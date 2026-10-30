@@ -1,0 +1,525 @@
+//! Where routes join a shared lane: a dot at every point where two routes
+//! start or stop running together, where the ink actually parts, and one bar
+//! along the lane for joins a few units apart. The marks are found from the
+//! finished routes and change nothing about where anything is placed.
+
+use std::collections::HashMap;
+
+use crate::drawing::Edge;
+use crate::geometry::{Curve, Point, Segment, round_coord, vertices_of};
+use crate::js;
+use crate::paint::build::{Items, concat, grouped, point, shape};
+use crate::paint::styles::stroke_width;
+use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Role, Shape, Stroke};
+
+/// How far a junction mark reaches past the line it sits on.
+const JUNCTION_REACH: f64 = 1.6;
+/// How far a route must go on from a point to count as leaving it that way.
+const ONWARD: f64 = 0.5;
+/// How much clear space two marks along one lane need to read as two.
+const APART: f64 = 2.0;
+
+/// One straight stretch of a route, along one axis.
+#[derive(Clone, Copy, Debug)]
+struct Stretch {
+    route: usize,
+    across: bool,
+    at: f64,
+    from: f64,
+    to: f64,
+    from_bend: f64,
+    to_bend: f64,
+    width: f64,
+}
+
+/// A place two routes join or part, and the heavier of the lines there; a bar
+/// when it runs on to `until`.
+#[derive(Clone, Debug)]
+struct Junction {
+    point: Point,
+    until: Option<Point>,
+    route: usize,
+    width: f64,
+    routes: Vec<usize>,
+}
+
+/// One route, as the joins are found from it.
+pub(super) struct JoinRoute {
+    corners: Vec<Point>,
+    bends: Vec<f64>,
+    width: f64,
+}
+
+/// A route's straight stretches between its corners, each with the bends at its two ends.
+fn stretches_of(route: &JoinRoute, index: usize) -> Vec<Stretch> {
+    let bend = |at: usize| route.bends.get(at).copied().unwrap_or(0.0);
+    route
+        .corners
+        .windows(2)
+        .enumerate()
+        .filter_map(|(at, pair)| {
+            stretch_between(
+                pair[0],
+                pair[1],
+                [bend(at), bend(at + 1)],
+                index,
+                route.width,
+            )
+        })
+        .collect()
+}
+
+/// The stretch from one corner to the next, low end first; none unless it runs
+/// straight across or straight down.
+fn stretch_between(
+    a: Point,
+    b: Point,
+    bends: [f64; 2],
+    route: usize,
+    width: f64,
+) -> Option<Stretch> {
+    let across = (a.y - b.y).abs() < ONWARD;
+    if across == ((a.x - b.x).abs() < ONWARD) {
+        return None;
+    }
+    let (start, end) = if across { (a.x, b.x) } else { (a.y, b.y) };
+    let forward = start <= end;
+    Some(Stretch {
+        route,
+        across,
+        at: if across { a.y } else { a.x },
+        from: js::js_min(start, end),
+        to: js::js_max(start, end),
+        from_bend: if forward { bends[0] } else { bends[1] },
+        to_bend: if forward { bends[1] } else { bends[0] },
+        width,
+    })
+}
+
+/// Whether a point lies on a stretch, within `near` of it.
+fn on_stretch(stretch: &Stretch, point: Point, near: f64) -> bool {
+    let off = if stretch.across { point.y } else { point.x };
+    let along = if stretch.across { point.x } else { point.y };
+    (off - stretch.at).abs() <= near && along >= stretch.from - near && along <= stretch.to + near
+}
+
+/// The ways a stretch's ink leaves a point on it: left and right, or up and
+/// down, each where the stretch runs on past the point.
+fn stretch_ways(stretch: &Stretch, point: Point, near: f64) -> Vec<&'static str> {
+    if !on_stretch(stretch, point, near) {
+        return Vec::new();
+    }
+    let along = if stretch.across { point.x } else { point.y };
+    let (back, forth) = if stretch.across {
+        ("left", "right")
+    } else {
+        ("up", "down")
+    };
+    let mut ways = Vec::new();
+    if along - stretch.from > near {
+        ways.push(back);
+    }
+    if stretch.to - along > near {
+        ways.push(forth);
+    }
+    ways
+}
+
+/// The ways a route's ink leaves a point, each once.
+fn ways_out(stretches: &[Stretch], point: Point, near: f64) -> Vec<&'static str> {
+    let mut ways: Vec<&'static str> = Vec::new();
+    for way in stretches
+        .iter()
+        .flat_map(|stretch| stretch_ways(stretch, point, near))
+    {
+        if !ways.contains(&way) {
+            ways.push(way);
+        }
+    }
+    ways
+}
+
+/// Whether two routes' ink parts at a point: it leaves the point in different ways.
+fn part_at(one: &[Stretch], other: &[Stretch], point: Point, near: f64) -> bool {
+    let a = ways_out(one, point, near);
+    let b = ways_out(other, point, near);
+    a.len() != b.len() || a.iter().any(|way| !b.contains(way))
+}
+
+/// Each end of a shared stretch with where the ink parts there.
+struct Shared {
+    ends: [(Point, Point); 2],
+    near: f64,
+}
+
+/// Where two routes run together on one stretch, and where their ink parts at
+/// each end of it, held in from a bend; none when they do not share one.
+fn shared_ends(one: &Stretch, other: &Stretch) -> Option<Shared> {
+    if one.route == other.route || one.across != other.across {
+        return None;
+    }
+    let near = js::js_max(f64::midpoint(one.width, other.width), ONWARD);
+    let from = js::js_max(one.from, other.from);
+    let to = js::js_min(one.to, other.to);
+    if (one.at - other.at).abs() > near || to - from <= near {
+        return None;
+    }
+    let at = f64::midpoint(one.at, other.at);
+    let point = |along: f64| {
+        if one.across {
+            Point { x: along, y: at }
+        } else {
+            Point { x: at, y: along }
+        }
+    };
+    let middle = f64::midpoint(from, to);
+    let inward = |along: f64, at_from: bool| {
+        js::js_min(
+            (middle - along).abs(),
+            js::max([one, other].map(|stretch| {
+                let end = if at_from { stretch.from } else { stretch.to };
+                if (end - along).abs() <= near {
+                    if at_from {
+                        stretch.from_bend
+                    } else {
+                        stretch.to_bend
+                    }
+                } else {
+                    0.0
+                }
+            })),
+        )
+    };
+    Some(Shared {
+        ends: [
+            (point(from), point(from + inward(from, true))),
+            (point(to), point(to - inward(to, false))),
+        ],
+        near,
+    })
+}
+
+/// The joins of two stretches: a mark at each end of their shared run where
+/// the routes part, in the ink of the heavier one.
+fn joins_between(one: &Stretch, other: &Stretch, by_route: &[Vec<Stretch>]) -> Vec<Junction> {
+    let Some(shared) = shared_ends(one, other) else {
+        return Vec::new();
+    };
+    let heavier = if one.width >= other.width { one } else { other };
+    shared
+        .ends
+        .iter()
+        .filter(|(end, _)| {
+            part_at(
+                &by_route[one.route],
+                &by_route[other.route],
+                *end,
+                shared.near,
+            )
+        })
+        .map(|(_, parts)| Junction {
+            point: *parts,
+            until: None,
+            route: heavier.route,
+            width: heavier.width,
+            routes: vec![one.route, other.route],
+        })
+        .collect()
+}
+
+/// The routes each once, in the order first given.
+fn unique(routes: impl IntoIterator<Item = usize>) -> Vec<usize> {
+    let mut kept = Vec::new();
+    for route in routes {
+        if !kept.contains(&route) {
+            kept.push(route);
+        }
+    }
+    kept
+}
+
+/// The joins found so far, one per place, in the order their places were found.
+#[derive(Default)]
+struct Found {
+    order: Vec<Junction>,
+    places: HashMap<String, usize>,
+}
+
+impl Found {
+    /// Keep a join, or merge it into the one found at its place: the heavier one
+    /// stays, and both keep every route either named.
+    fn keep(&mut self, junction: Junction) {
+        let key = format!(
+            "{},{}",
+            js::number(js::round(junction.point.x / 2.0)),
+            js::number(js::round(junction.point.y / 2.0))
+        );
+        match self.places.get(&key) {
+            None => {
+                self.places.insert(key, self.order.len());
+                let routes = unique(junction.routes.clone());
+                self.order.push(Junction { routes, ..junction });
+            }
+            Some(&at) => {
+                let held = &self.order[at];
+                let routes = unique(
+                    held.routes
+                        .iter()
+                        .copied()
+                        .chain(junction.routes.iter().copied()),
+                );
+                let kept = if held.width < junction.width {
+                    junction
+                } else {
+                    held.clone()
+                };
+                self.order[at] = Junction { routes, ..kept };
+            }
+        }
+    }
+}
+
+/// Whether two joins stand close enough on one line that their marks would touch.
+fn touching(a: &Junction, b: &Junction) -> bool {
+    let dx = (a.point.x - b.point.x).abs();
+    let dy = (a.point.y - b.point.y).abs();
+    let reach = a.width + b.width + JUNCTION_REACH * 2.0 + APART;
+    (dx < ONWARD && dy < reach) || (dy < ONWARD && dx < reach)
+}
+
+/// One mark for joins that touch: the heaviest one's, stretched from the first
+/// to the last of them, naming every route they join.
+fn mark_of(cluster: &[Junction]) -> Junction {
+    let heaviest =
+        cluster.iter().skip(1).fold(
+            &cluster[0],
+            |best, one| if one.width > best.width { one } else { best },
+        );
+    if cluster.len() == 1 {
+        return heaviest.clone();
+    }
+    let mut ordered: Vec<&Junction> = cluster.iter().collect();
+    let ascending = |a: f64, b: f64| a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal);
+    ordered.sort_by(|a, b| {
+        ascending(a.point.x, b.point.x).then_with(|| ascending(a.point.y, b.point.y))
+    });
+    Junction {
+        point: ordered[0].point,
+        until: Some(ordered[ordered.len() - 1].point),
+        routes: unique(cluster.iter().flat_map(|one| one.routes.iter().copied())),
+        ..heaviest.clone()
+    }
+}
+
+/// The joins gathered into marks, joins that touch each other into one.
+fn gathered(junctions: Vec<Junction>) -> Vec<Junction> {
+    let mut pending = junctions;
+    let mut marks = Vec::new();
+    while let Some(first) = pending.pop() {
+        let mut cluster = vec![first];
+        while let Some(index) = pending
+            .iter()
+            .position(|one| cluster.iter().any(|held| touching(held, one)))
+        {
+            cluster.push(pending.remove(index));
+        }
+        marks.push(mark_of(&cluster));
+    }
+    marks
+}
+
+/// Every place where two routes run together and part, one join per place.
+fn joins_of(routes: &[JoinRoute]) -> Vec<Junction> {
+    let by_route: Vec<Vec<Stretch>> = routes
+        .iter()
+        .enumerate()
+        .map(|(index, route)| stretches_of(route, index))
+        .collect();
+    let stretches: Vec<Stretch> = by_route.iter().flatten().copied().collect();
+    let mut found = Found::default();
+    for (index, one) in stretches.iter().enumerate() {
+        for other in &stretches[index + 1..] {
+            for junction in joins_between(one, other, &by_route) {
+                found.keep(junction);
+            }
+        }
+    }
+    found.order
+}
+
+/// How far before each of a route's corners its ink starts to turn.
+fn bends_of(curve: &Curve) -> Vec<f64> {
+    let mut from = curve.from;
+    let mut radii = vec![0.0];
+    for segment in &curve.segments {
+        if let Segment::Cubic { to, .. } = segment {
+            radii.push(js::js_max((to.x - from.x).abs(), (to.y - from.y).abs()));
+        }
+        from = segment.to();
+    }
+    radii.push(0.0);
+    radii
+}
+
+/// How far a junction mark reaches from its point on a line of some width.
+pub(super) fn mark_radius(width: f64) -> f64 {
+    width + JUNCTION_REACH
+}
+
+/// The marks for every join, in the ink and weight of the heavier line there:
+/// each route with the ink its line is drawn in.
+pub(super) fn junction_marks(routes: &[(&Edge, Colour)]) -> Items {
+    let join_routes: Vec<JoinRoute> = routes
+        .iter()
+        .map(|(route, _)| JoinRoute {
+            corners: vertices_of(&route.curve),
+            bends: bends_of(&route.curve),
+            width: stroke_width(route.edge.emphasis),
+        })
+        .collect();
+    let junctions = gathered(joins_of(&join_routes));
+    if junctions.is_empty() {
+        return Items::new();
+    }
+    let marks = junctions
+        .iter()
+        .map(|junction| {
+            let ink = &routes[junction.route].1;
+            let radius = mark_radius(junction.width);
+            let from = point(junction.point.x, junction.point.y);
+            let mark = match junction.until {
+                None => Shape::new(
+                    Purpose::Line,
+                    Geometry::Circle {
+                        centre: Some(from),
+                        radius: round_coord(radius),
+                    },
+                )
+                .filled(ink),
+                Some(until) => Shape::path(
+                    Purpose::Line,
+                    vec![
+                        PathStep::Move { to: from },
+                        PathStep::Line {
+                            to: point(until.x, until.y),
+                        },
+                    ],
+                )
+                .unfilled()
+                .stroked(Stroke::new(ink, round_coord(radius * 2.0)).capped(Cap::Round)),
+            };
+            shape(Shape {
+                members: junction
+                    .routes
+                    .iter()
+                    .map(|at| routes[*at].0.edge.id.clone())
+                    .collect(),
+                ..mark
+            })
+        })
+        .collect();
+    grouped(Group::new(Role::Junctions, concat(marks)).pointer(Pointer::None))
+}
+
+#[cfg(test)]
+mod tests {
+    //! Where routes join a shared lane (TASK-337): a route that joins another's
+    //! lane is marked where it joins, even when routing nudged the two lanes a
+    //! unit apart; two routes that only share a corner they turn together, or
+    //! only the point they both end at, or lanes far enough apart to draw as
+    //! two lines, are not marked.
+
+    use super::{JoinRoute, Junction, gathered, joins_of};
+    use crate::geometry::Point;
+
+    /// A line as thick as an ordinary relationship's.
+    const WIDTH: f64 = 1.4;
+
+    fn route(corners: &[(f64, f64)]) -> JoinRoute {
+        JoinRoute {
+            corners: corners.iter().map(|&(x, y)| Point { x, y }).collect(),
+            bends: Vec::new(),
+            width: WIDTH,
+        }
+    }
+
+    /// Every place routes join, each run of nearby joins gathered into one mark.
+    fn junctions_of(routes: &[JoinRoute]) -> Vec<Junction> {
+        gathered(joins_of(routes))
+    }
+
+    fn sorted(mut routes: Vec<usize>) -> Vec<usize> {
+        routes.sort_unstable();
+        routes
+    }
+
+    #[test]
+    fn a_route_joining_another_lane_is_marked_where_it_joins_and_only_there() {
+        // Both end on one card at the bottom left. The second joins the first's
+        // lane half way down, a unit and a bit to the side, which still draws as
+        // one line; from there they run together and turn into the card together.
+        let joins = junctions_of(&[
+            route(&[(500.0, 0.0), (0.0, 0.0), (0.0, 400.0), (-40.0, 400.0)]),
+            route(&[(500.0, 200.0), (1.2, 200.0), (1.2, 400.0), (-40.0, 400.0)]),
+        ]);
+        assert_eq!(joins.len(), 1);
+        assert!((joins[0].point.x - 0.6).abs() < 0.05);
+        assert!((joins[0].point.y - 200.0).abs() < 0.05);
+        assert_eq!(sorted(joins[0].routes.clone()), [0, 1]);
+    }
+
+    // Platform Phone API: a merge dot drawn at the corner a route's bend cut,
+    // eight units from where its ink met the lane, read as a spur.
+    #[test]
+    fn a_route_turning_off_a_lane_is_marked_where_its_bend_leaves_the_lane() {
+        let mut turning = route(&[(0.0, 0.0), (0.0, 200.0), (100.0, 200.0)]);
+        turning.bends = vec![0.0, 8.0, 0.0];
+        let joins = junctions_of(&[route(&[(0.0, 0.0), (0.0, 400.0)]), turning]);
+        assert_eq!(joins.len(), 1);
+        assert_eq!(joins[0].point, Point { x: 0.0, y: 192.0 });
+    }
+
+    // Board rasterizer and Command dispatch: three branches leaving one trunk
+    // six units apart drew three overlapping dots, a lumpy blob.
+    #[test]
+    fn joins_a_few_units_apart_along_one_lane_are_marked_once_from_the_first_to_the_last() {
+        let joins = junctions_of(&[
+            route(&[(0.0, 0.0), (0.0, 400.0)]),
+            route(&[(0.0, 0.0), (0.0, 200.0), (100.0, 200.0)]),
+            route(&[(0.0, 0.0), (0.0, 206.0), (-100.0, 206.0)]),
+        ]);
+        assert_eq!(joins.len(), 1);
+        assert_eq!(joins[0].point, Point { x: 0.0, y: 200.0 });
+        assert_eq!(joins[0].until, Some(Point { x: 0.0, y: 206.0 }));
+        // One mark for the three joins stands for every route that meets along it.
+        assert_eq!(sorted(joins[0].routes.clone()), [0, 1, 2]);
+    }
+
+    #[test]
+    fn routes_that_only_arrive_at_one_point_or_run_apart_are_not_marked() {
+        // One point both end at, from different sides.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0)]),
+                route(&[(100.0, 100.0), (0.0, 100.0)])
+            ])
+            .is_empty()
+        );
+        // Two lanes far enough apart to draw as two lines.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0)]),
+                route(&[(6.0, 0.0), (6.0, 100.0)])
+            ])
+            .is_empty()
+        );
+        // One lane from end to end, corners and all.
+        assert!(
+            junctions_of(&[
+                route(&[(0.0, 0.0), (0.0, 100.0), (50.0, 100.0)]),
+                route(&[(1.0, 0.0), (1.0, 100.0), (51.0, 100.0)]),
+            ])
+            .is_empty()
+        );
+    }
+}

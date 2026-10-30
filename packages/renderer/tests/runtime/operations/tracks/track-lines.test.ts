@@ -1,24 +1,6 @@
-// How the track engine's lines run through a drawing (visual polish): each
-// test is a defect a visual review found in real boards, reduced to a fixture.
-// What this catches: a line that steps sideways by less than its two bends
-// need, a line rising into the card above whose arrowhead sits on its last
-// bend, labels on a crowded band shifted together until every line through
-// them jogs, a labelled fan whose trunk turns once and whose labels then turn
-// it a second time, two labelled lines entering one card unevenly, a line
-// crossing a container's heading through its painted words, lanes put where
-// they cross another line that a free column would have left alone, a line
-// through a card entering and leaving it a few points apart, a run of lanes
-// left where a label stood before it slid aside, a container ending 12 px
-// above another opening under it, two lines lined up end to end across a
-// channel so that they read as one, lines into one card that join on the way
-// and then part again, to their own ends or to join once more, a line
-// run round the outside of the drawing where a short free route ran through
-// it, and a labelled line stepping sideways both above and below its label
-// where one column ran free from its label to its card.
-
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import {
 	corridorPoints,
 	routeLabels,
@@ -111,7 +93,7 @@ test.each([
 			layout: "track",
 			policy,
 		});
-		for (const [id, points] of routePoints(drawing.svg))
+		for (const [id, points] of corridorPoints(drawing.svg))
 			for (const step of sidewaysSteps(points))
 				expect(step > 0.5 && step < TWO_BENDS, `${id} steps ${step}`).toBe(false);
 	},
@@ -121,6 +103,7 @@ test.each([
 // above turned on the channel's first track, 8 px under that card.
 test("every line's arrowhead sits on a straight run, rising lines' too", async () => {
 	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture(risingLine),
 		theme: "light",
 		layout: "track",
@@ -149,7 +132,12 @@ test("labels crowding one band leave as many of their lines straight as fit", as
 			["stage1", "probe", "new", "call", "Stage 1: plain HTTP on a preview port"],
 		].map(([id, from, to, kind, label]) => ({ id, from, to, kind, label })),
 	});
-	const drawing = await renderArchitecture({ content: band, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: band,
+		theme: "light",
+		layout: "track",
+	});
 	const jogging = [...routePoints(drawing.svg)].filter(([, points]) =>
 		points.some((point, index) => index > 0 && Math.abs(point.x - points[index - 1]!.x) > 0.5),
 	);
@@ -161,6 +149,7 @@ test("labels crowding one band leave as many of their lines straight as fit", as
 // face, so each line ran sideways on the trunk's track and again below its label.
 test("a labelled line leaving through a trunk runs sideways on one level only", async () => {
 	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture(trunkFan),
 		theme: "light",
 		layout: "track",
@@ -180,6 +169,7 @@ test("a labelled line leaving through a trunk runs sideways on one level only", 
 // label down to its card.
 test("a labelled line steps sideways on one side of its label at most", async () => {
 	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture(throughLabel),
 		theme: "light",
 		layout: "track",
@@ -217,7 +207,12 @@ test("two labelled lines into one card enter it evenly", async () => {
 			label: "Database connection",
 		})),
 	});
-	const drawing = await renderArchitecture({ content: fork, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: fork,
+		theme: "light",
+		layout: "track",
+	});
 	const store = drawing.atlas.nodes["store"]!;
 	const routes = routePoints(drawing.svg);
 	const [left, right] = ["left", "right"].map((id) => routes.get(id)!.at(-1)!.x);
@@ -305,6 +300,7 @@ function crossingsOf(svg: string): number {
 // Graphviz left them, so the sibling crossed it on its way to its label.
 test("a run of lanes takes the free column that crosses fewest other lines", async () => {
 	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture(laneOrder),
 		theme: "light",
 		layout: "track",
@@ -333,7 +329,12 @@ function containerBoxes(svg: string): { x: number; y: number; width: number; hei
 // stood each label put the line in and the line out 10 px apart.
 test("a line into a card and one out of it run through it on one column", async () => {
 	const content = orderedFixture(throughCard);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const routes = routePoints(drawing.svg);
 	for (const { id } of content.nodes) {
 		const box = drawing.atlas.nodes[id]!;
@@ -388,13 +389,6 @@ test("a container standing over another keeps a container's inset from it", asyn
 		}
 });
 
-// Reduced from a dogfood board, names replaced: a line came down onto its track
-// and turned where another turned off the track below and went on down, one
-// lane over, and the two read as one line with a kink. The second, taken from
-// a board of this repository, had the two parted, and a later pass closing a
-// short step moved one back onto the other's column. In the third, the one
-// line's run of lanes stepped round a label above, so no move of the whole
-// run was free.
 test.each([
 	["read-as-one", readAsOne],
 	["command-groups", commandGroups],
@@ -430,11 +424,6 @@ test.each([
 	},
 );
 
-// Reduced from a dogfood board, names replaced: under Blocks, lines of one
-// kind from one block reach a card in another through one port. Each carrying
-// its own label inside the card's block, they split through their labels
-// after the port, and either joined again at the card, a ladder of loops, or
-// ended apart on it. Once joined, lines stay one line into the card.
 test("lines of one kind that join on the way to a card stay one line into it", async () => {
 	const content = orderedFixture(twinLines);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "blocks", policy });

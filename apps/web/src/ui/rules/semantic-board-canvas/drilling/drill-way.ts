@@ -1,13 +1,13 @@
 // Which way a drill-down leads, in the words and marks the chrome uses for it:
-// the renderer's own reading of the way, which it draws on the card (a ring
+// the board's reading of the way, which the renderer draws on the card (a ring
 // around an arrow), so the card, its hover tip and Go deeper say one thing. Up
 // opens a coarser board, the whole this one is a part of; down a finer one, the
 // part's inside; across a board at the same level. Pure.
 
-import { drillDirection, type DrillDirection } from "@archboard/renderer/picture";
+import { drillDirection } from "@archboard/board/policy";
 
 /** Which way the board a part opens lies from the board it is drawn on. */
-type DrillWay = Exclude<DrillDirection, "elsewhere">;
+type DrillWay = Exclude<ReturnType<typeof drillDirection>, "elsewhere">;
 
 /**
  * Which way a board lies from another, by their levels in the vault's order.

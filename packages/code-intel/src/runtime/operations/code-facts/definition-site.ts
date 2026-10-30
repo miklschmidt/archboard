@@ -104,13 +104,14 @@ function ownSpelling(definitions: readonly Definition[], symbol: string): string
  * @returns Each file and the name there.
  */
 function reexportTargets(facts: SyntaxFacts, symbol: string): Target[] {
-	const [first = "", ...rest] = symbol.split(".");
 	return facts.imports.flatMap((found) => {
 		const to = found.resolved;
 		if (to === undefined) return [];
 		return found.names.flatMap((name): Target[] => {
 			if (found.reexport && name.local === "*") return [{ path: to, symbol }];
-			return name.local === first ? [joined({ path: to, symbol: name.imported }, rest)] : [];
+			if (symbol !== name.local && !symbol.startsWith(`${name.local}.`)) return [];
+			const rest = symbol.slice(name.local.length).split(".").filter(Boolean);
+			return [joined({ path: to, symbol: name.imported }, rest)];
 		});
 	});
 }

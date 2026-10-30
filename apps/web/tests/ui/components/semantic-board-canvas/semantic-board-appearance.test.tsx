@@ -1,7 +1,8 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { headLength } from "@archboard/renderer/picture";
+import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { HEAD_LENGTH } from "@archboard/renderer/picture";
 import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
 import { pressKey } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import { sidebarSettled } from "#tests/ui/support/semantic-board-canvas/sidebar-probes.ts";
@@ -17,19 +18,57 @@ import {
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 
 /**
- * A picture whose node reports its independently applied visual channels.
- * @param color The body's color, from its group.
+ * How a picture drew one subject, as the renderer core answers it.
+ * @param id The subject.
+ * @param typeKind Its kind's key.
+ * @param typeName What its kind is called.
+ * @param look How it was drawn: a part's depiction and colour, or a line's colour, dash and head.
+ * @returns The appearance.
+ */
+function applied(
+	id: string,
+	typeKind: string,
+	typeName: string,
+	look: Partial<AppliedAppearance>,
+): AppliedAppearance {
+	return {
+		id,
+		typeKind,
+		typeName,
+		iconSvg: "",
+		depiction: "",
+		typeColor: "",
+		lineColor: "",
+		dash: "",
+		arrowhead: "",
+		...look,
+	};
+}
+
+/**
+ * A render answer whose picture draws subjects with these appearances, and
+ * whose key lists these samples.
+ * @param appearances What the picture draws, in drawing order.
+ * @param key The kinds and relationship kinds its key lists.
+ * @param key.kinds The part kinds.
+ * @param key.relationships The relationship kinds.
+ * @returns A render answer at the same board version.
+ */
+function keyed(
+	appearances: AppliedAppearance[],
+	key: { kinds: AppliedAppearance[]; relationships: AppliedAppearance[] },
+): Record<string, unknown> {
+	return { ...drawing(1), appearances, key };
+}
+
+/**
+ * A picture whose node is drawn as an API card.
+ * @param color The kind's colour.
  * @returns A render answer at the same board version.
  */
 function styledDrawing(color: string): Record<string, unknown> {
-	const drawn = drawing(1);
-	return {
-		...drawn,
-		svg: String(drawn["svg"]).replace(
-			'data-semantic-kind="node" data-semantic-id="n1"',
-			`data-semantic-kind="node" data-semantic-id="n1" data-depiction="card" data-type-name="API" data-type-color="violet" data-body-color="${color}" data-group="core"`,
-		),
-	};
+	const api = applied("n1", "api", "API", { depiction: "card", typeColor: color });
+	return keyed([api], { kinds: [api], relationships: [] });
 }
 
 /** A readable architecture whose applied appearance the legend explains. */
@@ -125,35 +164,25 @@ test("traffic changes are explained without animation numbers", async () => {
 });
 
 /**
- * A picture of four cards of three kinds and two relationships of two kinds,
- * one with a filled head and one with an open head.
+ * A picture whose key lists three part kinds that share one name and two
+ * relationship kinds that share another, one line with a filled head and one
+ * with an open head.
  * @returns A render answer at the same board version.
  */
 function keyedDrawing(): Record<string, unknown> {
-	const nodes = [
-		{ id: "n1", kind: "public-api", color: "violet" },
-		{ id: "n2", kind: "private-api", color: "blue" },
-		{ id: "n3", kind: "public-api", color: "violet" },
-		{ id: "n4", kind: "another-api", color: "violet" },
-	]
-		.map(
-			(node) =>
-				`<g data-semantic-id="${node.id}" data-type-kind="${node.kind}" data-type-name="API" data-depiction="card" data-type-color="${node.color}"/>`,
-		)
-		.join("");
-	const edges = [
-		{ id: "e1", kind: "request", dash: "solid", head: "filled" },
-		{ id: "e2", kind: "response", dash: "dashed", head: "open" },
-	]
-		.map(
-			(edge) =>
-				`<g data-semantic-id="${edge.id}" data-type-kind="${edge.kind}" data-type-name="Message" data-line-dash="${edge.dash}" data-arrowhead="${edge.head}"/>`,
-		)
-		.join("");
-	return { ...drawing(1), svg: `<svg xmlns="http://www.w3.org/2000/svg">${nodes}${edges}</svg>` };
+	const kinds = [
+		applied("n1", "public-api", "API", { depiction: "card", typeColor: "violet" }),
+		applied("n2", "private-api", "API", { depiction: "card", typeColor: "blue" }),
+		applied("n4", "another-api", "API", { depiction: "card", typeColor: "violet" }),
+	];
+	const relationships = [
+		applied("e1", "request", "Message", { dash: "solid", arrowhead: "filled" }),
+		applied("e2", "response", "Message", { dash: "dashed", arrowhead: "open" }),
+	];
+	return keyed([...kinds, ...relationships], { kinds, relationships });
 }
 
-test("legend preserves kinds with shared display names and consolidates repeated samples", async () => {
+test("the legend lists each sample the key lists, kinds that share a name apart", async () => {
 	server.reply = { status: 200, body: keyedDrawing() };
 	mountStage();
 	await settle();
@@ -172,7 +201,7 @@ test("the legend draws each arrowhead as large as the picture draws the head of 
 	const heads = [...part("semantic-legend").querySelectorAll("svg > svg")];
 	expect(heads).toHaveLength(2);
 	for (const head of heads) {
-		expect(Number(head.getAttribute("width"))).toBe(headLength("normal"));
-		expect(Number(head.getAttribute("height"))).toBe(headLength("normal"));
+		expect(Number(head.getAttribute("width"))).toBe(HEAD_LENGTH);
+		expect(Number(head.getAttribute("height"))).toBe(HEAD_LENGTH);
 	}
 });

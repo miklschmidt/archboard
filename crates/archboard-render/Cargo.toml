@@ -1,0 +1,28 @@
+[package]
+name = "archboard-render"
+description = "The renderer core's one call: a board's reading, the vault's policy and the render's choices in, the picture and its key out"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+archboard-flows = { path = "../archboard-flows" }
+archboard-layout = { path = "../archboard-layout" }
+archboard-scene = { path = "../archboard-scene" }
+archboard-svg = { path = "../archboard-svg" }
+# The vault's groups are read in the order its policy lists them.
+indexmap = { version = "2", features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+# Every number the host writes is read back to the same double.
+serde_json = { version = "1", features = ["float_roundtrip"] }
+# The TypeScript types of the core's contract are generated from its Rust
+# types (src/bin/export-types.rs).
+ts-rs = "12"
+
+[dev-dependencies]
+# The native test lays its solves out with the core's own Graphviz (ADR 0060).
+archboard-graphviz = { path = "../archboard-graphviz" }

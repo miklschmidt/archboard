@@ -18,6 +18,9 @@ You need these things:
 - Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
 - A desktop browser, to read the boards. The browser layout is for desktop
   screens only.
+- Nix with flakes, to build the renderer core. `nix develop` in the checkout
+  gives Bun and the Rust tools. Without Nix, install the Rust toolchain with the
+  `wasm32-unknown-unknown` target, `lld`, and `wasm-bindgen-cli` 0.2.129.
 - Chromium or Google Chrome, only to draw PNG files and to record videos.
 - `ffmpeg` with libx264 and aac, or Nix, only to record videos. If there is no
   `ffmpeg`, the recorder runs `nixpkgs#ffmpeg-headless` through Nix.
@@ -29,6 +32,7 @@ Run these commands once:
 ```bash
 git clone https://github.com/miklschmidt/archboard.git ~/Projects/archboard
 cd ~/Projects/archboard
+nix develop
 bun install
 bun run build
 ```
@@ -38,9 +42,11 @@ also installs the Codex version that archboard is pinned to, inside the
 checkout, and generates the contract for it. The Archboard server does not start unless
 that Codex passes its checks. A Codex on your `PATH` is not used.
 
-`bun run build` builds the browser application into `dist/frontend`. Without
-it, the page tells you to run the build. The server and the CLI run from the
-TypeScript in `apps/` and `packages/`, so nothing else is built. After each `git pull`,
+`bun run build` builds the renderer core to WebAssembly and the browser
+application into `dist/frontend`. Without it, the page tells you to run the
+build. The server and the CLI run from the TypeScript in `apps/` and
+`packages/`. If the renderer core was built from other sources than the
+checkout holds, they refuse to draw and name `bun run build:core` (ADR 0059). After each `git pull`,
 run `bun install` and `bun run build` again. `bun install` also links the workspace
 packages into `node_modules`, and the server does not start without those links.
 
@@ -296,6 +302,7 @@ A language server reads a checkout the way your editor does. For most languages,
 - clangd runs a helper program that a compile command names for a `native` GPU. The section on C, C++ and Objective-C says more.
 - csharp-ls evaluates the MSBuild files of the solution.
 - sourcekit-lsp evaluates `Package.swift`.
+- rust-analyzer runs `cargo metadata`, the build scripts and the procedural macros of the Cargo workspace, and `cargo check` after it loads.
 
 So archboard starts such a language server only for a checkout where you, or the agent that works in that repository, configured it. Then the Archboard server runs the language server as your editor does. It uses the command and arguments that you configured. It uses the environment of the Archboard server, which is the environment of the command that started it (see [section 5](#5-start-the-archboard-server-and-sign-in-to-codex)). The check adds no flag, no variable and no rewritten file.
 
@@ -316,7 +323,7 @@ In a monorepo, the check reads the root only. A package that installs another ve
 
 ### The other languages
 
-Python, C, C++, Objective-C, C# and Swift have no default server. To configure one, follow these steps:
+Python, C, C++, Objective-C, C#, Swift and Rust have no default server. To configure one, follow these steps:
 
 1. Install the server.
 2. If you did not register the checkout yet, run `archboard repo add` (see [Code bindings](#code-bindings)).
@@ -326,7 +333,7 @@ Python, C, C++, Objective-C, C# and Swift have no default server. To configure o
 archboard repo language-server <language> <command> [--arg=<argument>]...
 ```
 
-The language is `python`, `csharp`, `swift` or `c`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
+The language is `python`, `csharp`, `swift`, `c` or `rust`. The language `c` covers C, C++ and Objective-C. The command is a program on the `PATH` of the Archboard server, or the absolute path of a program. Write an argument that starts with `-` as `--arg=<argument>`.
 
 `--repo <identity>` names another repository, and the command then configures its chosen checkout. Without it, the command configures the known checkout that holds the working directory. `--remove` removes the server of the language. `archboard repo list` shows the configured servers of each checkout. `archboard repo forget` removes them with the checkout.
 
@@ -395,6 +402,16 @@ sourcekit-lsp builds a package itself on the first run to prepare its background
 The check starts sourcekit-lsp in the package that holds the file. It waits for `workspace/synchronize` with `index: true` to finish the build graph and index before it asks for definitions. The server keeps its index database and a module cache under `.build`, as it does in your editor. A first check can take longer than a later check because the server prepares the package.
 
 If no `Package.swift` holds the file, the check says `language-server-unready` once. Its uses stay candidates.
+
+#### Rust
+
+Install rust-analyzer, for example with `rustup component add rust-analyzer rust-src` or `nix profile install nixpkgs#rust-analyzer`. rust-analyzer also needs `cargo` on the `PATH` of the Archboard server, and the source of the standard library. With rustup, the `rust-src` component gives that source. On Nix, set `RUST_SRC_PATH` in the environment of the Archboard server. This repository's `nix develop` shell gives all three. Then run `archboard repo language-server rust rust-analyzer`.
+
+The check reads `.rs` files and each `Cargo.toml`. It starts rust-analyzer in the nearest directory above the file whose `Cargo.toml` declares a `[workspace]`, else in the directory of the nearest `Cargo.toml`. So one server answers for every member of a workspace. The check opens the file and waits until rust-analyzer ends its `rustAnalyzer/cachePriming` progress, which it begins after it loads the workspace, its build scripts and its procedural macros. Then it asks for definitions.
+
+rust-analyzer runs `cargo check` after it loads, as it does in your editor. That writes into the `target` directory of the workspace. On this repository (24 cores, rust-analyzer 2026-10-12), the rust-analyzer part of a check took 5.7 seconds with a warm `target` directory.
+
+If no `Cargo.toml` holds the file, the check says `language-server-unready` once. Its uses stay candidates.
 
 ## Rendering to a bitmap
 

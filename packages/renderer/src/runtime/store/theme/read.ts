@@ -1,9 +1,7 @@
 import { transform, type Selector, type StyleRule, type Declaration } from "lightningcss";
 import type { DiagramTheme } from "@archboard/board/render-reply";
+import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 import { exportColor } from "#runtime/store/theme/colors.ts";
-
-/** Only color declarations live in the shared stylesheet. */
-type ThemeColors = Readonly<Record<DiagramTheme, Readonly<Record<string, string>>>>;
 
 /**
  * Recognize the shared stylesheet's base selector.
@@ -87,4 +85,4 @@ function readThemeColors(css: string): ThemeColors {
 	return { light, dark: { ...light, ...dark } };
 }
 
-export { readThemeColors, type ThemeColors };
+export { readThemeColors };

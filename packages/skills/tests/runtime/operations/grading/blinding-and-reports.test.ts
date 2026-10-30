@@ -133,7 +133,6 @@ const RUN: CompletedRun = {
 				height: 400,
 				diagram: { width: 900, height: 400 },
 				svgSha256: "ab".repeat(32),
-				facesLoaded: 4,
 				motion: "paused-at-start",
 			},
 			tiles: [

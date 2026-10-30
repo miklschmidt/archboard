@@ -1,0 +1,136 @@
+{
+	"nodes": [
+		{
+			"id": "Y70KOm9C",
+			"order": 4000,
+			"name": "Route handlers",
+			"kind": "module",
+			"responsibility": "Answers every request: board reads, the one write boundary with its claim, rename and discard, the code checks, the repositories and checkout choice, the page, health and opening vault",
+			"description": "Board routes, Board write routes, Claim routes, Rename route, Discard route, Service routes, Code check route, Locality route and Footprint route. Their own board draws each one with the parts it reaches.",
+			"parent": "nU6dNHBE",
+			"groups": ["drawing"],
+			"drillDown": {
+				"board": "Archboard server routes",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "9G6CmNgt",
+			"order": 10000,
+			"name": "Codex workbench",
+			"kind": "service",
+			"responsibility": "Adapts Archboard's context, tools, narration and checkout admission to the voice agent it hosts through createVoiceAgent",
+			"parent": "cuOguqkZ",
+			"groups": ["agent"],
+			"drillDown": {
+				"board": "Codex realtime voice",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "WEawqdWG",
+			"order": 33000,
+			"name": "HTTP listener",
+			"kind": "module",
+			"responsibility": "The one Express application and the HTTP server that answers for it",
+			"parent": "nU6dNHBE"
+		},
+		{
+			"id": "tbH9ZyCA",
+			"order": 36000,
+			"name": "Live panes",
+			"kind": "module",
+			"responsibility": "Keeps the panes on screen, their sockets and tabs, and board announcements live",
+			"description": "Pane routes, Pane socket, Pane registry, Board announcements, Change feed, Tab session presence and Disk change watcher form this server subsystem. Board content stays on disk; the subsystem holds only screen and session state.",
+			"parent": "cuOguqkZ",
+			"groups": ["panes"],
+			"drillDown": {
+				"board": "Live panes",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		},
+		{
+			"id": "nU6dNHBE",
+			"order": 38000,
+			"name": "HTTP serving",
+			"kind": "module",
+			"responsibility": "Takes every HTTP call: mounts the routes on one application and listener, refuses foreign browser origins and calls that name no vault, and opens a node's code."
+		},
+		{
+			"id": "cuOguqkZ",
+			"order": 40000,
+			"name": "Panes and the workbench",
+			"kind": "module",
+			"responsibility": "Keeps the panes on screen with their sockets, tabs and board news, and owns the private Codex child that is bridged to those panes."
+		},
+		{
+			"id": "MYbmjfIR",
+			"order": 45000,
+			"name": "Codex realtime voice",
+			"kind": "service",
+			"responsibility": "Owns the reusable Codex generations, sessions, workhorses, approvals and voice behind createVoiceAgent, with the host's identity and policy",
+			"parent": "cuOguqkZ",
+			"groups": ["agent"],
+			"drillDown": {
+				"board": "Codex realtime voice",
+				"variant": {
+					"kind": "current"
+				}
+			}
+		}
+	],
+	"edges": [
+		{
+			"id": "fISQ9jAX",
+			"order": 10000,
+			"from": "tbH9ZyCA",
+			"to": "9G6CmNgt",
+			"kind": "event",
+			"description": "the page's agent messages",
+			"emphasis": "normal"
+		},
+		{
+			"id": "9wogU6N3",
+			"order": 22000,
+			"from": "Y70KOm9C",
+			"to": "tbH9ZyCA",
+			"kind": "event",
+			"label": "announce the accepted write",
+			"description": "announce the accepted write",
+			"emphasis": "hero"
+		},
+		{
+			"id": "hjFA6kH4",
+			"order": 49000,
+			"from": "9G6CmNgt",
+			"to": "tbH9ZyCA",
+			"kind": "data",
+			"description": "changes since its cursor",
+			"emphasis": "normal"
+		},
+		{
+			"id": "fpTfPg1T",
+			"order": 51000,
+			"from": "9G6CmNgt",
+			"to": "tbH9ZyCA",
+			"kind": "call",
+			"description": "a pane's tab, and the end of a tab gone for 60 s; the board the pane shows",
+			"emphasis": "normal"
+		},
+		{
+			"id": "GQKfoYtu",
+			"order": 73000,
+			"from": "tbH9ZyCA",
+			"to": "WEawqdWG",
+			"kind": "dependency",
+			"description": "upgrades on the same listener",
+			"emphasis": "muted"
+		}
+	]
+}

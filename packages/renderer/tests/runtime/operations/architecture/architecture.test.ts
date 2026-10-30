@@ -3,14 +3,7 @@ import { describe, expect, test } from "bun:test";
 import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import {
-	drawnSpan,
-	drawnWidth,
-	drawnTexts,
-	labelPlates,
-	registeredFaces,
-	spanFits,
-} from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
 import { across, along } from "#tests/runtime/support/drawn-reading.ts";
 import {
 	distanceToFrame,
@@ -19,6 +12,10 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 import type { VariantContent } from "@archboard/board/content";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+const policy = DEFAULT_SEMANTIC_POLICY;
 
 /**
  * One architecture, as its own contract reads it.
@@ -79,7 +76,7 @@ async function render(
 	content: VariantContent = SAMPLE,
 	theme: DiagramTheme = "light",
 ): Promise<RenderedDiagram> {
-	return renderArchitecture({ content, theme });
+	return renderArchitecture({ policy, content, theme });
 }
 
 /**
@@ -267,10 +264,9 @@ describe("renderArchitecture", () => {
 			),
 		);
 		const header = drawnTexts(rendered.svg).filter((run) => run.subject.id === "svc");
-		const faces = registeredFaces(rendered.svg);
 		expect(header.length).toBeGreaterThan(1);
 		for (const run of header) {
-			const span = drawnSpan(run, faces);
+			const span = drawnSpan(run);
 			const exclusion = {
 				x: span.left - 12,
 				y: run.y - run.size - 12,
@@ -303,14 +299,13 @@ describe("renderArchitecture", () => {
 		}
 	});
 
-	test("an edge naming a container arrives on that container's frame", async () => {
+	test("an edge naming a container arrives on its visible header card", async () => {
 		const rendered = await render();
 		const arrival = routeEnds(rendered.svg).get("e7");
 		expect(arrival).toBeDefined();
 
-		// The arrowhead touches the box the reader sees, rather than landing well
-		// inside it on a strip of title the router happens to find convenient.
-		const box = rendered.atlas.regions["store"]!;
+		const box = headerCards(rendered).get("store")!;
+		expect(box).toBeDefined();
 		expect(distanceToFrame(arrival!, box)).toBeLessThan(2);
 		expect(arrival!.x).toBeGreaterThanOrEqual(box.x - 2);
 		expect(arrival!.y).toBeGreaterThanOrEqual(box.y - 2);
@@ -377,7 +372,6 @@ describe("renderArchitecture", () => {
 				{ id: "long", name: long, kind: "module", parent: "box" },
 			]),
 		);
-		const faces = registeredFaces(rendered.svg);
 		const title = drawnTexts(rendered.svg).filter(
 			(drawn) => drawn.subject.id === "long" && drawn.size === 14,
 		);
@@ -385,14 +379,13 @@ describe("renderArchitecture", () => {
 		expect(title.length).toBeGreaterThan(1);
 		expect(title.map((run) => run.text).join(" ")).toBe(long);
 		expect(title.every((run) => run.size === 14)).toBe(true);
-		expect(
-			title.every((run) => spanFits(drawnSpan(run, faces), rendered.atlas.nodes["long"]!)),
-		).toBe(true);
+		expect(title.every((run) => spanFits(drawnSpan(run), rendered.atlas.nodes["long"]!))).toBe(
+			true,
+		);
 	});
 
 	test("every drawn word fits its subject, measured in the face it is drawn in", async () => {
 		const rendered = await render();
-		const faces = registeredFaces(rendered.svg);
 		const drawn = drawnTexts(rendered.svg);
 		const plates = labelPlates(rendered.svg);
 
@@ -403,7 +396,7 @@ describe("renderArchitecture", () => {
 			const box = boxOf(rendered, text.subject);
 			expect(box).toBeDefined();
 			expect([400, 500]).toContain(text.weight);
-			expect(spanFits(drawnSpan(text, faces), box!)).toBe(true);
+			expect(spanFits(drawnSpan(text), box!)).toBe(true);
 		}
 
 		// A label is also checked against its own plate, which the atlas was
@@ -415,41 +408,29 @@ describe("renderArchitecture", () => {
 			.filter((one) => one.subject.kind === "edge")
 			.map((one) => {
 				const plate = plates.get(one.subject.id)!;
-				expect(spanFits(drawnSpan(one, faces), plate)).toBe(true);
-				return Math.round((plate.width - drawnWidth(one, faces)) * 100) / 100;
+				expect(spanFits(drawnSpan(one), plate)).toBe(true);
+				return Math.round((plate.width - one.width) * 100) / 100;
 			});
 		expect(slack.length).toBeGreaterThan(3);
 		expect(new Set(slack).size).toBe(1);
 		expect(slack[0]!).toBeGreaterThan(0);
 	});
 
-	test("the document registers every face it draws in", async () => {
+	test("a picture draws its words in glyphs it defines and needs no font", async () => {
 		const rendered = await render();
-		const faces = registeredFaces(rendered.svg);
-		expect(faces.size).toBe(4);
+		const defined = new Set(
+			Array.from(rendered.svg.matchAll(/<path id="(g[a-z][45]-\d+)"/g), ([, id]) => id),
+		);
+		const used = Array.from(rendered.svg.matchAll(/<use href="#(g[^"]+)"/g), ([, id]) => id);
+		expect(used.length).toBeGreaterThan(100);
+		expect(used.filter((id) => !defined.has(id))).toEqual([]);
+		// Each glyph is defined once, however often the words use it.
+		expect(rendered.svg.match(/<path id="g/g)).toHaveLength(defined.size);
 		for (const text of drawnTexts(rendered.svg)) {
-			expect(faces.has(`${text.family}|${text.weight}`)).toBe(true);
+			expect(text.text.trim() === "" || text.face !== undefined).toBe(true);
 		}
-		// A synthesised weight would be wider than anything that was measured.
-		expect(rendered.svg).toContain("font-synthesis:none");
-		expect(rendered.svg).not.toMatch(/font-weight="(600|700|bold)"/);
-	});
-
-	test("an embedded render carries its faces instead of pointing at them", async () => {
-		const linked = await renderArchitecture({ content: SAMPLE, theme: "light" });
-		const embedded = await renderArchitecture({
-			content: SAMPLE,
-			theme: "light",
-			fonts: "embedded",
-		});
-
-		expect(linked.svg).toContain('url("/assets/diagram-fonts/');
-		expect(embedded.svg).not.toContain("/assets/diagram-fonts/");
-		expect(embedded.svg).toContain('url("data:font/ttf;base64,');
-		expect(embedded.svg.length).toBeGreaterThan(linked.svg.length);
-		// Same picture either way: only where the bytes come from changed.
-		expect(embedded.atlas).toEqual(linked.atlas);
-		expect(embedded.width).toBe(linked.width);
+		expect(rendered.svg).not.toContain("@font-face");
+		expect(rendered.svg).not.toContain("font-family");
 	});
 
 	test("a label belongs to its edge, in the markup and in the atlas", async () => {
@@ -459,8 +440,7 @@ describe("renderArchitecture", () => {
 		expect(labelled).toHaveLength(1);
 		expect(labelled[0]!.subject).toEqual({ kind: "edge", id: "e2" });
 
-		const faces = registeredFaces(rendered.svg);
-		const span = drawnSpan(labelled[0]!, faces);
+		const span = drawnSpan(labelled[0]!);
 		const box = rendered.atlas.edges["e2"]!;
 		expect(spanFits(span, box)).toBe(true);
 		// And inside the plate it is printed on, which is sized independently of

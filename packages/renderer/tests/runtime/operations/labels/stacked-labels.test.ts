@@ -6,8 +6,11 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { drawnTexts, labelPlates } from "#tests/runtime/support/drawn-text.ts";
-import { PALETTE } from "#shared/rules/svg/page/theme.ts";
+
+/** The face a label's chip is painted in. */
+const PILL = "light-dark(var(--slab-face), var(--popover))";
 
 test.each(LayoutEngineSchema.options)(
 	"stacked labels are set apart by more than the lines of one label (%s)",
@@ -25,7 +28,12 @@ test.each(LayoutEngineSchema.options)(
 			...stated,
 			edges: [{ ...stated.edges[0]!, label: `${long}\nOpen the lifecycle` }],
 		};
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			content,
+			policy: DEFAULT_SEMANTIC_POLICY,
+			theme: "light",
+			layout,
+		});
 		const lines = drawnTexts(drawing.svg)
 			.filter(({ subject }) => subject.id === "e1")
 			.toSorted((a, b) => a.y - b.y);
@@ -44,7 +52,7 @@ test.each(LayoutEngineSchema.options)(
 			.split('data-semantic-id="e1"')
 			.find((chunk) => chunk.includes('data-semantic-part="label"'))!;
 		const words = group.slice(0, group.indexOf("</g>"));
-		expect(words.split(`style="fill:${PALETTE.pill}"`).length - 1).toBe(2);
+		expect(words.split(`style="fill:${PILL}"`).length - 1).toBe(2);
 		expect(words).not.toContain("<line");
 	},
 );

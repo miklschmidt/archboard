@@ -1,6 +1,7 @@
 // What the page has to say before and after the shot: that it is the SVG,
-// paused at its first frame with every face loaded, and that the bitmap it
-// answered is exactly the size the diagram asks for.
+// paused at its first frame, and that the bitmap it answered is exactly the
+// size the diagram asks for. The SVG draws its words in glyphs it defines
+// (ADR 0059), so there is no face to wait for.
 
 import { bitmapSizeOf, type RasterBounds } from "#runtime/operations/rasterizer/bounds.ts";
 import { isJsonRecord } from "#runtime/clients/headless-chromium/devtools.ts";
@@ -10,8 +11,6 @@ import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 interface PageReadiness {
 	readonly width: number;
 	readonly height: number;
-	readonly fonts: number;
-	readonly failedFaces: readonly string[];
 }
 
 /** The bytes a shot answered, and their size. */
@@ -24,8 +23,7 @@ interface CheckedBitmap {
 /**
  * What the page runs before the shot: pause every SMIL animation at its first
  * frame so the traffic marks sit where the renderer put them at time zero,
- * load every declared face and refuse to go on with a fallback, and read the
- * page size the SVG states.
+ * and read the page size the SVG states.
  */
 const READINESS_SCRIPT = `(async () => {
 	const root = document.documentElement;
@@ -34,18 +32,7 @@ const READINESS_SCRIPT = `(async () => {
 	}
 	root.pauseAnimations();
 	root.setCurrentTime(0);
-	const faces = [...document.fonts];
-	await Promise.all(faces.map((face) => face.load().catch(() => undefined)));
-	await document.fonts.ready;
-	const failedFaces = faces
-		.filter((face) => face.status !== "loaded")
-		.map((face) => face.family + " " + face.weight);
-	return {
-		width: root.width.baseVal.value,
-		height: root.height.baseVal.value,
-		fonts: faces.length,
-		failedFaces,
-	};
+	return { width: root.width.baseVal.value, height: root.height.baseVal.value };
 })()`;
 
 /**
@@ -55,27 +42,18 @@ const READINESS_SCRIPT = `(async () => {
  */
 function isPageReadiness(value: unknown): value is PageReadiness {
 	return (
-		isJsonRecord(value) &&
-		typeof value["width"] === "number" &&
-		typeof value["height"] === "number" &&
-		typeof value["fonts"] === "number" &&
-		Array.isArray(value["failedFaces"])
+		isJsonRecord(value) && typeof value["width"] === "number" && typeof value["height"] === "number"
 	);
 }
 
 /**
- * The readiness the page reported, refused when a face did not load.
+ * The readiness the page reported.
  * @param value What the page answered.
  * @returns The readiness.
  */
 function checkedReadiness(value: unknown): PageReadiness {
 	if (!isPageReadiness(value)) {
 		throw new Error("The page did not report its readiness.");
-	}
-	if (value.failedFaces.length > 0) {
-		throw new Error(
-			`The document's faces did not load before capture: ${value.failedFaces.join(", ")}.`,
-		);
 	}
 	return value;
 }

@@ -13,12 +13,14 @@ import path from "node:path";
 import { parseSemanticBoard } from "@archboard/board/document";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
+import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
 const runs = Number(process.argv[2] ?? 5);
 
-const items: { name: string; content: unknown }[] = [];
+const items: { name: string; content: unknown; policy: SemanticPolicy }[] = [];
 for (const file of fs
 	.readdirSync(fixtures)
 	.filter((name) => name.endsWith(".content.json"))
@@ -26,8 +28,10 @@ for (const file of fs
 	items.push({
 		name: file.replace(".content.json", ""),
 		content: JSON.parse(fs.readFileSync(path.join(fixtures, file), "utf8")),
+		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
+const { configuration: policy } = readSemanticBoardConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
@@ -35,11 +39,13 @@ for (const file of fs
 	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) continue;
 	const current = parsed.board.variants.find((variant) => variant.id === parsed.board.current);
-	if (current !== undefined) items.push({ name: parsed.board.name, content: current.content });
+	if (current !== undefined)
+		items.push({ name: parsed.board.name, content: current.content, policy });
 }
 
 // Warm the engine and the measurement caches once, on a board measured nowhere below.
 await renderArchitecture({
+	policy: DEFAULT_SEMANTIC_POLICY,
 	content: orderedFixture({
 		nodes: ["warm-a", "warm-b", "warm-c"].map((id) => ({ id, name: id, kind: "module" })),
 		edges: [
@@ -57,12 +63,16 @@ for (const item of items) {
 	// A layout is remembered by its content, so only the first render lays
 	// it out; the rest are the same picture painted again, in the other theme.
 	const started = performance.now();
-	await renderArchitecture({ content, theme: "light" });
+	await renderArchitecture({ policy: item.policy, content, theme: "light" });
 	const first = performance.now() - started;
 	const again: number[] = [];
 	for (let run = 1; run < runs; run += 1) {
 		const repeated = performance.now();
-		await renderArchitecture({ content, theme: run % 2 === 0 ? "light" : "dark" });
+		await renderArchitecture({
+			policy: item.policy,
+			content,
+			theme: run % 2 === 0 ? "light" : "dark",
+		});
 		again.push(performance.now() - repeated);
 	}
 	const median = again.toSorted((a, b) => a - b)[Math.floor(again.length / 2)] ?? 0;

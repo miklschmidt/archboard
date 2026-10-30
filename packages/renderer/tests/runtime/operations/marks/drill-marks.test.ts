@@ -23,8 +23,9 @@ import {
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
-import { drawnSpan, drawnTexts, registeredFaces } from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const OPENS = { board: "elsewhere", variant: { kind: "current" } };
 
@@ -79,6 +80,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 		grammar + " marks each part that opens a board with the way it lies, and draws its name whole",
 		async () => {
 			const { svg } = await renderSemanticView({
+				policy: DEFAULT_SEMANTIC_POLICY,
 				content,
 				grammar,
 				theme: "light",
@@ -204,6 +206,7 @@ for (const [grammar, layout] of DRAWINGS) {
 		const drawings = await Promise.all(
 			[[], [...parts, "frame"]].map(async (unsettled) => {
 				const { svg } = await renderSemanticView({
+					policy: DEFAULT_SEMANTIC_POLICY,
 					content: FRAMED,
 					grammar,
 					theme: "light",
@@ -254,6 +257,7 @@ for (const [grammar, layout] of DRAWINGS) {
 
 test("an architecture keeps a frame's far name clear of its far mark", async () => {
 	const { svg } = await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
 		content: orderedFixture({
 			nodes: [
 				{
@@ -281,10 +285,9 @@ test("an architecture keeps a frame's far name clear of its far mark", async () 
 		.map((group) => ringOf(group, "far"))
 		.find((found) => found !== undefined)!;
 	const shift = bodyShift(svg);
-	const faces = registeredFaces(svg);
 	const name = drawnTexts(svg, "far").filter(({ subject }) => subject.id === "frame");
 	expect(name.length).toBeGreaterThan(0);
 	for (const line of name) {
-		expect(drawnSpan(line, faces).right, line.text).toBeLessThan(shift.x + ring.x - ring.reach);
+		expect(drawnSpan(line).right, line.text).toBeLessThan(shift.x + ring.x - ring.reach);
 	}
 });

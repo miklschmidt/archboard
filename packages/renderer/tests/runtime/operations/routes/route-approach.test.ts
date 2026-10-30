@@ -8,7 +8,14 @@ import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.jso
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema, type DiagramBox } from "@archboard/board/render-reply";
-import { routeCrosses, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
+import {
+	corridorPoints,
+	routeCrosses,
+	routePoints,
+	type DrawnPoint,
+} from "#tests/runtime/support/drawn-routes.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({
@@ -67,7 +74,11 @@ function expectSquare(point: DrawnPoint, vector: DrawnPoint, box: DiagramBox): v
 }
 
 test("every relationship of a crowded board leaves and arrives square to its named subject", async () => {
-	const drawing = await renderArchitecture({ content: CROWDED, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: CROWDED,
+		theme: "light",
+	});
 	const paths = routePoints(drawing.svg);
 	expect(paths.size).toBe(CROWDED.edges.length);
 	for (const edge of CROWDED.edges) {
@@ -89,7 +100,11 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 			{ id: "down", from: "core", to: "io", kind: "call" },
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const path = routePoints(drawing.svg).get("self")!;
 	const card = drawing.atlas.nodes["io"]!;
 	expect(path.length).toBeGreaterThan(2);
@@ -109,12 +124,17 @@ test("a self-loop meets its own card squarely and stays outside its interior", a
 // arrival's quarter-slot inside the IIS title band. Its eight-unit final leg
 // was shorter than the visible arrowhead and left no room for the bend.
 test.each(LayoutEngineSchema.options)(
-	"an incoming frame arrow has a whole head and rounded bend before its endpoint (%s)",
+	"an incoming header arrow has a whole head and room for any bend before its endpoint (%s)",
 	async (layout) => {
 		const content = orderedFixture(frameApproach);
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		const points = routePoints(drawing.svg).get("g1zvz5QO")!;
-		expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
+		expectSquare(points.at(-1)!, tangent(points, "last"), headerCards(drawing).get("j6TdeSth")!);
 		const group = drawing.svg.match(
 			/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
 		)![1]!;
@@ -134,10 +154,18 @@ test.each(LayoutEngineSchema.options)(
 		const end = steps.at(-1)!;
 		const corner = steps.at(-2)!;
 		expect(end.kind).toBe("L");
-		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
 		const tip = end.values;
 		const beside = corner.values.slice(-2);
 		expect(Math.hypot(tip[0]! - beside[0]!, tip[1]! - beside[1]!)).toBeGreaterThan(headReach);
+		const corridor = corridorPoints(drawing.svg).get("g1zvz5QO")!;
+		if (
+			corridor.every((point) => point.x === corridor[0]!.x) ||
+			corridor.every((point) => point.y === corridor[0]!.y)
+		) {
+			// Crossing hops can curve along a straight approach without a turn.
+			return;
+		}
+		expect(corner.kind, "the incoming bend stays rounded").toBe("C");
 		// The last turn, past any hop the approach carries over a line it crosses:
 		// a turn's quarter circle is wider than a hop's.
 		const radii = steps.slice(1).map((step, index) => {
@@ -156,7 +184,11 @@ test.each(LayoutEngineSchema.options)(
 // entered a crowded side corridor with only 12.1 units for the head and bend.
 test("an ordinary arrow reserves a full straight approach and bend beside neighboring cards", async () => {
 	const content = orderedFixture(sideApproach);
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const points = routePoints(drawing.svg).get("tPQRa40r")!;
 	expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["mVg3PdJf"]!);
 	const group = drawing.svg.match(

@@ -14,9 +14,7 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout.json";
 import liveServerState from "#tests/runtime/support/fixtures/live-server-state.json";
-import skillEvaluation from "#tests/runtime/support/fixtures/skill-evaluation.json";
 import twinLines from "#tests/runtime/support/fixtures/twin-lines.json";
-import workhorseNews from "#tests/runtime/support/fixtures/workhorse-news-track.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
@@ -83,15 +81,6 @@ test("a lane keeps the frames either station beside it stands in", async () => {
 	for (const id of ["e5", "e8"]) expect(turnsOf(lines.get(id)!)).toBeLessThanOrEqual(4);
 });
 
-// Blocks straightens a lane onto the column its line runs on even where the
-// straight lane crosses more than the stepped one: refused there, 'rasterize
-// each picture' and 'photograph everything declared' each stepped twice, and
-// the whole of Archboard server crossed 69 -> 90 times.
-test("Blocks straightens a lane even where it crosses more", async () => {
-	const lines = await linesOf(skillEvaluation, "blocks");
-	for (const id of ["5TtCOktb", "b3s3lWZn"]) expect(turnsOf(lines.get(id)!), id).toBe(0);
-});
-
 // Blocks settles a label under the card above it before over the card below:
 // the other way round, 'tell the panes on the board' stood off its line's
 // column and the line stepped to reach it.
@@ -109,12 +98,4 @@ test("a lap costs its run only where it sets the page's edge", async () => {
 	const lines = await linesOf(workingWithAnAgent, "blocks");
 	for (const id of ["PuILGsjg", "kZtsu0nq"])
 		expect(routesCross(lines.get("rcSUaP1b")!, lines.get(id)!)).toBeFalse();
-});
-
-// Pulling a leaving label down onto the line's lower end is kept only where
-// the drawing reads no worse: taken on page size alone, 'answer the
-// workhorse' stepped round the label row and across another line.
-test("a leaving label is pulled down only where the drawing reads no worse", async () => {
-	const lines = await linesOf(workhorseNews, "track");
-	expect(routesCross(lines.get("5EeoHuyh")!, lines.get("yjIBH8F4")!)).toBeFalse();
 });

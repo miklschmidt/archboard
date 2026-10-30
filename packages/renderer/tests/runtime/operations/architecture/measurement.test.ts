@@ -1,85 +1,122 @@
+// Every word a card or a line's plate carries is drawn whole, at its readable
+// size, inside what holds it, as the drawn document says it. What this catches:
+// a word lost or broken where its room holds it whole, a wrapped line that keeps
+// the space it broke at and widens its card, a plate whose lines are not
+// balanced or not centred, a container that draws its description, and a
+// render that answers differently after another board was drawn.
 import { expect, test } from "bun:test";
-import { diagramTextWidth } from "#runtime/operations/render.ts";
-import { measureArchitecture } from "#runtime/operations/measure.ts";
-import { type TextRun } from "#shared/rules/render/drawing.ts";
-import { emptyContent, type VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/board/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { renderArchitecture } from "#runtime/operations/render.ts";
+import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import {
+	drawnSpan,
+	drawnTexts,
+	labelPlates,
+	spanFits,
+	type DrawnText,
+} from "#tests/runtime/support/drawn-text.ts";
+
+/** A card's name size: archboard_scene::paint::design CARD_TITLE_FONT. */
+const TITLE_SIZE = 14;
+/** A card's responsibility size, set smaller than its name. */
+const NOTE_SIZE = 11;
+/** A line's words size: archboard_scene::paint::design PILL_FONT. */
+const LABEL_SIZE = 10;
+/** The narrowest a plate is: archboard_scene::measure::labels LABEL_MIN_WIDTH. */
+const LABEL_MIN_WIDTH = 40;
+/** The widest a card is drawn. */
+const CARD_MAX_WIDTH = 340;
 
 /**
- * A run's width as the host canvas measures the whole line, in the face it is set in.
- * @param run The run.
- * @returns Its width.
+ * Draw one architecture on the light ground.
+ * @param content What to draw.
+ * @returns The drawing.
  */
-function exactWidth(run: TextRun): number {
-	const family = run.font.family === "mono" ? "Archboard Diagram Mono" : "Archboard Diagram Sans";
-	return diagramTextWidth(run.text, { family, weight: run.font.weight }, run.fontSize);
+async function drawn(content: VariantContent) {
+	return await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content, theme: "light" });
 }
 
+/**
+ * A text without its spaces, to compare the letters of wrapped lines.
+ * @param text The text.
+ * @returns Its letters.
+ */
 function letters(text: string): string {
 	return text.replace(/\s+/g, "");
 }
 
-test("measurement preserves complete words at fixed readable sizes and bounds their exact painted widths", () => {
+/**
+ * The runs drawn for one subject at one size.
+ * @param texts Every run of the picture.
+ * @param id The subject.
+ * @param size The size.
+ * @returns Its runs, in drawing order.
+ */
+function runsOf(texts: readonly DrawnText[], id: string, size: number): DrawnText[] {
+	return texts.filter((text) => text.subject.id === id && text.size === size);
+}
+
+test("a card's and a plate's words are drawn whole, at readable sizes, inside what holds them", async () => {
 	const name = "AuthenticationAndAuthorizationWithUninterruptedLongIdentifiers";
 	const responsibility =
 		"Owns the complete request lifecycle while preserving every responsibility word across all wrapped lines.";
-	const label = "authentication and authorization requests delivered with the complete payload";
-	const content: VariantContent = {
-		...emptyContent(),
-		nodes: [{ id: "api", order: 1000, name, responsibility, kind: "service" }],
-		edges: [
-			{ id: "call", order: 1000, from: "api", to: "api", kind: "call", label, emphasis: "normal" },
-		],
-	};
-	const measured = measureArchitecture(content);
-	const card = measured.nodes.get("api")!;
-	const titleRuns = card.runs.filter((run) => run.role === "title");
-	const noteRuns = card.runs.filter((run) => run.role === "note");
-	expect(titleRuns.length).toBeGreaterThan(1);
-	expect(noteRuns.length).toBeGreaterThan(1);
-	expect(letters(titleRuns.map((run) => run.text).join(""))).toBe(name);
-	expect(letters(noteRuns.map((run) => run.text).join(""))).toBe(letters(responsibility));
-	expect(titleRuns.every((run) => run.fontSize === 14)).toBeTrue();
-	expect(noteRuns.every((run) => run.fontSize === 11)).toBeTrue();
-	expect(card.headerHeight).toBe(0);
-	for (const run of card.runs) {
-		expect(run.width).toBe(exactWidth(run));
-		expect(run.x).toBe(52);
-		expect(run.x + run.width).toBeLessThanOrEqual(card.width - 16);
-		expect(run.y).toBeLessThan(card.height - 16);
+	const label = "authorization requests with the complete payload";
+	const drawing = await drawn(
+		orderedFixture({
+			nodes: [
+				{ id: "api", name, responsibility, kind: "service" },
+				{ id: "db", name: "Store", kind: "datastore" },
+			],
+			edges: [{ id: "call", from: "api", to: "db", kind: "call", label }],
+		}),
+	);
+	const texts = drawnTexts(drawing.svg);
+	const card = drawing.atlas.nodes["api"]!;
+	const title = runsOf(texts, "api", TITLE_SIZE);
+	const note = runsOf(texts, "api", NOTE_SIZE);
+	expect(title.length).toBeGreaterThan(1);
+	expect(note.length).toBeGreaterThan(1);
+	expect(letters(title.map((run) => run.text).join(""))).toBe(name);
+	expect(letters(note.map((run) => run.text).join(""))).toBe(letters(responsibility));
+	for (const run of [...title, ...note]) {
+		expect(spanFits(drawnSpan(run), card)).toBe(true);
+		expect(run.y).toBeLessThan(card.y + card.height);
 	}
-	const plate = measured.labels.get("call")!;
-	expect(letters(plate.runs.map((run) => run.text).join(""))).toBe(letters(label));
-	expect(plate.runs.length).toBeGreaterThan(1);
-	for (const run of plate.runs) {
-		expect(run.fontSize).toBe(10);
-		expect(run.width).toBe(exactWidth(run));
-		expect(run.x + run.width).toBeLessThanOrEqual(plate.width - 10);
-		expect(run.y).toBeLessThan(plate.height - 8);
+	const plate = labelPlates(drawing.svg).get("call")!;
+	const words = runsOf(texts, "call", LABEL_SIZE);
+	expect(words.length).toBeGreaterThan(1);
+	expect(letters(words.map((run) => run.text).join(""))).toBe(letters(label));
+	for (const run of words) {
+		expect(spanFits(drawnSpan(run), plate)).toBe(true);
+		expect(run.y).toBeLessThan(plate.y + plate.height);
 	}
 });
 
 // From the dogfood boards: a wrapped line kept the space it broke at, and the
-// card grew past its 340 px maximum by that space's width.
-test("a card's wrapped lines do not widen it by the space they broke at", () => {
-	const content: VariantContent = {
-		...emptyContent(),
-		nodes: [
-			{
-				id: "socket",
-				order: 1000,
-				name: "Pane socket",
-				kind: "module",
-				responsibility:
-					"One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
-			},
-		],
-	};
-	const card = measureArchitecture(content).nodes.get("socket")!;
-	for (const run of card.runs) expect(run.text).toBe(run.text.trimEnd());
-	expect(card.width).toBeLessThan(341);
+// card grew past its widest by that space's width.
+test("a card's wrapped lines do not widen it by the space they broke at", async () => {
+	const drawing = await drawn(
+		orderedFixture({
+			nodes: [
+				{
+					id: "socket",
+					name: "Pane socket",
+					kind: "module",
+					responsibility:
+						"One socket per page: registers it with the panes, and passes its agent messages to the Codex workbench",
+				},
+			],
+		}),
+	);
+	const runs = drawnTexts(drawing.svg).filter((text) => text.subject.id === "socket");
+	expect(runs.length).toBeGreaterThan(2);
+	for (const run of runs) expect(run.text).toBe(run.text.trimEnd());
+	// Within a hair of its widest: a kept space would add a whole space's width.
+	expect(drawing.atlas.nodes["socket"]!.width).toBeLessThan(CARD_MAX_WIDTH + 1);
 });
 
-test("a relationship's plate hugs its balanced lines and centres them on the line it labels", () => {
+test("a relationship's plate hugs its balanced lines and centres them on the line it labels", async () => {
 	// One line of this is just wider than a plate's text room, and one glyph is far narrower.
 	// The long word is wider than half the words, so a wrap balanced below it would break it.
 	const labels = {
@@ -87,107 +124,83 @@ test("a relationship's plate hugs its balanced lines and centres them on the lin
 		glyph: "/",
 		long: "layoutWithLines(handle, width, lineHeight)",
 	};
-	const measured = measureArchitecture({
-		...emptyContent(),
-		nodes: [{ id: "api", order: 1000, name: "API", kind: "service" }],
-		edges: Object.entries(labels).map(([id, label]) => ({
-			id,
-			order: 1000,
-			from: "api",
-			to: "api",
-			kind: "call" as const,
-			label,
-			emphasis: "normal" as const,
-		})),
-	});
-	const wrapped = measured.labels.get("wrapped")!;
-	const widths = wrapped.runs.map((run) => run.width);
-	expect(wrapped.runs).toHaveLength(2);
-	expect(wrapped.width).toBeCloseTo(Math.max(...widths) + 20, 6);
+	const drawing = await drawn(
+		orderedFixture({
+			nodes: ["a", "b", "c", "d"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
+			edges: Object.entries(labels).map(([id, label], index) => ({
+				id,
+				from: "a",
+				to: ["b", "c", "d"][index],
+				kind: "call",
+				label,
+			})),
+		}),
+	);
+	const texts = drawnTexts(drawing.svg);
+	const plates = labelPlates(drawing.svg);
+	const wrapped = runsOf(texts, "wrapped", LABEL_SIZE);
+	const widths = wrapped.map((run) => run.width);
+	expect(wrapped).toHaveLength(2);
 	// Balanced: no word is left alone on the last line.
 	expect(Math.min(...widths)).toBeGreaterThan(Math.max(...widths) / 2);
 	// Balanced, but never inside a word that the plate's room holds whole.
-	const long = measured.labels.get("long")!.runs.flatMap((run) => run.text.split(" "));
+	const long = runsOf(texts, "long", LABEL_SIZE).flatMap((run) => run.text.split(" "));
 	expect(long).toEqual(labels.long.split(" "));
-	for (const plate of [wrapped, measured.labels.get("glyph")!]) {
-		expect(plate.width).toBeGreaterThanOrEqual(40);
-		for (const run of plate.runs) {
-			expect(run.width).toBe(exactWidth(run));
-			expect(run.x + run.width / 2).toBeCloseTo(plate.width / 2, 6);
+	for (const id of ["wrapped", "glyph"]) {
+		const plate = plates.get(id)!;
+		expect(plate.width).toBeGreaterThanOrEqual(LABEL_MIN_WIDTH);
+		for (const run of runsOf(texts, id, LABEL_SIZE)) {
+			expect(run.x + run.width / 2).toBeCloseTo(plate.x + plate.width / 2, 1);
 		}
 	}
 });
 
-test("structural parents reserve the whole wrapped header and keep descriptions in inspection", () => {
+test("a container draws its whole wrapped header above its members and leaves its description to inspection", async () => {
+	const name = "Service ownership and request orchestration";
 	const description = "This extended inspector prose must not become another canvas paragraph.";
-	const content: VariantContent = {
-		...emptyContent(),
-		nodes: [
-			{
-				id: "parent",
-				order: 1000,
-				name: "Service ownership and request orchestration",
-				responsibility: "Coordinates authentication, authorization, and service request dispatch.",
-				description,
-				kind: "service",
-			},
-			{ id: "child", order: 1000, name: "Token store", parent: "parent", kind: "module" },
-		],
-	};
-	const measured = measureArchitecture(content);
-	const parent = measured.nodes.get("parent")!;
-	expect(parent.headerHeight).toBe(parent.height);
-	expect(parent.headerHeight).toBeGreaterThan(72);
-	// Its words stand on its header slab as a card's stand on its own.
-	expect(parent.runs.every((run) => run.x === 60 && run.y < parent.headerHeight - 16)).toBeTrue();
-	expect(parent.runs.some((run) => description.includes(run.text))).toBeFalse();
-	expect(measured.nodes.get("child")!.headerHeight).toBe(0);
+	const drawing = await drawn(
+		orderedFixture({
+			nodes: [
+				{
+					id: "parent",
+					name,
+					responsibility:
+						"Coordinates authentication, authorization, and service request dispatch.",
+					description,
+					kind: "service",
+				},
+				{ id: "child", name: "Token store", parent: "parent", kind: "module" },
+			],
+		}),
+	);
+	const runs = drawnTexts(drawing.svg).filter((text) => text.subject.id === "parent");
+	const child = drawing.atlas.nodes["child"]!;
+	expect(runs.every((run) => run.y < child.y)).toBe(true);
+	expect(runs.some((run) => description.includes(run.text))).toBe(false);
 	expect(
-		parent.runs
-			.filter((run) => run.role === "title")
+		runsOf(runs, "parent", TITLE_SIZE + 1)
 			.map((run) => run.text)
 			.join(" "),
-	).toBe(content.nodes[0]!.name);
+	).toBe(name);
 });
 
-test("cached preparation keeps faces and sizes distinct across repeated renders", () => {
-	const content: VariantContent = {
-		...emptyContent(),
+test("a board drawn in between leaves another board's picture as it was", async () => {
+	const words = "AVAST Waterfall Office";
+	const content = orderedFixture({
 		nodes: [
-			{
-				id: "api",
-				order: 1000,
-				name: "AVAST Waterfall Office",
-				responsibility: "AVAST Waterfall Office",
-				kind: "service",
-			},
+			{ id: "api", name: words, responsibility: words, kind: "service" },
+			{ id: "db", name: "Store", kind: "datastore" },
 		],
-		edges: [
-			{
-				id: "call",
-				order: 1000,
-				from: "api",
-				to: "api",
-				kind: "call",
-				label: "AVAST Waterfall Office",
-				emphasis: "normal",
-			},
-		],
-	};
-	const first = measureArchitecture(content);
-	measureArchitecture({
-		...emptyContent(),
-		nodes: [{ id: "other", order: 1000, name: "WWWW iii ffi To Vary AWAY", kind: "service" }],
+		edges: [{ id: "call", from: "api", to: "db", kind: "call", label: words }],
 	});
-	expect(measureArchitecture(content)).toEqual(first);
-	const runs = [...first.nodes.get("api")!.runs, ...first.labels.get("call")!.runs];
-	for (const run of runs) {
-		expect(run.width).toBe(exactWidth(run));
-	}
+	const first = await drawn(content);
+	await drawn(
+		orderedFixture({
+			nodes: [{ id: "other", name: "WWWW iii ffi To Vary AWAY", kind: "service" }],
+		}),
+	);
+	expect((await drawn(content)).svg).toBe(first.svg);
+	// The name, its note and the label are three faces or sizes, measured apart.
+	const runs = drawnTexts(first.svg).filter((run) => run.text === words);
 	expect(new Set(runs.map((run) => run.width)).size).toBeGreaterThan(2);
-	expect(measureArchitecture(emptyContent())).toEqual({
-		nodes: new Map(),
-		labels: new Map(),
-		lines: new Map(),
-	});
 });

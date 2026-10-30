@@ -172,6 +172,10 @@ The decision has these parts:
   configuration is machine-local. `repo list` shows it, `repo forget` removes it,
   and registering the same root again keeps it. Registering the same identity at
   another root drops it, because nobody configured a server there.
+- Rust (TASK-540) has no default server either. rust-analyzer runs
+  `cargo metadata`, the build scripts and the procedural macros of the
+  workspace, and `cargo check` after it loads, so it runs the code of the
+  repository.
 - `language-servers.json` and `ARCHBOARD_LANGUAGE_SERVERS` are gone. The `false`
   value is gone too, because nothing needs it now. INSTALL.md and the consumer
   skill say that a configured server runs the code of the repository. So an agent
@@ -901,8 +905,11 @@ the exact upstream tag (TASK-367.01).
 | `@tree-sitter-grammars/tree-sitter-hcl` | 1.2.0   | Apache-2.0 | Terraform and OpenTofu |
 | `@lumis-sh/wasm-swift`                  | 0.26.3  | MIT        | Swift                  |
 | `@lumis-sh/wasm-nix`                    | 0.26.3  | MIT        | Nix                    |
+| `tree-sitter-rust`                      | 0.24.0  | MIT        | Rust                   |
 
 The user approved this list on 2026-10-06, as the notes of TASK-367.01 record.
+The user approved `tree-sitter-rust` 0.24.0 on 2026-10-25 for TASK-540. It adds
+15 MB to `node_modules`, of which 1.1 MB is `.wasm`.
 
 They are runtime dependencies, pinned to these exact versions. A grammar
 release can rename the nodes that a query names, so an upgrade is a task of its

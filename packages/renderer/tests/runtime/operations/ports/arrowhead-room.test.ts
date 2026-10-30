@@ -12,7 +12,6 @@ import { expect, test } from "bun:test";
 
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
-import { APPROACH_STRAIGHT } from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import spokenInstruction from "#tests/runtime/support/fixtures/a-spoken-instruction.json";
@@ -20,6 +19,10 @@ import reachTheWorkhorse from "#tests/runtime/support/fixtures/board-changes-rea
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import oneWriteLands from "#tests/runtime/support/fixtures/one-write-lands.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The straight run every line keeps before its head: archboard_layout::constants::APPROACH_STRAIGHT. */
+const APPROACH_STRAIGHT = 12;
 
 /** A point of the drawing. */
 interface Point {
@@ -79,7 +82,12 @@ test.each(LayoutEngineSchema.options)(
 	"every arrowhead fits the straight run that every line keeps before its end (%s)",
 	async (layout) => {
 		for (const content of BOARDS) {
-			const { svg } = await renderArchitecture({ content, theme: "light", layout });
+			const { svg } = await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				theme: "light",
+				layout,
+			});
 			const reaches = markerReaches(svg);
 			const lines = [
 				...svg.matchAll(/<path (?![^>]*ab-halo)[^>]*marker-end="url\(#([^)]+)\)"[^>]*>/g),

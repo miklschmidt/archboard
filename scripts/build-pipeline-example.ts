@@ -167,7 +167,7 @@ async function draw(board: string): Promise<string[]> {
 				const drawn = await renderBoard(
 					read.board,
 					// The file outlives the server that drew it, so it carries its faces.
-					{ variant: variant.id, view: view.id, theme: "light", fonts: "embedded" },
+					{ variant: variant.id, view: view.id, theme: "light" },
 					policy,
 				);
 				if (!drawn.ok) throw new Error(`${board}: ${drawn.error}`);

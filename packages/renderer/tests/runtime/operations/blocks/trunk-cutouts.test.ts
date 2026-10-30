@@ -13,6 +13,7 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // One service calls three others: their routes leave it along one lane.
 const FAN_OUT = orderedFixture({
@@ -48,7 +49,11 @@ function capsOf(svg: string): string[][] {
 }
 
 test("the stretch another route of a trunk draws is cut with butt ends, and nothing else is", async () => {
-	const { svg } = await renderArchitecture({ content: FAN_OUT, theme: "light" });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: FAN_OUT,
+		theme: "light",
+	});
 	const masks = capsOf(svg);
 	expect(masks.length, "a trunk has routes whose ink another route draws").toBeGreaterThan(0);
 	for (const caps of masks) {
@@ -57,7 +62,11 @@ test("the stretch another route of a trunk draws is cut with butt ends, and noth
 });
 
 test("the gap under a line that crosses over is cut with round ends", async () => {
-	const { svg } = await renderArchitecture({ content: CROSSED, theme: "light" });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: CROSSED,
+		theme: "light",
+	});
 	const caps = capsOf(svg).flat();
 	expect(caps).toContain("round");
 	expect(caps.every((cap) => cap === "round" || cap === "butt")).toBe(true);

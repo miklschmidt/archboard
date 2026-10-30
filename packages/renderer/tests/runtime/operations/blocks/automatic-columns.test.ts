@@ -6,6 +6,7 @@ import { observedCloud, platformCloud } from "#tests/runtime/support/cloud-readi
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import phone from "../../../../../../docs/design/wide-board-layout-fixtures/phone-ownership.content.json";
 import cloud from "#tests/runtime/support/fixtures/branching-cloud.json";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 // Work-vault readings of Cloud Infrastructure, three versions of one board:
 // folded into columns each fit the pane better, but the steering line from
@@ -17,7 +18,11 @@ test.each([
 	["platform API migration", platformCloud],
 	["device migration", orderedFixture(cloud)],
 ] as const)("%s stays unfolded where a fold would cross its lines", async (_name, content) => {
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const routes = corridorPoints(drawing.svg);
 	expect(routesCross(routes.get("6xASyZPU")!, routes.get("xCH4TAWg")!)).toBe(false);
 	const frame = drawing.atlas.nodes["j6TdeSth"]!;
@@ -45,7 +50,11 @@ test("a long reading selects three downward columns when two cannot fit", async 
 			kind: "call",
 		})),
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const columns = new Set(Object.values(drawing.atlas.nodes).map((box) => box.x));
 	expect(columns.size).toBe(3);
 	expect(Object.keys(drawing.atlas.nodes)).toHaveLength(24);
@@ -55,7 +64,11 @@ test("a long reading selects three downward columns when two cannot fit", async 
 
 test("a marginal fit gain keeps the compact ownership reading in one column", async () => {
 	const content = orderedFixture(phone);
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const frame = drawing.atlas.nodes["FB5oiRXm"]!;
 	const database = drawing.atlas.nodes["kw6lbbtf"]!;
 	expect(database.y).toBeGreaterThan(frame.y + frame.height);

@@ -38,7 +38,7 @@ interface SessionOptions {
 
 /** What one capture is: the document and the bitmap it should become. */
 interface CaptureJob extends RasterBounds {
-	/** The self-contained SVG document, with its faces embedded. */
+	/** The self-contained SVG document. */
 	readonly svg: string;
 }
 
@@ -47,8 +47,6 @@ interface Capture {
 	readonly png: Uint8Array;
 	readonly width: number;
 	readonly height: number;
-	/** How many faces the document declared, all of them loaded before the shot. */
-	readonly fonts: number;
 }
 
 /** What a closed session proved about its own teardown. */
@@ -161,12 +159,11 @@ class RasterSession {
 		try {
 			signal?.throwIfAborted();
 			await this.load(devtools, file, signal);
-			const readiness = checkedReadiness(
+			checkedReadiness(
 				await devtools.evaluate(READINESS_SCRIPT, { timeoutMs: this.options.jobTimeoutMs }),
 			);
 			signal?.throwIfAborted();
-			const bitmap = checkedBitmap(await this.shoot(devtools, job), job);
-			return { ...bitmap, fonts: readiness.fonts };
+			return checkedBitmap(await this.shoot(devtools, job), job);
 		} catch (error) {
 			throw this.captureFailure(error, devtools, signal);
 		} finally {
@@ -203,7 +200,10 @@ class RasterSession {
 
 	/**
 	 * Size the viewport to the page, set the device scale to the job's scale
-	 * and take the shot of the requested rectangle.
+	 * and take the shot of the requested rectangle. The viewport is the whole
+	 * page, so the shot never captures beyond it: a capture beyond the viewport
+	 * resizes the view again and, on a loaded machine, took the frame before
+	 * every tile was drawn, leaving blank rectangles in a large picture.
 	 * @param devtools The connection.
 	 * @param job What to draw.
 	 * @returns The DevTools answer.
@@ -225,7 +225,7 @@ class RasterSession {
 			{
 				format: "png",
 				clip: { ...regionOf(job), scale: 1 },
-				captureBeyondViewport: true,
+				captureBeyondViewport: false,
 				fromSurface: true,
 			},
 			timeout,

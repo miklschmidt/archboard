@@ -1,19 +1,18 @@
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
-import {
-	appearanceFrom,
-	keyOf,
-	LINE_MARKS,
-	markCounts,
-	pictureAppearances,
-	type AppliedAppearance,
-} from "#shared/rules/render/picture-key.ts";
+import { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
 import type { DrawnBoard } from "@archboard/board/render-reply";
 import { exported } from "#tests/runtime/support/export-board.ts";
 
-// An exported picture can carry the legend of what it draws, under it or beside
-// it, or be the legend alone (TASK-468). The legend lists what the page's key
-// lists for the same picture, read by the same code.
+// A render answers each subject's appearance and the picture's key beside the
+// document, read by the core off its own scene (TASK-520.08); a pane lists its
+// key from them. They must say what the drawn document says: what a DOM query
+// of its subject groups finds. An exported picture can carry the legend of what
+// it draws, under it or beside it, or be the legend alone (TASK-468), and the
+// legend lists what the page's key lists for the same picture.
+
+/** How the picture drew one subject. */
+type AppliedAppearance = DrawnBoard["appearances"][number];
 
 /** One entry of an exported legend: what it keys, its words and its count. */
 interface Listed {
@@ -30,7 +29,7 @@ interface Listed {
 function listed(svg: string): (Listed & { x: number; y: number })[] {
 	return [
 		...svg.matchAll(
-			/<g data-legend-entry="([^"]+)">[\s\S]*?<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>(?:\n<text [^>]*>(\d+)<\/text>)?\n?<\/g>/gu,
+			/<g data-legend-entry="([^"]+)">[\s\S]*?<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>(?:\n(?:<g [^>]*aria-hidden="true">[^]*?<\/g>)?<text [^>]*>(\d+)<\/text>)?\n?<\/g>/gu,
 		),
 	].map((found) => ({
 		keys: found[1]!,
@@ -48,7 +47,7 @@ function listed(svg: string): (Listed & { x: number; y: number })[] {
  * @returns The entries.
  */
 function pageKey(drawn: DrawnBoard): Listed[] {
-	const key = keyOf(pictureAppearances(drawn.svg));
+	const { key } = drawn;
 	const relationships = key?.relationships ?? [];
 	return [
 		...markCounts(drawn.changes?.standing ?? {}).map((one) => ({
@@ -62,6 +61,66 @@ function pageKey(drawn: DrawnBoard): Listed[] {
 			? []
 			: LINE_MARKS.map(({ mark, word }) => ({ keys: mark, words: word }))),
 	];
+}
+
+/** What a DOM query finds of one subject's group. */
+interface Queried {
+	getAttribute(name: string): string | null;
+	querySelector(selector: string): { readonly outerHTML: string } | null;
+}
+
+/**
+ * One subject's appearance as its group in the document states it, each fact
+ * the group leaves out at its neutral value.
+ * @param group The subject's group.
+ * @returns Its appearance.
+ */
+function statedBy(group: Queried): AppliedAppearance {
+	/**
+	 * One fact the group states.
+	 * @param name The attribute that states it.
+	 * @param neutral Its value when the group states none.
+	 * @returns The fact.
+	 */
+	const fact = (name: string, neutral: string): string => group.getAttribute(name) ?? neutral;
+	return {
+		id: group.getAttribute("data-semantic-id")!,
+		typeName: fact("data-type-name", ""),
+		typeKind: fact("data-type-kind", ""),
+		iconSvg: group.querySelector("[data-type-icon] svg")?.outerHTML ?? "",
+		depiction: fact("data-depiction", ""),
+		typeColor: fact("data-type-color", "neutral"),
+		lineColor: fact("data-line-color", "neutral"),
+		dash: fact("data-line-dash", "solid"),
+		arrowhead: fact("data-arrowhead", "filled"),
+	};
+}
+
+/**
+ * The sample a subject is drawn with: its kind and look, whatever subject it is.
+ * @param appearance The subject's appearance.
+ * @returns The sample, as one comparable string.
+ */
+function sampleOf({ id: _id, depiction: _depiction, ...look }: AppliedAppearance): string {
+	return JSON.stringify(look);
+}
+
+/**
+ * Each kind once, by the sample it is drawn with, where the picture first draws it.
+ * @param appearances Appearances in drawing order.
+ * @returns The last subject drawn with each distinct sample, in that order.
+ */
+function samples(appearances: readonly AppliedAppearance[]): AppliedAppearance[] {
+	return [...new Map(appearances.map((one) => [sampleOf(one), one])).values()];
+}
+
+/**
+ * The same appearance with its icon reduced to what any serialiser writes of it.
+ * @param appearance An appearance.
+ * @returns Its facts, and how many paths its icon draws.
+ */
+function comparable({ iconSvg, ...facts }: AppliedAppearance) {
+	return { ...facts, iconPaths: iconSvg.match(/ d="/gu)?.length ?? 0 };
 }
 
 /**
@@ -105,30 +164,29 @@ describe("what the legend lists", () => {
 		}
 	});
 
-	test("the page reads a picture's subjects as a DOM query does", async () => {
+	test("the answer's appearances and key say what a DOM query of the document finds", async () => {
 		const window = new Window();
 		try {
 			for (const view of [undefined, "Exchange"]) {
-				const { svg } = await exported({ variant: "Worker pool", view, layout: "blocks" });
-				const picture = new window.DOMParser().parseFromString(svg, "image/svg+xml");
+				const drawn = await exported({ variant: "Worker pool", view, layout: "blocks" });
+				const picture = new window.DOMParser().parseFromString(drawn.svg, "image/svg+xml");
+				// A subject drawn by several groups, a container's frame and its
+				// header, keeps its first place and the last group's facts.
 				const read = new Map<string, AppliedAppearance>();
 				for (const group of picture.querySelectorAll("[data-semantic-id][data-type-name]")) {
-					const id = group.getAttribute("data-semantic-id")!;
-					const icon = group.querySelector("[data-type-icon] svg")?.outerHTML ?? "";
-					read.set(
-						id,
-						appearanceFrom(id, (name) => group.getAttribute(name), icon),
-					);
+					const stated = statedBy(group);
+					read.set(stated.id, stated);
 				}
-				const scanned = pictureAppearances(svg);
-				expect([...scanned.keys()]).toEqual([...read.keys()]);
-				for (const [id, { iconSvg: readIcon, ...readFacts }] of read) {
-					const { iconSvg: scannedIcon, ...scannedFacts } = scanned.get(id)!;
-					expect(scannedFacts).toEqual(readFacts);
-					// The same icon, whichever serialiser wrote it out.
-					expect(scannedIcon === "").toBe(readIcon === "");
-					expect(scannedIcon.match(/ d="/gu)?.length).toBe(readIcon.match(/ d="/gu)?.length);
-				}
+				expect(read.size).toBeGreaterThan(0);
+				expect(drawn.appearances.map(comparable)).toEqual([...read.values()].map(comparable));
+				// The key lists each kind and relationship kind the document draws,
+				// once, in the order it draws them.
+				const kinds = [...read.values()].filter((one) => one.depiction !== "");
+				const relationships = [...read.values()].filter((one) => one.depiction === "");
+				expect(drawn.key?.kinds.map(comparable)).toEqual(samples(kinds).map(comparable));
+				expect(drawn.key?.relationships.map(comparable)).toEqual(
+					samples(relationships).map(comparable),
+				);
 			}
 		} finally {
 			await window.happyDOM.close();

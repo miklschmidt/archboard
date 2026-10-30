@@ -10,12 +10,17 @@ import { covering, detached, masking, overlaps } from "#tests/runtime/support/dr
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { distanceToFrame, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Each relationship starts and ends at the frame of the subject it names. */
 async function expectReadableRoutes(
 	content: VariantContent,
 ): Promise<{ drawing: RenderedDiagram; paths: ReturnType<typeof routePoints> }> {
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const paths = routePoints(drawing.svg);
 	const labels = routeLabels(drawing.svg);
 	const words = drawnTexts(drawing.svg);

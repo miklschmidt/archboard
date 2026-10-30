@@ -5,7 +5,7 @@
 > Track and Blocks lay out every board now.
 
 TASK-278 replaces the ELK layout audited below. Spacing and clearance values
-are editable in [`config.ts`](../../packages/renderer/src/shared/constants/spacing.ts);
+are editable in [`constants.rs`](../../crates/archboard-layout/src/constants.rs);
 values use diagram pixels, independent of camera zoom. Rebuild the frontend,
 restart the canvas at its configured URL, and reload the viewer after editing.
 The current rules are:
@@ -29,7 +29,8 @@ The current rules are:
 - A frame's relationship with its own descendant meets its title divider;
   external relationships meet its outline. Incoming frame arrows use a clear
   face with room for their head and bend. Protect complete title bands.
-- Route around cards and title bands with libavoid. Relationships with matching
+- Route around cards and title bands with the router of the renderer core
+  (TASK-520.02). Relationships with matching
   kind, comparison standing and local direction share ports on each face;
   different channels use distinct attachment positions and lanes. On Track a
   difference in emphasis or in traffic makes a different channel too; Blocks
@@ -72,7 +73,7 @@ skips, fixed title detour flanks, folded-layout exceptions, the multiple-flank
 scorecard search, and later route fanning/jog repair. Integration-added private
 port ordering, pin spreading, endpoint checkpoints, minimum jog/approach rules,
 label-axis scoring, and crossing-driven corner compression were also deleted at the user's request. Graphviz places the graph;
-libavoid routes it. [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md)
+libavoid routed it until the core's router replaced it (TASK-520.02). [ADR 0033](../adr/0033-graphviz-placement-and-obstacle-routing.md)
 and [the measured investigation](shared-container-rows.md) record the choice.
 
 ## Historical audit before adoption
@@ -96,9 +97,9 @@ not an additional source of constraints. The code owns the behavior.
 
 | Rule                                                                                                                                     | Purpose / judgment                                                                                                                                                           | Code owner                                              |
 | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| A node becomes a frame when another visible node names it as its parent. Type and containment are separate.                              | Semantic representation; keep.                                                                                                                                               | `measurement.ts`, `semantic-appearance.ts`, ADR 0025    |
+| A node becomes a frame when another visible node names it as its parent. Type and containment are separate.                              | Semantic representation; keep.                                                                                                                                               | `measure/cards.rs`, `semantic-appearance.ts`, ADR 0025  |
 | Preserve the authored parent hierarchy and document order in the engine graph.                                                           | Containment is meaning. Document order also provides deterministic tie-breaking.                                                                                             | `layout/compound-graph.ts` → `containNodes`             |
-| Measure the title without truncation; use its measured box as the frame's minimum size.                                                  | Text must fit. Heading measurement uses 20px padding, a 56px text offset, preferred width 260–340px and minimum height 72px.                                                 | `measurement.ts`                                        |
+| Measure the title without truncation; use its measured box as the frame's minimum size.                                                  | Text must fit. Heading measurement uses 20px padding, a 56px text offset, preferred width 260–340px and minimum height 72px.                                                 | `measure/cards.rs`                                      |
 | Reserve the title band plus 24px of air; use 24px on the other sides.                                                                    | Presentation policy, now consistent. Engine routes can require extra space beyond these minimum insets.                                                                      | `layout/compound-graph.ts` → `framePadding`             |
 | Pack a collection of independent leaf cards with ELK rectangle packing.                                                                  | Prevents one excessively wide row. Uses the existing reference-pane aspect ratio and 24px card gaps; relationships touching children or nested frames retain layered layout. | `layout/compound-graph.ts` → `configureCollections`     |
 | Leaf collections without inter-child relationships use normal 20px routing tracks instead of the global label-driven allowance.          | Engine workaround: invisible boundary-port nodes otherwise inflate empty side/bottom space.                                                                                  | `layout/compound-graph.ts` → `configureCollections`     |

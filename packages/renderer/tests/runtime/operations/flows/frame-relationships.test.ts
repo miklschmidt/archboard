@@ -3,6 +3,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const BASE = {
 	nodes: [
@@ -37,7 +38,12 @@ test.each(
 		nodes: [...before.nodes, { id: "extra", name: "Another card", kind: "module" }],
 		edges: [...before.edges, { id: "e9", from: "pane", to: "extra", kind: "call" }],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light", layout });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout,
+	});
 	expect(Object.keys(drawing.atlas.edges)).toContain(relationship.id);
 	expect(routesThroughCards(drawing, content)).toEqual([]);
 });

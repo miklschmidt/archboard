@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { coreSourceHash } from "@archboard/renderer/core";
 
 import {
 	FRONTEND_INPUTS_FILE,
@@ -39,9 +40,6 @@ const RENDERER_SOURCES = [
 	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
 	"node_modules/@remixicon/react/package.json",
-	"node_modules/@viz-js/viz/package.json",
-	"node_modules/libavoid-js/package.json",
-	"node_modules/libavoid-js/dist/libavoid.wasm",
 ];
 
 /**
@@ -150,6 +148,11 @@ const testCache = {
 		".agents/skills/*",
 		".claude/skills/*",
 		".claude/rules/**",
+		// A test loads the core, which refuses a build of other sources than these.
+		"crates/**",
+		"Cargo.lock",
+		"flake.nix",
+		"flake.lock",
 	],
 	env: [
 		...analysisCache.env,
@@ -159,6 +162,21 @@ const testCache = {
 		"ARCHBOARD_TEST_*",
 		"ARCHBOARD_RENDERER_CHROMIUM",
 	],
+};
+// The Rust checks read only the crates, the workspace manifest that holds their lint policy,
+// clippy's thresholds, the lock file and the diagram fonts the text crate builds in.
+const coreCache = {
+	input: [
+		"crates/**",
+		"Cargo.toml",
+		"clippy.toml",
+		"Cargo.lock",
+		"flake.nix",
+		"flake.lock",
+		"packages/renderer/assets/fonts/*.ttf",
+	],
+	output: [],
+	env: analysisCache.env,
 };
 const browserTestCache = {
 	...testCache,
@@ -175,13 +193,22 @@ const capacityTests = [
 ];
 
 export default defineConfig({
+	// Both the page and its workers refuse a core from another source build.
+	define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
 	run: {
 		tasks: {
 			contracts: {
 				command: "bun scripts/generate-codex-app-server-contract.ts --ensure",
 				cache: { input: analysisCache.input, env: analysisCache.env },
 			},
+			// The renderer core, built to WebAssembly inside `nix develop` (ADR 0059). The build
+			// script keeps a build that records the hash of this checkout's sources.
+			core: {
+				command: "bun scripts/build-core.ts",
+				cache: false,
+			},
 			frontend: {
+				dependsOn: ["core"],
 				command: "vp build",
 				cache: { input: [{ auto: true }, ...FRONTEND_INPUT_GLOBS] },
 			},
@@ -203,7 +230,7 @@ export default defineConfig({
 				},
 			},
 			types: {
-				dependsOn: ["contracts"],
+				dependsOn: ["contracts", "core"],
 				command:
 					'concurrently --names source,browser "tsc --noEmit" "tsc --noEmit -p tsconfig.frontend.json"',
 				cache: analysisCache,
@@ -229,18 +256,46 @@ export default defineConfig({
 				command: "bun scripts/lint-css.ts",
 				cache: analysisCache,
 			},
+			"lint:core": {
+				command:
+					"cargo clippy --locked --workspace --all-targets --target wasm32-unknown-unknown -- --deny warnings",
+				cache: coreCache,
+			},
+			// rustdoc reads every doc, private ones too, and fails on any of its lints.
+			"lint:core-docs": {
+				command:
+					"RUSTDOCFLAGS='-D warnings' cargo doc --locked --workspace --no-deps --document-private-items",
+				cache: coreCache,
+			},
+			"format:core": {
+				command: "cargo fmt --all --check",
+				cache: coreCache,
+			},
+			"test:core": {
+				command: "cargo test --locked --workspace",
+				cache: coreCache,
+			},
 			"lint:all": {
-				dependsOn: ["contracts"],
-				command: ["vp run lint:tests", "vp run lint:policy", "vp run lint:css"],
+				dependsOn: ["contracts", "core"],
+				command: [
+					"vp run lint:tests",
+					"vp run lint:policy",
+					"vp run lint:css",
+					"vp run lint:core",
+					"vp run lint:core-docs",
+				],
 				cache: false,
 			},
 			"fix:all": {
-				dependsOn: ["contracts"],
+				dependsOn: ["contracts", "core"],
 				command: [
 					"vp run --no-cache lint:tests --fix",
 					"vp run --no-cache lint:policy --fix",
 					"vp run lint:css",
 					"vp fmt --config vite.config.ts",
+					"cargo fmt --all",
+					// Formatting the Rust sources or the build script invalidates the first core build.
+					"vp run core",
 				],
 				cache: false,
 			},
@@ -249,6 +304,7 @@ export default defineConfig({
 					"vp run types",
 					"vp run frontend",
 					"vp run workbench-example",
+					"vp run test:core",
 					"vp run test:modules",
 					"vp run test:system",
 					"vp run test:repository",
@@ -257,7 +313,12 @@ export default defineConfig({
 				cache: false,
 			},
 			"check:all": {
-				command: ["vp run lint:all", "vp run format:check", "vp run test:all"],
+				command: [
+					"vp run lint:all",
+					"vp run format:check",
+					"vp run format:core",
+					"vp run test:all",
+				],
 				cache: false,
 			},
 			"test:modules": {
@@ -295,6 +356,7 @@ export default defineConfig({
 				cache: browserTestCache,
 			},
 			"test:macos": {
+				dependsOn: ["core"],
 				command: [
 					"bun test --isolate --max-concurrency=1",
 					"packages/process/tests",
@@ -350,10 +412,14 @@ export default defineConfig({
 			// authored in skills/, which is formatted.
 			".claude/**",
 			".agents/skills/**",
+			// Vendored third-party crates keep upstream's files for the same reason
+			// (crates/vendor/README.md).
+			"crates/vendor/*/**",
 			"dist/**",
 			"node_modules/**",
 			"backlog/**",
 			"packages/codex-app-server/src/shared/protocol/generated/**",
+			"packages/renderer/src/shared/protocol/generated/**",
 		],
 		useTabs: true,
 		printWidth: 100,
@@ -390,11 +456,6 @@ export default defineConfig({
 		port: 5173,
 		proxy: {
 			"/api": {
-				target: "http://127.0.0.1:3000",
-				changeOrigin: false,
-			},
-			// The faces a picture drawn in the page links and measures with.
-			"/assets/diagram-fonts": {
 				target: "http://127.0.0.1:3000",
 				changeOrigin: false,
 			},

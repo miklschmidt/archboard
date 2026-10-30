@@ -87,17 +87,17 @@ async function atlasOf(
 	board: ReturnType<typeof boardOf>,
 	choices: { variant: string; view?: string },
 ): Promise<DiagramAtlas> {
-	const outcome = await renderBoard(
-		board,
-		{ ...choices, theme: "light", fonts: "linked" },
-		DEFAULT_SEMANTIC_POLICY,
-	);
+	const outcome = await renderBoard(board, { ...choices, theme: "light" }, DEFAULT_SEMANTIC_POLICY);
 	if (!outcome.ok || !("atlas" in outcome.reply)) throw new Error("Expected a drawn picture");
 	return outcome.reply.atlas;
 }
 
 test("a container's entry point takes its first row and its hidden parts sit below it", async () => {
-	const { atlas } = await renderArchitecture({ content: orderedFixture(service), theme: "light" });
+	const { atlas } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: orderedFixture(service),
+		theme: "light",
+	});
 	expect(standsBelow(atlas, "client", "api")).toBe(true);
 	expect(standsBelow(atlas, "api", "job")).toBe(true);
 	expect(standsBelow(atlas, "api", "core")).toBe(true);

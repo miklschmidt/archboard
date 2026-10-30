@@ -12,14 +12,19 @@ Vite+ requires Node.js `^22.18.0 || ^24.11.0 || >=26.0.0` for build and validati
 Bun runs the product and its tests.
 
 ```bash
+nix develop      # Bun and the Rust tools that build the renderer core
 bun install      # if it fails while it extracts a tarball, run it again
-bun run build    # builds the browser bundle into dist/frontend
+bun run build    # builds the renderer core and the browser bundle into dist/frontend
 ```
 
 `bun install` installs the Codex version that `package.json` pins. The server
 runs only that Codex, never one on your `PATH`. The install also generates the
 Codex app-server contract and the generated references of the skill. Bun runs
-the CLI and the server directly from TypeScript, so nothing else is built (ADR 0014).
+the CLI and the server directly from TypeScript (ADR 0014). The renderer core is
+Rust, built to WebAssembly by `bun run build:core` (ADR 0059). A Bun process
+refuses a core built from other sources than the checkout holds, so after you
+change `crates/`, run `bun run build:core` before the next
+command. Lint, type checks and the frontend build run it first.
 
 A new worktree needs its own `bun install` and `bun run build`. A
 `node_modules` that links to another checkout fails the contract check.

@@ -1,5 +1,5 @@
 // A line that leaves a container by its wall, drawn straight from its card's
-// side where nothing stands between (walls.ts). What this catches: a line
+// side where nothing stands between (crates/archboard-layout/src/blocks/walls.rs). What this catches: a line
 // that leaves its card by the bottom and hooks under the card's corner to
 // reach the wall.
 
@@ -52,7 +52,7 @@ test("a line out of a container by its wall leaves its card's side when nothing 
 // Reduced from a board of a work vault, names replaced: the line into the
 // region's load balancer is joined from pieces routed in two blocks, and
 // where they met it ran down past the region's wall and back up to its card.
-// Once the drawing is joined, the loop is taken out (shared/rules/blocks/lines/steps.ts), clear
+// Once the drawing is joined, the loop is taken out (crates/archboard-layout/src/blocks/steps.rs), clear
 // of every card.
 test("a joined line runs on into its container without the loop its pieces made", async () => {
 	const content = orderedFixture(requestPath);

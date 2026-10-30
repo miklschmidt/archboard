@@ -6,7 +6,9 @@
 // of the package `fixtures/swift-shop`, all of whose files are root files; a
 // C or C++ module's are its public headers, read from the fixture project
 // `fixtures/c-shop`; a Terraform module is the configuration directly in its
-// directory, read from `fixtures/terraform-shop`.
+// directory, read from `fixtures/terraform-shop`; a Rust crate's root file is
+// its `lib.rs`, and a module's its `mod.rs` or the file beside its directory,
+// read from the workspace `fixtures/rust-shop`.
 
 import { afterAll, expect, test } from "bun:test";
 import { type CheckoutFiles } from "#runtime/operations/code-facts/modules/module-resolution.ts";
@@ -61,6 +63,7 @@ const pythonShop = fixtureDirectory("python-shop");
 const swiftShop = fixtureDirectory("swift-shop");
 const cShop = fixtureDirectory("c-shop");
 const terraformShop = fixtureDirectory("terraform-shop");
+const rustShop = fixtureDirectory("rust-shop");
 const facts = createCodeFacts();
 
 afterAll(() => {
@@ -69,6 +72,7 @@ afterAll(() => {
 	swiftShop.remove();
 	cShop.remove();
 	terraformShop.remove();
+	rustShop.remove();
 });
 
 /**
@@ -225,4 +229,40 @@ test("a Terraform module is the configuration directly in its directory, and exp
 	const infra = await exposureOf("infra", terraformShop);
 	expect(infra?.outside).toContain("infra/modules/queue/main.tf");
 	expect(infra?.outside).not.toContain("infra/main.tf");
+});
+
+test("a Rust crate exposes what its lib.rs opens and passes on, and a module what its file opens", async () => {
+	// A crate's lib.rs and a module's mod.rs stand for their directory.
+	expect(moduleOf("crates/ledger/src/lib.rs", "file")).toBe("crates/ledger/src");
+	expect(moduleOf("crates/shop/src/main.rs", "file")).toBeUndefined();
+	const ledger = await exposureOf("crates/ledger/src", rustShop);
+	expect(ledger?.rootFiles).toEqual(["crates/ledger/src/lib.rs"]);
+	// The package's directory is the same crate.
+	expect((await exposureOf("crates/ledger", rustShop))?.rootFiles).toEqual([
+		"crates/ledger/src/lib.rs",
+	]);
+	const names = await namesOf("crates/ledger/src", rustShop);
+	const topLevel = names?.filter(([name = ""]) => !name.includes("."));
+	expect(topLevel).toEqual(
+		[
+			// `pub use entry::{post as record, Entry}` passes them on from the private module.
+			["Entry", "crates/ledger/src/entry.rs"],
+			["record", "crates/ledger/src/entry.rs"],
+			["Account", "crates/ledger/src/lib.rs"],
+			// pub(crate) opens it beyond its file, though not to another crate.
+			["audit", "crates/ledger/src/lib.rs"],
+			// `#[macro_export]` exports it from the crate's root.
+			["cents", "crates/ledger/src/lib.rs"],
+		].toSorted(),
+	);
+	// `pub mod money` passes the module's open names on under its name; a private field stays.
+	expect(names).toContainEqual(["money.Money.from_cents", "crates/ledger/src/money/mod.rs"]);
+	expect(names?.some(([name]) => name === "Entry.note" || name === "private_helper")).toBe(false);
+	expect(ledger?.outside).toContain("crates/shop/src/checkout.rs");
+	expect(ledger?.outside.some((file) => file.startsWith("crates/ledger/"))).toBe(false);
+	const money = await exposureOf("crates/ledger/src/money", rustShop);
+	expect(money?.rootFiles).toEqual(["crates/ledger/src/money/mod.rs"]);
+	expect(money?.outside).toContain("crates/ledger/src/entry.rs");
+	// A directory that is no module of a crate is none.
+	expect(await exposureOf("crates", rustShop)).toBeUndefined();
 });

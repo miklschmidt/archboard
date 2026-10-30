@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
-const INPUT_DIRECTORIES = ["packages", "apps", "patches"];
+const INPUT_DIRECTORIES = ["packages", "apps", "patches", "crates"];
 const INPUT_FILES = [
 	"vite.config.ts",
 	"tsconfig.json",
@@ -10,6 +10,11 @@ const INPUT_FILES = [
 	"package.json",
 	"bun.lock",
 	"tools/frontend-build-inputs.ts",
+	"Cargo.toml",
+	"Cargo.lock",
+	"scripts/build-core.ts",
+	"flake.nix",
+	"flake.lock",
 ];
 const FRONTEND_INPUTS_FILE = ".frontend-inputs.sha256";
 const FRONTEND_INPUT_GLOBS = [

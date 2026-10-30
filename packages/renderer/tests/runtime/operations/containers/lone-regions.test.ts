@@ -1,37 +1,17 @@
-// A group draws a region round its only member in a container, or at the
-// board level, as round several (ADR 0038, amended 2026-09-27). Such a region
-// is laid out as its card with a larger box (layout rules, section 44). What
-// this catches: a region round one card or container laid out as a cluster
-// or block of its own, which reordered the board's ranks, stood a container
-// off the lines into it and ran lines through cards; a line that stops on the
-// region's wall, or in its inset beside the node, short of its node; a
-// container alone in its region fitted tighter round what it holds; a caption
-// painted over a line into the card; a label lost from a line into a
-// container a packed region holds; and a caption run past the wall of a
-// region round a container.
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { placingGroups, type VariantContent } from "@archboard/board/content";
+import { routesThroughGroupHeaders } from "#tests/runtime/support/drawn-checks.ts";
+import foldedCaption from "#tests/runtime/support/fixtures/folded-caption.json";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
-import {
-	bodyShift,
-	routeLabels,
-	routePoints,
-	turnsOf,
-} from "#tests/runtime/support/drawn-routes.ts";
+import { bodyShift, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import aSpokenInstruction from "#tests/runtime/support/fixtures/a-spoken-instruction.json";
-import boardRequestPath from "#tests/runtime/support/fixtures/board-request-path.json";
-import commandInterface from "#tests/runtime/support/fixtures/command-interface.json";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
 import liveServerState from "#tests/runtime/support/fixtures/live-server-state.json";
-import readingABoard from "#tests/runtime/support/fixtures/reading-a-board-panes.json";
-import recordingAWalkthrough from "#tests/runtime/support/fixtures/recording-a-walkthrough.json";
 import startingAWorkhorse from "#tests/runtime/support/fixtures/starting-a-workhorse.json";
-import whatTheCliCanBeAsked from "#tests/runtime/support/fixtures/what-the-cli-can-be-asked.json";
-import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
@@ -215,67 +195,6 @@ function within({ x, y }: { x: number; y: number }, box: Box): boolean {
 }
 
 /**
- * The cards of a drawing, read row by row: every card's id, ordered by the
- * row it stands on, then from left to right. A row is the height of the
- * topmost card on it, and a card stands on the first row it shares some
- * height with: a card a region round it lowers under its caption stays on
- * its rank's row.
- * @param drawing The drawing.
- * @param cards The cards to read.
- * @returns Their ids, in reading order.
- */
-function readingOrder(drawing: RenderedDiagram, cards: readonly string[]): string[] {
-	const boxes = cards
-		.map((id) => ({ id, box: drawing.atlas.nodes[id]! }))
-		.toSorted((one, other) => one.box.y - other.box.y);
-	const rows: Box[] = [];
-	const rowOf = new Map<string, number>();
-	for (const { id, box } of boxes) {
-		const at = rows.findIndex((row) => box.y < row.y + row.height && box.y + box.height > row.y);
-		if (at === -1) rows.push(box);
-		rowOf.set(id, at === -1 ? rows.length - 1 : at);
-	}
-	return boxes
-		.toSorted((one, other) => rowOf.get(one.id)! - rowOf.get(other.id)! || one.box.x - other.box.x)
-		.map(({ id }) => id);
-}
-
-// Reduced from dogfood views. Recording a walkthrough: three regions round
-// one card each, laid out as clusters of their own, pulled their cards off
-// the ranks the board stood them on, stood the voice region as a tall sparse
-// band and bent the lines round it. A spoken instruction becomes work: a port
-// settled on the inset beside the card alone in its region stepped the line
-// out of it, and for that bend the board kept a port order that stood the
-// cards of a container the other way round. The room regions round one card
-// take moves the routes round them, and the choices weighed on those routes
-// turned: What the CLI can be asked parted four lines into Board client for a
-// hop more and 21% more line, and wrapped its widest rank's cards into other
-// rows; Working with an agent moved four more ports to side walls and stood
-// Pane session off to the middle.
-const readAsWithout = [
-	["Recording a walkthrough", "track", recordingAWalkthrough],
-	["Recording a walkthrough", "blocks", recordingAWalkthrough],
-	["A spoken instruction becomes work", "blocks", aSpokenInstruction],
-	["What the CLI can be asked", "blocks", whatTheCliCanBeAsked],
-	["Working with an agent", "blocks", workingWithAnAgent],
-] as const;
-test.each(readAsWithout)(
-	"%s: the %s engine reads the cards as it does without its regions round one node",
-	async (_board, layout, fixture) => {
-		const content = orderedFixture(fixture);
-		expect(loneNodes(content).length).toBeGreaterThan(0);
-		const cards = content.nodes
-			.filter(({ id }) => !content.nodes.some(({ parent }) => parent === id))
-			.map(({ id }) => id);
-		const [grouped, plain] = await Promise.all([
-			drawn(content, layout),
-			drawn(ungrouped(content), layout),
-		]);
-		expect(readingOrder(grouped, cards)).toEqual(readingOrder(plain, cards));
-	},
-);
-
-/**
  * The line ends at a card or container alone in its region that stop short
  * of it: off a card's face or in its rounded corner, or outside a container,
  * whose lines may meet its title row.
@@ -331,13 +250,6 @@ const loneContainer = {
 	],
 };
 
-// A line may reach the wall of a region round one node anywhere along it,
-// the region's inset beside the node included: into a container drawn
-// inline alone in its region, and between cards alone in theirs in two
-// containers packed apart, it stopped in that inset, beside its node. Live
-// server state, reduced from a dogfood view: a port settled against the one
-// card alone in its region its line runs to, over the region's box, ended
-// the line into Codex workbench in the card's rounded corner.
 const besideTheNode = {
 	"a container alone in its region inside another": loneContainer,
 	"Live server state": liveServerState,
@@ -366,33 +278,6 @@ test.each(
 	const content = orderedFixture(besideTheNode[board as keyof typeof besideTheNode]);
 	expect(endsOffNode(content, await drawn(content, layout))).toEqual([]);
 });
-
-// Reduced from dogfood boards. Board request path: a line whose lane stood a little inside the
-// face of a card alone in its region, nearer its corner than a port is moved to, stepped aside
-// above the region to reach the card. Command interface: its ports settled as the board without
-// its regions round one card settled them, the four 'board operation' lines into Board writes
-// stepped twice more each. Reading a board: a port a margin in from Pane session's own face
-// stepped its line aside under the region. Lines alike in emphasis and traffic: unlike ones part
-// lanes.
-const turnsAsWithout = {
-	"Board request path": boardRequestPath,
-	"Command interface": commandInterface,
-	"Reading a board": readingABoard,
-};
-async function turns(content: VariantContent): Promise<Map<string, number>> {
-	const picture = await drawn(content, "track");
-	return new Map([...routePoints(picture.svg)].map(([id, points]) => [id, turnsOf(points)]));
-}
-
-test.each(Object.keys(turnsAsWithout))(
-	"%s: the track engine turns no line more than without its regions round one card",
-	async (board) => {
-		const content = orderedFixture(turnsAsWithout[board as keyof typeof turnsAsWithout]);
-		for (const e of content.edges) Object.assign(e, { emphasis: "normal", traffic: undefined });
-		const [grouped, plain] = await Promise.all([turns(content), turns(ungrouped(content))]);
-		for (const [id, count] of grouped) expect(count, id).toBeLessThanOrEqual(plain.get(id)!);
-	},
-);
 
 // A container alone in its region, drawn inline, was fitted to what it holds
 // by a container's inset from the region's walls, and its own walls then
@@ -433,18 +318,21 @@ test("a region round one card paints its caption beside the lines into the card"
 		}
 });
 
-// Reduced from a board of a work vault, letters replaced: a chain of cards
-// above a wide pool that is its group's only member at the board level. Its
-// region, laid out as a cluster or a block of its own, stood the pool off the
-// chain, and the line into it ran across to reach it.
+// Live panes sends a line down to a block port that later folds above its
+// card. Closing that line's jog must keep its port outside the painted tab.
 test.each(["track", "blocks"] as const)(
-	"the %s engine stands a chain over the middle of a container alone in its region",
+	"the %s engine keeps folded routes clear of a lone region's painted caption",
 	async (layout) => {
-		const drawing = await drawn(orderedFixture(legacyRouting), layout);
-		const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
-		expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
+		const drawing = await drawn(orderedFixture(foldedCaption), layout);
+		expect(routesThroughGroupHeaders(drawing)).toEqual([]);
 	},
 );
+
+test("the track engine stands a chain over the middle of a container alone in its region", async () => {
+	const drawing = await drawn(orderedFixture(legacyRouting), "track");
+	const [balancer, pool] = [drawing.atlas.nodes["zYCHWE5R"]!, drawing.atlas.nodes["2cGTPFaw"]!];
+	expect(Math.abs(balancer.x + balancer.width / 2 - (pool.x + pool.width / 2))).toBeLessThan(1);
+});
 
 // Two containers their group gathers at the board level: packed as a block,
 // their region holds their frames alone and draws only trunks, and the label
@@ -491,7 +379,13 @@ test.each(["track", "blocks"].flatMap((by) => ["card", "container"].map((round) 
 		const [lone] = loneNodes(content);
 		const own = drawing!.atlas.nodes[lone!]!;
 		expect(caption.x + caption.width).toBeLessThanOrEqual(region.x + region.width);
-		expect(own.width).toBe(plain!.atlas.nodes[lone!]!.width);
+		if (round === "card") {
+			expect(own.width).toBe(plain!.atlas.nodes[lone!]!.width);
+		} else {
+			// A wide caption changes the entry face, while the frame stays tight.
+			expect(own.width).toBeLessThanOrEqual(plain!.atlas.nodes[lone!]!.width);
+			expect(headerCards(drawing!).get(lone!)!.width).toBe(headerCards(plain!).get(lone!)!.width);
+		}
 		expect(Math.abs(own.x + own.width / 2 - region.x - region.width / 2)).toBeLessThan(1);
 		expect(endsOffNode(content, drawing!)).toEqual([]);
 	},

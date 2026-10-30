@@ -3,16 +3,27 @@ import input from "#tests/runtime/support/fixtures/placement-order-graph.json";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
 import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const CONTENT = VariantContentSchema.parse(input);
 
 async function cardBoxes(content: VariantContent, layout?: LayoutEngineName) {
-	const drawing = await renderArchitecture({ content, theme: "light", layout });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout,
+	});
 	return drawing.atlas.nodes;
 }
 
 async function edgeBoxes(content: VariantContent, layout?: LayoutEngineName) {
-	const drawing = await renderArchitecture({ content, theme: "light", layout });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout,
+	});
 	return drawing.atlas.edges;
 }
 
@@ -43,8 +54,16 @@ test("replacing every subject identity leaves card and relationship geometry in 
 			to: nodeIds.get(edge.to)!,
 		})),
 	};
-	const original = await renderArchitecture({ content: CONTENT, theme: "light" });
-	const replacement = await renderArchitecture({ content: renamed, theme: "light" });
+	const original = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: CONTENT,
+		theme: "light",
+	});
+	const replacement = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: renamed,
+		theme: "light",
+	});
 	for (const [before, after] of nodeIds)
 		expect(replacement.atlas.nodes[after]).toEqual(original.atlas.nodes[before]);
 	for (const [before, after] of edgeIds)
@@ -76,7 +95,11 @@ test("authored order determines sibling positions and relationship paint order",
 			{ id: "earlier", order: 1000, from: "second", to: "first", kind: "call", emphasis: "normal" },
 		],
 	};
-	const rendered = await renderArchitecture({ content, theme: "light" });
+	const rendered = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	expect(rendered.svg.indexOf('data-semantic-kind="edge" data-semantic-id="earlier"')).toBeLessThan(
 		rendered.svg.indexOf('data-semantic-kind="edge" data-semantic-id="later"'),
 	);
@@ -86,6 +109,10 @@ test("authored order determines sibling positions and relationship paint order",
 			Object.assign({}, node, { order: node.order === 1000 ? 2000 : 1000 }),
 		),
 	};
-	const changed = await renderArchitecture({ content: swapped, theme: "light" });
+	const changed = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: swapped,
+		theme: "light",
+	});
 	expect(changed.atlas.nodes["second"]).not.toEqual(rendered.atlas.nodes["second"]);
 });

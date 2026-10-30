@@ -25,7 +25,6 @@ import {
 } from "@archboard/board/document";
 import type {
 	LayoutEngineName,
-	FontSource,
 	LegendLayout,
 	NothingDrawnReason,
 	OfferedView,
@@ -36,9 +35,8 @@ import type { ToldStanding } from "@archboard/board/reconciliation";
 import type { SemanticPolicy } from "@archboard/board/policy";
 import type { VariantContent } from "@archboard/board/content";
 import type { FlowStep } from "@archboard/board/flow";
-import { SemanticRenderError } from "#shared/protocol/render-request.ts";
+import { SemanticRenderError, type SubjectStanding } from "#shared/protocol/render-request.ts";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
-import { placedStanding } from "#shared/rules/render/picture-key.ts";
 
 /** What a render of one board asks for. */
 interface BoardRenderChoices {
@@ -56,7 +54,6 @@ interface BoardRenderChoices {
 	readonly against?: string | undefined;
 	/** The theme a document that stands alone is drawn in; absent, it is for a page. */
 	readonly theme?: StandaloneTheme | undefined;
-	readonly fonts: FontSource;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */
 	readonly layout?: LayoutEngineName | undefined;
 	/**
@@ -219,9 +216,8 @@ function emptyReason(
  * @param variant The variant to draw.
  * @param view The view to draw, or nothing for the overview.
  * @param against The variant the caller named to read it against, if any.
- * @param how The theme, the faces and the vault policy.
+ * @param how The theme and the vault policy.
  * @param how.theme The theme a document that stands alone is drawn in, when it is one.
- * @param how.fonts Where the drawn faces come from.
  * @param how.policy The vault's presentation policy.
  * @param how.comparison Whether to draw comparison treatment.
  * @param how.layout Which engine lays the architecture out.
@@ -237,7 +233,6 @@ async function drawnReply(
 	against: SemanticVariant | undefined,
 	how: {
 		theme: StandaloneTheme | undefined;
-		fonts: FontSource;
 		policy: SemanticPolicy;
 		comparison: boolean;
 		layout: LayoutEngineName | undefined;
@@ -286,7 +281,6 @@ async function drawnReply(
 			variant: variant.content,
 			grammar: reading.grammar,
 			theme: how.theme,
-			fonts: how.fonts,
 			layout: how.layout,
 			frame: { title, legend: how.legend, legendOnly: how.legendOnly },
 			...(waiting === null ? {} : { unsettled: waiting.issues.map((issue) => issue.subject) }),
@@ -417,6 +411,27 @@ function drawnPolicy(policy: SemanticPolicy): unknown {
 }
 
 /**
+ * How the subjects a drawing placed stand: a comparison's standing kept to
+ * them. A reading holds more than its grammar draws (a sequence view keeps the
+ * relationships between its participants and draws none of them), so a mark
+ * is counted, and a subject named, only where the drawing put one (TASK-497).
+ * @param standing How every subject of the reading stands.
+ * @param placed The subjects the drawing placed, by id.
+ * @returns The standing of those alone.
+ */
+function placedStanding(
+	standing: Readonly<Record<string, SubjectStanding>>,
+	placed: readonly string[],
+): Record<string, SubjectStanding> {
+	return Object.fromEntries(
+		placed.flatMap((id) => {
+			const stands = standing[id];
+			return stands === undefined ? [] : [[id, stands]];
+		}),
+	);
+}
+
+/**
  * How a variant differs, as the answer says it: the standing of what the
  * picture placed alone. The reading holds subjects its grammar never draws, and
  * a panel or a receipt that counted them counted a mark nobody could find
@@ -516,7 +531,6 @@ async function drawBoard(
 	}
 	const drawn = await drawnReply(board, variant, view, against, {
 		theme: choices.theme,
-		fonts: choices.fonts,
 		policy,
 		comparison: choices.comparison !== false,
 		layout: choices.layout,

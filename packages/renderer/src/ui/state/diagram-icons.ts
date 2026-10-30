@@ -9,13 +9,10 @@
 import { z } from "zod";
 
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
-import { OWN_ICONS } from "#shared/rules/svg/page/icons.ts";
+import { OWN_ICONS } from "#shared/protocol/generated/core/marks.ts";
 
 /** Where the server serves one icon's path data. */
 const ICON_URL = "/assets/diagram-icons";
-
-/** The icon drawn for a kind the policy does not describe. */
-const FALLBACK_ICON = "RiQuestionLine";
 
 const IconSchema = z.object({ paths: z.array(z.string()) });
 
@@ -33,7 +30,7 @@ function iconsNamedBy(policy: SemanticPolicy): Set<string> {
 		...Object.values(policy.nodeKinds),
 		...Object.values(DEFAULT_SEMANTIC_POLICY.nodeKinds),
 	];
-	return new Set([FALLBACK_ICON, ...OWN_ICONS, ...kinds.map((kind) => kind.icon)]);
+	return new Set([...OWN_ICONS, ...kinds.map((kind) => kind.icon)]);
 }
 
 /**

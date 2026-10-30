@@ -20,19 +20,12 @@ if (!root) {
 	throw new Error("The page has no #root element to mount into.");
 }
 
-// Where vite serves the routing engine's WebAssembly from. The renderer package
-// starts its own layout workers, and tells each of them this address.
-const avoidWasmUrl = new URL(
-	"../../../node_modules/libavoid-js/dist/libavoid.wasm",
-	import.meta.url,
-).href;
-
-// Pictures are drawn here, with this browser's canvas and a pool of engine
+// Pictures are drawn here, with the renderer core and a pool of engine
 // workers, from the boards this tab reads (TASK-247). The renderer is its own
 // chunk, fetched and started while the application boots, so the shell and a
 // kept picture never wait for it.
 const renderer = import("@archboard/renderer/browser").then((module) => {
-	module.startBrowserRenderer({ avoidWasmUrl });
+	module.startBrowserRenderer();
 	return module;
 });
 takePicturesFrom(

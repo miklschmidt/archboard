@@ -8,6 +8,7 @@ import { describe, expect, test } from "bun:test";
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const NODES = [
 	{ id: "sh", name: "Shell", kind: "external", responsibility: "Invokes the command" },
@@ -54,7 +55,11 @@ function drawnIds(svg: string, kind: "edge" | "step"): string[] {
 
 describe("a flow drawn on its board", () => {
 	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
-		const rendered = await renderArchitecture({ content: board(), theme: "light" });
+		const rendered = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: board(),
+			theme: "light",
+		});
 		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2", "s3"]);
 		expect(drawnIds(rendered.svg, "edge")).toEqual([]);
 		expect([...routeEnds(rendered.svg, "step").keys()].toSorted()).toEqual(["s1", "s2", "s3"]);
@@ -68,6 +73,7 @@ describe("a flow drawn on its board", () => {
 
 	test("a board with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: board([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
 			theme: "light",
 		});
@@ -77,6 +83,7 @@ describe("a flow drawn on its board", () => {
 
 	test("a standing keyed by the step's id lands on its line", async () => {
 		const rendered = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: board(),
 			theme: "light",
 			standing: { s3: "added" },
@@ -96,6 +103,10 @@ test("a step to a part drawn with children draws nothing: the container receives
 		edges: [],
 		flows: [FLOW],
 	});
-	const rendered = await renderArchitecture({ content, theme: "light" });
+	const rendered = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2"]);
 });

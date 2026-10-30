@@ -1,17 +1,12 @@
 import { expect, test } from "bun:test";
 
 import { renderBoard } from "#runtime/operations/render.ts";
-import { shownDrawing } from "#shared/rules/render/shown.ts";
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
-import { across, bridged, down, drawing } from "#tests/runtime/support/fixed-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
 import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-
-/** How a line of a call is drawn. */
-const LINE = { dash: "solid", arrowhead: "filled" } as const;
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
 	const before = orderedFixture({
@@ -43,12 +38,12 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 	});
 	const decorated = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked" },
+		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	const plain = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked", comparison: false },
+		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!decorated.ok || !plain.ok || !("svg" in decorated.reply) || !("svg" in plain.reply)) {
@@ -100,12 +95,12 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	});
 	const compared = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked" },
+		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	const plain = await renderBoard(
 		board,
-		{ variant: "draft", theme: "light", fonts: "linked", comparison: false },
+		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
@@ -149,23 +144,6 @@ test("turning the comparison off moves nothing a draft shares with its reference
 		for (const [id, route] of routePoints(drawings.plain.svg)) {
 			expect(route).toEqual(routes.get(id)!);
 		}
-	}
-});
-
-test("a line is not hopped or cut where it crosses a line that is not drawn", () => {
-	const settled = drawing([across(50), down(50)]);
-	const whole = { ...settled, bridged: bridged(settled) };
-	expect(whole.bridged.bridges).toHaveLength(1);
-	const lines = new Map(whole.edges.map(({ edge }) => [edge.id, LINE] as const));
-	for (const unshown of ["0", "1"]) {
-		const shown = shownDrawing(whole, new Set([unshown]), lines);
-		expect(shown.bridged.bridges).toEqual([]);
-		expect(shown.bridged.edges.map(({ edge }) => edge.id)).toEqual(
-			["0", "1"].filter((id) => id !== unshown),
-		);
-		expect(shown.bridged.edges[0]!.curve).toEqual(
-			settled.edges.find(({ edge }) => edge.id !== unshown)!.curve,
-		);
 	}
 });
 
@@ -258,37 +236,6 @@ test("a view without its comparison draws only what the draft's own view holds",
 	);
 	expectSamePlaces(drawings, [writes.id, "store"]);
 	expect(Object.keys(drawings.plain.atlas.nodes).toSorted()).toEqual(["api", "gate"]);
-});
-
-test("lines keep their lanes where a card that is not drawn held them apart", () => {
-	// Two routes whose rows fold a crossing into their corners, and a card
-	// between the lanes they would exchange onto.
-	const folded = drawing([
-		[
-			{ x: 0, y: 50 },
-			{ x: 60, y: 50 },
-			{ x: 60, y: 100 },
-			{ x: 100, y: 100 },
-		],
-		[
-			{ x: 100, y: 50 },
-			{ x: 40, y: 50 },
-			{ x: 40, y: 0 },
-			{ x: 0, y: 0 },
-		],
-	]);
-	const [node] = orderedFixture({ nodes: [{ id: "gone", name: "Gone", kind: "service" }] }).nodes;
-	const measured = { node: node!, width: 10, height: 10, headerHeight: 10, runs: [] };
-	const settled = {
-		...folded,
-		cards: [{ measured, box: { x: 45, y: 20, width: 10, height: 10 }, depth: 0 }],
-	};
-	const whole = { ...settled, bridged: bridged(settled) };
-	const lines = new Map(whole.edges.map(({ edge }) => [edge.id, LINE] as const));
-	const shown = shownDrawing(whole, new Set([node!.id]), lines);
-	expect(shown.bridged.edges.map(({ curve }) => curve)).toEqual(
-		whole.bridged.edges.map(({ curve }) => curve),
-	);
 });
 
 test("a view keeps the draft's own step lines where its comparison pulls a relationship in", async () => {

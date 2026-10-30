@@ -1,0 +1,20 @@
+[package]
+name = "archboard-flows"
+description = "The layout of a board's flows: its message sequences and its flowcharts"
+version = "0.0.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+# A flowchart is laid out as a board is, and its lines' crossings counted so.
+archboard-layout = { path = "../archboard-layout" }
+archboard-scene = { path = "../archboard-scene" }
+indexmap = "2"
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = { version = "1", features = ["float_roundtrip"] }

@@ -14,7 +14,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/semantic-claim.test.ts",
 	"tests/system/browser/voice-box.test.ts",
 	"tests/system/browser/voice-box-presented.test.ts",
-	"tests/system/browser/measured-text.test.ts",
+	"tests/system/browser/drawn-glyphs.test.ts",
 	"tests/system/browser/browser-drawn-pictures.test.ts",
 	"tests/system/browser/semantic-traffic.test.ts",
 	"tests/system/browser/opener-settings.test.ts",

@@ -59,9 +59,7 @@ const SemanticRasterReceiptSchema = z.object({
 	/** The exact renderer document and stable presentation state used for capture. */
 	source: z.object({
 		renderer: z.literal("semantic-renderer"),
-		fonts: z.literal("embedded"),
 		svgSha256: z.string(),
-		facesLoaded: z.int(),
 		motion: z.literal("paused-at-start"),
 	}),
 });

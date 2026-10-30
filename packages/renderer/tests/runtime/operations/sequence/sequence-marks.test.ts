@@ -4,9 +4,9 @@
 import { describe, expect, test } from "bun:test";
 
 import type { VariantContent } from "@archboard/board/content";
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { type StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import {
 	markShape,
 	rowMarkOf,
@@ -22,6 +22,7 @@ import {
 	drawnSequence,
 	subject,
 } from "#tests/runtime/support/sequence-fixture.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * The ink a start tag is filled with, as an attribute or in its style.
@@ -51,9 +52,13 @@ function geometry(tag: string): string {
  * @param part Which of its drawn parts: its label, or its lifeline.
  * @returns The part's markup, without colour.
  */
-function partSeen(standing: StatedStandings, id: string, part: "label" | "lifeline"): string {
+async function partSeen(
+	standing: StatedStandings,
+	id: string,
+	part: "label" | "lifeline",
+): Promise<string> {
 	return withoutColour(
-		subjectGroups(drawnSequence(standing).svg).find(
+		subjectGroups((await drawnSequence(standing)).svg).find(
 			(group) => group.id === id && group.markup.includes(`data-semantic-part="${part}"`),
 		)!,
 	);
@@ -69,8 +74,8 @@ function frameWithoutPin(rendered: RenderedDiagram): string {
 }
 
 describe("a stated standing on a sequence", () => {
-	test("marks steps, participants and the flow that holds them", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
+	test("marks steps, participants and the flow that holds them", async () => {
+		const rendered = await drawnSequence(SEQUENCE_STANDING);
 
 		expect(subject(rendered, "step", "s2").standing).toBe("added");
 		expect(subject(rendered, "step", "s4").standing).toBe("changed");
@@ -85,8 +90,8 @@ describe("a stated standing on a sequence", () => {
 		}
 	});
 
-	test("draws a removed step as absent from the exchange", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
+	test("draws a removed step as absent from the exchange", async () => {
+		const rendered = await drawnSequence(SEQUENCE_STANDING);
 		const gone = subject(rendered, "step", "s3");
 		const kept = subject(rendered, "step", "s1");
 
@@ -98,11 +103,13 @@ describe("a stated standing on a sequence", () => {
 		// Its row says so, once, and its line carries no swipe of its own.
 		expect(markShape(rowMarkOf(rendered.svg, "s3")!)).toBeDefined();
 		expect(rowMarkOf(rendered.svg, "s1")).toBeUndefined();
-		expect(strokesOf(gone).length).toBe(strokesOf(subject(drawnSequence(), "step", "s3")).length);
+		expect(strokesOf(gone).length).toBe(
+			strokesOf(subject(await drawnSequence(), "step", "s3")).length,
+		);
 	});
 
-	test("marks a message that moved once, on its own row, and never on its label", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
+	test("marks a message that moved once, on its own row, and never on its label", async () => {
+		const rendered = await drawnSequence(SEQUENCE_STANDING);
 		// The frame's own rect: its halo carries a class before its box.
 		const frame = /<rect x="([\d.]+)"[^>]*\swidth="([\d.]+)"/.exec(
 			subject(rendered, "flow", "f1").markup,
@@ -118,14 +125,14 @@ describe("a stated standing on a sequence", () => {
 			expect(pin).toBe(/translate\(([\d.]+),/.exec(subject(rendered, "flow", "f1").markup)![1]);
 		}
 		// The words of a moved message are drawn as an unchanged one's are.
-		expect(partSeen({ s2: "added" }, "s2", "label")).toBe(
-			partSeen({ s2: "unchanged" }, "s2", "label"),
+		expect(await partSeen({ s2: "added" }, "s2", "label")).toBe(
+			await partSeen({ s2: "unchanged" }, "s2", "label"),
 		);
 	});
 
-	test("marks a flow on its corner, and a message of a flow added whole not at all", () => {
-		const unchanged = drawnSequence({ f1: "unchanged" });
-		const changed = drawnSequence({ f1: "changed" });
+	test("marks a flow on its corner, and a message of a flow added whole not at all", async () => {
+		const unchanged = await drawnSequence({ f1: "unchanged" });
+		const changed = await drawnSequence({ f1: "changed" });
 		// The frame's rule is its own whichever way the flow stands.
 		expect(frameWithoutPin(changed)).toBe(frameWithoutPin(unchanged));
 		expect(markShape(subject(changed, "flow", "f1"))).toBeDefined();
@@ -133,12 +140,12 @@ describe("a stated standing on a sequence", () => {
 		const whole = Object.fromEntries(
 			["f1", "s1", "s2", "s3", "s4"].map((id) => [id, "added" as const]),
 		);
-		const added = drawnSequence(whole);
+		const added = await drawnSequence(whole);
 		expect(markShape(subject(added, "flow", "f1"))).toBeDefined();
 		for (const id of ["s1", "s2", "s3", "s4"]) {
 			expect(rowMarkOf(added.svg, id)).toBeUndefined();
 			expect(subject(added, "step", id).markup).toBe(
-				subject(drawnSequence({ f1: "unchanged" }), "step", id).markup.replace(
+				subject(await drawnSequence({ f1: "unchanged" }), "step", id).markup.replace(
 					'data-semantic-standing="unchanged"',
 					'data-semantic-standing="added"',
 				),
@@ -146,8 +153,8 @@ describe("a stated standing on a sequence", () => {
 		}
 	});
 
-	test("draws a removed participant as absent down the whole column, not only at its card", () => {
-		const rendered = drawnSequence(SEQUENCE_STANDING);
+	test("draws a removed participant as absent down the whole column, not only at its card", async () => {
+		const rendered = await drawnSequence(SEQUENCE_STANDING);
 		// A participant is drawn twice: the card at the head of the column, and the
 		// column of time under it. Both are the same subject, so both say so.
 		const both = subjectGroups(rendered.svg).filter(
@@ -164,7 +171,7 @@ describe("a stated standing on a sequence", () => {
 		expect(column.opacity).toBeGreaterThan(0);
 		expect(column.opacity).toBeLessThan(1);
 		const card = both.find((group) => !group.markup.includes(lifeline))!;
-		const kept = subjectGroups(drawnSequence({ legacy: "unchanged" }).svg).find(
+		const kept = subjectGroups((await drawnSequence({ legacy: "unchanged" })).svg).find(
 			(group) => group.id === "legacy" && group.kind === "node" && !group.markup.includes(lifeline),
 		)!;
 		expect(card.markup).toContain("stroke-dasharray");
@@ -173,12 +180,12 @@ describe("a stated standing on a sequence", () => {
 
 		// And the column reads differently from a participant that stayed, with the
 		// colour spent.
-		expect(partSeen(SEQUENCE_STANDING, "legacy", "lifeline")).not.toBe(
-			partSeen({ legacy: "unchanged" }, "legacy", "lifeline"),
+		expect(await partSeen(SEQUENCE_STANDING, "legacy", "lifeline")).not.toBe(
+			await partSeen({ legacy: "unchanged" }, "legacy", "lifeline"),
 		);
 	});
 
-	test("keeps a removed step's words readable on opaque plates, so a lifeline behind them stays hidden", () => {
+	test("keeps a removed step's words readable on opaque plates, so a lifeline behind them stays hidden", async () => {
 		// The removed message's label sits across a lifeline, and a note under it
 		// does too. Its words are faded to the secondary ink rather than made
 		// see-through, which would drop them under 4.5:1, and each lies on an
@@ -194,43 +201,57 @@ describe("a stated standing on a sequence", () => {
 		 * @param standing How the sequence's subjects stand.
 		 * @returns The group.
 		 */
-		const wordsOf = (standing: StatedStandings) =>
-			subjectGroups(renderDataFlow({ content: noted, standing }).svg)
+		const wordsOf = async (standing: StatedStandings) =>
+			subjectGroups(
+				(
+					await renderSemanticView({
+						policy: DEFAULT_SEMANTIC_POLICY,
+						content: noted,
+						standing,
+						grammar: "sequence",
+					})
+				).svg,
+			)
 				.filter((group) => group.kind === "step" && group.id === "s3")
 				.find((group) => group.markup.includes("<text"))!;
-		const words = wordsOf(SEQUENCE_STANDING);
+		const words = await wordsOf(SEQUENCE_STANDING);
 		// Nothing in it is drawn see-through but the row's tint and the ghost of its chip.
 		expect(words.markup).not.toMatch(/<g\b[^>]*\sopacity=/u);
-		const tags = [...words.markup.matchAll(/<(?:rect|text)\b[^>]*>/g)].map(([tag]) => tag);
+		const tags = [...words.markup.matchAll(/<(?:rect|g)\b[^>]*>/g)].map(([tag]) => tag);
 		const plates = tags.filter((tag) => tag.startsWith("<rect") && !/ab-halo|opacity/.test(tag));
-		const texts = tags.filter((tag) => tag.startsWith("<text"));
+		// Words are drawn by their glyphs, in a group of their own.
+		const texts = tags.filter((tag) => tag.includes('aria-hidden="true"'));
 		// A plate under the label's words and one under the note's, each laid first.
 		expect(plates.length).toBeGreaterThanOrEqual(2);
 		expect(tags.indexOf(plates[0]!)).toBeLessThan(tags.indexOf(texts[0]!));
 		expect(tags.indexOf(plates[1]!)).toBeLessThan(tags.indexOf(texts.at(-1)!));
 		// The label's words are in another ink than a kept message's.
-		const kept = [...wordsOf({ s3: "unchanged" }).markup.matchAll(/<text\b[^>]*>/g)][0]![0];
+		const kept = /<g\b[^>]*aria-hidden="true">/.exec(
+			(await wordsOf({ s3: "unchanged" })).markup,
+		)![0];
 		expect(fill(kept)).toBeDefined();
 		expect(fill(texts[0]!)).not.toBe(fill(kept));
 	});
 
-	test("tells its four standings apart without relying on colour", () => {
+	test("tells its four standings apart without relying on colour", async () => {
 		// A message has no outline to take over and no corner to pin, so its row
 		// carries its standing: a pin in the margin, in shape as well as hue.
-		const steps = STANDINGS.map((one) => {
-			const rendered = drawnSequence({ s3: one });
-			const row = rowMarkOf(rendered.svg, "s3");
-			return (
-				withoutColour(subject(rendered, "step", "s3")) +
-				(row === undefined ? "" : withoutColour(row))
-			);
-		});
+		const steps = await Promise.all(
+			STANDINGS.map(async (one) => {
+				const rendered = await drawnSequence({ s3: one });
+				const row = rowMarkOf(rendered.svg, "s3");
+				return (
+					withoutColour(subject(rendered, "step", "s3")) +
+					(row === undefined ? "" : withoutColour(row))
+				);
+			}),
+		);
 		expect(new Set(steps).size).toBe(4);
 	});
 });
 
-test("a selected participant or message is traced in the selection's ink over what it draws", () => {
-	const rendered = drawnSequence();
+test("a selected participant or message is traced in the selection's ink over what it draws", async () => {
+	const rendered = await drawnSequence();
 	const groups = subjectGroups(rendered.svg);
 	const selection = /\.is-selected \.ab-halo\{[^}]*stroke:([^;}]+)/.exec(rendered.svg)![1];
 	// A participant's column: each halo retraces its lifeline or one of its

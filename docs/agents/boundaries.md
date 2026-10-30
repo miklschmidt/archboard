@@ -15,6 +15,8 @@ Product source lives in workspaces. The root `package.json` lists `packages/*` a
 ```text
 packages/<name>/   # a library that owns one behavior. See Packages.
 apps/<name>/       # a process entry that nothing imports: cli, server, web, workbench-example. See Apps.
+crates/<crate>/    # a Rust crate of the root Cargo workspace (ADR 0059)
+crates/vendor/     # third-party crates the core builds in, no workspace members (crates/vendor/README.md)
 tests/system/      # repository, process, browser and full-product tests across owners
 scripts/, tools/   # repository scripts and the Oxlint plugin
 vite.config.ts     # the build host of the browser app
@@ -422,7 +424,7 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   `tests/runtime/support/history-lens/lens.ts`.
 - `runtime/operations/` holds the reading and judging: `code-facts/` has the language-agnostic
   facts, `modules/` for what a module exposes, and one folder for each language or format
-  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `nix/`, `kubernetes/`, `compose/`,
+  (`typescript/`, `python/`, `c/`, `csharp/`, `objc/`, `swift/`, `rust/`, `nix/`, `kubernetes/`, `compose/`,
   `terraform/`); `code-check/` has the pass, `claims/`, `evidence/` and `interfaces/`;
   `history-lens/` and `language-servers/` hold the rest. `runtime/services/code-facts/` holds the
   reader that caches facts by content, the grammars and the tree-sitter query files. `runtime/clients/`
@@ -436,46 +438,55 @@ subpaths with 16 names, where code outside imported 7 module paths. It imports `
   with their dotfiles. A test finds them through `FIXTURES` of the `checkout.ts` beside them.
 
 The eleventh is `renderer` (`@archboard/renderer`). It draws a board as a picture. It adopts the `api/` role for
-`shared/`, `runtime/` and `ui/` and exposes 9 subpaths with 61 names, where code outside imported 10 module paths and
-two asset paths. It imports `board`, `timing` and `process`. The 2 files of `shared/api/` and the
-1 file of `ui/api/` are safe for the browser, with no Node import. The 6 files of `runtime/api/` are Node-bound and run
-only in Bun.
+`shared/`, `runtime/` and `ui/`. It imports `board`, `timing` and `process`.
+The files of `shared/api/` and `ui/api/` are safe for the browser, with no Node import.
+The files of `runtime/api/` are Node-bound and run only in Bun.
 
-- `shared/` holds the picture code that the browser and Bun both run. `rules/` is the pure code: `render/` has the entry
-  points and the host contract, `text/` the measurement and the fonts, `engine/` the layout engine and its worker pool,
-  `layout/`, `track/` and `blocks/` the three ways to lay a board out, `flowchart/`, and `svg/` the painters. These
-  four folders split by behavior (`blocks/tree/`, `track/routes/`, `svg/parts/`), not by a longer file prefix.
-  `constants/` holds the spacing, the typography and `shell-geometry.ts`, and `protocol/` holds what a render asks and
-  answers.
-- `runtime/` holds the Bun host. `services/bun-host.ts` installs the `@napi-rs/canvas` canvas, the diagram fonts, the
-  theme colors and the pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
-  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render and measure entry points, the
+- `shared/` holds the host code that the browser and Bun both run. It holds no rule of layout, painting or
+  measurement: the renderer core in `crates/` draws every picture (ADR 0059). `rules/` is the pure code: `render/` has
+  the entry points (`board.ts` resolves a board's variant, view and comparison into what a render asks, and
+  `diagram.ts` hands that to the core with this host's durations and theme colours), the host contract, the words a
+  pane's key says beside the kinds the core lists (`key-marks.ts`) and the marks a pane draws itself (`marks.ts`), and
+  `engine/` runs the layout's solves on a pool of workers. `constants/` holds `shell-geometry.ts`, and `protocol/`
+  holds what a render asks and answers. `protocol/generated/core/` is the core's ignored build: its WebAssembly, its
+  glue, and the TypeScript types of its contract, generated from its Rust types.
+  The core takes the reading, the vault's policy and the render's choices in one call, `render`
+  (`crates/archboard-render`), and answers the document, its atlas, each subject's appearance and the picture's key.
+  It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
+  as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
+  worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
+  solve at a time with the core's `layOutBoard`, which lays out each graph it ranks with the core's own Graphviz
+  (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
+- `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
+  pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
+  `new URL("../processes/layout-worker.ts", import.meta.url)`. `operations/` has the render entry points, the
   icon paths, the bounds, PNG and receipt of the rasterizer, and in `recipe/` the render recipe in a file. `services/rasterizer/` is the rasterizer,
   `processes/headless-chromium/` and `clients/headless-chromium/` are the private Chromium and its DevTools client, and
   `store/` reads the theme stylesheet and names where the assets are.
-- `ui/` holds the browser host. `state/` keeps what the page loads once (the faces, the icons, whether the renderer has
+- `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
-  `startBrowserRenderer({ avoidWasmUrl })` and draws a board with `drawBoardHere`. The worker is started inside the
+  `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
-  bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The page
-  tells the worker where the routing engine's WebAssembly is, because `apps/web/src/main.tsx` finds it in the root
-  `node_modules`, where `libavoid-js` does not export it.
-- `./picture` is what a pane reads of a picture besides its pixels: the key it lists, the inks and marks the canvas draws
-  with, the code warnings, and what a render asks and answers. `./shell-geometry` is the shell's fixed geometry and the
+  bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
+  page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.
+- `./picture` is what a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks
+  the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
+  subject's appearance arrive with the picture (`@archboard/board/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
-  `renderBoard`, `renderArchitecture`, the diagram icon paths and the text width. `./rasterizer` is the bitmap of a
+  `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture. `./recipe` is the render recipe that a board render carries: `readRenderRecipe` reads it from the bytes of an SVG or a PNG, `embedRecipeInPng` writes it into a bitmap, `replaceRenderRecipe` puts another recipe in its place and keeps every other byte, and `recipeRenderRequest` is the render request that draws it again; the Bun `renderBoard` writes it into an SVG when the caller names the vault. `./headless-chromium` is the private Chromium, which the walkthrough recorder
   and the README scripts also start. `./theme` reads the colors of the shared stylesheet.
 - The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
-  server's `/assets/diagram-fonts` route, `readme:assets` and the theme parity test take the path from there.
+  renderer core carries the four diagram faces in its build (ADR 0059). `readme:assets` and the theme parity test take
+  the path from there.
   `./theme.css` and the four `./fonts/<filename>` exports expose the stylesheet and fonts that the web app consumes.
   `apps/web/src/ui/theme/app.css` uses these package names in `@import` and `url()` references, which Vite resolves. `vite.config.ts` hashes `packages/renderer/src/shared`, `packages/renderer/src/ui` and the Bun worker
   into the renderer build, so a picture kept by an older build is never shown.
-- Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The browser
-  measurement contract (`tests/system/browser/measured-text.test.ts`) holds the Bun canvas, which loads from the root
-  `node_modules`, to what Chrome draws.
+- Tailwind scans the `ui` area of every package, and the renderer's `ui` area holds no class names. The glyph
+  contract (`tests/system/browser/drawn-glyphs.test.ts`) holds the pictures of the page and of the Bun core to the
+  glyph positions of the core in Chrome.
 - The tests are in `tests/`. `shared/rules/` tests the pure code. `runtime/operations/<behavior>/` holds the
   whole-picture suites, with their fixtures in `runtime/support/fixtures/`. `runtime/services/rasterizer/`,
   `runtime/processes/headless-chromium/` and `runtime/store/theme/` test the rest. A few tests read board fixtures from
@@ -811,9 +822,8 @@ of `dist/`.
 entry, the page and the stylesheet. Inside the app a file is `#ui/components/semantic-board-canvas/LevelMark.tsx`. No
 behavior has an index: a caller imports the file that defines a name.
 
-- `src/main.tsx` is the browser entry. It starts the pictures drawn in the page, mounts the application or the
-  renderer of a recorded talk, and finds the routing engine's WebAssembly with a file URL
-  (`../../../node_modules/libavoid-js/dist/libavoid.wasm`), since the package exports only its entry. `index.html` and
+- `src/main.tsx` is the browser entry. It starts the pictures drawn in the page and mounts the application or the
+  renderer of a recorded talk. `index.html` and
   `favicon.svg` sit beside `src/`; Vite takes `apps/web` as its root and writes the bundle to the repository's
   `dist/frontend`, which `apps/server` serves. `index.html` links `/src/ui/theme/app.css`. That file is the only one in
   `src/ui/theme/`, because a stylesheet is no role; the plugin judges TypeScript only. Its `@source` paths are

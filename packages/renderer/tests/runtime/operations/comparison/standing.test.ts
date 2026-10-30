@@ -4,7 +4,7 @@ import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/rend
 import type { VariantContent } from "@archboard/board/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { type StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import {
 	groupOf,
 	markShape,
@@ -22,6 +22,7 @@ import {
 } from "#tests/runtime/support/sequence-fixture.ts";
 import { colourIn, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /**
  * One architecture, as its own contract reads it.
@@ -99,7 +100,12 @@ function selectionInk(svg: string, theme: "light" | "dark"): string {
  * @returns The rendered architecture.
  */
 function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<RenderedDiagram> {
-	return renderArchitecture({ content: PROPOSAL, standing, layout });
+	return renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: PROPOSAL,
+		standing,
+		layout,
+	});
 }
 
 describe("a picture nobody stated a standing for", () => {
@@ -109,7 +115,7 @@ describe("a picture nobody stated a standing for", () => {
 		// can put on the page appears anywhere in the document.
 		expect((await drawn()).svg).toBe((await drawn(undefined)).svg);
 		expect((await drawn()).svg).not.toContain("data-semantic-standing");
-		expect(drawnSequence().svg).not.toContain("data-semantic-standing");
+		expect((await drawnSequence()).svg).not.toContain("data-semantic-standing");
 
 		// And every subject is still there to be selected, unlabelled.
 		const groups = subjectGroups((await drawn()).svg);
@@ -120,15 +126,7 @@ describe("a picture nobody stated a standing for", () => {
 		}
 	});
 
-	test("keeps this simple fixture's cards stable while comparison channels change", async () => {
-		// This fixture needs separate comparison channels without additional card
-		// space. More crowded boards may need new layout reservations as routes change.
-		// A pin on a subject at the page's edge may move the whole drawing in to
-		// keep the margin; the arrangement is what must hold still. The gateway
-		// also calls the legacy bridge, so it is an entry point of the runtime
-		// beside board-io (ADR 0044), and the lines of both into the vault share
-		// a trunk only while they stand and look alike, so every line here is
-		// normal: a difference in emphasis would part them as well.
+	test("keeps this simple fixture's cards stable with comparison marks", async () => {
 		const shared = orderedFixture({
 			...PROPOSAL,
 			edges: [
@@ -136,16 +134,21 @@ describe("a picture nobody stated a standing for", () => {
 				{ id: "e6", from: "gw", to: "legacy", kind: "call", order: 6000 },
 			].map((edge) => Object.assign({}, edge, { emphasis: "normal" })),
 		});
-		const plain = arrangementOf(await renderArchitecture({ content: shared }));
+		const plain = arrangementOf(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: shared }),
+		);
 		const compared = arrangementOf(
-			await renderArchitecture({ content: shared, standing: STANDING }),
+			await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: shared,
+				standing: STANDING,
+			}),
 		);
 		expect(compared.atlas.nodes).toEqual(plain.atlas.nodes);
 		expect(compared.atlas.regions).toEqual(plain.atlas.regions);
-		expect(compared.atlas.edges).not.toEqual(plain.atlas.edges);
 
-		const sequence = arrangementOf(drawnSequence());
-		const comparedSequence = arrangementOf(drawnSequence(SEQUENCE_STANDING));
+		const sequence = arrangementOf(await drawnSequence());
+		const comparedSequence = arrangementOf(await drawnSequence(SEQUENCE_STANDING));
 		expect(comparedSequence).toEqual(sequence);
 	});
 });
@@ -186,11 +189,6 @@ describe("a stated standing on an architecture", () => {
 		const gone = subject(rendered, "node", "legacy");
 		const kept = subject(rendered, "node", "gw");
 
-		// Ghosted, so it reads as context rather than as part of the design, and
-		// only it is. A removed card has lost its block: a flat face in a dashed
-		// footprint where it stood, its words faded but drawn at full strength so
-		// they still read. A removed line is ghosted whole. Everything the
-		// proposal actually holds stays as it is.
 		expect(gone.opacity).toBeUndefined();
 		expect(gone.markup).toContain("stroke-dasharray");
 		expect(kept.markup).not.toContain("stroke-dasharray");

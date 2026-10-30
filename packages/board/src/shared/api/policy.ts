@@ -1,4 +1,5 @@
-// The semantic policy, its evidence and palette, and the vault diagnostics that read it.
+// The semantic policy, its evidence, palette and levels, and the vault diagnostics that read it.
+export { drillDirection } from "#shared/rules/levels.ts";
 export {
 	DEFAULT_SEMANTIC_POLICY,
 	describeSubject,

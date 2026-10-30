@@ -7,6 +7,7 @@ import {
 	routeLabels,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 test("a flank label clears an unrelated corridor without bending away from its route", async () => {
 	// Reduced from the actual 25px label detour: the new parallel route's label
@@ -72,7 +73,11 @@ test("a flank label clears an unrelated corridor without bending away from its r
 			},
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const points = routePoints(drawing.svg).get("6zcjVgzh")!;
 	// How the added route is attached is chosen by the whole drawing's cost,
 	// not fixed to a flank for it; what a reader needs is the label on a
@@ -130,7 +135,11 @@ test("flank label allocation keeps an outer corridor clear of an adjacent card",
 			},
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const points = corridorPoints(drawing.svg).get("I1lGjMES")!;
 	// The route keeps its label on a straight run, with few bends and no card crossed.
 	expect(onStraightRun(points, drawing, "I1lGjMES")).toBe(true);
@@ -194,7 +203,11 @@ test("a skip keeps its label on its own run and clears every card", async () => 
 			},
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	// Route geometry follows the complete current dependency graph.
 	const points = corridorPoints(drawing.svg).get("6zcjVgzh")!;
 	expect(onStraightRun(points, drawing, "6zcjVgzh")).toBe(true);

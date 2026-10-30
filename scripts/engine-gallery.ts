@@ -101,7 +101,6 @@ for (const board of boards) {
 				{
 					...(view === undefined ? {} : { view }),
 					theme: "light",
-					fonts: "embedded",
 					layout: engine,
 				},
 				policy,

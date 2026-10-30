@@ -53,17 +53,6 @@ type LayoutEngineName = z.infer<typeof LayoutEngineSchema>;
 /** The engine a render uses when it names none. */
 const DEFAULT_LAYOUT_ENGINE: LayoutEngineName = "track";
 
-/**
- * Where a drawn document's faces come from.
- *
- * A pane is inside a page the server serves, so it links them and the browser
- * fetches each one once. A file somebody keeps has no server behind it, so it
- * carries them. Nothing else is offered: naming a face without delivering it is
- * how a picture ends up drawn in a font nobody measured.
- */
-const FontSourceSchema = z.enum(["linked", "embedded"]);
-type FontSource = z.infer<typeof FontSourceSchema>;
-
 /** A rectangle in the drawn document's own viewBox units. */
 const DiagramBoxSchema = z.object({
 	x: z.number(),
@@ -235,12 +224,46 @@ const PictureReceiptShape = {
 	marks: PictureMarksSchema.nullable(),
 };
 
+/**
+ * How a picture drew one subject, as the renderer core read it off the picture
+ * it drew: each fact as the subject's group in the document says it.
+ */
+const AppliedAppearanceSchema = z.object({
+	id: z.string(),
+	/** What its kind is called. */
+	typeName: z.string(),
+	/** The key of its kind in the vault's policy. */
+	typeKind: z.string(),
+	/** The icon's own markup, as the picture draws it; empty for a line. */
+	iconSvg: z.string(),
+	/** `card` or `container` for a part; empty for a line. */
+	depiction: z.string(),
+	typeColor: z.string(),
+	lineColor: z.string(),
+	dash: z.string(),
+	arrowhead: z.string(),
+});
+
+/**
+ * What a picture's key lists (TASK-383): one sample of each part kind and of
+ * each relationship kind the picture draws, in the order it draws them, so
+ * nothing in the key is absent from the picture.
+ */
+const PictureKeySchema = z.object({
+	kinds: z.array(AppliedAppearanceSchema).readonly(),
+	relationships: z.array(AppliedAppearanceSchema).readonly(),
+});
+
 /** A board that was drawn. */
 const DrawnBoardSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
 	width: z.number().positive(),
 	height: z.number().positive(),
 	atlas: DiagramAtlasSchema,
+	/** Each subject the picture draws with the appearance it was drawn with, in drawing order. */
+	appearances: z.array(AppliedAppearanceSchema).readonly(),
+	/** What the picture's key lists, or null when it draws no subject of a kind. */
+	key: PictureKeySchema.nullable(),
 	/** What the picture draws; `changes.standing` says how each of these stands, and no other. */
 	drawn: DrawnSubjectsSchema,
 });
@@ -277,6 +300,8 @@ function wasDrawn(reply: SemanticRenderReply): reply is DrawnBoard {
 }
 
 export {
+	AppliedAppearanceSchema,
+	PictureKeySchema,
 	OfferedViewSchema,
 	type OfferedView,
 	SubjectStandingSchema,
@@ -291,8 +316,6 @@ export {
 	DEFAULT_LAYOUT_ENGINE,
 	LayoutEngineSchema,
 	type LayoutEngineName,
-	FontSourceSchema,
-	type FontSource,
 	DiagramBoxSchema,
 	type DiagramBox,
 	DiagramAtlasSchema,

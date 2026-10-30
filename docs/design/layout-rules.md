@@ -9,6 +9,15 @@ below are the dated inventory's; file references describe the tree at that time.
 [Section 28](#28-every-variant-is-laid-out-fresh-2026-09-19-task-276) records the
 removal of predecessor geometry constraints under ADR 0032.
 
+The painter is no longer TypeScript. Since TASK-520.03 (2026-10-24) the renderer
+core in Rust paints the drawing that layout answers, bridges and all
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)),
+so where a rule below says it runs in the painter, it runs in
+`crates/archboard-scene/src/paint/`. Since TASK-520.04 (2026-10-25) the core also
+lays out every Track solve (section 54), so where a rule below says Track runs it in
+`shared/rules/blocks/` or `shared/rules/track/`, it runs in
+`crates/archboard-layout/src/blocks/` or `crates/archboard-layout/src/track/`.
+
 Traffic no longer has a place where it rests, so layout owes it nothing. Sections
 40 to 43 once held rules about where a still picture rested a traffic streak
 (`comet-rest.ts`). They were removed on 2026-10-04 with that code. A still picture
@@ -19,7 +28,7 @@ now shows the whole train of pulses at its phase
 
 | Stage                               | Decided by | Where                                                                                                       |
 | ----------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------- |
-| Text and card sizes                 | us         | `lib/measurement.ts` (Pretext)                                                                              |
+| Text and card sizes                 | us         | `archboard_scene::measure`, shaped by `crates/archboard-text`                                               |
 | Dependency ranks, cycle breaking    | us         | `lib/layout/rank.ts`                                                                                        |
 | Containment hierarchy, frame insets | us         | `lib/layout/compound-graph.ts` (`containNodes`, `nodeOf`)                                                   |
 | Attachment faces and port order     | **us**     | `compound-graph.ts` (`facesOf`, `sidesOf`, `containmentOf`, `previousSides`, `hasTopApproach`, `portOf`)    |
@@ -294,6 +303,8 @@ predecessor turns it off, since its cards are pinned where the reader last
 saw them. The general crossing invariant in `tests/crossing-rounding.test.ts`
 exposed a bridge defect on the way: a route whose end carried floating noise
 (575.0000000000001 against 575) was never a straight run and never bridged.
+The crossing tests of `crates/archboard-layout/src/routes/tests/` hold that
+invariant now.
 
 ## 8. A trunk for hubs (2026-09-15, TASK-239, not landed)
 
@@ -2592,7 +2603,8 @@ point, one from the right point, and a third from the bottom point.
 Two things put every answer on the bottom point. The track router gives the
 lines of one kind that leave one card face one shared port and one trunk
 (`channels.ts`), and every line of a flowchart is of one kind. Then
-`flowchart-ports.ts` moved that port to the middle of the side it crosses.
+`flowchart-ports.ts` (now `ports.rs` of `crates/archboard-flows`, section 53)
+moved that port to the middle of the side it crosses.
 Moving the line ends after the layout cannot fix this. An answer whose label
 Graphviz stood inside the diamond's width would run back under the diamond.
 
@@ -2616,7 +2628,7 @@ The layout now places the answers apart:
   and no jog closing moves it.
 - Once the drawing is laid out, the flowchart cuts the box back to the
   diamond. It draws a side line out of the point on that side: sideways,
-  then down where it was laid out (`fromSide`).
+  then down where it was laid out (`fromSide`, now `from_side`).
 
 With four or more answers, the middle ones share the bottom point and split
 below it. A line up out of a decision is not held.
@@ -2661,9 +2673,9 @@ The second round fixes them with four rules:
 - The flowchart lays the graph out twice. The first layout holds no answer
   to a point. Graphviz orders each decision's answers there so that the
   fewest lines cross, a loop's line back up included. The second layout
-  asks for the points in that order (`inFreeOrder` in `flowchart.ts`). If
-  that drawing crosses lines, a third layout asks in the board's order, and
-  the drawing that crosses fewer lines wins. Asked for its points, Graphviz
+  asks for the points in that order (`inFreeOrder` in `flowchart.ts`, now
+  `in_free_order`). If that drawing crosses lines, a third layout asks in
+  the board's order, and the drawing that crosses fewer lines wins. Asked for its points, Graphviz
   can still stand the steps against the first layout's order. A stop and A
   tab session ends crossed because the board's order put the step that loops
   back up on the far side.
@@ -2775,3 +2787,317 @@ Measured and not kept:
   workers starting at once. It needs a protocol that tells each candidate's
   weight and keeps the winner's solve. On a runner with few cores, the solves
   wait for each other. Not built.
+
+This change was made to the TypeScript renderer, while the renderer core of
+sections 52 to 60 was built beside it. When the two were joined, only the
+worker part carried over: a layout worker says `{ ready: true }` once it has
+instantiated the core, and the pool starts its next worker then. The stacking
+choice is the core's (`crates/archboard-layout/src/architecture/choosing.rs`,
+section 59). It asks for two partial solves and, when they do not answer at
+once, for the whole board laid each way, and calls off the way it does not
+choose. The pool does not stop a worker that holds a solve called off; that
+solve finishes, and the pool remembers its answer.
+
+## 52. The core's router routes the trunks of Blocks (2026-10-25, TASK-520.02)
+
+The renderer core routes the trunks of Blocks with its own orthogonal router
+(`crates/archboard-router`), in place of libavoid
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+The router is written from the published papers that its module cites. It
+searches a grid of the obstacles' buffer edges with A*, and charges each turn
+and each crossing of a route found before it. It then nudges the routes on
+one line apart one axis at a time with a separation solver. Routes from one
+shared pin run as one line until they part, and routes that share a line
+stand in the order in which they part. Where those orders contradict each
+other, the surest orders are kept and the rest are dropped, so no order
+closes a cycle. Where a channel is too narrow for its lanes, the routes are
+nudged again with each pin held only by the stub out of its buffer, and the
+answer that crowds fewer routes is kept. On Agent workbench a line whose
+segment into its pin, held at the pin, ran 424 px up a corridor left three
+other lines the room of one, and they stood 5.8 px apart. A trunk that the
+router cannot route still falls back to undirected ends and then to a dogleg
+(`trunks.ts`). The router never throws.
+
+All 5,295 trunk scenes that libavoid routed for the corpus were replayed
+through the router. Crossings fell from 260,419 to 195,096 (25% fewer), turns
+rose from 306,189 to 322,437 (5% more) and the routes are 3% shorter. No
+connector was left unrouted, and the replay took 6.5 s.
+
+| drawing, Blocks, one at a time | libavoid | the core's router |
+| ------------------------------ | -------- | ----------------- |
+| all 293 drawings               | 18.0 s   | 14.4 s            |
+| Workspace packages             | 3.0 s    | 0.56 s            |
+| One tab session                | 1.1 s    | 0.39 s            |
+
+One drawing takes longer: Agent workbench's Workhorse operations
+responsibilities, about 210 ms in place of 150 ms when the board's views are
+drawn in order. Alone, each of its seven solves is faster than with libavoid.
+
+On whole boards drawn with their groups, Blocks can choose another packing
+with the new routes, and some boards count more crossings than before
+(Agent workbench 399 to 565), others fewer (Board persistence 398 to 279).
+Over the 23 boards and fixtures, crossings rose from 4,200 to 4,352 (4%),
+the page area fell 17%, the route length 8%, and the ink of lines in a
+margin lane by more than half.
+The user compared every board in dark mode, side by side, and judged the
+router's pictures better on all of them. The scorecard weighs crossings
+before position, packing, grouping and order, which decide more of how a
+board reads, so it was not the judge.
+
+The legacy-routing fixture now stands its chain of cards in line with the
+line into the wide pool below it, not over the pool's middle. With libavoid
+the slid packing's straight line came back with two turns 5e-14 px apart,
+which tied it with the centred packing, and the centred packing won by
+order. The router returns the straight line. Both final pictures run straight
+into the pool.
+
+The Blocks cases of Browser application and Board viewer no longer need a
+test budget of their own: Board viewer, the slowest, takes about 5 s.
+
+## 53. The core lays out sequences and flowcharts (2026-10-25, TASK-520.06)
+
+The renderer core lays out every message sequence and every flowchart
+(`crates/archboard-flows`,
+[ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+The rules are the TypeScript rules they replace, ported in the same order of
+floating-point operations, so what each rule is for is what the sections above
+say. They now live here, in `crates/archboard-flows/src/`:
+
+| rule                                                         | was (`packages/renderer/src/shared/rules/`) | now                       |
+| ------------------------------------------------------------ | ------------------------------------------- | ------------------------- |
+| columns, cards, lifelines and the stack of flows             | `layout/sequence/dataflow.ts`               | `sequence/layout.rs`      |
+| a participant's card                                         | `layout/sequence/sequence-card.ts`          | `sequence/card.rs`        |
+| a message's words, its note and its pitch                    | `layout/sequence/step-rows.ts`              | `sequence/rows.rs`        |
+| every step down the page, and a frame's rows                 | `layout/sequence/step-placing.ts`           | `sequence/placing.rs`     |
+| activation bars                                              | `layout/sequence/activations.ts`            | `sequence/activations.rs` |
+| a message's ends, its label's plate and its row              | `layout/sequence/messages.ts`               | `sequence/messages.rs`    |
+| a decision's or loop's frame                                 | `layout/sequence/frames.ts`                 | `sequence/frames.rs`      |
+| the sizes                                                    | `layout/sequence/sequence-design.ts`        | `sequence/design.rs`      |
+| what the painter reads, and a picture without its comparison | `render/sequence-picture.ts`, `shownFlows`  | `sequence/mod.rs`         |
+| a flow read as a flowchart's graph                           | `flowchart/flowchart-graph.ts`              | `flowchart/graph.rs`      |
+| where a line meets a diamond, a hexagon or a terminal        | `flowchart/flowchart-ports.ts`              | `flowchart/ports.rs`      |
+| shape sizes, the answers' order, the diamonds                | `flowchart/flowchart.ts`                    | `flowchart/mod.rs`        |
+
+Two route helpers that Track and Blocks still use in TypeScript are copied
+into `routes.rs`: `reversed` (`layout/routes/curves.ts`) and `pairCrossings`
+(`blocks/tree/joins.ts`). The other curve helpers are the painter's
+(`archboard_scene::geometry`).
+
+The host still gives the core what it does not hold. Text widths and line
+breaks are the core's own since TASK-520.07: the layout crates ask
+`archboard_scene::measure`, which shapes with the bundled font files. A flowchart's graph is laid out by the track
+engine (TASK-520.04): the core awaits it through `FlowchartHost::track` up to
+three times, as the TypeScript did. A sequence is laid out and painted in one
+synchronous call (`drawSequence`), and a flowchart in one asynchronous call
+(`drawFlowchart`), so neither drawing crosses back to TypeScript before it is
+painted.
+
+Every sequence and flowchart view of every variant of the dogfood vault and
+of the vaults under `examples/` was drawn with the TypeScript layout and with
+the core, under both engines and both themes, with and without the comparison:
+13,364 sequence drawings and 8,852 flowchart drawings, every one the same
+bytes. The whole corpus, architecture views included, is 35,560 pictures, and
+none of them changed.
+
+The current variants were timed with one job, four runs before and four
+after, each drawing at its fastest run. Sequences take 8,795 ms in place of
+9,229 ms. Flowcharts take 20,933 ms in place of 20,338 ms, about 0.85 ms more
+for each of the 696 drawings. Architecture views, which this change does not
+touch, take 12,101 ms in place of 12,062 ms. The flowchart's extra time is the
+crossing to the track engine. For each of its two or three layouts, the core
+writes the graph as JSON and reads the drawing back as JSON, where the
+TypeScript layout handed the engine its own objects. That crossing ends when
+the core holds the track engine (TASK-520.04).
+
+## 54. The core lays out Track (2026-10-25, TASK-520.04)
+
+The renderer core answers every Track solve. The crate
+`crates/archboard-layout` holds the solve: the block tree, each block of
+cards ranked by Graphviz and routed on tracks, wraps, folds, stacking, port
+settling, the sides each line crosses and the assembly
+([ADR 0059](../adr/0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)).
+Its interface is one function, `lay_out_track`, which takes the measured graph
+as the JSON of an ELK node and answers the root of the drawing. Graphviz stays
+a capability of the host: the crate asks for each graph through the trait
+`Graphviz`, and the wasm binding (`layOutTrack`) satisfies it with the
+host's viz-js. The Blocks solve stays in TypeScript until TASK-520.05.
+
+The port keeps the TypeScript stage's arithmetic: floating point in the same
+order, maps read in the order they were filled, stable sorts and numbers
+spelt as ECMAScript spells them. Every Track solve of the corpus was
+recorded with its Graphviz calls and replayed through the crate. Each one
+gave Graphviz the same graphs byte for byte and answered the same drawing.
+After the switch, none of the 35,560 corpus drawings of both engines, both
+themes and both comparison modes differed from the drawings before it.
+
+Track renders faster. The 293 current Track views, drawn one at a time, took
+12.3 s before and 8.1 s after in each of three runs. No view was more than
+1 ms slower in every run.
+
+The TypeScript branches that only an inline board took are gone. These
+include ports that slide along a block's edge, the entry row, inline frames
+that grow round resized children and the settling of ports in a block of
+cards drawn inline. Also gone are a wrap held to its columns, the cost of a
+lap round the page and the scene flags that chose these rules. What Blocks
+still runs stays in `shared/rules/blocks/` and `shared/rules/track/`, and
+the crate holds a copy of it until TASK-520.05 ports Blocks.
+
+## 55. The core lays out Blocks (2026-10-25, TASK-520.05)
+
+The renderer core answers every solve of an architecture, Track and Blocks.
+The crate `crates/archboard-layout` lays a board out one way in one
+function, `lay_out_board`, for every nesting the solve's root options name:
+packed as blocks, inline, or inline with its groups packed. The Blocks
+branches joined the Track ones: containers as blocks, the cluster of loose
+cards in a block of blocks, the packing of a block of blocks and the trunks
+between its blocks, port settling with packings, held port orders, blocks
+that face their walls, and a container widened round its caption. The
+trunks are routed by `crates/archboard-router` inside the core, so the
+`routeTrunks` binding and its flat number array are gone. Graphviz stays a
+capability of the host behind the trait `Graphviz`.
+
+The choices between the solves of one board stay where the renderer runs,
+because they ask for solves side by side across the worker pool and each
+solve starts from Graphviz as loaded (`solves.ts`, `joins-laid.ts`). What
+they weigh moved into the core. A solve that a choice may weigh tells its
+drawing's reading with the drawing, and the core weighs two readings
+(`draws_better`, `reads_better_packed`, `stacks_of`) and names the blocks a
+joins choice turns (`joining_of`, `has_regions`). The renderer never reads a
+reading. A solve tells one only when it is asked (`archboard.blocks.read`),
+because reading a drawing costs about as much as routing a small one. A
+solve no longer names a stage: its root options name its nesting.
+
+The port was held to the TypeScript stage as Track was (section 54). The
+2,394 Blocks solves of the corpus were recorded with their Graphviz calls
+and replayed through the crate. Each gave Graphviz the same graphs byte for
+byte and answered the same drawing. The one difference was a title box's
+list of header sizes, which the TypeScript drawing carried and nothing read.
+After the switch, none of the 36,032 corpus drawings of both engines, both
+themes and both comparison modes differed from the drawings before it.
+
+Blocks renders faster. The 293 current Blocks views, drawn one at a time
+in three runs before and after, took 9.1 to 9.2 s before and 7.9 to 8.1 s
+after; 60 views were faster in every run and one view of 6 ms was 1 ms
+slower. Track took as long as before, 8.1 to 8.2 s; 10 views were faster
+and 9 slower in every run, by 1 to 2 ms, on a machine shared with other
+work.
+
+Every TypeScript rule of `shared/rules/blocks/` and `shared/rules/track/`
+is gone, about 18,000 lines. `blocks/tree/` keeps the block engine, the
+solves and the joins choice. The unit tests of the removed rules moved
+with them into the crate.
+
+## 56. The renderer package is a thin host of the core (2026-10-25, TASK-520.08)
+
+The core draws a picture in one call. The crate `crates/archboard-render`
+takes the reading to draw, the vault's policy and the render's choices, and
+answers the document, its atlas, each subject's appearance and the picture's
+key. It keeps the scene for a frontend that paints it itself. The host gives
+it the durations and theme colours in the request, and runs the layout's
+solves and gives icon paths through a port (ADR 0059). The choices between
+the solves of a board moved into the core as async Rust over the `Solver`
+port, and the crossing pass moved with them.
+
+The host still runs the solves side by side on its worker pool. When the
+core no longer needs a solve, it calls the solve off without dropping it. A
+solve that waits for a worker is refused and laid out afresh if a later
+turn needs it. A solve that a worker already lays out answers, and a later
+turn shares that answer, as TASK-464 chose. The cases of
+`join-candidates.test.ts` hold this through the host.
+
+A cargo test draws a corpus board natively to the bytes the WebAssembly
+build wrote (`crates/archboard-render/tests/native.rs`). Graphviz is a C
+library that the host runs, so the test replays the Graphviz answers that the
+WebAssembly build recorded for each solve, and checks that every solve asks
+Graphviz for the same graphs.
+
+None of the 36,360 corpus drawings differed from the drawings before the
+change. None of the 17,640 exports differed, across both engines, every
+view, with and without comparison, with each legend and without a title, and
+none of their whole replies differed. The appearances and key in each reply
+equal what the old TypeScript scan read from its document. The 2,344 current
+views, drawn one at a time in two runs that alternated the two builds, took
+as long as before: Blocks 12.5 s against 12.1 s and 11.8 s against 12.0 s,
+Track 13.4 s against 12.9 s and 12.6 s against 12.8 s, on a machine shared
+with other work.
+
+About 5,900 lines of TypeScript left `packages/renderer/src`: the diagram
+helpers, the flows, painting, measurement, the drawing and shown drawing,
+step lines, appearances, the picture key scan, the engines, the solves, the
+joins choice, the compound graph, page fit, the routes and the spacing. The
+tests of the removed rules moved into the crates.
+
+## 57. A frame that closes a cycle turns its line, and side-by-side containers share their gutter (2026-10-25, TASK-520)
+
+Two faults of Track came to light when TASK-520.08 adopted new content on
+the boards Renderer layout and Semantic renderer. The same content drew
+clean before that adoption, and the TypeScript engine had both faults too.
+
+A cycle can close through a container's link to one of its own members,
+such as a line out of a frame's title that comes back into the frame. That
+link carries no relationship, so the cycle check reversed nothing, and
+Graphviz broke the cycle its own way. On Renderer layout it put a label one
+row above the frame, outside the rows its line spans, so the label stayed
+off its line. The cycle check now remembers the relationship that led into
+each item on its path. When a containment link closes a cycle, the check
+reverses the last relationship on that cycle (`blocks/cycles.rs`).
+
+Each container wall keeps lines a clearance away on its outer side
+(`track/occupancy.rs`). Two containers 40 units apart each kept 24 units,
+so their zones closed the whole gap, and straightening left a line where
+Graphviz had put it, 4.4 units off a wall. A wall's outer clearance now ends
+at the middle of the gap it shares with a facing wall of another container,
+when that middle is at least one lane (16 units) from both walls. A minimum
+of half a lane squeezed a line 10 units from two region walls on Command
+interface, so the minimum is one lane.
+
+Eight of the 2,344 current drawings changed: two views, each in both themes
+and with and without comparison. Renderer layout's Responsibilities lost
+its label off a route and its one crossing, and its routes got shorter
+(6,196 to 5,512), but its page grew from 3.14 to 4.24 megapixels. Archboard's
+Workspace packages improved on every measure: crossings 46 to 42, route
+length 83,854 to 65,397, page area 12.37 to 9.91 megapixels.
+`wide-boards.test.ts` holds both boards whole, and a Rust test in each file
+holds each rule.
+
+## 58. The core runs Graphviz itself (2026-10-26, TASK-548.01)
+
+The core lays out every graph a solve ranks with graphviz-pure 0.2.1, a
+pure-Rust port of Graphviz 16.1.0, vendored under `crates/vendor` with its
+`qsort` changed to sort ties as musl's does
+([ADR 0060](../adr/0060-the-core-lays-graphs-out-with-a-vendored-graphviz-pure.md)).
+`crates/archboard-graphviz` replays the cgraph calls viz-js made of the
+layout's graph object and answers `dot`'s `json0`, y inverted. Before, the
+host's viz-js answered through `GraphvizHost`.
+
+None of the 2,344 current drawings changed. Natively, all 222 graphs captured
+from the corpus get viz-js's geometry; with upstream's Apple `qsort`, 98 did
+not. Drawn on one job, the corpus took 22.4 s in place of 24.4 s. On the same
+machine, alternating with the commit before, two runs of `timing.ts 7` took
+10,729 ms and 10,649 ms of first renders in all, against 10,273 ms and
+10,062 ms, and the slowest first render, Agent workbench, took 1,703 ms and
+1,674 ms against 1,754 ms and 1,702 ms.
+
+## 59. The critical path of a first render (2026-10-26, TASK-548.04)
+
+The slowest first renders waited for two solves of the stacking choice in a
+row: a partial solve, then the whole solve that it chose. The whole solve
+laid each way is now asked beside the partial solves, and the one not chosen
+is called off. Track's router also got 24.5% cheaper in the core.
+[first-render-critical-path.md](first-render-critical-path.md) records the
+measurements, the tools that measure a critical path, the critical paths against the
+500 ms target and what still stands between the boards and it. No drawing
+changed.
+
+## 60. graphviz-pure lays our graphs out faster, to the same bytes (2026-10-26, TASK-548.03)
+
+The vendored graphviz-pure gives every graph the same answer, byte for byte,
+in about a third less time. On the 1,072 Graphviz calls of the first renders
+that `timing.ts 7` measures, WebAssembly in Bun took 7.2 s against 11.0 s.
+Two alternated runs of `timing.ts 7` took 8,559 ms and 8,645 ms of first
+renders in all, against 10,556 ms and 10,601 ms. Agent workbench took
+1,359 ms and 1,398 ms against 1,669 ms and 1,680 ms. None of the 2,344
+current drawings changed.
+[graphviz-pure-speed.md](graphviz-pure-speed.md) records the oracle, the
+profile before and after, the gain of each change, and Graphviz's share of
+the slowest boards' critical paths against the target of 500 ms.

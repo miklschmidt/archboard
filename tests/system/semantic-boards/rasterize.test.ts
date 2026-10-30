@@ -126,11 +126,10 @@ describe("semantic rasterize", () => {
 				theme: "dark",
 				file: out,
 				scale: 1,
-				source: { renderer: "semantic-renderer", fonts: "embedded", motion: "paused-at-start" },
+				source: { renderer: "semantic-renderer", motion: "paused-at-start" },
 			});
 			expect(receipt.variant.lifecycle).toBe("current");
 			expect(receipt.source.svgSha256).toMatch(/^[0-9a-f]{64}$/u);
-			expect(receipt.source.facesLoaded).toBeGreaterThan(0);
 			// Native scale: the bitmap is the diagram's own page, pixel for pixel.
 			expect(pngSize(fs.readFileSync(out))).toEqual({
 				width: receipt.width,
@@ -399,7 +398,7 @@ describe("semantic rasterize", () => {
 			);
 			const framed = cli(["semantic", "render", "transfers", "--title", "--legend", "vertical"]);
 			expect(framed.status, framed.stderr).toBe(0);
-			const words = /data-slot="export-title"><text [^>]*>([^<]*)</u.exec(framed.stdout)?.[1];
+			const words = /"export-title">[^]*?<text [^>]*>([^<]*)</u.exec(framed.stdout)?.[1];
 			expect(words).toContain("transfers");
 			expect(words).toContain(plain.variant.name);
 			expect(framed.stdout).toContain('data-slot="export-legend" data-layout="vertical"');

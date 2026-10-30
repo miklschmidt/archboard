@@ -59,7 +59,7 @@ const BOARD = SemanticBoardSchema.parse({
 async function emptyCode(variant: string, view?: string): Promise<string | undefined> {
 	const outcome = await renderBoard(
 		BOARD,
-		{ theme: "light", fonts: "linked", variant, view },
+		{ theme: "light", variant, view },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!outcome.ok) throw new Error(outcome.error);

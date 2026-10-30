@@ -1,5 +1,6 @@
 import { test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
@@ -19,7 +20,12 @@ for (const fixture of fixtures) {
 	for (const layout of LayoutEngineSchema.options) {
 		test(`${fixture.name} (${layout}): complete parts and clear drawing`, async () => {
 			const content = orderedFixture(fixture.content);
-			const drawing = await renderArchitecture({ content, theme: "light", layout });
+			const drawing = await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				theme: "light",
+				layout,
+			});
 			expectDrawingIntact(drawing, content, layout);
 		});
 	}

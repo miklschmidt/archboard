@@ -33,8 +33,13 @@ jobs:
           cache: true
           run-install: false
 
+      # The flake's dev shell holds the Rust tools that build the renderer
+      # core (ADR 0059), so install and the gate run inside it.
+      - name: Setup Nix
+        uses: cachix/install-nix-action@v31
+
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: nix develop --command bun install --frozen-lockfile
 
       - name: Restore validation task cache
         id: task-cache
@@ -63,7 +68,7 @@ jobs:
         shell: bash
         env:
           CI: "true"
-        run: bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"
+        run: nix develop --command bash -o pipefail -c 'bun run check 2>&1 | tee "$RUNNER_TEMP/archboard-check.log"'
 
       - name: Retain validation evidence
         if: always() && (steps.validation.outcome == 'success' || steps.validation.outcome == 'failure' || steps.validation.outcome == 'cancelled')
@@ -83,7 +88,7 @@ jobs:
   macos-processes:
     name: macOS native process ownership
     runs-on: macos-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -96,8 +101,11 @@ jobs:
           cache: true
           run-install: false
 
+      - name: Setup Nix
+        uses: cachix/install-nix-action@v31
+
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: nix develop --command bun install --frozen-lockfile
 
       - name: Restore validation task cache
         id: task-cache
@@ -109,7 +117,7 @@ jobs:
             vite-task-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Verify native ownership, storage, and board paths
-        run: bunx vp run test:macos
+        run: nix develop --command bunx vp run test:macos
 
       - name: Save validation task cache
         if: success()

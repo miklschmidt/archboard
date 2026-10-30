@@ -129,3 +129,16 @@ source changes now require an explicit server restart.
 ADR 0021 removed the reload implementation, its analyzer, and its supporting
 measurements. This ADR continues to govern running backend TypeScript source
 directly and building only the frontend.
+
+## Amendment of 2026-10-24: the renderer core is built
+
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md)
+makes the renderer a Rust crate, compiled to WebAssembly. So the browser bundle
+is no longer the only build: `bun run build:core` builds the core (TASK-520.01).
+The CLI and the server still run their TypeScript from source.
+
+The core build records the hash of the sources it was made from. A Bun process
+compares that hash with the sources in its checkout. If they differ, it refuses
+to draw and names `bun run build:core`. So a stale core has a symptom, which is
+what this decision asks of every copy. The frontend build always builds the
+core first, so a browser bundle holds the core of its sources.

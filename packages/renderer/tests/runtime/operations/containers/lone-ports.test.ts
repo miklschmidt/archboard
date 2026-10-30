@@ -10,8 +10,7 @@
 
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { SemanticPolicySchema } from "@archboard/board/policy";
-import { LABEL_ROUTE_CLEARANCE } from "#shared/constants/spacing.ts";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	cornersOf,
@@ -24,6 +23,9 @@ import {
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import archboard from "#tests/runtime/support/fixtures/archboard.json";
 import readingABoard from "#tests/runtime/support/fixtures/reading-a-board.json";
+
+/** The room a line's words keep from an unrelated line: archboard_layout::routes::LABEL_ROUTE_CLEARANCE. */
+const LABEL_ROUTE_CLEARANCE = 12;
 
 /** The vocabulary of the fixture, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -148,7 +150,12 @@ function runsOf(points: readonly DrawnPoint[]) {
 // Blocks still runs two of this board's lines a part-lane apart.
 test("no line runs a part-lane beside another", async () => {
 	const content = orderedFixture(readingABoard);
-	const drawn = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const drawn = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const lines = [...routePoints(drawn.svg)].map(
 		([id, points]) => [id, runsOf(cornersOf(points))] as const,
 	);

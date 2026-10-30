@@ -42,50 +42,48 @@ function bodyShift(svg: string): DrawnPoint {
 }
 
 /**
- * Every coordinate pair a path command list names, in order.
+ * A rendered path's points, including curve controls and relative message ends.
  * @param d The `d` attribute.
  * @returns The points it passes through, including its control points.
  */
 function pointsOf(d: string): DrawnPoint[] {
-	return [...d.matchAll(/(-?[\d.]+),(-?[\d.]+)/g)].map((pair) => ({
-		x: Number(pair[1] ?? 0),
-		y: Number(pair[2] ?? 0),
-	}));
+	const points: DrawnPoint[] = [];
+	for (const [, command, values] of d.matchAll(/([MLCQHVAhvaZz])([^MLCQHVAhvaZz]*)/gu)) {
+		const numbers = (values!.match(/-?[\d.]+/gu) ?? []).map(Number);
+		const last = points.at(-1) ?? { x: 0, y: 0 };
+		if (command === "H" || command === "h") {
+			points.push({ x: numbers[0]! + (command === "h" ? last.x : 0), y: last.y });
+		} else if (command === "V" || command === "v") {
+			points.push({ x: last.x, y: numbers[0]! + (command === "v" ? last.y : 0) });
+		} else if (command === "A" || command === "a") {
+			// Arc radii and flags are not positions on the route.
+			points.push({
+				x: numbers.at(-2)! + (command === "a" ? last.x : 0),
+				y: numbers.at(-1)! + (command === "a" ? last.y : 0),
+			});
+		} else {
+			for (let index = 0; index < numbers.length; index += 2)
+				points.push({ x: numbers[index]!, y: numbers[index + 1]! });
+		}
+	}
+	return points;
 }
 
 /**
  * Where each drawn route ends, on the page.
  *
- * The last coordinate of a route's own path is where its arrowhead is placed,
- * which is the thing a reader sees touching whatever the route arrives at. The
- * halo path that precedes it in the group carries the same shape, so the first
- * path of the group is the one read.
- *
- * Only routes written as absolute coordinate pairs can be read this way, which
- * is every architecture edge and every straight sequence message. A self-message
- * loop is written in relative commands with no final pair, so it is not one of
- * these and asking for it gives a number that means nothing.
+ * The last point of a route's own path is where its arrowhead stands.
  * @param svg The rendered document.
  * @param kind Which sort of subject to read: `edge` in the architecture grammar, `step` in the sequence one.
  * @returns Each route's arrival point, by the id of the subject that drew it.
  */
-function routeEnds(svg: string, kind: string = "edge"): Map<string, DrawnPoint> {
-	const shift = bodyShift(svg);
-	const ends = new Map<string, DrawnPoint>();
-	for (const group of svg.matchAll(
-		new RegExp(
-			`<g data-semantic-kind="${kind}" data-semantic-id="([^"]+)"[^>]*>([\\s\\S]*?)</g>`,
-			"g",
-		),
-	)) {
-		const id = group[1] ?? "";
-		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
-		const last = pointsOf(drawn[drawn.length - 1]?.[1] ?? "").at(-1);
-		if (last !== undefined) {
-			ends.set(id, { x: last.x + shift.x, y: last.y + shift.y });
-		}
-	}
-	return ends;
+function routeEnds(svg: string, kind: "edge" | "step" = "edge"): Map<string, DrawnPoint> {
+	return new Map(
+		[...routePoints(svg, kind)].flatMap(([id, points]) => {
+			const last = points.at(-1);
+			return last === undefined ? [] : [[id, last] as const];
+		}),
+	);
 }
 
 /**
@@ -96,24 +94,30 @@ function routeEnds(svg: string, kind: string = "edge"): Map<string, DrawnPoint> 
  * faithful stand-in for the ink when the question is "does this line go through
  * that box".
  * @param svg The rendered document.
- * @returns Each edge's points, by edge id.
+ * @param kind The semantic subject that carries each route.
+ * @returns Each route's points, by subject id.
  */
-function routePoints(svg: string): Map<string, DrawnPoint[]> {
+function routePoints(svg: string, kind: "edge" | "step" = "edge"): Map<string, DrawnPoint[]> {
 	const shift = bodyShift(svg);
 	const paths = new Map<string, DrawnPoint[]>();
 	for (const group of svg.matchAll(
-		/<g data-semantic-kind="edge" data-semantic-id="([^"]+)"[^>]*>([\s\S]*?)<\/g>/g,
+		new RegExp(
+			`<g data-semantic-kind="${kind}" data-semantic-id="([^"]+)"[^>]*>([\\s\\S]*?)</g>`,
+			"g",
+		),
 	)) {
 		const drawn = [...(group[2] ?? "").matchAll(/<path[^>]*\sd="([^"]*)"[^>]*marker-end=/g)];
-		// A relationship is drawn as more than one group — its route, and the words
-		// it says on the layer above every route. Only the arrow-bearing path is
-		// a route; warning glyphs in the words group must not replace it.
-		if (drawn.length === 0) {
-			continue;
-		}
+		// Labels repeat the subject's ID. The arrow or the line group's explicit
+		// headless treatment identifies its route, rather than a warning glyph.
+		const path =
+			drawn.at(-1)?.[1] ??
+			(/^<g[^>]*data-arrowhead="none"/u.test(group[0])
+				? /<path(?![^>]*class=)[^>]*\sd="([^"]*)"/u.exec(group[2] ?? "")?.[1]
+				: undefined);
+		if (path === undefined) continue;
 		paths.set(
 			group[1] ?? "",
-			pointsOf(drawn[drawn.length - 1]?.[1] ?? "").map((point) => ({
+			pointsOf(path).map((point) => ({
 				x: point.x + shift.x,
 				y: point.y + shift.y,
 			})),
@@ -178,15 +182,18 @@ function roundBridges(path: string) {
  * Read routing corridors without circular crossing hops.
  * This is only for corridor comparisons: clearance checks use the actual ink.
  * @param svg The rendered document.
+ * @param kind The semantic subject that carries each route.
  * @returns Each route's points before its crossing decorations.
  */
-function corridorPoints(svg: string): Map<string, DrawnPoint[]> {
+function corridorPoints(svg: string, kind: "edge" | "step" = "edge"): Map<string, DrawnPoint[]> {
 	const corridors = svg.replace(/ d="([^"]+)"/gu, (attribute, path: string) => {
 		let corridor = path;
 		for (const bridge of roundBridges(path)) corridor = corridor.replaceAll(bridge.span, "");
 		return attribute.replace(path, corridor);
 	});
-	return new Map([...routePoints(corridors)].map(([id, points]) => [id, withoutSeams(points)]));
+	return new Map(
+		[...routePoints(corridors, kind)].map(([id, points]) => [id, withoutSeams(points)]),
+	);
 }
 
 /**

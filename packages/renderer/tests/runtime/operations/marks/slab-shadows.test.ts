@@ -7,10 +7,11 @@
 
 import { expect, test } from "bun:test";
 
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { lightnessOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
 const BOARD = orderedFixture({
@@ -122,7 +123,12 @@ function expectShadowsUnderCards(svg: string, cards: readonly string[]): void {
 test.each(["track", "blocks"] as const)(
 	"every card's shadow lies under every card on a board (%s)",
 	async (layout) => {
-		const drawing = await renderArchitecture({ content: BOARD, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: BOARD,
+			theme: "light",
+			layout,
+		});
 		expectShadowsUnderCards(drawing.svg, ["route", "guard", "db"]);
 		// A container's header slab casts a card's shadow, drawn in its frame: the
 		// frame lies under every card too.
@@ -136,8 +142,12 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
-test("every participant's shadow lies under every participant of a sequence", () => {
-	const drawing = renderDataFlow({ content: EXCHANGE });
+test("every participant's shadow lies under every participant of a sequence", async () => {
+	const drawing = await renderSemanticView({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: EXCHANGE,
+		grammar: "sequence",
+	});
 	expectShadowsUnderCards(drawing.svg, ["web", "app", "db"]);
 });
 
@@ -236,7 +246,11 @@ test.each(["light", "dark"] as const)(
 			nodes: [{ id: "card", name: "Orders DB", kind: "database" }],
 			edges: [],
 		});
-		const drawing = await renderArchitecture({ content: lone, theme });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: lone,
+			theme,
+		});
 		const svg = paintedIn(drawing.svg, theme);
 		const card = /<g data-semantic-kind="node" data-semantic-id="card"[\s\S]*?<\/g>/u.exec(svg)![0];
 		const seat = /<rect [^>]*pointer-events="all"[^>]*>/u.exec(card)![0];
@@ -281,6 +295,7 @@ test.each(["light", "dark"] as const)(
 	"a shadow fades continuously from under the card to zero at 10x (%s)",
 	async (theme: DiagramTheme) => {
 		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
 			content: orderedFixture({
 				nodes: [{ id: "card", name: "Orders DB", kind: "database" }],
 				edges: [],

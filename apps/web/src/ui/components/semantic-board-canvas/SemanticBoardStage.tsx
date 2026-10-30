@@ -357,7 +357,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		reducedMotion,
 		onPick,
 	});
-	const appearances = useStageAppearances(drawn, departure.leaving);
+	const { appearances, key } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	const { goTo } = narrative;
 	const onReadBeat = useCallback(
@@ -405,7 +405,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			cut={dive.cut}
 			leaving={departure.leaving}
 			sidebar={sidebar}
-			appearances={appearances}
+			pictureKey={key}
 			look={look}
 			tab={tab}
 			onTab={onTab}

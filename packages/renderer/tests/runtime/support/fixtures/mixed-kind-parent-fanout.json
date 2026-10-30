@@ -1,0 +1,97 @@
+{
+	"nodes": [
+		{
+			"id": "5sWG4uuq",
+			"order": 4000,
+			"name": "Coordinator tools",
+			"kind": "module",
+			"responsibility": "Runs the tool calls the coordinator makes, once each, against a replay ledger; each workhorse tool names the checkout whose workhorse it works with, and a spoken stop names none",
+			"parent": "CjiN3z5a"
+		},
+		{
+			"id": "qZsXIuQG",
+			"order": 9000,
+			"name": "Semantic context",
+			"kind": "module",
+			"responsibility": "What changed on the boards of the tab's panes, and what a pane shows or picked out: the events Archboard announces to the coordinator and the voice",
+			"parent": "hshxlvQL"
+		},
+		{
+			"id": "VNzfidEL",
+			"order": 19000,
+			"name": "Tab sessions",
+			"kind": "module",
+			"responsibility": "Sends each tool call and notification to the tab session whose thread it names: that session's coordinator tools and callbacks, and its workhorses"
+		},
+		{
+			"id": "RhINImP0",
+			"order": 22000,
+			"name": "Coordinator turn homes",
+			"kind": "module",
+			"responsibility": "Remembers, for each coordinator turn, the conversation shown when it started and the checkouts it gave work to, so the page shows the turn in the right conversation",
+			"parent": "CjiN3z5a"
+		},
+		{
+			"id": "CjiN3z5a",
+			"order": 25000,
+			"name": "Tools and work",
+			"kind": "module",
+			"responsibility": "What the coordinator may ask for: the frozen tool contract, the tool calls it runs once each, a spoken approval, and where each turn that gave work is shown"
+		},
+		{
+			"id": "hshxlvQL",
+			"order": 26000,
+			"name": "Coordinator news",
+			"kind": "module",
+			"responsibility": "What the coordinator and the voice model are told while voice is live: workhorse news and announced context changes, in order, the outcome report, and the Archboard context they come from"
+		},
+		{
+			"id": "ZilfteOF",
+			"order": 30000,
+			"name": "Board catalogue",
+			"kind": "module",
+			"responsibility": "Archboard's context for the coordinator: the catalogue of the boards and variants in the vault of the pane the session presents through, read whole",
+			"parent": "hshxlvQL"
+		},
+		{
+			"id": "BC9wK59M",
+			"order": 31000,
+			"name": "Archboard announcements",
+			"kind": "module",
+			"responsibility": "Archboard's board changes, focus and selection, worded for the coordinator and the voice and announced through the voice agent",
+			"parent": "hshxlvQL"
+		},
+		{
+			"id": "ccaUoxFa",
+			"order": 32000,
+			"name": "Context announcements",
+			"kind": "module",
+			"responsibility": "Tells a tab session's coordinator and live voice a context change the host announces, each through the tab's one callback queue, and only while voice is live",
+			"parent": "hshxlvQL"
+		}
+	],
+	"edges": [
+		{
+			"id": "NfthRpE6",
+			"order": 7000,
+			"from": "VNzfidEL",
+			"to": "5sWG4uuq",
+			"kind": "event",
+			"label": "a tool call from the coordinator",
+			"emphasis": "hero",
+			"traffic": {
+				"speed": 40,
+				"volume": 0.5
+			}
+		},
+		{
+			"id": "etaTfLee",
+			"order": 41000,
+			"from": "VNzfidEL",
+			"to": "RhINImP0",
+			"kind": "call",
+			"label": "note a turn's start and the work its operations give",
+			"emphasis": "normal"
+		}
+	]
+}

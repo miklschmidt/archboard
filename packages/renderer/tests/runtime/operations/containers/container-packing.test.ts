@@ -1,11 +1,14 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { CONTAINER_INSET } from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { measureArchitecture } from "#runtime/operations/measure.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
+import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+
+/** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
+const CONTAINER_INSET = 20;
 
 // Track still pads a container whose cards fan out below it wider than its
 // insets, so that case holds on Blocks alone.
@@ -40,7 +43,12 @@ test.each([
 				kind: "call",
 			})),
 		});
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
+		const drawing = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			layout,
+		});
 		expect(drawing.readingDirection).toBe("down");
 		const frame = drawing.atlas.nodes["pool"]!;
 		const cards = content.nodes
@@ -57,8 +65,10 @@ test.each([
 		expect(right).toBe(left);
 		expect(bottom).toBe(left);
 		// The cards stand as far under the header as in from the sides.
-		const header = measureArchitecture(content).nodes.get("pool")!.headerHeight;
-		expect(Math.min(...cards.map(({ y }) => y)) - frame.y).toBe(header + CONTAINER_INSET);
+		expect(Math.min(...cards.map(({ y }) => y))).toBeCloseTo(
+			headerFoot(drawing.svg, "pool") + CONTAINER_INSET,
+			1,
+		);
 	},
 );
 
@@ -92,7 +102,11 @@ test("external dependencies follow their contained sources beneath the frame", a
 			},
 		],
 	});
-	const drawing = await renderArchitecture({ content, theme: "light" });
+	const drawing = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+	});
 	const frame = drawing.atlas.nodes["pool"]!;
 	const childIds = new Set(
 		content.nodes.filter(({ parent }) => parent === "pool").map(({ id }) => id),

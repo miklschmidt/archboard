@@ -3,9 +3,11 @@
 What each check proves, and the constraints on running them. Read this when
 changing tests or CI, or when a browser check fails.
 
-`bun run test` type-checks and builds both browser applications, then runs four normal
+`bun run test` type-checks and builds both browser applications, then runs five normal
 native lanes in this order:
 
+- `test:core`: the Rust tests of every crate under `crates/`, run natively with
+  `cargo test --locked --workspace` inside `nix develop`;
 - `test:modules`: isolated package-owned and app-owned product tests discovered under
   `packages/` and `apps/`, excluding the capacity and benchmark inventories;
 - `test:system`: system product owners under the five explicit non-browser
@@ -18,8 +20,11 @@ native lanes in this order:
   (`tests/system/repository-policy/skill-frontmatter.test.ts`),
   the README asset manifest and staleness owner
   (`tests/system/repository-policy/readme-assets.test.ts`), which starts no browser,
-  and the owner that holds the README banner's mark to the shell's
-  (`tests/system/repository-policy/readme-lockup.test.ts`);
+  the owner that holds the README banner's mark to the shell's
+  (`tests/system/repository-policy/readme-lockup.test.ts`),
+  and the owner of the crates' shape rules that no lint sees: every crate
+  inherits the workspace lints, and no `.rs` file is over 600 lines
+  (`tests/system/repository-policy/rust-crates.test.ts`);
 - `test:serial-browser`: every owner in the executable `BROWSER_TEST_PATHS`
   inventory through the strict adapter.
 
@@ -32,12 +37,17 @@ The normal gate also renders three fixed fixtures on both engines in
 `packages/renderer/tests/runtime/operations/blocks/drawing-integrity.test.ts`.
 They cover labeled dependencies, dense cross-links, and nested containers.
 Shared assertions detect missing parts, routes through cards, misplaced labels,
-and line clearance defects. These six cases read no vault and enforce no speed limit.
+hidden parent frames, and line clearance defects.
+A parent frame must paint above each enclosing container, so its lines meet a visible boundary.
+These six cases read no vault and enforce no speed limit.
 Focused renderer tests and process cancellation deadlines also remain in the normal gate.
 Neither `bun run test` nor `bun run check` invokes the benchmark task.
 
 `bun run check` is the complete normal gate locally and on GitHub Actions.
 It runs lint, formatting, both TypeScript projects, and the normal test chain.
+`lint:all` includes `lint:core`, clippy over the crates and their tests, and
+`lint:core-docs`, rustdoc over every doc comment of the crates, and
+`format:core` checks their formatting with `cargo fmt`.
 `lint:all` includes `lint:css`, which applies the shared import boundaries to authored CSS.
 The CSS fixtures and package graph own the refusal and dependency regressions.
 The hosted run includes opener persistence and the entire serial browser inventory.
@@ -65,6 +75,8 @@ The browser version joins the test cache key, so a Chrome update invalidates pri
 
 A separate macOS CI job runs `test:macos` and exercises the native process observer, Codex lifecycle,
 Git cleanup, renderer startup cleanup, storage paths, and board filename casing.
+It installs dependencies and runs the lane inside `nix develop`.
+The lane builds the renderer core first because its board lifecycle tests render pictures.
 The job also runs the native sandbox refusal and repaired macOS fixture owners.
 This catches platform-specific failures that the Ubuntu suite cannot exercise;
 it does not replace any local gate.
@@ -182,14 +194,10 @@ uses a 60-second case deadline when `CI=true`. Its default engine also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.
-The preload still applies its 60-second wall-clock ceiling. Only three Blocks
-cases declare a real-time exception, each with its own case deadline on CI and
-locally. Browser application and Board viewer get `TEST_HEAVY_BLOCKS_CASE_MS`:
-their layout alone took 47.85 seconds on CI, past 60 on a slower runner, and
-52.9 seconds locally on a loaded machine. Codex realtime voice gets
-`TEST_HEAVIEST_BLOCKS_CASE_MS`: it went past 60 seconds on CI, and locally it
-takes about three and a half times as long as Browser application (TASK-536).
-TASK-377 owns the cause.
+The preload still applies its 60-second wall-clock ceiling to every case. The
+Blocks cases of Browser application and Board viewer had a real-time exception
+while libavoid routed their trunks. Since the core's router routes them
+(TASK-520.02), Board viewer, the slowest, takes about 5 seconds locally.
 
 Keep a real-time exception inside its exact test callback. Its first statement calls
 `declareTestWallClockBudget` with the exact test name, a concrete reason, a `TEST_*`
@@ -203,7 +211,7 @@ case.
 workflow: `semantic rasterize` against a real Archboard server, the same selectors as
 `semantic render`, and a board file that does not move. The rasterizer's own
 owner, `packages/renderer/tests/runtime/services/rasterizer`, proves real pixels, native and
-scaled dimensions, full bounds past a display, font readiness, bounds refusals,
+scaled dimensions, full bounds past a display, bounds refusals,
 cancellation and a Chromium that is provably gone. The Chromium it runs on is
 `packages/renderer/src/runtime/processes/headless-chromium`, whose owner proves caller flags, an exact
 window viewport, event delivery without retention, a page Blob streamed to a

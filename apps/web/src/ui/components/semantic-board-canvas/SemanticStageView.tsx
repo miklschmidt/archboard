@@ -7,6 +7,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX, ReactNode } from "react";
 
 import type {
+	PictureKey,
 	SemanticRender,
 	SemanticWaiting,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -38,7 +39,6 @@ import type { PresentationPosition } from "#ui/hooks/semantic-board-canvas/use-p
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { PagePlace } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
-import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice, GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
@@ -117,8 +117,8 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly onChooseGroup: (group: string | null) => void;
 	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
-	/** What the picture on screen draws each kind with, for the key and the inspector. */
-	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
+	/** What the key to the picture on screen lists, or null while nothing typed is drawn. */
+	readonly pictureKey: PictureKey | null;
 	/** How the vault's kinds look, for the About page and the details panel. */
 	readonly look: KindLook;
 	/** The tab of the pane's header that is open: the picture, or the About page. */
@@ -270,7 +270,7 @@ function SemanticStageView(view: RenderView): JSX.Element {
 						{presentationOver(view)}
 						{view.tab === "about" && <PaneAboutPage view={view} />}
 					</div>
-					<SemanticStageSidebar view={view} appearances={view.appearances} />
+					<SemanticStageSidebar view={view} pictureKey={view.pictureKey} />
 				</ReadingArea>
 			</PeekProvider>
 		</>

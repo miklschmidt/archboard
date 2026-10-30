@@ -9,11 +9,12 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { APCA, lightnessContrast, seenIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
 import { themeColor } from "#runtime/store/theme/source.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Three neutral lines of each emphasis inside a container, and one exchange. */
 const CONTENT = orderedFixture({
@@ -95,7 +96,10 @@ function grounds(theme: DiagramTheme) {
 
 describe("a neutral line reads on every ground and stays quieter than text", () => {
 	test.each(THEMES)("a relationship and its head (%s)", async (theme) => {
-		const { svg } = seenIn(await renderArchitecture({ content: CONTENT }), theme);
+		const { svg } = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+			theme,
+		);
 		const { page, floor, text } = grounds(theme);
 		const lines = headedLines(svg).filter(({ id }) => id === "loud" || id === "plain");
 		expect(lines).toHaveLength(2);
@@ -107,8 +111,15 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 		}
 	});
 
-	test.each(THEMES)("a message and a lifeline (%s)", (theme) => {
-		const { svg } = seenIn(renderDataFlow({ content: CONTENT }), theme);
+	test.each(THEMES)("a message and a lifeline (%s)", async (theme) => {
+		const { svg } = seenIn(
+			await renderSemanticView({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: CONTENT,
+				grammar: "sequence",
+			}),
+			theme,
+		);
 		const { page, floor } = grounds(theme);
 		const messages = headedLines(svg).map(({ ink }) => ink);
 		const lifelines = [
@@ -124,7 +135,9 @@ describe("a neutral line reads on every ground and stays quieter than text", () 
 });
 
 test("every arrowhead has one length, whatever the emphasis of its line", async () => {
-	const { svg } = seenIn(await renderArchitecture({ content: CONTENT }));
+	const { svg } = seenIn(
+		await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+	);
 	const lengths = headedLines(svg).map(({ head, width }) => headLength(svg, head, width));
 	expect(lengths).toHaveLength(3);
 	for (const length of lengths) expect(length).toBeCloseTo(lengths[0]!, 1);

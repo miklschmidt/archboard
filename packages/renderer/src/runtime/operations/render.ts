@@ -4,7 +4,6 @@
 // host and imports the core.
 import {
 	renderArchitecture as renderArchitectureIn,
-	renderDataFlow as renderDataFlowIn,
 	renderSemanticView as renderSemanticViewIn,
 } from "#shared/rules/render/diagram.ts";
 import {
@@ -33,16 +32,6 @@ import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 async function renderArchitecture(request: DiagramRenderRequest): Promise<RenderedDiagram> {
 	installBunHost();
 	return renderArchitectureIn(request);
-}
-
-/**
- * A semantic data flow in, one self-contained SVG plus its geometry out.
- * @param request What to draw, and on which ground.
- * @returns The document, its size and its atlas.
- */
-function renderDataFlow(request: DiagramRenderRequest): RenderedDiagram {
-	installBunHost();
-	return renderDataFlowIn(request);
 }
 
 /**
@@ -102,25 +91,4 @@ function carryingRecipe(
 	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }
 
-/**
- * How wide a piece of text is as the Bun canvas measures it, in a diagram face.
- * @param text The text.
- * @param face The face: its CSS family name and weight.
- * @param face.family The CSS family name the document registers.
- * @param face.weight The weight.
- * @param fontSize The size.
- * @returns Its width.
- * @throws {Error} When the canvas gives no 2D context.
- */
-function diagramTextWidth(
-	text: string,
-	face: { readonly family: string; readonly weight: number },
-	fontSize: number,
-): number {
-	installBunHost();
-	const context = new OffscreenCanvas(1, 1).getContext("2d");
-	if (context === null) throw new Error("The Bun canvas gives no 2D context");
-	context.font = `${face.weight} ${fontSize}px "${face.family}"`;
-	return context.measureText(text).width;
-}
-export { diagramTextWidth, renderArchitecture, renderBoard, renderDataFlow, renderSemanticView };
+export { renderArchitecture, renderBoard, renderSemanticView };

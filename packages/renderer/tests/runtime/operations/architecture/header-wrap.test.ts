@@ -1,34 +1,21 @@
-// A container's header wraps its words at the width of the slab they stand
-// on, as drawn, and stands no taller than they need (TASK-486): measured
-// before layout at a card's widest, a wide container's responsibility stood
-// as a narrow column at the left of a wide, tall, mostly empty slab.
+// Parent headers use normal card sizing in both engines and every theme (TASK-548.11).
 import { expect, test } from "bun:test";
 import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import {
-	ARCHITECTURE_CARD_PADDING,
-	ARCHITECTURE_ICON_GAP,
-	CONTAINER_INSET,
-} from "#shared/constants/spacing.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import {
-	drawnTexts,
-	drawnWidth,
-	registeredFaces,
-	type DrawnText,
-} from "#tests/runtime/support/drawn-text.ts";
-
-/** The type chip a slab keeps left of its words, and the gap between them. */
-const CHIP_AND_GAP = 24 + ARCHITECTURE_ICON_GAP;
-/** The responsibility's size: a note's, set smaller than the name. */
-const NOTE_SIZE = 11;
+import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 const RESPONSIBILITY =
 	"Loads the retained state and reopens the same hardware key, renews with a fresh proof of that key when a renewal is due, and saves the outcome without any identity rollback.";
 
 const content = orderedFixture({
 	nodes: [
+		{ id: "caller", name: "Caller", kind: "module" },
 		{ id: "plan", name: "Durable access", kind: "service", responsibility: RESPONSIBILITY },
+		{ id: "plain", name: "Durable access", kind: "service", responsibility: RESPONSIBILITY },
 		...["Load", "Open", "Renew", "Serve"].map((name) => ({
 			id: name.toLowerCase(),
 			name: `${name} the certificate`,
@@ -36,54 +23,54 @@ const content = orderedFixture({
 			parent: "plan",
 		})),
 	],
-	edges: [],
+	edges: [
+		{ id: "parent", from: "caller", to: "plan", kind: "call" },
+		{ id: "member", from: "caller", to: "serve", kind: "call" },
+		{ id: "leaving", from: "plan", to: "plain", kind: "call" },
+	],
 });
 
 /**
- * How many lines words take, broken only between words, at a width.
- * @param line One drawn line, whose face and size the words are set in.
- * @param words The words.
- * @param width The width.
- * @param faces The faces the document registers.
- * @returns The count.
+ * The icon size written into a subject's SVG.
+ * @param svg The rendered document.
+ * @param id The semantic subject.
+ * @returns The visible icon's width.
  */
-function linesAt(
-	line: DrawnText,
-	words: readonly string[],
-	width: number,
-	faces: ReadonlyMap<string, string>,
-): number {
-	let lines = 1;
-	let text = "";
-	for (const word of words) {
-		const longer = text === "" ? word : `${text} ${word}`;
-		if (text !== "" && drawnWidth({ ...line, text: longer }, faces) > width) {
-			lines += 1;
-			text = word;
-		} else text = longer;
-	}
-	return lines;
+function iconSize(svg: string, id: string): number {
+	const own = svg
+		.split(/(?=<g[^>]*data-semantic-kind=)/u)
+		.filter((chunk) => chunk.slice(0, chunk.indexOf(">") + 1).includes(`data-semantic-id="${id}"`))
+		.join("");
+	return Number(/<svg [^>]*width="([\d.]+)"/u.exec(own)?.[1]);
 }
 
-test.each(LayoutEngineSchema.options)(
-	"a wide container's header wraps at its slab and is as tall as its words (%s)",
-	async (layout) => {
-		const drawing = await renderArchitecture({ content, theme: "light", layout });
-		const frame = drawing.atlas.nodes["plan"]!;
-		const notes = drawnTexts(drawing.svg).filter(
-			({ subject, size }) => subject.id === "plan" && size === NOTE_SIZE,
-		);
-		const first = notes[0]!;
-		// The words stand in from the slab's left by the chip, and from its right by the slab's padding.
-		const room = frame.x + frame.width - (first.x - frame.x) + CHIP_AND_GAP - first.x;
-		const needed = linesAt(first, RESPONSIBILITY.split(" "), room, registeredFaces(drawing.svg));
-		expect(frame.width).toBeGreaterThan(2 * 340);
-		expect(notes.length).toBe(needed);
-		// Under the last line: its descent, the slab's padding, and the inset above the cards.
-		const cards = ["load", "open", "renew", "serve"].map((id) => drawing.atlas.nodes[id]!.y);
-		const below = Math.min(...cards) - notes.at(-1)!.y;
-		expect(below).toBeLessThanOrEqual(
-			17 - NOTE_SIZE + ARCHITECTURE_CARD_PADDING + CONTAINER_INSET + 8,
-		);
-	},
-);
+for (const layout of LayoutEngineSchema.options) {
+	for (const theme of ["light", "dark", undefined] as const) {
+		test(`a compact parent keeps its text and visible line ends (${layout}, ${theme ?? "page"})`, async () => {
+			const drawing = await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content,
+				theme,
+				layout,
+			});
+			const frame = drawing.atlas.nodes["plan"]!;
+			const header = headerCards(drawing).get("plan")!;
+			const card = drawing.atlas.nodes["plain"]!;
+			expect(header.width).toBe(card.width);
+			expect(header.width).toBeLessThan(frame.width);
+			const texts = drawnTexts(drawing.svg);
+			const notes = texts.filter(({ subject, size }) => subject.id === "plan" && size === 11);
+			expect(notes.map((line) => line.text).join(" ")).toBe(RESPONSIBILITY);
+			for (const line of notes) {
+				expect(line.x).toBeGreaterThan(header.x);
+				expect(line.x + line.width).toBeLessThanOrEqual(header.x + header.width);
+				expect(line.y).toBeLessThan(header.y + header.height);
+			}
+			const name = (id: string) =>
+				texts.find((run) => run.subject.id === id && run.text === "Durable access")!;
+			expect(name("plan").size).toBeGreaterThan(name("plain").size);
+			expect(iconSize(drawing.svg, "plan")).toBeGreaterThan(iconSize(drawing.svg, "plain"));
+			expectDrawingIntact(drawing, content, layout);
+		});
+	}
+}

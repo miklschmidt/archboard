@@ -2,11 +2,11 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import type { DiagramTheme } from "@archboard/board/render-reply";
 import type { VariantContent } from "@archboard/board/content";
-import { renderArchitecture, renderDataFlow } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { type StatedStandings } from "#shared/rules/svg/parts/standing.ts";
+import { type StatedStandings } from "#shared/protocol/render-request.ts";
 import { groupOf, subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
-import { drawnSpan, drawnTexts, registeredFaces } from "#tests/runtime/support/drawn-text.ts";
+import { drawnSpan, drawnTexts } from "#tests/runtime/support/drawn-text.ts";
 import { bodyShift, distanceToRoute, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import {
 	APCA,
@@ -16,6 +16,7 @@ import {
 	seenIn,
 } from "#tests/runtime/support/drawn-colours.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Two parts and every sort of relationship a standing can be drawn on. */
 const CONTENT: VariantContent = orderedFixture({
@@ -97,7 +98,12 @@ async function architecture(
 	theme: DiagramTheme = "light",
 ): Promise<RenderedDiagram> {
 	return seenIn(
-		await renderArchitecture({ content: CONTENT, standing: STANDING, unsettled }),
+		await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: CONTENT,
+			standing: STANDING,
+			unsettled,
+		}),
 		theme,
 	);
 }
@@ -107,8 +113,16 @@ async function architecture(
  * @param unsettled Which subjects the board has not decided, when any.
  * @returns The rendered picture.
  */
-function sequence(unsettled: readonly string[] = []): RenderedDiagram {
-	return seenIn(renderDataFlow({ content: CONTENT, standing: STANDING, unsettled }));
+async function sequence(unsettled: readonly string[] = []): Promise<RenderedDiagram> {
+	return seenIn(
+		await renderSemanticView({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content: CONTENT,
+			standing: STANDING,
+			unsettled,
+			grammar: "sequence",
+		}),
+	);
 }
 
 /**
@@ -273,7 +287,9 @@ describe("a relationship is drawn in one colour from end to end", () => {
 		const drawn = await architecture();
 		// A plain board uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
-		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
+		const plain = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+		);
 		expect(line(subject(drawn, "edge", "moved")).ink).not.toBe(
 			line(subject(plain, "edge", "moved")).ink,
 		);
@@ -285,14 +301,20 @@ describe("a relationship is drawn in one colour from end to end", () => {
 	test("a relationship nothing happened to is drawn in the ink of its weight", async () => {
 		const marked = line(subject(await architecture(), "edge", "same"));
 		const plain = line(
-			subject(seenIn(await renderArchitecture({ content: CONTENT })), "edge", "same"),
+			subject(
+				seenIn(await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT })),
+				"edge",
+				"same",
+			),
 		);
 		expect(marked.ink).toBe(plain.ink);
 		expect(marked.head).toBe(plain.head);
 	});
 
 	test("the standing takes the colour and leaves the dash and the weight alone", async () => {
-		const plain = seenIn(await renderArchitecture({ content: CONTENT }));
+		const plain = seenIn(
+			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
+		);
 		const markedDrawing = await architecture();
 		for (const id of ["moved", "new", "gone", "same"]) {
 			const marked = LINE.exec(subject(markedDrawing, "edge", id).markup)![0];
@@ -319,18 +341,18 @@ describe("a relationship is drawn in one colour from end to end", () => {
 
 	test("a relationship the proposal no longer has sends no pulses", async () => {
 		expect(pulseInks((await architecture()).svg, "gone")).toHaveLength(0);
-		expect(pulseInks(sequence().svg, "answers")).toHaveLength(0);
+		expect(pulseInks((await sequence()).svg, "answers")).toHaveLength(0);
 	});
 });
 
 describe("the words a relationship carries are on top of every dot", () => {
-	test("an exchange's plates are painted after every message's dots", () => {
+	test("an exchange's plates are painted after every message's dots", async () => {
 		// The same rule as the architecture's, and for the same reason. A stack of
 		// horizontal runs at a fixed pitch mostly cannot reach another row's
 		// plate — but "mostly" has to be re-derived every time somebody adds a
 		// self-message loop or a taller plate, and the rule it stands in for is
 		// the simple one.
-		const svg = sequence().svg;
+		const { svg } = await sequence();
 		expect(lastRouteMark(svg)).toBeLessThan(firstWordsAt(svg, "step"));
 	});
 
@@ -347,7 +369,11 @@ describe("the words a relationship carries are on top of every dot", () => {
 describe("what nobody has decided is said in its own corner", () => {
 	test("an unlabelled return carries its warning on the route", async () => {
 		const content = { ...CONTENT, edges: CONTENT.edges.map(({ label: _label, ...edge }) => edge) };
-		const drawn = await renderArchitecture({ content, unsettled: ["same"] });
+		const drawn = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			unsettled: ["same"],
+		});
 		const badge = badges(drawn).get("same")!;
 		const shift = bodyShift(drawn.svg);
 		const routes = routePoints(drawn.svg);
@@ -367,7 +393,7 @@ describe("what nobody has decided is said in its own corner", () => {
 			"io",
 			"moved",
 		]);
-		expect([...badges(sequence(["f1", "asks", "io"])).keys()].toSorted()).toEqual([
+		expect([...badges(await sequence(["f1", "asks", "io"])).keys()].toSorted()).toEqual([
 			"asks",
 			"f1",
 			"io",
@@ -399,16 +425,15 @@ describe("what nobody has decided is said in its own corner", () => {
 		let checked = 0;
 		for (const drawn of [
 			await architecture(["io", "gw", "moved"]),
-			sequence(["f1", "asks", "io"]),
+			await sequence(["f1", "asks", "io"]),
 		]) {
-			const faces = registeredFaces(drawn.svg);
 			const where = badges(drawn);
 			for (const text of drawnTexts(drawn.svg)) {
 				const badge = where.get(text.subject.id);
 				if (badge === undefined) {
 					continue;
 				}
-				const span = drawnSpan(text, faces);
+				const span = drawnSpan(text);
 				// The badge sits in the padding every box already leaves to the right
 				// of its words, so nothing had to be re-measured to make room for it.
 				const clear =

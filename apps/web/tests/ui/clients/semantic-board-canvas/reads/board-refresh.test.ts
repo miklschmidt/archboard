@@ -212,6 +212,8 @@ async function drawFromDocument(
 		svg: `<svg xmlns="http://www.w3.org/2000/svg"></svg>`,
 		atlas: { nodes: {}, edges: {}, regions: {} },
 		drawn: { nodes: [], edges: [], flows: [], steps: [] },
+		appearances: [],
+		key: null,
 	};
 }
 

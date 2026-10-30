@@ -126,8 +126,16 @@ function follows(cutout: string, route: string): boolean {
 }
 
 test("crossing clearances share the drawn curve and narrowly clear the ink beneath them", async () => {
-	const light = await renderArchitecture({ content: CROSSED, theme: "light" });
-	const dark = await renderArchitecture({ content: CROSSED, theme: "dark" });
+	const light = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: CROSSED,
+		theme: "light",
+	});
+	const dark = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content: CROSSED,
+		theme: "dark",
+	});
 	const lines = routes(light.svg);
 	const shift = bodyShift(light.svg);
 	const cutouts = masks(light.svg);
@@ -186,7 +194,15 @@ test("crossing clearances share the drawn curve and narrowly clear the ink benea
 	expect(masks(dark.svg)).toEqual(cutouts);
 	expect(routes(dark.svg)).toEqual(lines);
 	expect(dark.atlas).toEqual(light.atlas);
-	expect((await renderArchitecture({ content: CROSSED, theme: "light" })).svg).toBe(light.svg);
+	expect(
+		(
+			await renderArchitecture({
+				policy: DEFAULT_SEMANTIC_POLICY,
+				content: CROSSED,
+				theme: "light",
+			})
+		).svg,
+	).toBe(light.svg);
 });
 
 test("fan-in and fan-out connections do not acquire false crossing bridges", async () => {
@@ -201,7 +217,11 @@ test("fan-in and fan-out connections do not acquire false crossing bridges", asy
 				{ id: "other", ...pair, kind: "call" },
 			],
 		});
-		const drawn = await renderArchitecture({ content, theme: "light" });
+		const drawn = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+		});
 		expect(routes(drawn.svg)).toHaveLength(2);
 		expect(masks(drawn.svg).size).toBe(0);
 		expect(routes(drawn.svg).flatMap((route) => roundBridges(route.paths[0]!))).toEqual([]);
@@ -262,7 +282,12 @@ test("routes sharing a trunk draw its ink once: one line, one dash pattern, one 
 		nodes: ["a", "b", "c", "t"].map((id) => ({ id, name: id.toUpperCase(), kind: "service" })),
 		edges: ["a", "b", "c"].map((from) => ({ id: `${from}t`, from, to: "t", kind: "event" })),
 	});
-	const { svg } = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const drawn = routes(svg);
 	const ends = drawn.map((route) => endsOf(route.paths[0]!).slice(-2));
 	// The fixture's precondition: all three arrive down one shared last stretch.
@@ -283,7 +308,12 @@ test("no line shows through a removed relationship's label", async () => {
 		edges: [{ id: "ab", from: "a", to: "b", kind: "call", label: "reads rows" }],
 	});
 	for (const standing of [{}, { ab: "removed" as const }]) {
-		const drawn = await renderArchitecture({ content, theme: "light", standing });
+		const drawn = await renderArchitecture({
+			policy: DEFAULT_SEMANTIC_POLICY,
+			content,
+			theme: "light",
+			standing,
+		});
 		const label =
 			/<g data-semantic-kind="edge" data-semantic-id="ab"[^>]*>\s*<rect x="([-\d.]+)" y="([-\d.]+)" width="([\d.]+)" height="([\d.]+)"/u.exec(
 				drawn.svg,
@@ -355,7 +385,12 @@ test("traffic on a joined line runs on past the junction to its card", async () 
 			{ id: "ct", from: "c", to: "t", kind: "event" },
 		],
 	});
-	const { svg } = await renderArchitecture({ content, theme: "light", layout: "track" });
+	const { svg } = await renderArchitecture({
+		policy: DEFAULT_SEMANTIC_POLICY,
+		content,
+		theme: "light",
+		layout: "track",
+	});
 	const layers = [...svg.matchAll(/data-traffic="([^"]+)"/gu)];
 	expect(layers.map((layer) => layer[1])).toEqual(["bt"]);
 	// Painted in a layer of its own after the last line, so no line's mask cuts it.

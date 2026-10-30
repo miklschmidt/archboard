@@ -35,6 +35,11 @@ Where things are written down:
 - This box has node and bun but no npm or npx. Use `bun run <script>`, never
   `npm run`. `bun install` intermittently fails to extract a tarball. If it
   fails, run it again.
+- The renderer core is Rust, built to WebAssembly (ADR 0059). Run Rust and
+  build commands inside `nix develop`, which gives cargo, `wasm-bindgen` and
+  Bun. After a change to `crates/`, run `bun run build:core`:
+  a Bun process refuses a core built from other sources than its checkout
+  holds.
 - A running server read its source at start. Editing source changes the next
   CLI command, not the running server: `archboard restart` stops it, builds
   the frontend and starts it again.
@@ -143,10 +148,16 @@ rules that will not stop you:
   `packages/board/src/shared/rules/ids.ts` (one to eight characters). No second
   site mints an id. An id is what a proposal is compared by, so renaming one
   makes a change look like a deletion and an addition.
-- **Text width is measured, not estimated**, by the canvas of the place that draws the
-  picture with the diagram fonts loaded: the browser's own, or `@napi-rs/canvas`
-  under Bun (TASK-247).
-  `tests/system/browser/measured-text.test.ts` holds the Bun canvas to what Chrome draws.
+- **The core shapes every word, and nothing else measures text** (ADR 0059,
+  TASK-520.07). `crates/archboard-text` shapes a run with the bundled font files
+  and breaks a paragraph to a width. A character that Onest or DM Mono lacks
+  comes from the Noto fallback faces, in the one order of `Face::fallbacks`,
+  for measuring, breaking and drawing alike. The layout crates ask
+  `archboard_scene::measure`, never the host. The scene carries each run as
+  glyphs with its string, and a picture draws those glyphs: an SVG defines each
+  glyph it uses once and lays its words over them in no ink, so it needs no font
+  and a search still finds them. `tests/system/browser/drawn-glyphs.test.ts`
+  holds every painter to the glyph positions of the core.
 - **Every duration lives in the `@archboard/timing` package** (`packages/timing`) with what it
   pulls against written beside it.
 - **A node's code binding is part of its meaning**, not a presentation overlay:

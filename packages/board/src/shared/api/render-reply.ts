@@ -18,7 +18,6 @@ export type {
 	DiagramBox,
 	DiagramTheme,
 	DrawnBoard,
-	FontSource,
 	LayoutEngineName,
 	LegendLayout,
 	MarkedSubjects,

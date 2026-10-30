@@ -7,11 +7,12 @@
 // subject's own group is drawn in, so the page's shift never enters a comparison.
 
 import { expect, test } from "bun:test";
-import { renderDataFlow } from "#runtime/operations/render.ts";
+import { renderSemanticView } from "#runtime/operations/render.ts";
 import { messagesOf } from "@archboard/board/flow";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { labelPlates } from "#tests/runtime/support/drawn-text.ts";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;
@@ -60,11 +61,13 @@ function cardOf(groups: readonly DrawnGroup[], id: string): { top: number; botto
 	return { top: box("y"), bottom: box("y") + box("height") };
 }
 
-test("the heads of one flow stand one height, so every lifeline starts level under its card", () => {
+test("the heads of one flow stand one height, so every lifeline starts level under its card", async () => {
 	// Cards in one header row share a top edge, and one with a responsibility of
 	// several lines needs more height. Heads of their own heights started their
 	// lifelines at as many heights down the page.
-	const rendered = renderDataFlow({
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: [
@@ -142,7 +145,7 @@ function penOf(d: string): { start: number; end: number; y: number; heading: num
 	return { start, end: x, y, heading };
 }
 
-test("every message's arrowhead touches the bar or lifeline it arrives at", () => {
+test("every message's arrowhead touches the bar or lifeline it arrives at", async () => {
 	const content = orderedFixture({
 		nodes: [
 			{ id: "a", name: "Caller", kind: "service" },
@@ -165,7 +168,12 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 			},
 		],
 	});
-	const rendered = renderDataFlow({ theme: "light", content });
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
+		policy: DEFAULT_SEMANTIC_POLICY,
+		theme: "light",
+		content,
+	});
 	const markers = new Map(
 		[...rendered.svg.matchAll(/<marker\s[^>]*>/g)].map(([tag]) => [
 			/id="([^"]+)"/.exec(tag)![1]!,
@@ -213,12 +221,14 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", () =
 	}
 });
 
-test("a flow's header slab spans the whole of a frame its words widened", () => {
+test("a flow's header slab spans the whole of a frame its words widened", async () => {
 	// A self-message's words on the last column reach past the columns, and the
 	// frame grows to hold them; the header slab the flow's title is printed on
 	// grows with it, as far in from either side of the frame.
 	const long = "a label long enough to reach past every column of this flow";
-	const rendered = renderDataFlow({
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: [
@@ -247,10 +257,12 @@ test("a flow's header slab spans the whole of a frame its words widened", () => 
 	expect(frame("x") + frame("width") - slab("x") - slab("width")).toBeCloseTo(left, 6);
 });
 
-test("a message's words stand between the lifelines either side of them", () => {
+test("a message's words stand between the lifelines either side of them", async () => {
 	// A label wider than the gap it names ran across the next lifeline, and one
 	// centred over an arrow that passes a column stood on that column's lifeline.
-	const rendered = renderDataFlow({
+	const rendered = await renderSemanticView({
+		grammar: "sequence",
+		policy: DEFAULT_SEMANTIC_POLICY,
 		theme: "light",
 		content: orderedFixture({
 			nodes: ["a", "b", "c"].map((id) => ({ id, name: `Part ${id}`, kind: "service" })),

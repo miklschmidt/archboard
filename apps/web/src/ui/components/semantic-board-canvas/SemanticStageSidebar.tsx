@@ -8,7 +8,10 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type {
+	PictureKey,
+	SemanticRender,
+} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	SemanticBoardPanel,
 	type SemanticBoardPanelProps,
@@ -21,7 +24,6 @@ import {
 	SidebarPanel,
 } from "#ui/components/semantic-board-canvas/SemanticSidebar.tsx";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
-import type { AppliedAppearance } from "@archboard/renderer/picture";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
@@ -123,14 +125,14 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
  * The sidebar beside a semantic pane's picture.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
- * @param props.appearances What the picture on screen draws each kind with.
+ * @param props.pictureKey What the key to the picture on screen lists.
  * @returns The sidebar.
  */
 function SemanticStageSidebar(props: {
 	readonly view: StageSidebarView;
-	readonly appearances: ReadonlyMap<string, AppliedAppearance>;
+	readonly pictureKey: PictureKey | null;
 }): JSX.Element {
-	const { view, appearances } = props;
+	const { view, pictureKey } = props;
 	const { level, onPick, selection } = view;
 	const clear = useCallback((): void => {
 		onPick(null);
@@ -152,7 +154,7 @@ function SemanticStageSidebar(props: {
 					groups={view.groups}
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
-					appearances={appearances}
+					pictureKey={pictureKey}
 					comparison={view.comparison}
 					onComparisonChange={view.onComparisonChange}
 				/>
