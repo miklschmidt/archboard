@@ -215,7 +215,11 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	await reads(browser, "");
 	await browser.run(["click", '[aria-label="Present fullscreen"]']);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.fullscreenElement !== null`),
+		// Enter belongs to a button while the button still has focus.
+		() =>
+			browser.eval<boolean>(
+				`document.fullscreenElement !== null && document.activeElement === document.body`,
+			),
 		Boolean,
 		"the presented pane",
 		WAIT,
