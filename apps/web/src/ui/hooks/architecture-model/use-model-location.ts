@@ -430,7 +430,9 @@ function nullableParameter(value: string | undefined): string | null {
  */
 function searchValue(value: ModelAddress[keyof ModelAddress]): string | undefined {
 	if (value === null || value === undefined) return undefined;
-	return typeof value === "string" ? value : value.join(",");
+	if (typeof value === "string") return value;
+	// An empty list narrows nothing, and `focus=` would read back as one empty identity.
+	return value.length === 0 ? undefined : value.join(",");
 }
 
 export { useModelLocation };
