@@ -154,10 +154,16 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     let marked = words.marked();
     let title = paragraph(words.name, title_style.font, title_style.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
-    let natural = js_max(title.natural_width() + marked, note.natural_width());
     let far = far_name_width(words.name, title_style.size - TITLE.size);
-    let least = js_max(size.least, far + marked);
-    let width = crate::js::js_min(size.most, js_max(least, natural + left + padding));
+    let named = title.natural_width() + marked + left + padding;
+    let least = js_max(js_max(size.least, far + marked), named);
+    // A note that outgrows the card takes the most width, never a width of its
+    // own, so a row of cards reads as one set.
+    let width = if note.natural_width() + left + padding <= least {
+        crate::js::js_min(size.most, least)
+    } else {
+        size.most
+    };
     let available = width - left - padding;
     let titles = runs_for(&title, title_style, available - marked, left, padding);
     let paths = path_run(
@@ -176,6 +182,9 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         note_top + notes.len() as f64 * NOTE.line
     };
     let height = js_max(size.height, bottom + padding);
+    // The least height is the far view's: near words stand in the middle of it,
+    // so a short card keeps no empty band under them.
+    let slack = (height - bottom - padding) / 2.0;
     // The painted width wins, even when a single long word needs a little more
     // space than the preferred maximum; no character is hidden or cut.
     let painted = titles
@@ -188,7 +197,15 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         width: js_max(width, left + painted + padding),
         height,
         header_height: 0.0,
-        runs: titles.into_iter().chain(paths).chain(notes).collect(),
+        runs: titles
+            .into_iter()
+            .chain(paths)
+            .chain(notes)
+            .map(|run| TextRun {
+                y: run.y + slack,
+                ..run
+            })
+            .collect(),
         headers: None,
         pointed: None,
     }
