@@ -3,11 +3,11 @@ id: TASK-554
 title: >-
   Boards pack tighter, raising the council's compactness score without
   lengthening lines
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-30T03:32:00Z'
+updated_date: '2026-10-30T05:40:00Z'
 labels:
   - renderer
   - layout
@@ -28,7 +28,7 @@ The final council of TASK-548.08 (2026-10-28, 40 blind pairs against c147b73c8, 
 - [x] #2 The council judges no pair worse, and no after picture has a defect its before picture lacks
 - [x] #3 First and growing-edit renders of Board viewer, Board persistence and Archboard server routes stay under 500 ms on a quiet machine
 - [x] #4 Every Track drawing of the corpus is byte-identical to the base branch
-- [ ] #5 Compactness measurements of the complete corpus before and after are recorded in docs/design
+- [x] #5 Compactness measurements of the complete corpus before and after are recorded in docs/design
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -108,4 +108,12 @@ Council 563 (seed 563, 40 architecture pairs: 32 plain and 8 comparison; Blocks 
 Code review against feat/faster-first-render, six gpt-6.1-sol scopes, each fixing its own findings; every merged fix kept all 22,878 corpus drawings byte-identical and bun run check green. Placement-planner boundary (5fac68232): provisional routes could reassign a declared decision exit; one shared endpoint guard now holds declared points through routing and compaction. Selection and labels (4f621fb4a): quadratic gap scans in compaction replaced by a prefix sum with binary search; unreachable hierarchy departure code removed. Placement and render entry (e4838b312): restored the nested-route crossing assertion; added plain Blocks tests for dropped labeled routes, container children and flow messages. Route construction (c6f082112): quadratic fan building and cubic member and label scans indexed. Planner-router boundary (c5f8e4bf5): documented that reservations add search cost and that window borders stay available; regression test added. Router and Graphviz: one finding left open. Fixed strokes that lie between grid coordinates escape the crossing cost; the reviewer's fix broke an Archboard server drawing at VyIQhwhS and was reverted, so nothing was merged. Boards (9139bd151): Renderer layout gains Placement entry and Blocks route planner; Semantic renderer separates plain Blocks layout from Track's retained positions; both TASK-554 proposals adopted. Default engine (eb9e818e2, 2963b2bde): Blocks is the default, ADR 0064 and an ADR 0040 amendment record it; Track-specific tests name Track; the two README SVG recipes name no engine and now follow Blocks.
 
 2026-10-30, the owner: criterion 3 (every hard check passes in both engines) moves out of TASK-554 into TASK-557, which first decides whether Track stays. Blocks passes every hard check on the complete corpus.
+
+The final measurement round (a312592f3, docs/design/blocks-planned-layout.md, Final corpus measurements) found 35 whole-board comparison renders that Blocks refused with 'No clear planned channel'. Fixed on fix/blocks-whole-comparison (03af07a6c, merged): blocked endpoints are kept across route and placement attempts, and two more bounded repairs give every enclosing block room once the original attempts fail. All 35 draw with zero findings, all 47,510 earlier drawings are byte-identical, the slowest timing is 393 ms, and scripts/render-corpus.ts now draws whole boards with comparison too. Renderer layout corrected to four placement repairs (258f5667a).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Blocks keeps the legacy Blocks placement and plans its routes: ports, lanes, label runs and shared trunks, a complete geometry guard, and contraction of empty bands (ADR 0063, accepted). Plain Blocks views lay out only what they draw. Blocks is now the default engine (ADR 0064); Track is unchanged and still available. On the 3,981 plain drawings that the base branch, main and this branch all draw, mean page area falls 25% against the base and 13% against main, bends per route fall from 2.35 to 1.22, routes with four or more bends from 31% to 4.1%, and hard geometry findings from 7,517 (base) and 27,950 (main) to 0. First renders of the three timing boards fall from 970 to 1,475 ms to 195 to 392 ms. Blind council 563 against main: 33 better, 7 same, 0 worse, K +1.56, R +0.62. Six gpt-6.1-sol review scopes fixed their findings with every drawing unchanged; one router finding stays open (fixed strokes between grid coordinates escape the crossing cost). Track's own hard checks moved to TASK-557. Measurements and evidence: docs/design/blocks-planned-layout.md.
+<!-- SECTION:FINAL_SUMMARY:END -->
