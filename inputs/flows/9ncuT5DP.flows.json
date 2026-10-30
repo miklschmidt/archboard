@@ -253,7 +253,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Turns a pane's typed text into turn/start on an idle workhorse or turn/steer on an active one. The gateway checks the command lease and thread link first, so a stale tab cannot act on the conversation."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#UmUjUWRv",
@@ -720,7 +721,8 @@
             "symbol": "onError"
           }
         }
-      ]
+      ],
+      "summary": "Injects one brief about a settled board change into the checkout's workhorse thread, after it proves that the link and generation stand. A lost response settles as unknown and is never sent twice."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#eUWhXhf8",
@@ -1044,7 +1046,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "On a tab's first message or Talk, readies the coordinator, starts the shown checkout's workhorse and binds its link. A failed start rolls back, and an unknown outcome is never retried."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#ILeym7Ex",
@@ -1326,7 +1329,8 @@
             "symbol": "createDelegate"
           }
         }
-      ]
+      ],
+      "summary": "Routes delegate_to_workhorse to the named checkout: a new turn when the workhorse is idle, its queue when it is active. The epoch ledger records whether the work arrived, failed or stayed unknown."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#Va4NV3BO",
@@ -1509,7 +1513,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "Words a workhorse notification or a tell_coordinator call as one sentence and starts a coordinator turn on it. With no voice session, or an unattended one, the news is only recorded."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#fNauRzDy",
@@ -1822,7 +1827,8 @@
             "symbol": "announceContextChange"
           }
         }
-      ]
+      ],
+      "summary": "Tells the coordinator and the live voice about a board change or a pane's focus. The coordinator gets a developer message and the voice gets context or speech, and without a voice session nothing is queued."
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#gBoH41j4",
@@ -2063,7 +2069,8 @@
             }
           ]
         }
-      ]
+      ],
+      "summary": "When a tab's last chat closes, a grace period lets a reload return to its conversation and approvals. If none returns, the server ends the session, cancels its approvals and unloads its threads."
     }
   ]
 }
