@@ -9,6 +9,7 @@ export {
 	readArchitectureCheckpoint,
 	listArchitectureCheckpoints,
 } from "#runtime/operations/history/read.ts";
+export { readRetainedModule } from "#runtime/operations/history/retained-module.ts";
 export { readLegacyInventory } from "#runtime/operations/legacy-inventory/inventory.ts";
 export { readArchitectureClaims } from "#runtime/operations/model-edit/claims.ts";
 export { watchArchitectureModel } from "#runtime/operations/read/model-watch.ts";

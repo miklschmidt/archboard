@@ -322,6 +322,22 @@ const ArchitectureCheckpointListSchema = z.discriminatedUnion("success", [
 		.strict(),
 	ArchitectureModelFailureSchema,
 ]);
+const ArchitectureRetainedModuleSchema = z.discriminatedUnion("success", [
+	z
+		.object({
+			success: z.literal(true),
+			retained: z
+				.object({
+					checkpoint: GitObjectIdSchema,
+					name: z.string().min(1),
+					createdAt: z.iso.datetime(),
+				})
+				.strict()
+				.nullable(),
+		})
+		.strict(),
+	ArchitectureModelFailureSchema,
+]);
 const ArchitectureArchiveInitializationSchema = z.discriminatedUnion("success", [
 	z
 		.object({
@@ -348,6 +364,7 @@ type ArchitectureCheckpointRequest = z.infer<typeof ArchitectureCheckpointReques
 type ArchitectureCheckpoint = z.infer<typeof ArchitectureCheckpointSchema>;
 type ArchitectureCheckpointRetain = z.infer<typeof ArchitectureCheckpointRetainSchema>;
 type ArchitectureCheckpointList = z.infer<typeof ArchitectureCheckpointListSchema>;
+type ArchitectureRetainedModule = z.infer<typeof ArchitectureRetainedModuleSchema>;
 type ArchitectureModelRead = z.infer<typeof ArchitectureModelReadSchema>;
 type ArchitectureModel = z.infer<typeof ArchitectureModelSchema>;
 type ModelDiagnostic = z.infer<typeof ModelDiagnosticSchema>;
@@ -366,10 +383,12 @@ export {
 	ArchitectureCheckpointSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureRetainedModuleSchema,
 	type ArchitectureCheckpointRequest,
 	type ArchitectureCheckpoint,
 	type ArchitectureCheckpointRetain,
 	type ArchitectureCheckpointList,
+	type ArchitectureRetainedModule,
 	QualifiedSubjectIdSchema,
 	ArchitectureManifestSchema,
 	ArchitectureModuleSchema,

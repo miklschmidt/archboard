@@ -132,4 +132,4 @@ function stateCatalogue(
 	return [...authored, ...retained.filter((state) => !live.has(state.id))];
 }
 
-export { retainedStates, retainedReservations, stateCatalogue };
+export { modelRecords, retainedStates, retainedReservations, stateCatalogue };

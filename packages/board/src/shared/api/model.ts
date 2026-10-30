@@ -10,10 +10,12 @@ export {
 	ArchitectureCheckpointRequestSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
+	ArchitectureRetainedModuleSchema,
 } from "#shared/schemas/model.ts";
 export type {
 	ArchitectureCheckpointRequest,
 	ArchitectureCheckpointList,
+	ArchitectureRetainedModule,
 } from "#shared/schemas/model.ts";
 export {
 	ArchitectureModuleEditSchema,
