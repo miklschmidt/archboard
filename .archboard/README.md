@@ -54,6 +54,7 @@ The existing source owners provide useful starting scopes:
 | Shared packages    | `vKEsyHFk/vKEsyHFk#fssx6Gaq` | `packages`                      |
 | Model runtime      | `vKEsyHFk/0T9enjhi#1VHRyajb` | `packages/board`                |
 | Renderer           | `vKEsyHFk/vKEsyHFk#OHywsFXm` | `packages/renderer`             |
+| Core render        | `vKEsyHFk/OjRLKb74#nmyK8UOO` | `crates/archboard-render/src`   |
 | Local workbench    | `vKEsyHFk/vKEsyHFk#sw4oFps0` | `packages/workbench`            |
 | Voice coordination | `vKEsyHFk/vKEsyHFk#lU0khwR0` | `packages/codex-realtime-voice` |
 | Example host       | `vKEsyHFk/vKEsyHFk#xssnUgIk` | `apps/workbench-example`        |
@@ -67,7 +68,6 @@ archboard browser show vKEsyHFk --pane A --module 'vKEsyHFk/0T9enjhi#1VHRyajb'
 
 Packages remain independent of the applications that call them.
 An outgoing relationship does not establish containment.
-The package layer groups describe dependency direction, not fixed module depths.
 External participants remain outside Archboard's implementation ownership.
 
 ## Proposals and walkthroughs
