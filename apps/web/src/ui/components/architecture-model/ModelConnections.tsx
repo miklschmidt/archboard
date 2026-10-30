@@ -41,7 +41,6 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 	const { model, onSelect } = props;
 	const { line, joins } = props.connection;
 	const pick = useModelPick(line.id, onSelect);
-	const Arrow = arrowOf(line);
 	return (
 		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent border-b">
 			<button
@@ -58,7 +57,7 @@ function ConnectionChoice(props: ModelConnectionsProps & { connection: Connectio
 					{moduleName(model, line.from, props.reference)}
 				</span>
 				<span className="text-control flex min-w-0 items-baseline gap-2">
-					<Arrow aria-hidden="true" className="text-muted-foreground size-4 shrink-0 self-center" />
+					<LineArrow line={line} className="text-muted-foreground size-4 shrink-0 self-center" />
 					{moduleName(model, line.to, props.reference)}
 				</span>
 				<span className="text-body text-muted-foreground min-w-0">{kindNames(model, joins)}</span>
@@ -232,7 +231,6 @@ function ConnectionDetails(props: {
 }): JSX.Element {
 	const { connection, model, reference } = props;
 	const { line } = connection;
-	const Arrow = arrowOf(line);
 	return (
 		<article data-slot="model-connection-details" className="space-y-8">
 			<header className="space-y-3">
@@ -241,7 +239,7 @@ function ConnectionDetails(props: {
 					className="title-figure [overflow-wrap:anywhere] uppercase"
 				>
 					{moduleName(model, line.from, reference)}{" "}
-					<Arrow aria-hidden="true" className="inline size-[0.7em] align-baseline" />{" "}
+					<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
 					{moduleName(model, line.to, reference)}
 				</h3>
 				<p data-slot="model-connection-kinds" className="text-control text-muted-foreground">
@@ -283,11 +281,14 @@ function lineEnds(line: Connection["line"], model: Model, reference: Model | und
 
 /**
  * The mark between the two ends of a drawn line.
- * @param line The line.
+ * @param props The line and how the mark stands among its words.
+ * @param props.line The line.
+ * @param props.className Where it stands.
  * @returns An arrow each way when it runs both ways.
  */
-function arrowOf(line: Connection["line"]): typeof RiArrowRightLine {
-	return line.twoWay === true ? RiArrowLeftRightLine : RiArrowRightLine;
+function LineArrow(props: { line: Connection["line"]; className: string }): JSX.Element {
+	const Arrow = props.line.twoWay === true ? RiArrowLeftRightLine : RiArrowRightLine;
+	return <Arrow aria-hidden="true" className={props.className} />;
 }
 
 /**
