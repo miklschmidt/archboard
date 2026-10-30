@@ -270,11 +270,20 @@ async function openModelSidebar(
 export { openModelSidebar };
 
 /**
- * Read again as a person does who comes back to the page. A healthy reading has no Refresh,
- * because the feed is live, and history that changes under it has no feed.
+ * Press Refresh when the reading offers it. A healthy reading has none, because the feed keeps it
+ * fresh, so nothing is pressed.
  */
 async function refreshModel(browser: AgentBrowserSession): Promise<void> {
-	await browser.eval(`window.dispatchEvent(new Event('visibilitychange'))`);
+	const refresh = '[data-slot="model-refresh"]';
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector(${JSON.stringify(refresh)})?.disabled !== true`,
+			),
+		Boolean,
+		"Refresh to settle",
+	);
+	await browser.eval(`document.querySelector(${JSON.stringify(refresh)})?.click()`);
 }
 
 export { refreshModel };
