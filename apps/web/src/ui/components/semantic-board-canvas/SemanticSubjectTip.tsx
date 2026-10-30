@@ -48,7 +48,22 @@ function SemanticSubjectTip(props: {
 		target === null
 			? null
 			: tipOver(target, props.appearance, props.reading, props.far, levels, props.overview);
-	const anchor = useTipAnchor(target);
+	return <SubjectTipBox target={target} tip={tip} />;
+}
+
+/**
+ * Lay a tip beside the part it is about.
+ * @param props The part and what to say.
+ * @param props.target The part under the pointer, or null.
+ * @param props.tip What the tip says, or null.
+ * @returns The tip, or nothing.
+ */
+function SubjectTipBox(props: {
+	readonly target: TipTarget | null;
+	readonly tip: SubjectTip | null;
+}): JSX.Element | null {
+	const { tip } = props;
+	const anchor = useTipAnchor(props.target);
 	if (tip === null || anchor === null) {
 		return null;
 	}
@@ -237,4 +252,4 @@ function useCut(element: { readonly current: HTMLElement | null }): boolean {
 	return cut;
 }
 
-export { SemanticSubjectTip };
+export { SemanticSubjectTip, SubjectTipBox };

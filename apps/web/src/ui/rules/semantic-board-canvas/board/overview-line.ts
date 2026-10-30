@@ -30,7 +30,10 @@ interface LineSubject {
  * @param id The picked id.
  * @returns The line, or undefined when the id is not a joined line's.
  */
-function overviewLineOf(variant: SemanticVariant, id: string): LineSubject | undefined {
+function overviewLineOf(
+	variant: Pick<SemanticVariant, "content">,
+	id: string,
+): LineSubject | undefined {
 	const found = overviewLines(variant.content).find(({ line }) => line.id === id);
 	if (found === undefined || found.joins.length === 1) {
 		return undefined;

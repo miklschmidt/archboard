@@ -10,6 +10,7 @@ import {
 	useState,
 	type JSX,
 	type KeyboardEvent,
+	type PointerEvent,
 	type RefObject,
 } from "react";
 import { everyStep } from "@archboard/board/flow";
@@ -17,7 +18,12 @@ import type { DiagramBox } from "@archboard/board/render-reply";
 import type { projectModel } from "@archboard/board/content";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import {
+	useCameraWith,
+	type BoardCamera,
+	type CameraView,
+} from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { FAR_SCALE } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { useLeaving } from "#ui/hooks/semantic-board-canvas/use-leaving.ts";
@@ -32,6 +38,12 @@ import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/cod
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
+import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
+import { SubjectTipBox } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	subjectTip,
+	type TipTarget,
+} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
@@ -111,6 +123,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	});
 	useCameraHandover(camera, drawing.board, reducedMotion);
 	const { lighting, single } = useSceneLighting(scene, selected, leaving !== null);
+	const tip = useSceneTip(drawing, camera, lighting);
 	const selectArea = useAreaSelection(scene, camera, onSelectMany);
 	const onPick = useReveal({
 		camera,
@@ -127,8 +140,8 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		atlas: drawing.atlas,
 		onSelect: onPick,
 		onSelectArea: selectArea,
-		onHover: lighting.onHover,
-		dismissTip: lighting.release,
+		onHover: tip.onHover,
+		dismissTip: tip.dismiss,
 		openDown: open,
 	});
 	const onKeyDown = useCallback(
@@ -144,6 +157,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	);
 	useSceneMarks(staged, scene, { selected, warnings: props.warnings, focus, veil, lighting });
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
+	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
 	useTrafficRest(surface, camera, gesture === "dragging");
 	useSceneArrival(surface, scene.presentation, props.onPresentation);
@@ -163,6 +177,8 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			className={diagramClass(leaving)}
 			ref={attachViewport}
 			{...pointer}
+			onPointerLeave={tip.leave}
+			onWheel={tip.dismiss}
 			onKeyDown={onKeyDown}
 		>
 			<LeavingPart departure={leaving} at="announcement" />
@@ -179,6 +195,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				}
 			/>
 			<EmptyReading scene={scene} pending={props.pending} />
+			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
 			<LeavingPart departure={leaving} at="spinner" />
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
@@ -295,6 +312,74 @@ function useSceneLighting(scene: AcceptedScene, selected: ReadonlySet<string>, l
 		],
 	);
 	return { lighting: useLighting(lightingInput), single };
+}
+
+/**
+ * The tip over what the pointer rests on, moved by the same hand as the light.
+ * @param drawing The picture on the surface.
+ * @param camera The pane's camera.
+ * @param lighting The light on the picture.
+ * @returns The open tip, what to do as the pointer moves, and how it closes.
+ */
+function useSceneTip(
+	drawing: AcceptedScene["picture"],
+	camera: BoardCamera,
+	lighting: ReturnType<typeof useLighting>,
+) {
+	const { shown, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
+	const { onHover: lightHover, release } = lighting;
+	const onHover = useCallback(
+		(event: PointerEvent<HTMLElement>): void => {
+			tipHover(event);
+			lightHover(event);
+		},
+		[tipHover, lightHover],
+	);
+	const leave = useCallback((): void => {
+		dismiss();
+		release();
+	}, [dismiss, release]);
+	return { shown, onHover, dismiss, leave };
+}
+
+/**
+ * Let go of what the pointer rested on while a drag moves it from under the pointer.
+ * @param dragging Whether a drag is under way.
+ * @param release Let go.
+ */
+function useRelease(dragging: boolean, release: () => void): void {
+	useEffect(() => {
+		if (dragging) release();
+	}, [dragging, release]);
+}
+
+/**
+ * Whether the camera rests where a card says only the start of its responsibility.
+ * @param view Where the camera is.
+ * @returns True when it does.
+ */
+function seenFromFar(view: CameraView): boolean {
+	return view.rest.scale < FAR_SCALE;
+}
+
+/**
+ * What the tip over a part of the scene says.
+ * @param props The part and the scene.
+ * @param props.target The part under the pointer, or null.
+ * @param props.scene The scene on screen.
+ * @param props.camera The pane's camera: a card seen from far says less, and its tip the rest.
+ * @returns The tip, or nothing.
+ */
+function ModelSubjectTip(props: {
+	target: TipTarget | null;
+	scene: AcceptedScene;
+	camera: BoardCamera;
+}): JSX.Element {
+	const { target, scene } = props;
+	const far = useCameraWith(props.camera, seenFromFar);
+	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
+	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
+	return <SubjectTipBox target={target} tip={tip} />;
 }
 
 /**
