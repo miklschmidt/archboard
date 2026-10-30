@@ -4,6 +4,7 @@ title: Name a frame with an edge tab and end lines on the parts that own them
 status: To Do
 assignee: []
 created_date: '2026-10-30T23:06:00Z'
+updated_date: '2026-10-30T23:32:00Z'
 labels:
   - renderer
   - frontend
@@ -29,4 +30,12 @@ The owner compared header mockups in /tmp/integrate/header-mockups/ and chose th
 - [ ] #4 A selected tab opens the module, and its description stays reachable in the reader and in exports
 - [ ] #5 Gates 1 to 4 and frame fill are measured again and any change is stated
 - [ ] #6 The owner sees the result in the real pane and accepts it by eye
+- [ ] #7 In a reading such as Commands, a reader sees which parts reach which outside card, and a part only loses its last line by a stated rule
+- [ ] #8 Cards in one frame stand on a shared grid with one column gap and one row gap, and any exception is stated in the rule
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner accepted variant E of the header mockups, with the tab keeping a background lighter than the floor. On Commands at c68fbb308, 43 relationships give 10 lines, four frame lines hold 37, and 16 of 24 parts show no line. Those 24 cards stand at 10 left edges and 8 top edges. A threshold that keeps many-part lines on the frame does not meet the owner request.
+<!-- SECTION:NOTES:END -->
