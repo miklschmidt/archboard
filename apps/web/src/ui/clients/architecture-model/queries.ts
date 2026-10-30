@@ -217,7 +217,8 @@ async function readModel(
 /**
  * A model has one server snapshot, shared by every reader of its vault.
  * The feed reports each change of a followed vault, so a reading stays fresh until a model event
- * or an explicit refresh marks it stale. A preview has no feed and refreshes when it is shown.
+ * or an explicit refresh marks it stale. A preview, a state and a checkpoint can live in history,
+ * which has no feed, so they read again when they are shown.
  * Query cancellation discards obsolete reads. A failed refresh keeps the last coherent data.
  * @param vault The addressed vault.
  * @param checkpoint The exact identity, or null for current inputs.
@@ -237,7 +238,9 @@ function architectureModelQuery(
 		 * @returns The runtime answer.
 		 */
 		queryFn: (context) => readModel(vault, checkpoint, context.signal, selection),
-		...(selection.preview == null ? followed : shownFresh),
+		...(checkpoint === null && selection.state == null && selection.preview == null
+			? followed
+			: shownFresh),
 		retry: false,
 	});
 }
