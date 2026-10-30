@@ -37,6 +37,9 @@ test("activity follows what connected panes can show and stops with the last pan
 
 	second();
 	expect([...running]).toEqual(["/shop"]);
+	activity.addressed("/off-screen");
+	expect([...running].toSorted()).toEqual(["/off-screen", "/shop"]);
 	first();
 	expect(running.size).toBe(0);
+	activity.dispose();
 });

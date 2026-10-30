@@ -23,6 +23,8 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 	const watched = new Map<string, () => void>();
 	/** The vaults open in connected panes, each with how many panes hold it. */
 	const held = new Map<string, number>();
+	/** The vaults a recent write named, which can be open in no pane and in no registry. */
+	const written = new Map<string, ReturnType<typeof setTimeout>>();
 	let registered: readonly string[] = [];
 	let stopped = false;
 
@@ -143,17 +145,36 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 				break;
 		}
 	}
-	/** Watch what a connected pane can show: nothing while no pane is connected. */
+	/**
+	 * Watch what a connected pane can show, and nothing while no pane is connected. A snapshot
+	 * outlives its watcher then, so a pane that replaces the last one still reads what landed.
+	 */
 	function followWanted(): void {
-		const wanted = new Set(held.size === 0 ? [] : [...registered, ...held.keys()]);
+		const wanted = new Set(
+			held.size === 0 ? [] : [...registered, ...held.keys(), ...written.keys()],
+		);
 		for (const [vault, stop] of watched) {
 			if (wanted.has(vault)) continue;
 			stop();
 			watched.delete(vault);
-			forget(vault);
+			if (held.size > 0) forget(vault);
 		}
 		for (const vault of wanted)
 			if (!watched.has(vault)) watched.set(vault, watchArchitectureModel(vault, receive));
+	}
+	/**
+	 * Keep following a written vault for as long as it has activity to show.
+	 * @param vault The vault a write named.
+	 */
+	function followWritten(vault: string): void {
+		clearTimeout(written.get(vault));
+		const timer = setTimeout(() => {
+			written.delete(vault);
+			if (entries.has(vault)) followWritten(vault);
+			else if (!stopped) followWanted();
+		}, CLAIM_MS.activityLinger);
+		timer.unref();
+		written.set(vault, timer);
 	}
 	return {
 		/**
@@ -162,6 +183,14 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 		 */
 		register(vaults: readonly string[]): void {
 			registered = vaults;
+			if (!stopped) followWanted();
+		},
+		/**
+		 * Show off-screen work: a write can name a vault that no pane or registry names.
+		 * @param vault The vault the write named.
+		 */
+		addressed(vault: string): void {
+			followWritten(vault);
 			if (!stopped) followWanted();
 		},
 		/**
@@ -194,8 +223,10 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 			stopped = true;
 			for (const stop of watched.values()) stop();
 			for (const entry of entries.values()) clearLinger(entry);
+			for (const timer of written.values()) clearTimeout(timer);
 			watched.clear();
 			entries.clear();
+			written.clear();
 		},
 	};
 }
