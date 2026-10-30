@@ -114,9 +114,11 @@ Each route-order attempt permits eight repairs, each with ninety-six conflict at
 Local grid windows retain limits of 128 obstacles, 192 coordinates per axis, and 32,768 search states.
 Final routing shares four grid windows across its four route-order attempts for each placement candidate.
 Packed-block gap estimates also use at most four local windows per packed scene.
+
 After a complete placement refusal, the legacy placer first adds 32 then 64 units around the latest blocked endpoints.
 Each refusal also retains the blocked endpoints from every route order and placement.
 If those attempts fail, two further repairs start from the initial placement's complete blockage feedback, with the same 32 and 64 unit limits.
+
 These repairs give every enclosing block extra room, including the page.
 They also try the existing wider wraps and placements without provisional labels on dense boards.
 An existing guarded drawing ends the search.
@@ -158,10 +160,17 @@ The shared set contains 3,981 plain drawings and 7,294 comparison drawings.
 The plain set includes 381 whole boards.
 Main lacks all 400 whole-board comparison drawings, so that category contributes no shared measurements.
 The measured head refused 35 of those requests with `No clear planned channel` errors, recorded in `head/failures.json`.
+
 The follow-up repair draws all 35 requests with zero geometry findings.
 After the original attempts fail, it uses complete blockage feedback and gives enclosing blocks room in two further bounded retries.
 The corpus script now includes whole boards in both comparison modes.
 The tables retain the original measurement commits.
+
+The complete follow-up corpus produces 23,790 Blocks drawings and 23,790 Track drawings across both themes, with zero refusals and zero hard findings for Blocks.
+All 47,510 previous drawings remain byte-identical, including every Track drawing.
+The 61 historical failures about subject lists retain the same keys in each theme.
+Three fresh runs keep every first render and growing edit of the timing boards below 500 ms, with a maximum of 392.76 ms.
+Core `381307d748a63108` and the evidence in `/tmp/blocks-channel/` record this follow-up.
 
 | Plain drawings                 |           Base |           Main |           Head |
 | ------------------------------ | -------------: | -------------: | -------------: |
