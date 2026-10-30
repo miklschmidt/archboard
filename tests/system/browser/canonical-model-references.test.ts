@@ -100,10 +100,10 @@ async function followSubject(
 		WAIT,
 	);
 	await browser.run(["click", button]);
-	await openAbout(browser, "selection");
 	await pollUntil(
-		() =>
-			browser.eval<{
+		async () => {
+			await openAbout(browser, "selection");
+			return browser.eval<{
 				found: boolean;
 				url: string;
 				error: string | null;
@@ -111,7 +111,8 @@ async function followSubject(
 				selected: unknown[];
 			}>(
 				`({ found: document.querySelector(${JSON.stringify(selector)}) !== null, url: location.href, error: document.querySelector('[data-slot="model-error"], [data-slot="module-reference-error"]')?.textContent ?? null, steps: [...document.querySelectorAll('[data-slot="model-flow-steps"] [data-step-id]')].map(node => ({id:node.getAttribute('data-step-id'),pressed:node.getAttribute('aria-pressed')})), selected: [...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')) })`,
-			),
+			);
+		},
 		(value) => value.found,
 		"the exact foreign subject",
 		WAIT,

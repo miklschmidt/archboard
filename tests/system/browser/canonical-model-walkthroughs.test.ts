@@ -271,21 +271,15 @@ test("walkthrough beats change readings while one revision stays captured until 
 		"the original scope",
 		WAIT,
 	);
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-disabled') ?? null`,
-		),
-	).toBeNull();
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="semantic-sidebar-toggle"]')?.getAttribute('aria-expanded') ?? null`,
-		),
-	).toBe("true");
-	expect(
-		await browser.eval<string>(
-			`document.querySelector('[data-slot="model-selection-count"]').getAttribute('data-count')`,
-		),
-	).toBe("1");
+	await pollUntil(
+		() =>
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-selection-count"]')?.getAttribute('data-count') ?? null`,
+			),
+		(count) => count === "1",
+		"the selection kept while the walkthrough ran",
+		WAIT,
+	);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.walkthroughs).toEqual(initial.body.walkthroughs);

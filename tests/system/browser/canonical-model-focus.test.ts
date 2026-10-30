@@ -128,7 +128,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	await openAbout(browser, "selection");
 	expect(
 		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
+			`[...document.querySelectorAll('[data-slot="model-about"] [data-slot="model-selected-subjects"] [data-subject-id]')].map(node => node.getAttribute('data-subject-id')).sort()`,
 		),
 	).toEqual(["Shop#Decode", "Shop#Gateway"]);
 	await openAbout(browser);

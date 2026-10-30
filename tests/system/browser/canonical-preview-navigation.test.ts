@@ -1,4 +1,9 @@
-import { startModelWalkthrough, listedParts, openAbout, pick } from "./support/canonical-page.ts";
+import {
+	startModelWalkthrough,
+	listedParts,
+	openAbout,
+	pick as pickSubject,
+} from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -170,7 +175,7 @@ test("a converted reference preserves preview and paired original state and chec
 	);
 	rmSync(join(fixture.vault, "Shop.semantic.json"));
 	rmSync(join(fixture.vault, ".archboard/migration-plan.json"));
-	await pick(browser, "Shop/System#Api");
+	await pickSubject(browser, "Shop/System#Api");
 	await openAbout(browser, "selection");
 	const action = '[data-slot="module-follow-reference"]';
 	await pollUntil(
