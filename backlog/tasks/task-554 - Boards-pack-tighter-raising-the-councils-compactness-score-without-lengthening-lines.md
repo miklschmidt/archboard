@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-30T00:06:00Z'
+updated_date: '2026-10-30T01:23:00Z'
 labels:
   - renderer
   - layout
@@ -99,4 +99,6 @@ Council 560: cbac3f598 (readable row order and speed3 merged) against legacy Blo
 2026-10-30: the owner moved the council's before side. PR #24's Blocks (feat/faster-first-render, and 8cdedb1c3 above it) draws badly, so passing against it proves little; the before side is now the original TypeScript renderer on main (38a8da877), from before the Rust conversion. Councils 554 to 561 compared against 8cdedb1c3 and stand only as that comparison; council 561's Opus grader was stopped. Setup: a scratch worktree of main at /tmp/council-main/before with this branch's scripts/render-corpus.ts copied in and its .archboard/vault replaced by this branch's vault, so both sides draw the same content. main cannot read the Archboard board's current variant (7 of 316 current Blocks drawings), which leaves those out of the sample. The 500 ms speed target and the Track byte-identity gate keep PR #24 as their base.
 
 Council 562 (seed 562, 40 architecture pairs, Blocks at 7b55b3332 against main 38a8da877, the TypeScript renderer before the Rust port; graders Opus, gpt-6.1-sol, gpt-6-astra): 23 better, 9 same, 8 worse, 0 both fail. The change fails. Every reported defect is on main's side (lines through full-width container headers, and shared trunks that mix sources and targets), and I ruled all 22 real. Most of the 23 better pairs win on those defects alone: their scores favour main. Mean per-criterion margin, after minus before: K -0.66, R -0.34, T -0.02, L 0.00, O -0.01, W -0.17. Worse pairs: 007 and 013 (Live panes boundary with no lines: Blocks leaves an empty band about five card heights tall), 009 and 010 (HTTP serving: loose frame, foundations spread around it), 018, 020, 022 (empty bays), 025 (Codex realtime voice overview: tall stretch, spawn line sent over the source's top). Files: /tmp/council-562/out/key.json, /tmp/grading-562/{verdicts,rulings.json,tally.txt}. The comparison pairs were rendered before the TASK-556 header fix.
+
+Compaction round (report /tmp/blocks-explore/build/report-11.md, 7c9667042, fast-forwarded into feat/blocks-layout). The empty space in council 562 pairs 007, 013 and 025 was reserved by hidden comparison subjects: plain Blocks pictures were laid out from the comparison projection. Plain Blocks now lays out only what it draws, so turning comparison on can move Blocks cards. ADR 0032 already puts the settled picture's readability over frozen positions. Track keeps its shared positions. Two other changes: the placement search also tries placement without the provisional label boxes, and the planner contracts empty bands after routing. Plain Blocks area -19.13%, bends per route 1.258 to 1.224, routes with four or more bends 4.59% to 4.14%, long detours 2,087 to 2,086, zero hard findings, Track unchanged, all six timing medians faster (Board viewer first render 384 ms). bun run check 20/20.
 <!-- SECTION:NOTES:END -->
