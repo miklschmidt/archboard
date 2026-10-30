@@ -47,6 +47,7 @@ import {
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import { panelWidth } from "#ui/rules/architecture-model/panel-room.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 interface ModelDiagramProps {
@@ -60,8 +61,10 @@ interface ModelDiagramProps {
 	leaving: Departure | null;
 	/** Whether this picture took over from a flight that already put the camera in place. */
 	cut?: boolean | undefined;
-	/** Whether a panel lies over the picture's edge. */
-	floating?: boolean | undefined;
+	/** Whether the right panel lies over the picture's edge. */
+	panelOpen?: boolean | undefined;
+	/** The selection once its wait is over, which the camera acts on. Only a reader has one. */
+	settled?: ReadonlySet<string> | undefined;
 	reducedMotion: boolean;
 	reserve?: number;
 	onPresentation?: ((picture: { key: string; arrived: boolean } | null) => void) | undefined;
@@ -88,7 +91,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const { scene, camera, selected, onSelect, onSelectMany, onOpen, reducedMotion } = props;
 	const { picture: drawing, projection, model } = scene;
 	const presenting = scene.presentation !== undefined;
-	const floating = props.floating === true;
+	const panelOpen = props.panelOpen === true;
 	const { reserve: reserveBottom } = camera;
 	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
@@ -138,16 +141,18 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const tip = useSceneTip(drawing, camera, lighting);
 	const selectArea = useAreaSelection(scene, camera, onSelectMany);
 	const far = useCameraWith(camera, seenFromFar);
+	const settled = soleSubject(props.settled ?? selected, projection.connections);
 	const onPick = useReveal({
 		camera,
 		atlas: drawing.atlas,
 		edges: projection.content.edges,
-		selection: single,
-		off: presenting || floating,
+		selection: settled,
+		off: presenting,
+		covered: panelOpen ? panelWidth : undefined,
 		reducedMotion,
 		onPick: onSelect,
 	});
-	useClearOfPanel(props.area ?? NO_AREA, floating, single, camera, reducedMotion);
+	useClearOfPanel(props.area ?? NO_AREA, panelOpen, settled, camera, reducedMotion, panelWidth);
 	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,

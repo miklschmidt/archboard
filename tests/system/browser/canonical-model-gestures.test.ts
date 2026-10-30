@@ -13,6 +13,7 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
+import { settledOn } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -139,3 +140,42 @@ test("empty-canvas dragging selects while middle and Space dragging pan", async 
 	if (!after.body.success) throw new Error(after.body.error);
 	expect(after.body.revision).toEqual(before.body.revision);
 }, 60_000);
+
+test("a double click opens a card at the right edge, because the panel and camera wait", async () => {
+	await using resources = new AsyncDisposableStack();
+	const root = join(browserTestRoots().ownerRoot, "double-click-model");
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", `${server.base}/`]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	const card = '[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"]';
+	const coveredByPanel = `(() => {
+		const diagram = document.querySelector('[data-slot="model-diagram"]')?.getBoundingClientRect();
+		const box = document.querySelector('${card}')?.getBoundingClientRect();
+		return diagram !== undefined && box !== undefined && box.right > diagram.right - 360 && box.left < diagram.right - 16;
+	})()`;
+	await pollUntil(
+		async () => {
+			if (await browser.eval<boolean>(coveredByPanel)) return true;
+			await browser.eval(
+				`document.querySelector('[data-slot="model-diagram"]')?.dispatchEvent(new WheelEvent("wheel", { deltaY: -120, ctrlKey: true, clientX: 340, clientY: 500, bubbles: true, cancelable: true })); true`,
+			);
+			return false;
+		},
+		Boolean,
+		"a card at the right edge",
+		WAIT,
+	);
+	await browser.eval(
+		`window.panelSeen = false; new MutationObserver(() => { window.panelSeen ||= document.querySelector('[data-slot="model-panel"]') !== null; }).observe(document.body, { childList: true, subtree: true }); true`,
+	);
+	await browser.run(["dblclick", card]);
+	await settledOn(browser, "Shop#Gateway");
+	expect(await browser.eval<boolean>("window.panelSeen")).toBe(false);
+}, 30_000);

@@ -21,7 +21,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, fixtureGit, selectReading } from "./support/canonical-model.ts";
-import { openModelSidebar, openRepository } from "./support/canonical-page.ts";
+import { openAbout, openRepository } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -50,7 +50,7 @@ function modelFixture(root: string, model: string, repository: string): string {
 }
 
 async function selectGateway(browser: AgentBrowserSession): Promise<void> {
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<{
@@ -400,7 +400,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('checkpointA')`),
 	).toBe(retained.body.checkpoint.id);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(
 		await browser.eval<boolean>(
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="historical"]') !== null`,

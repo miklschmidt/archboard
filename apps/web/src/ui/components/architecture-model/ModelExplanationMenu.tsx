@@ -49,7 +49,7 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
 			<DropdownMenu.Trigger
 				data-slot="model-explain"
-				className="text-control hover:bg-muted rounded-control px-3 py-2"
+				className="text-control hover:bg-muted rounded-control px-2 py-1"
 			>
 				Explain
 			</DropdownMenu.Trigger>

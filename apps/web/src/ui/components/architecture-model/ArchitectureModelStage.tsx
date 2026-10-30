@@ -29,7 +29,10 @@ import {
 	architectureModelQuery,
 	architectureModelKeys,
 } from "#ui/clients/architecture-model/queries.ts";
-import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import {
+	ModelComparisonLine,
+	ModelStateDetails,
+} from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelFailedRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
@@ -403,11 +406,17 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const overview = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
 			<>
-				<ModelStateDetails model={shown} paneId={paneId} states={states} hasCurrent={hasCurrent} />
+				<ModelStateDetails model={shown} paneId={paneId} states={states} />
 				<CheckpointEvidence model={shown} />
 			</>
 		),
-		[paneId, states, hasCurrent],
+		[paneId, states],
+	);
+	const comparison = useCallback(
+		(shown: NonNullable<typeof model>): JSX.Element => (
+			<ModelComparisonLine model={shown} paneId={paneId} hasCurrent={hasCurrent} />
+		),
+		[paneId, hasCurrent],
 	);
 	// One frame for every answer: its header keeps an open menu while a read fails, retries or arrives.
 	return (
@@ -436,6 +445,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 				<ModelBookmarkReading model={model}>
 					<ModelReading
 						overview={overview}
+						comparison={comparison}
 						overlay={props.overlay}
 						vault={props.vault}
 						model={model}

@@ -76,6 +76,17 @@ const SIDEBAR_MS = durations({
 	 * seen, which is all it is for.
 	 */
 	subjectIn: 120,
+	/**
+	 * How long a click on the picture waits before the right panel opens and the
+	 * camera makes room for it. The card and the tree row light at once. A second
+	 * click starts this wait again, and a double click opens the card and cancels it.
+	 *
+	 * Pulls against the double click, which must land on the card that the first
+	 * click hit: a panel or a camera that moved sooner leaves the second click on
+	 * something else. Past about 300 ms the panel seems to answer late, and a
+	 * person who reads a card has to wait for what they asked.
+	 */
+	panelWait: 220,
 });
 
 export { COLUMN_MS, SIDEBAR_MS };

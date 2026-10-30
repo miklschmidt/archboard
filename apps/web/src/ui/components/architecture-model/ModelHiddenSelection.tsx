@@ -6,6 +6,8 @@ import { flowSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
 interface ModelHiddenSelectionProps {
 	projection: ReturnType<typeof projectModel>;
 	selected: ReadonlySet<string>;
+	/** Whether the selection is one line, however many relationships it joins. */
+	oneLine?: boolean;
 	onReveal: () => void;
 	onRevealFlow: (id: string) => void;
 }
@@ -19,13 +21,15 @@ function ModelHiddenSelection(props: ModelHiddenSelectionProps): JSX.Element | n
 	const hidden = hiddenSelection(props);
 	if (hidden.count === 0) return null;
 	return (
-		<section className="border-border mb-6 space-y-3 border-b pb-4">
+		<section className="space-y-3">
 			<output
 				data-slot="model-hidden-selection"
 				data-count={hidden.count}
 				className="text-body block"
 			>
-				{hidden.count} selected subjects are hidden in this reading.
+				{props.oneLine === true
+					? "This reading does not draw this line."
+					: `${hidden.count} selected subjects are hidden in this reading.`}
 			</output>
 			{hidden.structural > 0 && (
 				<Button

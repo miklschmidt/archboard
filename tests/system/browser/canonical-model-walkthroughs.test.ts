@@ -1,4 +1,4 @@
-import { openDestination, openModelSidebar } from "./support/canonical-page.ts";
+import { openDestination, openAbout } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -161,9 +161,9 @@ test("walkthrough beats change readings while one revision stays captured until 
 		"the original handler selection",
 		WAIT,
 	);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Handler"]']);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await openDestination(browser, "walkthroughs");
 	await pollUntil(
 		() =>

@@ -24,6 +24,7 @@ import type { BoardPlace } from "#ui/components/semantic-board-canvas/PaneHeader
 import { SemanticStageView } from "#ui/components/semantic-board-canvas/SemanticStageView.tsx";
 import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDeparture } from "#ui/hooks/semantic-board-canvas/use-departure.ts";
 import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
@@ -168,6 +169,14 @@ interface SemanticBoardStageProps {
 }
 
 const NO_EDGES: readonly never[] = Object.freeze([]);
+
+/**
+ * How wide this stage's panel is, which a picture's area never narrows.
+ * @returns Its width.
+ */
+function sidebarWidth(): number {
+	return SIDEBAR_WIDTH;
+}
 
 /**
  * The relationships of the variant on screen.
@@ -364,7 +373,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const { tab, onTab, place } = useStageTab(drill.board, narrative.open !== null, choose);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
 	const sidebar = useSidebar(props.selection, resting, narrative.open !== null, tab === "about");
-	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion);
+	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion, sidebarWidth);
 	const onPickInPicture = useReveal({
 		camera,
 		atlas: drawn?.atlas ?? null,

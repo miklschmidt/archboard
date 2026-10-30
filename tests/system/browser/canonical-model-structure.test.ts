@@ -14,7 +14,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { initializeSource, selectReading, unfoldedHistory } from "./support/canonical-model.ts";
-import { openModelSidebar, editCanonicalModel as edit } from "./support/canonical-page.ts";
+import { openAbout, editCanonicalModel as edit } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -82,7 +82,7 @@ test("structural writes refresh current modules while exact history and selected
 		"the retained architecture",
 		WAIT,
 	);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() => selectedName(browser),
@@ -124,7 +124,7 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("Gateway");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
 	await pollUntil(
 		() =>
@@ -142,7 +142,7 @@ test("structural writes refresh current modules while exact history and selected
 	).toEqual(["Cache"]);
 
 	await selectReading(browser, "current");
-	await openModelSidebar(browser, "selection");
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() => selectedName(browser),
 		(name) => name === "API",
@@ -163,7 +163,7 @@ test("structural writes refresh current modules while exact history and selected
 	if (!after.body.success) throw new Error(JSON.stringify(after.body));
 	const cache = after.body.modules.find((module) => module.name === "Cache");
 	if (cache === undefined) throw new Error("The structural write did not add Cache.");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(await roots(browser)).toContain(cache.id);
 	await edit(request, vault, "contain-api", [
 		{ type: "edit-module", subject: "Shop#Gateway", set: { parent: "Shop#Worker" } },
@@ -174,7 +174,7 @@ test("structural writes refresh current modules while exact history and selected
 		"the reparented module to leave the roots",
 		WAIT,
 	);
-	await openModelSidebar(browser, "selection");
+	await openAbout(browser, "selection");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
@@ -185,7 +185,7 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("API");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", `[data-slot="module-list"] [data-module-id="${cache.id}"]`]);
 	await edit(request, vault, "remove-cache", [{ type: "remove-module", subject: cache.id }]);
 	await pollUntil(
@@ -197,11 +197,11 @@ test("structural writes refresh current modules while exact history and selected
 		"the removed selection without a replacement",
 		WAIT,
 	);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	expect(await roots(browser)).toEqual(["Shop#Worker"]);
 	await selectReading(browser, baseline);
 	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	expect(await selectedName(browser)).toBe("Gateway");
 }, 90_000);

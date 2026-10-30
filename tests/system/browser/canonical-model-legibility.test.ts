@@ -19,7 +19,7 @@ import { switchTheme } from "./support/shell-dom.ts";
 import {
 	seedCanonicalModel,
 	editCanonicalModel,
-	openModelSidebar,
+	openAbout,
 	chooseFlow,
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
@@ -350,7 +350,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 
 	// The other grammar, told in the same language: the plate is over the dots.
 	// The views are on the board tab, which the pick moved away from.
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await chooseFlow(browser, flow);
 	await pollUntil(
 		() =>

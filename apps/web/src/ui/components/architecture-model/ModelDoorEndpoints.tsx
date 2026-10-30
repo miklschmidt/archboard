@@ -1,8 +1,10 @@
 import type { JSX } from "react";
 import { doorEndpoints, type Model, type projectModel } from "@archboard/board/content";
 import { kindNames, moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
+import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type Edge = Projection["listed"][number]["joins"][number];
@@ -12,6 +14,8 @@ interface ModelDoorEndpointsProps {
 	model: Model;
 	projection: Projection;
 	onSelect: ModelSelection["select"];
+	/** Whether each list shows whole, where nothing limits the room. */
+	whole?: boolean;
 }
 
 /**
@@ -24,21 +28,20 @@ function ModelDoorEndpoints(props: ModelDoorEndpointsProps): JSX.Element | null 
 	const groups = doorEndpoints(projection, door);
 	if (groups.length === 0) return null;
 	return (
-		<section data-slot="model-door-endpoints" className="mt-8 space-y-4" aria-label="Endpoints">
-			<h3 className="text-title font-semibold">Endpoints</h3>
+		<div data-slot="model-door-endpoints" className="flex flex-col gap-4">
 			{groups.map(({ part, edges }) => (
-				<section key={part} data-part-id={part} className="space-y-1">
-					<h4 className="text-control font-semibold">
-						{moduleName(model, part, projection.reference)}
-					</h4>
-					<ul className="space-y-1">
-						{edges.map((edge) => (
-							<Endpoint key={edge.id} {...props} edge={edge} />
-						))}
-					</ul>
-				</section>
+				<ModelPanel.Section
+					key={part}
+					title={moduleName(model, part, projection.reference)}
+					count={edges.length}
+					slot="model-door-part"
+				>
+					<ModelPanel.Rows items={edges} whole={props.whole}>
+						{(edge) => <Endpoint key={edge.id} {...props} edge={edge} />}
+					</ModelPanel.Rows>
+				</ModelPanel.Section>
 			))}
-		</section>
+		</div>
 	);
 }
 
@@ -50,19 +53,16 @@ function ModelDoorEndpoints(props: ModelDoorEndpointsProps): JSX.Element | null 
 function Endpoint(props: ModelDoorEndpointsProps & { edge: Edge }): JSX.Element {
 	const { edge, model, projection, onSelect } = props;
 	const pick = useModelPick(edge.id, onSelect);
+	const peek = usePeekRow(edge.id);
 	return (
-		<li>
-			<button
-				type="button"
-				data-relationship-id={edge.id}
-				{...pick}
-				className="hover:bg-muted rounded-control text-body w-full px-3 py-2 text-left"
-			>
-				{moduleName(model, edge.from, projection.reference)} →{" "}
-				{moduleName(model, edge.to, projection.reference)}
-				<span className="text-muted-foreground block">{kindNames(model, [edge])}</span>
-			</button>
-		</li>
+		<ModelPanel.Row
+			data-relationship-id={edge.id}
+			{...pick}
+			{...peek}
+			stacked
+			name={`${moduleName(model, edge.from, projection.reference)} → ${moduleName(model, edge.to, projection.reference)}`}
+			detail={edge.label ?? kindNames(model, [edge])}
+		/>
 	);
 }
 

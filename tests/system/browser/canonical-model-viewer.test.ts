@@ -1,4 +1,4 @@
-import { openModelSidebar, refreshModel } from "./support/canonical-page.ts";
+import { openAbout, refreshModel } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -74,7 +74,7 @@ test("canonical modules open their authored details without writing architecture
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') === null`,
 		),
 	).toBe(true);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await pollUntil(
 		() =>
@@ -129,9 +129,9 @@ test("canonical modules open their authored details without writing architecture
 	writeFileSync(gatewayPath, gateway);
 	await refreshModel(browser);
 	await pollUntil(modelState, (state) => state === "ready", "the repaired model to reopen", WAIT);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	for (const module of before.body.modules) rmSync(join(vault, module.file));
 	await refreshModel(browser);
 	await pollUntil(
@@ -379,7 +379,7 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await selectReading(browser, checkpoint);
 	await pollUntil(state, (value) => value === "ready", "the retained reading", WAIT);
 	expect(await gatewayDetails(browser)).toContain("Accepts shopping requests");
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await pollUntil(
 		() =>
 			browser.eval<string>(

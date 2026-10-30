@@ -6,6 +6,8 @@ interface ModelCaptionProps {
 	projection: ReturnType<typeof projectModel>;
 	everyLine: boolean;
 	onToggle: () => void;
+	/** What the reading is compared with. */
+	comparison?: ReactNode;
 	/** Statements of the reading that end the line, each with its control. */
 	children?: ReactNode;
 }
@@ -30,6 +32,7 @@ function ModelCaption(props: ModelCaptionProps): JSX.Element | null {
 					{responsibility}
 				</p>
 			)}
+			{props.comparison}
 			{projection.flow === null && projection.implied.length > 0 && (
 				<LeftOutLines {...props} left={projection.implied.length} />
 			)}
@@ -43,7 +46,9 @@ function ModelCaption(props: ModelCaptionProps): JSX.Element | null {
  * @param props Whether every line is drawn, how many leave, and the control's action.
  * @returns The statement and its control.
  */
-function LeftOutLines(props: Omit<ModelCaptionProps, "children"> & { left: number }): JSX.Element {
+function LeftOutLines(
+	props: Pick<ModelCaptionProps, "everyLine" | "onToggle"> & { left: number },
+): JSX.Element {
 	const { everyLine, left } = props;
 	return (
 		<>

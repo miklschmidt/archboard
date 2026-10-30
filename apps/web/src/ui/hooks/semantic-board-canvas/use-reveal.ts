@@ -32,6 +32,8 @@ interface RevealInputs {
 	readonly selection: string | null;
 	/** Whether something else already moves the camera: a presented step, or a panel over the picture. */
 	readonly off: boolean;
+	/** How much of the room's right side a panel covers, which a reveal keeps clear. */
+	readonly covered?: ((room: number) => number) | undefined;
 	/** Whether the person asked for no motion, which lands the camera at once. */
 	readonly reducedMotion: boolean;
 	/**
@@ -87,18 +89,32 @@ function boxesFor(inputs: RevealInputs, previous: string | null): Rect[] {
 }
 
 /**
+ * The part of the room that a panel leaves clear.
+ * @param room The room.
+ * @param covered How much of its right side a panel covers.
+ * @returns What a reveal can use.
+ */
+function clearRoom<Room extends { readonly width: number }>(
+	room: Room,
+	covered: RevealInputs["covered"],
+): Room {
+	return covered === undefined ? room : { ...room, width: room.width - covered(room.width) };
+}
+
+/**
  * Glide the camera so the pick is in view, when it is not.
  * @param inputs What decides.
  * @param previous The part picked out before.
  */
 function showPick(inputs: RevealInputs, previous: string | null): void {
 	const { camera, off, reducedMotion } = inputs;
-	if (off || camera.room === null) {
+	const { room } = camera;
+	if (off || room === null) {
 		return;
 	}
 	const target = revealCamera(
 		camera.view().camera,
-		camera.room,
+		clearRoom(room, inputs.covered),
 		boxesFor(inputs, previous),
 		FIT_MARGIN * 2,
 	);

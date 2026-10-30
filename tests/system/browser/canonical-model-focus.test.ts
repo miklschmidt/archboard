@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { openModelSidebar } from "./support/canonical-page.ts";
+import { openAbout } from "./support/canonical-page.ts";
 import type { z } from "zod";
 import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
@@ -120,7 +120,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 		WAIT,
 	);
 	await browser.run(["click", nearby]);
-	await openModelSidebar(browser);
+	await openAbout(browser);
 	await browser.eval(
 		`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Decode"]').dispatchEvent(new MouseEvent('click', { bubbles: true, ctrlKey: true }))`,
 	);

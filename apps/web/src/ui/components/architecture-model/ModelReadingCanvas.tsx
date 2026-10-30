@@ -29,7 +29,8 @@ interface ModelReadingCanvasProps
 			| "pending"
 			| "leaving"
 			| "cut"
-			| "floating"
+			| "panelOpen"
+			| "settled"
 			| "reducedMotion"
 			| "onOpen"
 			| "onAttention"
@@ -49,7 +50,7 @@ interface ModelReadingCanvasProps
 	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
-	/** What stands at the picture's lower left. */
+	/** What lies over the picture: the Key and the panel. */
 	children?: ReactNode;
 }
 
@@ -77,7 +78,8 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							pending={props.pending}
 							leaving={props.leaving}
 							cut={props.cut}
-							floating={props.floating}
+							panelOpen={props.panelOpen}
+							settled={props.settled}
 							warnings={props.warnings}
 							selected={selection.ids}
 							onSelect={selection.select}
@@ -103,7 +105,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 						waiting={waiting}
 					/>
 				</div>
-				<div className="absolute bottom-4 left-4 z-20 empty:hidden">{props.children}</div>
+				{props.children}
 				<div
 					data-slot="model-stage-overlay"
 					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
