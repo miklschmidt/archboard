@@ -79,6 +79,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "order": 60600,
+      "kind": "call",
+      "label": "serve solves in a Web Worker",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/workers/layout-worker.ts",
+        "symbol": "serveLayoutEngine"
+      },
+      "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ",
+      "id": "vKEsyHFk#EwDGu9IN"
     }
   ]
 }

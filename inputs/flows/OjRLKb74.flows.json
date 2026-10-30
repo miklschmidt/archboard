@@ -146,6 +146,7 @@
                   }
                 },
                 {
+                  "id": "vKEsyHFk#6frfbXt8",
                   "from": "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
                   "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
                   "label": "One settled drawing",
@@ -154,8 +155,7 @@
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "crates/archboard-layout/src/architecture/mod.rs",
                     "symbol": "draw"
-                  },
-                  "id": "vKEsyHFk#6frfbXt8"
+                  }
                 }
               ]
             }
@@ -169,8 +169,8 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "crates/archboard-render/src/lib.rs",
-            "symbol": "paint"
+            "path": "crates/archboard-scene/src/paint/mod.rs",
+            "symbol": "paint_architecture"
           }
         },
         {
@@ -522,7 +522,7 @@
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "crates/archboard-layout/src/architecture/mod.rs",
-            "symbol": "fitted_page"
+            "symbol": "draw"
           }
         },
         {
@@ -534,7 +534,7 @@
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "crates/archboard-layout/src/architecture/mod.rs",
-            "symbol": "bridge_crossings"
+            "symbol": "draw"
           }
         }
       ]
@@ -699,7 +699,7 @@
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
                         "path": "crates/archboard-layout/src/blocks/card_layout.rs",
-                        "symbol": "Graphviz"
+                        "symbol": "render"
                       }
                     },
                     {
@@ -711,7 +711,7 @@
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
                         "path": "crates/archboard-layout/src/blocks/card_layout.rs",
-                        "symbol": "Graphviz"
+                        "symbol": "render"
                       }
                     },
                     {

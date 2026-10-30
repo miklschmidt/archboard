@@ -11,5 +11,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 60800,
+      "kind": "call",
+      "label": "color words for the standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/far_card.rs",
+        "symbol": "standing_palette"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "id": "vKEsyHFk#qnIHdYgf"
+    }
+  ]
 }

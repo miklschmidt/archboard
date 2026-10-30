@@ -24,7 +24,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-layout/src/blocks/card_layout.rs",
-        "symbol": "Graphviz"
+        "symbol": "render"
       },
       "id": "vKEsyHFk/OjRLKb74#Md6tqK1p",
       "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"

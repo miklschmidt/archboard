@@ -6,8 +6,7 @@
   "description": "picture_key keeps one sample of each node and relationship kind in drawing order, and mark_counts counts a comparison's marks on the subjects a drawing placed. archboard-svg spells each applied appearance as the document writes it. One reader, so the page's legend and an exported legend cannot list different things.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/legend_entries.rs",
-    "symbol": "picture_key"
+    "path": "crates/archboard-scene/src/paint/legend_entries.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#X0CpwpF1",

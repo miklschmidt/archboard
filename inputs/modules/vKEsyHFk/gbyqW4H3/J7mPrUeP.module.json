@@ -77,6 +77,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#Mi41O26J",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "where a label sits on its curve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/edge_line.rs",
+        "symbol": "label_anchor_of"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#0s8raCUw",
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
     }
   ]
 }

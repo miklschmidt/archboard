@@ -22,8 +22,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-stage-appearances.ts",
-        "symbol": "appearances"
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx",
+        "symbol": "SemanticLegend"
       },
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"

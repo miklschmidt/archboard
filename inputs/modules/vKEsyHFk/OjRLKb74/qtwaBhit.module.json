@@ -6,8 +6,7 @@
   "description": "A block's size is final before its parent places it as one box. A block of cards may wrap its widest rank into rows or fold its ranks into columns where that reads better; last, each relationship's lines are joined end to end.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-layout/src/blocks/legacy.rs",
-    "symbol": "place"
+    "path": "crates/archboard-layout/src/blocks/legacy.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#qtwaBhit",

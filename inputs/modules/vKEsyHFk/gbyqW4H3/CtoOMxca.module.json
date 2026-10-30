@@ -5,8 +5,7 @@
   "responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "crates/archboard-scene/src/paint/sequence.rs",
-    "symbol": "paint_sequence"
+    "path": "crates/archboard-scene/src/paint/sequence.rs"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#CtoOMxca",
