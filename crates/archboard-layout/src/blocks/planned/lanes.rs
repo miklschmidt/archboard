@@ -45,6 +45,7 @@ pub(super) struct Hint {
 struct Reservation {
     edges: Vec<usize>,
     interval: Interval,
+    fans: [Option<usize>; 2],
 }
 type Bands = std::collections::BTreeMap<(bool, u64, u64), Vec<Reservation>>;
 
@@ -63,6 +64,7 @@ fn bands(
         })
         .collect();
     let mut groups = Bands::new();
+    let fans = band_fans(topology);
     for (edge, _) in topology
         .routes
         .iter()
@@ -78,38 +80,58 @@ fn bands(
             let group = groups
                 .entry((horizontal, low.to_bits(), high.to_bits()))
                 .or_default();
-            reserve(topology, edge, interval, group);
+            reserve(topology, edge, interval, fans[edge], group);
         }
     }
     groups
 }
 
 /// A source fan's shared band must precede private labels. A target fan follows them.
+fn band_fans(topology: &super::topology::Topology) -> Vec<Option<usize>> {
+    let mut labelled = vec![false; topology.routes.len()];
+    for label in &topology.labels {
+        labelled[label.edge] = true;
+    }
+    let mut fans = vec![None; topology.routes.len()];
+    for (index, fan) in topology.fans.iter().enumerate() {
+        if matches!(fan.common, super::topology::CommonEndpoint::Source(_))
+            && fan.members.iter().any(|&member| labelled[member])
+        {
+            continue;
+        }
+        for &edge in &fan.members {
+            fans[edge].get_or_insert(index);
+        }
+    }
+    fans
+}
+
 fn reserve(
     topology: &super::topology::Topology,
     edge: usize,
     interval: Interval,
+    fan: Option<usize>,
     group: &mut Vec<Reservation>,
 ) {
-    let fan = topology.fans.iter().find(|fan| {
-        fan.members.contains(&edge)
-            && (!matches!(fan.common, super::topology::CommonEndpoint::Source(_))
-                || fan
-                    .members
-                    .iter()
-                    .all(|member| !topology.labels.iter().any(|label| label.edge == *member)))
-    });
-    let existing = group.iter_mut().find(|request| {
-        fan.is_some_and(|fan| request.edges.iter().all(|edge| fan.members.contains(edge)))
+    let existing = fan.and_then(|fan| {
+        group
+            .iter_mut()
+            .find(|request| request.fans.contains(&Some(fan)))
     });
     if let Some(request) = existing {
         request.edges.push(edge);
         request.interval.start = request.interval.start.min(interval.start);
         request.interval.end = request.interval.end.max(interval.end);
+        for fan in &mut request.fans {
+            if !topology.memberships[edge].contains(fan) {
+                *fan = None;
+            }
+        }
     } else {
         group.push(Reservation {
             edges: vec![edge],
             interval,
+            fans: topology.memberships[edge],
         });
     }
 }
@@ -231,6 +253,68 @@ fn band(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::blocks::planned::{model::Model, topology::Topology};
+    use crate::graph::Node;
+    use serde_json::json;
+
+    #[test]
+    fn bands_keep_the_first_eligible_fan_and_never_merge_through_a_former_member() {
+        for (labelled, target_first) in [(false, false), (true, false), (false, true)] {
+            let graph = fan_graph(labelled, target_first);
+            let model = Model::new(&graph).unwrap();
+            let topology = Topology::new(&model);
+            let fans = band_fans(&topology);
+            let mut requests = Vec::new();
+            for id in ["ax", "bx", "ay", "ax2"] {
+                let edge = model.edge_index[id];
+                reserve(
+                    &topology,
+                    edge,
+                    Interval {
+                        start: 0.0,
+                        end: 100.0,
+                    },
+                    fans[edge],
+                    &mut requests,
+                );
+            }
+            let members: Vec<Vec<_>> = requests
+                .iter()
+                .map(|request| {
+                    request
+                        .edges
+                        .iter()
+                        .map(|&edge| model.edges[edge].id.as_str())
+                        .collect()
+                })
+                .collect();
+            let expected = if labelled || target_first {
+                vec![vec!["ax", "bx", "ax2"], vec!["ay"]]
+            } else {
+                vec![vec!["ax", "bx"], vec!["ay", "ax2"]]
+            };
+            assert_eq!(members, expected);
+        }
+    }
+
+    fn fan_graph(labelled: bool, target_first: bool) -> Node {
+        let mut graph = json!({"id":"root", "children":[
+            {"id":"a","width":160,"height":80},
+            {"id":"b","width":160,"height":80},
+            {"id":"x","width":160,"height":80},
+            {"id":"y","width":160,"height":80}], "edges":[
+            {"id":"ax","sources":["a"],"targets":["x"]},
+            {"id":"ax2","sources":["a"],"targets":["x"]},
+            {"id":"bx","sources":["b"],"targets":["x"]},
+            {"id":"ay","sources":["a"],"targets":["y"]}]});
+        if labelled {
+            graph["edges"][3]["labels"] = json!([{"width":80,"height":24}]);
+        }
+        if target_first {
+            graph["edges"][2]["layoutOptions"] = json!({"archboard.order":"-1"});
+        }
+        serde_json::from_value(graph).unwrap()
+    }
 
     #[test]
     fn disjoint_connections_reuse_room_but_nearby_intervals_keep_clearance() {
