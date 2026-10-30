@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-28T00:47:00Z'
-updated_date: '2026-10-30T01:23:00Z'
+updated_date: '2026-10-30T02:11:00Z'
 labels:
   - renderer
   - layout
@@ -101,4 +101,6 @@ Council 560: cbac3f598 (readable row order and speed3 merged) against legacy Blo
 Council 562 (seed 562, 40 architecture pairs, Blocks at 7b55b3332 against main 38a8da877, the TypeScript renderer before the Rust port; graders Opus, gpt-6.1-sol, gpt-6-astra): 23 better, 9 same, 8 worse, 0 both fail. The change fails. Every reported defect is on main's side (lines through full-width container headers, and shared trunks that mix sources and targets), and I ruled all 22 real. Most of the 23 better pairs win on those defects alone: their scores favour main. Mean per-criterion margin, after minus before: K -0.66, R -0.34, T -0.02, L 0.00, O -0.01, W -0.17. Worse pairs: 007 and 013 (Live panes boundary with no lines: Blocks leaves an empty band about five card heights tall), 009 and 010 (HTTP serving: loose frame, foundations spread around it), 018, 020, 022 (empty bays), 025 (Codex realtime voice overview: tall stretch, spawn line sent over the source's top). Files: /tmp/council-562/out/key.json, /tmp/grading-562/{verdicts,rulings.json,tally.txt}. The comparison pairs were rendered before the TASK-556 header fix.
 
 Compaction round (report /tmp/blocks-explore/build/report-11.md, 7c9667042, fast-forwarded into feat/blocks-layout). The empty space in council 562 pairs 007, 013 and 025 was reserved by hidden comparison subjects: plain Blocks pictures were laid out from the comparison projection. Plain Blocks now lays out only what it draws, so turning comparison on can move Blocks cards. ADR 0032 already puts the settled picture's readability over frozen positions. Track keeps its shared positions. Two other changes: the placement search also tries placement without the provisional label boxes, and the planner contracts empty bands after routing. Plain Blocks area -19.13%, bends per route 1.258 to 1.224, routes with four or more bends 4.59% to 4.14%, long detours 2,087 to 2,086, zero hard findings, Track unchanged, all six timing medians faster (Board viewer first render 384 ms). bun run check 20/20.
+
+Council 563 (seed 563, 40 architecture pairs: 32 plain and 8 comparison; Blocks at 7c9667042 against main 38a8da877; graders Opus, gpt-6.1-sol, gpt-6-astra): 33 better, 7 same, 0 worse, 0 both fail. The change passes. Every reported defect is on main's side: lines through headers, shared trunks, and in Opus's reading two missing labels. I ruled all 20 pairs' defects real after checking pairs 004 and 020, which only Opus reported. Mean per-criterion margin, Blocks minus main: K +1.56, R +0.62, T +0.19, L -0.07, O +0.26, W +1.07 (council 562 before compaction: K -0.66, R -0.34). Scores alone still favour main on two whole boards (007 Archboard server TASK-367.24 anchors, 037 Semantic renderer TASK-468) and on pair 018 (Board viewer TASK-365 overview, comparison). Files: /tmp/council-563/out/key.json, /tmp/grading-563/{verdicts,rulings.json,tally.txt}.
 <!-- SECTION:NOTES:END -->
