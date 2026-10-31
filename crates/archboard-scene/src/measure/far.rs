@@ -401,8 +401,10 @@ pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
     Some(FarWords {
         runs,
         chip: (PAD_X, top, sizes.chip),
-        tags: (!card.tags.is_empty())
-            .then_some((sizes.x + sizes.room, name_top + sizes.name * NAME_LINE / 2.0)),
+        tags: (!card.tags.is_empty()).then_some((
+            sizes.x + sizes.room,
+            name_top + sizes.name * NAME_LINE / 2.0,
+        )),
     })
 }
 

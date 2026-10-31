@@ -231,10 +231,7 @@ function TypeSample(props: {
 }): JSX.Element {
 	const { appearance } = props;
 	// A door draws its icon in a door's dark ink. A chip draws it in its kind's colour, as a card does.
-	const markup = useMemo(
-		() => ({ __html: uncoloured(appearance.iconSvg) }),
-		[appearance.iconSvg],
-	);
+	const markup = useMemo(() => ({ __html: uncoloured(appearance.iconSvg) }), [appearance.iconSvg]);
 	const style = useMemo(() => chipPaint(paletteInk(appearance.typeColor)), [appearance.typeColor]);
 	return (
 		<span
