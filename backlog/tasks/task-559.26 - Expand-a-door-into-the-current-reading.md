@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T03:49:00Z'
-updated_date: '2026-10-31T06:45:00Z'
+updated_date: '2026-10-31T08:00:00Z'
 labels:
   - frontend
   - board
@@ -28,10 +28,10 @@ The owner wants two actions on a door: navigate, which opens that module, and ex
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A door offers navigate and expand as two visible actions, by pointer and keyboard
-- [ ] #2 Expand draws that module as an open frame with its parts in the same picture, and lines to it end on its parts
-- [ ] #3 The expanded frame's tab offers collapse, which brings the door back
-- [ ] #4 Expanding repeats, and the address holds it, so a reload, a shared link and a pane keep the reading
+- [x] #1 A door offers navigate and expand as two visible actions, by pointer and keyboard
+- [x] #2 Expand draws that module as an open frame with its parts in the same picture, and lines to it end on its parts
+- [x] #3 The expanded frame's tab offers collapse, which brings the door back
+- [x] #4 Expanding repeats, and the address holds it, so a reload, a shared link and a pane keep the reading
 - [ ] #5 The picture keeps its transitions, lands whole, and stays under 500 ms on the readings the owner names
 - [ ] #6 The owner accepts it by eye
 <!-- AC:END -->
@@ -57,10 +57,18 @@ What happens in the cases a reader can reach:
 - A door that holds an expanded frame or the open module, which a relationship on the module itself draws: that frame nests inside the new frame. Collapsing the outer frame leaves the inner one open.
 - An address that names an unknown module or one with no parts opens nothing for that identity, and the panel's list omits it, with a line that says how many it left out. No read refuses.
 - A drawing that the core refuses stays the refusal that every drawing has: the last picture stays with Retry and Back.
+
+Amendments after the build. Frames stand in one row, or fill rows as wide as the widest frame, so two frames stack and a small frame fills what a short row leaves. A flat board of several frames in any reading now takes the grid, and a nested frame keeps the ranks. The panel foot says Expand here or Collapse, as an outlined action. A holder of the scope that only an address can name draws as a nested frame with no gesture to reach it.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 The owner confirmed the reading: an open frame with its parts.
+
+Built and committed. The projection treats every open module alike, so a reading of one frame is the case of an empty list. Rules live in packages/board/src/shared/rules/model-expansion.ts and apps/web/src/ui/rules/architecture-model/expansion.ts. The pointer, the panel and the E key reach one rule, toggled.
+
+Measures on the real core under Bun, milliseconds. Base readings: Commands 176, Browser 172, Workspace packages 410. One expansion: Commands + Command contract 99, + Command startup 95, + Server access 93, + Workspace packages 504; Browser + Archboard server 286, + Workspace packages 351; Workspace packages + Agent CLI 367, + Browser 353, + Workbench example 223, + Archboard server 512. Two expansions reach 1448. 33 readings, 0 refused, 11 over 500. The router's greedy pass takes most of that time, and that code is unchanged.
+
+Measures in a cold browser, click to new picture: 447 to 523 ms for the small expansions and 672 to 1005 ms for those with Workspace packages. One long task of about 330 ms comes before the picture, where the core takes about 100 ms under Bun. A door's navigation stays quicker because its picture is drawn ahead on hover. AC 5 stays unchecked: transitions, reduced motion and the landing hold, but the time does not hold on every expansion.
 <!-- SECTION:NOTES:END -->
