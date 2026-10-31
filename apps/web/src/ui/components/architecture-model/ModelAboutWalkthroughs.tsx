@@ -2,14 +2,21 @@
 // Each step has its number, set as a drawing's sheet number is, its heading and its words, and
 // beside them the reading it opens and the subjects it lights. A walkthrough is presented or
 // narrated from its head, and presented from any step. Choosing a subject selects it, as a row of
-// the page does. The Walkthroughs destination of the left column goes on navigating them.
+// the page does. The Walkthroughs destination of the left column goes on navigating them. The
+// root of a model holds many, so past a few a card opens on its head and its steps wait.
 //
 // Presenting and narrating are readings: nothing is written and no revision moves.
 
-import { RiArrowRightLine, RiMicLine, RiPlayCircleLine, RiPlayLine } from "@remixicon/react";
-import { useCallback, useContext, useMemo, type CSSProperties, type JSX } from "react";
+import {
+	RiArrowDownSLine,
+	RiArrowRightLine,
+	RiMicLine,
+	RiPlayCircleLine,
+	RiPlayLine,
+} from "@remixicon/react";
+import { useCallback, useContext, useMemo, useState, type CSSProperties, type JSX } from "react";
 
-import { Button, IconButton } from "@archboard/ui-kit/components";
+import { Button, cn, IconButton } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/board/content";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
@@ -28,6 +35,9 @@ interface ModelAboutWalkthroughsProps {
 	readonly selection: ModelSelection;
 	readonly look: KindLook;
 }
+
+/** How many walkthroughs a page shows step by step from the start. */
+const OPEN_SCRIPTS = 3;
 
 /**
  * Every walkthrough of a subject, each as a script.
@@ -58,6 +68,8 @@ interface WalkthroughScriptProps extends ModelAboutWalkthroughsProps {
 function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 	const { walkthrough } = props;
 	const steps = walkthrough.beats.length;
+	const [open, setOpen] = useState(props.walkthroughs.length <= OPEN_SCRIPTS);
+	const toggle = useCallback((): void => setOpen((was) => !was), []);
 	const playback = useContext(ModelWalkthroughContext);
 	const start = playback?.select;
 	const narration = playback?.narration;
@@ -76,9 +88,19 @@ function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 				<div className="flex min-w-0 flex-1 flex-col gap-2">
 					<h4 className="flex min-w-0 items-baseline gap-3">
 						<span className="title-name min-w-0">{walkthrough.name}</span>
-						<span className="text-body text-muted-foreground shrink-0 font-normal">
+						<button
+							type="button"
+							aria-expanded={open}
+							data-slot="about-steps"
+							onClick={toggle}
+							className="text-body text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-0.5 font-normal"
+						>
 							{steps === 1 ? "1 step" : `${steps} steps`}
-						</span>
+							<RiArrowDownSLine
+								aria-hidden="true"
+								className={cn("size-4 transition-transform", open && "rotate-180")}
+							/>
+						</button>
 					</h4>
 					{walkthrough.summary !== undefined && (
 						<p className="text-control text-muted-foreground max-w-[72ch] font-normal">
@@ -109,11 +131,13 @@ function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 					)}
 				</div>
 			</div>
-			<ol aria-label={`Steps of ${walkthrough.name}`} className="border-border border-t">
-				{walkthrough.beats.map((beat, index) => (
-					<StepRow key={beat.id} {...props} beat={beat} index={index} />
-				))}
-			</ol>
+			{open && (
+				<ol aria-label={`Steps of ${walkthrough.name}`} className="border-border border-t">
+					{walkthrough.beats.map((beat, index) => (
+						<StepRow key={beat.id} {...props} beat={beat} index={index} />
+					))}
+				</ol>
+			)}
 		</li>
 	);
 }
@@ -211,14 +235,14 @@ function StepReading(props: { readonly model: Model; readonly beat: Beat }): JSX
 }
 
 /**
- * The subjects a step lights, or else the subjects it focuses, each a chip that selects it.
+ * The subjects a step lights, or else the subjects it focuses, each a chip that selects it. A
+ * subject the reading on screen does not hold has nothing to select, and names nothing here.
  * @param props The step, its model and the selection.
  * @returns The chips, or nothing for a step about the whole picture.
  */
 function StepSubjects(props: StepRowProps): JSX.Element | null {
 	const { beat, model } = props;
 	const { selection: lit, focus } = beat.reading;
-	const subjects = lit.length > 0 ? lit : focus;
 	const known = useMemo(
 		() => new Map(modelSubjects(model).map((subject) => [subject.id, subject])),
 		[model],
@@ -227,24 +251,25 @@ function StepSubjects(props: StepRowProps): JSX.Element | null {
 		() => new Map(model.modules.map((module) => [module.id, module.kind])),
 		[model.modules],
 	);
+	const subjects = (lit.length > 0 ? lit : focus).flatMap((id) => {
+		const subject = known.get(id);
+		return subject === undefined ? [] : [{ id, name: subjectName(subject) }];
+	});
 	if (subjects.length === 0) return null;
 	return (
 		<div className="text-body flex min-w-0 items-baseline gap-2">
 			<span className="text-muted-foreground w-12 shrink-0">Focus</span>
 			<ul className="flex min-w-0 flex-wrap gap-1">
-				{subjects.map((id) => {
-					const subject = known.get(id);
-					return (
-						<SubjectChip
-							key={id}
-							id={id}
-							name={subject === undefined ? id : subjectName(subject)}
-							kind={kinds.get(id)}
-							look={props.look}
-							selection={props.selection}
-						/>
-					);
-				})}
+				{subjects.map(({ id, name }) => (
+					<SubjectChip
+						key={id}
+						id={id}
+						name={name}
+						kind={kinds.get(id)}
+						look={props.look}
+						selection={props.selection}
+					/>
+				))}
 			</ul>
 		</div>
 	);

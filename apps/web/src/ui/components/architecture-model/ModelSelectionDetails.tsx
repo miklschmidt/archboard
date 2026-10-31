@@ -36,7 +36,7 @@ function scopeModel(props: ModelSelectionDetailsProps): Model {
  * @param props.model The coherent model.
  * @param props.reference The verified base for removed subjects.
  * @param props.selected Canonical selected identities.
- * @param props.title The selection or focus heading.
+ * @param props.title The heading, for a place that does not state one.
  * @param props.slot The represented reading context.
  * @returns Authored subjects without discarding the rest of the selection.
  */
@@ -44,7 +44,7 @@ function SelectedSubjects(props: {
 	model: Model;
 	reference: Model | undefined;
 	selected: ReadonlySet<string>;
-	title: string;
+	title?: string | undefined;
 	slot: "model-selected-subjects" | "model-focused-subjects";
 }): JSX.Element {
 	const fromBase = props.reference === undefined ? [] : modelSubjects(props.reference);
@@ -55,7 +55,7 @@ function SelectedSubjects(props: {
 	].filter((subject) => props.selected.has(subject.id));
 	return (
 		<section className="space-y-4">
-			<h3 className="text-title font-semibold">{props.title}</h3>
+			{props.title !== undefined && <h3 className="text-title font-semibold">{props.title}</h3>}
 			{subjects.length < props.selected.size && (
 				<output data-slot="module-missing-selection" className="text-body block">
 					{props.selected.size - subjects.length} selected subjects are unavailable in this reading.

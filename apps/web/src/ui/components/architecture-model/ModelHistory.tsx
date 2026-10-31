@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/board/content";
 import { Button } from "@archboard/ui-kit/components";
 import { PartHistory } from "#ui/components/semantic-board-canvas/PartHistory.tsx";
-import { SidebarRegion } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 
@@ -46,18 +45,16 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 	}, [refetch]);
 	const look = useMemo(() => kindLookOf(props.model.policy, new Map()), [props.model.policy]);
 	return (
-		<SidebarRegion slot="semantic-inspector-history">
-			<div className="flex items-center justify-between gap-2">
-				<h3 className="text-title font-semibold">Local code history</h3>
-				<Button
-					variant="outline"
-					onClick={read}
-					disabled={query.isFetching}
-					data-slot="module-read-history"
-				>
-					{query.data === undefined ? "Read" : "Refresh"}
-				</Button>
-			</div>
+		<div data-slot="semantic-inspector-history" className="flex max-w-[72ch] flex-col gap-4">
+			<Button
+				variant="outline"
+				className="self-start"
+				onClick={read}
+				disabled={query.isFetching}
+				data-slot="module-read-history"
+			>
+				{query.data === undefined ? "Read local Git history" : "Refresh"}
+			</Button>
 			{query.isFetching && (
 				<output className="text-body text-muted-foreground">Reading Git history…</output>
 			)}
@@ -75,7 +72,7 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 					onPick={props.onSelect}
 				/>
 			)}
-		</SidebarRegion>
+		</div>
 	);
 }
 

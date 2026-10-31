@@ -5,6 +5,7 @@ import {
 	RiArrowLeftRightLine,
 	RiArrowRightLine,
 	RiBox3Line,
+	RiDoorOpenLine,
 	RiFileCodeLine,
 	RiHistoryLine,
 	RiInputMethodLine,
@@ -12,7 +13,7 @@ import {
 	RiPuzzleLine,
 } from "@remixicon/react";
 import { useMemo, type JSX, type ReactNode } from "react";
-import type { Model } from "@archboard/board/content";
+import { doorEndpoints, type Model } from "@archboard/board/content";
 import {
 	AboutFacts,
 	aboutSection,
@@ -21,7 +22,11 @@ import {
 } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import { ModelAboutWalkthroughs } from "#ui/components/architecture-model/ModelAboutWalkthroughs.tsx";
 import { ModelConnectionTable } from "#ui/components/architecture-model/ModelConnectionTable.tsx";
-import { ConnectionDetails, kindNames, lineEnds } from "#ui/components/architecture-model/ModelConnections.tsx";
+import {
+	ConnectionDetails,
+	kindNames,
+	LineTitle,
+} from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelCollectionDetails } from "#ui/components/architecture-model/ModelCollectionDetails.tsx";
 import { ModelDoorEndpoints } from "#ui/components/architecture-model/ModelDoorEndpoints.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
@@ -35,7 +40,11 @@ import {
 	type ModelSelectionDetailsProps,
 } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { ModuleDefinition, ModuleEvidence, RelationshipEvidence } from "#ui/components/architecture-model/ModuleDetails.tsx";
+import {
+	ModuleDefinition,
+	ModuleEvidence,
+	RelationshipEvidence,
+} from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ModuleNavigation } from "#ui/components/architecture-model/ModuleNavigation.tsx";
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
@@ -71,10 +80,9 @@ interface ModelAboutSelectionProps extends ModelSelectionDetailsProps {
  * @param props The page's inputs.
  * @returns Everything the reading holds about the selected subject.
  */
-function ModelAboutSelection(props: ModelAboutSelectionProps): JSX.Element | null {
+function ModelAboutSelection(props: ModelAboutSelectionProps): JSX.Element {
 	const subject = selectedSubject({ ...props, ids: props.selection.ids });
 	if (subject.kind === "module") return <ModulePage {...props} module={subject.module} />;
-	if (subject.kind === "none") return null;
 	return <OtherPage {...props} subject={subject} />;
 }
 
@@ -191,6 +199,19 @@ function useModuleSections(props: ModulePageProps) {
 			receives.length,
 			<ModelConnectionTable {...table} connections={receives} />,
 		),
+		aboutSection(
+			"endpoints",
+			"Endpoints",
+			RiDoorOpenLine,
+			doorEndpoints(projection, id).length,
+			<ModelDoorEndpoints
+				door={id}
+				model={source}
+				projection={projection}
+				onSelect={selection.select}
+				whole
+			/>,
+		),
 		id === scope
 			? aboutSection(
 					"interface",
@@ -281,13 +302,6 @@ function ModulePage(props: ModelAboutSelectionProps & { readonly module: Module 
 						{props.evidence}
 						<ModelSubjectStanding model={model} subject={module.id} />
 						<HiddenNote {...props} />
-						<ModelDoorEndpoints
-							door={module.id}
-							model={source}
-							projection={projection}
-							onSelect={props.selection.select}
-							whole
-						/>
 					</>
 				}
 				sections={sections}
@@ -300,8 +314,8 @@ function ModulePage(props: ModelAboutSelectionProps & { readonly module: Module 
 
 /** What the title and the one section of any subject but a module hold. */
 interface OtherSubjectPage {
-	readonly name: string;
-	readonly kindName: string;
+	readonly name: ReactNode;
+	readonly kindName?: string | undefined;
 	readonly lead?: string | undefined;
 	readonly label: string;
 	readonly body: ReactNode;
@@ -318,7 +332,7 @@ function linePage(props: ModelAboutSelectionProps, connection: Connection): Othe
 	const { reference } = props.projection;
 	const { joins } = connection;
 	return {
-		name: lineEnds(connection.line, model, reference),
+		name: <LineTitle line={connection.line} model={model} reference={reference} />,
 		kindName: kindNames(model, joins),
 		lead: joins.length === 1 ? (joins[0].label ?? undefined) : undefined,
 		label: joins.length === 1 ? "Relationship" : "Relationships",
@@ -330,11 +344,11 @@ function linePage(props: ModelAboutSelectionProps, connection: Connection): Othe
  * What the page says of anything but one module.
  * @param props The page's inputs.
  * @param subject The selected subject.
- * @returns The page's parts, or null for nothing.
+ * @returns The page's parts. A selection the reading cannot name still has its page, which says so.
  */
 function otherPage(
 	props: ModelAboutSelectionProps,
-	subject: Exclude<SelectedSubject, { readonly kind: "module" | "none" }>,
+	subject: Exclude<SelectedSubject, { readonly kind: "module" }>,
 ): OtherSubjectPage {
 	const { model, projection, selection } = props;
 	const { reference } = projection;
@@ -344,7 +358,7 @@ function otherPage(
 			name: subject.collection.name,
 			kindName: "Flow collection",
 			label: "Flows",
-			body: <ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />,
+			body: <ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} bare />,
 		};
 	if (subject.kind === "flow")
 		return {
@@ -358,19 +372,18 @@ function otherPage(
 					flow={subject.flow}
 					reference={reference}
 					selection={selection}
+					bare
 				/>
 			),
 		};
 	return {
 		name: `${selection.ids.size} selected`,
-		kindName: "Selection",
 		label: "Selected subjects",
 		body: (
 			<SelectedSubjects
 				model={model}
 				reference={reference}
 				selected={selection.ids}
-				title="Selected subjects"
 				slot="model-selected-subjects"
 			/>
 		),
@@ -384,7 +397,7 @@ function otherPage(
  */
 function OtherPage(
 	props: ModelAboutSelectionProps & {
-		readonly subject: Exclude<SelectedSubject, { readonly kind: "module" | "none" }>;
+		readonly subject: Exclude<SelectedSubject, { readonly kind: "module" }>;
 	},
 ): JSX.Element {
 	const page = otherPage(props, props.subject);

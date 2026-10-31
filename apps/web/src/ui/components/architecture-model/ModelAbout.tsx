@@ -162,7 +162,6 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 						model={model}
 						reference={reference}
 						selected={focused}
-						title="Focused subjects"
 						slot="model-focused-subjects"
 					/>,
 				),

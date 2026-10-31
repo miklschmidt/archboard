@@ -27,7 +27,7 @@ interface ModelConnectionTableProps {
 
 /** The table's columns: from, to after its arrow, what it carries, and its kind. */
 const CONNECTION_GRID =
-	"grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)_112px] items-start gap-x-4 pl-3 pr-1";
+	"grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_176px] items-start gap-x-4 pl-3 pr-1";
 
 /**
  * Keyboard users inspect the same projected lines as pointer users: a table of both ends, what
@@ -99,7 +99,7 @@ function ConnectionRow(
 						<ConnectionEnd id={line.to} model={model} reference={reference} look={look} />
 					</span>
 					<span className="text-foreground/85 min-w-0 font-normal">{line.label}</span>
-					<span className="flex min-w-0 flex-col gap-1">
+					<span className="flex min-w-0 flex-wrap gap-x-3 gap-y-1">
 						{kindsOf(joins).map((kind) => (
 							<RelationshipChip key={kind} look={look} kind={kind} />
 						))}

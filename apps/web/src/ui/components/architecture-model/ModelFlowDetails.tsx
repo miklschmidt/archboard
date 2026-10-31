@@ -12,6 +12,8 @@ interface ModelFlowDetailsProps {
 	selection: ModelSelection;
 	/** Say only what is selected, for a place with no room for the whole flow. */
 	brief?: boolean | undefined;
+	/** Leave out the name and the summary, for a page that states them in its title. */
+	bare?: boolean | undefined;
 }
 
 /**
@@ -20,15 +22,15 @@ interface ModelFlowDetailsProps {
  * @returns The flow narrative and keyboard-accessible authored steps.
  */
 function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
-	const { brief } = props;
+	const { brief, bare } = props;
 	const steps = everyStep(props.flow.steps).filter(
 		(step) => brief !== true || props.selection.ids.has(step.id),
 	);
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
-			<h3 className="text-title font-semibold">{props.flow.name}</h3>
+			{bare !== true && <h3 className="text-title font-semibold">{props.flow.name}</h3>}
 			<ModelSubjectStanding model={props.model} subject={props.flow.id} />
-			{brief !== true && props.flow.summary && (
+			{brief !== true && bare !== true && props.flow.summary && (
 				<p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>
 			)}
 			<ol data-slot="model-flow-steps" className="space-y-3">

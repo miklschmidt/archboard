@@ -159,42 +159,48 @@ function OneRelationship(
 }
 
 /**
+ * The two ends of a line as a title, with the mark the line draws between them.
+ * @param props The line and its model.
+ * @param props.line The line.
+ * @param props.model The model that names its modules.
+ * @param props.reference The coherent base for a removed end.
+ * @returns The title's words.
+ */
+function LineTitle(props: {
+	line: Connection["line"];
+	model: Model;
+	reference: Model | undefined;
+}): JSX.Element {
+	const { line, model, reference } = props;
+	return (
+		<span aria-label={lineEnds(line, model, reference)}>
+			{moduleName(model, line.from, reference)}{" "}
+			<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
+			{moduleName(model, line.to, reference)}
+		</span>
+	);
+}
+
+/**
  * A projected line keeps every authored relationship with all that it says.
  * @param props The selected line and complete model.
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
  * @param props.reference The coherent base for removed endpoints.
- * @param props.children What the code says of it.
  * @returns The complete relationship details in authored order.
  */
 function ConnectionDetails(props: {
 	connection: Connection;
 	model: Model;
 	reference: Model | undefined;
-	children?: ReactNode;
 }): JSX.Element {
 	const { connection, model, reference } = props;
-	const { line } = connection;
 	return (
 		<article data-slot="model-connection-details" className="space-y-8">
-			<header className="space-y-3">
-				<h3
-					aria-label={lineEnds(line, model, reference)}
-					className="title-figure [overflow-wrap:anywhere] uppercase"
-				>
-					{moduleName(model, line.from, reference)}{" "}
-					<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
-					{moduleName(model, line.to, reference)}
-				</h3>
-				<p data-slot="model-connection-kinds" className="text-control text-muted-foreground">
-					{kindNames(model, connection.joins)}
-				</p>
-			</header>
-			{props.children}
 			<ol className="space-y-6">
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
-						<p className="text-control">{lineEnds(edge, model, props.reference)}</p>
+						<p className="text-control">{lineEnds(edge, model, reference)}</p>
 						<p className="text-muted-foreground">
 							{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
 						</p>
@@ -261,4 +267,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ConnectionDetails, ConnectionSummary, kindNames, lineEnds, moduleName };
+export { ConnectionDetails, ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName };

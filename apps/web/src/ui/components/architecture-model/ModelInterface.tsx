@@ -20,14 +20,16 @@ function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
 	if (inspection === undefined || !inspection.holdsParts) return null;
 	return (
 		<section data-slot="model-interface" className="space-y-6" aria-label="Module interface">
-			<ContainerInterface
-				content={complete}
-				node={inspection.container}
-				look={look}
-				onPick={props.onSelect}
-			/>
+			<div className="-mx-4 -my-4">
+				<ContainerInterface
+					content={complete}
+					node={inspection.container}
+					look={look}
+					onPick={props.onSelect}
+				/>
+			</div>
 			<section data-slot="model-whole-interface" className="text-body space-y-2">
-				<h3 className="text-title font-semibold">Whole-module callers</h3>
+				<h4 className="text-muted-foreground font-semibold">Whole-module callers</h4>
 				{inspection.onContainer.length === 0 && (
 					<p className="text-muted-foreground">No connection names this module as a whole.</p>
 				)}
@@ -39,7 +41,7 @@ function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
 				))}
 			</section>
 			<section data-slot="model-interface-outgoing" className="text-body space-y-2">
-				<h3 className="text-title font-semibold">Outgoing connections</h3>
+				<h4 className="text-muted-foreground font-semibold">Outgoing connections</h4>
 				{inspection.outgoing.length === 0 && (
 					<p className="text-muted-foreground">No connection leaves this module.</p>
 				)}

@@ -124,7 +124,7 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
 				</span>
 				{columns.groups && <GroupsCell module={module} groups={props.groups} />}
 				{columns.code && (
-					<span className={WIDE_ONLY}>
+					<span className="hidden min-w-0 pt-1 @min-[860px]/sheet:flex">
 						<ModelCodePath path={place.path} />
 					</span>
 				)}
