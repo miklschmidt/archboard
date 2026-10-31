@@ -97,19 +97,6 @@
       "to": "vKEsyHFk/qKGcB6vZ#hxZxt8Wy"
     },
     {
-      "order": 42000,
-      "kind": "call",
-      "label": "a callback as canonical JSON, kept on its record",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
-        "symbol": "canonicalJson"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#HiOX9Fc5",
-      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
-    },
-    {
       "order": 52000,
       "kind": "call",
       "label": "the callback as canonical JSON, kept on its record",

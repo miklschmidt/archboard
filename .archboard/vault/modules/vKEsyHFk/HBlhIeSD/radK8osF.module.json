@@ -48,29 +48,16 @@
     },
     {
       "order": 51000,
-      "kind": "call",
-      "label": "historical JSON bytes",
+      "kind": "dependency",
+      "label": "select the source files of a binding",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
-        "symbol": "decodeSemanticBoardDocument"
+        "path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts",
+        "symbol": "filesOfBinding"
       },
-      "id": "vKEsyHFk/0T9enjhi#tb0ZJK9U",
-      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
-    },
-    {
-      "order": 100000,
-      "kind": "call",
-      "label": "decodes historical board bytes without writes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
-        "symbol": "decodeSemanticBoardDocument"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#AMHnFhbq",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
+      "to": "vKEsyHFk#NVlMWCWO"
     },
     {
       "order": 113000,
@@ -85,19 +72,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 51000,
-      "kind": "dependency",
-      "label": "select the source files of a binding",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts",
-        "symbol": "filesOfBinding"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#K7yg89u4",
-      "to": "vKEsyHFk#NVlMWCWO"
     }
   ]
 }

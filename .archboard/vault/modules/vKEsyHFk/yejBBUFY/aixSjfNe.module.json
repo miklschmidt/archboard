@@ -28,19 +28,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 34000,
-      "kind": "render",
-      "label": "one stage, at the talk's step",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "SemanticBoardStage"
-      },
-      "id": "vKEsyHFk/yejBBUFY#o3xHmMmJ",
-      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
-    }
-  ]
+  "outgoing": []
 }

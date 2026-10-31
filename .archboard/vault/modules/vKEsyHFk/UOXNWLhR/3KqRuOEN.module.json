@@ -14,19 +14,5 @@
   "formerNames": [
     "Render stage states"
   ],
-  "outgoing": [
-    {
-      "order": 70022,
-      "kind": "call",
-      "label": "apply picture and camera interaction",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "moveCameraByKey"
-      },
-      "id": "vKEsyHFk#MtvcBtx6",
-      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
-    }
-  ]
+  "outgoing": []
 }

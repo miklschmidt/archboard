@@ -27,23 +27,6 @@
   ],
   "outgoing": [
     {
-      "order": 12000,
-      "kind": "http",
-      "label": "JSON",
-      "emphasis": "normal",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-requests/src/ui/clients/server-requests.ts",
-        "symbol": "fetch"
-      },
-      "id": "vKEsyHFk/yejBBUFY#chjmKQLj",
-      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
-    },
-    {
       "order": 2000,
       "kind": "http",
       "label": "views and controls",

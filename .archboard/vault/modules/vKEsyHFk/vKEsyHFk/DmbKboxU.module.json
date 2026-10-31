@@ -16,19 +16,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 70052,
-      "kind": "call",
-      "label": "resolve bound repository vaults",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/bound-vaults.ts",
-        "symbol": "isVaultLayout"
-      },
-      "id": "vKEsyHFk#CZjzqbF1",
-      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
-    }
-  ]
+  "outgoing": []
 }

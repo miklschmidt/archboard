@@ -174,18 +174,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
       "to": "vKEsyHFk#9VahN2IU"
-    },
-    {
-      "order": 101000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-        "symbol": "parseBoardKey"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#qqzbmw2N",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }
