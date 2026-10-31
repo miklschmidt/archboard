@@ -53,6 +53,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 23000,
+      "kind": "http",
+      "label": "check code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "answerCodeCheck"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
     }
   ]
 }

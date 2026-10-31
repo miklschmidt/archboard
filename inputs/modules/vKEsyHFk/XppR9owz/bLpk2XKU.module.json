@@ -32,5 +32,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "the registry, for the generated audit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/contract-artifacts/render.ts",
+        "symbol": "cliContractRegistry"
+      },
+      "id": "vKEsyHFk/XppR9owz#kggkjerM",
+      "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    }
+  ]
 }
