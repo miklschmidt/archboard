@@ -146,14 +146,14 @@ the repository of the pane beside it, or the destination that the reader chose.
 
 Each repository state has one line and one way on:
 
-| State | The pane or page says | The way on |
-| --- | --- | --- |
-| No repository | `No repository yet` | The command `archboard install-skill`, and a row appears in about 2 s |
-| Repository not on this machine | `<name> is not here` | The chooser and `archboard repo add` |
-| No choice | `No repository open` | The chooser |
-| No model | `No model yet` | `Ask the agent to write it` fills the composer |
-| Planning model | `Nothing implemented yet` | `Open <proposal>`, or `Ask the agent to propose a design` fills the composer |
-| Legacy model | `Migration required` | `Ask the agent for a migration preview` fills the composer |
+| State                          | The pane or page says     | The way on                                                                   |
+| ------------------------------ | ------------------------- | ---------------------------------------------------------------------------- |
+| No repository                  | `No repository yet`       | The command `archboard install-skill`, and a row appears in about 2 s        |
+| Repository not on this machine | `<name> is not here`      | The chooser and `archboard repo add`                                         |
+| No choice                      | `No repository open`      | The chooser                                                                  |
+| No model                       | `No model yet`            | `Ask the agent to write it` fills the composer                               |
+| Planning model                 | `Nothing implemented yet` | `Open <proposal>`, or `Ask the agent to propose a design` fills the composer |
+| Legacy model                   | `Migration required`      | `Ask the agent for a migration preview` fills the composer                   |
 
 The reader sends what an action puts in the composer. No state writes to the model by itself.
 
