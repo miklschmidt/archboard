@@ -4,6 +4,7 @@
 
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import type { Model } from "@archboard/board/content";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
 import { ModelStateFact } from "#ui/components/architecture-model/ModelStateTimeline.tsx";
 import { KindIcon } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
@@ -33,20 +34,32 @@ interface AboutPlace {
 	readonly keep: (top: number) => void;
 }
 
-/** Inputs for the page. */
-interface ModelAboutFrameProps {
+/** What the head of the page says of its subject. */
+interface AboutHead {
 	/** The name of the subject. */
 	readonly name: ReactNode;
-	/** The line of facts under the name. */
-	readonly facts: ReactNode;
+	/** Its kind, when it has one of the model's vocabulary. */
+	readonly kind?: string | undefined;
+	/** What a subject with no such kind is. */
+	readonly kindName?: string | undefined;
+	/** Its code path, when it has one. */
+	readonly path?: string | undefined;
 	/** What the subject is responsible for. */
 	readonly lead?: string | undefined;
 	/** The longer account of it. */
 	readonly description?: string | undefined;
+}
+
+/** Inputs for the page. */
+interface ModelAboutFrameProps {
+	readonly head: AboutHead;
+	readonly look: KindLook;
+	/** The reading's state on the timeline, or undefined for a reading with none. */
+	readonly state: TimelineEntry | undefined;
 	/** What the page is about and what can be done. */
 	readonly tools: ReactNode;
 	/** How the subject stands: its warnings, and how it differs from what it is read against. */
-	readonly standing?: ReactNode;
+	readonly children?: ReactNode;
 	readonly sections: readonly AboutPageSection[];
 	readonly place: AboutPlace;
 	readonly reducedMotion: boolean;
@@ -69,6 +82,25 @@ function aboutSection(
 	body: ReactNode,
 ): AboutPageSection {
 	return { key, label, icon, count, body };
+}
+
+/**
+ * What the head says of a module.
+ * @param module The module.
+ * @param tree The tree of the reading, which knows its code path.
+ * @returns The head.
+ */
+function moduleHead(
+	module: Pick<Model["modules"][number], "id" | "name" | "kind" | "responsibility" | "description">,
+	tree: Reader["tree"],
+): AboutHead {
+	return {
+		name: module.name,
+		kind: module.kind,
+		path: tree.owner.get(module.id)?.path,
+		lead: module.responsibility,
+		description: module.description,
+	};
 }
 
 /**
@@ -130,23 +162,23 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
  * @returns The title.
  */
 function AboutTitle(props: ModelAboutFrameProps): JSX.Element {
-	const { lead, description } = props;
+	const { head } = props;
 	return (
 		<header data-slot="model-about-title" className={ABOUT_TITLE}>
 			<div className="flex min-w-0 items-start justify-between gap-6">
-				<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{props.name}</h2>
+				<h2 className="title-figure min-w-0 [overflow-wrap:anywhere] uppercase">{head.name}</h2>
 				<div className="flex shrink-0 items-center gap-2 pt-2">{props.tools}</div>
 			</div>
-			{props.facts}
-			{lead !== undefined && lead !== "" && (
-				<p className="text-reading text-foreground/90 max-w-[68ch] text-pretty">{lead}</p>
+			<AboutFacts {...head} look={props.look} state={props.state} />
+			{Boolean(head.lead) && (
+				<p className="text-reading text-foreground/90 max-w-[68ch] text-pretty">{head.lead}</p>
 			)}
-			{description !== undefined && description !== "" && (
+			{Boolean(head.description) && (
 				<p className="text-body text-muted-foreground max-w-[68ch] whitespace-pre-wrap">
-					{description}
+					{head.description}
 				</p>
 			)}
-			{props.standing}
+			{props.children}
 		</header>
 	);
 }
@@ -197,13 +229,12 @@ function AboutSubject(props: {
  * @param props.state The reading's state on the timeline, or undefined for a reading with none.
  * @returns The line.
  */
-function AboutFacts(props: {
-	readonly look: KindLook;
-	readonly kind?: string | undefined;
-	readonly kindName?: string | undefined;
-	readonly path?: string | undefined;
-	readonly state: TimelineEntry | undefined;
-}): JSX.Element {
+function AboutFacts(
+	props: Pick<AboutHead, "kind" | "kindName" | "path"> & {
+		readonly look: KindLook;
+		readonly state: TimelineEntry | undefined;
+	},
+): JSX.Element {
 	const { look, kind, path, state } = props;
 	return (
 		<p
@@ -235,11 +266,12 @@ function AboutFacts(props: {
 }
 
 export {
-	AboutFacts,
 	AboutSubject,
 	aboutSection,
+	moduleHead,
 	ModelAboutFrame,
 	shownSections,
+	type AboutHead,
 	type AboutPageSection,
 	type AboutPlace,
 };

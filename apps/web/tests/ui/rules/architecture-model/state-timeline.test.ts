@@ -23,7 +23,7 @@ function state(
 	predecessor?: string,
 	adoptedAt?: string,
 ): State {
-	return { id, name: id, lifecycle, predecessor, adoptedAt } as State;
+	return { id, name: id, lifecycle, predecessor, adoptedAt };
 }
 
 test("a draft branches one deeper than the state it came from, and a draft off a draft deeper again", () => {

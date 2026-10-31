@@ -16,11 +16,12 @@ import { useMemo, type JSX, type ReactNode } from "react";
 import { ModelAboutSelection } from "#ui/components/architecture-model/ModelAboutSelection.tsx";
 import { ModelAboutWalkthroughs } from "#ui/components/architecture-model/ModelAboutWalkthroughs.tsx";
 import {
-	AboutFacts,
 	AboutSubject,
 	aboutSection,
+	moduleHead,
 	ModelAboutFrame,
 	shownSections,
+	type AboutHead,
 	type AboutPageSection,
 	type AboutPlace,
 } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
@@ -107,9 +108,83 @@ function ModelAbout(props: ModelAboutProps): JSX.Element {
 /** What the page of the open scope reads. */
 interface ScopePageProps extends ModelAboutProps {
 	readonly look: ReturnType<typeof kindLookOf>;
-	readonly state: Parameters<typeof AboutFacts>[0]["state"];
+	readonly state: StateTimeline["entries"][number] | undefined;
 	readonly tools: ReactNode;
 	readonly timeline: StateTimeline;
+}
+
+/**
+ * Where the lists of the open scope put their modules.
+ * @param props The page's inputs.
+ * @returns The rows of the parts and of the nearby modules.
+ */
+function useScopePlaces(props: ScopePageProps) {
+	const { tree } = props;
+	const { flow, focused, children, context, depicted } = props.projection;
+	return useMemo(() => {
+		const all = new Map(depicted.nodes.map((node) => [node.id, node]));
+		return {
+			parts: modulePlaces(children, tree, all, flow === null && focused === null),
+			nearby: modulePlaces(context, tree, all, false),
+		};
+	}, [children, context, tree, depicted.nodes, flow, focused]);
+}
+
+/**
+ * The steps of a flow reading.
+ * @param props The page's inputs.
+ * @returns The section, or null for any other reading.
+ */
+function flowSection(props: ScopePageProps): AboutPageSection | null {
+	const { model, selection } = props;
+	const { flow, reference } = props.projection;
+	if (flow === null) return null;
+	return aboutSection(
+		"flow",
+		"Steps",
+		RiListOrdered2,
+		flow.steps.length,
+		<ModelFlowDetails model={model} flow={flow} reference={reference} selection={selection} bare />,
+	);
+}
+
+/**
+ * The subjects a focused reading draws.
+ * @param props The page's inputs.
+ * @returns The section, or null for a reading with no focus.
+ */
+function focusSection(props: ScopePageProps): AboutPageSection | null {
+	const { focused, reference } = props.projection;
+	if (focused === null) return null;
+	return aboutSection(
+		"focus",
+		"Focus",
+		RiMapPinLine,
+		focused.size,
+		<SelectedSubjects
+			model={props.model}
+			reference={reference}
+			selected={focused}
+			slot="model-focused-subjects"
+		/>,
+	);
+}
+
+/**
+ * What the open module offers to the rest of the model.
+ * @param props The page's inputs.
+ * @returns The section, or null for a scope that holds no parts.
+ */
+function interfaceSection(props: ScopePageProps): AboutPageSection | null {
+	const { model, projection, selection } = props;
+	if (projection.inspection?.holdsParts !== true) return null;
+	return aboutSection(
+		"interface",
+		"Interface",
+		RiInputMethodLine,
+		undefined,
+		<ModelInterface model={model} projection={projection} onSelect={selection.select} />,
+	);
 }
 
 /**
@@ -118,33 +193,12 @@ interface ScopePageProps extends ModelAboutProps {
  * @returns The sections, in the order a reader asks.
  */
 function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
-	const { model, projection, selection, look, tree, onShow, walkthroughs } = props;
-	const { flow, focused, children, context, listed, reference, inspection, depicted } = projection;
-	const { select } = selection;
-	const places = useMemo(() => {
-		const all = new Map(depicted.nodes.map((node) => [node.id, node]));
-		return {
-			parts: modulePlaces(children, tree, all, flow === null && focused === null),
-			nearby: modulePlaces(context, tree, all, false),
-		};
-	}, [children, context, tree, depicted.nodes, flow, focused]);
+	const { model, projection, selection, look, onShow, walkthroughs } = props;
+	const { listed, reference } = projection;
+	const places = useScopePlaces(props);
 	const list = { model, projection, selection, look, onShow };
 	return shownSections([
-		flow === null
-			? null
-			: aboutSection(
-					"flow",
-					"Steps",
-					RiListOrdered2,
-					flow.steps.length,
-					<ModelFlowDetails
-						model={model}
-						flow={flow}
-						reference={reference}
-						selection={selection}
-						bare
-					/>,
-				),
+		flowSection(props),
 		aboutSection(
 			"walkthroughs",
 			"Walkthroughs",
@@ -157,23 +211,10 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 				look={look}
 			/>,
 		),
-		focused === null
-			? null
-			: aboutSection(
-					"focus",
-					"Focus",
-					RiMapPinLine,
-					focused.size,
-					<SelectedSubjects
-						model={model}
-						reference={reference}
-						selected={focused}
-						slot="model-focused-subjects"
-					/>,
-				),
+		focusSection(props),
 		aboutSection(
 			"parts",
-			flow === null ? "Parts" : "Participants",
+			projection.flow === null ? "Parts" : "Participants",
 			RiBox3Line,
 			places.parts.length,
 			<ModelModuleList {...list} places={places.parts} head="Part" slot="module-list" />,
@@ -196,19 +237,11 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 				reference={reference}
 				selected={selection.ids}
 				look={look}
-				onSelect={select}
+				onSelect={selection.select}
 				onShow={onShow}
 			/>,
 		),
-		inspection?.holdsParts === true
-			? aboutSection(
-					"interface",
-					"Interface",
-					RiInputMethodLine,
-					undefined,
-					<ModelInterface model={model} projection={projection} onSelect={select} />,
-				)
-			: null,
+		interfaceSection(props),
 		aboutSection(
 			"groups",
 			"Groups",
@@ -273,22 +306,15 @@ function ModelOwnership(): JSX.Element {
  * What the head of the page says: a flow reading is about its flow, a scope about its module. The
  * roots have no responsibility of their own, so the state on screen says what they are.
  * @param props The page's inputs.
- * @returns The head's parts.
+ * @returns The head.
  */
-function scopeHead(props: ScopePageProps) {
+function scopeHead(props: ScopePageProps): AboutHead {
 	const { model, scope, tree } = props;
 	const { flow } = props.projection;
-	if (flow !== null) return { name: flow.name, kindName: "Flow", lead: flow.summary ?? undefined };
+	if (flow !== null) return { name: flow.name, kindName: "Flow", lead: flow.summary };
 	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
-	if (module === undefined)
-		return { name: model.manifest.name, lead: model.selectedState?.summary ?? undefined };
-	return {
-		name: module.name,
-		kind: module.kind,
-		path: scope === null ? undefined : tree.owner.get(scope)?.path,
-		lead: module.responsibility,
-		description: module.description,
-	};
+	if (module !== undefined) return moduleHead(module, tree);
+	return { name: model.manifest.name, lead: model.selectedState?.summary };
 }
 
 /**
@@ -299,27 +325,18 @@ function scopeHead(props: ScopePageProps) {
 function ScopePage(props: ScopePageProps): JSX.Element {
 	const sections = useScopeSections(props);
 	const { model, scope, look, state } = props;
-	const head = scopeHead(props);
 	return (
 		<ModelAboutFrame
-			name={head.name}
-			facts={
-				<AboutFacts
-					look={look}
-					kind={head.kind}
-					kindName={head.kindName}
-					path={head.path}
-					state={state}
-				/>
-			}
-			lead={head.lead}
-			description={head.description}
+			head={scopeHead(props)}
+			look={look}
+			state={state}
 			tools={props.tools}
-			standing={<ModelSubjectStanding model={model} subject={scope} />}
 			sections={sections}
 			place={props.place}
 			reducedMotion={props.reducedMotion}
-		/>
+		>
+			<ModelSubjectStanding model={model} subject={scope} />
+		</ModelAboutFrame>
 	);
 }
 

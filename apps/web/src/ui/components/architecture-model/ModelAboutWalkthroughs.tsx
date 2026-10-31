@@ -70,14 +70,6 @@ function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 	const steps = walkthrough.beats.length;
 	const [open, setOpen] = useState(props.walkthroughs.length <= OPEN_SCRIPTS);
 	const toggle = useCallback((): void => setOpen((was) => !was), []);
-	const playback = useContext(ModelWalkthroughContext);
-	const start = playback?.select;
-	const narration = playback?.narration;
-	const present = useCallback((): void => start?.(walkthrough.id), [start, walkthrough.id]);
-	const narrate = useCallback(
-		(): void => narration?.start(walkthrough.id),
-		[narration, walkthrough.id],
-	);
 	return (
 		<li
 			data-slot="about-walkthrough"
@@ -108,28 +100,7 @@ function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 						</p>
 					)}
 				</div>
-				<div className="flex shrink-0 items-center gap-1">
-					<Button
-						variant="outline"
-						data-slot="about-present"
-						aria-label={`Present ${walkthrough.name}`}
-						onClick={present}
-					>
-						<RiPlayCircleLine aria-hidden="true" />
-						Present
-					</Button>
-					{narration != null && (
-						<IconButton
-							label={`Narrate ${walkthrough.name}`}
-							tip="Narrate aloud"
-							held={narration.held}
-							slot="about-narrate"
-							onClick={narrate}
-						>
-							<RiMicLine />
-						</IconButton>
-					)}
-				</div>
+				<ScriptActions walkthrough={walkthrough} />
 			</div>
 			{open && (
 				<ol aria-label={`Steps of ${walkthrough.name}`} className="border-border border-t">
@@ -139,6 +110,45 @@ function WalkthroughScript(props: WalkthroughScriptProps): JSX.Element {
 				</ol>
 			)}
 		</li>
+	);
+}
+
+/**
+ * The ways to present a walkthrough and to narrate it.
+ * @param props The walkthrough.
+ * @param props.walkthrough The walkthrough.
+ * @returns The controls.
+ */
+function ScriptActions(props: { readonly walkthrough: Walkthrough }): JSX.Element {
+	const { id, name } = props.walkthrough;
+	const playback = useContext(ModelWalkthroughContext);
+	const start = playback?.select;
+	const narration = playback?.narration;
+	const present = useCallback((): void => start?.(id), [start, id]);
+	const narrate = useCallback((): void => narration?.start(id), [narration, id]);
+	return (
+		<div className="flex shrink-0 items-center gap-1">
+			<Button
+				variant="outline"
+				data-slot="about-present"
+				aria-label={`Present ${name}`}
+				onClick={present}
+			>
+				<RiPlayCircleLine aria-hidden="true" />
+				Present
+			</Button>
+			{narration != null && (
+				<IconButton
+					label={`Narrate ${name}`}
+					tip="Narrate aloud"
+					held={narration.held}
+					slot="about-narrate"
+					onClick={narrate}
+				>
+					<RiMicLine />
+				</IconButton>
+			)}
+		</div>
 	);
 }
 

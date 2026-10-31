@@ -39,17 +39,24 @@ function useWalkthroughBeat(
 		}),
 		[playback.walkthrough.id, first],
 	);
-	const matching =
-		driven?.walkthrough === playback.walkthrough.id && driven.beat < caption.beats.length
-			? driven
-			: null;
 	const position = useWalkthrough(
 		{ board: model.manifest.id, variant: model.checkpoint?.id },
 		offered,
-		driven === undefined ? initial : matching,
+		driven === undefined ? initial : drivenPlace(driven, playback, caption.beats.length),
 	);
 	const beat = readingAt(playback, position.beatIndex);
 	return { ...beat, key: `${model.revision.digest}:${beat.id}`, caption, position };
+}
+
+/**
+ * The position that is asked for, when it is a place in this walkthrough.
+ * @param driven The requested position, or null for the recording overview.
+ * @param playback The resolved narrative.
+ * @param beats How many beats it has.
+ * @returns The position, or null.
+ */
+function drivenPlace(driven: DrivenPlace | null, playback: Playback, beats: number) {
+	return driven?.walkthrough === playback.walkthrough.id && driven.beat < beats ? driven : null;
 }
 
 /**

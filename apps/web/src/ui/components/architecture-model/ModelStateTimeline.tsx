@@ -131,7 +131,6 @@ function StateRow(props: {
 	const rowStyle = useMemo(() => ({ paddingLeft: markX + TEXT_AFTER_MARK }), [markX]);
 	const markStyle = useMemo(() => ({ left: markX - 8, top: PAGE_LANE.middle - 8 }), [markX]);
 	const choose = useCallback((): void => onChoose(entry), [onChoose, entry]);
-	const reason = drawn ? undefined : reasonOf(entry);
 	return (
 		<li className={cn("relative", drawn && "bg-sidebar-accent shadow-raised rounded-control")}>
 			<button
@@ -154,31 +153,7 @@ function StateRow(props: {
 				>
 					<VariantMark lifecycle={state.lifecycle} />
 				</span>
-				<span className="flex min-w-0 flex-1 flex-col gap-0.5">
-					<span className="flex min-w-0 items-baseline gap-3">
-						<span className="title-name truncate">{state.name}</span>
-						<span
-							className={cn(
-								"text-body shrink-0",
-								state.lifecycle === "current"
-									? "text-foreground font-medium"
-									: "text-muted-foreground",
-							)}
-						>
-							{standingWords(entry)}
-						</span>
-						{drawn && (
-							<span className="text-body text-primary-text ml-auto shrink-0 font-medium">
-								On screen
-							</span>
-						)}
-					</span>
-					{reason !== undefined && (
-						<span className="text-control text-muted-foreground max-w-[72ch] font-normal">
-							{reason}
-						</span>
-					)}
-				</span>
+				<StateWords entry={entry} drawn={drawn} />
 			</button>
 			{drawn && (
 				<span
@@ -193,6 +168,49 @@ function StateRow(props: {
 				</div>
 			)}
 		</li>
+	);
+}
+
+/**
+ * What a row says of its state: its name, where it stands, and why it stands there. The state on
+ * screen says why under its row.
+ * @param props The state, and whether it is on screen.
+ * @param props.entry The state on the timeline.
+ * @param props.drawn Whether it is on screen.
+ * @returns The words.
+ */
+function StateWords(props: {
+	readonly entry: TimelineEntry;
+	readonly drawn: boolean;
+}): JSX.Element {
+	const { entry, drawn } = props;
+	const reason = drawn ? undefined : reasonOf(entry);
+	return (
+		<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+			<span className="flex min-w-0 items-baseline gap-3">
+				<span className="title-name truncate">{entry.state.name}</span>
+				<span
+					className={cn(
+						"text-body shrink-0",
+						entry.state.lifecycle === "current"
+							? "text-foreground font-medium"
+							: "text-muted-foreground",
+					)}
+				>
+					{standingWords(entry)}
+				</span>
+				{drawn && (
+					<span className="text-body text-primary-text ml-auto shrink-0 font-medium">
+						On screen
+					</span>
+				)}
+			</span>
+			{reason !== undefined && (
+				<span className="text-control text-muted-foreground max-w-[72ch] font-normal">
+					{reason}
+				</span>
+			)}
+		</span>
 	);
 }
 

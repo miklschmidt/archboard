@@ -63,6 +63,21 @@ function lineOf(
 }
 
 /**
+ * The states that branch off a state.
+ * @param states Every state.
+ * @param state The state.
+ * @param onLine The identities on the line, which stay there.
+ * @returns Its branches.
+ */
+function branchesOf(
+	states: readonly State[],
+	state: State,
+	onLine: ReadonlySet<string>,
+): readonly State[] {
+	return states.filter((branch) => branch.predecessor === state.id && !onLine.has(branch.id));
+}
+
+/**
  * The model's states in timeline order, each with its depth.
  * @param states Every state of the model.
  * @returns The timeline.
@@ -83,8 +98,7 @@ function stateTimeline(states: readonly State[]): StateTimeline {
 		if (placed.has(state.id)) return;
 		placed.add(state.id);
 		entries.push({ state, depth, from: byId.get(state.predecessor ?? "")?.name });
-		for (const branch of states)
-			if (branch.predecessor === state.id && !onLine.has(branch.id)) place(branch, depth + 1);
+		for (const branch of branchesOf(states, state, onLine)) place(branch, depth + 1);
 	};
 	for (const state of line) place(state, 0);
 	// A state the record joins to nothing above still has its place, at the end.

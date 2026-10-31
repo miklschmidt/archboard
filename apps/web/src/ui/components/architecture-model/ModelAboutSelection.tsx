@@ -15,10 +15,12 @@ import {
 import { useMemo, type JSX, type ReactNode } from "react";
 import { doorEndpoints, type Model } from "@archboard/board/content";
 import {
-	AboutFacts,
 	aboutSection,
+	moduleHead,
 	ModelAboutFrame,
 	shownSections,
+	type AboutHead,
+	type AboutPlace,
 } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import { ModelAboutWalkthroughs } from "#ui/components/architecture-model/ModelAboutWalkthroughs.tsx";
 import { ModelConnectionTable } from "#ui/components/architecture-model/ModelConnectionTable.tsx";
@@ -46,7 +48,6 @@ import {
 	RelationshipEvidence,
 } from "#ui/components/architecture-model/ModuleDetails.tsx";
 import { ModuleNavigation } from "#ui/components/architecture-model/ModuleNavigation.tsx";
-import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { modulePlaces } from "#ui/rules/architecture-model/module-places.ts";
 import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
@@ -58,6 +59,7 @@ import {
 	type Connection,
 	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
+import type { TimelineEntry } from "#ui/rules/architecture-model/state-timeline.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
 type Module = Model["modules"][number];
@@ -66,7 +68,7 @@ type Relationship = Connection["joins"][number];
 /** What a page about a selection reads. */
 interface ModelAboutSelectionProps extends ModelSelectionDetailsProps {
 	readonly look: KindLook;
-	readonly state: Parameters<typeof AboutFacts>[0]["state"];
+	readonly state: TimelineEntry | undefined;
 	readonly tools: ReactNode;
 	readonly tree: Reader["tree"];
 	readonly place: AboutPlace;
@@ -274,46 +276,34 @@ function ModulePage(props: ModelAboutSelectionProps & { readonly module: Module 
 	const source = moduleSource(model, projection, module.id);
 	const sections = useModuleSections({ ...props, source });
 	const opens = !isRemoved(projection, module.id) && module.id !== scope;
+	const tools = (
+		<>
+			{props.tools}
+			{opens && <OpenModule id={module.id} onOpen={onOpen} />}
+		</>
+	);
 	return (
 		<div data-slot="module-details" data-module-id={module.id} className="contents">
 			<ModelAboutFrame
-				name={module.name}
-				facts={
-					<AboutFacts
-						look={props.look}
-						kind={module.kind}
-						path={props.tree.owner.get(module.id)?.path}
-						state={props.state}
-					/>
-				}
-				lead={module.responsibility}
-				description={module.description}
-				tools={
-					<>
-						{props.tools}
-						{opens && <OpenModule id={module.id} onOpen={onOpen} />}
-					</>
-				}
-				standing={
-					<>
-						{props.evidence}
-						<ModelSubjectStanding model={model} subject={module.id} />
-						<HiddenNote {...props} />
-					</>
-				}
+				head={moduleHead(module, props.tree)}
+				look={props.look}
+				state={props.state}
+				tools={tools}
 				sections={sections}
 				place={props.place}
 				reducedMotion={props.reducedMotion}
-			/>
+			>
+				{props.evidence}
+				<ModelSubjectStanding model={model} subject={module.id} />
+				<HiddenNote {...props} />
+			</ModelAboutFrame>
 		</div>
 	);
 }
 
 /** What the title and the one section of any subject but a module hold. */
 interface OtherSubjectPage {
-	readonly name: ReactNode;
-	readonly kindName?: string | undefined;
-	readonly lead?: string | undefined;
+	readonly head: AboutHead;
 	readonly label: string;
 	readonly body: ReactNode;
 }
@@ -329,9 +319,11 @@ function linePage(props: ModelAboutSelectionProps, connection: Connection): Othe
 	const { reference } = props.projection;
 	const { joins } = connection;
 	return {
-		name: <LineTitle line={connection.line} model={model} reference={reference} />,
-		kindName: kindNames(model, joins),
-		lead: joins.length === 1 ? (joins[0].label ?? undefined) : undefined,
+		head: {
+			name: <LineTitle line={connection.line} model={model} reference={reference} />,
+			kindName: kindNames(model, joins),
+			lead: joins.length === 1 ? (joins[0].label ?? undefined) : undefined,
+		},
 		label: joins.length === 1 ? "Relationship" : "Relationships",
 		body: <ConnectionDetails connection={connection} model={model} reference={reference} />,
 	};
@@ -352,16 +344,13 @@ function otherPage(
 	if (subject.kind === "connection") return linePage(props, subject.connection);
 	if (subject.kind === "collection")
 		return {
-			name: subject.collection.name,
-			kindName: "Flow collection",
+			head: { name: subject.collection.name, kindName: "Flow collection" },
 			label: "Flows",
 			body: <ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} bare />,
 		};
 	if (subject.kind === "flow")
 		return {
-			name: subject.flow.name,
-			kindName: "Flow",
-			lead: subject.flow.summary,
+			head: { name: subject.flow.name, kindName: "Flow", lead: subject.flow.summary },
 			label: "Steps",
 			body: (
 				<ModelFlowDetails
@@ -374,7 +363,7 @@ function otherPage(
 			),
 		};
 	return {
-		name: "Selection",
+		head: { name: "Selection" },
 		label: "Selected subjects",
 		body: (
 			<SelectedSubjects
@@ -404,20 +393,17 @@ function OtherPage(
 	);
 	return (
 		<ModelAboutFrame
-			name={page.name}
-			facts={<AboutFacts look={props.look} kindName={page.kindName} state={props.state} />}
-			lead={page.lead}
+			head={page.head}
+			look={props.look}
+			state={props.state}
 			tools={props.tools}
-			standing={
-				<>
-					{props.subject.kind === "connection" && props.evidence}
-					<HiddenNote {...props} />
-				</>
-			}
 			sections={sections}
 			place={props.place}
 			reducedMotion={props.reducedMotion}
-		/>
+		>
+			{props.subject.kind === "connection" && props.evidence}
+			<HiddenNote {...props} />
+		</ModelAboutFrame>
 	);
 }
 

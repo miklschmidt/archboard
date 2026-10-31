@@ -22,9 +22,9 @@ function node(id: string, path: string, parent?: string): Node {
 		order: 0,
 		name: id,
 		kind: "service",
-		parent,
-		binding: { repository: "repo", path },
-	} as unknown as Node;
+		...(parent === undefined ? {} : { parent }),
+		binding: { repo: "repo", path },
+	};
 }
 
 const NODES = [
@@ -35,7 +35,7 @@ const NODES = [
 	node("deep", "a/1/x", "a1"),
 ];
 const ALL = new Map(NODES.map((one) => [one.id, one]));
-const TREE = moduleTree({ nodes: NODES } as unknown as VariantContent);
+const TREE = moduleTree({ nodes: NODES });
 const ROOTS = NODES.filter((one) => one.parent === undefined);
 
 test("a nested list follows the tree one rail deep and says what each row holds", () => {
