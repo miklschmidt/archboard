@@ -1,0 +1,15 @@
+{
+  "order": 68000,
+  "name": "Measures",
+  "kind": "module",
+  "responsibility": "Lists every module of a reading with its interface counts, commit count and unjoined pairs, sorted by the count a reader chooses",
+  "description": "One history read of a revision answers for every part at once, and a selection shares it. A row selects its module on the picture. An unread part states why, and no count joins a score.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/architecture-model/ModelMeasures.tsx"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#tQ2B3iEF",
+  "outgoing": []
+}

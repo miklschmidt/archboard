@@ -1,0 +1,15 @@
+{
+  "order": 37000,
+  "name": "Edge tab",
+  "kind": "function",
+  "responsibility": "Paints a frame and its edge tab: one line with the frame's kind, name and code path on the top edge of the well",
+  "description": "The tab's left side is the side of the frame. The frame's responsibility stays out of the picture and goes with the tab's group as the title of the picture's file.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/edge_tab.rs"
+  },
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#n2J80LO7",
+  "outgoing": []
+}

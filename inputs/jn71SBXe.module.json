@@ -1,0 +1,15 @@
+{
+  "order": 38000,
+  "name": "Door button",
+  "kind": "function",
+  "responsibility": "Paints a module outside the open one as a bright button, with an arrow that says where it lies in the tree from the open module",
+  "description": "A door takes the finish of a primary action in its group's colour, or in its kind's colour when it has no group. That colour stays bright on both themes. Its icon shows its kind.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/door.rs"
+  },
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#jn71SBXe",
+  "outgoing": []
+}
