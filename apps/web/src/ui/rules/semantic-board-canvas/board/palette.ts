@@ -14,4 +14,14 @@ function paletteInk(color: string | undefined, fallback = "--muted-foreground"):
 	return parsed.success ? `var(--semantic-${parsed.data})` : `var(${fallback})`;
 }
 
-export { paletteInk };
+/**
+ * What a group's tag is cut from, which a tag sets as `--tag` for the `group-tag` utility.
+ * @param color The colour's name, or anything else for none.
+ * @returns A CSS colour.
+ */
+function paletteTag(color: string | undefined): string {
+	const parsed = PaletteColorSchema.safeParse(color);
+	return `var(--tag-${parsed.success ? parsed.data : "neutral"})`;
+}
+
+export { paletteInk, paletteTag };

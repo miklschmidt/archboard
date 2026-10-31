@@ -75,7 +75,7 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 		"the camera of that reading",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-key"]']);
+	await browser.run(["click", '[data-slot="model-legend-filter"]']);
 	await pollUntil(
 		() => browser.eval<boolean>(`document.querySelector('[data-filter-kind="call"]') !== null`),
 		Boolean,
@@ -91,10 +91,9 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	);
 	await settledOn(browser, "Shop#Gateway");
 	expect(
-		await browser.eval<boolean>(`document.querySelector('[data-slot="model-key-sheet"]') !== null`),
+		await browser.eval<boolean>(`document.querySelector('[data-filter-kind="call"]') !== null`),
 	).toBe(true);
 	expect(await browser.eval<boolean>(`window.held.every((part) => part.isConnected)`)).toBe(true);
-	await browser.run(["press", "Escape"]);
 	const address = new URLSearchParams({
 		scopeA: "Shop#Gateway",
 		subjectA: "Shop#Handler",

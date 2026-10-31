@@ -308,7 +308,9 @@ function ModelOwnership(): JSX.Element {
  * @param props The page's inputs.
  * @returns The head.
  */
-function scopeHead(props: ScopePageProps): AboutHead {
+function scopeHead(
+	props: Pick<ScopePageProps, "model" | "scope" | "tree" | "projection">,
+): AboutHead {
 	const { model, scope, tree } = props;
 	const { flow } = props.projection;
 	if (flow !== null) return { name: flow.name, kindName: "Flow", lead: flow.summary };
@@ -340,4 +342,4 @@ function ScopePage(props: ScopePageProps): JSX.Element {
 	);
 }
 
-export { ModelAbout, type ModelAboutProps };
+export { ModelAbout, scopeHead, type ModelAboutProps };

@@ -86,41 +86,44 @@ state:
 - The mockup's tool rail communicates density and placement, not a drawing
   toolset: nobody draws on a board here.
 
-## The right panel, the Key and About
+## The right panel, the legend and About
 
-Revised 2026-10-30 (TASK-559.06). The canonical reader has no pane sidebar and no
+Revised 2026-10-31 (TASK-559.19). The canonical reader has no pane sidebar and no
 `Architecture | Selection` tabs. [The reader redesign](reader-redesign.md) records
-why. A permanent inspector cost each pane its width, so the picture refit, and it
-filled the first screen with controls, adoption prose and tours.
+why. An overlay panel and a legend behind a button replaced a permanent inspector,
+and the owner then took the legend for deleted, because the button went unnoticed for
+hours. The right side is now a short permanent column: it holds the legend and short
+text, and long lists stay in About.
 
-- **The right panel is absent until a selection.** It is 360 px wide, or 46 percent
-  of a narrow pane. It lies over the picture's right edge, so the picture keeps its
-  rectangle and its camera. The camera moves only when the panel would cover the
-  selected subject, and then only far enough to show it.
-- **A click lights its subject at once, and the panel and the camera wait 220 ms.**
-  A second click starts the wait again. A double click on a card at the right edge
-  therefore lands on the card and opens it.
-- **The panel says what the subject is, how it stands, and what it touches.** A
-  module shows its name, kind, code path and responsibility, its warnings and
-  standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
-  grouped by the part that reaches them. A line lists each relationship with its
-  real ends. A two-way line lists both directions, and a module's lists show each
-  direction of such a line with only what runs that way. Every row is an action
-  that selects its subject. A list shows 8 rows, then offers the rest in place.
+- **The right panel stands on every Diagram reading.** It is 360 px wide, or 46
+  percent of a narrow pane, in every pane. The picture fits the room that it leaves,
+  so a selection never refits the picture and the camera keeps its moves.
+- **With nothing selected, it says what is open.** It shows the open module's name
+  and description, or at the roots the model's name and the summary of its state,
+  because a model has no description of its own. A flow reading shows the flow.
+- **A click answers at once.** The card and the tree row light, and the panel names
+  the subject. Nothing moves, so a double click on a card lands on the card and
+  opens it.
+- **With a selection, it says what the subject is, how it stands, and what it
+  touches.** A module shows its name, kind, code path and responsibility, its warnings
+  and standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
+  grouped by the part that reaches them. A line lists each relationship with its real
+  ends. A two-way line lists both directions, and a module's lists show each direction
+  of such a line with only what runs that way. Every row is an action that selects its
+  subject. A list shows 8 rows, then offers the rest in place.
 - **The foot of the panel holds what can be done.** `Open module`, `Open code`,
-  `Focus` and `Explain` stay pinned while the body scrolls. Escape and the close
-  control let the selection go, and the keyboard returns to the picture.
+  `Focus` and `Explain` stay pinned under the legend while the subject scrolls. Escape
+  and the close control let the selection go, and the keyboard returns to the picture.
 - **Warnings sit on their subject.** The picture marks the warned subject, and the
   panel and About give the check's words for a module, a line or a step. Only About
   shows the count for the whole model.
-- **The Key stands at the picture's lower left and replaces `Filters`.** It is the
-  one entry point to the marks of a picture and to what it draws. A mark explains,
-  and a separate switch at the end of its row changes the reading. A kind that a
-  reader hid stays in the Key, dimmed, and the closed Key says how many are hidden.
-  A mixed line has a row and no switch, because it is no kind of relationship. Group
-  regions are off by default, and their switches turn them on.
-- **Only one overlay opens at a time.** The Key closes the panel while it is open,
-  and About covers both. The selection stays, so the panel returns.
+- **The legend stands at the foot of the panel and needs no click.** It replaces the
+  button at the picture's lower left and `Filters`, and it lists the kinds, line types
+  and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader
+  can hide. A kind that a reader hid stays in the legend, dimmed, and the heading row
+  says how many are hidden. A mixed line has a row and no switch, because it is no kind
+  of relationship. Groups close the legend as bright tags with no switch. A reading
+  with no groups has no group section.
 - **About holds every long list and names its subject.** The end of its title row
   reads `Open scope`. While something is selected, it offers `Open scope` and
   `Selected subject`. About opens on the selection when there is one. On the scope,
@@ -457,7 +460,7 @@ columns for groups and code leave the table of parts.
 Revised 2026-10-30 (TASK-559.05). The left column replaces the tree of boards.
 [The reader redesign](reader-redesign.md) records why. The column is 320 px wide
 and lists where to go. The picture shows the place, and the right side explains
-the selected thing. From the top, the column holds the wordmark, Find, the
+what is selected or open. From the top, the column holds the wordmark, Find, the
 repository switcher, the destinations and the agent dock.
 
 ![The left column at 1920×1080: Find, the repository switcher, the destinations

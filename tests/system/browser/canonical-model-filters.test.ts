@@ -18,30 +18,22 @@ import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
-async function openFilters(browser: AgentBrowserSession): Promise<void> {
-	await browser.run(["click", '[data-slot="model-key"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-key"]')?.getAttribute('aria-expanded') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
-			),
-		Boolean,
-		"the opened filter controls",
-		WAIT,
+const FILTER = '[data-slot="model-legend-filter"]';
+
+async function filtering(browser: AgentBrowserSession): Promise<boolean> {
+	return browser.eval<boolean>(
+		`document.querySelector('${FILTER}')?.getAttribute('aria-pressed') === 'true' && document.querySelector('[data-filter-kind="call"]') !== null`,
 	);
 }
 
+async function openFilters(browser: AgentBrowserSession): Promise<void> {
+	await browser.run(["click", FILTER]);
+	await pollUntil(() => filtering(browser), Boolean, "the opened filter controls", WAIT);
+}
+
 async function closeFilters(browser: AgentBrowserSession): Promise<void> {
-	await browser.run(["press", "Escape"]);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-key"]')?.getAttribute('aria-expanded') === 'false' && document.querySelector('[data-filter-kind="call"]') === null`,
-			),
-		Boolean,
-		"the dismissed filter controls",
-		WAIT,
-	);
+	await browser.run(["click", FILTER]);
+	await pollUntil(async () => !(await filtering(browser)), Boolean, "the put away filters", WAIT);
 }
 
 test("reading filters preserve selection and authored meaning with an explicit reveal action", async () => {
@@ -73,18 +65,12 @@ test("reading filters preserve selection and authored meaning with an explicit r
 		"a first picture with its groups off",
 		WAIT,
 	);
-	await openFilters(browser);
-	await browser.run(["click", '[data-filter-group="public"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') !== null`,
-			),
-		Boolean,
-		"the shown group region",
-		WAIT,
-	);
-	await closeFilters(browser);
+	expect(
+		await browser.eval<{ tags: number; switches: number }>(`(() => {
+			const groups = document.querySelector('[data-slot="model-legend-groups"]');
+			return { tags: groups.children.length, switches: groups.querySelectorAll('[role="switch"]').length };
+		})()`),
+	).toEqual({ tags: 1, switches: 0 });
 	await pick(browser, "Shop#Dispatch");
 	await openFilters(browser);
 	await browser.run(["click", '[data-filter-kind="call"]']);
@@ -92,10 +78,10 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null`,
+				`document.querySelector('[data-slot="model-hidden-selection"]')?.getAttribute('data-count') === '1' && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('[data-slot="model-legend-hidden"]') !== null`,
 			),
 		Boolean,
-		"the hidden selected connection",
+		"the hidden selected connection, and the count of what is hidden",
 		WAIT,
 	);
 	expect(
@@ -108,23 +94,11 @@ test("reading filters preserve selection and authored meaning with an explicit r
 			`document.querySelector('[data-slot="model-connection-details"]') !== null`,
 		),
 	).toBe(true);
-	await openFilters(browser);
-	await browser.run(["click", '[data-filter-group="public"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-diagram"] svg') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') === null`,
-			),
-		Boolean,
-		"hidden group regions",
-		WAIT,
-	);
 	expect(
 		await browser.eval<string[]>(
 			`[...new Set([...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map(node => node.getAttribute('data-semantic-id')))].sort()`,
 		),
 	).toEqual(["Shop#Gateway", "Shop#Worker"]);
-	await closeFilters(browser);
 	await browser.run(["click", '[data-slot="model-reveal-selection"]']);
 	await pollUntil(
 		() =>
@@ -138,7 +112,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	await openFilters(browser);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'true' && document.querySelector('[data-filter-group="public"]')?.getAttribute('aria-checked') === 'false'`,
+			`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'true'`,
 		),
 	).toBe(true);
 	await closeFilters(browser);
@@ -154,7 +128,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	);
 	await browser.run(["reload"]);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-key"]') !== null`),
+		() => browser.eval<boolean>(`document.querySelector('${FILTER}') !== null`),
 		Boolean,
 		"restored filter controls",
 		WAIT,
@@ -163,7 +137,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'false' && document.querySelector('[data-filter-group="public"]')?.getAttribute('aria-checked') === 'false' && document.querySelector('[data-slot="model-diagram"] svg') !== null`,
+				`document.querySelector('[data-filter-kind="call"]')?.getAttribute('aria-checked') === 'false' && document.querySelector('[data-slot="model-diagram"] svg') !== null`,
 			),
 		Boolean,
 		"restored filters",
@@ -171,7 +145,7 @@ test("reading filters preserve selection and authored meaning with an explicit r
 	);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null && document.querySelector('[data-slot="model-diagram"] [data-semantic-kind="group-region"]') === null`,
+			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"]') === null`,
 		),
 	).toBe(true);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");

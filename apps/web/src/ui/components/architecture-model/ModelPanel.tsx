@@ -1,6 +1,6 @@
-// The right panel of a reading: what explains the selected thing, and nothing else. It is absent
-// until a selection and lies over the picture, so the picture keeps its size and its camera.
-// Long lists and evidence live on About.
+// The right panel of a reading: a column that stands beside the picture on every Diagram reading,
+// so a selection never moves the picture. It says what is selected, or what is open while nothing
+// is, over the legend and what can be done. Long lists and evidence live on About.
 
 import { RiCloseLine } from "@remixicon/react";
 import {
@@ -16,14 +16,9 @@ import {
 } from "react";
 import { SIDEBAR_MS } from "@archboard/timing";
 import { cn, IconButton } from "@archboard/ui-kit/components";
-import { useSidebarSlide } from "#ui/hooks/semantic-board-canvas/use-sidebar-slide.ts";
-import { PANEL_CSS_WIDTH } from "#ui/rules/architecture-model/panel-room.ts";
 
-/** Where the panel stands, and the durations the stylesheet eases it with. */
+/** The duration the stylesheet fades a new subject in with. */
 const PANEL_STYLE: CSSProperties = {
-	width: PANEL_CSS_WIDTH,
-	"--sidebar-float-in-ms": `${SIDEBAR_MS.floatIn}ms`,
-	"--sidebar-float-out-ms": `${SIDEBAR_MS.floatOut}ms`,
 	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
 };
 
@@ -32,71 +27,93 @@ const ROWS_SHOWN = 8;
 
 /** Inputs for the panel. */
 interface ModelPanelProps {
-	readonly open: boolean;
-	/** Which subject it explains: a new one opens at the top and arrives with a fade. */
-	readonly subject: string;
-	/** Let go of the selection. */
-	readonly onClose: () => void;
-	/** What it says, ending in its `ModelPanel.Foot`. */
+	/** Let go of the selection, while there is one. */
+	readonly onClose: (() => void) | undefined;
+	/** Whether About lies over it. It then holds nothing and keeps its room, so the picture keeps its camera. */
+	readonly covered: boolean;
+	/** Its `ModelPanel.Subject`, then the legend and any `ModelPanel.Foot`. */
 	readonly children: ReactNode;
 }
 
 /**
- * Give the keyboard back to the picture when the panel leaves with it, by whatever means.
- * @param panel The panel's element, which lies beside the picture.
- * @param leaving Whether the panel is on its way out.
+ * Give the keyboard to the picture beside the panel.
+ * @param panel The panel's element.
  */
-function useFocusBack(panel: RefObject<HTMLElement | null>, leaving: boolean): void {
-	useLayoutEffect(() => {
-		const element = panel.current;
-		if (!leaving || element?.contains(document.activeElement) !== true) return;
-		element.parentElement?.querySelector<HTMLElement>('[data-slot="model-diagram"]')?.focus();
-	}, [leaving, panel]);
+function focusPicture(panel: HTMLElement | null): void {
+	panel?.parentElement?.querySelector<HTMLElement>('[data-slot="model-diagram"]')?.focus();
 }
 
 /**
- * The panel, while a selection stands.
- * @param props What it explains and how it closes.
- * @returns The panel, or nothing.
+ * Give the keyboard back to the picture when a selection lets go of what held it: the control that
+ * held it left with the subject, so nothing holds it now.
+ * @param panel The panel's element, which stands beside the picture.
+ * @param selecting Whether a selection stands.
  */
-function ModelPanelRoot(props: ModelPanelProps): JSX.Element | null {
-	const slide = useSidebarSlide(props.open ? "floating" : "away");
+function useFocusBack(panel: RefObject<HTMLElement | null>, selecting: boolean): void {
+	const was = useRef(selecting);
+	useLayoutEffect(() => {
+		const letGo = was.current && !selecting;
+		was.current = selecting;
+		if (letGo && document.activeElement === document.body) focusPicture(panel.current);
+	}, [panel, selecting]);
+}
+
+/**
+ * The panel.
+ * @param props What it holds and the way to let go.
+ * @returns The column.
+ */
+function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 	const panel = useRef<HTMLElement>(null);
-	useFocusBack(panel, slide.leaving);
-	if (!slide.mounted) return null;
+	const { onClose } = props;
+	useFocusBack(panel, onClose !== undefined);
 	return (
 		<aside
 			ref={panel}
-			aria-label="Selection"
+			aria-label="Right panel"
 			data-slot="model-panel"
-			data-place="floating"
-			data-motion={slide.motion}
-			data-leaving={slide.leaving ? "" : undefined}
-			inert={slide.leaving}
 			style={PANEL_STYLE}
-			className="border-border bg-sidebar absolute inset-y-0 right-0 z-30 flex min-h-0 flex-col border-l shadow-[var(--elevation-float),var(--elevation-edge-side)] in-data-presenting:hidden"
+			className={cn(
+				"border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col border-l in-data-presenting:hidden",
+				props.covered && "invisible",
+			)}
 		>
-			<IconButton
-				label="Clear selection"
-				slot="semantic-selection-clear"
-				className="absolute top-3 right-3 z-10"
-				onClick={props.onClose}
-			>
-				<RiCloseLine />
-			</IconButton>
-			<div
-				key={props.subject}
-				data-slot="model-panel-subject"
-				className="flex min-h-0 flex-1 flex-col"
-			>
-				{props.children}
-			</div>
+			{!props.covered && (
+				<>
+					{onClose !== undefined && (
+						<IconButton
+							label="Clear selection"
+							slot="semantic-selection-clear"
+							className="absolute top-3 right-3 z-10"
+							onClick={onClose}
+						>
+							<RiCloseLine />
+						</IconButton>
+					)}
+					{props.children}
+				</>
+			)}
 		</aside>
 	);
 }
 
 /**
- * What the panel says, which scrolls under its foot.
+ * What the panel says of one subject. A caller keys it by the subject, so a new one opens at the
+ * top and arrives with a fade.
+ * @param props What it holds.
+ * @param props.children What it says.
+ * @returns The region that scrolls above the legend.
+ */
+function Subject(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<div data-slot="model-panel-subject" className="flex min-h-0 flex-1 flex-col">
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * What the panel says, which scrolls.
  * @param props What it holds.
  * @param props.children The head and the sections.
  * @param props.slot Where a test finds what it explains.
@@ -255,7 +272,7 @@ function Row({
 }
 
 /**
- * What can be done with the subject, pinned under what the panel says.
+ * What can be done with the subject, pinned at the foot of the panel.
  * @param props The actions.
  * @param props.children The actions.
  * @returns The foot.
@@ -272,6 +289,6 @@ function Foot(props: { readonly children: ReactNode }): JSX.Element {
 }
 
 /** The panel, with its parts. */
-const ModelPanel = Object.assign(ModelPanelRoot, { Body, Head, Section, Rows, Row, Foot });
+const ModelPanel = Object.assign(ModelPanelRoot, { Subject, Body, Head, Section, Rows, Row, Foot });
 
 export { ModelPanel };
