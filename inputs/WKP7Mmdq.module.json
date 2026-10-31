@@ -7,8 +7,41 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/history/publication.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "schemaVersion": 1,
   "id": "vKEsyHFk#WKP7Mmdq",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "outgoing": [
+    {
+      "order": 161000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "publicationContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
+    },
+    {
+      "order": 164000,
+      "kind": "data",
+      "label": "Explicit complete fetch and non-forced publication",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/0T9enjhi#IIpdyxCj",
+      "to": "vKEsyHFk/0T9enjhi#ffFYC0XR"
+    },
+    {
+      "order": 167000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk/0T9enjhi#LfosB6s2",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    }
+  ]
 }
