@@ -31,7 +31,7 @@
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 2000,
@@ -57,20 +57,7 @@
         "symbol": "threadStart"
       },
       "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
-    },
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "delegate, steer, inspect, queue in the named checkout",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
-        "symbol": "delegate"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#mhknqBOz",
-      "to": "vKEsyHFk/9ncuT5DP#7XZtb0wb"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 27000,
@@ -112,19 +99,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#X6q6P132",
       "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 74000,
-      "kind": "call",
-      "label": "stop_workhorses: stop every running workhorse of the tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
-        "symbol": "stopWork"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#ITcuqCHT",
-      "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
     }
   ]
 }

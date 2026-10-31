@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/state/voice-session/session.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC",
   "schemaVersion": 1,
   "id": "vKEsyHFk#vKkzsDTy",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0SRnYXnC",
+  "outgoing": [
+    {
+      "order": 64000,
+      "kind": "call",
+      "label": "control the shared browser voice lifecycle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
+      "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
+    },
+    {
+      "order": 26000,
+      "kind": "data",
+      "label": "the pane's agent and media state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "symbol": "capabilities"
+      },
+      "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ]
 }
