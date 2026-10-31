@@ -549,7 +549,8 @@ These adapters do not repeat the domain matrix.
 `tests/system/semantic-boards/model-inspect.test.ts` owns `model inspect` and the interface sections of `model compare` through the real CLI and server.
 `packages/board/tests/shared/rules/compare/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
 `canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
-`canonical-model-comparison.test.ts` owns the comparison control, a way out of a saved comparison and through a reload, coherent removed definitions, changed fields, refusal, and retained recovery.
+`canonical-model-comparison.test.ts` owns the comparison control, a way out of a saved comparison and through a reload, coherent removed definitions, changed fields, refusal, retained recovery, and the interface changes above a proposal's change list, whose rows select their module, also one that the state lacks.
+`interface-changes.test.ts` owns what those rows say.
 `comparison-choices.test.ts` owns what the control offers and says, and `record-rows.test.ts` owns the sections and folded rows of History.
 `model-destination-state.test.tsx` owns the recovery actions of a failed drawing, a removed module, and an absent module.
 `canonical-model-planning.test.ts` owns planning roots, retained predecessor comparisons, empty baselines, and unavailable state intent.

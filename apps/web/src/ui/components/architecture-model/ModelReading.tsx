@@ -21,6 +21,7 @@ import { useChangeKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
 import type { MeasureKey } from "#ui/rules/architecture-model/module-measures.ts";
+import type { InterfaceRow } from "#ui/rules/architecture-model/interface-changes.ts";
 import { changeStepOf } from "#ui/rules/architecture-model/reader-keys.ts";
 
 /** Inputs for a reading. */
@@ -118,6 +119,36 @@ function walkFact(walk: ChangeWalk): string | undefined {
 }
 
 /**
+ * What a proposal changes, in the left column. An interface change selects its module the way a
+ * count of the interface line does, and this list stands beside About, so it brings the picture back.
+ * @param props The reader.
+ * @param props.reader The reader.
+ * @returns The list, once the base of the comparison is read.
+ */
+function ReadingChanges(props: { readonly reader: Reader }): JSX.Element | null {
+	const { walk, choices, selection, onDiagram } = props.reader;
+	const { showHere } = choices;
+	const showModule = useCallback(
+		(row: InterfaceRow): void => {
+			onDiagram();
+			showHere([row.id], row.scope);
+		},
+		[onDiagram, showHere],
+	);
+	if (walk.list === null) return null;
+	return (
+		<ModelColumn.List value="changes">
+			<ModelChanges.Interfaces
+				rows={walk.list.interfaces}
+				selected={soleOf(selection.ids)}
+				onShow={showModule}
+			/>
+			<ModelChanges.List list={walk.list} place={walk.place} onShow={walk.show} />
+		</ModelColumn.List>
+	);
+}
+
+/**
  * The left column of a reading: Find and the destinations.
  * @param props The reader.
  * @param props.reader The reader.
@@ -207,11 +238,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 						onChoose={choices.findModule}
 					/>
 				</ModelColumn.List>
-				{walk.list !== null && (
-					<ModelColumn.List value="changes">
-						<ModelChanges.List list={walk.list} place={walk.place} onShow={walk.show} />
-					</ModelColumn.List>
-				)}
+				<ReadingChanges reader={reader} />
 				{records && (
 					<ModelColumn.List value="history">
 						<ModelRecords

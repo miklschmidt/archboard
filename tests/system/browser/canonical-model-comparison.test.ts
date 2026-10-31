@@ -60,6 +60,61 @@ const REQUESTS = {
 };
 
 /**
+ * Serve a copy of the shop, in a Git repository of its own.
+ * @param resources What ends with the test.
+ * @param name The directory of the copy.
+ * @param flows A flow collection for a proposal to change.
+ * @returns The vault, its server, a requester, the current reading and its address.
+ */
+async function servedShop(resources: AsyncDisposableStack, name: string, flows?: object) {
+	const root = join(browserTestRoots().ownerRoot, name);
+	const vault = vaultIn(root);
+	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
+		recursive: true,
+	});
+	if (flows !== undefined) writeFileSync(join(vault, "requests.flows.json"), JSON.stringify(flows));
+	initializeSource(root);
+	const server = await startOwnedServer({
+		serverPath,
+		vault,
+		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
+	});
+	resources.defer(() => server.dispose());
+	registerServerBase(server.base);
+	const request = createJsonRequester(server);
+	const { body: initial } = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!initial.success || initial.manifest.current === null)
+		throw new Error(JSON.stringify(initial));
+	const target = { model: initial.manifest.id, state: initial.manifest.current.id };
+	return { vault, server, request, initial, target };
+}
+
+type Shop = Awaited<ReturnType<typeof servedShop>>;
+
+/**
+ * Claim subjects for a write.
+ * @param shop The served shop.
+ * @param target The state the claim is on.
+ * @param reason Why it claims them.
+ * @param subjects What it claims.
+ * @returns The claim.
+ */
+async function claimOn(
+	shop: Shop,
+	target: Shop["target"],
+	reason: string,
+	subjects: readonly string[],
+) {
+	const { vault, request } = shop;
+	const { body } = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: { vault, target, writer: "fixture-agent", reason, subjects },
+	});
+	if (!body.success) throw new Error(JSON.stringify(body));
+	return body.claim;
+}
+
+/**
  * Where a proposal's walk stands.
  * @param browser The page.
  * @returns The row it stands on, what the tab says and the grammar on show.
@@ -89,52 +144,25 @@ async function standsOn(browser: AgentBrowserSession, id: string, position: stri
 
 test("proposal comparison draws removed definitions from its coherent base and explains changed fields", async () => {
 	await using resources = new AsyncDisposableStack();
-	const root = join(browserTestRoots().ownerRoot, "compared-model");
-	const vault = vaultIn(root);
-	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
-		recursive: true,
-	});
-	writeFileSync(join(vault, "requests.flows.json"), JSON.stringify(REQUESTS));
-	initializeSource(root);
-	const server = await startOwnedServer({
-		serverPath,
-		vault,
-		env: serverTestEnvironment({ GIT_CONFIG_GLOBAL: "/dev/null", GIT_CONFIG_NOSYSTEM: "1" }),
-	});
-	resources.defer(() => server.dispose());
-	registerServerBase(server.base);
-	const request = createJsonRequester(server);
-	const initial = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!initial.body.success || initial.body.manifest.current === null)
-		throw new Error(JSON.stringify(initial.body));
-	const target = { model: initial.body.manifest.id, state: initial.body.manifest.current.id };
-	const claimed = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			writer: "fixture-agent",
-			reason: "Comparing queued architecture",
-			subjects: [
-				"Shop",
-				"Shop#Request",
-				"Shop#Answer",
-				...initial.body.modules.map((module) => module.id),
-				...initial.body.relationships.map((edge) => edge.id),
-			],
-		},
-	});
-	if (!claimed.body.success) throw new Error(JSON.stringify(claimed.body));
+	const shop = await servedShop(resources, "compared-model", REQUESTS);
+	const { vault, server, request, initial, target } = shop;
+	const claimed = await claimOn(shop, target, "Comparing queued architecture", [
+		"Shop",
+		"Shop#Request",
+		"Shop#Answer",
+		...initial.modules.map((module) => module.id),
+		...initial.relationships.map((edge) => edge.id),
+	]);
 	const created = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {
 			vault,
 			target,
-			expectedRevision: initial.body.revision,
+			expectedRevision: initial.revision,
 			operationId: "replace-worker",
 			writer: "fixture-agent",
 			doing: "Proposing queued architecture",
-			claim: claimed.body.claim.id,
+			claim: claimed.id,
 			proposal: { type: "create", name: "Queue replacement" },
 			changes: [
 				{ type: "remove-module", subject: "Shop#Worker" },
@@ -151,7 +179,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	});
 	await request("/api/architecture/claims/release", {
 		method: "POST",
-		body: { vault, claim: claimed.body.claim.id, writer: "fixture-agent" },
+		body: { vault, claim: claimed.id, writer: "fixture-agent" },
 	});
 	if (!created.body.success || created.body.target.state === null)
 		throw new Error(JSON.stringify(created.body));
@@ -186,6 +214,11 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	);
 	expect(rows).toEqual(expect.arrayContaining(["Shop#Worker", queue.id]));
 	expect(rows.at(-1)).toBe("Shop#Answer");
+	expect(
+		await browser.eval<boolean>(
+			`document.querySelector('[data-slot="model-interface-unchanged"]') !== null`,
+		),
+	).toBe(true);
 	for (const [index, id] of rows.entries()) {
 		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
 		await standsOn(browser, id, `${index + 1} of ${rows.length}`);
@@ -196,17 +229,10 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	await browser.run(["press", "n"]);
 	await standsOn(browser, "Shop#Answer", `${rows.length} of ${rows.length}`);
 	const draft = { model: target.model, state: created.body.target.state };
-	const secondClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target: draft,
-			writer: "fixture-agent",
-			reason: "Changing a draft under its reader",
-			subjects: ["Shop", draft.state],
-		},
-	});
-	if (!secondClaim.body.success) throw new Error(JSON.stringify(secondClaim.body));
+	const secondClaim = await claimOn(shop, draft, "Changing a draft under its reader", [
+		"Shop",
+		draft.state,
+	]);
 	const grown = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {
@@ -216,14 +242,14 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			operationId: "grow-draft",
 			writer: "fixture-agent",
 			doing: "Adding to the draft",
-			claim: secondClaim.body.claim.id,
+			claim: secondClaim.id,
 			proposal: { type: "edit" },
 			changes: [{ type: "add-module", module: { name: "Cache", kind: "service", order: 40 } }],
 		},
 	});
 	await request("/api/architecture/claims/release", {
 		method: "POST",
-		body: { vault, claim: secondClaim.body.claim.id, writer: "fixture-agent" },
+		body: { vault, claim: secondClaim.id, writer: "fixture-agent" },
 	});
 	if (!grown.body.success) throw new Error(JSON.stringify(grown.body));
 	const current = await request<ArchitectureModelRead>("/api/architecture/model");
@@ -265,17 +291,10 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	expect(after.body.revision).toEqual(current.body.revision);
 	expect(after.body.modules.map((module) => module.id)).toContain("Shop#Worker");
 	expect(after.body.modules.map((module) => module.id)).not.toContain(queue.id);
-	const otherClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
-		method: "POST",
-		body: {
-			vault,
-			target,
-			writer: "fixture-agent",
-			reason: "Comparing an independent alternative",
-			subjects: ["Shop", "Shop#Worker"],
-		},
-	});
-	if (!otherClaim.body.success) throw new Error(JSON.stringify(otherClaim.body));
+	const otherClaim = await claimOn(shop, target, "Comparing an independent alternative", [
+		"Shop",
+		"Shop#Worker",
+	]);
 	const alternative = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
 		method: "POST",
 		body: {
@@ -285,7 +304,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			operationId: "worker-alternative",
 			writer: "fixture-agent",
 			doing: "Naming an independent alternative",
-			claim: otherClaim.body.claim.id,
+			claim: otherClaim.id,
 			proposal: { type: "create", name: "Other worker" },
 			changes: [
 				{ type: "edit-module", subject: "Shop#Worker", set: { name: "Alternative worker" } },
@@ -294,7 +313,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	});
 	await request("/api/architecture/claims/release", {
 		method: "POST",
-		body: { vault, claim: otherClaim.body.claim.id, writer: "fixture-agent" },
+		body: { vault, claim: otherClaim.id, writer: "fixture-agent" },
 	});
 	if (!alternative.body.success || alternative.body.target.state === null)
 		throw new Error(JSON.stringify(alternative.body));
@@ -397,4 +416,83 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			`document.querySelector('[data-slot="model-state-details"][data-lifecycle="draft"]') !== null && document.querySelector('[data-slot="model-comparison-unavailable"]') === null`,
 		),
 	).toBe(true);
+}, 60_000);
+
+test("a proposal states its interface changes first, and a row selects its module", async () => {
+	await using resources = new AsyncDisposableStack();
+	const shop = await servedShop(resources, "interface-changes");
+	const { vault, server, request, initial, target } = shop;
+	const claimed = await claimOn(shop, target, "Changing two interfaces", [
+		"Shop",
+		...initial.modules.map((module) => module.id),
+		...initial.relationships.map((edge) => edge.id),
+	]);
+	const created = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target,
+			expectedRevision: initial.revision,
+			operationId: "change-interfaces",
+			writer: "fixture-agent",
+			doing: "Proposing a worker with parts and no gateway",
+			claim: claimed.id,
+			proposal: {
+				type: "create",
+				name: "Worker with parts",
+				confirm: ["INHERITANCE_DROPPED"],
+			},
+			changes: [
+				{ type: "remove-module", subject: "Shop#Handler" },
+				{ type: "remove-module", subject: "Shop#Gateway" },
+				{
+					type: "add-module",
+					module: { name: "Queue", kind: "service", order: 30, parent: "Shop#Worker" },
+				},
+			],
+		},
+	});
+	if (!created.body.success || created.body.target.state === null)
+		throw new Error(JSON.stringify(created.body));
+	const browser = resources.use(await createAgentBrowser());
+	const address = new URL(server.base);
+	address.searchParams.set("modelA", "Shop");
+	address.searchParams.set("stateA", created.body.target.state);
+	address.searchParams.set("scopeA", "Shop#Worker");
+	await browser.run(["open", address.href]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	await pollUntil(
+		() =>
+			browser.eval<string[]>(
+				`[...document.querySelectorAll('[data-interface-change], [data-change-id]')].map(row => row.getAttribute('data-interface-change') ?? '')`,
+			),
+		(rows) => rows.length > 2 && rows.slice(0, 2).every(Boolean) && !rows.slice(2).some(Boolean),
+		"the interface changes above the other changes",
+		WAIT,
+	);
+	await browser.run(["click", '[data-interface-change="Shop#Worker"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-scope') === '' && document.querySelector('[data-slot="module-details"][data-module-id="Shop#Worker"]') !== null`,
+			),
+		Boolean,
+		"the changed module, selected on the picture that holds it",
+		WAIT,
+	);
+	expect(
+		await browser.eval<boolean[]>(
+			`['Shop#Worker', 'Shop#Gateway'].map(id => document.querySelector('[data-interface-change="' + id + '"] [data-fact="notInState"]') !== null)`,
+		),
+	).toEqual([false, true]);
+	await browser.run(["click", '[data-interface-change="Shop#Gateway"]']);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="module-details"][data-module-id="Shop#Gateway"]') !== null && document.querySelector('[data-slot="semantic-inspector-standing"][data-standing="removed"]') !== null`,
+			),
+		Boolean,
+		"the module this state lacks, from the drawing of the comparison",
+		WAIT,
+	);
 }, 60_000);

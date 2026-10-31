@@ -203,7 +203,14 @@ no choice. A base that came from `Compare` stands in the control only while it i
 reaches the browser as `againstX=after`, which no person reads.
 
 Review uses a change list in the left column, grouped by owner, because most changes are flow steps that have
-no tree row. A proposal opens on it. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
+no tree row. Interface changes stand above that list, because an interface change costs every caller and a change
+inside a module costs one module (ADR 0044, TASK-559.30). Each module with an interface change reads once: what moved,
+then the counts that differ, before and after. A row selects the module on the picture that holds it, in the same way
+as a count of the interface line, and its parent opens if it must. A module that the state lacks says so, and its row
+reaches it on the drawing of the comparison. A proposal with no interface change says so in one quiet line. The rows
+are facts, so they wear no standing, score or warning, and they are no steps of the walk. A module whose counts moved
+with no interface change, such as one outgoing relationship more, has no row here, because the list below names what
+changed. A proposal opens on the Changes tab. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
 those keys. A change to a step opens that flow's sequence, and a beat opens its presentation. Reparenting shows
 old and new parents by name in the row and in the panel. Removed subjects stay reachable, because the drawing of
 the comparison holds them. A removed beat or walkthrough has no presentation to open, so the panel names it and
