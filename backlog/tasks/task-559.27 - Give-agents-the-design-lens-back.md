@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T04:16:00Z'
-updated_date: '2026-10-31T04:51:00Z'
+updated_date: '2026-10-31T04:55:00Z'
 labels:
   - cli
   - skills
@@ -62,4 +62,6 @@ Decisions.
 - Shared state names carry their id in the words, because this vault holds three proposals named TASK-446 after TASK-482.07.
 
 For TASK-559.30: read model.comparison.interfaceChanges. No second derivation is needed.
+
+Merged to integrate/pr19, gate 21 of 21 in 146 s. Two History fixtures took the new required comparison fields in the merge. Follow-up: this repository's model does not yet describe model inspect or the comparison fields.
 <!-- SECTION:NOTES:END -->
