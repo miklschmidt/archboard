@@ -30,8 +30,8 @@ interface StartShellProps {
 	readonly catalog: ModelCatalog;
 }
 
-/** The command that makes a checkout known to this machine. */
-const SET_UP = "archboard repo add .";
+/** The command that gives a checkout a vault and makes it known to this machine. */
+const SET_UP = "archboard install-skill";
 
 /** Nothing is on the panes before they exist. */
 const NO_ACTIVITY = {};
