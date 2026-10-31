@@ -265,6 +265,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#FngTyF3H",
       "to": "vKEsyHFk/0T9enjhi#e0GTqv1k"
+    },
+    {
+      "order": 980100,
+      "kind": "call",
+      "label": "original board addresses",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "parseBoardKey"
+      },
+      "to": "vKEsyHFk#9VahN2IU",
+      "id": "vKEsyHFk#X4APDE6a"
     }
   ]
 }

@@ -26,6 +26,19 @@
       "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
     },
     {
+      "order": 21000,
+      "kind": "dependency",
+      "label": "whether this page is a replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "replayAskedOf"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
+      "to": "vKEsyHFk#6RJ25ejV"
+    },
+    {
       "order": 82000,
       "kind": "call",
       "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
@@ -64,17 +77,17 @@
       "to": "vKEsyHFk/UOXNWLhR#F90402mH"
     },
     {
-      "order": 21000,
-      "kind": "dependency",
-      "label": "whether this page is a replay",
-      "emphasis": "normal",
+      "order": 980120,
+      "kind": "render",
+      "label": "mount the application",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/main.tsx",
-        "symbol": "replayAskedOf"
+        "symbol": "Application"
       },
-      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
-      "to": "vKEsyHFk#6RJ25ejV"
+      "to": "vKEsyHFk#mlSnLR16",
+      "id": "vKEsyHFk#sFuyzbsG"
     }
   ]
 }

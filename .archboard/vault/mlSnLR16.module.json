@@ -114,6 +114,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 980130,
+      "kind": "call",
+      "label": "the panes the address opens",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "openingPaneList"
+      },
+      "to": "vKEsyHFk#fLxtu2P4",
+      "id": "vKEsyHFk#c77ph39b"
     }
   ]
 }

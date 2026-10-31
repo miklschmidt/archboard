@@ -32,6 +32,19 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#gNPRCnlg",
       "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
+    },
+    {
+      "order": 980180,
+      "kind": "call",
+      "label": "the namespaces a role needs",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
+        "symbol": "requiredNamespaces"
+      },
+      "to": "vKEsyHFk#92V2PmcS",
+      "id": "vKEsyHFk#WmjfrsET"
     }
   ]
 }

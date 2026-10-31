@@ -44,6 +44,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#VRAAecug",
       "to": "vKEsyHFk#8539szQJ"
+    },
+    {
+      "order": 980090,
+      "kind": "call",
+      "label": "original board documents",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/migration.ts",
+        "symbol": "SemanticBoardSchema"
+      },
+      "to": "vKEsyHFk#vZUWUgyb",
+      "id": "vKEsyHFk#YvPtAKu5"
     }
   ]
 }
