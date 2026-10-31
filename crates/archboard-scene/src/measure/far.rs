@@ -32,7 +32,7 @@ const FOOT_LINE: f64 = 1.2;
 /// The room between the name, the responsibility and the foot of a far card.
 const ROW_GAP: f64 = 4.0;
 /// A far chip's side, and the room beside it, per unit of its name's size.
-const CHIP: f64 = 1.45;
+const CHIP: f64 = 1.6;
 const CHIP_GAP: f64 = 0.45;
 /// How far below the middle of a line its baseline stands, per unit of its size.
 const MIDDLE: f64 = 0.35;
@@ -526,6 +526,24 @@ mod tests {
         let scale = far_scale_for(&cards, page);
         assert!(scale > FAR_FLOOR);
         assert!(cards.iter().all(|card| far_words(card, scale).is_some()));
+    }
+
+    #[test]
+    fn a_group_on_a_far_card_leaves_its_path_alone() {
+        let plain = card("Run checks", Some(GIST), 110.0);
+        let tagged = FarCard {
+            tags: &["Core", "Shell"],
+            ..plain
+        };
+        let path = |words: FarWords| {
+            let runs = words.runs.into_iter();
+            runs.filter(|run| matches!(run.role, TextRole::Folder | TextRole::File))
+                .map(|run| run.text)
+                .collect::<String>()
+        };
+        let far = |card: &FarCard<'_>| far_words(card, FAR_LEAST).expect("it fits");
+        assert_eq!(path(far(&tagged)), path(far(&plain)));
+        assert!(far(&tagged).tags.is_some());
     }
 
     #[test]

@@ -148,13 +148,13 @@ describe("a group shows as a tag, and a card's face stays neutral", () => {
 				expect(chromaOf(face), id).toBeLessThan(0.012);
 				expect(chromaOf(edge), id).toBeLessThan(0.012);
 			}
-			// A tag stands in the near view and in the far view of every member.
+			// A member's tag stands in its near view. Its far view draws no button.
 			const finishes = (id: string, color: string) =>
 				groupOf(drawn, "node", id)!.markup.split(`url(#ab-door-${color})`).length - 1;
-			expect(finishes("gate", "green")).toBe(2);
-			expect(finishes("lone", "green")).toBe(2);
-			expect(finishes("work", "green")).toBe(2);
-			expect(finishes("work", "orange")).toBe(2);
+			expect(finishes("gate", "green")).toBe(1);
+			expect(finishes("lone", "green")).toBe(1);
+			expect(finishes("work", "green")).toBe(1);
+			expect(finishes("work", "orange")).toBe(1);
 			expect(groupOf(drawn, "node", "side")!.markup).not.toContain("url(#ab-door-");
 			// A container holds its parts: it takes no colour and no tag of its groups.
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
