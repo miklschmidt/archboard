@@ -16,5 +16,32 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 22000,
+      "kind": "dependency",
+      "label": "error codes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/group.ts",
+        "symbol": "errnoCode"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#H6GBSJO0",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 23000,
+      "kind": "dependency",
+      "label": "cleanup durations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/group-cleanup.ts",
+        "symbol": "CODEX_PROCESS_MS"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#7eSdILxB",
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
+    }
+  ]
 }

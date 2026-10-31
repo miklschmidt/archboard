@@ -79,32 +79,6 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#QqI9VPd1",
       "to": "vKEsyHFk/IbGtfJE2#7A4Joh1m"
-    },
-    {
-      "order": 70040,
-      "kind": "call",
-      "label": "read captured grading evidence",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
-        "symbol": "suppliedCaptures"
-      },
-      "id": "vKEsyHFk#jkSstw4e",
-      "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
-    },
-    {
-      "order": 120870,
-      "kind": "call",
-      "label": "runDirectories",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/records.ts",
-        "symbol": "runDirectories"
-      },
-      "to": "vKEsyHFk#ceSdCNn0",
-      "id": "vKEsyHFk#1qHDrwGo"
     }
   ]
 }

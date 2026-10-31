@@ -1,0 +1,15 @@
+{
+  "order": 912000,
+  "name": "Bun render",
+  "kind": "function",
+  "responsibility": "Draws one architecture reading in a Bun process",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/render.ts",
+    "symbol": "renderArchitecture"
+  },
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#i4B2MdhX",
+  "outgoing": []
+}

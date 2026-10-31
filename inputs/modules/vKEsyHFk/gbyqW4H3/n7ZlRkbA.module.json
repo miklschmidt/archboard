@@ -23,32 +23,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
       "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 64000,
-      "kind": "call",
-      "label": "reuse the relationship ink for the subject tip",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
-        "symbol": "lineInk"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#N8eFnJ9p",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "draw the code warning glyph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspectorCode.tsx",
-        "symbol": "lineWarning"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
-      "to": "vKEsyHFk#Ut8M2UHc"
     }
   ]
 }

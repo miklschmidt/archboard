@@ -1,8 +1,9 @@
 {
   "id": "hhgbZK4Q",
-  "name": "TASK-447 after TASK-482.07",
+  "name": "Workhorse start carries architecture roles and briefs",
   "formerNames": [
-    "TASK-447 (with flows)"
+    "TASK-447 (with flows)",
+    "TASK-447 after TASK-482.07"
   ],
   "summary": "Architecture roles and saved briefs for external implementation",
   "migration": {

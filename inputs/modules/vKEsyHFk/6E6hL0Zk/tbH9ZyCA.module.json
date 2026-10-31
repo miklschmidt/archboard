@@ -47,7 +47,7 @@
         "symbol": "handleBrowserMessage"
       },
       "id": "vKEsyHFk/6E6hL0Zk#fISQ9jAX",
-      "to": "vKEsyHFk#wN7gU7A0"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 18000,
@@ -61,7 +61,7 @@
         "symbol": "sendToVaultClients"
       },
       "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
-      "to": "vKEsyHFk#1eB2iikc"
+      "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W"
     },
     {
       "order": 65000,
@@ -113,7 +113,7 @@
         "symbol": "publishPaneContext"
       },
       "id": "vKEsyHFk/6E6hL0Zk#k3GPy1bo",
-      "to": "vKEsyHFk#wN7gU7A0"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 81000,

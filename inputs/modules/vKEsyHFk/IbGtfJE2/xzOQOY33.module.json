@@ -23,19 +23,6 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#PoidUOm3",
       "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
-    },
-    {
-      "order": 120810,
-      "kind": "call",
-      "label": "finding",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
-        "symbol": "finding"
-      },
-      "to": "vKEsyHFk#Ir2uY43V",
-      "id": "vKEsyHFk#mnEk0FII"
     }
   ]
 }

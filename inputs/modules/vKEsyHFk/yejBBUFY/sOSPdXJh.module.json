@@ -41,19 +41,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#294aYIvD",
       "to": "vKEsyHFk/yejBBUFY#rouptSyK"
-    },
-    {
-      "order": 120570,
-      "kind": "call",
-      "label": "frameClock",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/hooks/voice/use-voice-box-presence.ts",
-        "symbol": "frameClock"
-      },
-      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
-      "id": "vKEsyHFk#YqLJ0a18"
     }
   ]
 }

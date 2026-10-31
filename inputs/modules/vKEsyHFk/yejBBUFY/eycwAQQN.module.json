@@ -24,19 +24,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 100570,
-      "kind": "call",
-      "label": "recordedStep",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-replay/talk-playback.ts",
-        "symbol": "recordedStep"
-      },
-      "to": "vKEsyHFk#VP3z5VFD",
-      "id": "vKEsyHFk#KLKV6FAa"
-    }
-  ]
+  "outgoing": []
 }

@@ -32,32 +32,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 120600,
-      "kind": "call",
-      "label": "chosenCheckouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd",
-      "id": "vKEsyHFk#Ml2ERnT0"
-    },
-    {
-      "order": 121150,
-      "kind": "call",
-      "label": "gitCheckoutOfVault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "gitCheckoutOfVault"
-      },
-      "to": "vKEsyHFk#YaXkZmP6",
-      "id": "vKEsyHFk#nJh0IbJb"
-    }
-  ]
+  "outgoing": []
 }

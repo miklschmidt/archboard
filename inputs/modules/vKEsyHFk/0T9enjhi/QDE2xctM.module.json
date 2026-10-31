@@ -34,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 100880,
-      "kind": "call",
-      "label": "archiveContext",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
-        "symbol": "archiveContext"
-      },
-      "id": "vKEsyHFk#Ni9VvcRa",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
-    },
-    {
       "order": 209000,
       "kind": "call",
       "label": "resolveModelReferences",
@@ -58,45 +45,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
       "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
-    },
-    {
-      "order": 121260,
-      "kind": "call",
-      "label": "selectReferenceSubject",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
-        "symbol": "selectReferenceSubject"
-      },
-      "to": "vKEsyHFk#ZFPbsdoT",
-      "id": "vKEsyHFk#RpnTnsOy"
-    },
-    {
-      "order": 123690,
-      "kind": "call",
-      "label": "listArchitectureCheckpoints",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
-        "symbol": "listArchitectureCheckpoints"
-      },
-      "to": "vKEsyHFk#jW34VeDK",
-      "id": "vKEsyHFk#1d0fQNuY"
-    },
-    {
-      "order": 123780,
-      "kind": "call",
-      "label": "prepareCheckpoint",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
-        "symbol": "prepareCheckpoint"
-      },
-      "to": "vKEsyHFk#mmqPfwox",
-      "id": "vKEsyHFk#v9eBKpb8"
     }
   ]
 }

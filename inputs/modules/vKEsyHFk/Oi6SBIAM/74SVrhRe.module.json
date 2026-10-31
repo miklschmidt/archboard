@@ -36,19 +36,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
-      "order": 121930,
-      "kind": "call",
-      "label": "semanticPaneContextFor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/presentation.ts",
-        "symbol": "semanticPaneContextFor"
-      },
-      "to": "vKEsyHFk#o9R4Jb78",
-      "id": "vKEsyHFk#DTLRuM1q"
     }
   ]
 }

@@ -25,19 +25,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#8VT4p2DT",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
-    },
-    {
-      "order": 100540,
-      "kind": "call",
-      "label": "markCodeWarnings",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-code-marks.ts",
-        "symbol": "markCodeWarnings"
-      },
-      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-      "id": "vKEsyHFk#yBRTzZCx"
     }
   ]
 }

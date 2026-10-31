@@ -1,0 +1,15 @@
+{
+  "order": 905000,
+  "name": "Durable installation",
+  "kind": "function",
+  "responsibility": "Journals an operation and installs its files through durable atomic writes",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/model-install.ts",
+    "symbol": "installJournal"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#rHjvkAps",
+  "outgoing": []
+}

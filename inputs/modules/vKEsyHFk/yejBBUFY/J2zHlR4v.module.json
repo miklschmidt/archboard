@@ -25,27 +25,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 81000,
-      "kind": "call",
-      "label": "change the canonical reading address",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
-    },
-    {
-      "order": 123070,
-      "kind": "call",
-      "label": "ModelCorrections",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelStateHistory.tsx",
-        "symbol": "ModelCorrections"
-      },
-      "to": "vKEsyHFk#Bm1ASkd5",
-      "id": "vKEsyHFk#TjuOVQad"
-    }
-  ]
+  "outgoing": []
 }

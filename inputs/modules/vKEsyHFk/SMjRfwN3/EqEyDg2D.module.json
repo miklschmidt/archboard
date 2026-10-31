@@ -13,45 +13,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
   "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
-  "outgoing": [
-    {
-      "order": 101840,
-      "kind": "call",
-      "label": "RenderedVariantSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts",
-        "symbol": "RenderedVariantSchema"
-      },
-      "to": "vKEsyHFk#rFcG6JwD",
-      "id": "vKEsyHFk#2kU2geld"
-    },
-    {
-      "order": 101850,
-      "kind": "call",
-      "label": "RenderedVariantSchema.nullable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts",
-        "symbol": "RenderedVariantSchema.nullable"
-      },
-      "to": "vKEsyHFk#PecEiDcH",
-      "id": "vKEsyHFk#Ial2JOO8"
-    },
-    {
-      "order": 101860,
-      "kind": "call",
-      "label": "ArchitectureRenderResultSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts",
-        "symbol": "ArchitectureRenderResultSchema"
-      },
-      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz",
-      "id": "vKEsyHFk#Bq7GKnHE"
-    }
-  ]
+  "outgoing": []
 }

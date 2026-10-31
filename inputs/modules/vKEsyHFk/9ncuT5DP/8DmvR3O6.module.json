@@ -29,33 +29,7 @@
         "symbol": "emit"
       },
       "id": "vKEsyHFk/9ncuT5DP#2wlebJ2T",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
-    },
-    {
-      "order": 101690,
-      "kind": "call",
-      "label": "SupportedLoginAccountParamsSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/operations/command/browser-command.ts",
-        "symbol": "SupportedLoginAccountParamsSchema"
-      },
-      "to": "vKEsyHFk#RE5czL9l",
-      "id": "vKEsyHFk#3ItaimxQ"
-    },
-    {
-      "order": 101700,
-      "kind": "call",
-      "label": "SupportedLoginAccountParamsSchema.parse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/operations/command/browser-command.ts",
-        "symbol": "SupportedLoginAccountParamsSchema.parse"
-      },
-      "to": "vKEsyHFk#Uf6MEhfp",
-      "id": "vKEsyHFk#o9gySOzS"
+      "to": "vKEsyHFk/9ncuT5DP#tzyaOHwF"
     }
   ]
 }

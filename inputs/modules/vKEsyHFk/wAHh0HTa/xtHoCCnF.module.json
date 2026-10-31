@@ -29,20 +29,7 @@
         "symbol": "initialize"
       },
       "id": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
-      "to": "vKEsyHFk#3zoCVVz6"
-    },
-    {
-      "order": 121490,
-      "kind": "call",
-      "label": "publishProjection",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
-        "symbol": "publishProjection"
-      },
-      "to": "vKEsyHFk#vnSTaxfU",
-      "id": "vKEsyHFk#5tqc82hm"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     }
   ]
 }

@@ -1,8 +1,9 @@
 {
   "id": "D0qvstE4",
-  "name": "TASK-319 after TASK-482.07",
+  "name": "Coordinator turn homes record which turn delegated",
   "formerNames": [
-    "TASK-319 with flows"
+    "TASK-319 with flows",
+    "TASK-319 after TASK-482.07"
   ],
   "summary": "The per-tab workbench, browser gateway and session lifetimes, with the voice coordinator's turns and delegations in the snapshot",
   "migration": {

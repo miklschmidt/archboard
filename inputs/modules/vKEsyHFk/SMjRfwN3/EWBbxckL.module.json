@@ -73,7 +73,7 @@
         "symbol": "openVideoEncoder"
       },
       "id": "vKEsyHFk/SMjRfwN3#eq4BIHlx",
-      "to": "vKEsyHFk#dBGk8P78"
+      "to": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
     },
     {
       "order": 41000,
@@ -113,45 +113,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#uJ0o2UWM",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
-    },
-    {
-      "order": 102160,
-      "kind": "call",
-      "label": "voiceSamples",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
-        "symbol": "voiceSamples"
-      },
-      "id": "vKEsyHFk#vxAAYvJQ",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
-    },
-    {
-      "order": 120530,
-      "kind": "call",
-      "label": "WalkthroughRecordingError",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
-        "symbol": "WalkthroughRecordingError"
-      },
-      "to": "vKEsyHFk/XppR9owz#XAJYaUnv",
-      "id": "vKEsyHFk#DAlvyhLL"
-    },
-    {
-      "order": 121080,
-      "kind": "call",
-      "label": "voiceLevels",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
-        "symbol": "voiceLevels"
-      },
-      "to": "vKEsyHFk#r5pBkwgu",
-      "id": "vKEsyHFk#R7JIbn9j"
     }
   ]
 }

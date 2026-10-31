@@ -10,32 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#PEfE7dCL",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "one per run, on its own port",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
-        "symbol": "startServer"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 120780,
-      "kind": "call",
-      "label": "settlesWithin",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
-        "symbol": "settlesWithin"
-      },
-      "to": "vKEsyHFk#ThrdM0iN",
-      "id": "vKEsyHFk#qcATtNDN"
-    }
-  ]
+  "outgoing": []
 }

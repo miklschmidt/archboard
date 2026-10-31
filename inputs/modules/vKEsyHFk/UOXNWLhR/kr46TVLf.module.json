@@ -10,5 +10,19 @@
   "formerNames": [
     "Stage and reads"
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70043,
+      "kind": "call",
+      "label": "identify the retained reading",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
+        "symbol": "sameBoardName"
+      },
+      "id": "vKEsyHFk#GsciFned",
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    }
+  ]
 }

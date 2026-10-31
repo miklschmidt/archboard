@@ -1,0 +1,14 @@
+{
+  "order": 909000,
+  "name": "Recorder",
+  "kind": "module",
+  "responsibility": "Runs one recording of a walkthrough: voice, steps, capture and talk",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#5s91iwqw",
+  "outgoing": []
+}

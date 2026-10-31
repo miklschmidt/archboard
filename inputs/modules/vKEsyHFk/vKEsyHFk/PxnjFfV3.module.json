@@ -17,5 +17,45 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "the CLI under test",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/archboard.ts",
+        "symbol": "archboard"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
+      "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
+    },
+    {
+      "order": 9000,
+      "kind": "call",
+      "label": "one per run, on its own port",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/server.ts",
+        "symbol": "startServer"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
+      "order": 17000,
+      "kind": "data",
+      "label": "a fixture's talk, read back to replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "readTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    }
+  ]
 }

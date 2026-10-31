@@ -68,19 +68,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#2gd6s71s",
       "to": "vKEsyHFk/qKGcB6vZ#e4OAPDNW"
-    },
-    {
-      "order": 122020,
-      "kind": "call",
-      "label": "normalizeCoordinatorCallback",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
-        "symbol": "normalizeCoordinatorCallback"
-      },
-      "to": "vKEsyHFk#MEjN5Ev4",
-      "id": "vKEsyHFk#Lyt9TipC"
     }
   ]
 }

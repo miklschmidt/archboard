@@ -57,45 +57,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#4qdyTWGi",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 43000,
-      "kind": "http",
-      "description": "open, close and show panes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#DcOrPKY2",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 12000,
-      "kind": "http",
-      "label": "open, close and show panes",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "mountPaneRoutes"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#CJ5JwtNl",
-      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
-    },
-    {
-      "order": 62000,
-      "kind": "http",
-      "label": "browser panes: each pane's repository, checkout and own",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-report-route.ts",
-        "symbol": "getPanesRoute"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#b3mWnCLw",
-      "to": "vKEsyHFk/Oi6SBIAM#Am1mLDP5"
     }
   ]
 }

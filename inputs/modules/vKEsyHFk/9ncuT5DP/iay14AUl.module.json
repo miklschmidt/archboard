@@ -60,7 +60,7 @@
         "symbol": "onServerRequest"
       },
       "id": "vKEsyHFk/9ncuT5DP#NztvEtjX",
-      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
+      "to": "vKEsyHFk/9ncuT5DP#08zJvPJq"
     },
     {
       "order": 28000,
@@ -87,7 +87,7 @@
         "symbol": "onNotification"
       },
       "id": "vKEsyHFk/9ncuT5DP#9kvKfu7U",
-      "to": "vKEsyHFk#Tp3P0M7x"
+      "to": "vKEsyHFk/9ncuT5DP#Fg9dkGj3"
     },
     {
       "order": 34000,
@@ -207,45 +207,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#fa4FSkpO",
       "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
-    },
-    {
-      "order": 121420,
-      "kind": "call",
-      "label": "workhorseLinkKey",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
-        "symbol": "workhorseLinkKey"
-      },
-      "to": "vKEsyHFk#GjVCWdqC",
-      "id": "vKEsyHFk#UXcXJHh9"
-    },
-    {
-      "order": 121520,
-      "kind": "call",
-      "label": "endTabSession",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
-        "symbol": "endTabSession"
-      },
-      "to": "vKEsyHFk#vnSTaxfU",
-      "id": "vKEsyHFk#u8xKVqia"
-    },
-    {
-      "order": 122170,
-      "kind": "call",
-      "label": "refusedResponse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
-        "symbol": "refusedResponse"
-      },
-      "to": "vKEsyHFk#MEjN5Ev4",
-      "id": "vKEsyHFk#cOuot6d4"
     }
   ]
 }

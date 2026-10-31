@@ -63,7 +63,7 @@
         "symbol": "delegate"
       },
       "id": "vKEsyHFk/qKGcB6vZ#gxWbt0Mt",
-      "to": "vKEsyHFk#Qn3agI8k"
+      "to": "vKEsyHFk/9ncuT5DP#tlC2W839"
     },
     {
       "order": 10000,
@@ -77,19 +77,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#jWYpMYjr",
       "to": "vKEsyHFk/qKGcB6vZ#fEiupnAD"
-    },
-    {
-      "order": 16000,
-      "kind": "call",
-      "label": "delegate, steer, inspect, queue in the named checkout",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/tool-execution.ts",
-        "symbol": "delegate"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#mhknqBOz",
-      "to": "vKEsyHFk/9ncuT5DP#7XZtb0wb"
     },
     {
       "order": 34000,
@@ -142,19 +129,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#veSu4QHr",
       "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
-    },
-    {
-      "order": 122040,
-      "kind": "call",
-      "label": "refusedResponse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-tools/call-execution.ts",
-        "symbol": "refusedResponse"
-      },
-      "to": "vKEsyHFk#MEjN5Ev4",
-      "id": "vKEsyHFk#IfpA4way"
     }
   ]
 }
