@@ -36,18 +36,36 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	/** The code path of a module, when it has one. */
 	readonly pathOf: (id: string) => string | undefined;
 	readonly onReveal: () => void;
-	/** What can be done with any selection. */
-	readonly children: ReactNode;
 }
 
 /**
- * What the panel says of a selection, and what can be done with it.
+ * What the panel says while nothing is selected: what is open.
+ * @param props What is open.
+ * @param props.name Its name.
+ * @param props.description What it says of itself.
+ * @returns The body.
+ */
+function ModelPanelScope(props: {
+	readonly name: ReactNode;
+	readonly description: string | undefined;
+}): JSX.Element {
+	return (
+		<ModelPanel.Body slot="model-panel-scope">
+			<ModelPanel.Head title={props.name} />
+			{Boolean(props.description) && (
+				<p className="text-control font-normal whitespace-pre-wrap">{props.description}</p>
+			)}
+		</ModelPanel.Body>
+	);
+}
+
+/**
+ * What the panel says of a selection.
  * @param props The selection and its reading.
- * @returns The body and the foot.
+ * @returns The body.
  */
 function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
 	const subject = selectedSubject({ ...props, ids: props.selection.ids });
-	const module = subject.kind === "module" ? subject.module : undefined;
 	return (
 		<>
 			{subject.kind === "module" ? (
@@ -64,11 +82,24 @@ function ModelPanelSubject(props: ModelPanelSubjectProps): JSX.Element {
 					onRevealFlow={props.onRevealFlow}
 				/>
 			</div>
-			<ModelPanel.Foot>
-				{module !== undefined && <ModuleActions {...props} module={module} />}
-				{props.children}
-			</ModelPanel.Foot>
 		</>
+	);
+}
+
+/**
+ * What can be done with a selection, at the foot of the panel.
+ * @param props The selection, its reading and what can be done with any selection.
+ * @returns The foot.
+ */
+function ModelPanelActions(
+	props: ModelPanelSubjectProps & { readonly children: ReactNode },
+): JSX.Element {
+	const subject = selectedSubject({ ...props, ids: props.selection.ids });
+	return (
+		<ModelPanel.Foot>
+			{subject.kind === "module" && <ModuleActions {...props} module={subject.module} />}
+			{props.children}
+		</ModelPanel.Foot>
 	);
 }
 
@@ -271,4 +302,4 @@ function ModuleActions(
 	);
 }
 
-export { ModelPanelSubject };
+export { ModelPanelActions, ModelPanelScope, ModelPanelSubject };

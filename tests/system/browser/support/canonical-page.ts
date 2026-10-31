@@ -233,7 +233,7 @@ async function pick(
 	);
 }
 
-/** Press an action of the panel. It is still sliding in, so a click on the screen can miss it. */
+/** Press an action of the panel, once the selection has put it there. */
 async function pressInPanel(browser: AgentBrowserSession, selector: string): Promise<void> {
 	await pollUntil(
 		() =>

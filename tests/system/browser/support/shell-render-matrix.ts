@@ -236,15 +236,16 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const rowLabel = nav?.querySelector('[data-slot="model-tree"] [data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
+		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
 			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
-			!picture) {
+			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
 				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
-				picture: !!picture }));
+				picture: !!picture, panel: !!panel }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
@@ -333,7 +334,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), header: rect(header), paneHeader: rect(paneHeader), column: rect(column),
 				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), picture: rect(picture),
-				board: rect(board), control: rect(control) },
+				panel: rect(panel), board: rect(board), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkSize: rect(wordmark),

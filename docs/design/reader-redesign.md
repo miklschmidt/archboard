@@ -13,7 +13,8 @@ from Shop, on the renderer core before commit `4b970e501`. Measure again before 
 
 ## The rule of the screen
 
-The left column lists where to go. The middle shows it. The right explains the selected thing.
+The left column lists where to go. The middle shows it. The right column explains what is selected or open, and
+what the marks of the picture mean.
 
 - Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
   `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` show a count for the open scope.
@@ -23,11 +24,17 @@ The left column lists where to go. The middle shows it. The right explains the s
 - Caption, one line: the responsibility of the open module, then any statement of hidden lines. A flow reading
   shows its collection's name, then its summary, with no label before them. A retained flow with no summary shows
   the collection alone.
-- Picture: the open module with its parts and doors. The Key sits at its lower left.
-- Right panel: absent until a selection. It is an overlay, so the picture does not refit.
-- About: every long list. It names whether it describes the open scope or the selected subject.
+- Picture: the open module with its parts and doors. It fits the room that the right panel leaves.
+- Right panel: a permanent column of about 360 px on every Diagram reading (TASK-559.19). The owner chose it because
+  a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
+  description, and with a selection it shows the subject. The panel is always there, so a selection never refits the
+  picture.
+- Legend: the foot of the right panel, above any action bar. It needs no click, and it lists the kinds, line types and
+  groups of the reading. A long subject scrolls above it.
+- About: every long list. It names whether it describes the open scope or the selected subject. It covers the panel
+  and has no column of its own.
 
-Only one overlay opens at a time. Long evidence never goes into the right panel.
+Long lists and evidence never go into the right panel, because a small right sidebar once overwhelmed the owner.
 
 ## What a picture draws
 
@@ -66,7 +73,8 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
    Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
    caption states the count, and one control shows every line.
-7. Group regions are off by default. The Key turns them on.
+7. Group regions are off by default. Groups close the legend as bright tags with no switch, and TASK-559.16 removes
+   the regions.
 8. A card shows its code path. A far card shows its name, its path, then the start of its responsibility in the
    room that its box holds. A long path keeps its tail. An unbound container shows its shared folder with a count,
    for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership. A path that does not
@@ -109,8 +117,8 @@ entered or selected subject. If geometry has no real correspondence, change plai
 - Tree and Find navigate. A card selects. A code link opens source. Each has a keyboard route that needs no
   double click or hover. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `F` and `0` cover every move.
 - Up and Back are different actions. Moving to another module clears stale subject and flow intent.
-- A click lights the card and the tree row at once. The panel and any camera move wait 220 ms, and a second
-  click cancels them, so a double click never lands on a moved card.
+- A click lights the card and the tree row, and the right panel names the subject, at once. The picture does not
+  move, so a double click lands on the card.
 - A flow is chosen first, and the Sequence or Flowchart representation second. A scope with no flows offers
   `All flows (72)`. Selecting a flow opens the sequence. The move from structure to sequence is a plain change.
 - The flow list groups its rows under their collections. A collection name at the end of a row truncated the flow
@@ -209,7 +217,7 @@ signal. It binds a write and current content, and it stops at history:
 
 ## Gates
 
-Each gate is absolute and uses the real pane of this design, about 1551 by 960.
+Each gate is absolute and uses the real pane of this design, about 1239 by 1003 beside the right panel.
 
 1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land at 0.6.
 2. At landing, a name reaches 12 px and a path reaches 9 px on every reading of at most 18 lines.
@@ -231,7 +239,7 @@ The subtasks of TASK-559 carry this order. Each slice removes the path that it r
 3. One surface, one accepted scene, and the transitions.
 4. Honest failures and the proposal base.
 5. Left column and header.
-6. Right panel, About and the Key.
+6. Right panel, About and the legend.
 7. Start and return.
 8. Review of a proposal.
 9. Local compaction and candidates ranked by fit, on the content that the rules leave.

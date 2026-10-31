@@ -116,6 +116,29 @@
 	--semantic-pink: oklch(0.65 0.25 354);
 	--semantic-rose: oklch(58.6% 0.253 17.585);
 
+	/* What a group's tag is cut from: each palette color at its dark value, in both
+	   themes, so a tag is the same bright piece on chalk and on graphite. A change to
+	   a dark --semantic-<name> belongs here too. --tag-neutral is for a group that
+	   the vault no longer defines. */
+	--tag-red: oklch(0.71062735 0.16614792 22.216224);
+	--tag-orange: oklch(0.7576398 0.15903746 55.934415);
+	--tag-amber: oklch(0.83686057 0.16442159 84.428628);
+	--tag-yellow: oklch(0.86 0.125 86);
+	--tag-lime: oklch(0.84931542 0.20733982 128.849744);
+	--tag-green: oklch(0.80034877 0.18206039 151.711031);
+	--tag-emerald: oklch(0.77294438 0.15349041 163.223075);
+	--tag-teal: oklch(0.78451984 0.13252856 181.911977);
+	--tag-cyan: oklch(0.79711582 0.13388753 211.530189);
+	--tag-sky: oklch(0.75351288 0.13898886 232.66148);
+	--tag-blue: oklch(0.71374005 0.14338051 254.624021);
+	--tag-indigo: oklch(0.6801126 0.15830252 276.934902);
+	--tag-violet: oklch(0.70896895 0.15916821 293.541199);
+	--tag-purple: oklch(0.72168539 0.1766884 305.503759);
+	--tag-fuchsia: oklch(0.74772013 0.20697173 322.160432);
+	--tag-pink: oklch(0.72526641 0.17522733 349.760748);
+	--tag-rose: oklch(0.71918609 0.16898359 13.427993);
+	--tag-neutral: oklch(0.72 0.01 80);
+
 	--background: oklch(0.99 0.0025 90);
 	--foreground: oklch(0.17 0.006 75);
 	--card: oklch(1 0 0);

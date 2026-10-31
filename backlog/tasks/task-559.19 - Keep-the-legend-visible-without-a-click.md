@@ -1,10 +1,11 @@
 ---
 id: TASK-559.19
 title: Keep the legend visible without a click
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T01:58:00Z'
+updated_date: '2026-10-31T03:02:00Z'
 labels:
   - frontend
 dependencies:
@@ -24,13 +25,42 @@ The owner thought the legend was deleted, because the Key button at the lower le
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 The legend is visible without a click at the foot of a permanent right column on every Diagram reading at 1920 by 1080, and it lists the kinds, line types and groups of that reading
-- [ ] #2 With nothing selected the column shows the open module's name and description, and with a selection it shows the subject above the legend
-- [ ] #3 The way to hide kinds stays one control away, and it is visible
+- [x] #1 The legend is visible without a click at the foot of a permanent right column on every Diagram reading at 1920 by 1080, and it lists the kinds, line types and groups of that reading
+- [x] #2 With nothing selected the column shows the open module's name and description, and with a selection it shows the subject above the legend
+- [x] #3 The way to hide kinds stays one control away, and it is visible
 - [ ] #4 The picture fits inside the room the column leaves, and a selection never refits it
-- [ ] #5 The whole legend stays on screen on every corpus reading, and a long subject scrolls above it
-- [ ] #6 A group shows as a tag in both themes, in the look of the card tag, and the legend has no group switch
+- [x] #5 The whole legend stays on screen on every corpus reading, and a long subject scrolls above it
+- [x] #6 A group shows as a tag in both themes, in the look of the card tag, and the legend has no group switch
 - [ ] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
-- [ ] #8 The bottom left button is gone, and so is any code that only served the overlay
+- [x] #8 The bottom left button is gone, and so is any code that only served the overlay
 - [ ] #9 The owner accepts it by eye
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Make ModelPanel a flex column beside the picture on every Diagram reading, so the camera fits the room it leaves and a selection cannot refit it.
+2. With nothing selected, show the open subject through the same scopeHead as About. With a selection, show the subject, and pin the action bar at the column foot.
+3. Rename ModelKey to ModelLegend, and lay it out from the mocks at the column foot, outside the keyed subject. Filter puts a switch on each line type, with no popover.
+4. Group tags: one group-tag utility in app.css, cut from --tag-<name> in theme.css, the dark palette value in both themes. No group switches.
+5. Delete the overlay: panel wait, panel room, clear-of-panel use in ModelDiagram, reveal cover, slide CSS, SIDEBAR_MS.panelWait, the dismiss code.
+6. Update DESIGN.md and the docs. CONTEXT.md stays untouched: the brief changed, because another agent rewrites it.
+7. Update browser tests, sweep the corpus, run check:all.
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+No architecture proposal: the existing model stays accurate. Diagram presentation components already presents legends and details, and no module, relationship or flow changes. A grep of .archboard and skills found no mention of the Key, ModelKey or the overlay panel.
+PictureKey stays: it also serves the retained SemanticLegend, and key is the render reply's field and the core's Rust type, and crates/ is out of scope.
+Corpus sweep at 1920 by 1080 on the root and 111 modules with parts: the whole legend is on screen on all 112 readings. Tallest legend 289 px, at least 714 px left for the subject, picture 1239 wide, 77 readings show a group, at most 5.
+Two panes at 1920 by 1080: each picture is 439 px wide beside its 360 px column.
+Root description: a model has no description field, so the root shows the summary of its state, as About does.
+
+Evidence on the final code: bun run check:all exit 0 after 151 s, 21 of 21 tasks, 44 of 44 browser files, 5318 pass, 0 fail, on 932cc66aa plus this change. Screenshots in /tmp/integrate/slice19/.
+A long subject scrolls above the legend: 29 selected on Commands gave a body of 708 px holding 1200 px, the body ends where the legend starts, and legend and action bar stay whole, with the bar ending at 1080.
+Group tag finish computed from --semantic-orange in both themes: same stops in dark and light, matching the recipe.
+Criterion 4 stays open. The second half is proven: a selection leaves the picture frame and its transform identical. The first half is true for the frame, which ends at the column, but not for every drawing. The camera keeps its landing rule (LANDING_FLOOR 0.6), so a drawing that needs less than 0.6 to fit stands at 0.6 and is cut, and the reader pans. On 27 of 112 readings that happens, Commands among them. On the old 1599 px pane it happened on 20 of those 27, so the column adds 7. The rule stays, because the brief keeps the camera moves and a rebuilt picture is coming.
+Criterion 7 stays open until the rewrite of CONTEXT.md lands, because that file still names the Key at this head.
+Two facts stale after this change, in files out of scope here: the comment on REFERENCE_WIDTH in packages/renderer/src/shared/constants/shell-geometry.ts says the panel lies over the picture, and its value 1271 (mirrored in crates/archboard-layout/src/constants.rs) is above the real room of 1191, which is 1239 less margins. The gates in docs/design/reader-redesign.md were measured at the old pane.
+<!-- SECTION:NOTES:END -->

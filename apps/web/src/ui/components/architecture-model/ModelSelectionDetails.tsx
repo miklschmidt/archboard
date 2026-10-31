@@ -24,7 +24,9 @@ interface ModelSelectionDetailsProps {
  * @param props The requested scope and coherent readings.
  * @returns The model that actually owns the scope definition.
  */
-function scopeModel(props: ModelSelectionDetailsProps): Model {
+function scopeModel(
+	props: Pick<ModelSelectionDetailsProps, "model" | "scope" | "projection">,
+): Model {
 	if (props.scope === null) return props.model;
 	if (props.model.modules.some((entry) => entry.id === props.scope)) return props.model;
 	return props.projection.reference ?? props.model;

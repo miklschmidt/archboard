@@ -222,9 +222,9 @@ go, and the agent dock is at its foot. The panes are in the centre, one or two s
 by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
-A pane of the canonical reader has no sidebar. A selection lays the right panel
-(360px, or 46 percent of a narrow pane) over the picture's right edge, so the
-picture never refits. A retained board recording keeps a sidebar (280px). Every
+Every Diagram reading of the canonical reader has a right panel beside its picture
+(360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
+that it leaves. A selection never refits the picture. A retained board recording keeps a sidebar (280px). Every
 column starts with a chrome row (40px) and then a band (36px) for the find fields
 and the caption. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
@@ -390,19 +390,32 @@ the Rule tone.
 
 ### Right panel
 
-The right panel explains the selected thing and nothing else. It is absent until a
-selection, on Chrome Chalk with a rule down its inner edge, and it lies over the
-picture. A click lights its subject at once, and the panel waits 220ms, so a double
-click lands on the card. It eases in from 2rem to the right of its place and from
-nothing over 160ms, and leaves in 110ms. A new subject opens at the top of the panel
-and arrives with a 120ms fade. A row answers the pointer with a change of tone and
-nothing else, and it also lights its subject on the picture. Its actions stand in a
-foot that stays while the body scrolls. Long lists and evidence live on About. With
-reduced motion the panel appears and goes at once.
+The right panel is a permanent column beside the picture on every Diagram reading, on
+Chrome Chalk with a rule down its inner edge and `shadow-edge-side`. With nothing
+selected, it says the open module's name and description, or at the roots the model's
+name and the summary of its state. A flow reading says the flow. With a selection, it
+explains the selected thing, and a click on a card lights the card and fills the panel at
+once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row
+answers the pointer with a change of tone and nothing else, and it also lights its
+subject on the picture. Its actions stand at the foot of the column, under the legend.
+Long lists and evidence live on About, which lies over the panel, so the panel keeps its
+room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
-The Key stands at the picture's lower left. Its rows show a mark as the picture draws
-it, and a switch at the end of a row changes the reading. A mark and its switch stay
-apart, so reading the Key never changes the picture.
+The legend stands at the foot of the panel, above the actions, and needs no click. A long
+subject scrolls above it, and the whole legend stays on screen. A heading row holds
+`Legend` and the control `Filter`. Under it stand the kinds in two columns, a thin rule,
+the line types in two columns, a thin rule, and the groups. A section with nothing to
+show is absent. The legend lists what the reading draws and what a reader hid. A hidden
+line type stays, dimmed, and the heading row says how many are hidden. `Filter` puts a
+switch at the end of each line type, and a mixed line has none, because it is no kind of
+relationship.
+
+A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
+both themes, cut from the dark value of its palette color (`--tag-<name>`): a gradient
+from L+.02 C+.02 to L-.06 C+.03, a 1px edge at L-.26 C-.02, ink at oklch(0.2 0.03 H), an
+inset top highlight, weight 600 and 5px corners. The `group-tag` utility holds the one
+recipe. Its stops stay in OKLCH, because a mix toward a dark color in sRGB turns orange
+brown. A tag has no switch.
 
 ### Pane sidebar
 

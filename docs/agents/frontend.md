@@ -301,6 +301,8 @@ cards and the shade of a container's header slab, and the `--tray-*` colors a
 container's neutral well. A header's face is `--background`, or the floor of
 the tray around it. A group region has no token of
 its own: it is drawn in tones of its group's `--semantic-<name>` (ADR 0044).
+`--tag-<name>` is the dark value of `--semantic-<name>` in both themes, because a
+group's tag is the same bright piece on either ground. Change the two together.
 `apps/web/src/ui/theme/app.css` imports the file and holds every value that is not a
 color.
 
@@ -326,12 +328,15 @@ server, because the server reads the file only once, at start.
 `theme.css` sets with the color the built page has, in both themes. So no other
 stylesheet may set a theme token.
 
-A canonical pane has no sidebar. `ModelPanel` is absent until a selection and lies over the picture's right edge.
-`usePanelWait` holds a selection for `SIDEBAR_MS.panelWait`, so the panel and any camera move wait and a double click lands where it began.
+`ModelPanel` is a column beside the picture on every Diagram reading, so the camera fits the room it leaves and a selection never refits the picture.
+It holds its width under About, which lies over it, so the picture keeps its camera.
+`ModelPanelScope` says what is open while nothing is selected, through the same `scopeHead` as About.
 `ModelPanelSubject` says what the selection is, and `selectedSubject` decides which subject that is for the panel and for About.
 A row of the panel is an action. Long lists and evidence live on `ModelAbout`, which names the open scope or the selected subject.
-`ModelKey` stands at the picture's lower left and owns the marks and the visibility switches.
-Only one of the three lies over the picture at a time, and the selection survives each of them.
+`ModelLegend` stands at the foot of the panel, outside the keyed subject, so a new subject does not redraw it.
+It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
+A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
+The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.
 Captured walkthroughs keep their own selection and suspend the ordinary reader.

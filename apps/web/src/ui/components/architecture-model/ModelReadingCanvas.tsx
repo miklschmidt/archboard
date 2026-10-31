@@ -29,8 +29,6 @@ interface ModelReadingCanvasProps
 			| "pending"
 			| "leaving"
 			| "cut"
-			| "panelOpen"
-			| "settled"
 			| "reducedMotion"
 			| "onOpen"
 			| "onAttention"
@@ -51,7 +49,7 @@ interface ModelReadingCanvasProps
 	area: RefObject<HTMLDivElement | null>;
 	warnings: ReadonlySet<string>;
 	selection: ModelSelection;
-	/** What lies over the picture: the Key and the panel. */
+	/** What stands beside the picture: the right panel. */
 	children?: ReactNode;
 }
 
@@ -69,51 +67,50 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 			{request.grammar === "architecture" && (
 				<FocusAvailability missing={request.projection.missingFocus} />
 			)}
-			<div ref={area} className="relative flex min-h-0 min-w-0 flex-1">
-				<Suspense fallback={null}>
-					{scene !== null && (
-						<ModelDiagram
-							scene={scene}
-							camera={props.camera}
-							area={area}
-							pending={props.pending}
-							leaving={props.leaving}
-							cut={props.cut}
-							panelOpen={props.panelOpen}
-							settled={props.settled}
-							warnings={props.warnings}
-							selected={selection.ids}
-							onSelect={selection.select}
-							onSelectMany={selection.selectMany}
-							onOpen={props.onOpen}
-							onAttention={props.onAttention}
-							onWholeScope={props.onWholeScope}
-							onOpenState={props.onOpenState}
-							reducedMotion={props.reducedMotion}
+			<div className="flex min-h-0 min-w-0 flex-1">
+				<div ref={area} className="relative flex min-h-0 min-w-0 flex-1">
+					<Suspense fallback={null}>
+						{scene !== null && (
+							<ModelDiagram
+								scene={scene}
+								camera={props.camera}
+								pending={props.pending}
+								leaving={props.leaving}
+								cut={props.cut}
+								warnings={props.warnings}
+								selected={selection.ids}
+								onSelect={selection.select}
+								onSelectMany={selection.selectMany}
+								onOpen={props.onOpen}
+								onAttention={props.onAttention}
+								onWholeScope={props.onWholeScope}
+								onOpenState={props.onOpenState}
+								reducedMotion={props.reducedMotion}
+							/>
+						)}
+					</Suspense>
+					<NoPicture {...props} waiting={waiting} />
+					<div
+						data-slot="model-notices"
+						className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col *:pointer-events-auto"
+					>
+						{props.notices}
+						<ModelDestinationNotice
+							paneId={props.paneId}
+							request={request}
+							failure={props.failure}
+							onRetry={props.onRetry}
+							waiting={waiting}
 						/>
-					)}
-				</Suspense>
-				<NoPicture {...props} waiting={waiting} />
-				<div
-					data-slot="model-notices"
-					className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col *:pointer-events-auto"
-				>
-					{props.notices}
-					<ModelDestinationNotice
-						paneId={props.paneId}
-						request={request}
-						failure={props.failure}
-						onRetry={props.onRetry}
-						waiting={waiting}
-					/>
+					</div>
+					<div
+						data-slot="model-stage-overlay"
+						className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
+					>
+						{props.overlay}
+					</div>
 				</div>
 				{props.children}
-				<div
-					data-slot="model-stage-overlay"
-					className="pointer-events-none absolute inset-x-0 bottom-6 z-25 flex justify-center px-8"
-				>
-					{props.overlay}
-				</div>
 			</div>
 		</>
 	);

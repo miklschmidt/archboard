@@ -220,12 +220,12 @@ test(
 
 		// The shell draws what the shared geometry says, with the conversation
 		// closed: the navigator's column, the chrome row at the top of every
-		// column, and a lone pane's picture, which holds the whole stage.
+		// column, and a lone pane's picture with its right panel, which fill the stage.
 		for (const cell of matrix.cells.filter(({ viewport }) => viewport === "desktop")) {
-			const { column, header, picture } = cell.geometry;
+			const { column, header, picture, panel } = cell.geometry;
 			expect(column?.width, "navigator column width").toBe(NAVIGATOR_WIDTH);
 			expect(header?.height, "chrome row height").toBe(CHROME_HEIGHT);
-			expect(picture!.width, "the stage").toBe(STAGE.width);
+			expect(picture!.width + panel!.width, "the stage").toBe(STAGE.width);
 		}
 
 		const themes = matrix.cells
