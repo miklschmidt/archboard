@@ -33,32 +33,6 @@
       "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
     },
     {
-      "order": 9000,
-      "kind": "call",
-      "label": "installRendererHost",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/bun-host.ts",
-        "symbol": "installRendererHost"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#veScCirT",
-      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
-    },
-    {
-      "order": 27000,
-      "kind": "call",
-      "label": "Bun Workers, as the host's solve",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/services/bun-host.ts",
-        "symbol": "createEnginePool"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#TveKMtfC",
-      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
-    },
-    {
       "order": 29000,
       "kind": "call",
       "label": "a picture with no board around it",

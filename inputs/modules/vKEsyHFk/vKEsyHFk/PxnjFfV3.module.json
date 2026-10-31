@@ -19,32 +19,6 @@
   ],
   "outgoing": [
     {
-      "order": 8000,
-      "kind": "call",
-      "label": "the CLI under test",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/archboard.ts",
-        "symbol": "archboard"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#xKVVomRU",
-      "to": "vKEsyHFk/vKEsyHFk#TBnOCNx2"
-    },
-    {
-      "order": 9000,
-      "kind": "call",
-      "label": "one per run, on its own port",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/server.ts",
-        "symbol": "startServer"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
-      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
       "order": 17000,
       "kind": "data",
       "label": "a fixture's talk, read back to replay",
@@ -56,6 +30,45 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
       "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 46000,
+      "kind": "dependency",
+      "label": "own each evaluation process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#VJXR3kbp",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
+    },
+    {
+      "order": 35000,
+      "kind": "dependency",
+      "label": "keep a run's talks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "keepTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
+      "to": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
+    },
+    {
+      "order": 55000,
+      "kind": "dependency",
+      "label": "validate canonical evaluation inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/laying.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
     }
   ]
 }
