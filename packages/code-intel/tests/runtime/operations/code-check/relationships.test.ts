@@ -259,6 +259,7 @@ test("every finding of the relationship judgement, and nothing about a relations
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
+			"RELATIONSHIP_ON_CONTAINER e1 information",
 			"ANCHOR_MISMATCH e9 warning",
 		].toSorted(),
 	);

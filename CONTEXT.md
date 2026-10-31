@@ -68,7 +68,8 @@ _Avoid_: edge, arrow, link, connector, relation, line (that is what a picture dr
 **Whole-module endpoint**:
 The end of a relationship that names a module with parts and none of those parts.
 It stays on the module's boundary, and a reading never invents an inner end for it.
-It makes a caller and no entry point, so `archboard check` warns with `RELATIONSHIP_ON_CONTAINER`, and an author ends the relationship on the part that makes or answers the call.
+It makes a caller and no entry point, so `archboard check code` reports it as information with `RELATIONSHIP_ON_CONTAINER`.
+An author prefers the part that makes or answers the call, and the end stays acceptable when no part stands for the call.
 _Avoid_: port (that is where the renderer attaches a line)
 
 **Flow collection**:

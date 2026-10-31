@@ -41,6 +41,12 @@
 // address of the end for the code of the start and that code reads none of
 // those names, or the infrastructure, when the code of the start reads names
 // that nothing the check reads sets for it.
+//
+// `RELATIONSHIP_ON_CONTAINER` names a relationship with an end on a module with
+// parts and neither end inside the other. Such an end makes a caller and no
+// entry point (ADR 0044). It is information: an author prefers the part that
+// makes or answers the call, and the end stays right when no part stands for
+// the call. It reads the board alone, so it needs no evidence and no binding.
 
 import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
 import type { ClaimSite } from "#runtime/operations/code-check/claims/claims.ts";
@@ -584,15 +590,48 @@ function edgeOutcome(reading: RelationshipReading): RelationshipOutcome {
 }
 
 /**
+ * Name each relationship with an end on a module with parts, unless one end holds
+ * the other, which `CONTAINER_LINE_TO_OWN_PART` names.
+ * @param reading The board.
+ * @returns One information finding for each such relationship.
+ */
+function frameEndFindings(reading: RelationshipReading): CodeFinding[] {
+	const { nodes, edges } = reading.read.variant.content;
+	const containers = new Set(nodes.flatMap(({ parent }) => parent ?? []));
+	const subjectOf = edgeSubjects(reading.read.variant.content);
+	return edges
+		.filter(
+			({ from, to }) =>
+				(containers.has(from) || containers.has(to)) && !holdsOneAnother(reading, from, to),
+		)
+		.map((edge) => {
+			const subject = subjectOf(edge);
+			return {
+				...siteOf(reading.read, `edges.${edge.id}`, subject),
+				severity: "information",
+				code: "RELATIONSHIP_ON_CONTAINER",
+				message:
+					`The ${describeSubject(subject)} ends on a module with parts, so it makes a caller and ` +
+					"no entry point there. If a part makes or answers the call, end it on that part: an " +
+					"edit-relationship change with source or set.to. The end is right when no part stands " +
+					"for the call.",
+			};
+		});
+}
+
+/**
  * What the evidence says about the relationships of one board: the parts code
  * joins that the board does not, then each relationship with no anchor that
- * the evidence does not support.
+ * the evidence does not support, then each end on a module with parts.
  * @param reading The board, its parts' code, the evidence and the vocabulary.
  * @returns The findings and what was not judged.
  */
 function judgeRelationships(reading: RelationshipReading): RelationshipOutcome {
 	const edges = edgeOutcome(reading);
-	return { findings: [...undrawnFindings(reading), ...edges.findings], skipped: edges.skipped };
+	return {
+		findings: [...undrawnFindings(reading), ...edges.findings, ...frameEndFindings(reading)],
+		skipped: edges.skipped,
+	};
 }
 
 export { type RelationshipReading, judgeRelationships, siteOf };

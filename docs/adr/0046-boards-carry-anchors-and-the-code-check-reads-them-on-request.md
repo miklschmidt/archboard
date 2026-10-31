@@ -599,16 +599,17 @@ a call across a network, through an event bus or through a value that a part
 receives. An anchor turns the relationship into a claim that the check holds to
 the code, and the findings about an anchor are warnings.
 
-| Code                       | Says                                                                                       | Severity                            | Task                     |
-| -------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ------------------------ |
-| `ANCHOR_PATH_MISSING`      | The anchored file is not in the checkout.                                                  | warning                             | TASK-367.05              |
-| `ANCHOR_SYMBOL_MISSING`    | The anchored file neither defines nor references the symbol.                               | warning                             | TASK-367.05              |
-| `BINDING_SYMBOL_MISSING`   | The bound file or directory does not define the symbol or declare the address.             | warning                             | TASK-367.05              |
-| `BINDING_PATH_MISSING`     | On a named draft, the bound path is not in the checkout.                                   | warning                             | TASK-367.05              |
-| `ANCHOR_MISMATCH`          | The anchor holds, and it does not support its relationship or step.                        | warning, information on a candidate | TASK-367.06, TASK-367.07 |
-| `RELATIONSHIP_UNDRAWN`     | Evidence joins two bound parts, and no relationship joins them.                            | warning, information on a candidate | TASK-367.07              |
-| `RELATIONSHIP_BACKWARDS`   | The relationship has no anchor, and accepted evidence runs only from its end to its start. | information                         | TASK-367.07              |
-| `RELATIONSHIP_UNSUPPORTED` | The relationship has no anchor, and no accepted evidence joins its ends.                   | information                         | TASK-367.07, TASK-367.23 |
+| Code                        | Says                                                                                       | Severity                            | Task                     |
+| --------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ------------------------ |
+| `ANCHOR_PATH_MISSING`       | The anchored file is not in the checkout.                                                  | warning                             | TASK-367.05              |
+| `ANCHOR_SYMBOL_MISSING`     | The anchored file neither defines nor references the symbol.                               | warning                             | TASK-367.05              |
+| `BINDING_SYMBOL_MISSING`    | The bound file or directory does not define the symbol or declare the address.             | warning                             | TASK-367.05              |
+| `BINDING_PATH_MISSING`      | On a named draft, the bound path is not in the checkout.                                   | warning                             | TASK-367.05              |
+| `ANCHOR_MISMATCH`           | The anchor holds, and it does not support its relationship or step.                        | warning, information on a candidate | TASK-367.06, TASK-367.07 |
+| `RELATIONSHIP_UNDRAWN`      | Evidence joins two bound parts, and no relationship joins them.                            | warning, information on a candidate | TASK-367.07              |
+| `RELATIONSHIP_BACKWARDS`    | The relationship has no anchor, and accepted evidence runs only from its end to its start. | information                         | TASK-367.07              |
+| `RELATIONSHIP_UNSUPPORTED`  | The relationship has no anchor, and no accepted evidence joins its ends.                   | information                         | TASK-367.07, TASK-367.23 |
+| `RELATIONSHIP_ON_CONTAINER` | The relationship has an end on a module with parts, and neither end holds the other.       | information                         | TASK-559.28              |
 
 `ANCHOR_MISMATCH` says which of the two reasons holds. TASK-367.06 brings the
 definitions, so it reports a definition outside both ends. TASK-367.07 brings
