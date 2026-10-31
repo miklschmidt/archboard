@@ -146,19 +146,54 @@ function normalizeBoundPath(bound: string): string | undefined {
 }
 
 /**
+ * Every file a commit changed, under both names of a rename.
+ * @param commit The commit.
+ * @returns The files.
+ */
+function filesOfCommit(commit: WalkedCommit): string[] {
+	return commit.changes.flatMap((change) =>
+		change.from === undefined ? [change.path] : [change.path, change.from],
+	);
+}
+
+/**
+ * Every path a commit's changes fall under: each file, each directory above it
+ * and the whole repository. A name is here exactly when `filesOfBinding` finds a
+ * file of the commit for it, so a walk can skip the commits that touch no name
+ * of a path without listing their files.
+ * @param commit The commit.
+ * @returns The paths.
+ */
+function pathsUnder(commit: WalkedCommit): ReadonlySet<string> {
+	const paths = new Set([""]);
+	for (const file of filesOfCommit(commit)) {
+		for (let at = file; !paths.has(at); at = at.slice(0, Math.max(at.lastIndexOf("/"), 0))) {
+			paths.add(at);
+		}
+	}
+	return paths;
+}
+
+/**
  * Whether one commit changed a bound path, as the path was named when the
  * commit was made. A rename into the path adds the file's former name, under
  * which the older commits count.
  * @param commit The commit.
+ * @param touched The paths its changes fall under.
  * @param names Every name the path's files had after this commit; grows in place.
  * @returns True when the commit changed one of the path's files.
  */
-function changedUnder(commit: WalkedCommit, names: string[]): boolean {
+function changedUnder(
+	commit: WalkedCommit,
+	touched: ReadonlySet<string>,
+	names: Set<string>,
+): boolean {
+	const [few, many] = names.size < touched.size ? [names, touched] : [touched, names];
+	const met = [...few].filter((name) => many.has(name));
+	if (met.length === 0) return false;
+	const files = filesOfCommit(commit);
+	const bound = new Set(met.flatMap((name) => filesOfBinding(name, files)));
 	const formerNames: string[] = [];
-	const files = commit.changes.flatMap((change) =>
-		change.from === undefined ? [change.path] : [change.path, change.from],
-	);
-	const bound = new Set(names.flatMap((name) => filesOfBinding(name, files)));
 	const changed = commit.changes.filter((change) => {
 		const after = bound.has(change.path);
 		const from = change.from;
@@ -166,14 +201,16 @@ function changedUnder(commit: WalkedCommit, names: string[]): boolean {
 		if (after && from !== undefined && !before) formerNames.push(from);
 		return after || before;
 	});
-	names.push(...formerNames);
+	for (const name of formerNames) names.add(name);
 	return changed.length > 0;
 }
 
 /**
  * The commits that changed each bound path, newest first. Each path follows
  * the renames of its files: once a newer commit renamed a file into it, the
- * older commits count under the name the file had.
+ * older commits count under the name the file had. A year of commits across a
+ * model's hundreds of paths runs in one turn of the server's event loop, so a
+ * commit that touches none of a path's names costs one set lookup (ADR 0045).
  * @param commits The walk, newest first.
  * @param paths Normalized bound paths.
  * @returns For each path, the ids of the commits that changed it.
@@ -182,12 +219,15 @@ function commitsByBoundPath(
 	commits: readonly WalkedCommit[],
 	paths: Iterable<string>,
 ): Map<string, string[]> {
+	const walk = commits.map((commit) => ({ commit, touched: pathsUnder(commit) }));
 	return new Map(
 		[...new Set(paths)].map((bound) => {
-			const names = [bound];
+			const names = new Set([bound]);
 			return [
 				bound,
-				commits.filter((commit) => changedUnder(commit, names)).map((commit) => commit.commit),
+				walk
+					.filter(({ commit, touched }) => changedUnder(commit, touched, names))
+					.map(({ commit }) => commit.commit),
 			];
 		}),
 	);
