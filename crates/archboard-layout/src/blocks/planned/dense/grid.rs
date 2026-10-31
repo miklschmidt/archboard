@@ -40,11 +40,12 @@ pub(super) struct Join {
     pub label: f64,
 }
 
-/// The cell each part stands in, read left to right and top to bottom.
+/// The cell each part stands in, read left to right and top to bottom. The parts
+/// fill the first cells, so every row starts at the left edge and only the last
+/// row can run short.
 pub(super) struct Grid {
     pub columns: usize,
     pub cells: Vec<usize>,
-    count: usize,
 }
 
 /// What two parts that share a door cost for each cell between them.
@@ -74,13 +75,12 @@ impl Grid {
         Grid {
             columns,
             cells: (0..parts).collect(),
-            count: parts.div_ceil(columns) * columns,
         }
     }
 
     /// How many rows the grid holds.
     pub(super) fn rows(&self) -> usize {
-        self.count / self.columns
+        self.cells.len().div_ceil(self.columns)
     }
 
     /// A cell's column and row.
@@ -138,40 +138,23 @@ impl Grid {
             .unwrap_or(0) as f64
     }
 
-    /// Put a part in a cell, swapping with what stands there.
-    fn swap(&mut self, part: usize, cell: usize) -> (usize, Option<usize>) {
-        let old = self.cells[part];
-        let other = self.cells.iter().position(|&held| held == cell);
-        self.cells[part] = cell;
-        if let Some(other) = other {
-            self.cells[other] = old;
-        }
-        (old, other)
-    }
-
-    /// Take a swap back.
-    fn unswap(&mut self, part: usize, cell: usize, undo: (usize, Option<usize>)) {
-        self.cells[part] = undo.0;
-        if let Some(other) = undo.1 {
-            self.cells[other] = cell;
-        }
-    }
-
-    /// One pass over every part and every cell, keeping what lowers the cost.
+    /// One pass over every part and every cell, keeping each swap that lowers the cost.
     fn pass(&mut self, joins: &[Join], items: &[Item<'_>], pitch: Point, best: &mut f64) -> bool {
         let mut moved = false;
         for part in 0..self.cells.len() {
-            for cell in 0..self.count {
-                if cell == self.cells[part] {
+            for cell in 0..self.cells.len() {
+                let held = self.cells.iter().position(|&one| one == cell);
+                let other = held.unwrap_or(part);
+                if other == part {
                     continue;
                 }
-                let undo = self.swap(part, cell);
+                self.cells.swap(part, other);
                 let cost = self.cost(joins, items, pitch);
                 if cost + 1e-9 < *best {
                     *best = cost;
                     moved = true;
                 } else {
-                    self.unswap(part, cell, undo);
+                    self.cells.swap(part, other);
                 }
             }
         }

@@ -1,5 +1,7 @@
 //! Public solve contracts for graph classes that use planned channels.
 
+use std::collections::BTreeSet;
+
 use archboard_layout::lay_out_board;
 use serde_json::{Value, json};
 
@@ -50,6 +52,62 @@ fn a_dense_view_that_draws_skips_the_wider_placement_search() {
     assert!(graphs_laid(33) < graphs_laid(32));
 }
 
+/// A frame of parts of several sizes, each joined to the next two, with a door under it.
+fn frame_of(parts: usize) -> Value {
+    let children: Vec<Value> = (0..parts)
+        .map(
+            |i| json!({"id":format!("p{i}"),"width":180 + 30 * (i % 3),"height":60 + 20 * (i % 2)}),
+        )
+        .collect();
+    let line = |from: String, to: String| json!({"id":format!("{from}{to}"),"sources":[from],"targets":[to]});
+    let lines = (0..parts)
+        .flat_map(|i| (i + 1..parts.min(i + 3)).map(move |j| (format!("p{i}"), format!("p{j}"))));
+    let edges: Vec<Value> = lines
+        .chain([("p0".to_owned(), "door".to_owned())])
+        .map(|(from, to)| line(from, to))
+        .collect();
+    json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":[{"id":"frame","width":200,"height":36,
+            "layoutOptions":{"archboard.header.size":"36"},"children":children},
+            {"id":"door","width":160,"height":34}],
+        "edges":edges})
+}
+
+#[test]
+fn a_frames_parts_fill_a_shared_grid_from_its_first_cell_the_same_way_every_time() {
+    let graph = frame_of(7);
+    let placed = drawing(&graph);
+    assert_eq!(placed, drawing(&graph));
+    let parts: Vec<(i64, i64)> = placed["cards"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|card| card["id"].as_str().unwrap().starts_with('p'))
+        .map(|card| {
+            let at = |axis: &str| card["box"][axis].as_f64().unwrap().round() as i64;
+            (at("x"), at("y"))
+        })
+        .collect();
+    let lefts: BTreeSet<i64> = parts.iter().map(|part| part.0).collect();
+    let tops: BTreeSet<i64> = parts.iter().map(|part| part.1).collect();
+    assert_eq!(parts.len(), 7);
+    assert!(lefts.len() > 1 && lefts.len() < 7 && tops.len() > 1);
+    for (row, top) in tops.iter().enumerate() {
+        let row_lefts: BTreeSet<i64> = parts
+            .iter()
+            .filter(|part| part.1 == *top)
+            .map(|part| part.0)
+            .collect();
+        let full = if row + 1 < tops.len() {
+            lefts.len()
+        } else {
+            row_lefts.len()
+        };
+        assert_eq!(row_lefts.len(), full);
+        assert!(row_lefts.iter().eq(lefts.iter().take(full)));
+    }
+}
+
 #[test]
 fn nested_comparison_repairs_channels_through_enclosing_blocks() {
     // Reduced from a whole-board comparison. Its restored calls exceed the
@@ -63,7 +121,7 @@ fn nested_comparison_repairs_channels_through_enclosing_blocks() {
             .unwrap()
             .iter()
             .map(|edge| edge["id"].as_str().unwrap().to_owned())
-            .collect::<std::collections::BTreeSet<_>>()
+            .collect::<BTreeSet<_>>()
     };
     assert_eq!(ids(&placed["edges"]), ids(&graph["edges"]));
 }
