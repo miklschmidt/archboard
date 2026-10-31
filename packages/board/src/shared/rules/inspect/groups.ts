@@ -132,14 +132,16 @@ function inspectGroup(content: VariantContent, group: string): GroupInspection {
 			parent === undefined ? [] : [[id, parent] as const],
 		),
 	);
-	const ends = (edge: SemanticEdge) =>
-		[memberAt(edge.from, inside, parents), memberAt(edge.to, inside, parents)] as const;
-	const internalEdges = content.edges.filter((edge) => {
-		const [from, to] = ends(edge);
-		return from !== undefined && to !== undefined && from !== to;
-	});
-	const boundaryEdges = content.edges.flatMap((edge) => {
-		const boundary = boundaryOf(edge, ...ends(edge));
+	const crossings = content.edges.map((edge) => ({
+		edge,
+		from: memberAt(edge.from, inside, parents),
+		to: memberAt(edge.to, inside, parents),
+	}));
+	const internalEdges = crossings.flatMap(({ edge, from, to }) =>
+		from !== undefined && to !== undefined && from !== to ? [edge] : [],
+	);
+	const boundaryEdges = crossings.flatMap(({ edge, from, to }) => {
+		const boundary = boundaryOf(edge, from, to);
 		return boundary === null ? [] : [boundary];
 	});
 	const touched = new Set(boundaryEdges.map((boundary) => boundary.neighbor));
