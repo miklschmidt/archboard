@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/walkthrough-replay/start-replay.ts"
+    "path": "apps/web/src/ui/clients/walkthrough-replay"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#Kek84WN9",

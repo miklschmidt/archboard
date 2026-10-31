@@ -5,26 +5,12 @@
   "responsibility": "Journals an operation and installs its files through durable atomic writes",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/model-install.ts",
-    "symbol": "installJournal"
+    "path": "packages/board/src/runtime/store/model-install.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#FLjFy1AY",
   "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
   "outgoing": [
-    {
-      "order": 134000,
-      "kind": "call",
-      "label": "record durable progress",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-install.ts",
-        "symbol": "writeState"
-      },
-      "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
-      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
-    },
     {
       "order": 70200,
       "kind": "data",
@@ -37,6 +23,19 @@
       },
       "id": "vKEsyHFk#3sW3Kpz8",
       "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+    },
+    {
+      "order": 134000,
+      "kind": "call",
+      "label": "record durable progress",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-install.ts",
+        "symbol": "writeState"
+      },
+      "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
     },
     {
       "order": 135000,

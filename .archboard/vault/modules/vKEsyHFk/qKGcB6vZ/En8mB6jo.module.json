@@ -8,8 +8,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
-    "symbol": "createWorkbenchThreadProfile"
+    "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/qKGcB6vZ#En8mB6jo",

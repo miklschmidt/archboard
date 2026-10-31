@@ -5,26 +5,12 @@
   "responsibility": "Draws one architecture reading in a Bun process",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/operations/render.ts",
-    "symbol": "renderArchitecture"
+    "path": "packages/renderer/src/runtime/operations/render.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#jAl99x56",
   "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
   "outgoing": [
-    {
-      "order": 130030,
-      "kind": "call",
-      "label": "installBunHost",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/render.ts",
-        "symbol": "installBunHost"
-      },
-      "id": "vKEsyHFk#OeBKmvkq",
-      "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
-    },
     {
       "order": 8000,
       "kind": "call",
@@ -67,6 +53,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#PAOQHNdT",
       "to": "vKEsyHFk/gbyqW4H3#bm9AWXkW"
+    },
+    {
+      "order": 130030,
+      "kind": "call",
+      "label": "installBunHost",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "symbol": "installBunHost"
+      },
+      "id": "vKEsyHFk#OeBKmvkq",
+      "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP"
     }
   ]
 }

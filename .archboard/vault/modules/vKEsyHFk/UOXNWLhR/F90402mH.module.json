@@ -5,8 +5,7 @@
   "responsibility": "Draws a prepared reading through the installed browser renderer",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-    "symbol": "drawBoardHere"
+    "path": "packages/renderer/src/ui/state/browser-renderer.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#F90402mH",
