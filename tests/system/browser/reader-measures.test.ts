@@ -117,18 +117,21 @@ test("a selection reads the history, and the list shows every module and selects
 		WAIT,
 	);
 	expect(
-		await browser.eval<{ described: boolean; eases: string }>(`(() => {
-			const popover = document.querySelector('[data-slot="select-content"]');
-			const choices = [...popover.querySelectorAll('[role="option"]')];
-			return {
-				described: choices.length > 0 && choices.every((choice) => choice.querySelector('[data-slot="select-description"]')?.textContent),
-				eases: getComputedStyle(popover).transitionDuration,
-			};
+		await browser.eval<boolean>(`(() => {
+			const choices = [...document.querySelectorAll('[data-slot="select-content"] [role="option"]')];
+			return choices.length > 0 && choices.every((choice) => choice.querySelector('[data-slot="select-description"]')?.textContent);
 		})()`),
-	).toEqual({
-		described: true,
-		eases: `${COLUMN_MS.popoverIn / 1000}s, ${COLUMN_MS.popoverIn / 1000}s`,
-	});
+	).toBe(true);
+	// Base UI holds the transition off for the first frame of an open popover.
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`getComputedStyle(document.querySelector('[data-slot="select-content"]')).transitionDuration`,
+			),
+		(eases) => eases === `${COLUMN_MS.popoverIn / 1000}s, ${COLUMN_MS.popoverIn / 1000}s`,
+		"the popover to ease for its duration",
+		WAIT,
+	);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Enter"]);

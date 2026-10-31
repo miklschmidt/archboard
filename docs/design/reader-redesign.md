@@ -182,7 +182,7 @@ entered or selected subject. If geometry has no real correspondence, change plai
 - A flow is chosen first, and the Sequence or Flowchart representation second. Selecting a flow opens the sequence.
   The move from structure to sequence is a plain change. `[` and `]` walk the list of the left column.
 - The flow list groups its rows under their collections. A collection name at the end of a row truncated the flow
-  names at 320 px. Its heading sticks while the column scrolls, and it is not a row, so it adds no key stop.
+  names at the width of the column. Its heading sticks while the column scrolls, and it is not a row, so it adds no key stop.
 
 ## History and proposals
 
