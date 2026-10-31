@@ -127,6 +127,9 @@ function relationshipDetail(connection: Connection): ReactNode {
 	return <RelationshipEvidence edge={connection.joins[0]} />;
 }
 
+/** The tables of a module light nothing: the module on the page stands at the end of every row. */
+const NOTHING_LIT: ReadonlySet<string> = new Set();
+
 /**
  * Each list of one module. A section with nothing to show is absent.
  * @param props The module and its reading.
@@ -148,7 +151,7 @@ function useModuleSections(props: ModulePageProps) {
 	const table = {
 		model: source,
 		reference,
-		selected: selection.ids,
+		selected: NOTHING_LIT,
 		look,
 		onSelect: selection.select,
 		onShow,
