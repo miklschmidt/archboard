@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-30T16:45:00Z'
+updated_date: '2026-10-31T03:54:00Z'
 labels:
   - frontend
   - review
@@ -67,4 +67,6 @@ Owner, 2026-10-30: numbered containers such as Layer 4 and Layer 6 are too abstr
 Owner decision, 2026-10-30: delete the Layer 0 to Layer 7 containers from this repository's model. Do not replace them with groups, because more groups oversaturate the drawings. Show a module's code path on its card and let navigation read like the repository. The consumer skill and archboard check must catch containers with no code and no job of their own.
 
 Council settled on 2026-10-30. The design record is docs/design/reader-redesign.md and the papers are under docs/design/reader-council/. The implementation papers are the scrutiny pass so far.
+
+Product intent from the owner: the whole idea of the redesign was easy identification of codebase smells, viewed through the lens of Ousterhout's A Philosophy of Software Design. Judge every reader slice against that.
 <!-- SECTION:NOTES:END -->
