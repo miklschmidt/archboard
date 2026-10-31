@@ -27,6 +27,19 @@
   ],
   "outgoing": [
     {
+      "order": 56000,
+      "kind": "call",
+      "label": "one session per pane, opened in the page's opening vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
+      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
+    },
+    {
       "order": 65000,
       "kind": "render",
       "label": "Read an authored model",
@@ -105,17 +118,17 @@
       "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
     },
     {
-      "order": 56000,
+      "order": 2000,
       "kind": "call",
-      "label": "one session per pane, opened in the page's opening vault",
+      "label": "a session per pane, opened in a vault; show a board in one",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
         "symbol": "usePaneSession"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
-      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
+      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
     }
   ]
 }
