@@ -102,14 +102,12 @@ function ReadingCaption(props: {
 }): JSX.Element {
 	const { reader, code } = props;
 	const { location, accepted, selection } = reader;
-	const { focus, filters, grammar, setFocus } = location;
+	const { focus, grammar, setFocus } = location;
 	const clearFocus = useCallback((): void => setFocus(null), [setFocus]);
 	return (
 		<ModelCaption
 			model={accepted.shown.model}
 			projection={accepted.shown.projection}
-			everyLine={filters.everyLine}
-			onToggle={location.toggleEveryLine}
 		>
 			{grammar === "architecture" && focus !== null && (
 				<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clearFocus}>

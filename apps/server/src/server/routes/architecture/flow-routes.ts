@@ -74,10 +74,7 @@ async function flowPicture(model: Model, input: Reading, vault: string) {
 		policy: model.policy,
 		theme: input.theme,
 	});
-	return {
-		...renderReceipt(model, input, vault, drawn, flow),
-		leftOutLines: projection.listed.length - projection.connections.length,
-	};
+	return renderReceipt(model, input, vault, drawn, flow);
 }
 /**
  * Read only the comparison base identified by the shared public reader.
@@ -153,7 +150,7 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 		model,
 		input.scope ?? model.selectedModule ?? null,
 		input.focus ?? null,
-		{ hideKinds: input.hideKinds, showGroups: input.showGroups, everyLine: input.everyLine },
+		{ hideKinds: input.hideKinds, showGroups: input.showGroups },
 		reference,
 	);
 	const flow = model.collections
@@ -201,15 +198,13 @@ function renderReceipt(
  */
 function mountArchitectureFlowRoutes(app: Express): void {
 	app.get("/api/architecture/render", requireVault, async (req, res) => {
-		const { everyLine, ...selectors } = req.query;
 		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse({
-			...selectors,
+			...req.query,
 			...Object.fromEntries(
 				["focus", "hideKinds", "showGroups"]
 					.filter((key) => typeof req.query[key] === "string")
 					.map((key) => [key, [req.query[key]]]),
 			),
-			...(everyLine === "true" ? { everyLine: true } : {}),
 		});
 		if (!query.success) {
 			res

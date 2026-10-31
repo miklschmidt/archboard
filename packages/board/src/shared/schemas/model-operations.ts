@@ -29,7 +29,6 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	focus: z.array(QualifiedSubjectIdSchema).optional(),
 	hideKinds: z.array(z.string()).optional(),
 	showGroups: z.array(z.string()).optional(),
-	everyLine: z.boolean().optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),
 });
@@ -47,7 +46,6 @@ const ArchitectureRenderResultSchema = z.discriminatedUnion("success", [
 		height: z.number(),
 		placed: z.array(z.string()),
 		atlas: DiagramAtlasSchema,
-		leftOutLines: z.number().optional(),
 	}),
 	ArchitectureModelFailureSchema,
 ]);

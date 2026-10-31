@@ -239,117 +239,12 @@ describe("doors", () => {
 	});
 });
 
-describe("a crowded picture", () => {
+test("a crowded picture draws every relationship", () => {
 	const parts = Array.from({ length: 8 }, (_, index) => ({ id: `p${index}` }));
-	const chain = parts.slice(1).map((part, index) => ({
-		id: `step${index}`,
-		from: `p${index}`,
-		to: part.id,
-	}));
-	const shortcuts = parts.flatMap((from, start) =>
-		parts.slice(start + 2).map((to) => ({ id: `${from.id}-${to.id}`, from: from.id, to: to.id })),
+	const edges = parts.flatMap((from, start) =>
+		parts.slice(start + 1).map((to) => ({ id: `${from.id}-${to.id}`, from: from.id, to: to.id })),
 	);
-	const model = modelOf(parts, [...chain, ...shortcuts]);
-
-	test("keeps its lines at the budget", () => {
-		const small = modelOf(parts, [...chain, ...shortcuts.slice(0, 11)]);
-		expect(projectModel(small).connections).toHaveLength(18);
-		expect(projectModel(small).implied).toEqual([]);
-	});
-
-	test("above the budget, drops the lines that its paths imply, and counts them", () => {
-		const reading = projectModel(model);
-		expect(lines(reading)).toEqual(chain.map((edge) => `${edge.from}>${edge.to}`));
-		expect(reading.implied).toHaveLength(shortcuts.length);
-		expect(reading.listed).toHaveLength(chain.length + shortcuts.length);
-	});
-
-	test("no connected part loses its last line", () => {
-		const ring = parts.flatMap((from, start) =>
-			parts.flatMap((to, end) =>
-				start === end ? [] : [{ id: `${from.id}-${to.id}`, from: from.id, to: to.id }],
-			),
-		);
-		const reading = projectModel(modelOf(parts, ring));
-		const connected = new Set(reading.connections.flatMap(({ line }) => [line.from, line.to]));
-		expect(connected.size).toBe(parts.length);
-	});
-
-	test("of two lines that imply each other, the weaker leaves", () => {
-		const filler = Array.from({ length: 20 }, (_, index) => ({
-			id: `filler${index}`,
-			from: `x${index}`,
-			to: `y${index}`,
-		}));
-		const cards = [...new Set(filler.flatMap((edge) => [edge.from, edge.to]))].map((id) => ({
-			id,
-		}));
-		const reading = projectModel(
-			modelOf(
-				[...cards, { id: "s" }, { id: "t" }, { id: "u" }],
-				[
-					{ id: "weak", from: "s", to: "t" },
-					{ id: "strong", from: "s", to: "u" },
-					{ id: "stronger", from: "s", to: "u" },
-					{ id: "there", from: "t", to: "u" },
-					{ id: "back", from: "u", to: "t" },
-					...filler,
-				],
-			),
-		);
-		expect(reading.implied.map(({ line }) => line.id)).toEqual(["weak"]);
-	});
-
-	test("a two-way line leaves only with a path each way, and leads both ways", () => {
-		const filler = Array.from({ length: 20 }, (_, index) => ({
-			id: `filler${index}`,
-			from: `x${index}`,
-			to: `y${index}`,
-		}));
-		const cards = [...new Set(filler.flatMap((edge) => [edge.from, edge.to]))].map((id) => ({
-			id,
-		}));
-		const reading = projectModel(
-			modelOf(
-				[...cards, { id: "s" }, { id: "t" }, { id: "u" }, { id: "x" }],
-				[
-					{ id: "there", from: "s", to: "t" },
-					{ id: "back", from: "t", to: "s" },
-					{ id: "out", from: "s", to: "u" },
-					{ id: "on", from: "u", to: "t" },
-					{ id: "strong", from: "s", to: "x" },
-					{ id: "stronger", from: "s", to: "x" },
-					{ id: "weak", from: "t", to: "x" },
-					...filler,
-				],
-			),
-		);
-		expect(reading.implied.map(({ line }) => line.id)).toEqual(["weak"]);
-	});
-
-	test("one control draws every line again", () => {
-		const reading = projectModel(model, null, null, { everyLine: true });
-		expect(reading.content.edges).toHaveLength(chain.length + shortcuts.length);
-		expect(reading.implied).toHaveLength(shortcuts.length);
-	});
-
-	test("a door keeps its line", () => {
-		const held = parts.map((part) => ({ ...part, parent: "open" }));
-		const door = { id: "door", from: "p0", to: "outside" };
-		const reading = projectModel(
-			modelOf([{ id: "open" }, { id: "outside" }, ...held], [...chain, ...shortcuts, door]),
-			"open",
-		);
-		expect(lines(reading)).toContain("p0>outside");
-	});
-
-	test("a comparison keeps a changed line in the picture", () => {
-		const base = modelOf(parts, chain);
-		const after = { ...model, comparison: undefined } as Model;
-		const reading = projectModel(after, null, null, {}, base);
-		expect(reading.content.edges).toHaveLength(chain.length + shortcuts.length);
-		expect(reading.implied).toEqual([]);
-	});
+	expect(projectModel(modelOf(parts, edges)).content.edges).toHaveLength(edges.length);
 });
 
 test("group regions stay off until a reader turns one on", () => {

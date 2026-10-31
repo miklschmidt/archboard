@@ -5,7 +5,7 @@ import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type Edge = Projection["listed"][number]["joins"][number];
+type Edge = Projection["connections"][number]["joins"][number];
 
 interface ModelDoorEndpointsProps {
 	door: string;

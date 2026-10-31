@@ -62,7 +62,7 @@ function ModelModuleList(props: {
 			)}
 			<ModelConnections
 				model={model}
-				connections={props.projection.listed}
+				connections={props.projection.connections}
 				reference={props.projection.reference}
 				selected={selected}
 				onSelect={select}

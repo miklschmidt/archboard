@@ -7,14 +7,14 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
-import { busLines, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
+import { busLines, drawnEnds, joinedLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 type ModelFilters = Pick<
 	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "showGroups" | "everyLine"
+	"hideKinds" | "showGroups"
 >;
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 type Standing = Readonly<Record<string, ChangeKind>>;
@@ -37,7 +37,7 @@ type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 };
 
 /** What decides which lines a reading draws. */
-type LineChoices = Pick<ModelFilters, "hideKinds" | "everyLine">;
+type LineChoices = Pick<ModelFilters, "hideKinds">;
 
 /**
  * Adapt canonical meaning to the existing renderer content contract.
@@ -91,21 +91,20 @@ function projectScope(
 	const open = new Set(scope === null ? [] : [scope]);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const listed = joinedLines(complete, shown, endsOf, open, standing);
+	const connections = joinedLines(complete, shown, endsOf, open, standing);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
 	const visible = new Set([
 		...children.map((node) => node.id),
-		...listed.flatMap(({ line }) => [line.from, line.to]),
+		...connections.flatMap(({ line }) => [line.from, line.to]),
 	]);
 	const scoped = byId.get(scope ?? "");
 	if (scoped !== undefined) visible.add(scoped.id);
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !inside.has(node.id));
-	const lines = readingLines(listed, children, standing, choices.everyLine);
 	return {
 		focused: null as ReadonlySet<string> | null,
 		missingFocus: [] as string[],
 		complete,
-		...lines,
+		connections,
 		allConnections: joinedLines(complete, relevant, endsOf, open, standing),
 		children,
 		context,
@@ -115,7 +114,7 @@ function projectScope(
 		}),
 		missing: scope !== null && scoped === undefined,
 		inspection: interfaceOf(complete, scoped),
-		content: drawingContent(complete, visible, lines.connections, {
+		content: drawingContent(complete, visible, connections, {
 			parents: open,
 			doors: context,
 		}),
@@ -158,7 +157,7 @@ function projectModel(
 		opened,
 		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
-		held: heldContent(reference, () => read(context.complete, { ...filters, everyLine: true }), {
+		held: heldContent(reference, () => read(context.complete, filters), {
 			depicted: projection.content,
 			filters,
 		}),
@@ -293,8 +292,6 @@ function projectVisible(
 		children: complete.nodes.filter((node) => visible.has(node.id)),
 		context: [],
 		connections,
-		listed: connections,
-		implied: [],
 		allConnections,
 		content: drawingContent(complete, visible, connections, { parents: visible, doors: [] }),
 	};
@@ -375,17 +372,16 @@ function projectFocused(
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
-	const listed = joinedLines(complete, shown, ends, openSelf, standing);
+	const connections = joinedLines(complete, shown, ends, openSelf, standing);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
-	const visible = new Set([...anchors, ...listed.flatMap(({ line }) => [line.from, line.to])]);
+	const visible = new Set([...anchors, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !anchors.has(node.id));
-	const lines = readingLines(listed, children, standing, choices.everyLine);
 	return {
 		focused,
 		missingFocus: focus.filter((id) => !known.has(id)),
 		complete,
-		...lines,
+		connections,
 		allConnections: joinedLines(complete, relevant, ends, openSelf, standing),
 		children,
 		context,
@@ -397,7 +393,7 @@ function projectFocused(
 						.flatMap((id) => byId.get(id) ?? []),
 		missing: false,
 		inspection: interfaceOf(complete, byId.get(scope ?? "")),
-		content: drawingContent(complete, visible, lines.connections, {
+		content: drawingContent(complete, visible, connections, {
 			parents: anchors,
 			doors: context,
 		}),
