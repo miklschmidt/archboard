@@ -1,0 +1,14 @@
+{
+  "order": 68000,
+  "name": "Contract artifacts",
+  "kind": "module",
+  "responsibility": "Generates the audit of the command contract",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/contract-artifacts"
+  },
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#n2CkEhuJ",
+  "outgoing": []
+}

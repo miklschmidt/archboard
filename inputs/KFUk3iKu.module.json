@@ -1,0 +1,14 @@
+{
+  "order": 75000,
+  "name": "Board API",
+  "kind": "module",
+  "responsibility": "The shared entry files of the board package",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/shared/api"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#KFUk3iKu",
+  "outgoing": []
+}

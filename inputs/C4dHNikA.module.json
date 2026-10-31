@@ -1,0 +1,14 @@
+{
+  "order": 47000,
+  "name": "Code check contract",
+  "kind": "module",
+  "responsibility": "The answers of the code check and the footprint",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/shared"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#C4dHNikA",
+  "outgoing": []
+}

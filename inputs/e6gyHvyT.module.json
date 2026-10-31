@@ -1,0 +1,14 @@
+{
+  "order": 67000,
+  "name": "Publication requests",
+  "kind": "module",
+  "responsibility": "Reads and drives the publication of a checkpoint",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/architecture-model/publication.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#e6gyHvyT",
+  "outgoing": []
+}

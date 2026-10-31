@@ -1,0 +1,14 @@
+{
+  "order": 49000,
+  "name": "Example server",
+  "kind": "module",
+  "responsibility": "The example host's server code",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/workbench-example/src/server"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#xssnUgIk",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#kNmvgdbn",
+  "outgoing": []
+}

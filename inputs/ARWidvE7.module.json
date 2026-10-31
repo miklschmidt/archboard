@@ -1,0 +1,14 @@
+{
+  "order": 76000,
+  "name": "Board rules",
+  "kind": "module",
+  "responsibility": "The pure rules of a model: identities, scope, comparison, flow steps and projection",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/shared/rules"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ARWidvE7",
+  "outgoing": []
+}

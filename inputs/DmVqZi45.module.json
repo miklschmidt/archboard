@@ -1,0 +1,14 @@
+{
+  "order": 42000,
+  "name": "Workhorse start flow",
+  "kind": "module",
+  "responsibility": "Stages, starts, binds and commits a workhorse's thread",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/start.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#DmVqZi45",
+  "outgoing": []
+}

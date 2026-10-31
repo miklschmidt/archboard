@@ -1,0 +1,14 @@
+{
+  "order": 46000,
+  "name": "Owner projection",
+  "kind": "module",
+  "responsibility": "Projects the session into the snapshot that one browser sees",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#B4EubD9s",
+  "outgoing": []
+}

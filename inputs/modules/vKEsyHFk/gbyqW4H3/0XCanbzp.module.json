@@ -4,10 +4,6 @@
   "kind": "module",
   "responsibility": "Installs the Bun host, then renders architecture or an explicitly requested sequence or flowchart",
   "description": "The existing renderArchitecture operation accepts an optional grammar. Its default remains architecture. Public callers derive request and result types from operations. The interface remains 60 exports with its unchanged ceiling.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/runtime/operations/render.ts"
-  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#0XCanbzp",
   "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",

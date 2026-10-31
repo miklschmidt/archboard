@@ -1,0 +1,14 @@
+{
+  "order": 13000,
+  "name": "Route definition",
+  "kind": "module",
+  "responsibility": "Builds the route of a command and its children",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/protocol/routing/route.ts"
+  },
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#m1XhlPhW",
+  "outgoing": []
+}

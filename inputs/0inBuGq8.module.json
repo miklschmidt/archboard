@@ -1,0 +1,14 @@
+{
+  "order": 50000,
+  "name": "Example panels",
+  "kind": "ui",
+  "responsibility": "The panels of the example workbench",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/workbench-example/src/ui/components/workbench"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#xssnUgIk",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#0inBuGq8",
+  "outgoing": []
+}

@@ -1,0 +1,14 @@
+{
+  "order": 71000,
+  "name": "Shell actions",
+  "kind": "module",
+  "responsibility": "The actions that the shell offers",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application/shell-actions.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#n17ArCmW",
+  "outgoing": []
+}

@@ -4,10 +4,6 @@
   "kind": "module",
   "responsibility": "Shows recursive modules, interfaces, connection evidence, and exact reading history",
   "description": "Reads current, draft, completed, and exact architecture with explicit unavailable states. One catalogue supplies reading and comparison choices. Recursive scopes expose complete interfaces and relationship evidence. The router owns scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations.\n\nSelection retains canonical identities through renames, hidden subjects, and removed comparison definitions. Pointer modifiers, keyboard commands, and area selection share one owner. Focus opens containment paths. Filters preserve complete interfaces. Behavioral readings retain all participants and steps.\n\nCode and foreign navigation preserve exact historical pins. State details expose decisions, dates, documents, correction audit, unresolved issues, and blocked ancestry. Explanation actions capture the exact reading through the existing local action.\n\nEach reader belongs to its resolved vault. Captured walkthroughs reuse its renderer and camera, retain the ordinary reading, and change revision only on explicit restart. Every converted beat requires an explicit view. Unavailable beats draw no replacement architecture.\n\nMigration previews retain original coverage, lifecycle, standing, predecessors, and baselines. Failed composition keeps exact originals inspectable without claiming an empty current model. The browser authors no mapping, settlement, lifecycle decision, or migration.\n\nInstalled bookmarks preserve canonical authority and exact view membership without owning model content. Former addresses reopen retained originals with their exact state and checkpoint. Model ownership transfer remains explicitly unavailable.",
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model"
-  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "parent": "vKEsyHFk/yejBBUFY#TLCeNkdh",

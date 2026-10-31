@@ -1,0 +1,14 @@
+{
+  "order": 56000,
+  "name": "Thread parts",
+  "kind": "ui",
+  "responsibility": "The turns, markdown and tool buttons of a conversation",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components/thread"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#cgf4eSOm",
+  "outgoing": []
+}

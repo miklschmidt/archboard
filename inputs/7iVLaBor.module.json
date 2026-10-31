@@ -1,0 +1,14 @@
+{
+  "order": 33000,
+  "name": "Pane socket client",
+  "kind": "module",
+  "responsibility": "Keeps the one socket of a page, naming its vault, and hears its messages",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#7iVLaBor",
+  "outgoing": []
+}
