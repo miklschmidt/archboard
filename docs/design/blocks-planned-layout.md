@@ -3,11 +3,18 @@
 Status: accepted for TASK-554 on 2026-10-30, after the hybrid revision on 2026-10-29.
 The owner selected legacy Blocks placement with planned routing after three placement trials failed the visual gates.
 The hybrid contract below supersedes the original placement proposal.
+The reader redesign amends it (TASK-559.09, TASK-559.14 and TASK-559.16): a dense placement comes first, an edge tab replaces the header card, and no reading draws a group region.
 The remaining sections preserve the investigation and its earlier checkpoints.
 
 ## Hybrid contract
 
-The legacy placer owns card positions, dependency order, block packing, frames, folds, and wraps.
+A dense placement goes first, in `planned/dense`.
+It takes a reading of one open frame that holds only cards, and a root of 18 or more lines with no frame.
+It sets the parts on a shared grid below the edge tab, and it stands the doors round the frame, each near what it joins.
+Inside a frame, compactness comes before fewer bends.
+The planner routes each dense placement, tightest first, and the first room that lands whole wins.
+A reading that the dense placement does not take, or cannot route, falls to the legacy placer.
+The legacy placer owns card positions, dependency order, block packing, frames, folds, and wraps for such a reading.
 The planner owns every final Blocks route and label.
 Track retains its existing placement and routing behavior.
 The public Solver interface, text measurement, and authored board format stay the same.
@@ -46,7 +53,7 @@ The existing candidates remain available when the compact placement leaves insuf
 
 After route selection, the planner contracts empty bands in both coordinate directions.
 A band is a horizontal or vertical strip.
-Cards, measured headers, captions, labels, bends, and frame boundaries protect their occupied intervals plus the existing routing clearance.
+Cards, measured edge tabs, labels, bends, and frame boundaries protect their occupied intervals plus the existing routing clearance.
 Only straight runs cross the remaining gaps.
 The contraction translates cards without resizing them and shortens frames and routes together.
 Each shift removes whole coordinate units, so SVG rounding retains the original subpixel alignment at attachments.
@@ -69,7 +76,8 @@ A board with at most twenty-four cards also retains the two-row cut.
 Labels and boundary ports can push a small fan over the dense-scope limit.
 Smaller scopes retain the wider wrap search.
 
-Fixed placement supplies measured endpoints, exact headers, region captions, walls, and route ancestry to the planner.
+Fixed placement supplies measured endpoints, exact edge tabs, walls, and route ancestry to the planner.
+A frame is two endpoints: its outline, which what stands outside reaches, and the foot of its tab, which what it holds reaches.
 The planner considers four endpoint walls and the provisional routes as geometric guides.
 It starts with straight, elbow, and single-channel templates.
 It adds two-channel templates when the simpler templates fail.

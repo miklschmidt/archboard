@@ -549,3 +549,16 @@ took the lines drawn from 1,694 to 1,765, the total area from 148.5 M to 156.0 M
 and the readings that pass the fit gate from 107 to 109 of 115. No module with
 parts reads as no entry points although callers reach it. Of the 1,074
 relationships, 339 keep a frame end.
+
+## Amendment of 2026-10-31: the reader states the measures
+
+TASK-559.22 and TASK-559.29 settle where a reader finds these facts. Where the
+rules above say the pane inspector or the sidebar, the canonical reader has the
+interface line of the right panel, the Interface section of About and the
+`Measures` list. The line writes entry points as `entries`. It also counts the
+distinct callers that reach the module itself as `to module`. That count is a
+fact beside the five measures, not a sixth measure. `Measures` sorts every
+module by one count at a time, and nothing combines the counts.
+
+The derivation now lives in
+`packages/board/src/shared/rules/inspect/container-interface.ts`.

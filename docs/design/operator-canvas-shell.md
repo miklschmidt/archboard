@@ -111,9 +111,10 @@ text, and long lists stay in About.
   ends. A two-way line lists both directions, and a module's lists show each direction
   of such a line with only what runs that way. Every row is an action that selects its
   subject. A list shows 8 rows, then offers the rest in place.
-- **The foot of the panel holds what can be done.** `Open module`, `Open code`,
-  `Focus` and `Explain` stay pinned under the legend while the subject scrolls. Escape
-  and the close control let the selection go, and the keyboard returns to the picture.
+- **The action bar stands over the legend.** `Open module`, `Open code`, `Focus` and
+  `Explain` stay pinned there while the subject scrolls, because a bar under the legend
+  put a group's tag out from under the pointer. Escape and the close control let the
+  selection go, and the keyboard returns to the picture.
 - **Warnings sit on their subject.** The picture marks the warned subject, and the
   panel and About give the check's words for a module, a line or a step. Only About
   shows the count for the whole model.
@@ -122,8 +123,9 @@ text, and long lists stay in About.
   and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader
   can hide. A kind that a reader hid stays in the legend, dimmed, and the heading row
   says how many are hidden. A mixed line has a row and no switch, because it is no kind
-  of relationship. Groups close the legend as bright tags with no switch. A reading
-  with no groups has no group section.
+  of relationship. Groups close the legend as bright tags with no switch, and a press
+  on a tag selects the group's parts. A reading with no groups has no group section.
+  The layout engine switch stands under the legend on a structural reading.
 - **About holds every long list and names its subject.** The end of its title row
   reads `Open scope`. While something is selected, it offers `Open scope` and
   `Selected subject`. About opens on the selection when there is one. On the scope,
@@ -500,9 +502,9 @@ foot](assets/operator-shell-navigator.png)
   row stick to the top while the column scrolls. Siblings sort by code path.
   Unbound modules come last, and ties use authored order. A chain of modules with
   one part each folds into one row, and the crumbs show each step.
-- **`Flows` and `Walkthroughs` stay open while the reader walks them.** Relevant
-  entries come first. A scope with none offers `All flows (72)` style access. A
-  flow is chosen first, and `Sequence` or `Flowchart` second.
+- **`Flows` and `Walkthroughs` stay open while the reader walks them.** They list
+  the whole model, and the right panel lists what touches the reading. A flow is
+  chosen first, and `Sequence` or `Flowchart` second.
 - **`Changes` lists every change of a proposal under the owner that holds it.**
   A module owns its outgoing relationships, a flow its steps and a walkthrough
   its beats. Rows take the column's grid, and each marker is the standing mark

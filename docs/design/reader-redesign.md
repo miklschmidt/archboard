@@ -23,9 +23,9 @@ what the marks of the picture mean.
 - Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
-- Caption, one line: the responsibility of the open module, then any statement of hidden lines. A flow reading
-  shows its collection's name, then its summary, with no label before them. A retained flow with no summary shows
-  the collection alone.
+- Caption, one line: the responsibility of the open module. A flow reading shows its collection's name, then its
+  summary, with no label before them. A retained flow with no summary shows the collection alone. The comparison
+  control ends the line, and `Clear focus` while a focus stands.
 - Picture: the open module with its parts and doors. It fits the room that the right panel leaves.
 - Right panel: a permanent column of about 360 px on every Diagram reading (TASK-559.19). The owner chose it because
   a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
@@ -78,12 +78,12 @@ Other long lists and evidence never go into the right panel, because a small rig
 
 These rules live in the projection, so the CLI, exports and the reader draw the same picture.
 
-1. One module is open. Its children are parts, and the modules that it touches are doors. A flow and a
-   deliberate focus keep their own extent, because they cross branches.
+1. One module is open. Its children are parts, and the modules that it touches are doors. One edge tab on the
+   frame names the open module, and no card stands for it inside the frame. A flow and a deliberate focus keep
+   their own extent, because they cross branches.
 2. One line joins a pair of drawn parts. A pair with relationships in both directions draws one line with an
-   arrow at each end. A door's ends follow rule 5 per direction, so a pair folds only when both directions end on
-   the same two drawn parts. Distinct comparison states stay separate lines. The owner decided this on 2026-10-30,
-   and it replaces the two lines of a reciprocal pair.
+   arrow at each end. Distinct comparison states stay separate lines. The owner decided this on 2026-10-30, and it
+   replaces the two lines of a reciprocal pair.
 3. A line with one kind wears that kind. A line with mixed kinds wears a neutral style, and its tip and panel
    list the kinds. Filters act on the relationships before they join, so hiding a kind never hides another
    kind.
@@ -105,25 +105,27 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    tie. A line never shows a bare count. Each joined line still lists all of its relationships in its tip and panel,
    each with its real ends.
 
-5. A door is a card with a name only. If exactly one part reaches a door, the line ends on that part.
-   Otherwise the line ends on the frame, so a line on the frame means several parts. One click opens a door, and a
-   tip on it lists its real endpoints, grouped by child, up to eight of them. About lists them all. With Ctrl, a click
-   selects the door. A comparison can draw a door of a module that its state removed, which has nowhere to open, so
-   a click selects it.
+5. A door is a bright button with a name and no description, in the colour of its group, or of its kind when it
+   has no group. Its arrow points up, sideways or down by where its module lies in the tree from the open module.
+   A line ends on the part that owns it, whatever else reaches that door. Only a relationship that names the open
+   module itself stays on the frame. One click opens a door, and a tip on it lists its real endpoints, grouped by
+   child, up to eight of them. About lists them all. With Ctrl, a click selects the door. A comparison can draw a
+   door of a module that its state removed, which has nowhere to open, so a click selects it.
    From three lines of one kind to one door, each way, the lines share a trunk, and each line wears its words on its
-   own branch, beside the part that owns it.
-6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
-   Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
-   caption states the count, and one control shows every line.
+   own branch, beside the part that owns it. A line that finds no room for its words draws none, and the panel of
+   the selected line shows them.
+6. Deleted (ADR 0070). This rule took a line off the picture above 18 lines. Every relationship now has a line,
+   unless a filter hides its kind or it joins an open module to a part that it holds, which the nesting shows.
+   The number stays free, because code and tasks cite the rules by number.
 7. A group shows on its cards as a bright tag at the top right, and the cards of a group stand together. No
    frame is drawn round a group. Groups close the legend as the same tags with no switch.
-8. A card shows its code path at its foot, with the folders dimmed and the file bright. A far card shows its
-   name, its path, then the start of its responsibility in the room that its box holds, at the one far type
-   scale of its picture. A long path keeps its tail. An unbound container shows its shared folder with a count,
-   for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership. A path that does not
-   resolve wears the warning mark. An external module shows no path. A card is 260 wide, or wider for a long name,
-   unless its note outgrows that width. It then takes the full 340. A short card centers its words, so neither
-   view keeps an empty band.
+8. A card sets its name, then its responsibility, then its code path at its foot, with the folders dimmed and the
+   file bright. A far card shows its name, its path, then the start of its responsibility in the room that its box
+   holds, at the one far type scale of its picture. A long path keeps its tail. An unbound container shows its
+   shared folder with a count, for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership.
+   A path that does not resolve wears the warning mark. An external module shows no path. A card is 260 wide, or
+   wider for a long name, unless its note outgrows that width. It then takes the full 340. A group tag never widens
+   a card, so a long name wraps sooner. A card with no path centers its words, so it keeps no empty band.
 9. `Open code` follows an authored binding only. A derived folder never becomes a source action, and a path
    never establishes identity or containment.
 10. A chain of modules with one part each folds, as a code host folds single-child folders. The crumbs show
@@ -279,14 +281,17 @@ signal. It binds a write and current content, and it stops at history:
 | A code path as a link on the card                                  | The picture has no such target, and the row is under 9 px high in 43 of 123 readings.                                           |
 | Removing a stored label reservation first                          | Inside these rules, labels cost 10 percent overall. Revisit the root after the content rules.                                   |
 | A list of labels on a joined line                                  | The median line holds 3 labels of 32 characters, so stacked labels leave 80 of 123 readings at fit 0.6.                         |
+| A line budget that drops a line when a longer path joins its ends  | A path through a third part does not state what the dropped line states, so the caption's claim was false (ADR 0070).           |
+| A line on the frame when several parts reach a door                | It reads as the container acting, and it hides which part acts. On `Commands`, 16 of 24 parts showed no line (ADR 0070).        |
 
 ## Gates
 
 Each gate is absolute and uses the real pane of this design, about 1239 by 1003 beside the right panel.
 
-1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land whole on their far view.
+1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land whole on their far view. The
+   corpus now holds 115 readings, and 106 of them pass on the merged reader.
 2. At landing, a name reaches 12 px and a path reaches 9 px on every reading of at most 18 lines.
-3. No line leaves a picture without a statement, and the panel lists every connection.
+3. Every relationship has a line, as rule 6 says, and the panel lists every connection.
 4. Each reading of Shop stays at or below its size today.
 5. A draft opens against its base and draws with no error.
 6. The grading corpus includes `Workspace packages`, the root, `Browser`, `board` and `Command startup`.

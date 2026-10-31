@@ -8,6 +8,10 @@ TASK-548.08 proposes this change on 2026-10-26.
 The parent council judges every changed drawing before this decision is accepted.
 It replaces the speculative layout choices in ADR 0059 and their global reading comparison from ADR 0039.
 TASK-559.16 removes group regions from every reading on 2026-10-31, so no reading uses this placement.
+The region code stays dormant in `crates/archboard-layout/src/blocks` and `track`.
+TASK-559.14 replaces the parent header card with an edge tab ([ADR 0070](0070-doors-are-buttons-and-every-relationship-has-a-line.md)).
+So each sentence below about a header card no longer holds, and neither does the sentence that names ADR 0062.
+A line from outside a frame ends on its outline, and what the frame holds reaches it on the foot of its tab.
 The Rust core, Solver port, worker pool, and vendored Graphviz of ADR 0060 remain.
 
 ## Context

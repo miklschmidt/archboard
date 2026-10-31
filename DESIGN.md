@@ -277,6 +277,9 @@ alone.
 A group shows on each of its cards as a tag at the top right, the same bright
 piece as in the Legend, and the cards of a group stand together. No frame is
 drawn round a group. A card's face and front edge stay neutral in every group.
+A door is a bright button with the finish of a primary action, in the color of
+its group, or of its kind when it has no group, in both themes. Its arrow
+points up, sideways or down by where its module lies in the tree.
 The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
 folders dimmed and its file bright, as far from the foot as the name stands from
 the top. Below a scale of 0.857 a picture draws its far view: one type scale for
@@ -402,7 +405,7 @@ name and the summary of its state. A flow reading says the flow. With a selectio
 explains the selected thing, and a click on a card lights the card and fills the panel at
 once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row
 answers the pointer with a change of tone and nothing else, and a row of a subject on the
-picture also lights it. Its actions stand at the foot of the column, under the legend.
+picture also lights it. Its actions stand over the legend, so a selection never moves a tag.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 

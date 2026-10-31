@@ -1,8 +1,12 @@
 ---
-status: proposed
+status: superseded by ADR-0070
 ---
 
 # Parent headers use normal card sizing
+
+Superseded on 2026-10-31 by [ADR 0070](0070-doors-are-buttons-and-every-relationship-has-a-line.md).
+The owner chose an edge tab (TASK-559.14), so no frame holds a header card.
+The context below stays true of a wide header: it blocks routes to a frame's members.
 
 TASK-548.11 proposes this decision on 2026-10-27 within the next TASK-548.08 council round.
 The parent council judges the changed drawings before adoption.
