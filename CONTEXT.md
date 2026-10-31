@@ -123,6 +123,8 @@ Reconciliation resolves a proposal's inherited changes after its predecessor cha
 The existing family operation installs all affected descendants together.
 Blocked or superseded proposals retain their identities and explicit recovery routes.
 A comparison records the selected state, comparison source, and separate source revision.
+A change list shows each changed subject of a comparison under the subject that owns it.
+A walk through that list keeps its place by subject identity, not by position.
 A stale comparison cannot authorize a new adoption or code inspection.
 
 A checkpoint retains exact authored inputs and selection metadata in Git.

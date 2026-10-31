@@ -17,6 +17,7 @@ The left column lists where to go. The middle shows it. The right explains the s
 
 - Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
   `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` show a count for the open scope.
+  A proposal read against its base adds `Changes`, with its count and the reader's position.
 - Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
@@ -127,8 +128,16 @@ One line offers `Compare with current`. Current can also compare with a checkpoi
 browser as an explicit After choice.
 
 Review uses a change list in the left column, grouped by owner, because most changes are flow steps that have
-no tree row. `N` and `P` walk the list, and a change to a step opens that flow's sequence. Reparenting shows old
-and new parents, and removed subjects stay reachable. The walk keeps its place by subject identity.
+no tree row. A proposal opens on it. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
+those keys. A change to a step opens that flow's sequence, and a beat opens its presentation. Reparenting shows
+old and new parents by name in the row and in the panel. Removed subjects stay reachable, because the drawing of
+the comparison holds them. The exceptions are a removed beat and a removed walkthrough, which no presentation can
+open: the panel explains them from the picture on show.
+
+The walk keeps its place by subject identity. When the list changes, the position changes and the subject stays.
+If the subject leaves, the reader stands on the next one that stayed, and `N` shows that subject first. A
+selection of a change by any route also moves the place. The list reads the comparison and adds no comparison of
+its own.
 
 ## Start and states
 

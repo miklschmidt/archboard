@@ -489,7 +489,9 @@ foot](assets/operator-shell-navigator.png)
 - **The destinations** are `Modules`, `Flows`, `Walkthroughs` and `History`.
   `Flows` and `Walkthroughs` show a count for the open scope. A retained original
   has no `History`. A reading that fails offers `History` alone, so the reader
-  can go on to a reading that opens.
+  can go on to a reading that opens. A proposal read against its base adds
+  `Changes` on a second row, because five tabs do not fit the column, and opens
+  on it.
 - **`Modules` is a tree of the containment forest.** It opens the path to the
   open scope and the branches that the reader opened. The ancestors of the open
   row stick to the top while the column scrolls. Siblings sort by code path.
@@ -498,10 +500,19 @@ foot](assets/operator-shell-navigator.png)
 - **`Flows` and `Walkthroughs` stay open while the reader walks them.** Relevant
   entries come first. A scope with none offers `All flows (72)` style access. A
   flow is chosen first, and `Sequence` or `Flowchart` second.
+- **`Changes` lists every change of a proposal under the owner that holds it.**
+  A module owns its outgoing relationships, a flow its steps and a walkthrough
+  its beats. Rows take the column's grid, and each marker is the standing mark
+  of the picture. The tab shows the count, then the position, such as `12 of 49`.
+  The end of its row holds the walk: `Previous` and `Next`, each with its key cap,
+  because a key that nobody can see does not count. `N` and `P` do the same from
+  anywhere but a text field, and they bring the list back from another tab.
 - **`History` lists proposals first, then states, with their checkpoints folded.**
   Its rows load only when it opens, and a click carries the picture to that
   record. The comparison choice lives here. The state chip in the header opens
-  `History`.
+  `History`. A row whose name another state shares shows its identity in its
+  facts, and the state chip adds the identity too, so a reader can tell which
+  draft they open.
 - **One grid.** Every row is four columns placed by its depth alone: the
   disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
   the right. A row is 28 px high. One row is lit, the row of the open scope. A row
