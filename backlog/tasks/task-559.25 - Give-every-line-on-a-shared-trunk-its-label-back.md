@@ -4,6 +4,7 @@ title: Give every line on a shared trunk its label back
 status: To Do
 assignee: []
 created_date: '2026-10-31T03:37:00Z'
+updated_date: '2026-10-31T03:38:00Z'
 labels:
   - renderer
   - board
@@ -28,4 +29,11 @@ The door work made lines to one door share a trunk from three lines upward, and 
 - [ ] #3 A reader can tell which words belong to which part on Commands and Workhorses
 - [ ] #4 Gates 1 to 4 are measured again, no drawing passes 500 ms, and any change is stated
 - [ ] #5 The owner accepts it by eye
+- [ ] #6 Hovering any stretch of a shared trunk, including its last stretch before a door or part, lights every line that runs on that stretch, not only one of them
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The owner found that hovering the end of a line with several earlier junctions lights only one of the connections.
+<!-- SECTION:NOTES:END -->
