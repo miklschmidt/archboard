@@ -158,16 +158,19 @@ function withReach(
  * part wired to nothing the picture draws has nothing to say.
  * @param wiring What the variant says, or null while that is not known.
  * @param atlas Where every subject of the picture ended up.
- * @param id The semantic id that was poked, or null.
+ * @param ids The semantic ids that were poked, one or every line of a shared stretch.
  * @returns The ids to leave standing, or null for no light.
  */
 function litInPicture(
 	wiring: Wiring | null,
 	atlas: SemanticAtlas,
-	id: string | null,
+	ids: readonly string[],
 ): ReadonlySet<string> | null {
-	const lit = wiring === null || id === null ? null : litBy(wiring, id);
-	return lit !== null && [...lit].some((one) => one in atlas.edges) ? lit : null;
+	if (wiring === null) {
+		return null;
+	}
+	const lit = new Set(ids.flatMap((id) => [...(litBy(wiring, id) ?? [])]));
+	return [...lit].some((one) => one in atlas.edges) ? lit : null;
 }
 
 export {
