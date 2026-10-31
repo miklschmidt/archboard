@@ -146,6 +146,8 @@ pub(crate) const TAG_HEIGHT: f64 = 17.0;
 pub(crate) const TAG_RADIUS: f64 = 5.0;
 /// The room between two tags in a row.
 pub(crate) const TAG_GAP: f64 = 4.0;
+/// The side of a group's mark on a far card, near: a tag's words would crowd its box.
+pub(crate) const FAR_TAG: f64 = 8.0;
 /// How far a tag stands from a card's top and right edges.
 pub(crate) const TAG_INSET: f64 = 12.0;
 /// The room a tag keeps from the end of a name beside it.

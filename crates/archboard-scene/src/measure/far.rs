@@ -1,34 +1,36 @@
 //! What a card says from far away, and the one type scale a picture sets every
-//! far card at. A card keeps its box, so the scale is the largest at which every
-//! card of the picture holds its name, its tags and its path, and the rest of a
-//! card's box takes as much of its responsibility as whole lines hold.
+//! far card at. A card keeps its box and the build of its near view: the name at
+//! the top, the path at the foot. The scale is the largest at which every card of
+//! the picture holds its name and its path, and the room between them takes one
+//! line less of its responsibility than it could hold, so a card never reads full.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
 use crate::geometry::Rect;
 use crate::js::{self, js_max, js_min};
-use crate::measure::cards::{Style, TITLE, path_runs, tags_width};
+use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
 use crate::paint::design::{
-    CARD_NOTE_FONT, CARD_THICKNESS, DRILL_MARK_ROOM, FAR_START, ICON_CHIP_SIZE, LANDING_ROOM,
-    PART_NOTE_SIZE, PART_PATH_SIZE, PART_TITLE_SIZE, TAG_GAP, TAG_HEIGHT,
+    ARCHITECTURE_CARD_PADDING, CARD_NOTE_FONT, CARD_THICKNESS, DRILL_MARK_ROOM, FAR_START, FAR_TAG,
+    ICON_CHIP_SIZE, LANDING_ROOM, PART_NOTE_SIZE, PART_PATH_SIZE, PART_TITLE_SIZE, TAG_BESIDE,
+    TAG_GAP,
 };
 
 /// The scale of a far card a picture that lands near is set at, for a reader who
-/// zooms out: a name of 20 units, 12 px at a scale of 0.6.
-const FAR_LEAST: f64 = 20.0 / PART_TITLE_SIZE;
+/// zooms out: a name of 16 units, 12 px at a scale of 0.75.
+const FAR_LEAST: f64 = 16.0 / PART_TITLE_SIZE;
 /// Below this scale a card's far words are no larger than its near ones.
 const FAR_FLOOR: f64 = 1.0;
 /// How finely a picture's scale is sought: half a unit of a name.
 const FAR_STEP: f64 = 0.5 / PART_TITLE_SIZE;
 /// The room a far card keeps at its sides, above and below its words.
-const PAD_X: f64 = 14.0;
-const PAD_Y: f64 = 7.0;
+const PAD_X: f64 = ARCHITECTURE_CARD_PADDING;
+const PAD_Y: f64 = 10.0;
 /// The steps from one line to the next, per unit of the size of their words.
 const NAME_LINE: f64 = 1.15;
-const GIST_LINE: f64 = 1.25;
+const GIST_LINE: f64 = 1.3;
 const FOOT_LINE: f64 = 1.2;
 /// The room between the name, the responsibility and the foot of a far card.
-const ROW_GAP: f64 = 3.0;
+const ROW_GAP: f64 = 4.0;
 /// A far chip's side, and the room beside it, per unit of its name's size.
 const CHIP: f64 = 1.45;
 const CHIP_GAP: f64 = 0.45;
@@ -65,7 +67,7 @@ pub struct FarWords {
     pub runs: Vec<TextRun>,
     /// Where the chip stands and its side.
     pub chip: (f64, f64, f64),
-    /// Where the row of tags ends on the right and its top, at this scale.
+    /// Where the row of group marks ends on the right and its middle, at this scale.
     pub tags: Option<(f64, f64)>,
 }
 
@@ -215,8 +217,10 @@ struct Sizes {
     path: f64,
     chip: f64,
     x: f64,
-    /// The room its words have across, and the room its box has down.
+    /// The room its words have across, its name's room beside its group marks,
+    /// and the room its box has down.
     room: f64,
+    name_room: f64,
     height: f64,
 }
 
@@ -227,32 +231,42 @@ impl Sizes {
         let chip = js_min(name * CHIP, js_min(height, ICON_CHIP_SIZE * scale));
         let x = PAD_X + chip + name * CHIP_GAP;
         let marked = if card.drills { DRILL_MARK_ROOM } else { 0.0 };
+        let room = card.width - x - PAD_X - marked;
+        let beside = if card.tags.is_empty() {
+            0.0
+        } else {
+            marks_width(card.tags.len(), scale) + TAG_BESIDE * scale
+        };
         Sizes {
             name,
             note: PART_NOTE_SIZE * scale,
             path: PART_PATH_SIZE * scale,
             chip,
             x,
-            room: card.width - x - PAD_X - marked,
+            room,
+            name_room: room - beside,
             height,
         }
     }
 }
 
-/// The height of a far card's foot row, which holds its path and its tags.
-fn foot_of(card: &FarCard<'_>, scale: f64, sizes: Sizes) -> f64 {
-    let tagged = if card.tags.is_empty() {
-        0.0
-    } else {
-        TAG_HEIGHT * scale
-    };
-    js_max(tagged, card.path.map_or(0.0, |_| sizes.path * FOOT_LINE))
+/// How wide a far card's row of group marks stands at a scale.
+pub(crate) fn marks_width(count: usize, scale: f64) -> f64 {
+    let gaps = count.saturating_sub(1) as f64 * TAG_GAP;
+    (count as f64 * FAR_TAG + gaps) * scale
+}
+
+/// The height of a far card's foot, which holds its path.
+fn foot_of(card: &FarCard<'_>, sizes: Sizes) -> f64 {
+    card.path.map_or(0.0, |_| sizes.path * FOOT_LINE)
 }
 
 /// The stack of a far card at one scale: what it holds, and how tall each part stands.
 struct Stack {
     names: Vec<String>,
     gists: Vec<String>,
+    /// How far the name stands below the top of the chip it is set beside.
+    lead: f64,
     named: f64,
     told: f64,
     foot: f64,
@@ -261,7 +275,7 @@ struct Stack {
 impl Stack {
     /// How tall it stands.
     fn height(&self) -> f64 {
-        self.named + self.told + foot_room(self.foot) + self.foot
+        self.lead + self.named + self.told + foot_room(self.foot) + self.foot
     }
 }
 
@@ -270,29 +284,38 @@ fn foot_room(foot: f64) -> f64 {
     if foot > 0.0 { ROW_GAP } else { 0.0 }
 }
 
-/// The lines of a responsibility the room left under a name holds.
+/// The lines of a responsibility the room left under a name holds, less one, so
+/// that a far card never reads full. A last line stays where half a line of air
+/// stands round it.
 fn gist_in(card: &FarCard<'_>, sizes: Sizes, spare: f64) -> Vec<String> {
     let Some(gist) = card.gist else {
         return Vec::new();
     };
     let step = sizes.note * GIST_LINE;
-    let holds = |lines: &usize| *lines as f64 * step <= spare - ROW_GAP;
+    let room = spare - ROW_GAP;
     // A responsibility takes no more lines than it has words.
     let words = gist.split_whitespace().count();
-    match (1..=words).take_while(holds).last() {
-        Some(most) => gist_lines(gist, sizes.note, sizes.room, most),
-        None => Vec::new(),
+    let held = (1..=words + 1)
+        .take_while(|lines| *lines as f64 * step <= room)
+        .last()
+        .unwrap_or(0);
+    let aired = 1.5 * step <= room;
+    match held.saturating_sub(1).max(usize::from(aired)) {
+        0 => Vec::new(),
+        most => gist_lines(gist, sizes.note, sizes.room, most),
     }
 }
 
 /// What a card holds at one scale, or none where its box does not hold it.
-fn stacked(card: &FarCard<'_>, scale: f64, sizes: Sizes) -> Option<Stack> {
+fn stacked(card: &FarCard<'_>, sizes: Sizes) -> Option<Stack> {
     let most = card.lines.max(NAME_LINES);
-    let names = name_lines(card.name, sizes.name, sizes.room, most)?;
-    let foot = foot_of(card, scale, sizes);
-    let named = names.len() as f64 * sizes.name * NAME_LINE;
-    let spare = sizes.height - named - foot - foot_room(foot);
-    if spare < 0.0 || tags_width(card.tags, scale) > sizes.room {
+    let names = name_lines(card.name, sizes.name, sizes.name_room, most)?;
+    let foot = foot_of(card, sizes);
+    let line = sizes.name * NAME_LINE;
+    let lead = js_max(0.0, (sizes.chip - line) / 2.0);
+    let named = names.len() as f64 * line;
+    let spare = sizes.height - lead - named - foot - foot_room(foot);
+    if spare < 0.0 {
         return None;
     }
     let gists = gist_in(card, sizes, spare);
@@ -304,6 +327,7 @@ fn stacked(card: &FarCard<'_>, scale: f64, sizes: Sizes) -> Option<Stack> {
     Some(Stack {
         names,
         gists,
+        lead,
         named,
         told,
         foot,
@@ -333,26 +357,26 @@ fn block_runs(lines: &[String], style: Style, x: f64, top: f64) -> Vec<TextRun> 
         .collect()
 }
 
-/// The path on a far card's foot row, beside its tags.
-fn foot_path(card: &FarCard<'_>, scale: f64, sizes: Sizes, middle: f64) -> Vec<TextRun> {
-    let tags = if card.tags.is_empty() {
-        0.0
-    } else {
-        tags_width(card.tags, scale) + TAG_GAP * scale
-    };
+/// The path on a far card's foot.
+fn foot_path(card: &FarCard<'_>, sizes: Sizes, middle: f64) -> Vec<TextRun> {
     card.path.map_or_else(Vec::new, |path| {
         let baseline = middle + sizes.path * MIDDLE;
-        path_runs(path, sizes.room - tags, sizes.x, baseline, sizes.path)
+        path_runs(path, sizes.room, sizes.x, baseline, sizes.path)
     })
 }
 
-/// A card's far words at one scale, or none where they do not fit its box. The
-/// block stands in the middle of the box, so neither end keeps an empty band.
+/// A card's far words at one scale, or none where they do not fit its box. As on
+/// a near card the name stands at the top and the path at the foot. A card with
+/// no path centers its words, so it keeps no empty band.
 pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
     let sizes = Sizes::of(card, scale);
-    let stack = stacked(card, scale, sizes)?;
+    let stack = stacked(card, sizes)?;
     let block = stack.height();
-    let top = PAD_Y + (sizes.height - block) / 2.0;
+    let top = match card.path {
+        Some(_) => PAD_Y,
+        None => PAD_Y + (sizes.height - block) / 2.0,
+    };
+    let name_top = top + stack.lead;
     let names = Style {
         font: TITLE.font,
         size: sizes.name,
@@ -365,20 +389,20 @@ pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
         line: sizes.note * GIST_LINE,
         role: TextRole::Note,
     };
-    let foot_top = top + block - stack.foot;
-    let mut runs = block_runs(&stack.names, names, sizes.x, top);
+    let mut runs = block_runs(&stack.names, names, sizes.x, name_top);
     runs.extend(block_runs(
         &stack.gists,
         notes,
         sizes.x,
-        top + stack.named + ROW_GAP,
+        name_top + stack.named + ROW_GAP,
     ));
-    runs.extend(foot_path(card, scale, sizes, foot_top + stack.foot / 2.0));
-    let chip_top = PAD_Y + js_max(0.0, (sizes.height - js_max(block, sizes.chip)) / 2.0);
+    let foot_top = PAD_Y + sizes.height - stack.foot;
+    runs.extend(foot_path(card, sizes, foot_top + stack.foot / 2.0));
     Some(FarWords {
         runs,
-        chip: (PAD_X, chip_top, sizes.chip),
-        tags: (!card.tags.is_empty()).then_some((sizes.x + sizes.room, foot_top)),
+        chip: (PAD_X, top, sizes.chip),
+        tags: (!card.tags.is_empty())
+            .then_some((sizes.x + sizes.room, name_top + sizes.name * NAME_LINE / 2.0)),
     })
 }
 

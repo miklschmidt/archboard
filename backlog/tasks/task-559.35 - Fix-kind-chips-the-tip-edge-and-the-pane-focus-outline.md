@@ -4,6 +4,7 @@ title: Fix kind chips, the tip edge and the pane focus outline
 status: To Do
 assignee: []
 created_date: '2026-10-31T20:03:00Z'
+updated_date: '2026-10-31T20:06:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-559
@@ -21,4 +22,5 @@ The owner, on 2026-10-31: chips in tips and in the legend look dark and faded, t
 - [ ] #1 A chip in a tip or the legend has the look of a card's chip
 - [ ] #2 A tip has no coloured left edge
 - [ ] #3 A pane draws no focus outline of its own
+- [ ] #4 What recedes leaves the lit parts and lines plainly on top
 <!-- AC:END -->

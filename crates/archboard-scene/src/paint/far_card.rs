@@ -18,7 +18,7 @@ use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_
 use crate::paint::icons::ICON_SIZE;
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_palette;
-use crate::paint::tag::tag_row;
+use crate::paint::tag::{tag_marks, tag_row};
 use crate::paint::text_runs::paint_text_runs;
 use crate::request::{GroupTag, NodeAppearance, Standing};
 use crate::scene::SubjectKind;
@@ -133,7 +133,7 @@ fn far_view_of(
         size,
     };
     let tags = far.tags.map_or_else(Items::new, |(x, y)| {
-        tag_row(ink.tags, point(rect.x + x, rect.y + y), ink.scale)
+        tag_marks(ink.tags, point(rect.x + x, rect.y + y), ink.scale)
     });
     (words_in(&far.runs, rect, ink.words), chip, tags)
 }

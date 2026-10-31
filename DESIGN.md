@@ -287,8 +287,9 @@ points up, sideways or down by where its module lies in the tree.
 The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
 folders dimmed and its file bright, as far from the foot as the name stands from
 the top. Below a scale of 0.857 a picture draws its far view: one type scale for
-every card of the picture, words that fit each card's box, and the tag, the
-doors and the tab still readable.
+every card of the picture, the build of a near card with one line less of its
+responsibility than its box holds, a flat spot in a group's color for its tag,
+and the doors and the tab still readable.
 Each
 shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A comparison marks a part by its outline: a
@@ -343,7 +344,7 @@ along the line on both grounds.
 
 **The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
-**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
+**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede far under an opacity filter, so that what stays is plainly on top. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
 
 **The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.
 

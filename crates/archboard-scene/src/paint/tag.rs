@@ -1,10 +1,13 @@
 //! A group's tag: a small bright piece with the group's name, in the finish of a
-//! door. It takes that finish on both themes, whatever the card under it.
+//! door. It takes that finish on both themes, whatever the card under it. A far
+//! card draws a flat spot of the group's colour in its place.
 
 use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::width;
 use crate::paint::build::{Items, concat, lines, shape, text};
-use crate::paint::design::{TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_PADDING, TAG_RADIUS, TAG_SIZE};
+use crate::paint::design::{
+    FAR_TAG, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_PADDING, TAG_RADIUS, TAG_SIZE,
+};
 use crate::paint::finish::finish_of;
 use crate::paint::slab::{across, boxed};
 use crate::request::GroupTag;
@@ -76,4 +79,26 @@ pub(super) fn tag_row(tags: &[GroupTag], end: Point, scale: f64) -> Items {
     }
     row.reverse();
     concat(row)
+}
+
+/// A row of flat group marks, at a scale of their near size, that ends at a
+/// point on the right of their middle line.
+pub(super) fn tag_marks(tags: &[GroupTag], end: Point, scale: f64) -> Items {
+    let side = FAR_TAG * scale;
+    let step = side + TAG_GAP * scale;
+    let spots = tags.iter().rev().enumerate().map(|(index, group)| {
+        let rect = Rect {
+            x: end.x - side - index as f64 * step,
+            y: end.y - side / 2.0,
+            width: side,
+            height: side,
+        };
+        let bright = Colour::Bright { color: group.color };
+        shape(
+            Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(side / 2.0)))
+                .pointer(Pointer::None)
+                .filled(Paint::from(&bright)),
+        )
+    });
+    concat(spots.rev().collect())
 }

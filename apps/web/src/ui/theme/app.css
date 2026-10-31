@@ -243,7 +243,7 @@
 }
 [data-slot="semantic-board-surface"].is-presenting.is-veiled [data-semantic-id] {
 	opacity: 1;
-	filter: opacity(0.28);
+	filter: opacity(0.16);
 }
 [data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit,
 [data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit [data-semantic-id] {
@@ -268,10 +268,10 @@
 	transition: filter var(--lighting-ms, 0ms) ease-out;
 }
 [data-slot="semantic-board-surface"].is-probing {
-	--recede: 0.3;
+	--recede: 0.14;
 }
 [data-slot="semantic-board-surface"].is-probing.is-probing-light {
-	--recede: 0.5;
+	--recede: 0.24;
 }
 [data-slot="semantic-board-surface"].is-probing [data-semantic-id],
 [data-slot="semantic-board-surface"].is-probing [data-traffic],
@@ -314,12 +314,12 @@
 
 /* A relationship's label is never hidden (TASK-403). It is drawn at every zoom,
    seen from far as well as near. Where the rest of the picture recedes, under a
-   poke or under a presented step's veil, a label that is not lit recedes to half
-   at most, so its words can still be read. The board a flight carries inside a
+   poke or under a presented step's veil, a label that is not lit recedes less
+   than they do, so its words can still be made out. The board a flight carries inside a
    card keeps no filter, as above. */
 [data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
 	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, [data-dive-inset] *) {
-	filter: opacity(0.5);
+	filter: opacity(0.28);
 }
 
 /* A picture's traffic changes on every frame. On a compositing layer of its own
