@@ -32,6 +32,8 @@ interface ShellViewInputs {
 	readonly presentation: ShellPresentation | null;
 	readonly notices: readonly ShellNotice[];
 	readonly agentActivity: AgentActivityByVault;
+	/** The page starts on the chooser. */
+	readonly choosing?: boolean;
 }
 
 /**
@@ -112,6 +114,7 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 		repositories: shellRepositories(inputs),
 		boardsError: inputs.catalog.error,
 		boardsLoading: inputs.catalog.loading,
+		choosing: inputs.choosing === true,
 		selectedBoardKey: active.status.boardKey,
 		panes: shellPanes(inputs),
 		activePaneId: inputs.list.activePaneId,

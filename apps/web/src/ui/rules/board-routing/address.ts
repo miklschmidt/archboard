@@ -295,7 +295,7 @@ function planFor(
 				? [{ paneId: pane.paneId, boardKey: null, model: pane.model, repository: pane.repository }]
 				: [];
 		}
-		return pane.boardKey !== null && elsewhere(displayed, pane)
+		return (pane.boardKey ?? pane.repository) !== null && elsewhere(displayed, pane)
 			? [{ paneId: pane.paneId, boardKey: pane.boardKey, repository: pane.repository }]
 			: [];
 	});

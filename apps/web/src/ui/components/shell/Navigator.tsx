@@ -79,9 +79,9 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
  * @param beside Whether to use the adjacent pane.
  */
 function openRepository(actions: ShellActions, shell: ShellRepository, beside: boolean): void {
-	if (shell.model === undefined) return;
-	if (beside) actions.openBeside(shell.model.id, shell.repository.name);
-	else void actions.openModel(shell.model.id, shell.repository.name);
+	const model = shell.model?.id ?? null;
+	if (beside) actions.openBeside(model, shell.repository.name);
+	else void actions.openModel(model, shell.repository.name);
 }
 
 /**
@@ -106,6 +106,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 	const { view, actions, attachFind, attachDestinations } = props;
 	// Unchanged repository locations preserve the row values and handlers.
 	const panes = useKept(paneMarks(view), sameData);
+	const nothingListed = view.repositories.length === 0;
 	const [choosing, setChoosing] = useState(false);
 	const switcher = useRef<HTMLButtonElement>(null);
 	const leave = useCallback((): void => {
@@ -145,13 +146,15 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				className="group/navigator flex min-h-0 flex-1 flex-col"
 			>
 				<div ref={attachFind} className="contents" />
-				<RepositorySwitcher
-					ref={switcher}
-					repositories={view.repositories}
-					panes={panes}
-					open={choosing}
-					onOpenChange={setChoosing}
-				/>
+				{!nothingListed && (
+					<RepositorySwitcher
+						ref={switcher}
+						repositories={view.repositories}
+						panes={panes}
+						open={choosing}
+						onOpenChange={setChoosing}
+					/>
+				)}
 				<ListingState
 					loading={view.boardsLoading}
 					error={listingFailure(view)}
@@ -165,16 +168,18 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					hidden={choosing}
 					className="peer flex min-h-0 flex-1 flex-col empty:hidden"
 				/>
-				<RepositoryChooser
-					key={String(choosing)}
-					repositories={view.repositories}
-					panes={panes}
-					asked={choosing}
-					className={choosing ? "flex" : "hidden peer-empty:flex"}
-					onOpen={open}
-					onChooseCheckout={onChooseCheckout}
-					onLeave={leave}
-				/>
+				{!nothingListed && (
+					<RepositoryChooser
+						key={String(choosing)}
+						repositories={view.repositories}
+						panes={panes}
+						asked={choosing || view.choosing}
+						className={choosing ? "flex" : "hidden peer-empty:flex"}
+						onOpen={open}
+						onChooseCheckout={onChooseCheckout}
+						onLeave={leave}
+					/>
+				)}
 				<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
 			</nav>
 			{props.foot}
@@ -191,8 +196,8 @@ interface ListingStateProps {
 }
 
 /**
- * What the navigator says while it cannot list: that the repositories are being read, why
- * the listing failed, or that none is registered.
+ * What the navigator says while it cannot list: that the repositories are being read, or why
+ * the listing failed. The pane says that there are none.
  * @param props The listing state.
  * @returns The state, or nothing while repositories are listed.
  */
@@ -220,26 +225,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 			</div>
 		);
 	}
-	if (!props.empty) return null;
-	if (props.loading) return <ListingSkeleton />;
-	return <EmptyRepositoryNotice />;
-}
-
-/**
- * Guidance when no repository is registered.
- * @returns The repository discovery instruction.
- */
-function EmptyRepositoryNotice(): JSX.Element {
-	return (
-		<p
-			data-slot="navigator-empty"
-			style={MESSAGE_STYLE}
-			className="text-body text-muted-foreground py-3 pr-4"
-		>
-			No repositories are registered. Ask your local agent to register a checkout or create a
-			canonical model.
-		</p>
-	);
+	return props.empty && props.loading ? <ListingSkeleton /> : null;
 }
 
 /**

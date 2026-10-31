@@ -92,12 +92,23 @@ function shownCheckouts(entry: RepositoryEntry, inputs: ChoiceInputs): CheckoutC
 }
 
 /**
+ * The repositories in the order the chooser lists them: those that open on a reading come first,
+ * so Enter on the first row never leads to one that needs migration.
+ * @param repositories The repositories, by name.
+ * @returns The repositories.
+ */
+function readableFirst(repositories: readonly ShellRepository[]): readonly ShellRepository[] {
+	const readable = (shell: ShellRepository): boolean => shell.model !== undefined || shell.loading;
+	return [...repositories.filter(readable), ...repositories.filter((each) => !readable(each))];
+}
+
+/**
  * The rows of the chooser.
  * @param inputs The repositories, the filter, the panes and what the person opened.
  * @returns The rows, in order.
  */
 function repositoryRows(inputs: ChoiceInputs): RepositoryRow[] {
-	return inputs.repositories.flatMap((shell) => {
+	return readableFirst(inputs.repositories).flatMap((shell) => {
 		const name = shell.repository.name;
 		const checkouts = shownCheckouts(shell.repository, inputs);
 		const match = inputs.query === "" ? null : repositoryMatch(name, inputs.query);

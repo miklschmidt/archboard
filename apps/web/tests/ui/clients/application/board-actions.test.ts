@@ -25,6 +25,7 @@ function picker() {
 	const deps: ShellActionDeps = {
 		setTheme: unrelated,
 		openSettings: unrelated,
+		readRepository: unrelated,
 		fullscreen: {
 			attachStage: unrelated,
 			stage: null,
@@ -111,13 +112,6 @@ function picker() {
 			 * @returns Never; the catalog contents are outside this test.
 			 */
 			get repositories() {
-				return unrelated();
-			},
-			/**
-			 * Read the fixture state.
-			 * @returns Never; the served vault is outside this test.
-			 */
-			get served() {
 				return unrelated();
 			},
 			error: null,

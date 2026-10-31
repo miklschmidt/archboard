@@ -6,7 +6,6 @@ import { mutationAdmission } from "#server/wiring/owners/server-owners.ts";
 import { serverPhase } from "#server/lifecycle/startup/server-startup.ts";
 import { FRONTEND_DIRECTORY } from "#server/store/frontend/frontend-directory.ts";
 import { clients } from "@archboard/workbench/panes";
-import { openingVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Serve the frontend's page.
@@ -75,18 +74,6 @@ function syncStatusRoute(_req: Request, res: Response): void {
 }
 
 /**
- * The vault a page opens in when its address names no repository, or null when no repository
- * with a vault is known. The browser names the vault it opens in on every call, as every other
- * caller does (ADR 0049), and this is the one route it calls without one, because it is how it
- * learns one.
- * @param _req The request.
- * @param res Its response.
- */
-function servedVaultRoute(_req: Request, res: Response): void {
-	res.json({ success: true, vault: openingVault() });
-}
-
-/**
  * Answer an error no route handled.
  * @param err The error.
  * @param _req The request.
@@ -102,15 +89,14 @@ function unhandledErrorRoute(err: Error, _req: Request, res: Response, _next: Ne
 }
 
 /**
- * Mount the frontend page, the health, sync status and served-vault routes, and the
- * error handler that must come last.
+ * Mount the frontend page, the health and sync status routes, and the error handler that
+ * must come last.
  * @param app The application to mount on.
  */
 function mountServiceRoutes(app: Express): void {
 	app.get("/", frontendRoute);
 	app.get("/health", healthRoute);
 	app.get("/api/sync/status", syncStatusRoute);
-	app.get("/api/served-vault", servedVaultRoute);
 	app.use(unhandledErrorRoute);
 }
 

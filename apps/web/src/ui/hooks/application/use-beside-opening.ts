@@ -11,7 +11,7 @@ import type { PaneOpening, ShellActions } from "#ui/rules/shell/contracts.ts";
 
 /** A model waiting for the pane being added for it. */
 interface PendingBeside {
-	readonly key: string;
+	readonly key: string | null;
 	/** The repository the board is in. */
 	readonly repository: string;
 	/** What the pane opens of the model. */
@@ -76,7 +76,7 @@ function useBesideOpening(
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
 	return useCallback(
-		(key: string, repository: string, reading?: PaneOpening): void => {
+		(key: string | null, repository: string, reading?: PaneOpening): void => {
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {

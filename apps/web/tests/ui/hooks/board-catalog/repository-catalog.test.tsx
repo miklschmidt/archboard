@@ -18,7 +18,6 @@ const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";
 const REPOSITORIES = {
 	success: true,
-	served: SHOP,
 	repositories: [
 		{ name: "github.com/acme/shop", untracked: false, vault: SHOP, state: "ready", checkouts: [] },
 		{

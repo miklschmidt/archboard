@@ -77,6 +77,8 @@ interface ModelDiagramProps {
 	onAttention?: ((id: string) => void) | undefined;
 	/** Lift the focus and filters of a reading they left empty. */
 	onWholeScope?: (() => void) | undefined;
+	/** Read another state of the model, where a planning model offers its plan. */
+	onOpenState?: ((state: string) => void) | undefined;
 }
 
 const NO_AREA: RefObject<HTMLElement | null> = { current: null };
@@ -212,7 +214,12 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 					presentingMark(presenting)
 				}
 			/>
-			<ModelEmptyReading scene={scene} pending={props.pending} onWholeScope={props.onWholeScope} />
+			<ModelEmptyReading
+				scene={scene}
+				pending={props.pending}
+				onWholeScope={props.onWholeScope}
+				onOpenState={props.onOpenState}
+			/>
 			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
 			<ModelLineTip target={tip.shown} model={model} projection={projection} />
 			<LeavingPart departure={leaving} at="spinner" />

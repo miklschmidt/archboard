@@ -265,8 +265,8 @@ describe.serial("the repositories of the navigator", () => {
 		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
 	});
 
-	test("a vault that a link leads out of the layout is not listed, and no page opens in it", async () => {
-		// Every call naming it is refused (TASK-472.09). It sorts first, so a page would open there.
+	test("a vault that a link leads out of the layout is not listed", async () => {
+		// Every call naming it is refused (TASK-472.09), so no page may open there.
 		const holder = join(fixture.root, "aaa-linked-out");
 		const elsewhere = join(fixture.root, "boards-kept-elsewhere");
 		mkdirSync(join(holder, ".archboard"), { recursive: true });
@@ -274,10 +274,6 @@ describe.serial("the repositories of the navigator", () => {
 		symlinkSync(elsewhere, join(holder, ".archboard", "vault"));
 		cli("repo", "add", holder);
 		expect((await listed()).map((each) => each.name)).not.toContain("aaa-linked-out");
-		const opening = (await (await fetch(`${server.base}/api/served-vault`)).json()) as {
-			vault: string | null;
-		};
-		expect(opening.vault).not.toBe(realpathSync.native(elsewhere));
 	});
 
 	test("choosing a checkout preserves the captured canonical reading and its filters", async () => {

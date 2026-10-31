@@ -1,5 +1,6 @@
-import type { JSX, PointerEvent } from "react";
+import { useCallback, type JSX, type PointerEvent } from "react";
 import { Button } from "@archboard/ui-kit/components";
+import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**
@@ -8,15 +9,18 @@ import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
  * @param props.scene The scene on screen.
  * @param props.pending Whether another reading is on its way.
  * @param props.onWholeScope Lift what narrows the reading, when something does.
+ * @param props.onOpenState Read another state of the model.
  * @returns The statement that nothing is visible, or nothing.
  */
 function ModelEmptyReading(props: {
 	scene: AcceptedScene;
 	pending: boolean;
 	onWholeScope: (() => void) | undefined;
+	onOpenState: ((state: string) => void) | undefined;
 }): JSX.Element | null {
-	const { scene, pending, onWholeScope } = props;
+	const { scene, pending, onWholeScope, onOpenState } = props;
 	if (scene.picture.svg !== "" || scene.grammar === null || pending) return null;
+	if (isPlanned(scene)) return <ModelPlanned model={scene.model} onOpenState={onOpenState} />;
 	return (
 		<output
 			data-slot="model-empty-diagram"
@@ -39,6 +43,58 @@ function ModelEmptyReading(props: {
 				</>
 			)}
 		</output>
+	);
+}
+
+/**
+ * Whether the reader looks at the Current of a model that has none.
+ * @param scene The scene on screen.
+ * @returns True for a planning model, read with no proposal chosen.
+ */
+function isPlanned(scene: AcceptedScene): boolean {
+	return scene.model.manifest.current === null && scene.model.selectedState === null;
+}
+
+/**
+ * A planning model has no Current to draw. Its newest proposal is what it holds.
+ * @param props The model and the way to a proposal.
+ * @param props.model The model.
+ * @param props.onOpenState Read a proposal.
+ * @returns The state that nothing is implemented, and the way to the plan.
+ */
+function ModelPlanned(props: {
+	model: AcceptedScene["model"];
+	onOpenState: ((state: string) => void) | undefined;
+}): JSX.Element {
+	const { model, onOpenState } = props;
+	const proposal = model.proposals.at(-1);
+	const open = useCallback((): void => {
+		if (proposal !== undefined) onOpenState?.(proposal.id);
+	}, [proposal, onOpenState]);
+	return (
+		<ModelState slot="model-planned" cover>
+			<ModelState.Title>{model.manifest.name}</ModelState.Title>
+			<ModelState.Line>
+				{proposal === undefined
+					? "Nothing is implemented or proposed yet."
+					: "Nothing is implemented yet. The proposals hold the plan."}
+			</ModelState.Line>
+			{proposal === undefined ? (
+				<ModelState.Ask
+					label="Ask the agent to propose a design"
+					draft="Read this repository and propose its first architecture."
+				/>
+			) : (
+				<Button
+					size="sm"
+					data-slot="model-open-proposal"
+					onPointerDown={stopPropagation}
+					onClick={open}
+				>
+					Open {proposal.name}
+				</Button>
+			)}
+		</ModelState>
 	);
 }
 

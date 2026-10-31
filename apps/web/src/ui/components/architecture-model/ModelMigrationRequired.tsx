@@ -1,27 +1,52 @@
 import type { JSX } from "react";
+import { shownRepository } from "@archboard/ui-kit/components";
+import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 
 /**
- * Keep the old format unchanged until an owner approves its explicit migration.
- * @returns A read-only route to migration preview and review.
+ * A repository that stores boards keeps them until an owner approves a migration.
+ * @param props The repository, when the pane knows it.
+ * @param props.repository The repository's name.
+ * @returns What it needs and the way to its preview.
  */
-function ModelMigrationRequired(): JSX.Element {
+function ModelMigrationRequired(props: { readonly repository?: string | null }): JSX.Element {
+	const { repository } = props;
 	return (
-		<section data-slot="model-migration-required" className="text-body max-w-prose space-y-4 p-10">
-			<h3 className="text-title font-semibold">Migration required</h3>
-			<p>
-				This repository stores architecture as boards. Prepare a migration preview with your local
-				agent to open it as modules.
-			</p>
-			<p>
-				Review the proposed module identities and relationships. Apply the approved preview when you
-				are ready.
-			</p>
-			<p className="text-muted-foreground">
-				The current files stay unchanged until you apply the migration. Existing history remains
-				available afterward.
-			</p>
-		</section>
+		<ModelState slot="model-migration-required">
+			<ModelState.Title>
+				{repository ? shownRepository(repository).name : "Migration required"}
+			</ModelState.Title>
+			<ModelState.Line>
+				This repository stores its architecture as boards. A migration opens it as modules, and its
+				files stay unchanged until you apply it.
+			</ModelState.Line>
+			<ModelState.Ask
+				label="Ask the agent for a migration preview"
+				draft="Prepare a migration preview of this repository's boards. Do not apply the migration."
+			/>
+		</ModelState>
 	);
 }
 
-export { ModelMigrationRequired };
+/**
+ * A repository with a vault that holds no model yet.
+ * @param props The repository, when the pane knows it.
+ * @param props.repository The repository's name.
+ * @returns What it lacks and the way to its first model.
+ */
+function ModelAbsent(props: { readonly repository?: string | null }): JSX.Element {
+	const { repository } = props;
+	return (
+		<ModelState slot="model-absent">
+			<ModelState.Title>
+				{repository ? shownRepository(repository).name : "No model yet"}
+			</ModelState.Title>
+			<ModelState.Line>This repository has no architecture model yet.</ModelState.Line>
+			<ModelState.Ask
+				label="Ask the agent to write it"
+				draft="Read this repository and write its first architecture model."
+			/>
+		</ModelState>
+	);
+}
+
+export { ModelAbsent, ModelMigrationRequired };

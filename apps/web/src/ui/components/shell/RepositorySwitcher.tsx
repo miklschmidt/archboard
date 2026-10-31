@@ -321,7 +321,7 @@ function RepositoryLine(props: {
 			selected={row.selected}
 			expanded={row.branch ? row.open : undefined}
 			label={repositoryLabel(row)}
-			disabled={shell.model === undefined}
+			disabled={shell.repository.state !== "ready"}
 			onOpen={open}
 			onToggle={fold}
 		>

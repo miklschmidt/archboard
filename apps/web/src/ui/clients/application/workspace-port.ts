@@ -266,7 +266,10 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 					await showModel(vault, clientId, modelReading(model));
 					return { kind: "opened", boardKey: null, repository };
 				}
-				if (boardKey === null) return { kind: "unreachable" };
+				if (boardKey === null) {
+					await showModel(vault, clientId, {});
+					return { kind: "opened", boardKey: null, repository };
+				}
 				return { kind: "opened", ...(await show(clientId, boardKey, vault)) };
 			} catch {
 				move.failed();

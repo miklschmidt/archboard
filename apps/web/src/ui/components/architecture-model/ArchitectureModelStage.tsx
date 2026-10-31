@@ -4,6 +4,10 @@ import {
 	ModelFailureActions,
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
+import {
+	ModelAbsent,
+	ModelMigrationRequired,
+} from "#ui/components/architecture-model/ModelMigrationRequired.tsx";
 import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
@@ -24,6 +28,7 @@ import {
 	type UseQueryResult,
 } from "@tanstack/react-query";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { shownRepository } from "@archboard/ui-kit/components";
 import {
 	ArchitectureReadError,
 	architectureModelQuery,
@@ -63,6 +68,8 @@ interface ModelStageProps
 	reducedMotion: boolean;
 	/** Which time the pane has been pointed at a reading from outside. */
 	arrival?: number | undefined;
+	/** The repository of this reading, when the listing names it. */
+	repository?: string | null | undefined;
 }
 
 /**
@@ -72,7 +79,9 @@ interface ModelStageProps
  */
 function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 	const reading = useModelVault(props.vault, props.paneId);
-	if (reading.vault !== null) return <LocatedModelStage {...props} vault={reading.vault} />;
+	const { repository } = reading;
+	if (reading.vault !== null)
+		return <LocatedModelStage {...props} vault={reading.vault} repository={repository} />;
 	return (
 		<section
 			data-slot="architecture-model-stage"
@@ -168,6 +177,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
+	const unread = unreadRefusal(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
@@ -183,8 +193,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const header = (
 		<>
 			<ModelHeader
-				name={modelName(data)}
-				refresh={offeredRefresh(query, feed, refresh)}
+				name={headerName(data, unread === null ? null : (props.repository ?? null))}
+				refresh={unread === null ? offeredRefresh(query, feed, refresh) : undefined}
 				refreshing={query.isFetching}
 			/>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
@@ -207,6 +217,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				vault={props.vault}
 				reducedMotion={props.reducedMotion}
 				query={query}
+				destination={requestedModel ?? props.repository}
+				repository={props.repository}
 				states={stateCatalogue(catalogue.data)}
 				hasCurrent={hasCurrentState(catalogue.data)}
 				current={current}
@@ -358,6 +370,27 @@ function modelName(model: ArchitectureModelRead | undefined): string {
 }
 
 /**
+ * What the header names: a repository with nothing to read has no model to call it by.
+ * @param model The current query result.
+ * @param unread The repository of a pane that has no model to read.
+ * @returns The name.
+ */
+function headerName(model: ArchitectureModelRead | undefined, unread: string | null): string {
+	return unread === null ? modelName(model) : shownRepository(unread).name;
+}
+
+/**
+ * Which refusal says that a repository has no model to read, as a state and not a fault.
+ * @param error The selected request failure.
+ * @returns Its code, or null.
+ */
+function unreadRefusal(error: Error | null): "LEGACY_AUTHORITY" | "MODEL_NOT_FOUND" | null {
+	if (!(error instanceof ArchitectureReadError)) return null;
+	const { code } = error.failure;
+	return code === "LEGACY_AUTHORITY" || code === "MODEL_NOT_FOUND" ? code : null;
+}
+
+/**
  * The visible read state includes domain refusals and transport failures.
  * @param query The shared query snapshot.
  * @param stale Whether the cached current reading lacks fresh confirmation.
@@ -382,6 +415,10 @@ interface ModelResponseProps extends Pick<
 	| "onPresentationEnd"
 > {
 	query: ModelQuery;
+	/** What the reader waits for, in words. */
+	destination: string | null | undefined;
+	/** The repository of the reading, for a state that has no model to name. */
+	repository: string | null | undefined;
 	states: ReturnType<typeof stateCatalogue>;
 	hasCurrent: boolean;
 	current: boolean;
@@ -432,9 +469,9 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			overlay={props.overlay}
 			chrome={props.header}
 		>
-			<SlowRead pending={query.isPending} />
-			{model === undefined && problem !== null && <ModelError {...problem} />}
-			{problem !== null && (
+			<SlowRead pending={query.isPending} destination={props.destination} />
+			{model === undefined && <ModelUnanswered {...props} problem={problem} />}
+			{problem !== null && unreadRefusal(query.error) === null && (
 				<ModelFailedRecords
 					vault={props.vault}
 					paneId={props.paneId}
@@ -460,6 +497,23 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			)}
 		</ModelWalkthroughReader>
 	);
+}
+
+/**
+ * What a read that left no model says: the state of the repository, or the failure.
+ * @param props The read, the repository and the failure.
+ * @returns The state, or nothing while no answer has come.
+ */
+function ModelUnanswered(
+	props: Pick<ModelResponseProps, "query" | "repository"> & { problem: ModelErrorProps | null },
+): JSX.Element | null {
+	const { problem, repository } = props;
+	if (problem === null) return null;
+	const unread = unreadRefusal(props.query.error);
+	if (unread === "LEGACY_AUTHORITY")
+		return <ModelMigrationRequired repository={repository ?? null} />;
+	if (unread === "MODEL_NOT_FOUND") return <ModelAbsent repository={repository ?? null} />;
+	return <ModelError {...problem} />;
 }
 
 /**
@@ -514,15 +568,24 @@ function ReadFailure(props: {
 }
 
 /**
- * Say so when a first read lasts.
+ * Say so when a first read lasts, and name what it reads.
  * @param props The read.
  * @param props.pending Whether it has no answer yet.
+ * @param props.destination The repository or model it reads.
  * @returns The message, once the wait is long enough to name.
  */
-function SlowRead(props: { pending: boolean }): JSX.Element | null {
-	const slow = useSlowWait(props.pending ? "architecture" : null);
+function SlowRead(props: {
+	pending: boolean;
+	destination: string | null | undefined;
+}): JSX.Element | null {
+	const destination = props.destination ?? "architecture";
+	const slow = useSlowWait(props.pending ? destination : null);
 	if (!slow) return null;
-	return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
+	return (
+		<output data-slot="model-waiting" className="text-body text-muted-foreground p-10">
+			Reading {shownRepository(destination).name}…
+		</output>
+	);
 }
 
 /**

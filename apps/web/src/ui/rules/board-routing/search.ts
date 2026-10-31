@@ -170,7 +170,7 @@ function ownedParam(key: string): boolean {
 function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 	const panes: AddressedPane[] = [];
 	for (const key of Object.keys(search)) {
-		const paneId = /^(?:pane|model)([A-Za-z0-9]+)$/.exec(key)?.[1];
+		const paneId = /^(?:pane|model|repo)([A-Za-z0-9]+)$/.exec(key)?.[1];
 		if (paneId !== undefined && !panes.some((pane) => pane.paneId === paneId)) {
 			panes.push(paneFromSearch(search, paneId));
 		}
@@ -334,6 +334,25 @@ function searchFromAddress(address: WorkspaceAddress): WorkspaceSearch {
 	return search;
 }
 
+/**
+ * The search that puts one pane in a repository with nothing narrowed: every other field of
+ * that pane leaves, and the other pane stays as it is.
+ * @param search The search now.
+ * @param paneId The pane.
+ * @param repository The repository.
+ * @returns The search.
+ */
+function searchOfRepository(
+	search: Record<string, unknown>,
+	paneId: string,
+	repository: string,
+): WorkspaceSearch {
+	const kept = Object.entries(validateWorkspaceSearch(search)).filter(
+		([key]) => key === ACTIVE_PANE_PARAM || !key.endsWith(paneId),
+	);
+	return { ...Object.fromEntries(kept), [repoParam(paneId)]: repository };
+}
+
 export {
 	ACTIVE_PANE_PARAM,
 	addressFromSearch,
@@ -341,6 +360,7 @@ export {
 	parseWorkspaceSearchString,
 	repoParam,
 	searchFromAddress,
+	searchOfRepository,
 	stringifyWorkspaceSearch,
 	viewParam,
 	validateWorkspaceSearch,

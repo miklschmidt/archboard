@@ -35,6 +35,7 @@ interface ModelReadingCanvasProps
 			| "onOpen"
 			| "onAttention"
 			| "onWholeScope"
+			| "onOpenState"
 		>,
 		Pick<ComponentProps<typeof ModelDestinationNotice>, "paneId" | "failure" | "onRetry"> {
 	overlay?: ReactNode;
@@ -87,6 +88,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 							onOpen={props.onOpen}
 							onAttention={props.onAttention}
 							onWholeScope={props.onWholeScope}
+							onOpenState={props.onOpenState}
 							reducedMotion={props.reducedMotion}
 						/>
 					)}

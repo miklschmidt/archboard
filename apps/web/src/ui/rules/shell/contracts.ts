@@ -99,6 +99,8 @@ interface ShellView {
 	boardsError: string | null;
 	/** The repositories have not answered yet and nothing of them is in hand. */
 	boardsLoading: boolean;
+	/** The page starts on the chooser, so the chooser takes the keys. */
+	choosing: boolean;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
@@ -111,14 +113,14 @@ interface ShellView {
 interface ShellActions {
 	/**
 	 * Open a repository model and activate that checkout's conversation.
-	 * @param model The stable model identity.
+	 * @param model The stable model identity, or null for a repository with no model to read.
 	 * @param repository Its registered repository identity.
 	 * @param paneId The addressed pane, or the active pane when absent.
 	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 * @returns Whether the server accepted the destination.
 	 */
 	openModel(
-		model: string,
+		model: string | null,
 		repository: string,
 		paneId?: string,
 		reading?: PaneOpening,
@@ -140,11 +142,11 @@ interface ShellActions {
 	/**
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
-	 * @param key The board key.
+	 * @param key The board key, or null for a repository with no model to read.
 	 * @param repository The repository the board is in.
 	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 */
-	openBeside(key: string, repository: string, reading?: PaneOpening): void;
+	openBeside(key: string | null, repository: string, reading?: PaneOpening): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).

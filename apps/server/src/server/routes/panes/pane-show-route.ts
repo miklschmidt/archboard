@@ -8,6 +8,7 @@ import {
 	paneFromRequest,
 	paneResponse,
 	semanticPaneContextFor,
+	sendBoardlessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
@@ -180,6 +181,33 @@ function showResolvedPane(
 	});
 }
 /**
+ * Whether a reader opens a repository that holds nothing to read yet. The pane goes there
+ * anyway, because that pane states what the repository lacks and offers the way on.
+ * @param model The refusal of the read.
+ * @param body The parsed navigation request.
+ * @returns True for a reader's plain open of a repository with no model or a legacy one.
+ */
+function opensUnread(
+	model: Exclude<Awaited<ReturnType<typeof readArchitectureModel>>, { success: true }>,
+	body: z.infer<typeof RequestSchema>,
+): boolean {
+	const unread = model.code === "LEGACY_AUTHORITY" || model.code === "MODEL_NOT_FOUND";
+	return unread && body.agent !== true && body.reading.model === undefined;
+}
+/**
+ * Move a pane into a vault with no reading to send it.
+ * @param vault The addressed vault.
+ * @param pane The selected pane.
+ * @param res The navigation receipt.
+ */
+function moveUnread(vault: string, pane: PaneRegistration, res: Response): void {
+	movePaneVault(pane.clientId, vault);
+	const { repository, checkout } = placeOfVault(vault);
+	const place = { type: "pane_board", board: null, identity: null, vault, repository } as const;
+	sendBoardlessToPane(pane.clientId, place);
+	res.json({ success: true, repository, checkout, paneId: pane.paneId, ...paneResponse(pane) });
+}
+/**
  * Resolve a canonical reading before pointing the existing pane at it.
  * @param req The explicit vault and reading.
  * @param res The navigation receipt or refusal.
@@ -209,7 +237,9 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 	} = body.reading;
 	const model = await readArchitectureModel(vault, module, flow, selectors);
 	if (!model.success) {
-		respond(res, model);
+		const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
+		if (pane === undefined) respond(res, model);
+		else if (pane !== null) moveUnread(vault, pane, res);
 		return;
 	}
 	const refused = selectionRefusal(model, body.reading, body.agent === true);

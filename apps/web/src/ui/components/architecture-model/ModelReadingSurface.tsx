@@ -206,6 +206,7 @@ function ReadingPicture(props: {
 			failure={accepted.failure}
 			onRetry={accepted.retry}
 			onWholeScope={reader.onWholeScope}
+			onOpenState={location.selectState}
 			notices={
 				<>
 					{surface.children}
