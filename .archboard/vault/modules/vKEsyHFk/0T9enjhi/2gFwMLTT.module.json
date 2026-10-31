@@ -57,7 +57,7 @@
         "symbol": "installJournal"
       },
       "id": "vKEsyHFk/0T9enjhi#5PFwNTjm",
-      "to": "vKEsyHFk/0T9enjhi#CLdaoYy3"
+      "to": "vKEsyHFk#FLjFy1AY"
     },
     {
       "order": 249000,
@@ -70,7 +70,7 @@
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#S8zTZBw6",
-      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      "to": "vKEsyHFk#1RhUzmyZ"
     },
     {
       "order": 250000,
@@ -96,7 +96,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#W1fBWglm",
-      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      "to": "vKEsyHFk#ZGONZKxj"
     },
     {
       "order": 252000,
@@ -109,7 +109,7 @@
         "symbol": "historyResult"
       },
       "id": "vKEsyHFk/0T9enjhi#IyzXWhR8",
-      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      "to": "vKEsyHFk#v5jpAVBo"
     },
     {
       "order": 253000,
@@ -122,7 +122,7 @@
         "symbol": "notifyArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#J7A3jU0T",
-      "to": "vKEsyHFk/0T9enjhi#IyV7OF9L"
+      "to": "vKEsyHFk#P9dwhB8m"
     },
     {
       "order": 254000,
@@ -149,6 +149,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#8KIXscUH",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 70051,
+      "kind": "call",
+      "label": "inspect the signed Git archive",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-portable.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk#EXqmey6d",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
     }
   ]
 }
