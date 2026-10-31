@@ -1,9 +1,8 @@
 {
   "id": "zFIdZB1Y",
-  "name": "Pane Stop and coordinator inspection of a workhorse",
+  "name": "TASK-446 after TASK-482.07",
   "formerNames": [
-    "TASK-446 (with flows)",
-    "TASK-446 after TASK-482.07"
+    "TASK-446 (with flows)"
   ],
   "summary": "Observe actual work and stop the whole workhorse tree",
   "migration": {

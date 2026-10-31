@@ -103,6 +103,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",
       "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
+    },
+    {
+      "order": 56000,
+      "kind": "call",
+      "label": "one session per pane, opened in the page's opening vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#5zgh8igv",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     }
   ]
 }

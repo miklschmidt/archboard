@@ -85,6 +85,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#c4z5J6ZL",
       "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
+    },
+    {
+      "order": 42000,
+      "kind": "data",
+      "label": "keep the recorded talk and voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "writeTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#SGwsCHPo",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
     }
   ]
 }

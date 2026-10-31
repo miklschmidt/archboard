@@ -1,9 +1,6 @@
 {
   "id": "YkUcKOJ5",
-  "name": "Workbench client shows the voice coordinator's turns",
-  "formerNames": [
-    "TASK-319 after TASK-482.07"
-  ],
+  "name": "TASK-319 after TASK-482.07",
   "summary": "Browser application modules, with the conversation showing the voice coordinator's turns",
   "migration": {
     "legacy": "vKEsyHFk/yejBBUFY#YkUcKOJ5",
