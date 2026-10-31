@@ -60,7 +60,7 @@
         "symbol": "prepareCodexWorkbench"
       },
       "id": "vKEsyHFk/6E6hL0Zk#elH6AHHL",
-      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      "to": "vKEsyHFk#LWhqFJWg"
     },
     {
       "order": 47000,
@@ -100,6 +100,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 70045,
+      "kind": "call",
+      "label": "start pane socket ownership",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "symbol": "startWebSocketServer"
+      },
+      "id": "vKEsyHFk#4Uvqzrek",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     }
   ]
 }

@@ -36,18 +36,6 @@
   ],
   "outgoing": [
     {
-      "order": 106000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
-        "symbol": "readLegacyInventory"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#wHnFLFri",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
       "order": 107000,
       "kind": "call",
       "emphasis": "normal",
@@ -71,6 +59,30 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#EJAnYLlO",
       "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "symbol": "readLegacyInventory"
+      },
+      "id": "vKEsyHFk/0T9enjhi#VoM3JXyO",
+      "to": "vKEsyHFk/0T9enjhi#7mTerd6Y"
+    },
+    {
+      "order": 124000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/migration-routes.ts",
+        "symbol": "LegacyMappingWriteSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#LF1VUIUY",
+      "to": "vKEsyHFk/0T9enjhi#O3Pczt31"
     }
   ]
 }

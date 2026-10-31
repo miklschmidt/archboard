@@ -71,6 +71,32 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#KWmrBUXU",
       "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
+    },
+    {
+      "order": 70027,
+      "kind": "call",
+      "label": "report the server phase",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "id": "vKEsyHFk#Lot1YAoW",
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "whether writes are admitted, and how many run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "mutationAdmission.accepting"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
     }
   ]
 }
