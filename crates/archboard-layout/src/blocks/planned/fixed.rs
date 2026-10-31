@@ -7,7 +7,7 @@ use super::{
     topology::Topology,
 };
 use crate::{
-    blocks::assembly::{Placed, PlacedArea, PlacedLine},
+    blocks::assembly::{Placed, PlacedArea, PlacedLine, Title},
     geometry::{Point, Rect, inflate},
     graph::Node,
 };
@@ -96,6 +96,19 @@ fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
     }
 }
 
+/// The band a frame's title takes across its top: its tab, in a dense drawing.
+fn title_band(drawing: &Placed, frame: Rect, width: f64) -> Rect {
+    let held = |title: &&Title| title.band.x == frame.x && title.band.y == frame.y;
+    drawing.titles.iter().find(held).map_or(
+        Rect {
+            width,
+            height: 0.0,
+            ..frame
+        },
+        |title| title.band,
+    )
+}
+
 /// The box an endpoint ends on, with a frame's tab for a frame's outer endpoint.
 fn endpoint_box(endpoint: &Endpoint<'_>, drawing: &Placed) -> Result<(Rect, Option<Rect>), String> {
     let id = &endpoint.node.id;
@@ -108,11 +121,7 @@ fn endpoint_box(endpoint: &Endpoint<'_>, drawing: &Placed) -> Result<(Rect, Opti
         .find(|frame| frame.id == *id)
         .ok_or_else(|| format!("No placed endpoint for {id}"))?
         .bx;
-    let tab = Rect {
-        x: frame.x,
-        y: frame.y,
-        ..endpoint.bounds
-    };
+    let tab = title_band(drawing, frame, endpoint.bounds.width);
     if endpoint.foot.is_some() {
         return Ok((frame, Some(tab)));
     }
@@ -132,7 +141,7 @@ fn scope_bounds(model: &Model<'_>, scope: &Scope<'_>, drawing: &Placed) -> Optio
             .frames
             .iter()
             .find(|frame| frame.id == endpoint.node.id)?;
-        let tab = endpoint.bounds.height;
+        let tab = title_band(drawing, frame.bx, endpoint.bounds.width).height;
         return Some(Rect {
             y: frame.bx.y + tab,
             height: frame.bx.height - tab,

@@ -37,6 +37,8 @@ impl Graphviz for Column {
         let graph: Value = serde_json::from_str(graph).map_err(|error| error.to_string())?;
         let mut nodes = Vec::new();
         nodes_of(&graph, &mut nodes);
+        // Graphviz counts up from the foot, and the first node of a graph stands first.
+        nodes.reverse();
         let (mut width, mut height) = (0.0_f64, 0.0);
         let mut spans = Vec::new();
         let mut objects: Vec<Value> = nodes
