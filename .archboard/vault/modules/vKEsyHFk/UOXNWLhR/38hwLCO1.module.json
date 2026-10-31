@@ -26,6 +26,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#1BAA71RA",
       "to": "vKEsyHFk/UOXNWLhR#IJkVbMK2"
+    },
+    {
+      "order": 70032,
+      "kind": "call",
+      "label": "preserve retained read refusals",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-source.ts",
+        "symbol": "SemanticBoardError"
+      },
+      "id": "vKEsyHFk#A87QndqZ",
+      "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
     }
   ]
 }

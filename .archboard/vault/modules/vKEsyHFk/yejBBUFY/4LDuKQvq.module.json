@@ -38,6 +38,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#ygbcyDVT",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 91000,
+      "kind": "http",
+      "label": "open the code",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "createCodeOpenerRouter"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#dw2T12P3",
+      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
     }
   ]
 }

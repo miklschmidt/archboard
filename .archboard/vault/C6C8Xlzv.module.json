@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#C6C8Xlzv",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
+  "outgoing": [
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "the voice's stream; each step, line and version shown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "TalkCapture"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
+    }
+  ]
 }
