@@ -106,8 +106,8 @@ describe("two-way lines", () => {
 			"open",
 		);
 		const twoWay = reading.content.edges.filter((edge) => edge.twoWay === true);
-		expect(lines(reading).toSorted()).toEqual(["both>q", "open>both", "p>one"]);
-		expect(twoWay.map((edge) => `${edge.from}>${edge.to}`)).toEqual(["p>one"]);
+		expect(lines(reading).toSorted()).toEqual(["p>both", "p>one", "q>both"]);
+		expect(twoWay.map((edge) => `${edge.from}>${edge.to}`).toSorted()).toEqual(["p>one", "q>both"]);
 	});
 });
 
@@ -173,20 +173,6 @@ describe("the words on a joined line", () => {
 		expect(line?.label).toBe("with the r1, the r2 +1");
 	});
 
-	test("name a part on a line that ends on the frame", () => {
-		const reading = projectModel(
-			modelOf(
-				[{ id: "open" }, { id: "p", parent: "open" }, { id: "q", parent: "open" }, { id: "door" }],
-				[
-					{ id: "one", from: "p", to: "door" },
-					{ id: "two", from: "q", to: "door" },
-				],
-			),
-			"open",
-		);
-		expect(reading.content.edges[0]).toMatchObject({ from: "open", label: "from p, q" });
-	});
-
 	test("skip an end that the content does not hold", () => {
 		const reading = projectModel(
 			modelOf(
@@ -227,15 +213,34 @@ describe("doors", () => {
 		expect(door).not.toHaveProperty("codePath");
 	});
 
-	test("a line ends on the one part that reaches a door, otherwise on the frame", () => {
-		expect(lines(reading).toSorted()).toEqual(["open>shared", "part>lone", "shared>other"]);
+	test("a line ends on the part that reaches a door", () => {
+		expect(lines(reading).toSorted()).toEqual(["other>shared", "part>lone", "part>shared"]);
 		const single = reading.content.edges.find((edge) => edge.id === "single");
 		expect(single?.label).toBe("words");
 	});
 
-	test("a line on the frame keeps every relationship with its authored ends", () => {
-		const onFrame = reading.connections.find(({ line }) => line.from === "open");
-		expect(onFrame?.joins.map((edge) => edge.from)).toEqual(["part", "other"]);
+	test("a relationship authored on the open module ends on its frame", () => {
+		const own = modelOf(
+			[{ id: "open" }, { id: "part", parent: "open" }, { id: "door" }],
+			[{ id: "self", from: "open", to: "door" }],
+		);
+		expect(lines(projectModel(own, "open"))).toEqual(["open>door"]);
+	});
+
+	test("lines to one door of one kind share a trunk from three, and draw no words", () => {
+		const many = modelOf(
+			[
+				{ id: "open" },
+				...["a", "b", "c"].map((id) => ({ id, parent: "open" })),
+				{ id: "door" },
+			],
+			["a", "b", "c"].map((from) => ({ id: from, from, to: "door", label: "reads" })),
+		);
+		expect(projectModel(many, "open").content.edges.map((edge) => edge.label)).toEqual([
+			undefined,
+			undefined,
+			undefined,
+		]);
 	});
 });
 
