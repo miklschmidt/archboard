@@ -217,9 +217,7 @@ afterAll(() => {
 });
 
 test("anchors, binding symbols and the relationships between parts bound to C and C++ files are judged by the C and C++ adapters", () => {
-	const found = outcome.findings.map(
-		(each) => `${each.code} ${each.subject?.id} ${each.severity}`,
-	);
+	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[
 			"ANCHOR_SYMBOL_MISSING e2 warning",

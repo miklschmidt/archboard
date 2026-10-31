@@ -19,9 +19,7 @@ interface Sides {
  * @returns The ids.
  */
 function sideOf(sides: Pick<Sides, "lineages">, id: string): Set<string> {
-	return new Set(
-		[...sides.lineages].flatMap(([inside, chain]) => (chain.has(id) ? [inside] : [])),
-	);
+	return new Set([...sides.lineages].flatMap(([inside, chain]) => (chain.has(id) ? [inside] : [])));
 }
 
 /**
