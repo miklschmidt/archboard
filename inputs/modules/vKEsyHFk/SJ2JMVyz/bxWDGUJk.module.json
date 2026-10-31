@@ -90,7 +90,20 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      "to": "vKEsyHFk#ZGONZKxj"
+    },
+    {
+      "order": 70057,
+      "kind": "call",
+      "label": "publish structured local diagnostics",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+        "symbol": "logger"
+      },
+      "id": "vKEsyHFk#e00V8dhv",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }

@@ -12,6 +12,32 @@
   "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
   "outgoing": [
     {
+      "order": 13000,
+      "kind": "call",
+      "label": "the generation that may act",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 19000,
+      "kind": "dependency",
+      "label": "the archboard_app tools it answers",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
+        "symbol": "GeneralThreadToolNameSchema"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+    },
+    {
       "order": 20000,
       "kind": "dependency",
       "label": "the workhorse instructions, by digest",
@@ -38,19 +64,6 @@
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
-      "order": 13000,
-      "kind": "call",
-      "label": "the generation that may act",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
-        "symbol": "stageOperation"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
       "order": 32000,
       "kind": "call",
       "label": "the calling thread's tab session",
@@ -65,17 +78,17 @@
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
-      "order": 19000,
+      "order": 59000,
       "kind": "dependency",
-      "label": "the archboard_app tools it answers",
-      "emphasis": "muted",
+      "label": "the private session's tool requests and identities",
+      "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
-        "symbol": "GeneralThreadToolNameSchema"
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-mutations.ts",
+        "symbol": "DynamicServerRequest"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
-      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+      "id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",
+      "to": "vKEsyHFk#Q2Jc26oO"
     }
   ]
 }

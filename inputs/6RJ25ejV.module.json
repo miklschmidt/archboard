@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/walkthrough/src/shared"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
   "schemaVersion": 1,
   "id": "vKEsyHFk#6RJ25ejV",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#5zIYNuw1",
+  "outgoing": [
+    {
+      "order": 56000,
+      "kind": "dependency",
+      "label": "keep board and rendering schemas in a talk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/shared/protocol/talk.ts",
+        "symbol": "addressedVariant"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#iaq6pG14",
+      "to": "vKEsyHFk#vZUWUgyb"
+    }
+  ]
 }

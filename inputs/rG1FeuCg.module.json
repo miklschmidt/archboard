@@ -27,6 +27,32 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#ntLLD7Df",
       "to": "vKEsyHFk/9ncuT5DP#ZQxB1ZaK"
+    },
+    {
+      "order": 26000,
+      "kind": "data",
+      "label": "the pane's agent and media state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "symbol": "capabilities"
+      },
+      "id": "vKEsyHFk/yejBBUFY#DTRtWKab",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 64000,
+      "kind": "call",
+      "label": "control the shared browser voice lifecycle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/state/voice-session/session.ts",
+        "symbol": "start"
+      },
+      "id": "vKEsyHFk/yejBBUFY#bFY85rkM",
+      "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
   "schemaVersion": 1,
   "id": "vKEsyHFk#UoblaIEv",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 61000,
+      "kind": "call",
+      "label": "the dock's actions: send, Talk, pick a workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "to": "vKEsyHFk#x1I9VaDn"
+    }
+  ]
 }

@@ -38,6 +38,19 @@
       "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv"
     },
     {
+      "order": 44000,
+      "kind": "dependency",
+      "label": "own the Chromium process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+      "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
       "order": 48000,
       "kind": "dependency",
       "label": "the guard for its /json/version answer",
@@ -49,19 +62,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
-    },
-    {
-      "order": 44000,
-      "kind": "dependency",
-      "label": "own the Chromium process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
-      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }
