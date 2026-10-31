@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/ui/hooks/runtime/use-agent-runtime.ts",
         "symbol": "projectTimelineTurns"
       },
-      "to": "vKEsyHFk#DF6y1aoD",
-      "id": "vKEsyHFk#OnjiUpIM"
+      "id": "vKEsyHFk#OnjiUpIM",
+      "to": "vKEsyHFk#DF6y1aoD"
     },
     {
       "order": 102840,
@@ -34,8 +34,21 @@
         "path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
         "symbol": "frameClock"
       },
-      "to": "vKEsyHFk/yejBBUFY#rouptSyK",
-      "id": "vKEsyHFk#mC0LcaRV"
+      "id": "vKEsyHFk#mC0LcaRV",
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 120560,
+      "kind": "call",
+      "label": "frameClock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y",
+      "id": "vKEsyHFk#SnBTTa3U"
     }
   ]
 }

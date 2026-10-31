@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-binding/src/runtime/operations/binding-resolver.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
   "schemaVersion": 1,
   "id": "vKEsyHFk#tWzeneeg",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "outgoing": [
+    {
+      "order": 120630,
+      "kind": "call",
+      "label": "CodeBindingSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/binding-resolver.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "to": "vKEsyHFk#PfrQyv5D",
+      "id": "vKEsyHFk#Vchg0kIH"
+    }
+  ]
 }

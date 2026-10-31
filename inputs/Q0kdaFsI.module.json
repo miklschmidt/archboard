@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/runtime/rules/dynamic-tools/effects/effect-values.ts",
         "symbol": "dynamicApprovalHashForCanonicalJson"
       },
-      "to": "vKEsyHFk#862bHERd",
-      "id": "vKEsyHFk#cBJhdjmN"
+      "id": "vKEsyHFk#cBJhdjmN",
+      "to": "vKEsyHFk#862bHERd"
     },
     {
       "order": 102220,
@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/runtime/rules/dynamic-tools/vocabulary.ts",
         "symbol": "isCodexThreadStatusType"
       },
-      "to": "vKEsyHFk#vzaTHSY6",
-      "id": "vKEsyHFk#mYnsa8GU"
+      "id": "vKEsyHFk#mYnsa8GU",
+      "to": "vKEsyHFk#vzaTHSY6"
     },
     {
       "order": 102280,
@@ -47,8 +47,60 @@
         "path": "packages/workbench/src/runtime/services/host/archboard-voice.ts",
         "symbol": "RecordingNarrationSchema"
       },
-      "to": "vKEsyHFk#LBJHXq9N",
-      "id": "vKEsyHFk#1Hv0zKSz"
+      "id": "vKEsyHFk#1Hv0zKSz",
+      "to": "vKEsyHFk#LBJHXq9N"
+    },
+    {
+      "order": 120080,
+      "kind": "call",
+      "label": "GeneralThreadToolNameSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
+        "symbol": "GeneralThreadToolNameSchema"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x",
+      "id": "vKEsyHFk#E3StYBMJ"
+    },
+    {
+      "order": 121750,
+      "kind": "call",
+      "label": "encodeCanonicalContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
+        "symbol": "encodeCanonicalContext"
+      },
+      "to": "vKEsyHFk#IpkMUDFS",
+      "id": "vKEsyHFk#lRhz6Zwc"
+    },
+    {
+      "order": 121880,
+      "kind": "call",
+      "label": "voicePresentationPrompt",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/host/archboard-voice.ts",
+        "symbol": "voicePresentationPrompt"
+      },
+      "to": "vKEsyHFk#XwGA6dpV",
+      "id": "vKEsyHFk#hyJfpOHV"
+    },
+    {
+      "order": 122880,
+      "kind": "call",
+      "label": "operationWire",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/effects/effects.ts",
+        "symbol": "operationWire"
+      },
+      "to": "vKEsyHFk#iPnxvJWp",
+      "id": "vKEsyHFk#yjpzAkZd"
     }
   ]
 }

@@ -138,8 +138,21 @@
         "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
         "symbol": "createWorkbenchAdditionalContext"
       },
-      "to": "vKEsyHFk#HJDEcrXi",
-      "id": "vKEsyHFk#xgZDV5OC"
+      "id": "vKEsyHFk#xgZDV5OC",
+      "to": "vKEsyHFk#HJDEcrXi"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "label": "messageOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "symbol": "messageOf"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#lYjAlwZm"
     }
   ]
 }

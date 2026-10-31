@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
         "symbol": "subjectsOf"
       },
-      "to": "vKEsyHFk#kPbBQRAH",
-      "id": "vKEsyHFk#q5NpDVsi"
+      "id": "vKEsyHFk#q5NpDVsi",
+      "to": "vKEsyHFk#kPbBQRAH"
     },
     {
       "order": 102300,
@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
         "symbol": "modelContent"
       },
-      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
-      "id": "vKEsyHFk#iwkBEVME"
+      "id": "vKEsyHFk#iwkBEVME",
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
     },
     {
       "order": 102310,
@@ -47,8 +47,8 @@
         "path": "packages/workbench/src/server/projections/semantic-context/canonical-narration.ts",
         "symbol": "readArchitectureModel"
       },
-      "to": "vKEsyHFk#ZsEk7Dg8",
-      "id": "vKEsyHFk#4ZCZyipf"
+      "id": "vKEsyHFk#4ZCZyipf",
+      "to": "vKEsyHFk#ZsEk7Dg8"
     },
     {
       "order": 102330,
@@ -60,8 +60,8 @@
         "path": "packages/workbench/src/server/rules/pane/board-key.ts",
         "symbol": "parseBoardKey"
       },
-      "to": "vKEsyHFk#rasAaxs6",
-      "id": "vKEsyHFk#GqwZ3jcm"
+      "id": "vKEsyHFk#GqwZ3jcm",
+      "to": "vKEsyHFk#rasAaxs6"
     },
     {
       "order": 102340,
@@ -73,8 +73,8 @@
         "path": "packages/workbench/src/server/rules/semantic-context/narrated-subjects.ts",
         "symbol": "everyStep"
       },
-      "to": "vKEsyHFk#ARWidvE7",
-      "id": "vKEsyHFk#M8bRQVGC"
+      "id": "vKEsyHFk#M8bRQVGC",
+      "to": "vKEsyHFk#ARWidvE7"
     },
     {
       "order": 102350,
@@ -86,8 +86,8 @@
         "path": "packages/workbench/src/server/services/actions/dynamic-approvals.ts",
         "symbol": "createCodexBrowserModel"
       },
-      "to": "vKEsyHFk#862bHERd",
-      "id": "vKEsyHFk#YJaVWJUO"
+      "id": "vKEsyHFk#YJaVWJUO",
+      "to": "vKEsyHFk#862bHERd"
     },
     {
       "order": 102380,
@@ -99,8 +99,8 @@
         "path": "packages/workbench/src/server/services/generation/domain.ts",
         "symbol": "createCodexWaitGraph"
       },
-      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq",
-      "id": "vKEsyHFk#isHPKkVh"
+      "id": "vKEsyHFk#isHPKkVh",
+      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq"
     },
     {
       "order": 102390,
@@ -112,8 +112,8 @@
         "path": "packages/workbench/src/server/services/generation/dynamic-owners.ts",
         "symbol": "parseWorkhorseLinkKey"
       },
-      "to": "vKEsyHFk#zk55kV0S",
-      "id": "vKEsyHFk#UeJKNkdI"
+      "id": "vKEsyHFk#UeJKNkdI",
+      "to": "vKEsyHFk#zk55kV0S"
     },
     {
       "order": 102410,
@@ -125,8 +125,8 @@
         "path": "packages/workbench/src/server/services/host/archboard-checkouts.ts",
         "symbol": "isVaultLayout"
       },
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
-      "id": "vKEsyHFk#mk6XjCtX"
+      "id": "vKEsyHFk#mk6XjCtX",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
     },
     {
       "order": 102450,
@@ -138,8 +138,8 @@
         "path": "packages/workbench/src/server/services/host/listener-address.ts",
         "symbol": "checkoutPort"
       },
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9",
-      "id": "vKEsyHFk#ZUNSQRyJ"
+      "id": "vKEsyHFk#ZUNSQRyJ",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     },
     {
       "order": 102460,
@@ -151,8 +151,8 @@
         "path": "packages/workbench/src/server/services/host/listener-address.ts",
         "symbol": "logger"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#fZcPLi6h"
+      "id": "vKEsyHFk#fZcPLi6h",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     },
     {
       "order": 102560,
@@ -164,8 +164,8 @@
         "path": "packages/workbench/src/server/services/panes/context.ts",
         "symbol": "SemanticPaneContextSchema"
       },
-      "to": "vKEsyHFk#EllF3GsG",
-      "id": "vKEsyHFk#Tj4mYdqC"
+      "id": "vKEsyHFk#Tj4mYdqC",
+      "to": "vKEsyHFk#EllF3GsG"
     },
     {
       "order": 102570,
@@ -177,8 +177,8 @@
         "path": "packages/workbench/src/server/services/panes/context.ts",
         "symbol": "SemanticPaneContextSchema.safeParse"
       },
-      "to": "vKEsyHFk#KFUk3iKu",
-      "id": "vKEsyHFk#vsZiyUPd"
+      "id": "vKEsyHFk#vsZiyUPd",
+      "to": "vKEsyHFk#KFUk3iKu"
     },
     {
       "order": 102620,
@@ -190,8 +190,151 @@
         "path": "packages/workbench/src/server/services/sessions/panes.ts",
         "symbol": "panesInOrder"
       },
-      "to": "vKEsyHFk#woGD7QGm",
-      "id": "vKEsyHFk#yDSHoACj"
+      "id": "vKEsyHFk#yDSHoACj",
+      "to": "vKEsyHFk#woGD7QGm"
+    },
+    {
+      "order": 120020,
+      "kind": "call",
+      "label": "panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/tab-canvas.ts",
+        "symbol": "panes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#5IMwGBr4"
+    },
+    {
+      "order": 120240,
+      "kind": "call",
+      "label": "semanticChangeFeed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/sessions/feed.ts",
+        "symbol": "semanticChangeFeed"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ",
+      "id": "vKEsyHFk#TzAthlgF"
+    },
+    {
+      "order": 120900,
+      "kind": "call",
+      "label": "notifyExplanation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/generation/domain.ts",
+        "symbol": "notifyExplanation"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#bxWDGUJk",
+      "id": "vKEsyHFk#6aa4U9oE"
+    },
+    {
+      "order": 120990,
+      "kind": "call",
+      "label": "panePresentations",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/context.ts",
+        "symbol": "panePresentations"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#74SVrhRe",
+      "id": "vKEsyHFk#JFiU97WI"
+    },
+    {
+      "order": 121180,
+      "kind": "call",
+      "label": "vaultOfRequest",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/context.ts",
+        "symbol": "vaultOfRequest"
+      },
+      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT",
+      "id": "vKEsyHFk#hll64Zat"
+    },
+    {
+      "order": 121430,
+      "kind": "call",
+      "label": "tabSessionOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/tab-canvas.ts",
+        "symbol": "tabSessionOf"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T",
+      "id": "vKEsyHFk#6b74BSUv"
+    },
+    {
+      "order": 121690,
+      "kind": "call",
+      "label": "publishPaneContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/context.ts",
+        "symbol": "publishPaneContext"
+      },
+      "to": "vKEsyHFk#TcjyZjpQ",
+      "id": "vKEsyHFk#UEEwSlOD"
+    },
+    {
+      "order": 121770,
+      "kind": "call",
+      "label": "ArchboardContextSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/generation/dynamic-owners.ts",
+        "symbol": "ArchboardContextSchema"
+      },
+      "to": "vKEsyHFk#IpkMUDFS",
+      "id": "vKEsyHFk#fflqBDJt"
+    },
+    {
+      "order": 121980,
+      "kind": "call",
+      "label": "narratedBoardOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/tab-canvas.ts",
+        "symbol": "narratedBoardOf"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI",
+      "id": "vKEsyHFk#QgS3hIbn"
+    },
+    {
+      "order": 122220,
+      "kind": "call",
+      "label": "createDynamicAuthorityTokenIssuer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/dynamic-tools/authority.ts",
+        "symbol": "createDynamicAuthorityTokenIssuer"
+      },
+      "to": "vKEsyHFk#Q0kdaFsI",
+      "id": "vKEsyHFk#3YqCNPN9"
+    },
+    {
+      "order": 122890,
+      "kind": "call",
+      "label": "createCodexDynamicTools",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/generation/domain.ts",
+        "symbol": "createCodexDynamicTools"
+      },
+      "to": "vKEsyHFk#iPnxvJWp",
+      "id": "vKEsyHFk#9DueKQW1"
     }
   ]
 }

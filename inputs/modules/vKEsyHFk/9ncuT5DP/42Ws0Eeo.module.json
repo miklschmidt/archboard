@@ -46,6 +46,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#yql8mIiB",
       "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+    },
+    {
+      "order": 122190,
+      "kind": "call",
+      "label": "fail",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/semantic-context-publisher.ts",
+        "symbol": "fail"
+      },
+      "to": "vKEsyHFk#Q0kdaFsI",
+      "id": "vKEsyHFk#oN76gJR9"
     }
   ]
 }

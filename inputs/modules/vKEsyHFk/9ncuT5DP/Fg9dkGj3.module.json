@@ -19,5 +19,19 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 122070,
+      "kind": "call",
+      "label": "CodexCoordinatorError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/reuse.ts",
+        "symbol": "CodexCoordinatorError"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#Vlx0r3xy"
+    }
+  ]
 }

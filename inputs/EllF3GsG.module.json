@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/protocol"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#EllF3GsG",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [
+    {
+      "order": 123370,
+      "kind": "call",
+      "label": "SemanticBoardLevelSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/protocol/board-listing.ts",
+        "symbol": "SemanticBoardLevelSchema"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#tbvh15Ow"
+    }
+  ]
 }

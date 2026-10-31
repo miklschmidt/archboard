@@ -33,5 +33,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 122290,
+      "kind": "call",
+      "label": "JsonValueSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/approval-projection.ts",
+        "symbol": "JsonValueSchema"
+      },
+      "to": "vKEsyHFk#862bHERd",
+      "id": "vKEsyHFk#MHNSuQOV"
+    }
+  ]
 }

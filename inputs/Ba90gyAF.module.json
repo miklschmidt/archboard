@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "outgoing": [
     {
+      "order": 100430,
+      "kind": "call",
+      "label": "usePaneVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
+        "symbol": "usePaneVault"
+      },
+      "id": "vKEsyHFk#J8JVbDvJ",
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
+    },
+    {
       "order": 130000,
       "kind": "call",
       "label": "the pane's letter, controls, notice and focus",
@@ -25,17 +38,30 @@
       "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
     },
     {
-      "order": 100430,
+      "order": 121140,
       "kind": "call",
-      "label": "usePaneVault",
+      "label": "LevelMark",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
-        "symbol": "usePaneVault"
+        "symbol": "LevelMark"
       },
-      "to": "vKEsyHFk/UOXNWLhR#51hijVQY",
-      "id": "vKEsyHFk#J8JVbDvJ"
+      "to": "vKEsyHFk/yejBBUFY#b6D8IxT0",
+      "id": "vKEsyHFk#Y7M7Xzjq"
+    },
+    {
+      "order": 122960,
+      "kind": "call",
+      "label": "HeaderRow",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
+        "symbol": "HeaderRow"
+      },
+      "to": "vKEsyHFk#zAnua4yB",
+      "id": "vKEsyHFk#gaYdOR3i"
     }
   ]
 }

@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
       "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
+    },
+    {
+      "order": 123000,
+      "kind": "call",
+      "label": "SemanticPresentation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStagePresentation.tsx",
+        "symbol": "SemanticPresentation"
+      },
+      "to": "vKEsyHFk#zAnua4yB",
+      "id": "vKEsyHFk#TZRtdd8E"
     }
   ]
 }

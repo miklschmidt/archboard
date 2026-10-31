@@ -26,6 +26,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#2X7jYiVB",
       "to": "vKEsyHFk/IbGtfJE2#9TIT63Qz"
+    },
+    {
+      "order": 120700,
+      "kind": "call",
+      "label": "runProcess",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+        "symbol": "runProcess"
+      },
+      "to": "vKEsyHFk#smw47wvV",
+      "id": "vKEsyHFk#YiFwdQ0s"
     }
   ]
 }

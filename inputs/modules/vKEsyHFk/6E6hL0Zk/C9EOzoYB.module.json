@@ -46,6 +46,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
       "to": "vKEsyHFk#ZsEk7Dg8"
+    },
+    {
+      "order": 121890,
+      "kind": "call",
+      "label": "unavailableCanonical",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
+        "symbol": "unavailableCanonical"
+      },
+      "to": "vKEsyHFk#JN74G2DS",
+      "id": "vKEsyHFk#atoGgCT5"
     }
   ]
 }

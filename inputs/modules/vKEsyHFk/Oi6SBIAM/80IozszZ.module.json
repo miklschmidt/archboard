@@ -90,8 +90,34 @@
         "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
         "symbol": "logger"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#UAlBo6ll"
+      "id": "vKEsyHFk#UAlBo6ll",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 121940,
+      "kind": "call",
+      "label": "bodyOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "bodyOf"
+      },
+      "to": "vKEsyHFk#JN74G2DS",
+      "id": "vKEsyHFk#g4zY1EDx"
+    },
+    {
+      "order": 122370,
+      "kind": "call",
+      "label": "ShownConversationRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "ShownConversationRequestSchema"
+      },
+      "to": "vKEsyHFk#fpPxQld4",
+      "id": "vKEsyHFk#7t1VVGtT"
     }
   ]
 }

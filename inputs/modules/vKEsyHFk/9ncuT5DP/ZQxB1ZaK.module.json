@@ -89,6 +89,32 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#TFjDY5zE",
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "order": 122090,
+      "kind": "call",
+      "label": "phase",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
+        "symbol": "phase"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#cM7Wyw2F"
+    },
+    {
+      "order": 122280,
+      "kind": "call",
+      "label": "transitionRealtimeState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/realtime/adapter.ts",
+        "symbol": "transitionRealtimeState"
+      },
+      "to": "vKEsyHFk#862bHERd",
+      "id": "vKEsyHFk#AKlkSlLe"
     }
   ]
 }

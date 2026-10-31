@@ -24,5 +24,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 121000,
+      "kind": "call",
+      "label": "createPaneCore",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/pane-session/use-pane-session.ts",
+        "symbol": "createPaneCore"
+      },
+      "to": "vKEsyHFk#Ca093PoD",
+      "id": "vKEsyHFk#S6tMBrVm"
+    }
+  ]
 }

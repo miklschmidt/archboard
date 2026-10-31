@@ -47,6 +47,58 @@
       },
       "id": "vKEsyHFk/0T9enjhi#iPPIY0dg",
       "to": "vKEsyHFk#tHTVTbMS"
+    },
+    {
+      "order": 122730,
+      "kind": "call",
+      "label": "ArchitectureModuleSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-operations.ts",
+        "symbol": "ArchitectureModuleSchema"
+      },
+      "to": "vKEsyHFk#ziBggdd0",
+      "id": "vKEsyHFk#dJ5dJ03T"
+    },
+    {
+      "order": 122830,
+      "kind": "call",
+      "label": "QualifiedSubjectIdSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-operations.ts",
+        "symbol": "QualifiedSubjectIdSchema"
+      },
+      "to": "vKEsyHFk#glt0Q20M",
+      "id": "vKEsyHFk#h9y7vDvf"
+    },
+    {
+      "order": 123250,
+      "kind": "call",
+      "label": "StandaloneThemeSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-operations.ts",
+        "symbol": "StandaloneThemeSchema"
+      },
+      "to": "vKEsyHFk#EllF3GsG",
+      "id": "vKEsyHFk#D8miXMuX"
+    },
+    {
+      "order": 123430,
+      "kind": "call",
+      "label": "DiagramGrammarSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-operations.ts",
+        "symbol": "DiagramGrammarSchema"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#B3NgFdqD"
     }
   ]
 }

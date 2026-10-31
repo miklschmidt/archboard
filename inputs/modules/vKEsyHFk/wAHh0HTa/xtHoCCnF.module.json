@@ -30,6 +30,19 @@
       },
       "id": "vKEsyHFk/wAHh0HTa#qQrqNYdt",
       "to": "vKEsyHFk#HGsIg1Cl"
+    },
+    {
+      "order": 121490,
+      "kind": "call",
+      "label": "publishProjection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/hooks.ts",
+        "symbol": "publishProjection"
+      },
+      "to": "vKEsyHFk#CcW5NyRf",
+      "id": "vKEsyHFk#IiKIhbUI"
     }
   ]
 }

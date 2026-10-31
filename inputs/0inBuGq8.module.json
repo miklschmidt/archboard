@@ -21,8 +21,8 @@
         "path": "apps/workbench-example/src/ui/components/workbench/AccountConnection.tsx",
         "symbol": "useVoiceState"
       },
-      "to": "vKEsyHFk#DF6y1aoD",
-      "id": "vKEsyHFk#CmUULOXt"
+      "id": "vKEsyHFk#CmUULOXt",
+      "to": "vKEsyHFk#DF6y1aoD"
     },
     {
       "order": 100610,
@@ -34,8 +34,21 @@
         "path": "apps/workbench-example/src/ui/components/workbench/MountWorkbench.tsx",
         "symbol": "createVoiceClient"
       },
-      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL",
-      "id": "vKEsyHFk#dXlTSiMy"
+      "id": "vKEsyHFk#dXlTSiMy",
+      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
+    },
+    {
+      "order": 121590,
+      "kind": "call",
+      "label": "approvalChoices",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/workbench-example/src/ui/components/workbench/ApprovalCard.tsx",
+        "symbol": "approvalChoices"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#tAO3moEw",
+      "id": "vKEsyHFk#AZdvt6RC"
     }
   ]
 }

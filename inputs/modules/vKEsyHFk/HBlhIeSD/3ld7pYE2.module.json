@@ -97,6 +97,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
       "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    },
+    {
+      "order": 120010,
+      "kind": "call",
+      "label": "serverPhase",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#hwACZ2zb",
+      "id": "vKEsyHFk#OquRzDFM"
     }
   ]
 }

@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
         "symbol": "usesCommandKey"
       },
-      "to": "vKEsyHFk#g3KlZxCE",
-      "id": "vKEsyHFk#8aBZMOeI"
+      "id": "vKEsyHFk#8aBZMOeI",
+      "to": "vKEsyHFk#g3KlZxCE"
     },
     {
       "order": 102720,
@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "DropdownMenu"
       },
-      "to": "vKEsyHFk#92sBMXbd",
-      "id": "vKEsyHFk#PFi1DpHQ"
+      "id": "vKEsyHFk#PFi1DpHQ",
+      "to": "vKEsyHFk#92sBMXbd"
     },
     {
       "order": 102730,
@@ -47,8 +47,47 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "DropdownMenu.Trigger"
       },
-      "to": "vKEsyHFk#Z0nguLSh",
-      "id": "vKEsyHFk#fiP7akV1"
+      "id": "vKEsyHFk#fiP7akV1",
+      "to": "vKEsyHFk#Z0nguLSh"
+    },
+    {
+      "order": 121790,
+      "kind": "call",
+      "label": "VoiceLines",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "VoiceLines"
+      },
+      "to": "vKEsyHFk#rNQgfnGk",
+      "id": "vKEsyHFk#iR5I2PgU"
+    },
+    {
+      "order": 121860,
+      "kind": "call",
+      "label": "IconAction",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "IconAction"
+      },
+      "to": "vKEsyHFk#VJ7tvnVl",
+      "id": "vKEsyHFk#br83kRpQ"
+    },
+    {
+      "order": 122260,
+      "kind": "call",
+      "label": "Conversation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "Conversation"
+      },
+      "to": "vKEsyHFk#cgf4eSOm",
+      "id": "vKEsyHFk#Su8hzhWq"
     }
   ]
 }

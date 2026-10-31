@@ -96,8 +96,34 @@
         "path": "packages/workbench/src/server/services/owner/production.ts",
         "symbol": "resolveCodexExecutable"
       },
-      "to": "vKEsyHFk#KKNGRo3e",
-      "id": "vKEsyHFk#BPXwO8kb"
+      "id": "vKEsyHFk#BPXwO8kb",
+      "to": "vKEsyHFk#KKNGRo3e"
+    },
+    {
+      "order": 121710,
+      "kind": "call",
+      "label": "createWorkbenchStorage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "symbol": "createWorkbenchStorage"
+      },
+      "to": "vKEsyHFk#zkbykqCe",
+      "id": "vKEsyHFk#ELwg8nCe"
+    },
+    {
+      "order": 121910,
+      "kind": "call",
+      "label": "serverUrl",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/production.ts",
+        "symbol": "serverUrl"
+      },
+      "to": "vKEsyHFk#JN74G2DS",
+      "id": "vKEsyHFk#0LDXaW9N"
     }
   ]
 }

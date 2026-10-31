@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
   "outgoing": [
     {
+      "order": 14000,
+      "kind": "call",
+      "label": "edit the queue of the shown checkout's workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "add"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
+      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+    },
+    {
       "order": 29000,
       "kind": "call",
       "label": "the workhorse of the shown checkout, built on first use",
@@ -39,17 +52,30 @@
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
-      "order": 14000,
+      "order": 121460,
       "kind": "call",
-      "label": "edit the queue of the shown checkout's workhorse",
+      "label": "createServerBrowserAccountOwner",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
-        "symbol": "add"
+        "symbol": "createServerBrowserAccountOwner"
       },
-      "id": "vKEsyHFk/SJ2JMVyz#FWJMAVKj",
-      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
+      "to": "vKEsyHFk#CcW5NyRf",
+      "id": "vKEsyHFk#HAWPuXVi"
+    },
+    {
+      "order": 121820,
+      "kind": "call",
+      "label": "watchTranscriptChanges",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/browser-gateway.ts",
+        "symbol": "watchTranscriptChanges"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
+      "id": "vKEsyHFk#N600niPa"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/schemas/primitives.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
   "schemaVersion": 1,
   "id": "vKEsyHFk#glt0Q20M",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+  "outgoing": [
+    {
+      "order": 123650,
+      "kind": "call",
+      "label": "BLOCK_ID_RE",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/primitives.ts",
+        "symbol": "BLOCK_ID_RE"
+      },
+      "to": "vKEsyHFk#ARWidvE7",
+      "id": "vKEsyHFk#oa70kfPP"
+    }
+  ]
 }

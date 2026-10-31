@@ -47,6 +47,45 @@
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
     },
     {
+      "order": 101090,
+      "kind": "call",
+      "label": "walkthroughDependencies",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "walkthroughDependencies"
+      },
+      "id": "vKEsyHFk#fc74Robx",
+      "to": "vKEsyHFk#JDhuXgzY"
+    },
+    {
+      "order": 101100,
+      "kind": "call",
+      "label": "retainedStates",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/lifecycle.ts",
+        "symbol": "retainedStates"
+      },
+      "id": "vKEsyHFk#LNrmTNIn",
+      "to": "vKEsyHFk#aZW7suqF"
+    },
+    {
+      "order": 101110,
+      "kind": "call",
+      "label": "historyResult",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/read.ts",
+        "symbol": "historyResult"
+      },
+      "id": "vKEsyHFk#9wtgsnqZ",
+      "to": "vKEsyHFk#ZqX9evcg"
+    },
+    {
       "order": 193000,
       "kind": "call",
       "label": "canonical decoder",
@@ -177,43 +216,69 @@
       "to": "vKEsyHFk/0T9enjhi#Jx4O72DO"
     },
     {
-      "order": 101090,
+      "order": 121700,
       "kind": "call",
-      "label": "walkthroughDependencies",
+      "label": "assignFields",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "walkthroughDependencies"
+        "symbol": "assignFields"
       },
-      "to": "vKEsyHFk#JDhuXgzY",
-      "id": "vKEsyHFk#fc74Robx"
+      "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+      "id": "vKEsyHFk#Ak2qI87s"
     },
     {
-      "order": 101100,
+      "order": 122710,
       "kind": "call",
-      "label": "retainedStates",
+      "label": "StateMetadataSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/lifecycle.ts",
-        "symbol": "retainedStates"
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "StateMetadataSchema"
       },
-      "to": "vKEsyHFk#aZW7suqF",
-      "id": "vKEsyHFk#LNrmTNIn"
+      "to": "vKEsyHFk#ziBggdd0",
+      "id": "vKEsyHFk#Lhov8Hvs"
     },
     {
-      "order": 101110,
+      "order": 123150,
       "kind": "call",
-      "label": "historyResult",
+      "label": "modelRevision",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/read.ts",
-        "symbol": "historyResult"
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "modelRevision"
       },
-      "to": "vKEsyHFk#ZqX9evcg",
-      "id": "vKEsyHFk#9wtgsnqZ"
+      "to": "vKEsyHFk#rasAaxs6",
+      "id": "vKEsyHFk#WpHUgY9V"
+    },
+    {
+      "order": 123320,
+      "kind": "call",
+      "label": "ProposalSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "ProposalSchema"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#Shd16cNm"
+    },
+    {
+      "order": 123560,
+      "kind": "call",
+      "label": "mintId",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "mintId"
+      },
+      "to": "vKEsyHFk#ARWidvE7",
+      "id": "vKEsyHFk#USHXwMQV"
     }
   ]
 }

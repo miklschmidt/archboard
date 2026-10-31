@@ -36,8 +36,34 @@
         "path": "packages/workbench/src/server/services/host/archboard-presentation.ts",
         "symbol": "JsonValueSchema"
       },
-      "to": "vKEsyHFk#862bHERd",
-      "id": "vKEsyHFk#cWiLhbX3"
+      "id": "vKEsyHFk#cWiLhbX3",
+      "to": "vKEsyHFk#862bHERd"
+    },
+    {
+      "order": 122240,
+      "kind": "call",
+      "label": "isArchboardRecording",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-presentation.ts",
+        "symbol": "isArchboardRecording"
+      },
+      "to": "vKEsyHFk#Q0kdaFsI",
+      "id": "vKEsyHFk#2iddatLc"
+    },
+    {
+      "order": 122360,
+      "kind": "call",
+      "label": "ArchboardVoicePresentationSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-presentation.ts",
+        "symbol": "ArchboardVoicePresentationSchema"
+      },
+      "to": "vKEsyHFk#fpPxQld4",
+      "id": "vKEsyHFk#bTKKnQVL"
     }
   ]
 }

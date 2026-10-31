@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#SoK3eMhj",
       "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "order": 120780,
+      "kind": "call",
+      "label": "settlesWithin",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/server.ts",
+        "symbol": "settlesWithin"
+      },
+      "to": "vKEsyHFk#smw47wvV",
+      "id": "vKEsyHFk#omzFmKoK"
     }
   ]
 }

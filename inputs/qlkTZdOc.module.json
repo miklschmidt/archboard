@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "order": 122080,
+      "kind": "call",
+      "label": "settingsMismatch",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts",
+        "symbol": "settingsMismatch"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#n7L8EK9H"
     }
   ]
 }

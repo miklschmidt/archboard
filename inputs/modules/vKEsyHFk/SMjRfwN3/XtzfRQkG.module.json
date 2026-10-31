@@ -14,5 +14,32 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
   "parent": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 121110,
+      "kind": "call",
+      "label": "TalkSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/store/talk-files.ts",
+        "symbol": "TalkSchema"
+      },
+      "to": "vKEsyHFk#LBJHXq9N",
+      "id": "vKEsyHFk#atwgCiQf"
+    },
+    {
+      "order": 121200,
+      "kind": "call",
+      "label": "stateDir",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/store/talk-files.ts",
+        "symbol": "stateDir"
+      },
+      "to": "vKEsyHFk#Qy3AvfxK",
+      "id": "vKEsyHFk#5CAfmwhv"
+    }
+  ]
 }

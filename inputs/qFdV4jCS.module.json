@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "to": "vKEsyHFk/UOXNWLhR#WT3s42AE"
+    },
+    {
+      "order": 120090,
+      "kind": "call",
+      "label": "markSubjects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+        "symbol": "markSubjects"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+      "id": "vKEsyHFk#3saRG1yF"
     }
   ]
 }

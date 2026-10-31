@@ -28,5 +28,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 120270,
+      "kind": "call",
+      "label": "useAgentRuntime",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/runtime/AgentRuntimeProvider.tsx",
+        "symbol": "useAgentRuntime"
+      },
+      "to": "vKEsyHFk#5K2hAD55",
+      "id": "vKEsyHFk#yiEPqLAD"
+    }
+  ]
 }

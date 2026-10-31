@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/rules"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#ARWidvE7",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [
+    {
+      "order": 122790,
+      "kind": "call",
+      "label": "normalizeGroupIds",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/rules/inspect/groups.ts",
+        "symbol": "normalizeGroupIds"
+      },
+      "to": "vKEsyHFk#glt0Q20M",
+      "id": "vKEsyHFk#IzSo3uUd"
+    },
+    {
+      "order": 123380,
+      "kind": "call",
+      "label": "asksForDesignation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/rules/coherence/family.ts",
+        "symbol": "asksForDesignation"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#lGWLoI34"
+    }
+  ]
 }

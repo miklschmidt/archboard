@@ -17,5 +17,19 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 121470,
+      "kind": "call",
+      "label": "sessionLeaseLedger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-leases.ts",
+        "symbol": "sessionLeaseLedger"
+      },
+      "to": "vKEsyHFk#CcW5NyRf",
+      "id": "vKEsyHFk#qpErrZvg"
+    }
+  ]
 }

@@ -83,8 +83,21 @@
         "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
         "symbol": "captureWorkbenchInstructions"
       },
-      "to": "vKEsyHFk#voS2ymgi",
-      "id": "vKEsyHFk#UiKLn78N"
+      "id": "vKEsyHFk#UiKLn78N",
+      "to": "vKEsyHFk#voS2ymgi"
+    },
+    {
+      "order": 121510,
+      "kind": "call",
+      "label": "workbenchStorage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "workbenchStorage"
+      },
+      "to": "vKEsyHFk#CcW5NyRf",
+      "id": "vKEsyHFk#VFP79aQD"
     }
   ]
 }

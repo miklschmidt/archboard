@@ -105,6 +105,32 @@
       },
       "id": "vKEsyHFk#7IJFtNQk",
       "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    },
+    {
+      "order": 120720,
+      "kind": "call",
+      "label": "sequentially",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "sequentially"
+      },
+      "to": "vKEsyHFk#smw47wvV",
+      "id": "vKEsyHFk#v8LFd0VD"
+    },
+    {
+      "order": 120840,
+      "kind": "call",
+      "label": "runDirectories",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-run.ts",
+        "symbol": "runDirectories"
+      },
+      "to": "vKEsyHFk#FIRKrY5U",
+      "id": "vKEsyHFk#vDl0M7yC"
     }
   ]
 }

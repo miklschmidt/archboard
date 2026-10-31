@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#Vm6nSiIe",
       "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"
+    },
+    {
+      "order": 120750,
+      "kind": "call",
+      "label": "sequentially",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/pin-versions.ts",
+        "symbol": "sequentially"
+      },
+      "to": "vKEsyHFk#smw47wvV",
+      "id": "vKEsyHFk#lYoZ59he"
     }
   ]
 }

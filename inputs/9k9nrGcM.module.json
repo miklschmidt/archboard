@@ -47,8 +47,8 @@
         "path": "packages/skills/src/runtime/operations/runs/replay.ts",
         "symbol": "addressedVariant"
       },
-      "to": "vKEsyHFk#kPbBQRAH",
-      "id": "vKEsyHFk#2A56spI3"
+      "id": "vKEsyHFk#2A56spI3",
+      "to": "vKEsyHFk#kPbBQRAH"
     },
     {
       "order": 102000,
@@ -60,8 +60,8 @@
         "path": "packages/skills/src/runtime/operations/runs/replay.ts",
         "symbol": "framesOf"
       },
-      "to": "vKEsyHFk#LBJHXq9N",
-      "id": "vKEsyHFk#JIeAbOB8"
+      "id": "vKEsyHFk#JIeAbOB8",
+      "to": "vKEsyHFk#LBJHXq9N"
     },
     {
       "order": 102010,
@@ -73,8 +73,34 @@
         "path": "packages/skills/src/runtime/operations/runs/replay.ts",
         "symbol": "recordingContainerOf"
       },
-      "to": "vKEsyHFk/SMjRfwN3#L1cYIenF",
-      "id": "vKEsyHFk#a2E7h5tQ"
+      "id": "vKEsyHFk#a2E7h5tQ",
+      "to": "vKEsyHFk/SMjRfwN3#L1cYIenF"
+    },
+    {
+      "order": 120520,
+      "kind": "call",
+      "label": "readTalk",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "readTalk"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG",
+      "id": "vKEsyHFk#lnJKg0ZW"
+    },
+    {
+      "order": 120800,
+      "kind": "call",
+      "label": "finding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "finding"
+      },
+      "to": "vKEsyHFk#wIBmBVnn",
+      "id": "vKEsyHFk#EA3IOp7k"
     }
   ]
 }

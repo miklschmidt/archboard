@@ -51,6 +51,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#uQcYd3Nh",
       "to": "vKEsyHFk/9ncuT5DP#YxDrzJtI"
+    },
+    {
+      "order": 122050,
+      "kind": "call",
+      "label": "CodexCoordinatorError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/coordinator.ts",
+        "symbol": "CodexCoordinatorError"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#8ikijc6y"
     }
   ]
 }

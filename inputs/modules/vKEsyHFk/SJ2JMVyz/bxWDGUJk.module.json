@@ -81,18 +81,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
-      "order": 126000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk#ZsEk7Dg8"
-    },
-    {
       "order": 70057,
       "kind": "call",
       "label": "publish structured local diagnostics",
@@ -115,8 +103,8 @@
         "path": "packages/workbench/src/server/services/explanations/actions.ts",
         "symbol": "parseTabSessionId"
       },
-      "to": "vKEsyHFk#zk55kV0S",
-      "id": "vKEsyHFk#043pIVVk"
+      "id": "vKEsyHFk#043pIVVk",
+      "to": "vKEsyHFk#zk55kV0S"
     },
     {
       "order": 102370,
@@ -128,8 +116,33 @@
         "path": "packages/workbench/src/server/services/explanations/start.ts",
         "symbol": "checkoutOfVault"
       },
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
-      "id": "vKEsyHFk#tNxqbNDH"
+      "id": "vKEsyHFk#tNxqbNDH",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
+      "to": "vKEsyHFk#ZsEk7Dg8"
+    },
+    {
+      "order": 122350,
+      "kind": "call",
+      "label": "ExplanationActionRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+        "symbol": "ExplanationActionRequestSchema"
+      },
+      "to": "vKEsyHFk#fpPxQld4",
+      "id": "vKEsyHFk#6yRbi9iz"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/rules/host/context.ts"
   },
-  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
   "schemaVersion": 1,
   "id": "vKEsyHFk#h6JYbUk2",
-  "outgoing": []
+  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "outgoing": [
+    {
+      "order": 121030,
+      "kind": "call",
+      "label": "cloneAndFreeze",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/context.ts",
+        "symbol": "cloneAndFreeze"
+      },
+      "to": "vKEsyHFk#FIXGbdeH",
+      "id": "vKEsyHFk#tZ5zriC9"
+    }
+  ]
 }

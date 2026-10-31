@@ -12,6 +12,32 @@
   "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
   "outgoing": [
     {
+      "order": 13000,
+      "kind": "call",
+      "label": "the generation that may act",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
+        "symbol": "stageOperation"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 19000,
+      "kind": "dependency",
+      "label": "the archboard_app tools it answers",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
+        "symbol": "GeneralThreadToolNameSchema"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
+      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
+    },
+    {
       "order": 20000,
       "kind": "dependency",
       "label": "the workhorse instructions, by digest",
@@ -38,19 +64,6 @@
       "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
-      "order": 13000,
-      "kind": "call",
-      "label": "the generation that may act",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-staging.ts",
-        "symbol": "stageOperation"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#Uflv9hM7",
-      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
-    },
-    {
       "order": 32000,
       "kind": "call",
       "label": "the calling thread's tab session",
@@ -65,19 +78,6 @@
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
     },
     {
-      "order": 19000,
-      "kind": "dependency",
-      "label": "the archboard_app tools it answers",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
-        "symbol": "GeneralThreadToolNameSchema"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
-      "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"
-    },
-    {
       "order": 59000,
       "kind": "dependency",
       "label": "the private session's tool requests and identities",
@@ -89,6 +89,32 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#Gh6v3DzI",
       "to": "vKEsyHFk#psCGk705"
+    },
+    {
+      "order": 121740,
+      "kind": "call",
+      "label": "createTurnStartParams",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/mutation/mutation-context.ts",
+        "symbol": "createTurnStartParams"
+      },
+      "to": "vKEsyHFk#IpkMUDFS",
+      "id": "vKEsyHFk#SeqGsBxA"
+    },
+    {
+      "order": 122180,
+      "kind": "call",
+      "label": "CodexDynamicToolsError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-approval.ts",
+        "symbol": "CodexDynamicToolsError"
+      },
+      "to": "vKEsyHFk#Q0kdaFsI",
+      "id": "vKEsyHFk#C6GX3NKf"
     }
   ]
 }

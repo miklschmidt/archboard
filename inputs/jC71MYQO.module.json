@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "outgoing": [
     {
+      "order": 13000,
+      "kind": "call",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "to": "vKEsyHFk#LnRDyS05"
+    },
+    {
       "order": 22000,
       "kind": "call",
       "label": "send, Talk, narrate",
@@ -38,17 +51,82 @@
       "to": "vKEsyHFk#3Xzw7rLk"
     },
     {
-      "order": 13000,
+      "order": 120660,
       "kind": "call",
-      "label": "opening address; write what panes show and where",
+      "label": "ApplicationPane",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
-        "symbol": "useWorkspaceAddress"
+        "path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
+        "symbol": "ApplicationPane"
       },
-      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
-      "to": "vKEsyHFk#LnRDyS05"
+      "to": "vKEsyHFk/yejBBUFY#zkDth8gp",
+      "id": "vKEsyHFk#BkGi5Ddj"
+    },
+    {
+      "order": 120950,
+      "kind": "call",
+      "label": "boardAddressOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
+        "symbol": "boardAddressOf"
+      },
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+      "id": "vKEsyHFk#bCzJhPW1"
+    },
+    {
+      "order": 121300,
+      "kind": "call",
+      "label": "openWalkthroughRecorder",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
+        "symbol": "openWalkthroughRecorder"
+      },
+      "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv",
+      "id": "vKEsyHFk#36L6GNvp"
+    },
+    {
+      "order": 122620,
+      "kind": "call",
+      "label": "PaneSubtitles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-subtitle-overlay.ts",
+        "symbol": "PaneSubtitles"
+      },
+      "to": "vKEsyHFk#HX0GjXjl",
+      "id": "vKEsyHFk#5Y2DWOiT"
+    },
+    {
+      "order": 122760,
+      "kind": "call",
+      "label": "createPaneMoves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-panes.ts",
+        "symbol": "createPaneMoves"
+      },
+      "to": "vKEsyHFk#9iYczjM0",
+      "id": "vKEsyHFk#fkttLZqi"
+    },
+    {
+      "order": 122870,
+      "kind": "call",
+      "label": "agentActions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-agent.ts",
+        "symbol": "agentActions"
+      },
+      "to": "vKEsyHFk#3Ohuqr9A",
+      "id": "vKEsyHFk#d2S87mkz"
     }
   ]
 }

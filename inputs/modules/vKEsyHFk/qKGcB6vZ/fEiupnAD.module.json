@@ -55,6 +55,19 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
       "to": "vKEsyHFk#HJDEcrXi"
+    },
+    {
+      "order": 122100,
+      "kind": "call",
+      "label": "sameBinding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/classifier-turn.ts",
+        "symbol": "sameBinding"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#90pd1tsn"
     }
   ]
 }

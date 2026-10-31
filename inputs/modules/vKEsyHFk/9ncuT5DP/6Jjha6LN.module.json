@@ -20,5 +20,19 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 122140,
+      "kind": "call",
+      "label": "inspectSnapshot",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start/cleanup.ts",
+        "symbol": "inspectSnapshot"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#d0eqn5nE"
+    }
+  ]
 }

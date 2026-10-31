@@ -42,8 +42,21 @@
         "path": "packages/process/src/runtime/processes/git-command.ts",
         "symbol": "errorMessage"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#uWfuBMFb"
+      "id": "vKEsyHFk#uWfuBMFb",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 121580,
+      "kind": "call",
+      "label": "processGroupExists",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/process/src/runtime/processes/git-command.ts",
+        "symbol": "processGroupExists"
+      },
+      "to": "vKEsyHFk#LmqdsvuN",
+      "id": "vKEsyHFk#kKagpLwy"
     }
   ]
 }

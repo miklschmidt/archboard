@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#scByKwmU",
       "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+    },
+    {
+      "order": 122570,
+      "kind": "call",
+      "label": "useModelLocation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts",
+        "symbol": "useModelLocation"
+      },
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+      "id": "vKEsyHFk#XdaoYHvE"
     }
   ]
 }

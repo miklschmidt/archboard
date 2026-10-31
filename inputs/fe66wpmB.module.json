@@ -24,6 +24,19 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
       "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
+    },
+    {
+      "order": 122120,
+      "kind": "call",
+      "label": "createNotificationHandler",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/operations.ts",
+        "symbol": "createNotificationHandler"
+      },
+      "to": "vKEsyHFk#19vKZAmc",
+      "id": "vKEsyHFk#7ULEaMWN"
     }
   ]
 }
