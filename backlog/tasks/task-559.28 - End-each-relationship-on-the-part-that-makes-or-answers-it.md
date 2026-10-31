@@ -4,6 +4,7 @@ title: End each relationship on the part that makes or answers it
 status: To Do
 assignee: []
 created_date: '2026-10-31T04:16:00Z'
+updated_date: '2026-10-31T05:29:00Z'
 labels:
   - model
 dependencies: []
@@ -27,3 +28,9 @@ A relationship that ends on a module with parts makes a caller and no entry poin
 - [ ] #5 No module with parts reads as no entry points when callers reach it, except where the report gives the reason
 - [ ] #6 Flows and walkthroughs still resolve, and no proposal is adopted or lost
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Full repair held back, not merged. Measured on every reading against the model at 6a910327b: drawn lines 1694 to 2605, area 148.5 M to 243.5 M, readings that pass the fit gate 107 to 94 of 115, readings below 0.4 from 1 to 7, slowest drawing 509 ms to 767 ms. Canonical checkpoint operations went from 3 parts and 23 lines to 13 parts and 90 lines, and most new lines are file imports named after symbols. That is an import map and not architecture, so it fails the purpose. feat/relationship-ends at b58c99db9 stays as an option. Next: a smaller repair that adds a part only where it must.
+<!-- SECTION:NOTES:END -->
