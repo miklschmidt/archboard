@@ -196,16 +196,13 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	);
 	expect(rows).toEqual(expect.arrayContaining(["Shop#Worker", queue.id]));
 	expect(rows.at(-1)).toBe("Shop#Answer");
-	await browser.run(["click", '[data-slot="model-change-next"]']);
-	await standsOn(browser, rows[0], `1 of ${rows.length}`);
 	for (const [index, id] of rows.entries()) {
-		if (index === 0) continue;
-		await browser.run(["press", "n"]);
+		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
 		await standsOn(browser, id, `${index + 1} of ${rows.length}`);
 	}
 	expect((await walkPlace(browser)).grammar).toBe("sequence");
 	await browser.run(["press", "p"]);
-	await standsOn(browser, rows[rows.length - 2], `${rows.length - 1} of ${rows.length}`);
+	await standsOn(browser, rows.at(-2) ?? "", `${rows.length - 1} of ${rows.length}`);
 	await browser.run(["press", "n"]);
 	await standsOn(browser, "Shop#Answer", `${rows.length} of ${rows.length}`);
 	const draft = { model: target.model, state: created.body.target.state };

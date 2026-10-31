@@ -27,22 +27,22 @@ function relationship(id: string, from: string, to: string): Relationship {
 	return { id, from, to, kind: "call", order: 0, emphasis: "normal" };
 }
 
+const FLOW: Model["collections"][number]["flows"][number] = {
+	id: "Shop#Request",
+	name: "Handle request",
+	participants: ["Shop#Gateway", "Shop#Worker"],
+	steps: [
+		{ id: "Shop#Hand", from: "Shop#Gateway", to: "Shop#Worker", kind: "sync", label: "Hand" },
+		{ id: "Shop#Done", from: "Shop#Worker", to: "Shop#Gateway", kind: "return", label: "Done" },
+	],
+};
+
 const COLLECTION: Model["collections"][number] = {
 	schemaVersion: 1,
 	id: "Behavior",
 	name: "Requests",
 	file: "requests.flows.json",
-	flows: [
-		{
-			id: "Shop#Request",
-			name: "Handle request",
-			participants: ["Shop#Gateway", "Shop#Worker"],
-			steps: [
-				{ id: "Shop#Hand", from: "Shop#Gateway", to: "Shop#Worker", kind: "sync", label: "Hand" },
-				{ id: "Shop#Done", from: "Shop#Worker", to: "Shop#Gateway", kind: "return", label: "Done" },
-			],
-		},
-	],
+	flows: [FLOW],
 };
 
 /** The base: the worker's queue still calls the gateway, and its flow has two steps. */
@@ -61,7 +61,6 @@ const BASE: Model = {
  * @returns The reading.
  */
 function proposal(subjects: readonly Subject[]): Model {
-	const [flow] = COLLECTION.flows;
 	return {
 		...BASE,
 		selectedState: { id: "Draft", name: "Queue", lifecycle: "draft" },
@@ -71,7 +70,7 @@ function proposal(subjects: readonly Subject[]): Model {
 				module.id === "Shop#Decode" ? { ...module, parent: "Shop#Worker" } : module,
 			),
 		relationships: BASE.relationships.filter((edge) => edge.id !== "Shop#Calls"),
-		collections: [{ ...COLLECTION, flows: [{ ...flow, steps: flow.steps.slice(0, 1) }] }],
+		collections: [{ ...COLLECTION, flows: [{ ...FLOW, steps: FLOW.steps.slice(0, 1) }] }],
 		comparison: {
 			reason: "predecessor",
 			against: BASE.selectedState ?? null,
@@ -81,11 +80,12 @@ function proposal(subjects: readonly Subject[]): Model {
 	};
 }
 
+const MOVE = { field: "parent", before: "Shop#Handler", after: "Shop#Worker" };
 const MOVED: Subject = {
 	id: "Shop#Decode",
 	subjectKind: "module",
 	kind: "changed",
-	fields: [{ field: "parent", before: "Shop#Handler", after: "Shop#Worker" }],
+	fields: [MOVE],
 };
 const QUEUE: Subject = { id: "Shop#Queue", subjectKind: "module", kind: "removed", fields: [] };
 const CALLS: Subject = {
@@ -142,9 +142,8 @@ test("a reparented module names both parents, and a move to the roots has no ide
 		["Shop#Handler", "Handler"],
 		["Shop#Worker", "Worker"],
 	]);
-	const [moved] = MOVED.fields;
-	expect(namedField(moved, names)).toMatchObject({ before: "Handler", after: "Worker" });
-	expect(typeof namedField({ ...moved, after: undefined }, names).after).toBe("string");
+	expect(namedField(MOVE, names)).toMatchObject({ before: "Handler", after: "Worker" });
+	expect(typeof namedField({ ...MOVE, after: undefined }, names).after).toBe("string");
 });
 
 test("the place stays on its subject when the list changes around it", () => {
