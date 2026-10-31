@@ -2,13 +2,13 @@
   "order": 71000,
   "name": "Reading projection",
   "kind": "ui",
-  "responsibility": "Projects a reading of the model for the picture and the panel",
+  "responsibility": "Turns the address into the structure and the flow that a pane draws",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/architecture-model/ModelReading.tsx"
+    "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Y5mCjHvB",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "outgoing": []
 }
