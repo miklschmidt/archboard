@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "schemaVersion": 1,
   "id": "vKEsyHFk#sTfc9oXS",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "outgoing": [
+    {
+      "order": 45000,
+      "kind": "event",
+      "description": "one socket per page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 14000,
+      "kind": "event",
+      "label": "one socket per page, naming its vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "socketUrl"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#yG8Hyadm",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+    },
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "the id each of this tab's sockets carries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "tabSessionId"
+      },
+      "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
+      "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    }
+  ]
 }

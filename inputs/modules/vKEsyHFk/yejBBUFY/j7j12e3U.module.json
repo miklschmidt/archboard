@@ -24,5 +24,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 70030,
+      "kind": "call",
+      "label": "address the selected reading",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/board-catalog/listing.ts",
+        "symbol": "boardKeyFor"
+      },
+      "id": "vKEsyHFk#YZOiFcZt",
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    }
+  ]
 }

@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/state/application"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "schemaVersion": 1,
   "id": "vKEsyHFk#N8qU9kdQ",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 68000,
+      "kind": "call",
+      "label": "one pane's controllers, over the focused pane's transport",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/application/workbench-owners.ts",
+        "symbol": "createConversationControllers"
+      },
+      "id": "vKEsyHFk/yejBBUFY#NVu6WtHx",
+      "to": "vKEsyHFk/yejBBUFY#hO56iL2W"
+    },
+    {
+      "order": 25000,
+      "kind": "call",
+      "label": "a session for voice's pane; mute, stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/application/voice-store.ts",
+        "symbol": "createVoiceSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#qKwYD1B2",
+      "to": "vKEsyHFk#JFPhxTZM"
+    }
+  ]
 }

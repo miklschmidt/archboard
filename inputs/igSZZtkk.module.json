@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#igSZZtkk",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 130000,
+      "kind": "call",
+      "label": "the pane's letter, controls, notice and focus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
+        "symbol": "usePaneChrome"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#QPqsk43l",
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
+    },
+    {
+      "order": 100430,
+      "kind": "call",
+      "label": "usePaneVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeader.tsx",
+        "symbol": "usePaneVault"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY",
+      "id": "vKEsyHFk#vjXtw5E2"
+    }
+  ]
 }

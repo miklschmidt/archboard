@@ -7,8 +7,61 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "schemaVersion": 1,
   "id": "vKEsyHFk#5d6Gwps6",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "http",
+      "description": "what this pane is reading",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "postPaneRoute"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#VkGzebtq",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 5000,
+      "kind": "http",
+      "label": "reports, readings and calls, each naming the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "reportPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#wH0rE1x7",
+      "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
+    },
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "report the pane, show a board, take back, pick a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 67000,
+      "kind": "http",
+      "label": "the person activated a checkout, naming the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
+      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
+    }
+  ]
 }

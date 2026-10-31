@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/architecture-model/drawing.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "schemaVersion": 1,
   "id": "vKEsyHFk#oy1p6Hys",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 70017,
+      "kind": "call",
+      "label": "cache and interact with pictures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "browserPictureStorage"
+      },
+      "id": "vKEsyHFk#f0RC9khM",
+      "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "prepareContentHere",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "prepareContentHere"
+      },
+      "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
+      "to": "vKEsyHFk#YmWCEFDe"
+    }
+  ]
 }

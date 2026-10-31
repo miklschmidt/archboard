@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/DetailsPanel.tsx"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#sMbrFELA",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 79000,
+      "kind": "call",
+      "description": "The details panel lists what the picked part reaches.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/DetailsPanel.tsx",
+        "symbol": "reachOf"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#UXs6A8o7",
+      "to": "vKEsyHFk/UOXNWLhR#t49irDl0"
+    }
+  ]
 }

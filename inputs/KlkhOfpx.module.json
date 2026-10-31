@@ -7,8 +7,308 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/architecture-model"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#KlkhOfpx",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 100120,
+      "kind": "call",
+      "label": "KindIcon",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelAboutFrame.tsx",
+        "symbol": "KindIcon"
+      },
+      "to": "vKEsyHFk#H96nhWro",
+      "id": "vKEsyHFk#tqAIEbcE"
+    },
+    {
+      "order": 100130,
+      "kind": "call",
+      "label": "Tree",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelChanges.tsx",
+        "symbol": "Tree"
+      },
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "id": "vKEsyHFk#gajGeMnv"
+    },
+    {
+      "order": 100140,
+      "kind": "call",
+      "label": "architectureClaimsQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelClaims.tsx",
+        "symbol": "architectureClaimsQuery"
+      },
+      "to": "vKEsyHFk#o54dJ4QZ",
+      "id": "vKEsyHFk#NSDMnlBU"
+    },
+    {
+      "order": 100150,
+      "kind": "call",
+      "label": "takeBackClaim",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelClaims.tsx",
+        "symbol": "takeBackClaim"
+      },
+      "to": "vKEsyHFk#95clUvgm",
+      "id": "vKEsyHFk#7AT1ngjn"
+    },
+    {
+      "order": 100170,
+      "kind": "call",
+      "label": "usePaneChrome",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelColumn.tsx",
+        "symbol": "usePaneChrome"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL",
+      "id": "vKEsyHFk#iruRLdtN"
+    },
+    {
+      "order": 100180,
+      "kind": "call",
+      "label": "useModelLocation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDestinationState.tsx",
+        "symbol": "useModelLocation"
+      },
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+      "id": "vKEsyHFk#YGpZpRc1"
+    },
+    {
+      "order": 100190,
+      "kind": "call",
+      "label": "usePictureTransition",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "usePictureTransition"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+      "id": "vKEsyHFk#xQsdukR4"
+    },
+    {
+      "order": 100200,
+      "kind": "call",
+      "label": "useAutoFit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useAutoFit"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
+      "id": "vKEsyHFk#nohsMBgT"
+    },
+    {
+      "order": 100210,
+      "kind": "call",
+      "label": "useCameraWith",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useCameraWith"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+      "id": "vKEsyHFk#dyi6nlW5"
+    },
+    {
+      "order": 100220,
+      "kind": "call",
+      "label": "seenFromFar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "seenFromFar"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
+      "id": "vKEsyHFk#IhU2KYBh"
+    },
+    {
+      "order": 100230,
+      "kind": "call",
+      "label": "useReveal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useReveal"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+      "id": "vKEsyHFk#BWTukeiL"
+    },
+    {
+      "order": 100240,
+      "kind": "call",
+      "label": "useDiagramGestures",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useDiagramGestures"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#FyxVdk20",
+      "id": "vKEsyHFk#YWrMBnRA"
+    },
+    {
+      "order": 100250,
+      "kind": "call",
+      "label": "moveCameraByKey",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "moveCameraByKey"
+      },
+      "to": "vKEsyHFk#sP7sBUtD",
+      "id": "vKEsyHFk#RFpCPsBO"
+    },
+    {
+      "order": 100260,
+      "kind": "call",
+      "label": "CameraSurface",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "CameraSurface"
+      },
+      "to": "vKEsyHFk#WkYlF3Hj",
+      "id": "vKEsyHFk#6A6tZqYw"
+    },
+    {
+      "order": 100270,
+      "kind": "call",
+      "label": "surfaceMarks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "surfaceMarks"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
+      "id": "vKEsyHFk#JYpHa5sn"
+    },
+    {
+      "order": 100280,
+      "kind": "call",
+      "label": "beatFocus",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "beatFocus"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+      "id": "vKEsyHFk#6JQpU8XH"
+    },
+    {
+      "order": 100290,
+      "kind": "call",
+      "label": "useLighting",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useLighting"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
+      "id": "vKEsyHFk#5Z25wen6"
+    },
+    {
+      "order": 100300,
+      "kind": "call",
+      "label": "subjectTip",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "subjectTip"
+      },
+      "to": "vKEsyHFk#mwEYjSuY",
+      "id": "vKEsyHFk#0pqMVvSI"
+    },
+    {
+      "order": 100310,
+      "kind": "call",
+      "label": "markCodeWarnings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "markCodeWarnings"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
+      "id": "vKEsyHFk#G5D4Rj30"
+    },
+    {
+      "order": 100320,
+      "kind": "call",
+      "label": "modelHistoryQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelHistory.tsx",
+        "symbol": "modelHistoryQuery"
+      },
+      "to": "vKEsyHFk#ECCXXQNr",
+      "id": "vKEsyHFk#oY5lyDYr"
+    },
+    {
+      "order": 100330,
+      "kind": "call",
+      "label": "iconQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelLegend.tsx",
+        "symbol": "iconQuery"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+      "id": "vKEsyHFk#DrducAQQ"
+    },
+    {
+      "order": 100340,
+      "kind": "call",
+      "label": "architecturePublicationQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelPublication.tsx",
+        "symbol": "architecturePublicationQuery"
+      },
+      "to": "vKEsyHFk#C5ycA43f",
+      "id": "vKEsyHFk#6ZNedW7q"
+    },
+    {
+      "order": 100350,
+      "kind": "call",
+      "label": "PeekProvider",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelReadingSurface.tsx",
+        "symbol": "PeekProvider"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt",
+      "id": "vKEsyHFk#Z3C4Sgpw"
+    }
+  ]
 }
