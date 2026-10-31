@@ -64,7 +64,7 @@
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
-      "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     },
     {
       "order": 4000,
@@ -168,7 +168,7 @@
         "symbol": "diagramIconPaths"
       },
       "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
-      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      "to": "vKEsyHFk#VJycOIhx"
     },
     {
       "order": 97000,
@@ -207,7 +207,59 @@
         "symbol": "mountVoiceStartTraceRoute"
       },
       "id": "vKEsyHFk/6E6hL0Zk#7plLLcKh",
-      "to": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    },
+    {
+      "order": 100010,
+      "kind": "call",
+      "label": "mountMutationAdmission",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountMutationAdmission"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
+      "id": "vKEsyHFk#pxfWLNRl"
+    },
+    {
+      "order": 100020,
+      "kind": "call",
+      "label": "mountLegacyMigrationRoutes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountLegacyMigrationRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#YWQbfysA",
+      "id": "vKEsyHFk#hmBG3Xjj"
+    },
+    {
+      "order": 100030,
+      "kind": "call",
+      "label": "mountCodeCheckRoute",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountCodeCheckRoute"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
+      "id": "vKEsyHFk#k3SOk1I0"
+    },
+    {
+      "order": 100040,
+      "kind": "call",
+      "label": "mountServiceRoutes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/wiring/application/application.ts",
+        "symbol": "mountServiceRoutes"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2",
+      "id": "vKEsyHFk#dEZmbiGk"
     }
   ]
 }

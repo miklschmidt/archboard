@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/sockets/architecture/architecture-feed.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
   "schemaVersion": 1,
   "id": "vKEsyHFk#itx3hFZ9",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+  "outgoing": [
+    {
+      "order": 143000,
+      "kind": "call",
+      "label": "vault-scoped current event stream",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/architecture/architecture-feed.ts",
+        "symbol": "watchArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
+      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
+    }
+  ]
 }

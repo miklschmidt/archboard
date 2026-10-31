@@ -38,7 +38,7 @@
         "symbol": "handleBrowserMessage"
       },
       "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
-      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      "to": "vKEsyHFk#wN7gU7A0"
     },
     {
       "order": 15000,
@@ -128,7 +128,7 @@
         "symbol": "parseBoardKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "to": "vKEsyHFk#OJRnI6a2"
     }
   ]
 }
