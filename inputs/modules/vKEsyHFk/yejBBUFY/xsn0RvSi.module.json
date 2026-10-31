@@ -43,6 +43,19 @@
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"
     },
     {
+      "order": 6000,
+      "kind": "event",
+      "label": "the pane socket, naming its vault: registration and news",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-socket.ts",
+        "symbol": "WebSocket"
+      },
+      "id": "vKEsyHFk/yejBBUFY#PuILGsjg",
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+    },
+    {
       "order": 7000,
       "kind": "call",
       "label": "open the bound code",
@@ -70,19 +83,6 @@
     },
     {
       "order": 17000,
-      "kind": "http",
-      "description": "what this pane is reading",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "postPaneRoute"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#VkGzebtq",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
-      "order": 17000,
       "kind": "call",
       "label": "report the pane, show a board, take back, pick a checkout",
       "emphasis": "normal",
@@ -93,6 +93,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 18000,
+      "kind": "event",
+      "label": "a board's new version, in the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
+        "symbol": "announceSemanticBoardChange"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ZDhACWtE",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
     },
     {
       "order": 19000,
@@ -121,19 +134,6 @@
       "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
     },
     {
-      "order": 45000,
-      "kind": "event",
-      "description": "one socket per page",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 67000,
       "kind": "http",
       "label": "the person activated a checkout, naming the pane's vault",
@@ -145,34 +145,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
       "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
-    },
-    {
-      "order": 33000,
-      "kind": "event",
-      "label": "each socket names its tab, and its close forgets it",
-      "description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
-        "symbol": "noteTabSession"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#egDoJ9fH",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
-    },
-    {
-      "order": 66000,
-      "kind": "http",
-      "label": "the person activated a checkout (/api/panes/conversation)",
-      "description": "A focus, a board the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
-        "symbol": "showConversation"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#99za8lFO",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     }
   ]
 }

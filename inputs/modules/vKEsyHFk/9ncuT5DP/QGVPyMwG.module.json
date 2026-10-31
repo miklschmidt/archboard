@@ -29,7 +29,7 @@
         "symbol": "onChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#YOaSBuBr",
-      "to": "vKEsyHFk/9ncuT5DP#8DmvR3O6"
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
     },
     {
       "order": 31000,
@@ -70,19 +70,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#5gcxxoqv",
       "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
-    },
-    {
-      "order": 66000,
-      "kind": "dependency",
-      "label": "approval, realtime and session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/broker.ts",
-        "symbol": "CODEX_APPROVAL_MS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
     }
   ]
 }

@@ -41,7 +41,7 @@
         "symbol": "WalkthroughRecorder.start"
       },
       "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
-      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "order": 29000,
@@ -57,6 +57,32 @@
       "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
     },
     {
+      "order": 30000,
+      "kind": "call",
+      "label": "the voice's stream; each step, line and version shown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "TalkCapture"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "live and loud yet; stop",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/rules/walkthrough-recording/voice-sources.ts",
+        "symbol": "level"
+      },
+      "id": "vKEsyHFk/yejBBUFY#5y8UuVhP",
+      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC"
+    },
+    {
       "order": 31000,
       "kind": "data",
       "label": "the step to show",
@@ -67,7 +93,7 @@
         "symbol": "recordedStep"
       },
       "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
-      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
     },
     {
       "order": 40000,

@@ -96,6 +96,18 @@
       "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
     },
     {
+      "order": 161000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "publicationContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
+    },
+    {
       "order": 164000,
       "kind": "data",
       "label": "Explicit complete fetch and non-forced publication",

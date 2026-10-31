@@ -29,5 +29,58 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 65000,
+      "kind": "call",
+      "label": "runs the code check: boards, plans, pass and behind",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "createCodeCheck"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#D9dCZCLo",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
+    },
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "keep what a finished pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "createCodeFindingsMemory"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#gjUcUvHu",
+      "to": "vKEsyHFk/6E6hL0Zk#SmrySjjM"
+    },
+    {
+      "order": 109000,
+      "kind": "call",
+      "label": "the phase it is in",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "serverPhase"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#K3vcKTFp",
+      "to": "vKEsyHFk/6E6hL0Zk#J7yOKraz"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "whether writes are admitted, and how many run",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "mutationAdmission"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#CiOgt2S3",
+      "to": "vKEsyHFk/6E6hL0Zk#K6P74fM7"
+    }
+  ]
 }

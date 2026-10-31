@@ -43,7 +43,7 @@
         "symbol": "spawn"
       },
       "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "order": 58000,
@@ -57,19 +57,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#qXImR60k",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 33000,
-      "kind": "dependency",
-      "label": "the Codex executable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
     }
   ]
 }
