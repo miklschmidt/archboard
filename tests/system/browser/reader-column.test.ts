@@ -238,7 +238,7 @@ test("every move of the left column has a keyboard route, also in a presented pa
 		// Enter belongs to a button while the button still has focus.
 		() =>
 			browser.eval<boolean>(
-				`document.fullscreenElement !== null && document.activeElement === document.body`,
+				`document.fullscreenElement !== null && document.activeElement?.closest('button') === null`,
 			),
 		Boolean,
 		"the presented pane",
