@@ -46,4 +46,6 @@ Owner chose a button look for doors, mockup dark-I.png in /tmp/integrate/header-
 Merged from feat/blocks-dead-space at 8f7673c15. Gate on the merge 21 of 21 in 136 seconds. Rule 6 is deleted in 5d00cf275 pending the owner's look. Gate 1 113 of 115 at 135.9 M, frame fill median 0.405. Crossings rose from 465 to 1848 and bends from 1298 to 3545. Bus lines of three or more to one door draw no words, a departure from criterion 2. Open: 30 long detours, Workspace packages and workbench fail Gate 1, Commands lands on its head, two frames keep the legacy placement, and reader-redesign.md, blocks-planned-layout.md and ADRs 0044, 0061, 0062 and 0064 are stale.
 
 The owner rejected the drawn tab on sight: no visible frame outline, a stepped left side, a tab wider than its text and a soft shoulder. The tab is redone with the card work on feat/reader-cards, to match dark-E.png as one closed path.
+
+The owner looked at the door buttons on Agent CLI in the real pane and accepted them.
 <!-- SECTION:NOTES:END -->
