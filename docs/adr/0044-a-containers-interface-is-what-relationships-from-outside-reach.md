@@ -505,3 +505,28 @@ canonical read carries `interfaceChanges` and `interfaceMeasures` in its
 says them first, and `--beside` adds a competing state to the measures. These
 two sections are required parts of a comparison, so a forced adoption must copy
 them from a fresh read with no `--beside`.
+
+## Amendment of 2026-10-31: a relationship ends on the part that makes or answers it
+
+TASK-559.28 reverses the two refusals above: a relationship to a container is
+not a warning, and the consumer skill allows it for a whole-module dependency.
+The owner decided that a module cannot point at anything when the view is only
+that module. Its entry points can, and they need a card.
+
+The derivation does not change. A relationship that ends on the container
+itself still makes a caller and no entry point. What changes is what an author
+does with one. Measured on this repository before the repair, 70 of 114
+containers held such an end, and 9 read as no entry points although callers
+reached them.
+
+`archboard check` warns with `RELATIONSHIP_ON_CONTAINER` on a relationship from
+outside a container that ends on that container. The store still cannot tell a
+whole-module dependency from a call that belongs on a child, so the warning is
+a signal and no write refuses it. A reader keeps the frame line until the
+relationship is repaired. The author reads the source, then ends the relationship
+on the part that makes or answers the call, at the deepest level that the model
+states. If two parts make the same kind of call, the model states two
+relationships. If the container's own file makes or answers the call, the file
+gets a part, and the container stops binding that file. A part that binds the
+same path as its container takes no evidence over, because the code check holds
+that code to both.

@@ -1,10 +1,11 @@
-// What the semantics check says about one state of a canonical model. Three rules
+// What the semantics check says about one state of a canonical model. Four rules
 // read its shape: a container that gathers nothing, a root that nothing connects,
-// and a relationship between a module and a part that it holds. A shape is a
-// signal and never proves that a module has no job, so these are warnings and no
-// write reads them. No rule reads a name, a count or a folder. The fourth rule is
-// an error: a current flow with no summary breaks what every write of a flow now
-// keeps, and a reader can still read it.
+// a relationship between a module and a part that it holds, and a relationship
+// that ends on a module with parts. A shape is a signal and never proves that a
+// module has no job, so these are warnings and no write reads them. No rule reads
+// a name, a count or a folder. The fifth rule is an error: a current flow with no
+// summary breaks what every write of a flow now keeps, and a reader can still read
+// it.
 
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { containersOf } from "#shared/rules/scope.ts";
@@ -115,6 +116,21 @@ function unconnectedRoots(
 }
 
 /**
+ * Whether a relationship joins a module and a part that it holds, at any depth.
+ * @param relationship The relationship.
+ * @param relationship.from Its start.
+ * @param relationship.to Its end.
+ * @param parents Each contained module's parent.
+ * @returns True when one end holds the other.
+ */
+function joinsOwnPart(
+	{ from, to }: Pick<ModelStructure["relationships"][number], "from" | "to">,
+	parents: ReadonlyMap<string, string>,
+): boolean {
+	return containersOf(parents, to).includes(from) || containersOf(parents, from).includes(to);
+}
+
+/**
  * Warn about a relationship between a module and a part that it holds, at any depth. The nesting
  * already shows that, so a reading that opens the module draws no line for it. A call inside a
  * container starts at the part that makes it (ADR 0052).
@@ -126,10 +142,7 @@ function linesToOwnParts(
 	model: ModelStructure,
 	parents: ReadonlyMap<string, string>,
 ): VaultDiagnostic[] {
-	const owned = model.relationships.filter(
-		({ from, to }) =>
-			containersOf(parents, to).includes(from) || containersOf(parents, from).includes(to),
-	);
+	const owned = model.relationships.filter((relationship) => joinsOwnPart(relationship, parents));
 	const subject = edgeSubjects({ nodes: model.modules });
 	return model.modules.flatMap((module) =>
 		owned
@@ -141,6 +154,39 @@ function linesToOwnParts(
 				subject: subject(relationship),
 				message:
 					"It joins a module and a part inside it, which the nesting already shows, so a reading that opens the module draws no line for it. Read the source, then start or end it at the part that makes or answers the call: an edit-relationship change with source or set.to. If the source shows no such call, remove it.",
+			})),
+	);
+}
+
+/**
+ * Warn about a relationship from outside a module with parts that ends on that module. It makes a
+ * caller and no entry point, so the module's parts read as hidden (ADR 0044). The frame line stays
+ * drawn until an author repairs the relationship.
+ * @param model The modules and relationships of one state.
+ * @param parents Each contained module's parent.
+ * @returns One warning for each such relationship, on the file of the module that owns it.
+ */
+function linesOnContainers(
+	model: ModelStructure,
+	parents: ReadonlyMap<string, string>,
+): VaultDiagnostic[] {
+	const containers = new Set(parents.values());
+	const onFrame = model.relationships.filter(
+		(relationship) =>
+			(containers.has(relationship.from) || containers.has(relationship.to)) &&
+			!joinsOwnPart(relationship, parents),
+	);
+	const subject = edgeSubjects({ nodes: model.modules });
+	return model.modules.flatMap((module) =>
+		onFrame
+			.filter(({ from }) => from === module.id)
+			.map((relationship) => ({
+				severity: "warning" as const,
+				code: "RELATIONSHIP_ON_CONTAINER",
+				file: module.file,
+				subject: subject(relationship),
+				message:
+					"It ends on a module with parts, so it makes a caller and no entry point, and the module's parts read as hidden. Read the source, then end it on the part that makes or answers the call: an edit-relationship change with source or set.to. If the module's own file makes or answers it, add a part for that file first.",
 			})),
 	);
 }
@@ -180,6 +226,7 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 		...passThroughContainers(model, parents),
 		...unconnectedRoots(model, parents),
 		...linesToOwnParts(model, parents),
+		...linesOnContainers(model, parents),
 		...unexplainedFlows(model),
 	];
 }

@@ -58,6 +58,7 @@ const CHECK_SEMANTICS_HELP = [
 	"- CONTAINER_PASS_THROUGH: in a model that binds code, a module with parts and no binding, which no relationship or flow names, and whose parts no relationship or flow joins.",
 	"- ROOT_UNCONNECTED: in a model with several roots, a root with no relationship to another root. A relationship of a part inside it counts.",
 	"- CONTAINER_LINE_TO_OWN_PART: a relationship between a module and a part that it holds, at any depth. The nesting already shows it, so a reading that opens the module draws no line for it, and the panel still lists it. Start or end it at the part that makes or answers the call.",
+	"- RELATIONSHIP_ON_CONTAINER: a relationship from outside a module with parts that ends on that module. It makes a caller and no entry point, so the parts read as hidden, and its line stays on the frame. End it on the part that makes or answers the call.",
 	"",
 	"Errors on current architecture, which refuse only a write that touches the flow. A reader can still read it:",
 	"- FLOW_SUMMARY_MISSING: a flow with no summary. Read its code, then set the summary through `model edit` with an edit-flow change.",
