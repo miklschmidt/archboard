@@ -35,6 +35,8 @@ interface StateRow {
 	readonly checkpoint: string | null;
 	/** What the list says of that reading, which an exact address can outrun. */
 	readonly saved: Checkpoint | undefined;
+	/** Whether another proposal has its name, so that only its identity tells them apart. */
+	readonly shared?: boolean | undefined;
 }
 
 /** The row of the architecture that is current. */
@@ -118,7 +120,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 		() => stateRows({ states, groups, unfolded, checkpoint }),
 		[states, groups, unfolded, checkpoint],
 	);
-	const proposalRows = useMemo(() => proposals.map(proposalRow), [proposals]);
+	const proposalRows = useMemo(() => proposalRowsOf(proposals), [proposals]);
 	const lit = checkpoint ?? state ?? CURRENT;
 	return (
 		<div data-slot="model-history" className="flex flex-col">
@@ -139,18 +141,15 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 }
 
 /**
- * One proposal's row.
- * @param proposal The proposal.
- * @param proposal.id Its identity.
- * @param proposal.state What the catalogue says of it.
- * @returns The row.
+ * The rows of the proposals.
+ * @param proposals The proposals.
+ * @returns A row for each.
  */
-function proposalRow(proposal: {
-	readonly id: string;
-	readonly state: StateRow["state"];
-}): StateRow {
-	const { id, state } = proposal;
-	return {
+function proposalRowsOf(
+	proposals: readonly { readonly id: string; readonly state: StateRow["state"] }[],
+): StateRow[] {
+	const names = proposals.map(({ state }) => state?.name);
+	return proposals.map(({ id, state }) => ({
 		id,
 		parent: null,
 		branch: false,
@@ -159,7 +158,8 @@ function proposalRow(proposal: {
 		stateId: id,
 		checkpoint: null,
 		saved: undefined,
-	};
+		shared: names.indexOf(state?.name) !== names.lastIndexOf(state?.name),
+	}));
 }
 
 /**
@@ -310,32 +310,36 @@ function RecordRow(props: {
 			onOpen={open}
 			onToggle={fold}
 		>
-			<Tree.Name text={recordName(row)} />
+			<Tree.Name text={recordName(row)} title={row.state?.summary} />
 			<RecordFacts row={row} />
 		</Tree.Row>
 	);
 }
 
 /**
- * What a row says beside its name: a proposal only says when something stands in its way.
+ * What a row says beside its name: a proposal says only when something stands in its way, and
+ * what tells it from a proposal with the same name.
  * @param props The row.
  * @param props.row The row.
  * @returns The facts, or nothing.
  */
 function RecordFacts(props: { readonly row: StateRow }): JSX.Element | null {
-	const { id, state } = props.row;
-	const words = id === CURRENT ? null : recordFact(state);
+	const { id } = props.row;
+	const words = id === CURRENT ? null : recordFact(props.row);
 	return words === null ? null : <Tree.Facts>{words}</Tree.Facts>;
 }
 
 /**
  * The fact a record shows.
- * @param state What the catalogue says of it.
- * @returns The words, or null for a proposal that nothing stands in the way of.
+ * @param row The row.
+ * @returns The words, or null for a proposal with its own name that nothing stands in the way of.
  */
-function recordFact(state: StateRow["state"]): string | null {
-	if (state?.lifecycle === "draft") return standingLabel(state);
-	return (state?.lifecycle ?? "Unavailable") + standingSuffix(state);
+function recordFact(row: StateRow): string | null {
+	const { state } = row;
+	if (state?.lifecycle !== "draft")
+		return (state?.lifecycle ?? "Unavailable") + standingSuffix(state);
+	const facts = [row.shared === true ? row.id : null, standingLabel(state)];
+	return facts.filter((fact) => fact !== null).join(" · ") || null;
 }
 
 /**

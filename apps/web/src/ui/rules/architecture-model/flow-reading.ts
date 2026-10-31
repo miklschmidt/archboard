@@ -62,6 +62,8 @@ function modelSubjects(model: Model) {
 		...model.relationships,
 		...collectionSubjects(model),
 		...flowSubjects(model.collections.flatMap((collection) => collection.flows)),
+		...model.walkthroughs,
+		...model.walkthroughs.flatMap((walkthrough) => walkthrough.beats),
 	];
 }
 
@@ -116,6 +118,7 @@ function withCollectionFlows(model: Model, selected: ReadonlySet<string>): Set<s
  */
 function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string {
 	if ("name" in subject) return subject.name;
+	if ("title" in subject) return subject.title;
 	if ("question" in subject) return subject.question;
 	if ("condition" in subject) return subject.condition;
 	return subject.label ?? subject.id;

@@ -283,7 +283,10 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 			kinds,
 		);
 	}, [model.relationships, selection.ids, reveal, behavioralIds]);
-	const { settled, last } = usePanelWait(selection.ids);
+	// A selection that comes with a move explains the picture it comes with, so it waits for it.
+	const { settled, last } = usePanelWait(
+		selection.ids.size === 0 ? selection.ids : accepted.selected,
+	);
 	const panelOpen = settled.size > 0 && page === "diagram" && !keyOpen;
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	useReaderKeys(reader.onMove);

@@ -349,24 +349,25 @@ function TreeSection(props: {
 /**
  * The marker column: what kind of row this is, and what is drawn over it.
  * @param props The icon and its title, and what is drawn over it.
- * @param props.icon The icon, drawn muted.
+ * @param props.icon The icon, drawn muted, for a kind of row.
  * @param props.title What the icon says, on hover.
- * @param props.children Something drawn over the icon's corner, such as an agent at work.
+ * @param props.children What is drawn over the icon's corner, such as an agent at work, or the
+ * mark of a row with no icon.
  * @returns The column.
  */
 function TreeMarker(props: {
-	readonly icon: RemixiconComponentType;
+	readonly icon?: RemixiconComponentType | undefined;
 	readonly title?: string | undefined;
 	readonly children?: ReactNode;
 }): JSX.Element {
-	const Icon = props.icon;
+	const { icon: Icon } = props;
 	return (
 		<span
 			title={props.title}
 			style={MARKER_STYLE}
 			className="relative mr-1.5 flex h-5 shrink-0 items-center justify-center"
 		>
-			<Icon className="text-muted-foreground size-3.5" aria-hidden="true" />
+			{Icon !== undefined && <Icon className="text-muted-foreground size-3.5" aria-hidden="true" />}
 			{props.children}
 		</span>
 	);

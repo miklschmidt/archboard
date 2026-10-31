@@ -6,7 +6,9 @@ import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-
 import type { Model } from "@archboard/board/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
+import { reviewsChanges } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import { changedCount, namedField } from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 /**
@@ -94,7 +96,7 @@ function ModelComparisonLine({
 					After, with no comparison
 				</p>
 			) : (
-				<ComparisonSummary comparison={comparison} />
+				<ComparisonSummary comparison={comparison} counted={!reviewsChanges(model)} />
 			)}
 			{hasCurrent && !readsCurrent(model) && (
 				<Button
@@ -136,14 +138,17 @@ function baseName(comparison: NonNullable<Model["comparison"]>): string {
  * Comparison metadata describes the complete states before visual filtering.
  * @param props The shared runtime comparison.
  * @param props.comparison Its base and subject changes.
- * @returns The explicit base and number of changed subjects.
+ * @param props.counted Whether to count them: the Changes tab counts those of a proposal.
+ * @returns The explicit base, and the number of changed subjects.
  */
 function ComparisonSummary({
 	comparison,
+	counted,
 }: {
 	comparison: NonNullable<Model["comparison"]>;
+	counted: boolean;
 }): JSX.Element {
-	const changed = comparison.subjects.filter((subject) => subject.kind !== "unchanged");
+	const changed = changedCount(comparison);
 	return (
 		<p
 			data-slot="model-comparison"
@@ -151,8 +156,8 @@ function ComparisonSummary({
 			data-reason={comparison.reason}
 			className="text-body text-muted-foreground"
 		>
-			Compared with {baseName(comparison)} · {changed.length} changed{" "}
-			{changed.length === 1 ? "subject" : "subjects"}
+			Compared with {baseName(comparison)}
+			{counted && ` · ${changed} changed ${changed === 1 ? "subject" : "subjects"}`}
 		</p>
 	);
 }
@@ -193,25 +198,31 @@ function ModelComparisonNotice({
  * @param props The selected model and inspected subject identity.
  * @param props.model The complete runtime comparison.
  * @param props.subject The inspected canonical identity, or no subject.
+ * @param props.reference The base, which names a module that only it holds.
  * @returns Semantic change details without deriving changes from the drawing.
  */
 function ModelSubjectStanding({
 	model,
 	subject,
+	reference,
 }: {
 	model: Model;
 	subject: string | null;
+	reference?: Model | undefined;
 }): JSX.Element {
 	const against = useMemo(() => {
 		const comparison = model.comparison;
 		const change = comparison?.subjects.find((entry) => entry.id === subject);
 		if (comparison === undefined || change === undefined) return null;
+		const names = new Map(
+			[...(reference?.modules ?? []), ...model.modules].map(({ id, name }) => [id, name]),
+		);
 		return {
 			standing: change.kind,
 			against: comparison.against?.name ?? "empty planning baseline",
-			moved: change.fields.map(({ field, before, after }) => ({ field, before, after })),
+			moved: change.fields.map((field) => namedField(field, names)),
 		};
-	}, [model.comparison, subject]);
+	}, [model.comparison, model.modules, reference?.modules, subject]);
 	const open =
 		model.selectedState?.standing?.issues.filter((issue) => issue.subject === subject) ?? NO_ISSUES;
 	return <Standing against={against} open={open} code={null} />;

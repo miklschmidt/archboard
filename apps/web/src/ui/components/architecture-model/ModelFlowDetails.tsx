@@ -28,7 +28,11 @@ function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
 			{bare !== true && <h3 className="text-title font-semibold">{props.flow.name}</h3>}
-			<ModelSubjectStanding model={props.model} subject={props.flow.id} />
+			<ModelSubjectStanding
+				model={props.model}
+				subject={props.flow.id}
+				reference={props.reference}
+			/>
 			{brief !== true && bare !== true && props.flow.summary && (
 				<p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>
 			)}
@@ -84,7 +88,11 @@ function FlowStepDetails(
 			</button>
 			{selection.ids.has(step.id) && (
 				<div className="px-3 pb-2 empty:hidden">
-					<ModelSubjectStanding model={props.model} subject={step.id} />
+					<ModelSubjectStanding
+						model={props.model}
+						subject={step.id}
+						reference={props.reference}
+					/>
 				</div>
 			)}
 		</li>
