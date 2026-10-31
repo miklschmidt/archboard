@@ -7,8 +7,21 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/history/publication.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "schemaVersion": 1,
   "id": "vKEsyHFk#sw9nGtGK",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "outgoing": [
+    {
+      "order": 161000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "publicationContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
+    }
+  ]
 }

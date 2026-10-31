@@ -95,18 +95,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#IFI468Vn",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
-    },
-    {
-      "order": 224000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-read.ts",
-        "symbol": "readRequestedArchitecture"
-      },
-      "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",
-      "to": "vKEsyHFk/0T9enjhi#FlAxCoeb"
     }
   ]
 }
