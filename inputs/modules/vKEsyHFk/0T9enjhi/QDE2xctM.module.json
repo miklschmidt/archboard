@@ -45,6 +45,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
       "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
+    },
+    {
+      "order": 980030,
+      "kind": "call",
+      "label": "list the checkpoints that can pin",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
+        "symbol": "listArchitectureCheckpoints"
+      },
+      "to": "vKEsyHFk#v5jpAVBo",
+      "id": "vKEsyHFk#Wg3meI2l"
     }
   ]
 }

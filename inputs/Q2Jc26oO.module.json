@@ -27,6 +27,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#3vlSu8a3",
       "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
+    },
+    {
+      "order": 980160,
+      "kind": "call",
+      "label": "route each decoded frame",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "symbol": "createInboundRouter"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+      "id": "vKEsyHFk#gdsIiF8h"
     }
   ]
 }

@@ -86,6 +86,45 @@
       },
       "id": "vKEsyHFk/0T9enjhi#QxbSLLGA",
       "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 980000,
+      "kind": "call",
+      "label": "what is published of a checkpoint",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retain.ts",
+        "symbol": "checkpointPublication"
+      },
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l",
+      "id": "vKEsyHFk#0HzNfqV6"
+    },
+    {
+      "order": 980020,
+      "kind": "call",
+      "label": "capture the foreign pins",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retain.ts",
+        "symbol": "captureReferencePins"
+      },
+      "to": "vKEsyHFk/0T9enjhi#QDE2xctM",
+      "id": "vKEsyHFk#bWBjHjjK"
+    },
+    {
+      "order": 980060,
+      "kind": "call",
+      "label": "the walkthrough targets it keeps",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retain.ts",
+        "symbol": "walkthroughDependencies"
+      },
+      "to": "vKEsyHFk#v5jpAVBo",
+      "id": "vKEsyHFk#HnfPersG"
     }
   ]
 }

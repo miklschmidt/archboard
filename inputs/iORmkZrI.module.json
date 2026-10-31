@@ -51,6 +51,20 @@
       "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
     },
     {
+      "order": 33000,
+      "kind": "event",
+      "label": "each socket names its tab, and its close forgets it",
+      "description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "noteTabSession"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
       "order": 45000,
       "kind": "event",
       "description": "one socket per page",
@@ -64,18 +78,17 @@
       "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
-      "order": 33000,
-      "kind": "event",
-      "label": "each socket names its tab, and its close forgets it",
-      "description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
-      "emphasis": "normal",
+      "order": 980210,
+      "kind": "call",
+      "label": "send the report",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
-        "symbol": "noteTabSession"
+        "path": "apps/web/src/ui/clients/pane-session/pane-report-sender.ts",
+        "symbol": "reportPane"
       },
-      "id": "vKEsyHFk/9ncuT5DP#egDoJ9fH",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+      "to": "vKEsyHFk#ERy2jAwu",
+      "id": "vKEsyHFk#2UrR4Yp6"
     }
   ]
 }

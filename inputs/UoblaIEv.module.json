@@ -23,6 +23,32 @@
       },
       "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
       "to": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "order": 980220,
+      "kind": "render",
+      "label": "the subtitles toggle",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "SubtitlesToggle"
+      },
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+      "id": "vKEsyHFk#tJGMgOeT"
+    },
+    {
+      "order": 980230,
+      "kind": "render",
+      "label": "the voice control",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "VoiceControl"
+      },
+      "to": "vKEsyHFk#ZTh8T7Ym",
+      "id": "vKEsyHFk#pzWBfyor"
     }
   ]
 }

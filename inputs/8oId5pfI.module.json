@@ -24,6 +24,58 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#V4rI4i48",
       "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz"
+    },
+    {
+      "order": 980240,
+      "kind": "call",
+      "label": "architecture marks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "architecture.paint_architecture"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP",
+      "id": "vKEsyHFk#xV0HwjdR"
+    },
+    {
+      "order": 980250,
+      "kind": "call",
+      "label": "sequence marks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "paint_sequence"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+      "id": "vKEsyHFk#rN5226KV"
+    },
+    {
+      "order": 980260,
+      "kind": "call",
+      "label": "the theme",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "Palette"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+      "id": "vKEsyHFk#0wPxGNoW"
+    },
+    {
+      "order": 980270,
+      "kind": "call",
+      "label": "standing marks",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "Standings"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "id": "vKEsyHFk#ETQA4rnI"
     }
   ]
 }

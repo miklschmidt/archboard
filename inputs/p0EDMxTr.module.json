@@ -88,6 +88,19 @@
       },
       "id": "vKEsyHFk#3ooGgy80",
       "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "order": 980280,
+      "kind": "render",
+      "label": "a narrative beside the reader",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "ModelWalkthroughReader"
+      },
+      "to": "vKEsyHFk/yejBBUFY#r5MuZktA",
+      "id": "vKEsyHFk#7lMq2csR"
     }
   ]
 }
