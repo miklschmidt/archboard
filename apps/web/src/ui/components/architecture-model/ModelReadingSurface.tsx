@@ -105,10 +105,7 @@ function ReadingCaption(props: {
 	const { focus, grammar, setFocus } = location;
 	const clearFocus = useCallback((): void => setFocus(null), [setFocus]);
 	return (
-		<ModelCaption
-			model={accepted.shown.model}
-			projection={accepted.shown.projection}
-		>
+		<ModelCaption model={accepted.shown.model} projection={accepted.shown.projection}>
 			{grammar === "architecture" && focus !== null && (
 				<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clearFocus}>
 					Clear focus ({focus.length})

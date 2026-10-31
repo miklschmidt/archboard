@@ -490,7 +490,9 @@ function drawingContent(
  */
 function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return card.groups === undefined ? { ...named, door } : { ...named, door, doorGroups: card.groups };
+	return card.groups === undefined
+		? { ...named, door }
+		: { ...named, door, doorGroups: card.groups };
 }
 
 /**
