@@ -1,6 +1,6 @@
 import { useCallback, useMemo, type JSX } from "react";
 
-import type { ModelFlow, projectModel } from "@archboard/board/content";
+import type { ModelFlow } from "@archboard/board/content";
 import { ModelChoiceList } from "#ui/components/architecture-model/ModelChoiceList.tsx";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
 
@@ -14,9 +14,8 @@ type Representation = (typeof REPRESENTATIONS)[number]["value"];
 
 /** Inputs for the flows. */
 interface ModelFlowsProps {
-	readonly content: ReturnType<typeof projectModel>["depicted"];
-	/** The flows that concern the open scope. */
-	readonly near: readonly ModelFlow[];
+	/** Every flow of the model, whatever is open. */
+	readonly flows: readonly ModelFlow[];
 	/** The name of the collection that holds each flow. */
 	readonly collections: ReadonlyMap<string, string>;
 	/** The flow on screen. */
@@ -32,11 +31,7 @@ interface ModelFlowsProps {
  * @returns The list.
  */
 function ModelFlows(props: ModelFlowsProps): JSX.Element {
-	const { content, near, collections, flow, grammar, onChoose, onGrammar } = props;
-	const rest = useMemo(
-		() => content.flows.filter((entry) => !near.includes(entry)),
-		[content.flows, near],
-	);
+	const { flows, collections, flow, grammar, onChoose, onGrammar } = props;
 	const choose = useCallback(
 		(entry: ModelFlow, beside: boolean): void => onChoose(entry.id, beside),
 		[onChoose],
@@ -61,9 +56,7 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 	return (
 		<ModelChoiceList
 			label="Flows"
-			near={near}
-			rest={rest}
-			restLabel="All flows"
+			entries={flows}
 			lit={grammar === "architecture" ? null : flow}
 			attribute="data-flow-id"
 			onChoose={choose}

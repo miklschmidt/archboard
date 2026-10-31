@@ -117,7 +117,7 @@ function walkFact(walk: ChangeWalk): string | undefined {
  */
 function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, branches, flows, walkthroughs, choices, walk } = reader;
+	const { model, location, structure, tree, branches, choices, walk } = reader;
 	const { opened, depicted } = structure;
 	const find = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState("");
@@ -155,8 +155,8 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 			<ModelColumn.Destinations
 				destination={reader.destination}
 				onDestination={reader.onDestination}
-				flows={flows.length}
-				walkthroughs={walkthroughs.length}
+				flows={depicted.flows.length}
+				walkthroughs={model.walkthroughs.length}
 				changes={walkFact(walk)}
 				walker={walker}
 				offered={offeredBy(model, walk)}
@@ -174,8 +174,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				</ModelColumn.List>
 				<ModelColumn.List value="flows">
 					<ModelFlows
-						content={depicted}
-						near={flows}
+						flows={depicted.flows}
 						collections={collections}
 						flow={location.flow}
 						grammar={location.grammar}
@@ -184,7 +183,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					/>
 				</ModelColumn.List>
 				<ModelColumn.List value="walkthroughs">
-					<ModelWalkthroughs all={model.walkthroughs} near={walkthroughs} />
+					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
 				</ModelColumn.List>
 				{walk.list !== null && (
 					<ModelColumn.List value="changes">

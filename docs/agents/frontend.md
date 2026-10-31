@@ -333,9 +333,16 @@ It holds its width under About, which lies over it, so the picture keeps its cam
 `ModelPanelScope` says what is open while nothing is selected, through the same `scopeHead` as About.
 `ModelPanelSubject` says what the selection is, and `selectedSubject` decides which subject that is for the panel and for About.
 A row of the panel is an action. Long lists and evidence live on `ModelAbout`, which names the open scope or the selected subject.
+`ModelPanelContext` stands under what the panel says, in the same scroll, and `contextOf` decides what it lists.
+A row opens its flow or walkthrough through the same choice as Find, so the left column follows it.
+The left tabs list the whole model, and only the panel follows what a reader looks at.
 `ModelLegend` stands at the foot of the panel, outside the keyed subject, so a new subject does not redraw it.
 It owns the marks, and `Filter` puts a visibility switch on each line type that a reader can hide.
 A group's tag takes `--tag` from `paletteTag`, and the `group-tag` utility in `app.css` holds its one recipe.
+`ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
+A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
+A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
+`useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
 The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.

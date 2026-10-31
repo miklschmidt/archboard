@@ -6,9 +6,12 @@ import { ModelAbout, scopeHead } from "#ui/components/architecture-model/ModelAb
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import { ModelCaption } from "#ui/components/architecture-model/ModelCaption.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
+import { ModelEngine } from "#ui/components/architecture-model/ModelEngine.tsx";
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
+import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
 import { ModelLegend } from "#ui/components/architecture-model/ModelLegend.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
+import { ModelPanelContext } from "#ui/components/architecture-model/ModelPanelContext.tsx";
 import {
 	ModelPanelActions,
 	ModelPanelScope,
@@ -28,6 +31,7 @@ import {
 	collectionSubjects,
 	walkthroughSubjects,
 } from "#ui/rules/architecture-model/flow-reading.ts";
+import { scopeSubjects, walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
 import { selectedSubject } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -135,21 +139,50 @@ function ReadingCaption(props: {
 }
 
 /**
- * What the marks of the picture on screen mean.
+ * What the marks of the picture on screen mean, and what lays out a picture of the structure.
  * @param props The reader.
  * @param props.reader The reader.
- * @returns The legend.
+ * @returns The legend and the engine.
  */
 function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 	const { accepted, location } = props.reader;
 	const { shown, scene } = accepted;
+	const picture = scene?.picture.key ?? null;
 	return (
-		<ModelLegend
-			model={shown.model}
-			projection={shown.projection}
-			picture={scene?.picture.key ?? null}
-			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
-			onToggle={location.toggleFilter}
+		<>
+			<ModelLegend
+				model={shown.model}
+				projection={shown.projection}
+				picture={picture}
+				filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
+				onToggle={location.toggleFilter}
+			/>
+			{scene?.layout !== undefined && <ModelEngine />}
+		</>
+	);
+}
+
+/**
+ * What touches what the panel explains.
+ * @param props The reader and the selection.
+ * @param props.reader The reader.
+ * @param props.selected What the panel explains.
+ * @returns The lists.
+ */
+function ReadingContext(props: {
+	readonly reader: Reader;
+	readonly selected: ReadonlySet<string>;
+}): JSX.Element {
+	const { accepted, choices } = props.reader;
+	const { model, projection, reading } = accepted.shown;
+	return (
+		<ModelPanelContext
+			model={model}
+			projection={projection}
+			selected={props.selected}
+			flow={reading.grammar === "architecture" ? null : reading.flow}
+			onFlow={choices.findFlow}
+			onWalkthrough={choices.findWalkthrough}
 		/>
 	);
 }
@@ -160,17 +193,20 @@ interface ReadingPanelProps {
 	readonly code: ReturnType<typeof useModelCodeFindings>;
 	readonly actions: SelectionActions;
 	readonly onReveal: () => void;
+	/** Open the interface section of About. */
+	readonly onAbout: () => void;
 }
 
 /**
- * The column beside the picture: what is selected, or else what is open, over the legend.
+ * The column beside the picture: what is selected, or else what is open, and what touches it,
+ * over the legend and the engine.
  * @param props The surface and what the panel explains.
  * @returns The panel.
  */
 function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const { surface, code } = props;
 	const { reader } = surface;
-	const { accepted, selection, tree, location } = reader;
+	const { accepted, selection, tree, location, choices } = reader;
 	const { shown } = accepted;
 	const { model, projection } = shown;
 	const scope = projection.opened;
@@ -179,6 +215,9 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const selecting = ids.size > 0;
 	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);
 	const head = scopeHead({ model, scope, tree, projection });
+	const context = <ReadingContext reader={reader} selected={ids} />;
+	const { onAbout } = props;
+	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
 	const subject = {
 		vault: reader.vault,
 		paneId: surface.paneId,
@@ -192,6 +231,8 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		onRevealFlow: location.openFlow,
 		code: code.reading,
 		pathOf,
+		context,
+		line,
 	};
 	return (
 		<ModelPanel onClose={selecting ? selection.clear : undefined} covered={reader.page === "about"}>
@@ -199,7 +240,14 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 				{selecting ? (
 					<ModelPanelSubject {...subject} />
 				) : (
-					<ModelPanelScope name={head.name} description={head.description ?? head.lead} />
+					<ModelPanelScope name={head.name} description={head.description ?? head.lead}>
+						<ModelInterfaceLine
+							{...line}
+							inspection={projection.inspection}
+							nodes={projection.complete.nodes}
+						/>
+						{context}
+					</ModelPanelScope>
 				)}
 			</ModelPanel.Subject>
 			<ReadingLegend reader={reader} />
@@ -306,6 +354,11 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	useReaderKeys(reader.onMove);
 	const about = aboutKey(reader);
 	const place = useAboutPlace(about);
+	const { onPage } = reader;
+	const onInterface = useCallback((): void => {
+		place.ask("interface");
+		onPage("about");
+	}, [place, onPage]);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
 			<div
@@ -318,7 +371,13 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 			>
 				<ReadingCaption reader={reader} comparison={props.comparison?.(shown.model)} />
 				<ReadingPicture surface={props} warnings={code.warnings}>
-					<ReadingPanel surface={props} code={code} actions={actions} onReveal={revealSelection} />
+					<ReadingPanel
+						surface={props}
+						code={code}
+						actions={actions}
+						onReveal={revealSelection}
+						onAbout={onInterface}
+					/>
 				</ReadingPicture>
 				{page === "about" && (
 					<ReadingAbout
@@ -384,6 +443,10 @@ function ReadingAbout(props: {
 	const { select } = selection;
 	const { findModule } = choices;
 	const { nodes } = shown.projection.content;
+	const walkthroughs = useMemo(
+		() => walkthroughsAbout(shown.model, scopeSubjects(shown.projection.opened)),
+		[shown.model, shown.projection.opened],
+	);
 	const onShow = useCallback(
 		(id: string | null): void => {
 			// A module inside a part opens that part, because this picture does not draw it.
@@ -419,7 +482,7 @@ function ReadingAbout(props: {
 			code={code.reading}
 			onShow={onShow}
 			appearances={appearances}
-			walkthroughs={reader.walkthroughs}
+			walkthroughs={walkthroughs}
 			tree={reader.tree}
 			place={props.place}
 			reducedMotion={surface.reducedMotion}

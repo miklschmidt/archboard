@@ -51,8 +51,24 @@ function crossing(
 }
 
 /**
+ * Arrive at a part: the walk has reached it and all it holds.
+ * @param walk The walk under way.
+ * @param part The part.
+ * @param hop Which hop this is.
+ * @param arrived The parts this hop arrived at, which this adds to.
+ */
+function arrive(walk: Walk, part: string, hop: number, arrived: Set<string>): void {
+	const { wiring, hops } = walk;
+	for (const one of subtreeOf(wiring.nodes, part)) {
+		if (hops.has(one)) continue;
+		hops.set(one, hop);
+		arrived.add(one);
+	}
+}
+
+/**
  * One hop of the walk: every relationship that leaves the frontier is reached,
- * and so is the part it arrives at.
+ * and so are the part it arrives at and what that part holds.
  * @param walk The walk under way.
  * @param frontier The parts the last hop arrived at.
  * @param hop Which hop this is, counting from one.
@@ -65,10 +81,7 @@ function stepOnce(walk: Walk, frontier: ReadonlySet<string>, hop: number): Set<s
 		const { leaves, arrives } = crossing(edge, way);
 		if (!frontier.has(leaves) || hops.has(edge.id)) continue;
 		hops.set(edge.id, hop);
-		if (!hops.has(arrives)) {
-			hops.set(arrives, hop);
-			arrived.add(arrives);
-		}
+		arrive(walk, arrives, hop, arrived);
 	}
 	return arrived;
 }

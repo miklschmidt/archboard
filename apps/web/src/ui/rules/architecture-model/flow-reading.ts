@@ -11,17 +11,29 @@ import { projectFlow, type Model, type ModelFlow } from "@archboard/board/conten
 function relevantFlows(content: VariantContent, subjects: ReadonlySet<string>): ModelFlow[] {
 	const { flows } = content;
 	if (subjects.size === 0) return flows;
+	const seeds = reachOf(content, subjects);
+	const parents = new Map(content.nodes.map((module) => [module.id, module.parent]));
+	return flows.filter((flow) => flow.participants.some((id) => touchesScope(id, parents, seeds)));
+}
+
+/**
+ * What a selection reaches beyond itself: a relationship reaches its two ends, and a flow or a
+ * step reaches every participant of its flow.
+ * @param content The complete depicted architecture.
+ * @param subjects The selected subjects.
+ * @returns The subjects with what they reach.
+ */
+function reachOf(content: VariantContent, subjects: ReadonlySet<string>): ReadonlySet<string> {
 	const seeds = new Set(subjects);
 	for (const edge of content.edges.filter((entry) => subjects.has(entry.id))) {
 		seeds.add(edge.from);
 		seeds.add(edge.to);
 	}
-	for (const flow of flows) {
+	for (const flow of content.flows) {
 		if (flowSubjects([flow]).some((subject) => subjects.has(subject.id)))
 			for (const id of flow.participants) seeds.add(id);
 	}
-	const parents = new Map(content.nodes.map((module) => [module.id, module.parent]));
-	return flows.filter((flow) => flow.participants.some((id) => touchesScope(id, parents, seeds)));
+	return seeds;
 }
 
 /**
@@ -133,7 +145,9 @@ function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string 
 }
 
 export {
+	reachOf,
 	relevantFlows,
+	touchesScope,
 	projectFlow,
 	flowCollections,
 	flowSubjects,

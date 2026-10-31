@@ -166,7 +166,7 @@ test("diagram modes require a relevant flow and restore the prior architecture r
 		await browser.eval<string[]>(
 			`[...document.querySelectorAll('[data-flow-id]')].map(node => node.getAttribute('data-flow-id')).sort()`,
 		),
-	).toEqual(["Shop#Request", "Shop#Retry"]);
+	).toEqual(["Shop#Other", "Shop#Request", "Shop#Retry"]);
 	await browser.run(["click", '[data-flow-id="Shop#Request"]']);
 	await pollUntil(
 		() => drawnSubjects(browser),

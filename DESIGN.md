@@ -396,13 +396,31 @@ selected, it says the open module's name and description, or at the roots the mo
 name and the summary of its state. A flow reading says the flow. With a selection, it
 explains the selected thing, and a click on a card lights the card and fills the panel at
 once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row
-answers the pointer with a change of tone and nothing else, and it also lights its
-subject on the picture. Its actions stand at the foot of the column, under the legend.
+answers the pointer with a change of tone and nothing else, and a row of a subject on the
+picture also lights it. Its actions stand at the foot of the column, under the legend.
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
+Under what it says, the panel lists the flows and the walkthroughs that touch the
+selection, or else the open module. At the roots with nothing selected it lists neither.
+Each list has a count, four rows and a line that says how many more. A flow's row ends
+with its collection and a walkthrough's with its steps, and the flow on screen takes the
+tone of a chosen row.
+
+For a module with parts, open or selected, an `Interface` section under its head holds
+one quiet line: entries, hidden, callers, `to module` when callers reach the module itself,
+and pass-through. Each count selects what it counts on the module's picture, and a count
+of none is disabled. `Open in About`, a 24px outlined control in the heading, opens the
+Interface section of About. No count takes a warning color, nothing combines the counts,
+and the picture gains no permanent mark. With one module selected, the head of
+`Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward`
+and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle
+takes the primary mark, and the picture grades what it reached, each further hop fainter.
+
 The legend stands at the foot of the panel, above the actions, and needs no click. A long
-subject scrolls above it, and the whole legend stays on screen. A heading row holds
+subject and its lists scroll above it, and the whole legend stays on screen. Under the
+legend on a structural reading, one row holds `Layout engine` and a switch between Blocks
+and Tracks. A heading row holds
 `Legend` and the control `Filter`. Under it stand the kinds in two columns, a thin rule,
 the line types in two columns, a thin rule, and the groups. A section with nothing to
 show is absent. The legend lists what the reading draws and what a reader hid. A hidden

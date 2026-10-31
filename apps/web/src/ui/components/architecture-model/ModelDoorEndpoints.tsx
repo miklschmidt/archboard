@@ -14,12 +14,10 @@ interface ModelDoorEndpointsProps {
 	model: Model;
 	projection: Projection;
 	onSelect: ModelSelection["select"];
-	/** Whether each list shows whole, where nothing limits the room. */
-	whole?: boolean;
 }
 
 /**
- * A door lists the real endpoints that its name stands for.
+ * About lists the whole of the real endpoints that a door's name stands for.
  * @param props The selected module and the reading it stands in.
  * @returns Its relationships grouped by the child that reaches them, or nothing for another module.
  */
@@ -36,9 +34,9 @@ function ModelDoorEndpoints(props: ModelDoorEndpointsProps): JSX.Element | null 
 					count={edges.length}
 					slot="model-door-part"
 				>
-					<ModelPanel.Rows items={edges} whole={props.whole}>
-						{(edge) => <Endpoint key={edge.id} {...props} edge={edge} />}
-					</ModelPanel.Rows>
+					{edges.map((edge) => (
+						<Endpoint key={edge.id} {...props} edge={edge} />
+					))}
 				</ModelPanel.Section>
 			))}
 		</div>

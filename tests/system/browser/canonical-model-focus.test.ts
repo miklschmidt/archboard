@@ -95,7 +95,7 @@ test("focus draws the selected subjects, with the rest as doors", async () => {
 	);
 	await openModule(browser, "Shop#Gateway");
 	await openModule(browser, "Shop#Handler");
-	await pick(browser, "Shop#Gateway");
+	await pick(browser, "Shop#Gateway", { toggle: true });
 	await pick(browser, "Shop#Decode", { toggle: true });
 	await pollUntil(
 		() =>

@@ -164,6 +164,7 @@ function Head(props: { readonly title: ReactNode; readonly children?: ReactNode 
  * @param props.title What it lists.
  * @param props.count How many it lists.
  * @param props.slot Where a test finds it.
+ * @param props.action What acts on the list, at the end of its heading.
  * @param props.children Its rows.
  * @returns The section.
  */
@@ -171,16 +172,20 @@ function Section(props: {
 	readonly title: string;
 	readonly count?: number | undefined;
 	readonly slot: string;
+	readonly action?: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
 		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
-			<h4 className="text-body text-muted-foreground flex items-baseline gap-2 font-semibold">
-				{props.title}
-				{props.count !== undefined && (
-					<span className="text-technical font-mono font-normal">{props.count}</span>
-				)}
-			</h4>
+			<div className="flex items-center justify-between gap-2">
+				<h4 className="text-body text-muted-foreground flex items-baseline gap-2 font-semibold">
+					{props.title}
+					{props.count !== undefined && (
+						<span className="text-technical font-mono font-normal">{props.count}</span>
+					)}
+				</h4>
+				{props.action}
+			</div>
 			<ul className="-mx-2 flex flex-col">{props.children}</ul>
 		</section>
 	);
@@ -190,19 +195,19 @@ function Section(props: {
  * The rows of a list. Most lists show whole, and a long one offers the rest in place.
  * @param props The list.
  * @param props.items What it lists.
- * @param props.whole Whether it shows whole from the start.
+ * @param props.limit How many rows it shows before it offers the rest.
  * @param props.children One row.
  * @returns The rows.
  */
 function Rows<Item>(props: {
 	readonly items: readonly Item[];
-	readonly whole?: boolean | undefined;
+	readonly limit?: number | undefined;
 	readonly children: (item: Item) => ReactNode;
 }): JSX.Element {
-	const { items, children } = props;
-	const [whole, setWhole] = useState(props.whole === true);
+	const { items, limit = ROWS_SHOWN, children } = props;
+	const [whole, setWhole] = useState(false);
 	const showAll = useCallback((): void => setWhole(true), []);
-	const shown = whole ? items : items.slice(0, ROWS_SHOWN);
+	const shown = whole ? items : items.slice(0, limit);
 	return (
 		<>
 			{shown.map((item) => children(item))}
@@ -246,7 +251,7 @@ function Row({
 				type="button"
 				{...button}
 				className={cn(
-					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent rounded-control flex min-h-7 w-full gap-x-2 px-2 py-1 text-left",
+					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 w-full gap-x-2 px-2 py-1 text-left",
 					stacked ? "flex-col" : "items-baseline",
 				)}
 			>

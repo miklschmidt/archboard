@@ -348,13 +348,10 @@ async function openDestination(browser: AgentBrowserSession, destination: string
 
 export { openDestination };
 
-/** Bring a row of a list on screen, opening the row that holds the rest while it hides there. */
+/** Wait for a row of a list. */
 async function listedRow(browser: AgentBrowserSession, row: string): Promise<void> {
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector(${JSON.stringify(row)}) !== null || void document.querySelector('[data-row-id="rest"][aria-expanded="false"]')?.click()`,
-			),
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(row)}) !== null`),
 		Boolean,
 		`the row ${row}`,
 	);

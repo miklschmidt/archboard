@@ -59,7 +59,7 @@ interface ModelAboutProps extends ModelSelectionDetailsProps {
 	/** What can be done with the selection. */
 	readonly children: ReactNode;
 	/** The walkthroughs of the open scope. */
-	readonly walkthroughs: Reader["walkthroughs"];
+	readonly walkthroughs: readonly ModelSelectionDetailsProps["model"]["walkthroughs"][number][];
 	readonly tree: Reader["tree"];
 	readonly place: AboutPlace;
 	readonly onReveal: () => void;
@@ -183,7 +183,12 @@ function interfaceSection(props: ScopePageProps): AboutPageSection | null {
 		"Interface",
 		RiInputMethodLine,
 		undefined,
-		<ModelInterface model={model} projection={projection} onSelect={selection.select} />,
+		<ModelInterface
+			model={model}
+			complete={projection.complete}
+			inspection={projection.inspection}
+			onSelect={selection.select}
+		/>,
 	);
 }
 

@@ -1,4 +1,4 @@
-import type { JSX, ReactNode } from "react";
+import { useMemo, type ComponentProps, type JSX, type ReactNode } from "react";
 import type { Model } from "@archboard/board/content";
 import {
 	ConnectionSummary,
@@ -7,9 +7,9 @@ import {
 } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/components/architecture-model/ModelCollectionDetails.tsx";
-import { ModelDoorEndpoints } from "#ui/components/architecture-model/ModelDoorEndpoints.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
 import { ModelHiddenSelection } from "#ui/components/architecture-model/ModelHiddenSelection.tsx";
+import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import {
 	OpenModule,
@@ -18,17 +18,21 @@ import {
 } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModuleOpenCode } from "#ui/components/architecture-model/ModuleNavigation.tsx";
+import { TraceToggle } from "#ui/components/semantic-board-canvas/TraceToggle.tsx";
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
+import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import {
 	isRemoved,
 	linesOf,
+	moduleInterface,
 	moduleSource,
 	selectedSubject,
 	type Connection,
 	type SelectedSubject,
 } from "#ui/rules/architecture-model/selected-subject.ts";
+import type { Way } from "#ui/rules/semantic-board-canvas/board/reach.ts";
 
 /** Inputs for what the panel says of a selection. */
 interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
@@ -36,18 +40,24 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	/** The code path of a module, when it has one. */
 	readonly pathOf: (id: string) => string | undefined;
 	readonly onReveal: () => void;
+	/** What stands under the subject's own details: what touches it. */
+	readonly context: ReactNode;
+	/** What the interface line of a module does. */
+	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
 }
 
 /**
- * What the panel says while nothing is selected: what is open.
+ * What the panel says while nothing is selected: what is open, and what touches it.
  * @param props What is open.
  * @param props.name Its name.
  * @param props.description What it says of itself.
+ * @param props.children What touches it.
  * @returns The body.
  */
 function ModelPanelScope(props: {
 	readonly name: ReactNode;
 	readonly description: string | undefined;
+	readonly children: ReactNode;
 }): JSX.Element {
 	return (
 		<ModelPanel.Body slot="model-panel-scope">
@@ -55,6 +65,7 @@ function ModelPanelScope(props: {
 			{Boolean(props.description) && (
 				<p className="text-control font-normal whitespace-pre-wrap">{props.description}</p>
 			)}
+			{props.children}
 		</ModelPanel.Body>
 	);
 }
@@ -125,6 +136,7 @@ function OtherSubject(
 				model={model}
 				reference={projection.reference}
 				onSelect={select}
+				context={props.context}
 			>
 				{warnings}
 			</ConnectionSummary>
@@ -153,12 +165,13 @@ function OtherSubject(
 					slot="model-selected-subjects"
 				/>
 			)}
+			{props.context}
 		</ModelPanel.Body>
 	);
 }
 
 /**
- * What the panel says of one module: what it is, how it stands, and what it touches.
+ * What the panel says of one module: what it is, how it stands, its lines, and what touches it.
  * @param props The module and its reading.
  * @returns The body.
  */
@@ -167,19 +180,19 @@ function ModuleSubject(
 ): JSX.Element {
 	const { module, model, projection, selection } = props;
 	const source = moduleSource(model, projection, module.id);
-	const door = projection.context.some((entry) => entry.id === module.id);
+	const inspection = useMemo(() => moduleInterface(projection, module.id), [projection, module.id]);
 	return (
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
+			<ModelInterfaceLine
+				{...props.line}
+				inspection={inspection}
+				nodes={projection.complete.nodes}
+			/>
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} brief />
 			<ModelSubjectStanding model={model} subject={module.id} reference={projection.reference} />
-			<ModelDoorEndpoints
-				door={module.id}
-				model={source}
-				projection={projection}
-				onSelect={selection.select}
-			/>
-			{!door && <ModuleLines {...props} model={source} id={module.id} />}
+			<ModuleLines {...props} model={source} id={module.id} />
+			{props.context}
 		</ModelPanel.Body>
 	);
 }
@@ -218,29 +231,44 @@ function ModuleLines(props: ModelPanelSubjectProps & { readonly id: string }): J
 	const { sends, receives } = linesOf(props.projection, props.id);
 	return (
 		<>
-			<LineList {...props} title="Sends to" slot="model-panel-sends" lines={sends} />
-			<LineList {...props} title="Receives from" slot="model-panel-receives" lines={receives} />
+			<LineList {...props} title="Sends to" slot="model-panel-sends" lines={sends} way="onward" />
+			<LineList
+				{...props}
+				title="Receives from"
+				slot="model-panel-receives"
+				lines={receives}
+				way="back"
+			/>
 		</>
 	);
 }
 
+/** One direction of a module's lines. */
+interface LineListProps extends ModelPanelSubjectProps {
+	readonly id: string;
+	readonly title: string;
+	readonly slot: string;
+	readonly lines: readonly Connection[];
+	/** Which way a trace of these lines goes. */
+	readonly way: Way;
+}
+
 /**
- * One direction of a module's lines.
+ * One direction of a module's lines, and the control that traces how far it reaches.
  * @param props The module and the lines.
  * @returns The list, or nothing when it has no line.
  */
-function LineList(
-	props: ModelPanelSubjectProps & {
-		readonly id: string;
-		readonly title: string;
-		readonly slot: string;
-		readonly lines: readonly Connection[];
-	},
-): JSX.Element | null {
-	const { lines } = props;
+function LineList(props: LineListProps): JSX.Element | null {
+	const { id, way, lines, model, projection } = props;
+	const { parts } = useMemo(() => pictureReach(projection, id, way), [projection, id, way]);
+	const name = moduleName(model, id, projection.reference);
+	const trace = useMemo(
+		() => <TraceToggle part={id} name={name} way={way} parts={parts} />,
+		[id, name, way, parts],
+	);
 	if (lines.length === 0) return null;
 	return (
-		<ModelPanel.Section title={props.title} count={lines.length} slot={props.slot}>
+		<ModelPanel.Section title={props.title} count={lines.length} slot={props.slot} action={trace}>
 			<ModelPanel.Rows items={lines}>
 				{(connection) => <LineRow key={connection.line.id} {...props} connection={connection} />}
 			</ModelPanel.Rows>

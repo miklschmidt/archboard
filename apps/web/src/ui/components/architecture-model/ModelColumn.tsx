@@ -13,9 +13,9 @@ interface ColumnDestinationsProps {
 	readonly onDestination: (destination: Destination) => void;
 	/** The destinations the reading has. */
 	readonly offered: readonly Destination[];
-	/** How many flows the open scope has. */
+	/** How many flows the model has. */
 	readonly flows?: number;
-	/** How many walkthroughs the open scope has. */
+	/** How many walkthroughs the model has. */
 	readonly walkthroughs?: number;
 	/** What the Changes tab says of the walk, while a proposal is read. */
 	readonly changes?: string | undefined;
@@ -71,7 +71,7 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 
 /**
  * Put a reader's destinations in the left column while its pane has focus: tabs with the
- * count of the open scope on Flows and Walkthroughs. A proposal adds Changes on a row of its
+ * count of the whole model on Flows and Walkthroughs, so a list here never changes under a reader. A proposal adds Changes on a row of its
  * own, because five tabs do not fit the column, and the walk stands at the end of that row.
  * @param props The destination on screen and the lists.
  * @returns The destinations, or nothing while another pane has focus.

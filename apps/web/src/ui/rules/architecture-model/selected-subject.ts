@@ -1,6 +1,8 @@
+import { inspectContainer } from "@archboard/board/container-interface";
 import type { Model, projectModel } from "@archboard/board/content";
 
 type Projection = ReturnType<typeof projectModel>;
+type ModuleInterface = NonNullable<Projection["inspection"]>;
 type Connection = Projection["connections"][number];
 type Relationship = Connection["joins"][number];
 type Parents = ReadonlyMap<string, string | undefined>;
@@ -120,6 +122,26 @@ function isRemoved(projection: Projection, id: string): boolean {
 }
 
 /**
+ * Whether a subject is a door of the reading: a module outside it that a line reaches.
+ * @param projection The reading.
+ * @param id The subject.
+ * @returns True for a door.
+ */
+function isDoor(projection: Projection, id: string): boolean {
+	return projection.context.some((module) => module.id === id);
+}
+
+/**
+ * Whether a door leads anywhere: a comparison can draw a module that its state removed.
+ * @param projection The reading.
+ * @param id The subject.
+ * @returns True for a door of a module that the state holds.
+ */
+function isOpenDoor(projection: Projection, id: string): boolean {
+	return isDoor(projection, id) && !isRemoved(projection, id);
+}
+
+/**
  * Whether a module is another one or holds it, as a line's end holds a relationship's real end.
  * @param parents Each module's parent.
  * @param id The module.
@@ -233,12 +255,28 @@ function moduleSource(model: Model, projection: Projection, id: string): Model {
 	return isRemoved(projection, id) ? (projection.reference ?? model) : model;
 }
 
+/**
+ * What a module offers the rest of the model.
+ * @param projection The reading.
+ * @param id The module.
+ * @returns Its interface facts, or nothing for a module the selected state does not hold.
+ */
+function moduleInterface(projection: Projection, id: string): ModuleInterface | undefined {
+	const { complete } = projection;
+	const module = complete.nodes.find((one) => one.id === id);
+	return module === undefined ? undefined : inspectContainer(complete, module);
+}
+
 export {
+	isDoor,
+	isOpenDoor,
 	isRemoved,
 	linesOf,
+	moduleInterface,
 	moduleSource,
 	relationshipsOf,
 	selectedSubject,
 	type Connection,
+	type ModuleInterface,
 	type SelectedSubject,
 };
