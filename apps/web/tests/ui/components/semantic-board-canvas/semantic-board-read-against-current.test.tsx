@@ -115,7 +115,7 @@ test("a part only the current variant has stands removed on the historical one, 
 
 	expect(slot("semantic-inspector")?.textContent).toContain("Edit Queue");
 	expect(standing()).toBe("removed");
-	expect(slot("semantic-inspector-standing")?.textContent).toContain("as it is");
+	expect(slot("semantic-inspector-against")?.textContent).toContain("as it is");
 });
 
 test("a part only history has stands added on the historical variant", async () => {
