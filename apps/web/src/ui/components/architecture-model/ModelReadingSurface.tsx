@@ -20,7 +20,11 @@ import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-expl
 import { usePanelWait } from "#ui/hooks/architecture-model/use-panel-wait.ts";
 import { useReaderKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
-import { flowSubjects, collectionSubjects } from "#ui/rules/architecture-model/flow-reading.ts";
+import {
+	flowSubjects,
+	collectionSubjects,
+	walkthroughSubjects,
+} from "#ui/rules/architecture-model/flow-reading.ts";
 import { selectedSubject } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -47,10 +51,10 @@ function useBehavioralIds(reader: Reader): ReadonlySet<string> {
 	const { model, structure, comparison } = reader;
 	const { flows } = structure.depicted;
 	return useMemo(() => {
-		const collections = [model, comparison.reference].flatMap((source) =>
-			source === undefined ? [] : collectionSubjects(source),
+		const held = [model, comparison.reference].flatMap((source) =>
+			source === undefined ? [] : [...collectionSubjects(source), ...walkthroughSubjects(source)],
 		);
-		return new Set([...flowSubjects(flows), ...collections].map((one) => one.id));
+		return new Set([...flowSubjects(flows), ...held].map((one) => one.id));
 	}, [model, flows, comparison.reference]);
 }
 

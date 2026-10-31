@@ -62,9 +62,17 @@ function modelSubjects(model: Model) {
 		...model.relationships,
 		...collectionSubjects(model),
 		...flowSubjects(model.collections.flatMap((collection) => collection.flows)),
-		...model.walkthroughs,
-		...model.walkthroughs.flatMap((walkthrough) => walkthrough.beats),
+		...walkthroughSubjects(model),
 	];
+}
+
+/**
+ * The walkthroughs of a model with their beats, which no picture draws.
+ * @param model The coherent canonical reading.
+ * @returns The subjects.
+ */
+function walkthroughSubjects(model: Model) {
+	return [...model.walkthroughs, ...model.walkthroughs.flatMap(({ beats }) => beats)];
 }
 
 /**
@@ -130,6 +138,7 @@ export {
 	flowCollections,
 	flowSubjects,
 	modelSubjects,
+	walkthroughSubjects,
 	subjectName,
 	collectionSubjects,
 	withCollectionFlows,

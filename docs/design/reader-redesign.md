@@ -131,8 +131,8 @@ Review uses a change list in the left column, grouped by owner, because most cha
 no tree row. A proposal opens on it. `N` and `P` walk the list, and visible `Previous` and `Next` controls show
 those keys. A change to a step opens that flow's sequence, and a beat opens its presentation. Reparenting shows
 old and new parents by name in the row and in the panel. Removed subjects stay reachable, because the drawing of
-the comparison holds them. The exceptions are a removed beat and a removed walkthrough, which no presentation can
-open: the panel explains them from the picture on show.
+the comparison holds them. A removed beat or walkthrough has no presentation to open, so the panel names it and
+the architecture stays on show.
 
 The walk keeps its place by subject identity. When the list changes, the position changes and the subject stays.
 If the subject leaves, the reader stands on the next one that stayed, and `N` shows that subject first. A

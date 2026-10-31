@@ -156,7 +156,7 @@ function namedField(
 function fieldWords(change: Subject["fields"][number], reading: ChangeReading): string {
 	const { field, before, after } = change;
 	if (field !== "parent") return field.replace(/[A-Z]/gu, (hump) => ` ${hump.toLowerCase()}`);
-	return `moved from ${parentName(before, reading.names)} to ${parentName(after, reading.names)}`;
+	return `moved to ${parentName(after, reading.names)} from ${parentName(before, reading.names)}`;
 }
 
 /**
