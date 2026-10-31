@@ -34,18 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 98000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#cQ1xGdMT",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
       "order": 99000,
       "kind": "call",
       "emphasis": "normal",
@@ -130,8 +118,46 @@
         "path": "apps/server/src/server/routes/architecture/model-routes.ts",
         "symbol": "asyncEndpoint"
       },
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
-      "id": "vKEsyHFk#DmpFz1lt"
+      "id": "vKEsyHFk#DmpFz1lt",
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "order": 98000,
+      "kind": "call",
+      "label": "retains exact local checkpoints",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "retainArchitectureCheckpoint"
+      },
+      "id": "vKEsyHFk/0T9enjhi#iXs0a5bj",
+      "to": "vKEsyHFk#AuxVJel2"
+    },
+    {
+      "order": 108000,
+      "kind": "call",
+      "label": "derive the checkpoint request contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "ArchitectureCheckpointRequestSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#ZWlFN4et",
+      "to": "vKEsyHFk#tHTVTbMS"
+    },
+    {
+      "order": 92000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#lbpfmZQK",
+      "to": "vKEsyHFk#ZsEk7Dg8"
     }
   ]
 }
