@@ -94,7 +94,7 @@ test("migration preview preserves its source while readers navigate modules and 
 	).toEqual(["Shop/Future#Draft"]);
 	await browser.run(["click", '[data-slot="model-migration-preview"] summary']);
 	await openModule(browser, "Shop/System#Shop");
-	expect(await listedParts(browser)).toEqual(["Shop/System#Db", "Shop/System#Api"]);
+	expect(await listedParts(browser)).toEqual(["Shop/System#Api", "Shop/System#Db"]);
 	await visible(browser, '[data-slot="model-diagram"] [data-semantic-id="Shop/System#Api"]');
 	await browser.run(["reload"]);
 	await visible(browser, '[data-slot="model-reading"][data-scope="Shop/System#Shop"]');

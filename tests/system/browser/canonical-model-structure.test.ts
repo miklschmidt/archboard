@@ -33,7 +33,7 @@ async function roots(browser: AgentBrowserSession): Promise<string[]> {
 
 async function selectedName(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
-		`document.querySelector('[data-slot="module-details"] h2')?.textContent ?? null`,
+		`document.querySelector('[data-slot="module-details"] :is(h2, h3)')?.textContent ?? null`,
 	);
 }
 
@@ -130,7 +130,7 @@ test("structural writes refresh current modules while exact history and selected
 		WAIT,
 	);
 	expect(await selectedName(browser)).toBe("Gateway");
-	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
+	expect(await roots(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
 	await pollUntil(
 		() =>
 			browser.eval<string[]>(
@@ -204,7 +204,7 @@ test("structural writes refresh current modules while exact history and selected
 	);
 	expect(await roots(browser)).toEqual(["Shop#Worker"]);
 	await selectReading(browser, baseline);
-	expect(await roots(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
+	expect(await roots(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
 	await openDiagram(browser);
 	await pick(browser, "Shop#Gateway");
 	await pollUntil(

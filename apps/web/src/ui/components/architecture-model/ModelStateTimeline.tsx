@@ -138,7 +138,7 @@ function StateRow(props: {
 				type="button"
 				aria-pressed={drawn}
 				data-slot="state-entry"
-				data-state-id={state.id}
+				data-timeline-state={state.id}
 				data-lifecycle={state.lifecycle}
 				onClick={choose}
 				className={cn(

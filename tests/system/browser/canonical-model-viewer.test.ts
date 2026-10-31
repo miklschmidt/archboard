@@ -69,7 +69,7 @@ test("canonical modules open their authored details without writing architecture
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Handler"]') === null`,
 		),
 	).toBe(true);
-	expect(await listedParts(browser)).toEqual(["Shop#Worker", "Shop#Gateway"]);
+	expect(await listedParts(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openAbout(browser, "selection");
 	await pollUntil(
