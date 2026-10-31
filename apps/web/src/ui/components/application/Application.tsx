@@ -320,7 +320,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 			readRepository,
 		],
 	);
-	const openBeside = useBesideOpening(panes, livePanes, composed);
+	const { openBeside, destination } = useBesideOpening(panes, livePanes, composed);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
@@ -367,9 +367,15 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const [catalogNow] = useState(() => new LiveBinding<ModelCatalog>());
+	catalogNow.bind(catalog);
 	const openingVault = useCallback(
-		(paneId: string): string => vaultOfPane(livePanes, start, paneId),
-		[livePanes, start],
+		(paneId: string): string => {
+			const repository = destination();
+			const asked = repository === null ? null : vaultOf(catalogNow.read(), repository);
+			return asked ?? vaultOfPane(livePanes, start, paneId);
+		},
+		[livePanes, start, destination, catalogNow],
 	);
 	const mounted = usePaneViews({
 		panes,

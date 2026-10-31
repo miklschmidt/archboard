@@ -65,8 +65,26 @@ function ModelStateAsk(props: { readonly label: string; readonly draft: string }
 	);
 }
 
+/**
+ * A wait that lasted, under the top of the pane, which it never moves.
+ * @param props The words.
+ * @param props.children What the wait is for.
+ * @returns The message.
+ */
+function ModelStateWaiting(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<output
+			data-slot="model-waiting"
+			className="text-body bg-background border-border rounded-control mt-3 self-center border px-3 py-1"
+		>
+			{props.children}
+		</output>
+	);
+}
+
 ModelState.Title = ModelStateTitle;
 ModelState.Line = ModelStateLine;
 ModelState.Ask = ModelStateAsk;
+ModelState.Waiting = ModelStateWaiting;
 
 export { ModelState };

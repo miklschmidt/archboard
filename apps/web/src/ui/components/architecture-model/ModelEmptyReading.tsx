@@ -73,11 +73,11 @@ function ModelPlanned(props: {
 	}, [proposal, onOpenState]);
 	return (
 		<ModelState slot="model-planned" cover>
-			<ModelState.Title>{model.manifest.name}</ModelState.Title>
+			<ModelState.Title>Nothing implemented yet</ModelState.Title>
 			<ModelState.Line>
 				{proposal === undefined
-					? "Nothing is implemented or proposed yet."
-					: "Nothing is implemented yet. The proposals hold the plan."}
+					? `${model.manifest.name} has no proposal yet.`
+					: `${model.manifest.name} is a plan, and its proposals hold it.`}
 			</ModelState.Line>
 			{proposal === undefined ? (
 				<ModelState.Ask

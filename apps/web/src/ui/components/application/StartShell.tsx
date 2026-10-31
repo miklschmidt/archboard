@@ -84,8 +84,9 @@ function StartShell(props: StartShellProps): JSX.Element {
 function StartStage(props: StartShellProps): JSX.Element {
 	const { start, catalog } = props;
 	if (start.kind !== "choose") return <StartWait start={start} />;
+	if (catalog.error !== null) return <StartFailed error={catalog.error} />;
 	if (start.missing !== null) return <StartMissing name={start.missing} />;
-	if (catalog.error === null && catalog.repositories.length === 0) return <StartEmpty />;
+	if (catalog.repositories.length === 0) return <StartEmpty />;
 	return (
 		<ModelState slot="start-choose">
 			<ModelState.Title>No repository open</ModelState.Title>
@@ -107,16 +108,28 @@ function StartWait(props: { readonly start: Extract<Start, { kind: "wait" | "res
 	return (
 		<div data-slot="start-wait" className="bg-background flex flex-1 flex-col items-center">
 			{slow && (
-				<output
-					data-slot="model-waiting"
-					className="text-body bg-background border-border rounded-control mt-3 border px-3 py-1"
-				>
+				<ModelState.Waiting>
 					{destination === null || destination === undefined
 						? "Reading the repositories of this machine…"
 						: `Opening ${shownRepository(destination).name}…`}
-				</output>
+				</ModelState.Waiting>
 			)}
 		</div>
+	);
+}
+
+/**
+ * The repositories could not be read, and the column offers to read them again.
+ * @param props Why.
+ * @param props.error The failure.
+ * @returns The state.
+ */
+function StartFailed(props: { readonly error: string }): JSX.Element {
+	return (
+		<ModelState slot="start-failed">
+			<ModelState.Title>Repositories unavailable</ModelState.Title>
+			<ModelState.Line>{props.error}</ModelState.Line>
+		</ModelState>
 	);
 }
 
