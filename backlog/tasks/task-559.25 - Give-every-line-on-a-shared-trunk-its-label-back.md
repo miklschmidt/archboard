@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T03:37:00Z'
-updated_date: '2026-10-31T05:02:00Z'
+updated_date: '2026-10-31T05:25:00Z'
 labels:
   - renderer
   - board
@@ -66,4 +66,6 @@ Walkthrough recorder: "find ffmpeg and probe it, before any browser starts" and 
 Hover: a pointer on a line now rests on every line under it, through elementsFromPoint, and the light is the union through the existing light set. tests/system/browser/canonical-model-attention.test.ts proves it in a real browser on a stretch cut by a trunk mask, so masks do not block the hit test.
 
 Evidence: /tmp/integrate/slice25/final-commands.png, final-workhorses.png, final-agent-cli.png, final-close.png.
+
+Merged to integrate/pr19, gate 21 of 21 in 138 s after one load flake in canonical-preview-navigation, which then passed 3 of 3 alone. Six lines draw no words and are named above. Gate 1 fell from 113 to 106 of 115. Open: criterion 5, owner by eye.
 <!-- SECTION:NOTES:END -->
