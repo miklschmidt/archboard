@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:11:00Z'
+updated_date: '2026-10-31T03:15:00Z'
 labels:
   - frontend
 dependencies:
@@ -70,4 +70,6 @@ Two facts stale after this change, in files out of scope here: the comment on RE
 Merged from feat/reader-legend at 6d5287ba8. The full gate passed on the merge in 153 seconds, 21 of 21. Criterion 4 stays open: a selection never refits the picture, but the landing rule stops at scale 0.6, so 27 of 112 readings are cut and the reader pans. On the old pane it was 20 of those 27. The root shows the summary of its state, because a model has no description. Two panes leave each picture 439 px wide.
 
 The owner saw the column and asked for polish: Filter read as plain text, line types swapped places when hidden, because the list sorted hidden kinds last, and group tags did nothing. Decision: a tag click uses the existing selection, so it adds no new state.
+
+The owner objects to the word key wherever it means this legend. PictureKey in the client and in the core stays for now, because the core is owned by the door work. Rename it to a legend word after that merge, in the code and in crates/.
 <!-- SECTION:NOTES:END -->
