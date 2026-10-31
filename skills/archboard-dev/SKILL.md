@@ -18,6 +18,7 @@ Discover actual authority through `archboard model read` before authoring.
 
 Identify the modules, relationships, flows, and walkthroughs whose meaning the change affects.
 Record those identities in the task notes.
+Read each affected module through `model inspect`, and read `model locality` for what changes with it.
 If the existing architecture stays accurate, record why no proposal is needed.
 Documentation of an already-implemented proposal needs no second proposal.
 
@@ -42,6 +43,7 @@ Retired board commands provide no live authoring route.
 Make the proposal describe the implemented architecture.
 Include affected subjects that the original plan missed.
 Compare the selected state through `model compare` against its intended base.
+Set the branch against the proposal through `model footprint`.
 Make sure that proposal standing and affected descendants are settled.
 
 Run focused semantic and code inspection for the affected model state.

@@ -119,7 +119,8 @@ When a proposal ships, your agent adopts it as current architecture and records 
 <p align="center"><sub>A disposable copy of the Shop example records a real proposal and adoption through the public CLI. The timeline strip is added for this README. Its date and reason come from the accepted checkpoint metadata.</sub></p>
 
 - Exact checkpoints preserve their original bytes. A factual correction creates a new audited reading.
-- `archboard model compare --state "Queued fulfilment" --against current` compares stable subjects across the selected states.
+- `archboard model compare --state "Queued fulfilment" --against current` compares stable subjects across the selected states, with interface changes first.
+- `archboard model inspect "Inventory service"` states what callers of one module reach.
 - Module files, flow collections, walkthroughs, and compact active proposals stay in the repository for code review.
 
 Retained history lives in a separate Git archive. Publish that archive explicitly when sharing a checkpoint. Pushing source files alone does not share it.

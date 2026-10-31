@@ -546,6 +546,8 @@ Its real file and Git cases cover compact deltas, exact materialization, plannin
 Existing history owners retain publication, shallow recovery, source isolation, and linked-worktree coverage.
 `tests/system/semantic-boards/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
 These adapters do not repeat the domain matrix.
+`tests/system/semantic-boards/model-inspect.test.ts` owns `model inspect` and the interface sections of `model compare` through the real CLI and server.
+`packages/board/tests/shared/rules/compare/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
 `canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
 `canonical-model-comparison.test.ts` owns comparison choices, After through a reload, `Compare with current`, coherent removed definitions, changed fields, refusal, and retained recovery.
 `model-destination-state.test.tsx` owns the recovery actions of a failed drawing, a removed module, and an absent module.

@@ -113,13 +113,15 @@ Read the copied example through the public model interface:
 ./bin/archboard -C "$session" model read
 ./bin/archboard -C "$session" model read 'Inventory service'
 ./bin/archboard -C "$session" model read --state 'Queued fulfilment'
+./bin/archboard -C "$session" model inspect 'Inventory service'
 ./bin/archboard -C "$session" model compare --state 'Queued fulfilment'
 ./bin/archboard -C "$session" check
 ```
 
 The current reading has eight root modules. Inventory owns its stock API, ledger, database, and synchronization job.
 Opening a module changes the reading scope and preserves its identity.
-The queued proposal compares its changed responsibilities and relationships against current architecture.
+`model inspect` states the interface of Inventory: its entry point, hidden parts, callers, and outgoing relationship.
+The queued proposal compares its changed responsibilities and relationships against current architecture, with interface changes first.
 The recommendations proposals keep their separate planning root and competing approaches.
 
 For a new proposal, follow the [canonical authoring recipe](skills/archboard/references/canonical-models.md).
