@@ -9,7 +9,7 @@ import { useCallback, useMemo, type JSX } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type {
-	PictureKey,
+	PictureLegend,
 	SemanticRender,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
@@ -123,14 +123,14 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
  * The sidebar beside a semantic pane's picture.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
- * @param props.pictureKey What the key to the picture on screen lists.
+ * @param props.pictureLegend What the legend to the picture on screen lists.
  * @returns The sidebar.
  */
 function SemanticStageSidebar(props: {
 	readonly view: StageSidebarView;
-	readonly pictureKey: PictureKey | null;
+	readonly pictureLegend: PictureLegend | null;
 }): JSX.Element {
-	const { view, pictureKey } = props;
+	const { view, pictureLegend } = props;
 	const { level, onPick, selection } = view;
 	const clear = useCallback((): void => {
 		onPick(null);
@@ -148,7 +148,7 @@ function SemanticStageSidebar(props: {
 					groups={view.groups}
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
-					pictureKey={pictureKey}
+					pictureLegend={pictureLegend}
 					comparison={view.comparison}
 					onComparisonChange={view.onComparisonChange}
 				/>

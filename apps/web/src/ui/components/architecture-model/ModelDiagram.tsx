@@ -115,13 +115,13 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		cut: props.cut,
 	});
 	const leaving = useLeaving(staged, props.leaving, reducedMotion);
+	const flowReading = scene.reading.grammar !== "architecture";
 	const resting = useMemo<FitTarget>(
 		() => ({
-			kind: "landing",
+			kind: flowReading ? "flow" : "landing",
 			content: { width: drawing.width, height: drawing.height },
-			head: drawing.atlas.regions[projection.opened ?? ""],
 		}),
-		[drawing.width, drawing.height, drawing.atlas, projection.opened],
+		[flowReading, drawing.width, drawing.height],
 	);
 	useAutoFit(camera, hasPicture(drawing), focus, {
 		picture: sceneFit(scene),

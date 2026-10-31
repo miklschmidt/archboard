@@ -1,11 +1,8 @@
-//! Group nesting fixed by the graph, and crossing counts for measurements.
+//! Crossing counts for measurements.
 
 use crate::ecma::{abs, js_max, js_min, round};
 use crate::geometry::Point;
-use crate::graph::Node;
 use crate::track::scene::Set;
-
-use super::tree::{BlockTree, ClusterKind, Kept, Nesting};
 
 /// A route's straight runs, each as its two ends.
 fn runs_of(points: &[Point]) -> impl Iterator<Item = (Point, Point)> + '_ {
@@ -49,25 +46,4 @@ pub fn pair_crossings<P: AsRef<[Point]>>(lines: &[P]) -> usize {
         }
     }
     places.len()
-}
-
-/// A measured hierarchy's blocks, drawn one way, as no layout has decided anything yet.
-fn blocks_of(graph: &str, nesting: Nesting) -> Result<BlockTree, String> {
-    let graph: Node = serde_json::from_str(graph)
-        .map_err(|error| format!("The measured graph is unreadable: {error}"))?;
-    BlockTree::new(&graph, Kept::default(), nesting)
-}
-
-/// Whether an inline graph gathers any multi-member group into a region.
-///
-/// # Errors
-///
-/// When the graph or its options are unreadable.
-pub(crate) fn has_regions(graph: &str) -> Result<bool, String> {
-    let tree = blocks_of(graph, Nesting::Inline)?;
-    Ok(tree
-        .arena
-        .iter()
-        .flat_map(|block| block.clusters.values())
-        .any(|cluster| cluster.kind == ClusterKind::Region))
 }

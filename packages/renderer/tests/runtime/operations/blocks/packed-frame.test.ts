@@ -77,6 +77,14 @@ test("independent foundations share a row despite different incoming label owner
 				layoutOptions: { "archboard.header.size": "80" },
 				children: [card("b"), card("c")],
 			},
+			// A second frame keeps the board on its ranks: one open frame takes the grid.
+			{
+				id: "q",
+				width: 320,
+				height: 80,
+				layoutOptions: { "archboard.header.size": "80" },
+				children: [card("e")],
+			},
 		],
 		edges: [
 			["ab", "a", "b"],

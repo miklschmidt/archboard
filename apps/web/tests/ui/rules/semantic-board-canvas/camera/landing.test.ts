@@ -14,21 +14,24 @@ test("a small picture lands at the size it was drawn", () => {
 	expect(cameraFor(pane, { kind: "landing", content: { width: 400, height: 300 } })?.scale).toBe(1);
 });
 
-test("a picture too large to read whole lands at the floor, on the head of its frame", () => {
-	const head = { x: 100, y: 500, width: 1000, height: 1200 };
-	const camera = cameraFor(pane, { kind: "landing", content: { width: 2000, height: 3000 }, head });
+test("a picture larger than the pane lands whole, however small that makes it", () => {
+	const content = { width: 4000, height: 3000 };
+	const camera = cameraFor(pane, { kind: "landing", content });
+	expect(camera).toEqual(cameraFor(pane, { kind: "whole", content }));
+	expect(camera?.scale).toBeLessThan(0.6);
+});
+
+test("a long flow lands on its first steps, centred, at a scale that reads", () => {
+	const content = { width: 800, height: 3000 };
+	const camera = cameraFor(pane, { kind: "flow", content });
 	expect(camera?.scale).toBe(0.6);
-	expect(camera?.y).toBe(FIT_MARGIN - 500 * 0.6);
-	expect(camera?.x).toBeCloseTo(1551 / 2 - 600 * 0.6, 6);
+	expect(camera?.x).toBeCloseTo((1551 - 800 * 0.6) / 2, 6);
+	expect(camera?.y).toBe(FIT_MARGIN);
 });
 
-test("a frame wider than the pane lands on its left edge", () => {
-	const head = { x: 40, y: 0, width: 4000, height: 2000 };
-	const camera = cameraFor(pane, { kind: "landing", content: { width: 4100, height: 2000 }, head });
-	expect(camera?.x).toBe(FIT_MARGIN - 40 * 0.6);
-});
-
-test("the fit key still shows the whole of a picture that lands at the floor", () => {
-	const content = { width: 2000, height: 3000 };
-	expect(cameraFor(pane, { kind: "whole", content })?.scale).toBeLessThan(0.6);
+test("a flow that reads whole lands whole", () => {
+	const content = { width: 800, height: 600 };
+	expect(cameraFor(pane, { kind: "flow", content })).toEqual(
+		cameraFor(pane, { kind: "landing", content }),
+	);
 });

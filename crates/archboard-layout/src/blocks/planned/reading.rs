@@ -1,5 +1,7 @@
 //! Compare complete routes by clear approaches, crossings, bends and travel.
 
+use archboard_scene::paint::design::LANDING_ROOM;
+
 use crate::{
     blocks::assembly::PlacedLine,
     geometry::Point,
@@ -76,9 +78,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
 /// crowded approaches, then the work of tracing its lines times the room it takes.
 pub(super) type Order = (bool, usize, usize, f64);
 
-/// The pane's shape, width over height.
-const PANE_SHAPE: f64 = 1.65;
-/// The largest page that lands whole in a pane of 1551 by 960 at the reader's floor of 0.6.
+/// The shape of the room a picture lands in, width over height.
+const PANE_SHAPE: f64 = LANDING_ROOM.0 / LANDING_ROOM.1;
+/// The largest page a reading settles for. Past it, a reading of few lines tries more room.
 const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:39:00Z'
+updated_date: '2026-10-31T06:08:00Z'
 labels:
   - frontend
 dependencies:
@@ -28,7 +28,7 @@ The owner thought the legend was deleted, because the Key button at the lower le
 - [x] #1 The legend is visible without a click at the foot of a permanent right column on every Diagram reading at 1920 by 1080, and it lists the kinds, line types and groups of that reading
 - [x] #2 With nothing selected the column shows the open module's name and description, and with a selection it shows the subject above the legend
 - [x] #3 The way to hide kinds stays one control away, and it is visible
-- [ ] #4 The picture fits inside the room the column leaves, and a selection never refits it
+- [x] #4 The picture fits inside the room the column leaves, and a selection never refits it
 - [x] #5 The whole legend stays on screen on every corpus reading, and a long subject scrolls above it
 - [x] #6 A group shows as a tag in both themes, in the look of the card tag, and the legend has no group switch
 - [x] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
@@ -84,4 +84,6 @@ Two changes outside the brief's list, both needed by decision 3. First, the acti
 Design pass beyond the brief: the legend is a tray (bg-raised, shadow-edge-up), every row is 24 px with marks in one 22 px box, so names and samples align, the title uses the Title role, and the action row's left edge matches the legend's. A group tag with nothing drawn stays, dimmed and held. Show all earned its place: it is one click instead of opening Filter and pressing each switch.
 
 Evidence on the final code: check:all exit 0 after 212 s, 21 of 21 tasks, 45 of 45 browser files, 5336 pass, 0 fail. Corpus sweep at 1920 by 1080 on 112 readings: whole legend on screen on all, tallest 289 px, at least 714 px left for the subject, no clipped name, nothing over the column edge. Screenshots in /tmp/integrate/slice19b/.
+
+Criterion 4 closes on feat/reader-cards. A module's picture lands whole at the scale that fits the room, with a ceiling of 1, and every one of the 115 readings fits: the lowest landing is 0.352. Before, 10 readings stopped at the 0.6 floor. A selection still never refits. A sequence or a flowchart keeps its landing at 0.6 on the head of its frame, because a tall flowchart whole lands at about 0.19 and cannot be read. Transitions are unchanged.
 <!-- SECTION:NOTES:END -->

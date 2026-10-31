@@ -148,7 +148,7 @@ function ReadingCaption(props: {
 function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
-	const picture = scene?.picture.key ?? null;
+	const picture = scene?.picture.legend ?? null;
 	return (
 		<>
 			<ModelLegend

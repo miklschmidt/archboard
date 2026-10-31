@@ -27,7 +27,7 @@ import {
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
 import type {
 	AppliedAppearance,
-	PictureKey,
+	PictureLegend,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { LINE_MARKS, type LineMark } from "@archboard/renderer/picture";
 
@@ -40,7 +40,7 @@ const SAMPLE_WIDTH = 28;
  * @param props.picture Its kinds and relationship kinds.
  * @returns The legend.
  */
-function SemanticLegend(props: { readonly picture: PictureKey }): JSX.Element {
+function SemanticLegend(props: { readonly picture: PictureLegend }): JSX.Element {
 	const { kinds, relationships } = props.picture;
 	return (
 		<SidebarSection title="Legend" slot="semantic-legend">

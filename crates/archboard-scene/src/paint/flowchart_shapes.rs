@@ -103,7 +103,7 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
 fn look_of(shape: FlowchartShape) -> SlabLook {
     SlabLook {
         face: Paint::from(GradientId::FlowGold),
-        tintable: false,
+        soft: false,
         lit: Token::PrimaryTop.into(),
         edge: Token::PrimaryEdge.into(),
         thickness: CARD_THICKNESS,

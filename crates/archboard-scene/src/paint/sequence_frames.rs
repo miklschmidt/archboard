@@ -3,24 +3,25 @@
 //! its guards and its dividers.
 
 use crate::geometry::{Rect, round_coord};
+use crate::js::js_min;
 use crate::names::word;
 use crate::paint::appearance::tray_look;
 use crate::paint::build::{Items, group, lines, point, shape, text};
-use crate::paint::cards::{halo, header_anchor, paint_header};
+use crate::paint::cards::{header_anchor, header_width, paint_header};
 use crate::paint::design::{
-    BAND_RADIUS, CARD_THICKNESS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
-    FRAME_TAB_PADDING,
+    BAND_RADIUS, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD, FRAME_TAB_PADDING, TAB_PADDING,
 };
-use crate::paint::far_card::{Words, paint_heading_views};
+use crate::paint::far_card::{Words, heading_runs, paint_heading_views};
+use crate::paint::far_view::{far_layer, near_layer};
 use crate::paint::palette::Palette;
 use crate::paint::sequence_messages::PILL_BASELINE;
-use crate::paint::slab::{Lift, boxed, slab_seat, slab_shadow};
+use crate::paint::slab::{boxed, slab_seat};
 use crate::paint::standing::{
     PIN_INSET, ghost_opacity, standing_palette, standing_pin, standing_pin_at, subject,
     warning_badge,
 };
 use crate::paint::styles::{Styles, full_line_colour};
-use crate::paint::tray::tray;
+use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{SequenceFlow, SequenceFrame, Standing};
 use crate::scene::{
     Colour, Geometry, Group, Item, PathStep, Purpose, Role, Shape, Stroke, SubjectKind,
@@ -31,7 +32,7 @@ const FRAGMENT_RADIUS: f64 = 3.0;
 const TAB_CUT: f64 = 5.0;
 const DIVIDER_DASH: [f64; 2] = [4.0, 3.0];
 
-/// The frame around one flow, with the flow's name and summary on it.
+/// The frame around one flow, with the flow's name and summary in its tab.
 pub(super) fn paint_frame(
     layout: &SequenceFlow,
     palette: &Palette,
@@ -39,31 +40,36 @@ pub(super) fn paint_frame(
     unsettled: bool,
 ) -> Items {
     let styles = Styles::of(palette);
-    let frame = layout.frame;
-    let header = layout.header;
-    let ghosted = (standing == Some(Standing::Removed)).then_some(Standing::Removed);
-    let look = tray_look(layout.slab, palette, 0.0);
-    let plate = Rect {
-        y: layout.slab.y,
-        height: layout.slab.height - CARD_THICKNESS,
-        ..header
+    let (frame, header, flow) = (layout.frame, layout.header, &layout.flow);
+    let summary = flow.summary.as_deref();
+    let (far_runs, far_width) = heading_runs(&flow.name, summary, layout.tab);
+    let well = |width: f64| Well {
+        frame,
+        tab: Rect {
+            width: js_min(width, layout.tab.width),
+            ..layout.tab
+        },
     };
-    let flow = &layout.flow;
+    let near = well(header_width(header, &flow.name, summary) + 2.0 * TAB_PADDING);
+    let far = well(far_width);
+    let look = tray_look(palette, 0.0);
+    // A flow's other standings show on its pin, not round its frame.
+    let ghosted = standing.filter(|one| *one == Standing::Removed);
+    let view = |well: &Well| tab_view(well, &look, palette, ghosted);
     group(
         Role::Frame(None),
         Some(subject(SubjectKind::Flow, &flow.id, standing)),
         lines(vec![
-            slab_seat(frame, BAND_RADIUS),
-            slab_shadow(frame, BAND_RADIUS, Lift::Tray, palette, ghosted),
-            halo(frame, BAND_RADIUS, &styles, ghosted),
-            tray(frame, &look, palette, ghosted),
+            slab_seat(near.body(), BAND_RADIUS),
+            well_body(&near, &look, palette, ghosted),
+            near_layer(view(&near)),
+            far_layer(view(&far)),
             paint_heading_views(
-                &flow.name,
-                flow.summary.as_deref(),
-                plate,
+                &far_runs,
+                far.tab,
                 palette,
                 Words {
-                    items: paint_header(header, &flow.name, flow.summary.as_deref(), &styles),
+                    items: paint_header(header, &flow.name, summary, &styles),
                     anchor: header_anchor(header),
                 },
             ),

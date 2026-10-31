@@ -24,7 +24,7 @@
 import type { JSX, ReactNode } from "react";
 
 import type {
-	PictureKey,
+	PictureLegend,
 	SemanticRender,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { SemanticChanges } from "#ui/components/semantic-board-canvas/SemanticChanges.tsx";
@@ -72,7 +72,7 @@ interface SemanticBoardPanelProps {
 	 */
 	onChooseGroup: (group: string | null) => void;
 	/** What the key to the picture on screen lists, or null while nothing typed is drawn. */
-	pictureKey: PictureKey | null;
+	pictureLegend: PictureLegend | null;
 	/** Whether this pane draws comparison treatment. */
 	comparison: boolean;
 	/** Change the canvas comparison treatment. */
@@ -197,7 +197,7 @@ function groupSection(props: SemanticBoardPanelProps): ReactNode {
  * @returns The legend, or null while nothing typed is drawn.
  */
 function legend(props: SemanticBoardPanelProps): ReactNode {
-	const picture = props.pictureKey;
+	const picture = props.pictureLegend;
 	return picture === null ? null : <SemanticLegend picture={picture} />;
 }
 

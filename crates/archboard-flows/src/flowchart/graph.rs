@@ -85,7 +85,6 @@ impl<'a> Building<'a> {
             door: None,
             groups: Vec::new(),
             drills: false,
-            door_groups: Vec::new(),
         });
     }
 
@@ -219,7 +218,6 @@ impl<'a> Building<'a> {
             door: None,
             groups: Vec::new(),
             drills: false,
-            door_groups: Vec::new(),
         });
         self.subject(&flow.id);
         self.flow.clone_from(&flow.id);

@@ -124,7 +124,7 @@ Where things are written down:
   `check` and `check all` report skipped semantic and code work.
 - The core shapes every word, and nothing else measures text (ADR 0059, TASK-520.07).
   `crates/archboard-text` shapes a run with the bundled font files and breaks a paragraph to a width.
-  A character that Onest or DM Mono lacks comes from the Noto fallback faces, in the one order of `Face::fallbacks`.
+  A character that Onest or Maple Mono NL lacks comes from the Noto fallback faces, in the one order of `Face::fallbacks`.
   That order holds for measuring, breaking and drawing alike.
   The layout crates ask `archboard_scene::measure`, never the host.
   The scene carries each run as glyphs with its string, and a picture draws those glyphs.

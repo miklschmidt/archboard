@@ -227,7 +227,8 @@ describe("a part's near and far views", () => {
 			theme: "light",
 		});
 		const [chip] = viewsOf(rendered.svg, "tall", "card").chips;
-		expect(chip!.far.y).toBeLessThanOrEqual(chip!.near.y);
+		const card = rendered.atlas.nodes["tall"]!;
+		expect(chip!.far.y - card.y).toBeLessThan(card.height / 3);
 	});
 
 	test("sequence save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {

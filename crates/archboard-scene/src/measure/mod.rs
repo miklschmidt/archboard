@@ -15,12 +15,14 @@ mod cards;
 mod far;
 mod labels;
 
+#[cfg(test)]
+pub(crate) use cards::TAB_NEAR;
 pub use cards::{CardWords, measure_node};
-pub(crate) use cards::{DOOR_FAR, TAB_FAR, tab_runs};
-pub use far::{FarBox, FarSubject, far_size_for};
-pub use labels::{measure_caption, measure_label, message_lines, note_lines};
+pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top, tags_width};
+pub use far::{FarCard, FarWords, far_scale_for, far_words};
+pub use labels::{measure_label, message_lines, note_lines};
 
-/// The face a font names: Onest or DM Mono, at 400 or at 500. A weight that
+/// The face a font names: Onest or Maple Mono NL, at 400 or at 500. A weight that
 /// is not 500 is the regular face, the only other weight the files hold.
 pub fn face(font: DiagramFont) -> Face {
     match (font.family, font.weight) {

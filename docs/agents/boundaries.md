@@ -444,7 +444,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   Version 2 uses the existing recipe owner and preserves legacy recipes until explicit migration and re-export.
   `./headless-chromium` is the private Chromium that rasterization, recording, and README recipes share.
   `./theme` reads the colors of the shared stylesheet.
-- The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, DM Mono and Big Shoulders Display with their
+- The assets live in `assets/`, next to `src/`: `assets/fonts/` holds Onest, Maple Mono NL and Big Shoulders Display with their
   OFL texts and `README.md`, and `assets/theme.css` holds the colors of both themes. No package file reads a `src/`
   path. `./assets` exports `DIAGRAM_FONTS_DIRECTORY` and `THEME_STYLESHEET`, computed from the package's own place. The
   renderer core carries the four diagram faces in its build (ADR 0059). `readme:assets` and the theme parity test take

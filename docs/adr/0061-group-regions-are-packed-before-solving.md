@@ -7,6 +7,7 @@ status: proposed
 TASK-548.08 proposes this change on 2026-10-26.
 The parent council judges every changed drawing before this decision is accepted.
 It replaces the speculative layout choices in ADR 0059 and their global reading comparison from ADR 0039.
+TASK-559.16 removes group regions from every reading on 2026-10-31, so no reading uses this placement.
 The Rust core, Solver port, worker pool, and vendored Graphviz of ADR 0060 remain.
 
 ## Context

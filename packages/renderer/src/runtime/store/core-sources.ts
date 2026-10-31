@@ -22,8 +22,8 @@ const CORE_SOURCES = [
 	// The faces the core shapes and draws words with, carried in its build.
 	"packages/renderer/assets/fonts/Onest-wght-v1.000.ttf",
 	"packages/renderer/assets/fonts/Onest-Medium-v1.000.ttf",
-	"packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf",
-	"packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf",
+	"packages/renderer/assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf",
+	"packages/renderer/assets/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf",
 	"packages/renderer/assets/fonts/NotoSans-Greek-Regular-v2.015.ttf",
 	"packages/renderer/assets/fonts/NotoSans-Greek-Medium-v2.015.ttf",
 	"packages/renderer/assets/fonts/NotoSansSymbols2-Subset-v2.008.ttf",

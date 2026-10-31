@@ -85,7 +85,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 			subject: null,
 			scope: reading.scope ?? null,
 			focus: reading.focus,
-			filters: { hideKinds: reading.filters.relationships, showGroups: [] },
+			filters: { hideKinds: reading.filters.relationships },
 			grammar: reading.grammar,
 			flow: reading.flow ?? null,
 		}),

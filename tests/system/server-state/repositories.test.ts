@@ -323,7 +323,6 @@ describe.serial("the repositories of the navigator", () => {
 			scope: "Shop#Gateway",
 			focus: ["Shop#Gateway"],
 			hideKinds: ["call"],
-			showGroups: ["public"],
 		};
 		const shown = await inMain("/api/panes/show", {
 			method: "POST",
@@ -351,7 +350,6 @@ describe.serial("the repositories of the navigator", () => {
 						...capture.reading,
 						scope: reading.scope,
 						relationshipKinds: [],
-						groups: ["public"],
 					},
 				},
 			},

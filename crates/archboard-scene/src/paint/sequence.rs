@@ -5,7 +5,6 @@
 
 use crate::geometry::{Rect, canvas_for, union};
 use crate::paint::Ctx;
-use crate::paint::appearance::{card_look, semantic_ink};
 use crate::paint::build::{Items, group, grouped, lines, point, shape};
 use crate::paint::cards::paint_card;
 use crate::paint::colour::{Share, light_dark, mixed, tinted};
@@ -27,7 +26,7 @@ use crate::request::{
     NodeAppearance, SequenceColumn, SequenceDrawing, SequenceFlow, SequencePicture, Standing,
 };
 use crate::scene::{
-    Atlas, Colour, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
+    Atlas, Geometry, Group, Pointer, Purpose, Role, ShadowOf, Shape, Stroke, SubjectKind,
 };
 
 const ACTIVATION_RADIUS: f64 = 3.0;
@@ -36,7 +35,6 @@ const LIFELINE_DASH: [f64; 2] = [3.0, 5.0];
 const LIFELINE_DASH_OFFSET: f64 = SHADOW_REACH + 1.0 - 6.0;
 const HEAD_REACH: f64 = 64.0;
 const LIT_LIFELINE_WIDTH: f64 = 1.5;
-const BAR_SHADE: f64 = 0.4;
 const NEUTRAL_BAR: Share = Share {
     light: 0.5,
     dark: 0.25,
@@ -105,23 +103,14 @@ fn paint_row_marks(
     )
 }
 
-/// A participant's activation bar: a slim slab of the participant itself.
-fn bar_look(appearance: &NodeAppearance, palette: &Palette) -> SlabLook {
-    let shape =
-        |face: Colour, edge: Colour| SlabLook::plain(face, edge, BAR_THICKNESS, ACTIVATION_RADIUS);
-    if semantic_ink(appearance.body_color).is_none() {
-        let face = tinted(&palette.slab_face, Some(&palette.muted), NEUTRAL_BAR);
-        let edge = light_dark(
-            &mixed(&face, &palette.foreground, NEUTRAL_BAR_EDGE.light),
-            &mixed(&face, &palette.slab_deep, NEUTRAL_BAR_EDGE.dark),
-        );
-        return shape(face, edge);
-    }
-    let card = card_look(appearance.body_color, palette);
-    shape(
-        light_dark(&mixed(&card.lit, &card.edge, BAR_SHADE), &card.lit),
-        card.edge,
-    )
+/// A participant's activation bar: a slim neutral slab.
+fn bar_look(palette: &Palette) -> SlabLook {
+    let face = tinted(&palette.slab_face, Some(&palette.muted), NEUTRAL_BAR);
+    let edge = light_dark(
+        &mixed(&face, &palette.foreground, NEUTRAL_BAR_EDGE.light),
+        &mixed(&face, &palette.slab_deep, NEUTRAL_BAR_EDGE.dark),
+    );
+    SlabLook::plain(face, edge, BAR_THICKNESS, ACTIVATION_RADIUS)
 }
 
 /// A column's bars, reaching their corner radius past the call and the reply.
@@ -167,7 +156,6 @@ fn paint_column(
     column: &SequenceColumn,
     layout: &SequenceFlow,
     palette: &Palette,
-    appearance: &NodeAppearance,
     standing: Option<Standing>,
 ) -> Items {
     let styles = Styles::of(palette);
@@ -183,7 +171,7 @@ fn paint_column(
         ..Stroke::new(&palette.edge, 1.0).dashed(&LIFELINE_DASH)
     });
     let bars = activation_boxes(column);
-    let look = bar_look(appearance, palette);
+    let look = bar_look(palette);
     let mut parts = vec![
         shape(lifeline.clone()),
         shape(Shape {
@@ -336,13 +324,7 @@ fn paint_flow(
     }));
     body.extend(layout.columns.iter().map(|column| {
         let id = &column.card.node.id;
-        paint_column(
-            column,
-            layout,
-            palette,
-            appearance_of(picture, id),
-            standings.of(id),
-        )
+        paint_column(column, layout, palette, standings.of(id))
     }));
     body.push(flow_head(
         ctx,

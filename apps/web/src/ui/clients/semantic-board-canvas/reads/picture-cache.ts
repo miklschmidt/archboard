@@ -61,7 +61,7 @@ const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
 	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
 	.extend({
 		appearances: SemanticRenderReplySchema.options[0].shape.appearances,
-		key: SemanticRenderReplySchema.options[0].shape.key,
+		legend: SemanticRenderReplySchema.options[0].shape.legend,
 		readingDirection: z
 			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
 			.optional(),

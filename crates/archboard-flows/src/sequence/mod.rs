@@ -88,7 +88,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
         },
         frame: layout.frame,
         header: layout.header,
-        slab: layout.slab,
+        tab: layout.tab,
         lifeline_bottom: layout.lifeline_bottom,
         columns: layout
             .columns

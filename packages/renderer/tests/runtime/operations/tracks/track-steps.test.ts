@@ -6,15 +6,11 @@ import { bodyShift, corridorPoints, type DrawnPoint } from "#tests/runtime/suppo
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import onePointPort from "#tests/runtime/support/fixtures/one-point-port.json";
-import regionPortTurnBack from "#tests/runtime/support/fixtures/region-port-turn-back.json";
-import agentWorkbench from "#tests/runtime/support/fixtures/agent-workbench.json";
 import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
 import browserApplication from "#tests/runtime/support/fixtures/browser-application.json";
 import codexWorkhorse from "#tests/runtime/support/fixtures/codex-workhorse.json";
 import commandGroups from "#tests/runtime/support/fixtures/command-groups.json";
 import commandInterface from "#tests/runtime/support/fixtures/command-interface.json";
-import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
-import oneCommand from "#tests/runtime/support/fixtures/one-command.json";
 import oneCommandPath from "#tests/runtime/support/fixtures/one-command-path.json";
 import staircase from "#tests/runtime/support/fixtures/staircase.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
@@ -67,24 +63,6 @@ function sidewaysLevels(points: readonly DrawnPoint[]): Set<number> {
 	);
 }
 
-/**
- * How many times a drawn route doubles back: runs sideways one way, then,
- * after going down, the other way, each farther than a lane.
- * @param points The route's corridor, hops taken out.
- * @returns How many times it turns back.
- */
-function turnBacks(points: readonly DrawnPoint[]): number {
-	const runs: number[] = [];
-	points.slice(1).forEach((point, index) => {
-		const step = point.y === points[index]!.y ? point.x - points[index]!.x : 0;
-		if (step === 0) return;
-		if (Math.sign(runs.at(-1) ?? 0) === Math.sign(step)) runs[runs.length - 1]! += step;
-		else runs.push(step);
-	});
-	return runs.slice(1).filter((run, index) => Math.abs(run) > 16 && Math.abs(runs[index]!) > 16)
-		.length;
-}
-
 // Reduced from a dogfood board: a long line's lanes drift a little from band
 // to band where Graphviz drew it, no one column was free for all of them, and
 // each lane kept its own x, so the line stepped in almost every channel.
@@ -99,7 +77,7 @@ test("a long line no one column holds takes as few columns as hold it", async ()
 		expect(sidewaysLevels(points).size, id).toBeLessThanOrEqual(4);
 });
 
-// Reduced from a dogfood board: two lines leave a group region through its one
+// Reduced from a dogfood board: two lines leave a frame through its one
 // port, one of them straight down into it. Read as two lines lined up end to
 // end, the other was stepped a lane aside just before the port they share,
 // where they are drawn joined anyway.
@@ -112,21 +90,6 @@ test("a line into a port another line drops into is not stepped aside from it", 
 	});
 	const points = corridorPoints(drawing.svg).get("mxl6bmYW")!;
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(2);
-});
-
-// Reduced from a dogfood board: a line leaves a group region for a card far
-// below it. Its lanes were held to the region Graphviz drew the first one in,
-// so the line stepped down to a second track in the same empty channel
-// before running on outside the region.
-test("a line leaving a group region runs on the track it is already on", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(walkthroughStair),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	const points = corridorPoints(drawing.svg).get("P1XYQl8l")!;
-	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(1);
 });
 
 test.each([
@@ -161,34 +124,7 @@ test("a line steps to its label's column once, not again between label and card"
 	expect(sidewaysLevels(points).size).toBeLessThanOrEqual(3);
 });
 
-// Reduced from a dogfood board: two lines leave a group region through one
-// port on its bottom, placed between its two cards before the board around
-// the region was routed. Outside, their line goes on to the right, so the one
-// from the left card ran along the region's track past its turn and back.
-test("a line through a group region's port does not double back at it", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(regionPortTurnBack),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	for (const [id, points] of corridorPoints(drawing.svg)) expect(turnBacks(points), id).toBe(0);
-});
-
-// Taken from a board of this repository: a line out of Voice's top stepped
-// aside round a label inside the region, then back to the port the board
-// had settled on the region's wall, and on out the way it had come.
-test("a line out of a group region meets its port where it runs inside", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(agentWorkbench),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	expect(turnBacks(corridorPoints(drawing.svg).get("mhknqBOz")!)).toBeLessThanOrEqual(1);
-});
-
-/** A group region's box as drawn: its left and right walls, its top and bottom. */
+/** A frame's box as drawn: its left and right walls, its top and bottom. */
 interface Walls {
 	readonly left: number;
 	readonly right: number;
@@ -197,29 +133,10 @@ interface Walls {
 }
 
 /**
- * Every group region a drawing draws.
- * @param svg The drawing.
- * @returns Each region's walls.
- */
-function regionWalls(svg: string): Walls[] {
-	const shift = bodyShift(svg);
-	return [
-		...svg.matchAll(
-			/data-semantic-kind="group-region"[^>]*>\s*<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
-		),
-	].map(([, x, y, width, height]) => ({
-		left: Number(x) + shift.x,
-		right: Number(x) + Number(width) + shift.x,
-		top: Number(y) + shift.y,
-		bottom: Number(y) + Number(height) + shift.y,
-	}));
-}
-
-/**
- * The columns where a line runs down beside a region's wall for more than a
+ * The columns where a line runs down beside a frame's wall for more than a
  * lane, nearer it than a lane and a half.
  * @param points The line's corridor.
- * @param regions Every region's walls.
+ * @param regions Every frame's walls.
  * @returns Those columns.
  */
 function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): number[] {
@@ -238,20 +155,6 @@ function besideWalls(points: readonly DrawnPoint[], regions: readonly Walls[]): 
 		return beside ? [from.x] : [];
 	});
 }
-
-test("a line keeps a lane and a half from a group region's wall it runs beside", async () => {
-	for (const fixture of [durableWriteBoundary, oneCommand, commandGroups, browserApplication]) {
-		const drawing = await renderArchitecture({
-			content: orderedFixture(fixture),
-			theme: "light",
-			layout: "track",
-			policy,
-		});
-		const regions = regionWalls(drawing.svg);
-		for (const [id, points] of corridorPoints(drawing.svg))
-			expect(besideWalls(points, regions), id).toEqual([]);
-	}
-});
 
 /**
  * Every container frame a drawing draws, read from its halo, which stands
@@ -276,7 +179,7 @@ function frameWalls(svg: string): Walls[] {
 // Taken from boards of this repository: a line ran down just outside a
 // container's wall, 16 px off it, where nothing stood between them. Inside a
 // container its inset keeps what it holds off the wall; outside, a line keeps
-// a group region's clearance from it where it has the room.
+// the same clearance from it where it has the room.
 test("a line keeps a lane and a half outside a container's wall it runs beside", async () => {
 	for (const fixture of [voiceCoordinator, walkthroughStair]) {
 		const drawing = await renderArchitecture({
@@ -313,39 +216,6 @@ function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 		);
 }
 
-/**
- * Whether a point stands inside a region, its walls moved out by some amount.
- * @param point The point.
- * @param walls The region's walls.
- * @param by How far out; less than none moves them in.
- * @returns True when it is inside.
- */
-function within(point: DrawnPoint, walls: Walls, by: number): boolean {
-	return (
-		point.x > walls.left - by &&
-		point.x < walls.right + by &&
-		point.y > walls.top - by &&
-		point.y < walls.bottom + by
-	);
-}
-
-/**
- * The runs of a line through a group region neither of its ends stands in.
- * @param points The line's corridor.
- * @param regions Every region's walls.
- * @returns Each such run's middle.
- */
-function throughForeign(points: readonly DrawnPoint[], regions: readonly Walls[]): DrawnPoint[] {
-	const foreign = regions.filter(
-		(walls) => !within(points[0]!, walls, 2) && !within(points.at(-1)!, walls, 2),
-	);
-	return points.slice(1).flatMap((to, index) => {
-		const from = points[index]!;
-		const middle = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-		return foreign.some((walls) => within(middle, walls, -1)) ? [middle] : [];
-	});
-}
-
 test("a line runs inside the drawing rather than round it", async () => {
 	for (const [fixture, id] of [
 		[boardRasterizer, "P1XYQl8l"],
@@ -361,12 +231,10 @@ test("a line runs inside the drawing rather than round it", async () => {
 			leftOfEverything(drawing, id).filter((length) => length > 200),
 			id,
 		).toEqual([]);
-		const points = corridorPoints(drawing.svg).get(id)!;
-		expect(throughForeign(points, regionWalls(drawing.svg)), id).toEqual([]);
 	}
 });
 
-test("a line squeezed between a card and a region's wall passes on one column", async () => {
+test("a line squeezed between a card and a wall passes on one column", async () => {
 	const drawing = await renderArchitecture({
 		content: orderedFixture(codexWorkhorse),
 		theme: "light",

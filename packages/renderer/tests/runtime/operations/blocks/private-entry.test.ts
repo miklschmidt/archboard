@@ -20,9 +20,10 @@ test("an exclusive caller enters a closed hierarchy without a full-height return
 	const routes = corridorPoints(drawing.svg);
 	for (const edge of content.edges) {
 		const points = routes.get(edge.id)!;
-		const target = drawing.atlas.nodes[edge.to]!;
+		const parent = content.nodes.find(({ id }) => id === edge.to)!.parent!;
+		const frame = drawing.atlas.nodes[parent]!;
 		expect(Math.max(...points.map(({ y }) => y)), edge.id).toBeLessThanOrEqual(
-			target.y + target.height,
+			frame.y + frame.height,
 		);
 	}
 });

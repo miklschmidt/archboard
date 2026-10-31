@@ -22,8 +22,8 @@
 		"./assets": "./src/runtime/api/assets.ts",
 		"./theme.css": "./assets/theme.css",
 		"./fonts/Onest-wght-v1.000.ttf": "./assets/fonts/Onest-wght-v1.000.ttf",
-		"./fonts/DMMono-Regular-v1.000.ttf": "./assets/fonts/DMMono-Regular-v1.000.ttf",
-		"./fonts/DMMono-Medium-v1.000.ttf": "./assets/fonts/DMMono-Medium-v1.000.ttf",
+		"./fonts/MapleMonoNL-Regular-Subset-v7.9.ttf": "./assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf",
+		"./fonts/MapleMonoNL-Medium-Subset-v7.9.ttf": "./assets/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf",
 		"./fonts/BigShouldersDisplay-wght.ttf": "./assets/fonts/BigShouldersDisplay-wght.ttf"
 	}
 }

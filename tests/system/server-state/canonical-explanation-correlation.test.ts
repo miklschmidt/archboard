@@ -43,7 +43,7 @@ test("automatically consumed explanations correlate unloaded turns by client mes
 		expectedRevision: model.revision.digest,
 		subjects: ["Shop#Gateway"],
 		question: "What accepts shopping requests?",
-		reading: { focus: [], relationshipKinds: [], groups: true, grammar: "architecture" as const },
+		reading: { focus: [], relationshipKinds: [], grammar: "architecture" as const },
 	};
 	expect(await invoke("", { request })).toMatchObject({
 		success: true,

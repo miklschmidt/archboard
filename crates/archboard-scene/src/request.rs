@@ -81,21 +81,25 @@ pub enum DrillDirection {
     Elsewhere,
 }
 
+/// A group a part is in, as its tag says it.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+pub struct GroupTag {
+    /// What a reader sees it called.
+    pub name: String,
+    /// The colour of its tag.
+    pub color: PaletteColor,
+}
+
 /// The independent visual channels of a node in this reading.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeAppearance {
     /// Whether the part holds others, and so is drawn as a tray, not a card.
     pub container: bool,
-    /// Its body's colour: a card's placing group's (ADR 0038). A container's well
-    /// and header are made of what the well is cut into, so it has none (TASK-474).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub body_color: Option<PaletteColor>,
-    /// The group whose colour it takes, if any.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub group: Option<String>,
+    /// The groups a card is in, in the order the policy lists them. The face of a
+    /// card stays neutral, and a container says no group.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<GroupTag>,
     /// The colour of its kind, from the vault's policy.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
@@ -207,8 +211,6 @@ pub struct ArchitecturePicture {
     pub lines: BTreeMap<String, LineAppearance>,
     /// The lines that are flow steps drawn on the board, not authored relationships.
     pub steps: Vec<String>,
-    /// Each group's colour, by group id, for a group that has one.
-    pub groups: BTreeMap<String, PaletteColor>,
     /// The shapes of a flowchart; absent on an architecture.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]

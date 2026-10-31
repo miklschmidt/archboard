@@ -84,8 +84,8 @@ test("a sequence reserves only seven more units per flow and keeps the lifeline 
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content: SEQUENCE,
 	});
-	// The same public fixture measured 379 units before the 6-unit gap grew.
-	expect(rendered.height).toBe(386);
+	// The name and the summary stand in the frame's tab, which takes no room of the well.
+	expect(rendered.height).toBe(378);
 	const window = new Window();
 	const document = new window.DOMParser().parseFromString(rendered.svg, "image/svg+xml");
 	for (const column of document.querySelectorAll('[data-semantic-part="lifeline"]')) {

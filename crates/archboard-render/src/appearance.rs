@@ -1,54 +1,27 @@
-//! How the vault's policy says each subject looks: the group that places a
-//! part (ADR 0038), its kind's chip, which way the board it opens lies
-//! (ADR 0029), and how each line is drawn.
+//! How the vault's policy says each subject looks: the groups a part says on
+//! its tags, its kind's chip, which way the board it opens lies (ADR 0029), and
+//! how each line is drawn.
 
 use std::collections::{BTreeMap, HashSet};
 
 use archboard_layout::{LineLook, Node};
 use archboard_scene::paint::design::FALLBACK_ICON;
-use archboard_scene::request::{Arrowhead, Dash, DrillDirection, LineAppearance, NodeAppearance};
-use indexmap::IndexMap;
+use archboard_scene::request::{
+    Arrowhead, Dash, DrillDirection, GroupTag, LineAppearance, NodeAppearance,
+};
 
 use crate::request::Policy;
 
-/// The group each part is placed with: the first group, in the order the
-/// policy lists them, that it is in. A part in none is left out.
-pub(crate) fn placing_groups<'a>(
-    nodes: impl IntoIterator<Item = &'a Node>,
-    policy: &Policy,
-) -> IndexMap<String, String> {
-    nodes
-        .into_iter()
-        .filter_map(|node| {
-            let group = policy.groups.keys().find(|id| node.is_member_of(id))?;
-            Some((node.id.clone(), group.clone()))
+/// The tags of the groups a part is in, in the order the policy lists them.
+pub(crate) fn tags_of(node: &Node, policy: &Policy) -> Vec<GroupTag> {
+    policy
+        .groups
+        .iter()
+        .filter(|(id, _)| node.groups.contains(id))
+        .map(|(_, look)| GroupTag {
+            name: look.name.clone(),
+            color: look.color,
         })
-        .collect()
-}
-
-/// The group each part is gathered into a region with: the group it is
-/// placed with, unless a container round it is placed with that group too,
-/// whose region it already stands in.
-pub(crate) fn gathering_groups(nodes: &[Node], policy: &Policy) -> IndexMap<String, String> {
-    let placing = placing_groups(nodes, policy);
-    let parents: BTreeMap<&str, Option<&str>> = nodes
-        .iter()
-        .map(|node| (node.id.as_str(), node.parent.as_deref()))
-        .collect();
-    let inside = |id: &str, group: &str| {
-        let mut at = parents.get(id).copied().flatten();
-        while let Some(here) = at {
-            if placing.get(here).is_some_and(|placed| placed == group) {
-                return true;
-            }
-            at = parents.get(here).copied().flatten();
-        }
-        false
-    };
-    placing
-        .iter()
-        .filter(|(id, group)| !inside(id, group))
-        .map(|(id, group)| (id.clone(), group.clone()))
         .collect()
 }
 
@@ -64,8 +37,8 @@ pub fn drill_direction(kind: &str, here: Option<&str>, levels: &[String]) -> Dri
     }
 }
 
-/// Each drawn part's look: a card's body takes its placing group's colour,
-/// a container none (TASK-474), and every chip its kind's.
+/// Each drawn part's look: a card says its groups on tags, a container none,
+/// and every chip its kind's.
 pub(crate) fn node_appearances(
     nodes: &[&Node],
     policy: &Policy,
@@ -75,24 +48,18 @@ pub(crate) fn node_appearances(
         .iter()
         .filter_map(|node| node.parent.as_deref())
         .collect();
-    let placing = placing_groups(nodes.iter().copied(), policy);
     nodes
         .iter()
         .map(|node| {
             let container = parents.contains(node.id.as_str());
-            let group = placing.get(&node.id).cloned();
-            let door_group = (policy.groups.keys()).find(|id| node.door_groups.contains(id));
-            let body_color = group
-                .as_ref()
-                .filter(|_| !container)
-                .or(door_group)
-                .and_then(|group| policy.groups.get(group))
-                .map(|look| look.color);
             let kind = policy.node_kinds.get(&node.kind);
             let appearance = NodeAppearance {
                 container,
-                body_color,
-                group,
+                tags: if container {
+                    Vec::new()
+                } else {
+                    tags_of(node, policy)
+                },
                 type_color: kind.and_then(|kind| kind.color),
                 icon: kind
                     .and_then(|kind| kind.icon.clone())

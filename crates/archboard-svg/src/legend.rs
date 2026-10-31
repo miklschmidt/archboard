@@ -1,14 +1,14 @@
-//! What a picture's key lists, as a pane reads it beside the document: each
+//! What a picture's legend lists, as a pane reads it beside the document: each
 //! subject the picture draws with the appearance it was drawn with, and one
 //! sample of each part kind and relationship kind it draws (TASK-383). The
-//! samples are the scene's own (`archboard_scene::paint::picture_key`), the
+//! samples are the scene's own (`archboard_scene::paint::picture_legend`), the
 //! rule an exported legend lists by, and every fact is spelt as the document
 //! writes it on the subject's group, its icon as the document draws it.
 
 use std::collections::BTreeMap;
 
 use archboard_scene::names::word;
-use archboard_scene::paint::{Applied, Drawn, picture_key};
+use archboard_scene::paint::{Applied, Drawn, picture_legend};
 use archboard_scene::scene::Item;
 use serde::Serialize;
 use ts_rs::TS;
@@ -40,9 +40,9 @@ pub struct AppliedAppearance {
     pub arrowhead: String,
 }
 
-/// What a picture's key lists: only what the picture draws, in drawing order.
+/// What a picture's legend lists: only what the picture draws, in drawing order.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
-pub struct PictureKey {
+pub struct PictureLegend {
     /// One sample of each part kind the picture draws.
     pub kinds: Vec<AppliedAppearance>,
     /// One sample of each relationship kind the picture draws.
@@ -87,13 +87,13 @@ fn spelt(id: &str, applied: &Applied, icons: &BTreeMap<String, Vec<String>>) -> 
 }
 
 /// Each subject a picture's body draws with its appearance, in drawing order,
-/// and its key, or none when it draws no subject of a kind.
+/// and its legend, or none when it draws no subject of a kind.
 pub fn appearances(
     body: &[Item],
     icons: &BTreeMap<String, Vec<String>>,
-) -> (Vec<AppliedAppearance>, Option<PictureKey>) {
-    let key = picture_key(body);
-    let subjects = key
+) -> (Vec<AppliedAppearance>, Option<PictureLegend>) {
+    let legend = picture_legend(body);
+    let subjects = legend
         .subjects
         .iter()
         .map(|(id, applied)| spelt(id, applied, icons))
@@ -103,9 +103,10 @@ pub fn appearances(
             .map(|(id, applied)| spelt(id, applied, icons))
             .collect()
     };
-    let listed = (!key.kinds.is_empty() || !key.relationships.is_empty()).then(|| PictureKey {
-        kinds: samples(&key.kinds),
-        relationships: samples(&key.relationships),
-    });
+    let listed =
+        (!legend.kinds.is_empty() || !legend.relationships.is_empty()).then(|| PictureLegend {
+            kinds: samples(&legend.kinds),
+            relationships: samples(&legend.relationships),
+        });
     (subjects, listed)
 }

@@ -8,7 +8,6 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { corridorPoints, routeLabels, turnsOf } from "#tests/runtime/support/drawn-routes.ts";
 import rendererLayout from "#tests/runtime/support/fixtures/renderer-layout.json";
-import twinLines from "#tests/runtime/support/fixtures/twin-lines.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -65,11 +64,4 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks") {
 test("a jog is closed again once routing frees its column", async () => {
 	const lines = await linesOf(rendererLayout, "track");
 	expect(turnsOf(lines.get("Qvp9SqT5")!)).toBe(0);
-});
-
-// Two lines pass beside a frame their stations stand either side of; moved
-// onto a column inside it, each stepped in and out of the frame.
-test("a lane keeps the frames either station beside it stands in", async () => {
-	const lines = await linesOf(twinLines, "track");
-	for (const id of ["e5", "e8"]) expect(turnsOf(lines.get(id)!)).toBeLessThanOrEqual(4);
 });

@@ -70,7 +70,7 @@ typography:
     fontWeight: 500
     lineHeight: "28px"
   technical:
-    fontFamily: "Archboard DM Mono, ui-monospace, monospace"
+    fontFamily: "Archboard Maple Mono, ui-monospace, monospace"
     fontSize: "11px"
     fontWeight: 400
     lineHeight: "14px"
@@ -192,7 +192,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 **Body Font:** Onest (served as Archboard Onest).
 
-**Label/Mono Font:** DM Mono (served as Archboard DM Mono).
+**Label/Mono Font:** Maple Mono NL (served as Archboard Maple Mono), the one mono face of the shell and of every picture.
 
 **Character:** Tall condensed capitals name the thing that a region is about.
 A plain, round sans carries every other word. A quiet mono sets identifiers,
@@ -264,28 +264,27 @@ The file app.css holds the values for both themes and gives each one a
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
 light falls from above. A card is a slab: a lit top face, a front edge along
 its foot and a soft shadow below it. A container is a neutral well cut into
-the page, its floor only just darker than the page, with its top wall in
-shade, two quieter side walls as thick as it and a lit lip along its bottom.
-Its header is a slab friction fit in the well, a 2-unit gap inside the walls
-and as far from the outer edge on the top as on either side. It rises to the
-level of what the well is cut into and is made of it: its face is the color of
-the page, or of the floor of the container around it, and its front edge is
-that color in shade. So it reads as the head of the well and not as one more
-card. The first row of cards stands as far under it as from the sides and the
-bottom of the well. No group tints the header: the region of the group that
-places the container says the group, and the container's kind shows on its
-icon chip alone.
-The region of a group has no fill: a thin frame in a faded tone of the
-group's color, thick corner brackets and a caption tab in its full color. Each
+the page, its floor only just darker than the page. One inner shadow falls from
+the whole of its top edge, and a lit lip runs along its bottom. Its name stands
+on a tab, a lighter piece raised on that edge. The tab's left side is the well's
+left side, its top corners have the well's radius, and it meets the edge on the
+right in one crisp concave curve. The well's top edge runs on under the tab, so
+a line parts the tab from the floor. The tab hugs its words with 12 units on
+either side, and one outline runs round the tab and the well. The first row of
+cards stands as far under the edge as from the sides and the bottom of the well.
+No group tints a container, and it wears no tag: its kind shows on its icon chip
+alone.
+A group shows on each of its cards as a tag at the top right, the same bright
+piece as in the Legend, and the cards of a group stand together. No frame is
+drawn round a group. A card's face and front edge stay neutral in every group.
+The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
+folders dimmed and its file bright, as far from the foot as the name stands from
+the top. Below a scale of 0.857 a picture draws its far view: one type scale for
+every card of the picture, words that fit each card's box, and the tag, the
+doors and the tab still readable.
+Each
 shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
-come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
-group region's frame, corners and tab and a grouped card's face are tones of
-the group's own color, set in OKLCH at one lightness for every color. On chalk
-the corners and the tab are the named color itself at a lightness of its own,
-0.635 to 0.685, the lightest at which the words on the tab, a very light tint of
-the color, reach APCA Lc 60 for every color, and the faded frame is a light tone
-of the color that keeps its hue. A yellow group's tab is the flat gold with Gold
-Ink on it. A comparison marks a part by its outline: a
+come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
@@ -311,12 +310,7 @@ so the edge ends where the card ends. It falls only down and to the right,
 with a faint ring round the card. A label's face is the card's. A front edge
 is the face in shade, never a lighter strip: the neutral face's own neutral at
 lightness 0.815
-(oklch(0.815 0.003 255)). A grouped card is a clearly colored card in a clean
-tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
-nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
-edge is that hue in shade (lightness 0.78, chroma 0.096). On graphite a grouped
-face is a deep jewel tone (lightness 0.31, chroma 0.048), and its edge is a step
-under it at lightness 0.212, as a neutral one is. A chip is a light
+(oklch(0.815 0.003 255)). A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
 (`--diagram-text-muted`, oklch(0.45 0.028 262)). On graphite they are the
@@ -449,7 +443,7 @@ Under the legend on a structural reading, one row holds `Layout engine` and a sw
 Blocks and Tracks.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
-both themes, cut from the dark value of its palette color (`--tag-<name>`): a gradient
+both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient
 from L+.02 C+.02 to L-.06 C+.03, a 1px edge at L-.26 C-.02, ink at oklch(0.2 0.03 H), an
 inset top highlight, weight 600 and 5px corners. The `group-tag` utility holds the one
 recipe. Its stops stay in OKLCH, because a mix toward a dark color in sRGB turns orange

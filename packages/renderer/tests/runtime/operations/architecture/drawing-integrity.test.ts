@@ -1,7 +1,6 @@
 import { expect, test } from "bun:test";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import { routesThroughGroupHeaders } from "#tests/runtime/support/drawn-checks.ts";
 import { ambiguousTrunks } from "#tests/runtime/support/drawn-ink.ts";
 import {
 	endsOffCards,
@@ -22,7 +21,7 @@ function drawing(svg: string): RenderedDiagram {
 		width: 400,
 		height: 300,
 		appearances: [],
-		key: null,
+		legend: null,
 		placed: ["source", "target", "edge"],
 		atlas: {
 			nodes: {
@@ -74,12 +73,6 @@ test("parent header checks reject ink through the face and allow its boundary", 
 	const header = `<g data-semantic-kind="region" data-semantic-id="parent">${seat(50)}${seat(10)}</g>`;
 	expect(routesThroughParentHeaders(drawing(header + route("M0,10 L200,10")))).toEqual([]);
 	expect(routesThroughParentHeaders(drawing(header + route("M0,30 L200,30")))).toHaveLength(1);
-});
-
-test.each([50, 100])("group header checks reject ink through either zoom layer (x=%i)", (x) => {
-	const group = `<g data-semantic-kind="group-region" data-group="checks"><g class="ab-near"><path d="M10,60 V20 A10,10 0 0 1 20,10 H80 V60 Z"/></g><g class="ab-far"><path d="M10,60 V20 A10,10 0 0 1 20,10 H110 V60 Z"/></g></g>`;
-	expect(routesThroughGroupHeaders(drawing(group + route("M120,0 L120,80")))).toEqual([]);
-	expect(routesThroughGroupHeaders(drawing(group + route(`M${x},0 L${x},80`)))).toHaveLength(1);
 });
 
 test("parent frame checks reject absent frames and frames painted below an ancestor", () => {

@@ -62,8 +62,7 @@ fn drawn_bounds(drawing: &ArchitectureDrawing<NodeFacts, EdgeFacts>) -> Option<R
         std::iter::once(curve_bounds(&edge.curve))
             .chain(edge.label.as_ref().map(|label| label.bounds))
     });
-    let regions = drawing.regions.iter().flatten().map(|region| region.bounds);
-    union(nodes.chain(edges).chain(regions))
+    union(nodes.chain(edges))
 }
 
 /// A settled drawing moved so what it draws starts at the margin, on a page
@@ -98,16 +97,6 @@ pub(crate) fn fitted_page(
                 edge
             })
             .collect(),
-        regions: drawing.regions.map(|regions| {
-            regions
-                .into_iter()
-                .map(|mut region| {
-                    region.bounds = moved(region.bounds, by);
-                    region.caption.bounds = moved(region.caption.bounds, by);
-                    region
-                })
-                .collect()
-        }),
         direction: drawing.direction,
     }
 }

@@ -6,7 +6,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX, ReactNode } from "react";
 
 import type {
-	PictureKey,
+	PictureLegend,
 	SemanticRender,
 	SemanticWaiting,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -114,7 +114,7 @@ interface RenderView extends SemanticBoardStageProps {
 	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
 	/** What the key to the picture on screen lists, or null while nothing typed is drawn. */
-	readonly pictureKey: PictureKey | null;
+	readonly pictureLegend: PictureLegend | null;
 	/** How the vault's kinds look, for the details panel. */
 	readonly look: KindLook;
 	/** Pick a subject out and show it: the camera fits the subject. */
@@ -257,7 +257,7 @@ function SemanticStageView(view: RenderView): JSX.Element {
 						{stageBody(view)}
 						{presentationOver(view)}
 					</div>
-					<SemanticStageSidebar view={view} pictureKey={view.pictureKey} />
+					<SemanticStageSidebar view={view} pictureLegend={view.pictureLegend} />
 				</ReadingArea>
 			</PeekProvider>
 		</>

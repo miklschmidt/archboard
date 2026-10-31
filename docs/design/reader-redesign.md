@@ -115,10 +115,11 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
    Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
    caption states the count, and one control shows every line.
-7. Group regions are off by default. Groups close the legend as bright tags with no switch, and TASK-559.16 removes
-   the regions.
-8. A card shows its code path. A far card shows its name, its path, then the start of its responsibility in the
-   room that its box holds. A long path keeps its tail. An unbound container shows its shared folder with a count,
+7. A group shows on its cards as a bright tag at the top right, and the cards of a group stand together. No
+   frame is drawn round a group. Groups close the legend as the same tags with no switch.
+8. A card shows its code path at its foot, with the folders dimmed and the file bright. A far card shows its
+   name, its path, then the start of its responsibility in the room that its box holds, at the one far type
+   scale of its picture. A long path keeps its tail. An unbound container shows its shared folder with a count,
    for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership. A path that does not
    resolve wears the warning mark. An external module shows no path. A card is 260 wide, or wider for a long name,
    unless its note outgrows that width. It then takes the full 340. A short card centers its words, so neither
@@ -131,8 +132,9 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 
 ## Where a reading lands
 
-A picture fits whole if that scale reaches 0.6, with a ceiling of 1.0. Otherwise it lands at 0.6 on the head
-of the frame, and `0` still fits the whole. Deliberate zoom keeps its full range.
+A module's picture lands whole, with a ceiling of 1.0, and its far view carries the reading below 0.857. A
+sequence or a flowchart fits whole if that scale reaches 0.6. Otherwise it lands at 0.6 on the head of the
+frame, because a tall flow is unreadable whole. `0` still fits the whole. Deliberate zoom keeps its full range.
 
 ## One surface and one accepted scene
 
@@ -282,7 +284,7 @@ signal. It binds a write and current content, and it stops at history:
 
 Each gate is absolute and uses the real pane of this design, about 1239 by 1003 beside the right panel.
 
-1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land at 0.6.
+1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land whole on their far view.
 2. At landing, a name reaches 12 px and a path reaches 9 px on every reading of at most 18 lines.
 3. No line leaves a picture without a statement, and the panel lists every connection.
 4. Each reading of Shop stays at or below its size today.

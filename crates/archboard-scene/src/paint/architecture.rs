@@ -3,32 +3,32 @@
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
-use crate::drawing::{DrawingRegion, Edge, Node, Painted};
-use crate::geometry::{Curve, Rect, canvas_for, curve_bounds, inflate, union};
+use crate::drawing::{Edge, Node, Painted};
+use crate::geometry::{Rect, canvas_for, curve_bounds, inflate, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, lines};
 use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
-use crate::paint::door::{door_definitions, door_shadow, paint_door};
+use crate::paint::door::{door_colours, door_shadow, paint_door};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
 };
 use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::far_card::Part;
+use crate::paint::finish::finish_definitions;
 use crate::paint::flowchart_shapes::FlowchartShapes;
 use crate::paint::junctions::junction_marks;
 use crate::paint::measured_cards::paint_measured_card;
 use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, PortPlan, Ports, ends_in_port, port_plan, ports_of, ride_into};
-use crate::paint::regions::paint_region;
 use crate::paint::slab::{Lift, shadow_under};
 use crate::paint::standing::{Standings, Unsettled, marked_box};
 use crate::paint::styles::{head_of, quietened, relationship_ink, stroke_width};
 use crate::paint::traffic::{TrafficLine, paint_traffic};
-use crate::request::{LineAppearance, NodeAppearance, PaletteColor, Standing};
+use crate::request::{LineAppearance, NodeAppearance, Standing};
 use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 
 /// Boxes by subject id, in the order they were found.
@@ -75,14 +75,6 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
         })
         .collect();
     boxes.extend(inked.iter().chain(&labelled).map(|(_, rect)| *rect));
-    boxes.extend(
-        drawing
-            .drawing
-            .regions
-            .iter()
-            .flatten()
-            .map(|region| region.bounds),
-    );
     union(boxes)
 }
 
@@ -90,10 +82,8 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
 pub(super) struct Vocabulary<'a> {
     pub appearances: &'a BTreeMap<String, NodeAppearance>,
     pub lines: &'a BTreeMap<String, LineAppearance>,
-    pub groups: &'a BTreeMap<String, PaletteColor>,
     /// The lines that are flow steps drawn on the board.
     pub steps: HashSet<&'a str>,
-    pub far_size: f64,
 }
 
 /// The drawing a page is fitted to and how its subjects stand for the marks it
@@ -142,18 +132,15 @@ struct Painting<'p> {
     plan: PortPlan,
 }
 
-/// The order a page draws its boxes in: containers by depth, then cards and
-/// group regions.
+/// The order a page draws its boxes in: containers by depth, then cards.
 struct Stacked<'p> {
     containers: Vec<&'p Node>,
     cards: Vec<&'p Node>,
-    regions: Vec<&'p DrawingRegion>,
 }
 
 impl<'p> Stacked<'p> {
     /// A drawing's boxes in the order they are painted: containers shallowest
-    /// first, then the board's order, cards in the board's order, and regions
-    /// shallowest first.
+    /// first, then the board's order, and cards in the board's order.
     fn of(drawing: &'p Painted) -> Stacked<'p> {
         let mut containers: Vec<&Node> = drawing.drawing.containers.iter().collect();
         containers.sort_by(|a, b| {
@@ -162,13 +149,7 @@ impl<'p> Stacked<'p> {
         });
         let mut cards: Vec<&Node> = drawing.drawing.cards.iter().collect();
         cards.sort_by(|a, b| ascending(a.measured.node.order, b.measured.node.order));
-        let mut regions: Vec<&DrawingRegion> = drawing.drawing.regions.iter().flatten().collect();
-        regions.sort_by(|a, b| ascending(a.depth, b.depth));
-        Stacked {
-            containers,
-            cards,
-            regions,
-        }
+        Stacked { containers, cards }
     }
 }
 
@@ -275,18 +256,12 @@ impl<'p> Painting<'p> {
     fn frame(&self, held: &Node) -> Items {
         let id = &held.measured.node.id;
         paint_measured_frame(
+            self.ctx,
             held,
             self.palette,
             self.standings.of(id),
             self.appearance_of(id),
         )
-    }
-
-    /// A group's region, its caption kept clear of the routes.
-    fn region(&self, region: &DrawingRegion, routes: &[&Curve]) -> Items {
-        let color = self.vocabulary.groups.get(&region.group).copied();
-        let far_size = self.vocabulary.far_size;
-        paint_region(region, self.palette, color, far_size, routes)
     }
 
     /// The shadow under a card: its shape's own, or the slab's.
@@ -414,25 +389,26 @@ impl<'p> Painting<'p> {
         )
     }
 
+    /// The bright finishes the picture's doors and tags are drawn in.
+    fn finishes(&self) -> Vec<Definition> {
+        let cards = self.drawing.drawing.cards.iter();
+        let doors = cards
+            .clone()
+            .filter(|card| card.measured.node.door.is_some());
+        let tagged = cards.flat_map(|card| &self.appearance_of(&card.measured.node.id).tags);
+        let doors = door_colours(doors.map(|card| self.appearance_of(&card.measured.node.id)));
+        finish_definitions(doors.chain(tagged.map(|tag| Some(tag.color))))
+    }
+
     /// Every layer of the picture, bottom to top.
     fn layers(&self, stacked: &Stacked<'_>, traffic: &HashMap<String, Items>) -> Vec<Items> {
         let edges = &self.drawing.bridged.edges;
-        let routes: Vec<&Curve> = edges.iter().map(|routed| &routed.curve).collect();
-        let doors = (self.drawing.drawing.cards.iter())
-            .filter(|card| card.measured.node.door.is_some())
-            .map(|card| self.appearance_of(&card.measured.node.id));
         let mut painted: Vec<Items> = vec![
             definitions(self.masks.definitions.clone()),
             self.cuts(),
-            definitions(door_definitions(doors)),
+            definitions(self.finishes()),
         ];
         painted.extend(stacked.containers.iter().map(|held| self.frame(held)));
-        painted.extend(
-            stacked
-                .regions
-                .iter()
-                .map(|region| self.region(region, &routes)),
-        );
         painted.extend(stacked.cards.iter().map(|card| self.card_shadow(card)));
         painted.extend(
             edges.iter().map(|routed| {

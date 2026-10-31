@@ -450,12 +450,10 @@ const browserShowContract = defineCommand({
 			placeholder: "index",
 			description: "The zero-based walkthrough beat",
 		},
-		...(["focus", "hideKinds", "showGroups"] as const).map((key) => ({
+		...(["focus", "hideKinds"] as const).map((key) => ({
 			kind: "option" as const,
 			key,
-			spellings: [
-				key === "focus" ? "--focus" : key === "hideKinds" ? "--hide-kind" : "--show-group",
-			] as const,
+			spellings: [key === "focus" ? "--focus" : "--hide-kind"] as const,
 			value: "required" as const,
 			occurrences: "append" as const,
 			placeholder: "id",

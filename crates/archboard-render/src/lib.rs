@@ -1,6 +1,6 @@
 //! The renderer core's one call (ADR 0059): a board's reading, the vault's
 //! policy and the render's choices in; the picture, as one SVG document with
-//! its atlas, and the key a pane lists beside it out.
+//! its atlas, and the legend a pane lists beside it out.
 //!
 //! Agents author meaning, and this derives the presentation of every board
 //! (ADR 0023, ADR 0028): what is drawn in which grammar, every word measured,
@@ -27,7 +27,7 @@ use archboard_scene::paint::design::OWN_ICONS;
 use archboard_scene::paint::paint;
 use archboard_scene::request::{DocumentRequest, PageRequest, PaintRequest};
 use archboard_scene::scene::{PaintedDocument, Scene};
-use archboard_svg::{AppliedAppearance, PictureKey};
+use archboard_svg::{AppliedAppearance, PictureLegend};
 use serde::Serialize;
 use ts_rs::TS;
 
@@ -57,8 +57,8 @@ pub struct Drawn {
     /// Each subject the picture draws with the appearance it was drawn with,
     /// in the order it draws them.
     pub appearances: Vec<AppliedAppearance>,
-    /// What the picture's key lists, or null when it draws no subject of a kind.
-    pub key: Option<PictureKey>,
+    /// What the picture's legend lists, or null when it draws no subject of a kind.
+    pub legend: Option<PictureLegend>,
     /// The picture as the painter described it, for a frontend that paints
     /// it itself (ADR 0059). A host that shows the document needs none of it.
     #[serde(skip)]
@@ -79,7 +79,7 @@ pub enum NothingDrawn {
 #[derive(Clone, Debug, Serialize, TS)]
 #[serde(untagged)]
 pub enum Rendered {
-    /// The picture, and its key.
+    /// The picture, and its legend.
     Drawn(Box<Drawn>),
     /// Nothing, and why.
     Empty {
@@ -127,7 +127,7 @@ fn icons_of<H: Host>(host: &H, named: &[&str]) -> Result<BTreeMap<String, Vec<St
     host.icons(&names.into_iter().collect::<Vec<_>>())
 }
 
-/// A painted picture, written as its document, with its key.
+/// A painted picture, written as its document, with its legend.
 ///
 /// # Errors
 ///
@@ -136,7 +136,7 @@ fn drawn(request: &PaintRequest) -> Result<Drawn, String> {
     let scene = paint(request);
     let svg = archboard_svg::document(&scene, &request.document, &request.icons)
         .map_err(|error| error.0)?;
-    let (appearances, key) = archboard_svg::appearances(&scene.body, &request.icons);
+    let (appearances, legend) = archboard_svg::appearances(&scene.body, &request.icons);
     Ok(Drawn {
         document: PaintedDocument {
             svg,
@@ -147,7 +147,7 @@ fn drawn(request: &PaintRequest) -> Result<Drawn, String> {
             reading_direction: scene.reading,
         },
         appearances,
-        key,
+        legend,
         scene,
     })
 }

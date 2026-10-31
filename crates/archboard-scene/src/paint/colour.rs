@@ -44,15 +44,6 @@ impl ToneStep {
     }
 }
 
-/// A tone of an ink on the light ground and on the dark one.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct Tone {
-    /// The tone on the light ground.
-    pub light: ToneStep,
-    /// The tone on the dark ground.
-    pub dark: ToneStep,
-}
-
 /// One tone of an ink: the ink's own hue, at a lightness of its own and a share
 /// of the ink's chroma.
 fn tone(ink: &Colour, step: ToneStep) -> Colour {
@@ -62,11 +53,6 @@ fn tone(ink: &Colour, step: ToneStep) -> Colour {
         cap: step.cap,
         chroma: step.chroma,
     }
-}
-
-/// A surface in an ink's colour, a tone of it on each ground.
-pub(super) fn toned(ink: &Colour, steps: Tone) -> Colour {
-    light_dark(&tone(ink, steps.light), &tone(ink, steps.dark))
 }
 
 /// A colour in an ink: a tone of it on the light ground, a share of it over a base on the dark one.
@@ -82,30 +68,6 @@ pub(super) struct Inked {
 /// ink mixed into a base on the dark ground.
 pub(super) fn inked_over(base: &Colour, ink: &Colour, inked: Inked) -> Colour {
     light_dark(&tone(ink, inked.light), &mixed(base, ink, inked.dark))
-}
-
-/// How light an ink may be on the light ground, and a tone of it on the dark one.
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub(super) struct Held {
-    /// The least lightness the ink keeps on the light ground.
-    pub least: f64,
-    /// The most lightness the ink keeps on the light ground.
-    pub most: f64,
-    /// The tone of the ink on the dark ground.
-    pub dark: ToneStep,
-}
-
-/// An ink at its full colour: on the light ground the ink itself with its
-/// lightness held between two bounds, on the dark ground a tone of it.
-pub(super) fn held_tone(ink: &Colour, held: Held) -> Colour {
-    light_dark(
-        &Colour::Held {
-            ink: Box::new(ink.clone()),
-            least: held.least,
-            most: held.most,
-        },
-        &tone(ink, held.dark),
-    )
 }
 
 /// A colour at a share of its strength, the rest see-through.

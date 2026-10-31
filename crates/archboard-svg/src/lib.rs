@@ -10,7 +10,7 @@ mod colour;
 mod definitions;
 mod glyphs;
 mod groups;
-mod key;
+mod legend;
 mod legs;
 mod path;
 mod pulse;
@@ -23,7 +23,7 @@ mod tests;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-pub use key::{AppliedAppearance, PictureKey, appearances};
+pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};

@@ -1,13 +1,11 @@
 //! The words a layout settles on a plate before it routes: a relationship's
-//! label, a region's caption, a message's words and a note's lines.
+//! label, a message's words and a note's lines.
 
 use crate::drawing::{MeasuredLabel, TextRole, TextRun};
 use crate::js::js_max;
 use crate::measure::cards::{NOTE, Style, runs_for};
-use crate::measure::{paragraph, set_width};
-use crate::paint::design::{
-    ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, CARD_TITLE_FONT, PILL_FONT,
-};
+use crate::measure::paragraph;
+use crate::paint::design::{ARCHITECTURE_LABEL_PADDING_X, ARCHITECTURE_LABEL_PADDING_Y, PILL_FONT};
 use crate::sequence_picture::WordLine;
 
 /// A relationship's words on its plate.
@@ -17,18 +15,6 @@ const LABEL: Style = Style {
     line: 15.0,
     role: TextRole::Label,
 };
-
-/// A region's caption: the group's name, set larger than a card's title so a
-/// reader finds the regions first and can still read them at overview scale.
-const CAPTION: Style = Style {
-    font: CARD_TITLE_FONT,
-    size: 20.0,
-    line: 26.0,
-    role: TextRole::Label,
-};
-/// Room around a region caption's words, across and down.
-const CAPTION_PADDING_X: f64 = 12.0;
-const CAPTION_PADDING_Y: f64 = 8.0;
 
 /// The widest a relationship's plate grows before its words wrap.
 const LABEL_MAX_WIDTH: f64 = 200.0;
@@ -76,25 +62,6 @@ pub fn measure_label(text: &str) -> MeasuredLabel {
         width,
         height,
         runs,
-    }
-}
-
-/// A group's name as the caption its region is drawn with: one line.
-pub fn measure_caption(name: &str) -> MeasuredLabel {
-    let width = set_width(name, CAPTION.font, CAPTION.size);
-    let height = CAPTION.line + 2.0 * CAPTION_PADDING_Y;
-    MeasuredLabel {
-        width: width + 2.0 * CAPTION_PADDING_X,
-        height,
-        runs: vec![TextRun {
-            text: name.to_owned(),
-            width,
-            x: CAPTION_PADDING_X,
-            y: CAPTION_PADDING_Y + CAPTION.size,
-            font: CAPTION.font,
-            font_size: CAPTION.size,
-            role: CAPTION.role,
-        }],
     }
 }
 

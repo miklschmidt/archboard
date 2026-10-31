@@ -48,7 +48,7 @@ function shopReading(overrides: Partial<SceneReading> = {}): SceneReading {
 	return {
 		scope: null,
 		focus: null,
-		filters: { hideKinds: [], showGroups: [] },
+		filters: { hideKinds: [] },
 		grammar: "architecture",
 		flow: null,
 		subject: null,

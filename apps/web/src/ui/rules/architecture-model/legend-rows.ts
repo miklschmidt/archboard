@@ -7,7 +7,7 @@ import { LINE_MARKS } from "@archboard/renderer/picture";
 import type { Model, projectModel } from "@archboard/board/content";
 import type {
 	AppliedAppearance,
-	PictureKey,
+	PictureLegend,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
@@ -22,7 +22,7 @@ const UNKNOWN_KIND = { color: "neutral", dash: "solid", arrowhead: "filled" } as
 interface LegendReading {
 	readonly model: Model;
 	readonly projection: Projection;
-	readonly picture: PictureKey;
+	readonly picture: PictureLegend;
 	readonly hideKinds: readonly string[] | undefined;
 }
 

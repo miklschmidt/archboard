@@ -220,7 +220,6 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		flow: search[`flow${paneId}`],
 		focus: searchList(search[`focus${paneId}`]),
 		hideKinds: searchList(search[`hideKinds${paneId}`]),
-		showGroups: searchList(search[`showGroups${paneId}`]),
 	};
 }
 
@@ -305,7 +304,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 			}),
 		),
 		...Object.fromEntries(
-			(["focus", "hideKinds", "showGroups"] as const).flatMap((field) => {
+			(["focus", "hideKinds"] as const).flatMap((field) => {
 				const value = model[field];
 				// An empty list narrows nothing, and `focus=` would read back as one empty identity.
 				return value === undefined || value.length === 0

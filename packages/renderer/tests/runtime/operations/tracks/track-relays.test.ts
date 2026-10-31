@@ -4,18 +4,16 @@
 // a card inside a frame run round the outside of another card because it was
 // kept out of the frame it ends in, and a labelled line run out to the edge
 // of the drawing and back because its label's band had room only there, and
-// a line into a group region run out beside the region to its label and back,
-// and two lines into one block whose ports Graphviz stood beside the block's
+// two lines into one block whose ports Graphviz stood beside the block's
 // header drawn end to end a few points apart, so that they read as one.
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticPolicySchema } from "@archboard/board/policy";
-import { corridorPoints, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
+import { corridorPoints, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import frameDrop from "#tests/runtime/support/fixtures/frame-drop.json";
 import labelBand from "#tests/runtime/support/fixtures/label-band.json";
-import regionLabel from "#tests/runtime/support/fixtures/region-label.json";
 import stackedPorts from "#tests/runtime/support/fixtures/stacked-ports.json";
 
 /** The spacing of neighbouring lanes. */
@@ -68,22 +66,6 @@ test("a labelled line keeps between its ends when another band holds its label",
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const edge = content.edges.find(({ id }) => id === "Wa0ROBSq")!;
 	expectBetween(drawing, edge.id, [edge.from, edge.to]);
-});
-
-// Reduced from a dogfood board, names replaced: Graphviz stood the label of a
-// line into a group region beside the region, the relay's first route in
-// crossed a label that only later moved aside, and the line's run out to its
-// label and back was no lap by the reach of its ends.
-test("a line into a group region keeps its label between its ends", async () => {
-	const content = orderedFixture(regionLabel);
-	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
-	const edge = content.edges.find(({ id }) => id === "i6pk24Ov")!;
-	const ends = [drawing.atlas.nodes[edge.from]!, drawing.atlas.nodes[edge.to]!];
-	const label = routeLabels(drawing.svg).get(edge.id)!;
-	expect(label.x).toBeGreaterThanOrEqual(Math.min(...ends.map(({ x }) => x)));
-	expect(label.x + label.width).toBeLessThanOrEqual(
-		Math.max(...ends.map(({ x, width }) => x + width)),
-	);
 });
 
 // Reduced from a dogfood board, names replaced: two lines entered a group

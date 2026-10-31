@@ -48,15 +48,15 @@ function listed(svg: string): (Listed & { x: number; y: number })[] {
  * @returns The entries.
  */
 function pageKey(drawn: DrawnBoard): Listed[] {
-	const { key } = drawn;
-	const relationships = key?.relationships ?? [];
+	const { legend } = drawn;
+	const relationships = legend?.relationships ?? [];
 	return [
 		...markCounts(drawn.changes?.standing ?? {}).map((one) => ({
 			keys: "mark",
 			words: one.word,
 			count: one.count,
 		})),
-		...(key?.kinds ?? []).map((one) => ({ keys: "kind", words: one.typeName })),
+		...(legend?.kinds ?? []).map((one) => ({ keys: "kind", words: one.typeName })),
 		...relationships.map((one) => ({ keys: "relationship", words: one.typeName })),
 		...(relationships.length === 0
 			? []
@@ -184,8 +184,8 @@ describe("what the legend lists", () => {
 				// once, in the order it draws them.
 				const kinds = [...read.values()].filter((one) => one.depiction !== "");
 				const relationships = [...read.values()].filter((one) => one.depiction === "");
-				expect(drawn.key?.kinds.map(comparable)).toEqual(samples(kinds).map(comparable));
-				expect(drawn.key?.relationships.map(comparable)).toEqual(
+				expect(drawn.legend?.kinds.map(comparable)).toEqual(samples(kinds).map(comparable));
+				expect(drawn.legend?.relationships.map(comparable)).toEqual(
 					samples(relationships).map(comparable),
 				);
 			}

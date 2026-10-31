@@ -12,10 +12,7 @@ import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
-type ModelFilters = Pick<
-	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "showGroups"
->;
+type ModelFilters = Pick<z.infer<typeof ArchitectureRenderRequestSchema>, "hideKinds">;
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 type Standing = Readonly<Record<string, ChangeKind>>;
 type Node = VariantContent["nodes"][number];
@@ -25,8 +22,6 @@ type Edge = VariantContent["edges"][number];
 type DrawnNode = Node & {
 	readonly codePath?: string;
 	readonly door?: DoorWay;
-	/** A door's groups, which colour it whether or not the reading shows group regions. */
-	readonly doorGroups?: readonly string[];
 };
 /** Where a door lies in the tree from the open module. */
 type DoorWay = "up" | "across" | "down";
@@ -132,7 +127,7 @@ function projectScope(
  * @param model The coherent model.
  * @param scope The scope to restore when focus is cleared.
  * @param focus Explicit focused identities, or no focus.
- * @param filters Hidden relationship kinds and group regions.
+ * @param filters Hidden relationship kinds.
  * @param reference The coherent comparison base, when available.
  * @param visibility Exact imported view membership, when the reading supplies it.
  * @returns Visible parts, complete interface facts, and exact underlying connections.
@@ -172,7 +167,7 @@ function projectModel(
 			context.complete.nodes.find((node) => node.id === opened),
 		),
 		flow: null as ModelFlow | null,
-		content: withShownGroups(projection.content, filters),
+		content: projection.content,
 	};
 }
 
@@ -208,7 +203,7 @@ function heldContent(
 	shown: { depicted: DrawnContent; filters: ModelFilters },
 ): DrawnContent | undefined {
 	if (reference === undefined) return undefined;
-	return withShownGroups(withLinesOf(read().content, shown.depicted), shown.filters);
+	return withLinesOf(read().content, shown.depicted);
 }
 
 /**
@@ -304,22 +299,6 @@ function projectVisible(
 		connections,
 		allConnections,
 		content: drawingContent(complete, visible, connections, { parents: visible, doors: [] }),
-	};
-}
-
-/**
- * Group regions are off until a reader turns one on (rule 7).
- * @param content The projected picture.
- * @param filters The group regions the reader asked for.
- * @returns The depiction with only those regions, without altering either source state.
- */
-function withShownGroups(content: DrawnContent, filters: ModelFilters): DrawnContent {
-	return {
-		...content,
-		nodes: content.nodes.map((node) => ({
-			...node,
-			groups: node.groups?.filter((group) => filters.showGroups?.includes(group)),
-		})),
 	};
 }
 
@@ -498,9 +477,7 @@ function drawingContent(
  */
 function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return card.groups === undefined
-		? { ...named, door }
-		: { ...named, door, doorGroups: card.groups };
+	return { ...named, door };
 }
 
 /**

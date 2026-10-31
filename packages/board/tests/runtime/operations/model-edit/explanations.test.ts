@@ -20,7 +20,6 @@ test("an explanation captures the complete reading without changing authored inp
 		reading: {
 			focus: [],
 			relationshipKinds: ["call"],
-			groups: false,
 			grammar: "architecture" as const,
 		},
 	};
@@ -35,15 +34,8 @@ test("an explanation captures the complete reading without changing authored inp
 		},
 	});
 	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(before);
-	const groups = Object.keys(current.policy.groups);
-	expect(
-		await readArchitectureModel(vault, undefined, undefined, {
-			explain: { ...explain, reading: { ...explain.reading, groups } },
-		}),
-	).toMatchObject({ success: true, explanation: { request: { reading: { groups } } } });
 	for (const unavailable of [
-		{ groups: ["missing"] },
-		{ groups: ["constructor"] },
+		{ relationshipKinds: ["missing"] },
 		{ relationshipKinds: ["toString"] },
 	])
 		expect(
@@ -73,7 +65,6 @@ test("relationship and missing-flow explanations retain stable reading intent an
 			focus: ["Shop#Worker"],
 			referenceSubject: "Shop#Dispatch",
 			relationshipKinds: ["call"],
-			groups: false,
 			grammar: "architecture" as const,
 		},
 	};

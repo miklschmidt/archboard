@@ -280,7 +280,7 @@ test("a warning hidden by a limited view opens the whole board before focusing",
 			height: 3000,
 			drawn: { nodes: [], edges: [], flows: [], steps: [] },
 			appearances: [],
-			key: null,
+			legend: null,
 			atlas: { nodes: {}, edges: {}, regions: {} },
 		},
 	};

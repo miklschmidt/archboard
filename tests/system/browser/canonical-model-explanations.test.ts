@@ -126,7 +126,7 @@ test("an explanation keeps its captured comparison and selection after scope nav
 		vault: fixture.vault,
 		expectedRevision: initial.body.revision.digest,
 		expectedComparisonRevision: changed.after.digest,
-		reading: { scope: "Shop#Gateway", groups: [] },
+		reading: { scope: "Shop#Gateway" },
 	});
 	expect(await browser.run(["errors"])).toBe("");
 }, 60_000);

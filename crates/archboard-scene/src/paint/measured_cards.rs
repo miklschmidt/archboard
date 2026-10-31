@@ -1,6 +1,7 @@
 //! Measured cards: the words at supplied baselines, near and far.
 
-use crate::drawing::Node;
+use crate::drawing::{Node, TextRole, TextRun};
+use crate::measure::{tag_top, tags_width};
 use crate::paint::Ctx;
 use crate::paint::build::Items;
 use crate::paint::cards::paint_slab_card;
@@ -17,6 +18,19 @@ fn name_top(placed: &Node) -> f64 {
         .map_or(ARCHITECTURE_CARD_PADDING, |name| name.y - name.font_size)
 }
 
+/// A card's words where its box stands them: a row can stretch a card, and its
+/// path stays at its foot.
+fn placed_runs(placed: &Node) -> Vec<TextRun> {
+    let grown = placed.bounds.height - placed.measured.height;
+    let at_foot = |run: &TextRun| matches!(run.role, TextRole::Folder | TextRole::File);
+    (placed.measured.runs.iter())
+        .map(|run| TextRun {
+            y: run.y + if at_foot(run) { grown } else { 0.0 },
+            ..run.clone()
+        })
+        .collect()
+}
+
 /// One measured card with its kind glyph and its standing's treatment: the
 /// card drawn as `part`, its words where the layout measured them.
 pub(super) fn paint_measured_card(
@@ -27,14 +41,19 @@ pub(super) fn paint_measured_card(
     cut: Option<&ClipId>,
 ) -> Items {
     let (rect, standing) = (placed.bounds, part.standing);
+    let runs = placed_runs(placed);
+    let names: Vec<&str> = (part.appearance.tags.iter())
+        .map(|tag| tag.name.as_str())
+        .collect();
+    let baseline = runs.first().map_or(0.0, |name| name.y);
     let near = NearCard {
         chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
         chip_y: rect.y + name_top(placed),
-        words: words_in(
-            &placed.measured.runs,
-            rect,
-            &standing_palette(palette, standing),
-        ),
+        words: words_in(&runs, rect, &standing_palette(palette, standing)),
+        lines: (runs.iter())
+            .filter(|run| run.role == TextRole::Title)
+            .count(),
+        tag_top: tag_top(tags_width(&names, 1.0), placed.measured.width, baseline),
     };
     paint_slab_card(ctx, part, palette, cut, near)
 }

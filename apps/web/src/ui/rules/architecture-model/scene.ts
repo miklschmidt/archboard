@@ -66,7 +66,7 @@ interface AcceptedScene extends SceneRequest {
 /** What an empty coherent reading puts on the surface: nothing, and it is finished. */
 const EMPTY_DRAWING: ModelDrawing = Object.freeze({
 	appearances: [],
-	key: null,
+	legend: null,
 	svg: "",
 	width: 0,
 	height: 0,
@@ -195,8 +195,7 @@ function destinationName(to: SceneRequest): string {
  * @returns True with a focus or a filter.
  */
 function isNarrowed(reading: SceneReading): boolean {
-	const { hideKinds, showGroups } = reading.filters;
-	return reading.focus !== null || hideKinds.length > 0 || showGroups.length > 0;
+	return reading.focus !== null || reading.filters.hideKinds.length > 0;
 }
 
 /**

@@ -154,14 +154,11 @@ function captureFailure(model: ArchitectureModel, request: Request) {
  * Exact visible group selections and relationship kinds use the selected model's vocabulary.
  * @param model The coherent model and its policy.
  * @param request The captured reading intent.
- * @returns Whether a requested kind or group is unavailable.
+ * @returns Whether a requested kind is unavailable.
  */
 function unavailableReadingPolicy(model: ArchitectureModel, request: Request): boolean {
-	const groups = Array.isArray(request.reading.groups) ? request.reading.groups : [];
-	return (
-		request.reading.relationshipKinds.some(
-			(kind) => !Object.hasOwn(model.policy.relationshipKinds, kind),
-		) || groups.some((group) => !Object.hasOwn(model.policy.groups, group))
+	return request.reading.relationshipKinds.some(
+		(kind) => !Object.hasOwn(model.policy.relationshipKinds, kind),
 	);
 }
 /**

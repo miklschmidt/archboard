@@ -19,7 +19,7 @@ import {
 import { iconQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import type {
 	AppliedAppearance,
-	PictureKey,
+	PictureLegend,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import {
@@ -52,7 +52,7 @@ interface ModelLegendProps {
 	readonly model: Model;
 	readonly projection: ReturnType<typeof projectModel>;
 	/** What the picture draws, or null while it draws nothing that a legend explains. */
-	readonly picture: PictureKey | null;
+	readonly picture: PictureLegend | null;
 	readonly filters: Pick<ModelFilters, "hideKinds">;
 	readonly onToggle: (field: "hideKinds", id: string) => void;
 	/** Draw every kind of line again. */

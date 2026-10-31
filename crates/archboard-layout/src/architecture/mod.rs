@@ -16,12 +16,11 @@ use std::hash::BuildHasher;
 use archboard_scene::drawing::{
     ArchitectureDrawing, EdgeFacts, NodeFacts, Painted, PaintedDrawing,
 };
-use archboard_scene::geometry::Rect;
 use serde::{Deserialize, Serialize};
 
 pub use content::{Content, Edge, Node};
 pub use graph::Standings;
-pub use measured::{Measured, MeasuredGroups};
+pub use measured::Measured;
 pub use solving::{InProcess, Laying, Solver, Unsolved};
 
 use crate::routes::{
@@ -32,10 +31,10 @@ use crate::routes::{
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Engine {
-    /// Every relationship on an assigned track between ranks. Multi-member
-    /// group regions pack as blocks, with their containers drawn inline.
+    /// Every relationship on an assigned track between ranks, with containers
+    /// drawn inline.
     Track,
-    /// Each container and group region packed as a block of its own.
+    /// Each container packed as a block of its own.
     Blocks,
 }
 
@@ -74,14 +73,6 @@ pub async fn draw<S: Solver>(
     })
 }
 
-/// Whether one box lies inside another.
-fn inside(inner: Rect, outer: Rect) -> bool {
-    inner.x >= outer.x
-        && inner.y >= outer.y
-        && inner.x + inner.width <= outer.x + outer.width
-        && inner.y + inner.height <= outer.y + outer.height
-}
-
 /// A drawing without the subjects left out. Every box and route it keeps is
 /// the drawing's own, and only the hops and cuts where its lines cross are
 /// settled again on what is left, from the routes as the crossing pass
@@ -108,19 +99,6 @@ pub fn shown_drawing<S: BuildHasher>(
         .filter(|node| shown(&node.measured.node.id))
         .cloned()
         .collect();
-    // A region stays while it gathers something still drawn.
-    let regions = whole.regions.as_ref().map(|regions| {
-        regions
-            .iter()
-            .filter(|region| {
-                cards
-                    .iter()
-                    .chain(&containers)
-                    .any(|node| inside(node.bounds, region.bounds))
-            })
-            .cloned()
-            .collect()
-    });
     let kept: ArchitectureDrawing<NodeFacts, EdgeFacts> = ArchitectureDrawing {
         cards,
         containers,
@@ -130,7 +108,6 @@ pub fn shown_drawing<S: BuildHasher>(
             .filter(|edge| shown(&edge.edge.id))
             .cloned()
             .collect(),
-        regions,
         ..whole.clone()
     };
     let settled = if drawing.frozen {

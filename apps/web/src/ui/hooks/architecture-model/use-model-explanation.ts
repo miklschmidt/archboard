@@ -65,9 +65,6 @@ function useModelExplanation(
 				relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
 					(kind) => !filters.hideKinds.includes(kind),
 				),
-				groups: Object.keys(model.policy.groups).filter((group) =>
-					filters.showGroups.includes(group),
-				),
 				grammar: mode.data,
 				flow: flow ?? undefined,
 				referenceSubject,

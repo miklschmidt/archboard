@@ -3,9 +3,10 @@
 
 use std::collections::{BTreeMap, HashSet};
 
-use crate::drawing::{Painted, ReadingDirection};
-use crate::measure::{FarSubject, far_size_for};
-use crate::request::{PaintRequest, Picture, Standing};
+use crate::drawing::{Node, Painted, ReadingDirection, TextRole};
+use crate::geometry::Rect;
+use crate::measure::{FarCard, far_scale_for};
+use crate::request::{ArchitecturePicture, PaintRequest, Picture, SequencePicture, Standing};
 use crate::scene::{Atlas, Boxes, Definition, Head, HeadInk, Item, MarkerId, Scene};
 
 mod appearance;
@@ -21,8 +22,8 @@ mod edge_line;
 mod edge_tab;
 mod export;
 mod far_card;
-pub(crate) use far_card::far_name_width;
 mod far_view;
+mod finish;
 mod flowchart_shapes;
 mod icons;
 mod junctions;
@@ -34,7 +35,6 @@ mod page;
 mod palette;
 mod polygon;
 mod ports;
-mod regions;
 mod relay;
 mod sequence;
 mod sequence_frames;
@@ -44,18 +44,21 @@ mod shared_ink;
 mod slab;
 mod standing;
 mod styles;
+mod tag;
 mod text_runs;
 mod traffic;
 mod tray;
 
-pub use legend_entries::{Applied, Drawn, PictureKey, picture_key};
+pub use legend_entries::{Applied, Drawn, PictureLegend, picture_legend};
 pub use marks::{ViewerMarks, viewer_marks};
 
-/// What every part of one picture is painted with: the icons the host has.
+/// What every part of one picture is painted with.
 #[derive(Debug)]
 struct Ctx<'a> {
     /// Each icon's path data, by its export name.
     icons: &'a BTreeMap<String, Vec<String>>,
+    /// The one type scale of the picture's far cards.
+    far_scale: f64,
 }
 
 /// Every arrowhead marker and shared gradient a picture's body refers to.
@@ -94,6 +97,7 @@ fn definitions(palette: &palette::Palette) -> Vec<Definition> {
     }
     defined.extend(slab::slab_definitions(palette));
     defined.extend(ports::port_definitions(palette));
+    defined.push(tray::well_shade(palette));
     defined
 }
 
@@ -115,26 +119,88 @@ fn subject_atlas(atlas: Atlas, subjects: &HashSet<&str>) -> Atlas {
     }
 }
 
-/// The size group captions draw their names at from far away: the largest
-/// size at which every card the page holds, drawn or not, fits its name.
-fn far_size(page: &Painted) -> f64 {
-    far_size_for(
-        &page
-            .drawing
-            .cards
-            .iter()
-            .map(|card| FarSubject {
-                name: &card.measured.node.name,
-                bounds: card.bounds,
+/// The one type scale of a page's far cards. A door and a shape keep their own words.
+fn far_scale(picture: &ArchitecturePicture, page: &Painted) -> f64 {
+    let appearance = |id: &str| picture.appearances.get(id);
+    let shaped =
+        |id: &str| (picture.flowchart.as_ref()).is_some_and(|parts| parts.shapes.contains_key(id));
+    let cards: Vec<&Node> = (page.drawing.cards.iter())
+        .filter(|card| card.measured.node.door.is_none())
+        .filter(|card| !shaped(&card.measured.node.id))
+        .collect();
+    let tags: Vec<Vec<&str>> = (cards.iter())
+        .map(|card| {
+            appearance(&card.measured.node.id).map_or_else(Vec::new, |look| {
+                look.tags.iter().map(|tag| tag.name.as_str()).collect()
             })
-            .collect::<Vec<_>>(),
-    )
+        })
+        .collect();
+    let far: Vec<FarCard<'_>> = (cards.iter().zip(&tags))
+        .map(|(card, tags)| {
+            let node = &card.measured.node;
+            FarCard {
+                name: &node.name,
+                path: node.code_path.as_deref(),
+                gist: node.responsibility.as_deref(),
+                tags,
+                drills: appearance(&node.id).is_some_and(|look| look.drill.is_some()),
+                lines: (card.measured.runs.iter())
+                    .filter(|run| run.role == TextRole::Title)
+                    .count(),
+                width: card.bounds.width,
+                height: card.bounds.height,
+            }
+        })
+        .collect();
+    let box_of = Rect {
+        x: 0.0,
+        y: 0.0,
+        width: page.drawing.width,
+        height: page.drawing.height,
+    };
+    far_scale_for(&far, box_of)
+}
+
+/// The one type scale of a sequence's far cards.
+fn sequence_far_scale(picture: &SequencePicture) -> f64 {
+    let laid = picture.shown.as_ref().unwrap_or(&picture.laid);
+    let cards: Vec<FarCard<'_>> = (laid.flows.iter())
+        .flat_map(|flow| &flow.columns)
+        .map(|column| FarCard {
+            name: &column.card.node.name,
+            path: column.card.node.code_path.as_deref(),
+            gist: column.card.node.responsibility.as_deref(),
+            tags: &[],
+            drills: false,
+            lines: 1,
+            width: column.card.bounds.width,
+            height: column.card.bounds.height,
+        })
+        .collect();
+    let page = Rect {
+        x: 0.0,
+        y: 0.0,
+        width: laid.width,
+        height: laid.height,
+    };
+    far_scale_for(&cards, page)
+}
+
+/// The one type scale of a picture's far cards.
+fn picture_far_scale(picture: &Picture) -> f64 {
+    match picture {
+        Picture::Architecture(picture) => {
+            far_scale(picture, picture.whole.as_ref().unwrap_or(&picture.drawing))
+        }
+        Picture::Sequence(picture) => sequence_far_scale(picture),
+    }
 }
 
 /// One picture painted into a scene.
 pub fn paint(request: &PaintRequest) -> Scene {
     let ctx = Ctx {
         icons: &request.icons,
+        far_scale: picture_far_scale(&request.picture),
     };
     let palette = &palette::Palette::of_page();
     let page = &request.page;
@@ -159,9 +225,7 @@ pub fn paint(request: &PaintRequest) -> Scene {
             let vocabulary = architecture::Vocabulary {
                 appearances: &picture.appearances,
                 lines: &picture.lines,
-                groups: &picture.groups,
                 steps: picture.steps.iter().map(String::as_str).collect(),
-                far_size: far_size(page_drawing),
             };
             let held_page = architecture::HeldPage {
                 drawing: page_drawing,
@@ -266,7 +330,7 @@ mod tests {
                 "b": {"container": false, "icon": "RiServerLine", "typeName": "Service", "typeKind": "service", "drill": null}
             },
             "lines": {"ab": {"name": "Calls", "dash": "solid", "arrowhead": "filled"}},
-            "steps": [], "groups": {}
+            "steps": []
         },
         "page": {"standing": {"a": "added"}, "plain": false, "unsettled": [], "unbuilt": false},
         "document": {"name": "Two services", "farViewSwapMs": 280},

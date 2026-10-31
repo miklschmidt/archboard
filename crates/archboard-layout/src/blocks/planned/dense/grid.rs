@@ -1,7 +1,10 @@
 //! Which cell of a frame's grid each part stands in. A short search swaps parts
 //! while that shortens their lines.
 
-use crate::{geometry::Point, graph::Node};
+use crate::{
+    geometry::Point,
+    graph::{GROUPS, Node},
+};
 
 use super::CELL_GAP;
 
@@ -9,6 +12,8 @@ use super::CELL_GAP;
 const AGAINST: f64 = 600.0;
 /// What a turn costs, as a route's cost weighs it.
 const TURN: f64 = 120.0;
+/// How much harder a shared group holds two parts together than a shared door.
+const GROUP_PULL: f64 = 2.0;
 /// How many times the search passes over every part.
 const PASSES: usize = 6;
 
@@ -20,6 +25,8 @@ pub(super) struct Item<'a> {
     pub outward: f64,
     /// What it reaches outside the frame, each way.
     pub doors: Vec<(&'a str, bool)>,
+    /// The groups it is in.
+    pub groups: Vec<&'a str>,
 }
 
 impl<'a> Item<'a> {
@@ -28,6 +35,9 @@ impl<'a> Item<'a> {
             node,
             outward: 0.0,
             doors: Vec::new(),
+            groups: node
+                .option(GROUPS)
+                .map_or_else(Vec::new, |groups| groups.split(' ').collect()),
         }
     }
 }
@@ -110,14 +120,18 @@ impl Grid {
         joined + walled + self.apart(items, pitch)
     }
 
-    /// How far apart the parts of each door stand.
+    /// How far apart the parts of each door and of each group stand.
     fn apart(&self, items: &[Item<'_>], pitch: Point) -> f64 {
         let mut cost = 0.0;
         for (one, item) in items.iter().enumerate() {
             let (ax, ay) = self.at(self.cells[one]);
             for (other, peer) in items.iter().enumerate().skip(one + 1) {
-                let shared = item.doors.iter().filter(|door| peer.doors.contains(door));
-                let shared = shared.count() as f64;
+                let doors = item.doors.iter().filter(|door| peer.doors.contains(door));
+                let groups = item
+                    .groups
+                    .iter()
+                    .filter(|group| peer.groups.contains(group));
+                let shared = doors.count() as f64 + groups.count() as f64 * GROUP_PULL;
                 if shared > 0.0 {
                     let (bx, by) = self.at(self.cells[other]);
                     cost += shared

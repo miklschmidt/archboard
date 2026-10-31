@@ -286,11 +286,9 @@ test("a crowded picture draws every relationship", () => {
 	expect(projectModel(modelOf(parts, edges)).content.edges).toHaveLength(edges.length);
 });
 
-test("group regions stay off until a reader turns one on", () => {
+test("a reading keeps every group of a card, which it shows as tags", () => {
 	const model = modelOf([{ id: "a", groups: ["edge", "core"] }], []);
-	expect(projectModel(model).content.nodes[0]?.groups).toEqual([]);
-	const shown = projectModel(model, null, null, { showGroups: ["core"] });
-	expect(shown.content.nodes[0]?.groups).toEqual(["core"]);
+	expect(projectModel(model).content.nodes[0]?.groups).toEqual(["edge", "core"]);
 });
 
 /**

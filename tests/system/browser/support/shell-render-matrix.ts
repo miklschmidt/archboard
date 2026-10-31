@@ -201,8 +201,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// face counts when its load gives back loaded faces: one still loading
 		// is waited for, and one that fails, or that nothing declares, is false.
 		const fontChecks = await Promise.all(['400 14px "Archboard Onest"', '500 14px "Archboard Onest"',
-			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard DM Mono"',
-			'500 10px "Archboard DM Mono"'].map(font => document.fonts.load(font).then(
+			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard Maple Mono"',
+			'500 10px "Archboard Maple Mono"'].map(font => document.fonts.load(font).then(
 				faces => faces.length > 0 && faces.every(face => face.status === 'loaded'), () => false)));
 		const shell = document.getElementById('root')?.firstElementChild;
 		// The navigator's top row: the brand and the application's own controls.
@@ -351,7 +351,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
+					.filter(name => /(?:Onest-wght|MapleMonoNL-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
 				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),

@@ -1,26 +1,15 @@
 // The words and the marks of every named colour, as a reader sees them on each
 // ground (TASK-422, TASK-432).
 //
-// What this catches: a card's words or a kind's glyph or a line that falls
-// under its APCA level on the face a group tints or the ground it crosses, in
-// either theme, and, on the light ground, a face clipped out of its group's
-// hue or too pale to show it, and a front edge no darker than its face. The
-// light colours once stayed pale to keep their words legible. These numbers
-// say that deep ink and strong colours keep them legible instead. The levels
-// are APCA's (`APCA` in drawn-colours.ts), not the WCAG 2 ratio.
+// What this catches: a card's words, a tag's words on its finish, a kind's glyph
+// or a line that falls under its APCA level on the ground it crosses, in either
+// theme. The levels are APCA's (`APCA` in drawn-colours.ts), not the WCAG 2 ratio.
 
 import { APCAcontrast, sRGBtoY } from "apca-w3";
 import { describe, expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import {
-	APCA,
-	chromaOf,
-	lightnessContrast,
-	lightnessOf,
-	paintedIn,
-	toneHueOf,
-} from "#tests/runtime/support/drawn-colours.ts";
+import { APCA, lightnessContrast, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import type { DiagramTheme } from "@archboard/board/render-reply";
@@ -81,17 +70,6 @@ function cardOf(markup: string) {
 	};
 }
 
-/**
- * How far apart two hues are, round the circle.
- * @param a One hue, in degrees.
- * @param b The other.
- * @returns The angle between them.
- */
-function hueApart(a: number, b: number): number {
-	const apart = Math.abs(a - b) % 360;
-	return Math.min(apart, 360 - apart);
-}
-
 test("apca-w3 keeps the contract the contrast checks rely on", () => {
 	// The one local declaration of apca-w3 0.1.9 (apca-w3.d.ts) says the result
 	// is signed by polarity and reaches about 106 and 108 at the extremes.
@@ -101,7 +79,7 @@ test("apca-w3 keeps the contract the contrast checks rely on", () => {
 });
 
 describe("every named colour keeps its words and its marks legible", () => {
-	test.each(THEMES)("the words on a grouped card (%s)", async (theme) => {
+	test.each(THEMES)("the words on a card of every group (%s)", async (theme) => {
 		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
 		for (const color of COLOURS) {
 			const card = cardOf(groupOf(svg, "node", color)!.markup);
@@ -112,38 +90,20 @@ describe("every named colour keeps its words and its marks legible", () => {
 		}
 	});
 
-	test("a grouped face is a clear tint in its group's hue (light)", async () => {
-		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, "light");
+	test.each(THEMES)("a tag's words keep their level on its finish (%s)", async (theme) => {
+		const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
 		for (const color of COLOURS) {
-			const card = cardOf(groupOf(svg, "node", color)!.markup);
-			const ink = themeColor("light", `--semantic-${color}`);
-			// A tint sRGB cannot hold is clipped into a neighbouring hue: a blue face
-			// turns sky. The face keeps the hue of its colour and a tint that shows.
-			expect(hueApart(toneHueOf(card.face), toneHueOf(ink)), `${color} face hue`).toBeLessThan(6);
-			expect(chromaOf(card.face), `${color} face tint`).toBeGreaterThan(0.028);
+			const stops = new RegExp(
+				`id="ab-door-${color}".*?stop-color="(#[0-9a-f]{6})".*?stop-color="(#[0-9a-f]{6})"`,
+				"su",
+			).exec(svg)!;
+			const markup = groupOf(svg, "node", color)!.markup;
+			const tag = markup.slice(markup.indexOf(`url(#ab-door-${color})`));
+			const ink = /<g [^>]*fill="(#[0-9a-f]{6})"[^>]*aria-hidden="true">/u.exec(tag)![1]!;
+			for (const stop of stops.slice(1))
+				expect(lightnessContrast(ink, stop!), color).toBeGreaterThanOrEqual(APCA.mark);
 		}
 	});
-
-	test.each(THEMES)(
-		"a grouped card's front edge is its face in shade, a step darker (%s)",
-		async (theme) => {
-			const svg = paintedIn((await renderArchitecture({ content, policy })).svg, theme);
-			for (const color of COLOURS) {
-				const card = cardOf(groupOf(svg, "node", color)!.markup);
-				// The front edge is turned from the light: darker than the face in
-				// OKLCH lightness by as clear a step as a neutral card's edge in the
-				// dark theme, which is 0.095 under its face.
-				expect(
-					lightnessOf(card.face) - lightnessOf(card.edge),
-					`${color} step`,
-				).toBeGreaterThanOrEqual(0.09);
-				expect(
-					hueApart(toneHueOf(card.edge), toneHueOf(card.face)),
-					`${color} edge hue`,
-				).toBeLessThan(8);
-			}
-		},
-	);
 
 	test.each(THEMES)(
 		"a glyph on its chip, and a line on the page and on a tray's floor (%s)",

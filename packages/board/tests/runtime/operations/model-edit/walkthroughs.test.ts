@@ -323,7 +323,7 @@ test("exact narrative targets retain their history and unavailable targets never
 		expectedRevision: playback.revision.digest,
 		expectedSourceRevision: playback.playback.sourceRevision.digest,
 		subjects: [],
-		reading: { focus: [], relationshipKinds: [], groups: [], grammar: "architecture" as const },
+		reading: { focus: [], relationshipKinds: [], grammar: "architecture" as const },
 	};
 	const captured = await readArchitectureModel(vault, undefined, undefined, {
 		...playback.playback.source,
