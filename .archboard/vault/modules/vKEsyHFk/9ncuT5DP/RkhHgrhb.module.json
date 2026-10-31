@@ -75,6 +75,19 @@
       },
       "id": "vKEsyHFk#lBMb2LoN",
       "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
+    },
+    {
+      "order": 70046,
+      "kind": "call",
+      "label": "apply shared thread profiles",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+        "symbol": "captureExecutionContext"
+      },
+      "id": "vKEsyHFk#C12Ez7nd",
+      "to": "vKEsyHFk#92V2PmcS"
     }
   ]
 }
