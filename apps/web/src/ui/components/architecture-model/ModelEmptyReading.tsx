@@ -49,10 +49,11 @@ function ModelEmptyReading(props: {
 /**
  * Whether the reader looks at the Current of a model that has none.
  * @param scene The scene on screen.
- * @returns True for a planning model, read with no proposal chosen.
+ * @returns True for a planning model, read with no proposal chosen. A preview says so itself.
  */
 function isPlanned(scene: AcceptedScene): boolean {
-	return scene.model.manifest.current === null && scene.model.selectedState === null;
+	const { manifest, selectedState, migrationPreview } = scene.model;
+	return manifest.current === null && selectedState === null && migrationPreview === undefined;
 }
 
 /**

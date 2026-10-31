@@ -18,7 +18,7 @@ import {
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
 import { pickModelChoice as pick } from "./support/model-choice.ts";
-import { serverPath } from "./support/navigator-support.ts";
+import { servedRepository, serverPath } from "./support/navigator-support.ts";
 import { legacyNavigation } from "./support/legacy-navigation.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -159,9 +159,10 @@ test("a converted reference preserves preview and paired original state and chec
 	registerServerBase(server.base);
 	runServerCli(server, ["repo", "add", fixture.root]);
 	const browser = resources.use(await createAgentBrowser());
+	const repository = encodeURIComponent(await servedRepository(server.base));
 	await browser.run([
 		"open",
-		`${server.base}/?modelA=Shop&previewA=Shop&checkpointA=${fixture.checkpoint}&legacyAddressA=Store@Before`,
+		`${server.base}/?modelA=Shop&repoA=${repository}&previewA=Shop&checkpointA=${fixture.checkpoint}&legacyAddressA=Store@Before`,
 	]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
