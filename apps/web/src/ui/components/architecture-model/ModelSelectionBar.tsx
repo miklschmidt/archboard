@@ -28,7 +28,7 @@ function ModelSelectionBar(props: {
 	);
 	const count = selection.ids.size;
 	return (
-		<div data-slot="model-selection-bar" className="flex flex-wrap items-center gap-2">
+		<div data-slot="model-selection-bar" className="flex flex-wrap items-center gap-1.5">
 			<output
 				data-slot="model-selection-count"
 				data-count={count}

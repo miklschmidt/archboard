@@ -277,30 +277,18 @@ function useSceneLighting(scene: AcceptedScene, selected: ReadonlySet<string>, l
 	const { connections, content } = projection;
 	const single = soleSubject(selected, connections);
 	const peeked = usePeeked();
+	const free = scene.presentation === undefined && !leaving && reading.grammar === "architecture";
 	const lightingInput = useMemo(
 		() => ({
 			content,
 			atlas: picture.atlas,
 			selection: single,
+			several: free && single === null ? projectedMarks(selected, connections) : null,
 			peeked: { ...peeked, row: lineOf(peeked.row, connections) },
 			veil: null,
-			enabled:
-				scene.presentation === undefined &&
-				!leaving &&
-				(selected.size === 0 || single !== null) &&
-				reading.grammar === "architecture",
+			enabled: free && (selected.size === 0 || single !== null),
 		}),
-		[
-			content,
-			connections,
-			picture.atlas,
-			single,
-			peeked,
-			scene.presentation,
-			leaving,
-			selected,
-			reading.grammar,
-		],
+		[content, connections, picture.atlas, single, peeked, free, selected],
 	);
 	return { lighting: useLighting(lightingInput), single };
 }

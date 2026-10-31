@@ -6,7 +6,8 @@
 //
 // The same reading says what the picture lights when a part is poked (`litBy`):
 // the part and all it holds, every relationship that touches any of it, and the
-// parts at their other ends.
+// parts at their other ends. Several parts picked at once say nothing about their
+// wiring, so they light only themselves and the lines between them (`litBySeveral`).
 
 import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -136,6 +137,25 @@ function litBy(wiring: Wiring, id: string): ReadonlySet<string> | null {
 }
 
 /**
+ * What the picture leaves standing for several subjects picked at once: them, the relationships
+ * between them, the ends of any relationship among them, and the containers that hold any of it.
+ * @param wiring What the variant says, or null while that is not known.
+ * @param subjects The picked subjects, or null for none.
+ * @returns The ids to leave standing, or null when the picture draws none of them.
+ */
+function litBySeveral(
+	wiring: Wiring | null,
+	subjects: ReadonlySet<string> | null,
+): ReadonlySet<string> | null {
+	if (wiring === null || subjects === null) return null;
+	const between = wiring.edges.filter((edge) => subjects.has(edge.from) && subjects.has(edge.to));
+	const lit = new Set([...subjects, ...between.map((edge) => edge.id)]);
+	withEnds(wiring.edges, lit);
+	withContainers(wiring.nodes, lit);
+	return [...wiring.nodes, ...wiring.edges].some(({ id }) => lit.has(id)) ? lit : null;
+}
+
+/**
  * What a trace lights: what the pick lights, and everything the trace reached
  * beyond it, with the containers that hold any of them.
  * @param wiring What the variant says.
@@ -173,6 +193,7 @@ function litInPicture(
 export {
 	connectionsOf,
 	litBy,
+	litBySeveral,
 	litInPicture,
 	subtreeOf,
 	withReach,

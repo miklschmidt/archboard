@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:15:00Z'
+updated_date: '2026-10-31T03:39:00Z'
 labels:
   - frontend
 dependencies:
@@ -34,9 +34,9 @@ The owner thought the legend was deleted, because the Key button at the lower le
 - [x] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
 - [x] #8 The bottom left button is gone, and so is any code that only served the overlay
 - [ ] #9 The owner accepts it by eye
-- [ ] #10 Filter is a real control in the look of the panel's other controls, with an icon, a pressed state and the count of hidden kinds
-- [ ] #11 Every row of the legend keeps its position when a kind is hidden, shown or filtered, and nothing shifts sideways
-- [ ] #12 A group tag is a button: a click selects that group's parts in the reading with the existing selection, a second click clears it, and the tag shows that it is on
+- [x] #10 Filter is a real control in the look of the panel's other controls, with an icon, a pressed state and the count of hidden kinds
+- [x] #11 Every row of the legend keeps its position when a kind is hidden, shown or filtered, and nothing shifts sideways
+- [x] #12 A group tag is a button: a click selects that group's parts in the reading with the existing selection, a second click clears it, and the tag shows that it is on
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -49,6 +49,8 @@ The owner thought the legend was deleted, because the Key button at the lower le
 5. Delete the overlay: panel wait, panel room, clear-of-panel use in ModelDiagram, reveal cover, slide CSS, SIDEBAR_MS.panelWait, the dismiss code.
 6. Update DESIGN.md and the docs. CONTEXT.md stays untouched: the brief changed, because another agent rewrites it.
 7. Update browser tests, sweep the corpus, run check:all.
+
+8. Polish pass on the owner's feedback. Rows come from the whole reading, not from what the picture draws now, in one policy order for kinds, line types and groups, so hiding a kind moves nothing. A kind the picture no longer draws keeps a dimmed row with its policy icon. Filter becomes an outline button with an icon, a pressed state and the hidden count. Each line type reserves its switch's room. A group tag is a button over the existing selection, and 'on' is derived from it. The action bar moves above the legend, because the bar under it would push a tag out from under the pointer and the second click would land on Focus. Show all clears hidden kinds in one step.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -72,4 +74,14 @@ Merged from feat/reader-legend at 6d5287ba8. The full gate passed on the merge i
 The owner saw the column and asked for polish: Filter read as plain text, line types swapped places when hidden, because the list sorted hidden kinds last, and group tags did nothing. Decision: a tag click uses the existing selection, so it adds no new state.
 
 The owner objects to the word key wherever it means this legend. PictureKey in the client and in the core stays for now, because the core is owned by the door work. Rename it to a legend word after that merge, in the code and in crates/.
+
+Polish pass on feat/reader-legend-polish. The rows now come from the whole reading and not from the picture, because hiding one kind took a part kind off the picture in 93 of 316 hides across 70 of 111 readings, and a group's last door in 25 readings. Kinds, line types and groups each keep the policy's order. A kind that the picture leaves out keeps a dimmed row, and its chip reads the icon that the policy names, through iconQuery, which moved from LevelMark to the query owner. The hidden count now counts only the kinds of this reading, so a kind hidden elsewhere never adds a row that leaves again.
+
+Proof of no movement. A sweep over every corpus reading compared the rows with nothing hidden and with each kind hidden: 111 readings, 316 hides, 0 changed rows, and the same group set as before. tests/system/browser/canonical-model-legend.test.ts measures every word and mark of the legend at rest, with Filter on, with two kinds hidden, after Show all and with a group on, and all are identical.
+
+Two changes outside the brief's list, both needed by decision 3. First, the action bar moved above the legend, against the line 'above any action bar' in docs/design/reader-redesign.md, which this change updates. With the bar under the legend a selection pushed a tag up 57 px, so a second click at the same place landed on the action bar. Second, several selected subjects now recede the rest. The picture only did that for one pick, so a group click would have lit its parts and dimmed nothing. litBySeveral keeps the subjects, the lines between them and their containers. No state was added, and this also applies to a Ctrl selection and an area selection.
+
+Design pass beyond the brief: the legend is a tray (bg-raised, shadow-edge-up), every row is 24 px with marks in one 22 px box, so names and samples align, the title uses the Title role, and the action row's left edge matches the legend's. A group tag with nothing drawn stays, dimmed and held. Show all earned its place: it is one click instead of opening Filter and pressing each switch.
+
+Evidence on the final code: check:all exit 0 after 212 s, 21 of 21 tasks, 45 of 45 browser files, 5336 pass, 0 fail. Corpus sweep at 1920 by 1080 on 112 readings: whole legend on screen on all, tallest 289 px, at least 714 px left for the subject, no clipped name, nothing over the column edge. Screenshots in /tmp/integrate/slice19b/.
 <!-- SECTION:NOTES:END -->

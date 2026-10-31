@@ -242,6 +242,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[filters, navigate, userChanged],
 	);
+	const showAllKinds = useCallback((): void => {
+		userChanged?.("view");
+		void navigate({ hideKinds: undefined });
+	}, [navigate, userChanged]);
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[]): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
@@ -346,6 +350,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		focus,
 		filters,
 		toggleFilter,
+		showAllKinds,
 		reveal,
 		setFocus,
 		open,
