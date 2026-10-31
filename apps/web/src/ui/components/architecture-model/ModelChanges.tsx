@@ -52,20 +52,20 @@ function ChangesList(props: ChangesListProps): JSX.Element {
 	const box = useKeptInView(place);
 	const rows = useMemo(
 		() =>
-			list.changes.map(
-				(change): ChangeTreeRow => ({
-					id: change.id,
-					parent: null,
-					branch: false,
-					open: false,
-					change,
-				}),
-			),
+			list.changes.map((change): ChangeTreeRow => ({
+				id: change.id,
+				parent: null,
+				branch: false,
+				open: false,
+				change,
+			})),
 		[list],
 	);
 	const open = useCallback((row: ChangeTreeRow): void => onShow(row.change), [onShow]);
 	if (list.changes.length === 0)
-		return <p className="text-body text-muted-foreground px-4 py-3">Nothing differs from the base.</p>;
+		return (
+			<p className="text-body text-muted-foreground px-4 py-3">Nothing differs from the base.</p>
+		);
 	return (
 		<div ref={box} data-slot="model-changes" className="min-h-0 flex-1">
 			<Tree label="Changes" rows={rows} home={place} onOpen={open}>
@@ -118,10 +118,15 @@ function ChangeRowOf(props: {
 /** The rows change one at a time, and a long list holds thousands. */
 const ChangeRow = memo(ChangeRowOf);
 
-/** A key that a control answers to, in the look of the one that brings up Find. */
+/**
+ * A key that a control answers to, in the look of the one that brings up Find.
+ * @param props The key.
+ * @param props.letter The key.
+ * @returns The cap.
+ */
 function KeyCap(props: { readonly letter: string }): JSX.Element {
 	return (
-		<kbd className="text-technical border-current/30 rounded-control border px-1 font-mono leading-4">
+		<kbd className="text-technical rounded-control border border-current/30 px-1 font-mono leading-4">
 			{props.letter}
 		</kbd>
 	);

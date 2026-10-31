@@ -106,7 +106,7 @@ function offeredBy(model: Content, walk: ChangeWalk): readonly Destination[] {
  */
 function walkFact(walk: ChangeWalk): string | undefined {
 	if (!walk.reviewing) return undefined;
-	return walk.position === null ? String(walk.count) : `${walk.position} of ${walk.count}`;
+	return walk.position === undefined ? String(walk.count) : `${walk.position + 1} of ${walk.count}`;
 }
 
 /**
@@ -136,6 +136,10 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	);
 	const records = keepsRecord(model);
 	const { reference } = reader.comparison;
+	const walker = useMemo(
+		() => (reviewing ? <ModelChanges.Walker walk={walk} /> : undefined),
+		[reviewing, walk],
+	);
 	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
 		<>
@@ -154,7 +158,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				flows={flows.length}
 				walkthroughs={walkthroughs.length}
 				changes={walkFact(walk)}
-				walker={reviewing ? <ModelChanges.Walker walk={walk} /> : undefined}
+				walker={walker}
 				offered={offeredBy(model, walk)}
 			>
 				<ModelColumn.List value="modules">

@@ -6,7 +6,13 @@
 
 import { drawingOf, type FieldChange } from "@archboard/board/comparison";
 import { everyStep, stepWords } from "@archboard/board/flow";
-import { modelContent, moduleForest, type Model, type SemanticEdge } from "@archboard/board/content";
+import {
+	modelContent,
+	moduleForest,
+	type Model,
+	type SemanticEdge,
+} from "@archboard/board/content";
+import type { ChangeStep } from "#ui/rules/architecture-model/reader-keys.ts";
 
 type Comparison = NonNullable<Model["comparison"]>;
 type Subject = Comparison["subjects"][number];
@@ -46,6 +52,21 @@ interface ChangeList {
 	readonly positions: ReadonlyMap<string, number>;
 }
 
+/** Where a reader stands in a list. */
+interface WalkPlace {
+	readonly id: string;
+	/** Whether the reader stood on this subject, not on one that left the list before it. */
+	readonly landed: boolean;
+}
+
+/** Where a reading stands, which decides whether going to a change has to move it. */
+interface ChangeHere {
+	readonly structural: boolean;
+	readonly flow: string | null;
+	readonly opened: string | null;
+	readonly focused: boolean;
+}
+
 /** What a list reads its rows from. */
 interface ChangeReading {
 	readonly changed: ReadonlyMap<string, ChangedSubject>;
@@ -64,11 +85,25 @@ function isChanged(subject: Subject): subject is ChangedSubject {
 
 /**
  * How many subjects a comparison reports as changed.
- * @param comparison The comparison.
+ * @param comparison The comparison, when the reading has one.
  * @returns The count.
  */
-function changedCount(comparison: Comparison): number {
-	return comparison.subjects.filter(isChanged).length;
+function changedCount(comparison: Comparison | undefined): number {
+	return comparison?.subjects.filter(isChanged).length ?? 0;
+}
+
+/**
+ * Whether a reading has changes to walk: a proposal, read against a base.
+ * @param model The reading.
+ * @returns True for a draft with a comparison, which After turns off.
+ */
+function reviewsChanges(model: Model): boolean {
+	const { comparison, selectedState, migrationPreview } = model;
+	return (
+		selectedState?.lifecycle === "draft" &&
+		comparison !== undefined &&
+		migrationPreview === undefined
+	);
 }
 
 /**
@@ -178,11 +213,7 @@ function ownRow(reading: ChangeReading, id: string, target: ChangeTarget): Chang
  * @param to The other end.
  * @returns The innermost module that holds both, or null for the roots.
  */
-function commonScope(
-	parents: ChangeReading["parents"],
-	from: string,
-	to: string,
-): string | null {
+function commonScope(parents: ChangeReading["parents"], from: string, to: string): string | null {
 	const above = new Set<string>();
 	for (let at: string | undefined = from; at !== undefined; at = parents.get(at)) above.add(at);
 	for (let at: string | undefined = to; at !== undefined; at = parents.get(at)) {
@@ -343,11 +374,7 @@ function removedWalkthrough(base: Walkthrough, reading: ChangeReading): ChangeGr
  * @param reading The changes.
  * @returns A group for each walkthrough with changes.
  */
-function walkthroughGroups(
-	model: Model,
-	reference: Model,
-	reading: ChangeReading,
-): ChangeGroup[] {
+function walkthroughGroups(model: Model, reference: Model, reading: ChangeReading): ChangeGroup[] {
 	const held = new Set(model.walkthroughs.map((walkthrough) => walkthrough.id));
 	const bases = new Map(reference.walkthroughs.map((one) => [one.id, one]));
 	return [
@@ -357,6 +384,9 @@ function walkthroughGroups(
 			.flatMap((one) => removedWalkthrough(one, reading)),
 	];
 }
+
+/** A list with nothing in it. */
+const NO_CHANGES: ChangeList = { groups: [], changes: [], positions: new Map() };
 
 /**
  * What a reading changes against its base, grouped by owner.
@@ -383,27 +413,95 @@ function changeList(model: Model, reference: Model): ChangeList {
 }
 
 /**
- * The subject that keeps a reader's place in a list that changed: the same subject, or else the
- * nearest one after it that stays, or else the nearest one before it.
+ * A reader's place in a list that changed. It stays on its subject. If the subject left, it stands
+ * on the nearest one after it that stayed, which the reader has not seen yet, or else the nearest
+ * one before it.
+ * @param place The place.
  * @param before The list the reader walked.
  * @param after The list now.
- * @param id The subject the reader stood on.
- * @returns The subject, or null when none of the list stays.
+ * @returns The place, or null when none of the list stays.
  */
-function placeIn(before: ChangeList, after: ChangeList, id: string): string | null {
-	if (after.positions.has(id)) return id;
+function placeIn(place: WalkPlace, before: ChangeList, after: ChangeList): WalkPlace | null {
+	const { id } = place;
+	if (after.positions.has(id)) return place;
 	const at = before.positions.get(id) ?? 0;
 	const onward = [...before.changes.slice(at + 1), ...before.changes.slice(0, at).toReversed()];
-	return onward.find((change) => after.positions.has(change.id))?.id ?? null;
+	const stayed = onward.find((change) => after.positions.has(change.id));
+	return stayed === undefined ? null : { id: stayed.id, landed: false };
+}
+
+/**
+ * Where a reader stands: on the change they selected by any route, or else where a walk left them.
+ * @param list The list.
+ * @param place Where a walk left them.
+ * @param ids The selected identities.
+ * @returns The place.
+ */
+function standingPlace(
+	list: ChangeList,
+	place: WalkPlace | null,
+	ids: ReadonlySet<string>,
+): WalkPlace | null {
+	const [only, other] = ids;
+	if (other === undefined && only !== undefined && list.positions.has(only))
+		return { id: only, landed: true };
+	return place !== null && list.positions.has(place.id) ? place : null;
+}
+
+/**
+ * The change one step from a place. A reader on a subject they have not seen starts with it.
+ * @param list The list.
+ * @param place The place.
+ * @param step One step on, or one step back.
+ * @returns The change, or undefined at an end of the list.
+ */
+function changeAfter(
+	list: ChangeList,
+	place: WalkPlace | null,
+	step: ChangeStep,
+): Change | undefined {
+	const unseen = place?.landed === false && step === 1;
+	return list.changes[(positionOf(list, place) ?? -1) + (unseen ? 0 : step)];
+}
+
+/**
+ * A place's position in a list.
+ * @param list The list.
+ * @param place The place.
+ * @returns The position from zero, or undefined when the reader stands on no change.
+ */
+function positionOf(list: ChangeList, place: WalkPlace | null): number | undefined {
+	return place === null ? undefined : list.positions.get(place.id);
+}
+
+/**
+ * Whether going to a change has to move the reading, because a reader's Back should not fill up
+ * with moves to the place they are in.
+ * @param target The change's target.
+ * @param here Where the reading stands.
+ * @returns True when the address has to change.
+ */
+function movesReading(target: ChangeTarget, here: ChangeHere): boolean {
+	const { structural, flow, opened, focused } = here;
+	if (target.kind === "flow") return structural || flow !== target.flow;
+	if (target.kind === "scope") return !structural || focused || opened !== target.scope;
+	return !structural;
 }
 
 export {
+	NO_CHANGES,
+	changeAfter,
 	changeList,
 	changedCount,
+	movesReading,
 	namedField,
 	placeIn,
+	positionOf,
+	reviewsChanges,
+	standingPlace,
 	type Change,
-	type ChangeGroup,
+	type ChangeHere,
 	type ChangeList,
 	type ChangeTarget,
+	type WalkPlace,
 };

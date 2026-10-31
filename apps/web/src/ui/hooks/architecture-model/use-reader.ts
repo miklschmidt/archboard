@@ -4,7 +4,7 @@ import type { VariantContent } from "@archboard/board/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import type { Page } from "#ui/components/architecture-model/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { reviewsChanges, useChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
+import { useChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import { useModelMoves } from "#ui/hooks/architecture-model/use-model-moves.ts";
 import { useModelReading } from "#ui/hooks/architecture-model/use-model-reading.ts";
 import { useProjectedSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
@@ -12,6 +12,7 @@ import { useModuleBranches } from "#ui/hooks/architecture-model/use-module-branc
 import { useReaderChoices } from "#ui/hooks/architecture-model/use-reader-choices.ts";
 import { useReaderMoves } from "#ui/hooks/architecture-model/use-reader-moves.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { relevantFlows } from "#ui/rules/architecture-model/flow-reading.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
 import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
@@ -190,6 +191,7 @@ function useReader(inputs: ReaderInputs) {
 		reference: comparison.reference,
 		location,
 		opened,
+		selected: selection.ids,
 		onList: places.onList,
 		onDiagram: places.onDiagram,
 	});

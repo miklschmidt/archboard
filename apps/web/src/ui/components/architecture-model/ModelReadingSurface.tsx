@@ -283,10 +283,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 			kinds,
 		);
 	}, [model.relationships, selection.ids, reveal, behavioralIds]);
-	// A selection that comes with a move explains the picture it comes with, so it waits for it.
-	const { settled, last } = usePanelWait(
-		selection.ids.size === 0 ? selection.ids : accepted.selected,
-	);
+	const { settled, last } = usePanelWait(selectionToExplain(selection.ids, accepted.selected));
 	const panelOpen = settled.size > 0 && page === "diagram" && !keyOpen;
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	useReaderKeys(reader.onMove);
@@ -333,6 +330,20 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 			</div>
 		</PeekProvider>
 	);
+}
+
+/**
+ * What the panel waits on. A selection that comes with a move explains the picture it comes with,
+ * so it waits for that picture, and a selection let go leaves at once.
+ * @param ids The selected identities.
+ * @param shown The selection of the picture on show.
+ * @returns The identities.
+ */
+function selectionToExplain(
+	ids: ReadonlySet<string>,
+	shown: ReadonlySet<string>,
+): ReadonlySet<string> {
+	return ids.size === 0 ? ids : shown;
 }
 
 /**

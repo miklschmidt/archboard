@@ -1,4 +1,4 @@
-import { Fragment, useMemo, type JSX, type ReactNode } from "react";
+import { Fragment, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { cn, Tabs } from "@archboard/ui-kit/components";
@@ -53,6 +53,23 @@ function ColumnFind(props: { readonly children: ReactNode }): JSX.Element | null
 }
 
 /**
+ * The tabs a reading offers.
+ * @param props The destinations and what the tabs say of them.
+ * @returns The tabs.
+ */
+function destinationEntries(props: ColumnDestinationsProps): readonly DestinationEntry[] {
+	const { offered, flows = 0, walkthroughs = 0, changes = "" } = props;
+	const all: readonly DestinationEntry[] = [
+		{ value: "modules", label: "Modules", count: "" },
+		{ value: "flows", label: "Flows", count: countOf(flows) },
+		{ value: "walkthroughs", label: "Walkthroughs", count: countOf(walkthroughs) },
+		{ value: "history", label: "History", count: "" },
+		{ value: "changes", label: "Changes", count: changes },
+	];
+	return all.filter((entry) => offered.includes(entry.value));
+}
+
+/**
  * Put a reader's destinations in the left column while its pane has focus: tabs with the
  * count of the open scope on Flows and Walkthroughs. A proposal adds Changes on a row of its
  * own, because five tabs do not fit the column, and the walk stands at the end of that row.
@@ -60,20 +77,9 @@ function ColumnFind(props: { readonly children: ReactNode }): JSX.Element | null
  * @returns The destinations, or nothing while another pane has focus.
  */
 function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null {
-	const { destination, onDestination, offered, flows = 0, walkthroughs = 0, changes = "" } = props;
+	const { destination, onDestination } = props;
 	const slot = usePaneChrome().column?.destinations ?? null;
-	const entries = useMemo(() => {
-		const all: readonly DestinationEntry[] = [
-			{ value: "modules", label: "Modules", count: "" },
-			{ value: "flows", label: "Flows", count: countOf(flows) },
-			{ value: "walkthroughs", label: "Walkthroughs", count: countOf(walkthroughs) },
-			{ value: "history", label: "History", count: "" },
-			{ value: "changes", label: "Changes", count: changes },
-		];
-		return all.filter((entry) => offered.includes(entry.value));
-	}, [offered, flows, walkthroughs, changes]);
 	if (slot === null) return null;
-	const reviewing = offered.includes("changes");
 	return (
 		<>
 			{createPortal(
@@ -83,32 +89,47 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 					onValueChange={onDestination}
 					className="min-h-0 flex-1 gap-0"
 				>
-					<div className="relative shrink-0">
-						<Tabs.List
-							variant="underline"
-							className={cn(
-								"h-band px-2",
-								reviewing && "flex-wrap items-stretch group-data-horizontal/tabs:h-auto",
-							)}
-						>
-							{entries.map((entry) => (
-								<Fragment key={entry.value}>
-									{entry.value === "changes" && <TabRowBreak />}
-									<DestinationTab entry={entry} />
-								</Fragment>
-							))}
-						</Tabs.List>
-						{props.walker !== undefined && (
-							<div className="h-band absolute right-2 bottom-0 flex items-center">
-								{props.walker}
-							</div>
-						)}
-					</div>
+					<DestinationTabs entries={destinationEntries(props)} walker={props.walker} />
 					{props.children}
 				</Tabs>,
 				slot,
 			)}
 		</>
+	);
+}
+
+/**
+ * The tabs, and at the end of the last row the controls of the walk.
+ * @param props The tabs and the controls.
+ * @param props.entries The tabs.
+ * @param props.walker The controls of the walk.
+ * @returns The rows.
+ */
+function DestinationTabs(props: {
+	readonly entries: readonly DestinationEntry[];
+	readonly walker: ReactNode;
+}): JSX.Element {
+	const { entries, walker } = props;
+	return (
+		<div className="relative shrink-0">
+			<Tabs.List
+				variant="underline"
+				className={cn(
+					"h-band px-2",
+					walker !== undefined && "flex-wrap items-stretch group-data-horizontal/tabs:h-auto",
+				)}
+			>
+				{entries.map((entry) => (
+					<Fragment key={entry.value}>
+						{entry.value === "changes" && <TabRowBreak />}
+						<DestinationTab entry={entry} />
+					</Fragment>
+				))}
+			</Tabs.List>
+			{walker !== undefined && (
+				<div className="h-band absolute right-2 bottom-0 flex items-center">{walker}</div>
+			)}
+		</div>
 	);
 }
 
