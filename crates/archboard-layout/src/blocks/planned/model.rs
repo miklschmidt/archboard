@@ -104,7 +104,9 @@ impl<'a> Model<'a> {
                     edge.id
                 ));
             };
-            model.ends.push((model.ending(from, to), model.ending(to, from)));
+            model
+                .ends
+                .push((model.ending(from, to), model.ending(to, from)));
         }
         model.treatments = model
             .edges

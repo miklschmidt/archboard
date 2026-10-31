@@ -122,7 +122,7 @@ pub(super) fn route_candidates(
 fn dense_routes(lines: usize) -> usize {
     match lines {
         0..=15 => 6,
-        16..=24 => 3,
+        16..=24 => 2,
         25..=40 => 2,
         _ => 1,
     }

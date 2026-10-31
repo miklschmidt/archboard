@@ -175,11 +175,7 @@ fn shorten(
     repairs: &mut usize,
     chosen: &Shape,
 ) -> Option<Shape> {
-    let (from, to) = model.ends[edge];
-    let reciprocal = model.outgoing[to]
-        .iter()
-        .any(|&other| model.ends[other].1 == from);
-    if paths.len() > super::REFINEMENT_LIMIT || !reciprocal {
+    if paths.len() > super::REFINEMENT_LIMIT {
         return None;
     }
     let length = |line: &PlacedLine| super::geometry::length(&line.points);
