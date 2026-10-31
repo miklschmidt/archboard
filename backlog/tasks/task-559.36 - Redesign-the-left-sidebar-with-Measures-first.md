@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T20:20:00Z'
-updated_date: '2026-10-31T20:25:00Z'
+updated_date: '2026-10-31T20:51:00Z'
 labels:
   - frontend
   - design
@@ -44,11 +44,11 @@ The owner reviewed the left column and called the tabs sloppy and the Measures c
 ## Implementation Plan
 
 <!-- SECTION:PLAN:BEGIN -->
-1. Width: 448 px, from five tabs with three-digit counts on one row (445 px) and a table of a 184 px name, which fits 99 percent of this model's names, beside seven 30 px count columns. Change NAVIGATOR_WIDTH in shell-geometry.ts, the mirror in archboard-layout, and derive LANDING_ROOM from one Rust constant.
-2. ui-kit: one popover select and menu motion from a new group in @archboard/timing, a Select.Item description, select groups, a Count badge, and an edge variant of Tabs.
+1. Width: 448 px, from five tabs with three-digit counts on one row (445 px) and a table of a 184 px name, which fits 99 percent of this model's names, beside seven 30 px columns. NAVIGATOR_WIDTH holds it, and the core derives LANDING_ROOM from the same width.
+2. ui-kit: one popover select and menu motion, with popoverIn and popoverOut in COLUMN_MS of @archboard/timing, which apps/web puts on the root because the kit cannot read timing. A Select.Item description, select groups, a count variant of Badge, and an edge variant of Tabs.
 3. app.css and theme: colour utilities for the slab and tray tokens, elevation for a sunk well and a low slab, the column well, the edge tab.
-4. Column: Find as a well, the repository switcher as a raised key, tabs on one row, one well round each list, rows on the floor of the well, the chosen row as a raised plate with a gold front edge in place of the gold left bar.
-5. Measures: a table with one row per module, seven count columns under vertical heads, a shelf that holds the sort, what the sort counts and the heads, a footnote that says what the counts cover, a quiet dash for a module that was not read, and a neutral bar for the sorted count.
+4. Column: Find as a well, the repository switcher as a raised key, tabs on one row, one well round each list, rows on the floor of the well, the chosen row as a raised plate with a gold foot.
+5. Measures: a table with one row per module, seven count columns under vertical heads, a shelf that holds the sort, what the sort counts and the heads, a foot that says what the counts cover and why modules were not read, the sorted count on a slab and a neutral bar under the name.
 6. Badges across the column: Flows, Walkthroughs, Changes, walkthrough steps, checkouts.
 7. Screenshots in dark and light at 1920 by 1080, one pass of fixes, docs, tests, and bun run check.
 <!-- SECTION:PLAN:END -->

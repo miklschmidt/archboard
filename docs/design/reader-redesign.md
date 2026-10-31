@@ -16,10 +16,10 @@ from Shop, on the renderer core before commit `4b970e501`. Measure again before 
 The left column lists where to go. The middle shows it. The right column explains what is selected or open, and
 what the marks of the picture mean.
 
-- Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
-  `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk. `Flows` and `Walkthroughs` list the whole model and
-  show its count, so a list here never changes under a reader. Five tabs do not fit the column, so `Measures` starts
-  a second row. A proposal read against its base adds `Changes` to that row, with its count and the reader's position.
+- Left column, 448 px (TASK-559.36): Find, a repository switcher that shows the pane letter, the destinations
+  `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures` on one row, and Talk. `Flows` and `Walkthroughs` list
+  the whole model and show its count, so a list here never changes under a reader. A proposal read against its base
+  adds `Changes` on a second row, with its count and the reader's position.
 - Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
@@ -56,7 +56,9 @@ what the marks of the picture mean.
   one count, the most first. A tie goes by name, and a module with no such measure comes last, because no count is
   not a count of none. A row selects its module on its picture through the same path as a count in the interface
   line, opening what it must. The interface counts need no server and show at once, and the history counts arrive
-  with the read. A module the read skipped says why, a failed read says what happened and offers `Read again`, and a
+  with the read. The list is a table (TASK-559.36): each count keeps a column on every row, the sorted column has a
+  lit head and its numbers on slabs, and a neutral bar under the name draws that one count. A module the read skipped
+  takes a dash, and the foot of the list says why. A failed read says what happened and offers `Read again`, and a
   model with no bindings says that history needs them. Counts only: no score, no color, no rank and no mark on the
   picture (ADR 0044).
 - Trace: with one module selected, the head of `Sends to` holds `Trace onward` and the head of `Receives from` holds
@@ -305,7 +307,8 @@ signal. It binds a write and current content, and it stops at history:
 
 ## Gates
 
-Each gate is absolute and uses the real pane of this design, about 1239 by 1003 beside the right panel.
+Each gate is absolute and uses the real pane of this design, about 1111 by 1003 beside the right panel. The left
+column took it from 1239 wide to 1111 (TASK-559.36), so a picture lands in a room of 1063 by 955.
 
 1. At least 108 of 123 readings of this repository pass at fit 0.6. The rest land whole on their far view. The
    corpus now holds 115 readings, and 106 of them pass on the merged reader.

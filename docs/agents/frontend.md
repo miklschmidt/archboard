@@ -251,6 +251,13 @@ Its picture provider uses the local renderer.
 No provider falls back to a live board HTTP route.
 Canonical recordings use their captured model and the same canonical walkthrough components as ordinary playback.
 
+The left column draws its depth from the picture's tokens. `column-well` in `app.css` is the well of a list, and a row's tone is `bg-tray-sink`, so a stuck row hides what scrolls under it.
+A shelf or a foot of a list stands proud of the floor, so it sets its own z-index above the well's shadow.
+The `edge` variant of `Tabs.List` stands on the top edge of that well. `app.css` holds its piece, outside any layer, so it replaces the registry's trigger.
+A count is `Badge` with `variant="count"` and `size="technical"`.
+
+Every dropdown is `Select` or `DropdownMenu` from the ui-kit, and both ease with the `menu-motion` utility. The kit reads no timing, because it stands in the lowest layer, and a popover stands in a portal outside the shell root. So `applyShellDurations` puts `COLUMN_MS.popoverIn` and `popoverOut` on the root element when the page starts.
+
 The remaining stack stays as it is. Use the existing shadcn/Base UI primitives,
 Remix icons, Tailwind theme tokens and Bun validation. Other Platform libraries,
 font utilities, logging APIs and referenced skills are not implied dependencies.
@@ -387,7 +394,9 @@ The pane header slot takes the crumbs, the code path, the state chip, and `Diagr
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
 A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
 `ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `rules/architecture-model/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
-That rule also holds the one order of each measure.
+That rule also holds the one order of each measure, and each measure's name and what it counts.
+`ModelMeasureRow` draws a row's cells on one track of seven columns, so the heads and the rows line up.
+`ModelChoiceList` puts them in `Tree.Facts`, and `flat` gives a table's row no room for a disclosure.
 A row selects through `findModule`, the path of Find and of a count in the interface line.
 A closed tab draws nothing, so `ReadingColumn` keeps the sort.
 

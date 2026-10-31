@@ -69,3 +69,12 @@ boards out again, and ADR 0039 says how it is judged.
 - A reader's real pane is taller than the reference pane: 1271 by 992 beside a
   docked sidebar. The camera fits a drawing into the real pane, so a drawing
   never shows smaller on screen than its recorded fit.
+
+## Amendment of 2026-10-31: the navigator is 448 px wide
+
+TASK-559.36 widened the navigator from 320 px to 448 px, so that five tabs stand on one
+row and `Measures` can be a table. The rules above stand. The numbers follow the shell:
+the stage is 1471 by 1040, and the reference pane is 1143 wide and about 816 high. A
+fit recorded before this date is against the wider pane. `LANDING_ROOM` in the core
+follows the same width, so a picture lands in a room of 1063 by 955. The core keeps the
+navigator's width in `crates/archboard-scene/src/paint/design.rs`, beside this module.

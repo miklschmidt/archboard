@@ -82,6 +82,10 @@ correctness check rather than a style rule.
   also positioned `fixed`, so a tooltip never makes the page larger than the
   window.
 - `badge.tsx`: a `size` axis (`default`, `technical`, `chip`) beside the
-  official variants; every official variant is untouched.
+  official variants, and a `count` variant, the low slab of a number; every
+  official variant is untouched.
+- `tabs.tsx`: the `underline` and `edge` variants beside the official ones.
+- `select.tsx` and `dropdown-menu.tsx`: their classes draw the shell's raised
+  trigger and its `menu-motion` popover in place of the registry's animation.
 - `toggle-group.tsx`: CSS custom properties in `style` are
   typed by `css-custom-properties.d.ts` instead of `as React.CSSProperties`.

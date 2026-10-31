@@ -460,10 +460,13 @@ columns for groups and code leave the table of parts.
 ## The left column
 
 Revised 2026-10-30 (TASK-559.05). The left column replaces the tree of boards.
-[The reader redesign](reader-redesign.md) records why. The column is 320 px wide
-and lists where to go. The picture shows the place, and the right side explains
+[The reader redesign](reader-redesign.md) records why. The column is 448 px wide
+(TASK-559.36), because five tabs and the table of `Measures` need that room, and
+lists where to go. The picture shows the place, and the right side explains
 what is selected or open. From the top, the column holds the wordmark, Find, the
-repository switcher, the destinations and the agent dock.
+repository switcher, the destinations and the agent dock. The column is the same
+object as the picture: its list lies in a well, the open tab is the piece raised
+on the edge of that well, and a count is a low slab. DESIGN.md holds the recipe.
 
 ![The left column at 1920×1080: Find, the repository switcher, the destinations
 with the Modules tree open on a module, and Talk at the
@@ -492,11 +495,10 @@ foot](assets/operator-shell-navigator.png)
   conversation needs a pane. The start rule is in
   [the reader redesign](reader-redesign.md#start-and-states).
 - **The destinations** are `Modules`, `Flows`, `Walkthroughs`, `History` and
-  `Measures`. Five tabs do not fit the column, so `Measures` starts a second row.
-  `Flows` and `Walkthroughs` show a count for the open scope. A retained original
+  `Measures`, on one row. `Flows` and `Walkthroughs` show a count of the whole model. A retained original
   has no `History`, so its four tabs keep one row. A reading that fails offers
   `History` alone, so the reader can go on to a reading that opens. A proposal
-  read against its base adds `Changes` to the second row, and opens on it.
+  read against its base adds `Changes` on a second row, and opens on it.
 - **`Modules` is a tree of the containment forest.** It opens the path to the
   open scope and the branches that the reader opened. The ancestors of the open
   row stick to the top while the column scrolls. Siblings sort by code path.
@@ -523,9 +525,10 @@ foot](assets/operator-shell-navigator.png)
   redesign](reader-redesign.md#the-rule-of-the-screen) says what a row holds.
 - **One grid.** Every row is four columns placed by its depth alone: the
   disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
-  the right. A row is 28 px high. One row is lit, the row of the open scope. A row
-  under the pointer takes half the reading tone and no lit line, so it never looks
-  selected.
+  the right. A row is 28 px high. One row is lit, the row of the open scope, as a
+  raised plate with a gold front edge. A row under the pointer takes half that
+  tone and no gold, so it never looks selected. A row of `Measures` has no depth,
+  so it keeps no room for a disclosure.
 - **Each tree is one tab stop** with the keys of a tree. Right opens a closed
   row, then steps in. Left closes an open row, then steps out. Enter opens the
   row, Alt and Enter opens it beside, and typing goes on to Find.

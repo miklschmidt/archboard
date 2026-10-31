@@ -197,11 +197,8 @@ test("every measure keeps its place on a row, whatever the row can say of it", a
 	answering(async () => Response.json(ANSWER));
 	mount();
 	await waitFor(() => expect(history()).toBe("read"));
-	const cells = (id: string): number =>
-		row(id).querySelector('[data-slot="model-measure-cells"]')!.childElementCount;
-	expect(cells("api")).toBe(7);
-	expect(cells("route")).toBe(7);
-	expect(cells("worker")).toBe(7);
+	for (const id of ["api", "route", "worker"])
+		expect(row(id).querySelector('[data-slot="model-measure-cells"]')?.childElementCount).toBe(7);
 });
 
 test("a row says its counts to assistive technology, because a bare number says nothing", async () => {
@@ -227,10 +224,10 @@ test("the bar of a row follows the sorted count, and a count of none has none", 
 	answering(async () => Response.json(ANSWER));
 	mount();
 	await waitFor(() => expect(history()).toBe("read"));
-	const bar = (id: string) => row(id).querySelector<HTMLElement>('[data-slot="model-measure-bar"]');
-	expect(bar("api")?.style.width).toContain("* 1)");
-	expect(bar("route")).toBeNull();
-	expect(bar("worker")).toBeNull();
+	const bar = '[data-slot="model-measure-bar"]';
+	expect(row("api").querySelector<HTMLElement>(bar)?.style.width).toContain("* 1)");
+	expect(row("route").querySelector(bar)).toBeNull();
+	expect(row("worker").querySelector(bar)).toBeNull();
 });
 
 test("a failed read says so and offers the read again, and the interface stays", async () => {

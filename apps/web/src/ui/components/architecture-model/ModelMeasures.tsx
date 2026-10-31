@@ -29,6 +29,21 @@ import {
 	type MeasureRow,
 } from "#ui/rules/architecture-model/module-measures.ts";
 
+/** What the sort offers, by where the measure comes from. */
+const HISTORY_MEASURES = MEASURES.filter(({ key }) => isHistoryMeasure(key));
+const INTERFACE_MEASURES = MEASURES.filter(({ key }) => !isHistoryMeasure(key));
+
+/** The name of each measure, as the closed sort says it. */
+const SORT_ITEMS = MEASURES.map(({ key, label }) => ({ value: key, label }));
+
+/** Inputs for the sort, and for the shelf that holds it. */
+interface MeasureSortProps {
+	readonly measure: MeasureKey;
+	/** Whether the reading can read history. */
+	readonly history: boolean;
+	readonly onMeasure: (measure: MeasureKey) => void;
+}
+
 /** Inputs for the list. */
 interface ModelMeasuresProps {
 	readonly vault: string;
@@ -120,16 +135,9 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
  * What stands over the table while it scrolls: the sort, what it counts, and a head over each
  * column. The head of the sorted column is lit, so its numbers have a name.
  * @param props What the list is sorted by, and whether history can be read.
- * @param props.measure The measure.
- * @param props.history Whether the reading can read history.
- * @param props.onMeasure Sort by another measure.
  * @returns The shelf.
  */
-function MeasureShelf(props: {
-	readonly measure: MeasureKey;
-	readonly history: boolean;
-	readonly onMeasure: (measure: MeasureKey) => void;
-}): JSX.Element {
+function MeasureShelf(props: MeasureSortProps): JSX.Element {
 	const { measure, history, onMeasure } = props;
 	return (
 		<div className="bg-raised shadow-edge-down sticky top-0 z-20 flex items-end gap-2 pt-2 pr-3 pl-3">
@@ -180,26 +188,11 @@ function ColumnHead(props: { readonly label: string; readonly sorted: boolean })
 /**
  * The one sort control. A reading with no history to read offers only what it can sort by.
  * @param props What the list is sorted by, and whether history can be read.
- * @param props.measure The measure.
- * @param props.history Whether the reading can read history.
- * @param props.onMeasure Sort by another measure.
  * @returns The control, with its label.
  */
-function MeasureSort(props: {
-	readonly measure: MeasureKey;
-	readonly history: boolean;
-	readonly onMeasure: (measure: MeasureKey) => void;
-}): JSX.Element {
+function MeasureSort(props: MeasureSortProps): JSX.Element {
 	const { measure, history, onMeasure } = props;
 	const id = useId();
-	const items = useMemo(
-		() =>
-			MEASURES.filter(({ key }) => history || !isHistoryMeasure(key)).map(({ key, label }) => ({
-				value: key,
-				label,
-			})),
-		[history],
-	);
 	const choose = useCallback(
 		(value: MeasureKey | null): void => {
 			if (value !== null) onMeasure(value);
@@ -211,37 +204,17 @@ function MeasureSort(props: {
 			<label htmlFor={id} className="text-body text-muted-foreground shrink-0">
 				Sort by
 			</label>
-			<Select items={items} value={measure} onValueChange={choose}>
+			<Select items={SORT_ITEMS} value={measure} onValueChange={choose}>
 				<Select.Trigger id={id} size="sm" data-slot="model-measure-sort" className="min-w-0 flex-1">
 					<Select.Value />
 				</Select.Trigger>
 				<Select.Content className="w-115">
-					{history && (
-						<MeasureChoices label="Code history" measures={MEASURES.filter(fromHistory)} />
-					)}
-					<MeasureChoices label="Interface" measures={MEASURES.filter(fromInterface)} />
+					{history && <MeasureChoices label="Code history" measures={HISTORY_MEASURES} />}
+					<MeasureChoices label="Interface" measures={INTERFACE_MEASURES} />
 				</Select.Content>
 			</Select>
 		</div>
 	);
-}
-
-/**
- * Whether a measure comes from the code history.
- * @param measure The measure.
- * @returns True for one that does.
- */
-function fromHistory(measure: Measure): boolean {
-	return isHistoryMeasure(measure.key);
-}
-
-/**
- * Whether a measure comes from the module's interface.
- * @param measure The measure.
- * @returns True for one that does.
- */
-function fromInterface(measure: Measure): boolean {
-	return !isHistoryMeasure(measure.key);
 }
 
 /**

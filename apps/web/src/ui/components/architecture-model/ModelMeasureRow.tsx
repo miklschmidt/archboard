@@ -1,4 +1,4 @@
-import type { CSSProperties, JSX } from "react";
+import { useMemo, type JSX } from "react";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import {
 	MEASURES,
@@ -66,8 +66,8 @@ function ModelMeasureCells(props: {
  */
 function SortedBar(props: { readonly count: number; readonly most: number }): JSX.Element | null {
 	const { count, most } = props;
+	const style = useMemo(() => ({ width: `calc(${BAR_ROOM} * ${count / most})` }), [count, most]);
 	if (count === 0) return null;
-	const style: CSSProperties = { width: `calc(${BAR_ROOM} * ${count / most})` };
 	return (
 		<span
 			aria-hidden="true"
