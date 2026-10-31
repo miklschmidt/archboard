@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/Oi6SBIAM#StrSdB9p",
       "name": "A page connects its socket",
+      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the vault is gone, the pane lands in its repository's chosen checkout.",
       "participants": [
         "vKEsyHFk/yejBBUFY#xsn0RvSi",
         "vKEsyHFk/Oi6SBIAM#X07YebBP",
@@ -145,7 +146,7 @@
                           "id": "vKEsyHFk/Oi6SBIAM#RPw8zIHG",
                           "from": "vKEsyHFk/Oi6SBIAM#X07YebBP",
                           "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-                          "label": "its repository's chosen checkout, else the opening vault",
+                          "label": "its repository's chosen checkout",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
@@ -214,12 +215,12 @@
             }
           ]
         }
-      ],
-      "summary": "Accepts a pane's socket only from the page's own origin and for a vault the server can read. If the vault is gone, the pane lands in its repository's chosen checkout or the opening vault."
+      ]
     },
     {
       "id": "vKEsyHFk/Oi6SBIAM#YkrftZyC",
       "name": "A person chooses a checkout",
+      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its board again there. Every tab then refreshes its repositories.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
@@ -390,8 +391,7 @@
             }
           ]
         }
-      ],
-      "summary": "Seen from the panes: each pane learns where it is, or moves into the chosen checkout's vault and reads its board again there. Every tab then refreshes its repositories."
+      ]
     }
   ]
 }

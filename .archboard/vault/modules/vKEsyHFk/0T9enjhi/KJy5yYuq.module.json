@@ -175,6 +175,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
       "to": "vKEsyHFk/0T9enjhi#Jx4O72DO"
+    },
+    {
+      "order": 998000,
+      "kind": "call",
+      "label": "each compared state's interface",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/rules/compare/interfaces.ts",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo",
+      "id": "vKEsyHFk#UDGtsZfv"
     }
   ]
 }

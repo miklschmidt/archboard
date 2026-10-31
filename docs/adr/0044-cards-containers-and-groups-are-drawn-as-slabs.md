@@ -411,3 +411,33 @@ already stands round it and says the group. A part that a view draws as a card,
 with none of its children inside it, is a card and keeps its group's color.
 Grouping tests own the rule: a container's header face is the page's color, a
 nested one's is the floor around it, and no group's hue reaches it.
+
+## Amendment of 2026-10-31: a frame is a well with an edge tab, and a group is a tag
+
+TASK-559.14, TASK-559.16 and TASK-559.17 change what this record says about
+containers and groups. [ADR 0070](0070-doors-are-buttons-and-every-relationship-has-a-line.md)
+holds the edge tab and its reasons. The slabs of cards, chips and labels, the
+ports, the arrowheads, the lines and the APCA levels stand. These passages no
+longer hold:
+
+- **Rule 3.** A frame has no walls. It is a well with one inner shadow from the
+  whole of its top edge, a 2-unit lit lip along its foot, and one thin line
+  round the tab and the well. It still casts no shadow, and a nested well still
+  sinks a step deeper.
+- **Rule 4 and the amendment of 2026-10-15.** No frame holds a header slab. Its
+  name stands on an edge tab, a lighter piece raised on the top edge of the
+  well. The tab hugs its words with 12 units on either side, and its left side
+  is the well's left side.
+- **Rules 6 and 7.** No reading draws a group's region, and no group tints a
+  card. A card's face and front edge stay neutral. A group shows on its cards as
+  a bright tag.
+- **Rule 9.** A sequence frame is a well with a tab, as a container is.
+- **Rule 10.** On a container, the change mark runs round the face of its tab,
+  and a removed container is a ghost of the whole outline of the tab and the
+  well.
+- **Rule 14.** The tones of a group's region are gone. `--tray-tab` colors the
+  tab, and `--bright-<name>` colors a group's tag and a door.
+- **What stays.** A group's tag says the group, in place of the card.
+
+The `lib/svg` paths in this record name files that moved. The painter now lives
+in `crates/archboard-scene/src/paint`.

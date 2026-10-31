@@ -157,19 +157,6 @@
       "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
     },
     {
-      "order": 52000,
-      "kind": "call",
-      "label": "the vault a pane opens in, which the server serves",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
-        "symbol": "servedVault"
-      },
-      "id": "vKEsyHFk/yejBBUFY#9vLmTtXn",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
       "order": 59000,
       "kind": "call",
       "label": "a pane focused, a board opened, a fix asked for",

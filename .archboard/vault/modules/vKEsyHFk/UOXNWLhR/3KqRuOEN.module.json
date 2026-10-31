@@ -3,7 +3,7 @@
   "name": "Diagram presentation components",
   "kind": "function",
   "responsibility": "Presents diagram surfaces, legends, details, and reachable display states",
-  "description": "Canonical readers reuse the picture controls and legend. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path.",
+  "description": "Canonical readers reuse the picture surface, tips and type samples, and draw their own Legend and right panel in Model reading. The retained stage also presents original headers, variants, and walkthroughs through an explicit captured provider. These components contain no live legacy authoring path.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas"
@@ -186,19 +186,6 @@
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
     },
     {
-      "order": 86000,
-      "kind": "call",
-      "description": "The code of \"Render stage states\" reaches node \"Semantic viewer\".",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/AboutPage.tsx",
-        "symbol": "variantTimeline"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#wQBlFEQ3",
-      "to": "vKEsyHFk/UOXNWLhR#tSB580xH"
-    },
-    {
       "order": 102000,
       "kind": "call",
       "label": "the vault of inspection, search, history and the header",
@@ -238,19 +225,6 @@
       "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     },
     {
-      "order": 114000,
-      "kind": "call",
-      "label": "keep the picture in place",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "stayPicture"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#mTr3mpxi",
-      "to": "vKEsyHFk/UOXNWLhR#oF5Ib5A4"
-    },
-    {
       "order": 130000,
       "kind": "call",
       "label": "the pane's letter, controls, notice and focus",
@@ -262,6 +236,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#QPqsk43l",
       "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
+    },
+    {
+      "order": 1005000,
+      "kind": "call",
+      "label": "the selected module's interface",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/ContainerInterface.tsx",
+        "symbol": "inspectContainer"
+      },
+      "id": "vKEsyHFk#YUNbvrVu",
+      "to": "vKEsyHFk#DKzh4lMo"
     }
   ]
 }

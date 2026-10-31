@@ -3,7 +3,7 @@
   "name": "Repository listing",
   "kind": "module",
   "responsibility": "Turns the checkout registry into the repositories the navigator lists: each identity's chosen checkout, its vault and its state, and the names of the vaults",
-  "description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. The vault a page opens in is that of the first ready repository by name, else none. repositoryOfVault is how a show names the repository a pane moved into. A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
+  "description": "An identity is listed when any known checkout has a vault in the .archboard/vault layout; its state is ready, no-vault, gone or unchosen. The registry is the only source: no environment variable names a vault (TASK-472.09). A vault whose link leads out of the layout is no vault here, because every call to it is refused: its checkout reads no-vault, and an untracked one is not listed. repositoryOfVault is how a show names the repository a pane moved into. A vault that no registry entry holds has no repository name, and its checkout is the directory that holds it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/server/projections/repository-listing.ts"

@@ -40,6 +40,19 @@
       "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
     },
     {
+      "order": 70016,
+      "kind": "call",
+      "label": "show shared reading controls",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+        "symbol": "WarningCount"
+      },
+      "id": "vKEsyHFk#5Fd9qq2B",
+      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+    },
+    {
       "order": 72000,
       "kind": "call",
       "label": "Read the legacy board listing",
@@ -79,17 +92,17 @@
       "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
     },
     {
-      "order": 70016,
+      "order": 997000,
       "kind": "call",
-      "label": "show shared reading controls",
-      "emphasis": "muted",
+      "label": "the shared tree list",
+      "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
-        "symbol": "WarningCount"
+        "path": "apps/web/src/ui/components/architecture-model/ModelTree.tsx",
+        "symbol": "Tree"
       },
-      "id": "vKEsyHFk#5Fd9qq2B",
-      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5",
+      "id": "vKEsyHFk#3ooGgy80"
     }
   ]
 }

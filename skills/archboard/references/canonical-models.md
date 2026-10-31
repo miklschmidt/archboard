@@ -45,9 +45,9 @@ Hold Space while dragging, or drag with the middle mouse button, to pan.
 Select Focus to show the selected subjects and their required containment paths.
 The reading preserves selected ancestors and descendants together.
 Select Clear focus to return to the underlying scope.
-Use Filters to control relationship kinds and group regions.
+Use Filter in the Legend to hide relationship kinds.
 These controls change the reading without changing architecture files.
-The inspector keeps hidden selections and offers Reveal selection.
+The right panel keeps hidden selections and offers Reveal selection.
 Missing subjects remain explicit until their architecture returns or the reader changes focus.
 Focus and filters survive reload and browser history navigation.
 Selection itself stays temporary and does not add history.
@@ -389,6 +389,10 @@ A rename retains the old name as a former name.
 Use `set.parent` to reparent a module, or `clear:["parent"]` to make it a root.
 Use `edit-relationship.source` to transfer a relationship without replacing its identity.
 Keep its label, description, order, emphasis, traffic, and anchor unstated to preserve them.
+To replace a relationship, state `remove-relationship` and `add-relationship` in one batch.
+That explicit pair declares the replacement.
+The addition takes a new identity, and a comparison reports one removed and one added subject.
+Archboard never infers a replacement from matching ends or labels.
 
 New identities come from Archboard in the model namespace.
 Do not supply an ID, schema version, former names, or outgoing array for an addition.
@@ -1163,6 +1167,9 @@ Findings carry `model` and `state` beside stable subject identities.
 `BINDING_PATH_MISSING` reports an absent bound path in the current or selected state, including bindings without symbols.
 Unavailable repositories and source revisions appear as skips instead of missing-path warnings.
 Remembered findings use that same revision and remain empty until a code pass completes.
+A code check of a proposal reads its comparison source separately.
+If that source changes during the check, the check refuses with `STALE_REVISION`, so a stale comparison cannot authorize code inspection.
+Read the selected state again and retry the check.
 
 ## Navigate a local agent pane
 

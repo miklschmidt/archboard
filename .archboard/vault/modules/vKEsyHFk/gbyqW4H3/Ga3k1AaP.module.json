@@ -3,7 +3,7 @@
   "name": "Slab surfaces",
   "kind": "function",
   "responsibility": "Draws raised slabs and their shadows, selection seats and standing borders",
-  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. The header slab of a neutral container well uses the same slab function through tray.rs. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
+  "description": "Cards, icon chips, relationship labels and activation bars use these flat shapes. An edge tab and a door take their selection seats here. Card and label shadows are painted in separate member-tagged groups below the lines and cards. Standing marks border the top face; no wash or hatch replaces the group tint.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/slab.rs"
