@@ -32,14 +32,22 @@ recursively explores their immediate parts. They open the code
 and ask the agent about a part. Understanding comes first because the second
 job depends on it.
 
+Understanding a system includes finding where its design costs the most. The
+reader exists to make codebase smells easy to see, through the lens of John
+Ousterhout's A Philosophy of Software Design: shallow modules, pass-through
+entry points, information leakage and change amplification. It shows the facts
+behind a smell as counts and lists, with no score, and the architect judges
+them (ADR 0044).
+
 The second job is to plan a change. A proposal is drawn against the
 architecture that exists, and competing options sit side by side. The option
 that ships is adopted with the reason for it. The state it replaces stays as
 history.
 
 Success means this: an architect understands a system that they did not draw,
-from its model alone. Then they plan a change against it and trust that the
-picture says what the code is.
+from its model alone. They find where its design smells without first knowing
+where to look. Then they plan a change against it and trust that the picture
+says what the code is.
 
 ## Positioning
 
@@ -103,7 +111,7 @@ Shipped capabilities include:
 - Compact proposals, comparison, reconciliation, adoption, shelving, and audited historical correction.
 - Exact checkpoints, explicit archive publication and fetch, and portable model export and import.
 - Dynamic walkthroughs, local Codex narration, and retained recording replay.
-- Local explanation actions that preserve the reading captured when the request starts.
+- Local explanation actions. When a request starts, the action keeps the reading of that moment.
 - Subject claims, writer intent, human take-back, and durable recovery.
 - Code bindings, source evidence, groups, traffic, and reproducible SVG and PNG exports.
 
@@ -177,7 +185,7 @@ WCAG 2.2 AA is the required standard for every surface, except for contrast:
 - the reduced-motion preference honored by every animation, including traffic
   and camera glides
 - an accessible name and state for every mark that carries meaning, such as a
-  proposal's lifecycle or a reading's active filters
+  proposal's lifecycle or a reading's active filters.
 
 The contrast of text and of marks is judged with APCA (the Accessible
 Perceptual Contrast Algorithm), not with the WCAG 2 contrast ratio. The owner

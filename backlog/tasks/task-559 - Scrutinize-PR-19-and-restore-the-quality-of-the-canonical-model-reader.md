@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-31T03:57:00Z'
+updated_date: '2026-10-31T04:17:00Z'
 labels:
   - frontend
   - review
@@ -71,4 +71,6 @@ Council settled on 2026-10-30. The design record is docs/design/reader-redesign.
 Product intent from the owner: the whole idea of the redesign was easy identification of codebase smells, viewed through the lens of Ousterhout's A Philosophy of Software Design. Judge every reader slice against that.
 
 The owner left the choices to the integrator on 2026-10-31: pick the best options of the audit's ranked list, leave the rest as optional follow-ups for the owner's return. Decisions under that trust: rule 6 stays deleted, so every relationship has a line. Pull request 19 stays unpushed and unmerged until the owner approves.
+
+Delegated choice, 2026-10-31, from the audit in docs/design/task-549-reader-audit.md. Chosen: rank 1, 2 and 3 on TASK-559.22; rank 5 and the CLI half of 6 and 8 on TASK-559.27; rank 4 on TASK-559.29; rank 6 in the reader on TASK-559.30. Left as optional: TASK-559.31. Relationship repair decided as full repair, TASK-559.28, because a relationship that ends on a module with parts makes a caller and no entry point, so the measures read wrong until it moves: 70 of 114 modules with parts hold such an end, and 9 read as no entry points although callers reach them.
 <!-- SECTION:NOTES:END -->
