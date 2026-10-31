@@ -10,5 +10,14 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#RILUrr2x",
   "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "follow explicit foreign subject",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    }
+  ]
 }

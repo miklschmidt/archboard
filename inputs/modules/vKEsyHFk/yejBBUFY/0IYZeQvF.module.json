@@ -27,14 +27,6 @@
   ],
   "outgoing": [
     {
-      "order": 78000,
-      "kind": "call",
-      "label": "resolve source and references",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#F6bCh9SD",
-      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
-    },
-    {
       "order": 79000,
       "kind": "call",
       "label": "activate selected code",
@@ -46,14 +38,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    },
-    {
-      "order": 80000,
-      "kind": "call",
-      "label": "follow explicit foreign subject",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
     }
   ]
 }
