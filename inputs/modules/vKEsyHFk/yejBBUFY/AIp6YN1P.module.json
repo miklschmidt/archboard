@@ -54,6 +54,32 @@
       },
       "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
       "to": "vKEsyHFk/yejBBUFY#hDWpDois"
+    },
+    {
+      "order": 105000,
+      "kind": "http",
+      "label": "Read the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
+      "order": 70017,
+      "kind": "call",
+      "label": "cache and interact with pictures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "browserPictureStorage"
+      },
+      "id": "vKEsyHFk#f0RC9khM",
+      "to": "vKEsyHFk/yejBBUFY#dtYjWvlf"
     }
   ]
 }
