@@ -7,7 +7,7 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type Edge = Projection["listed"][number]["joins"][number];
+type Edge = Projection["connections"][number]["joins"][number];
 
 interface ModelDoorEndpointsProps {
 	door: string;

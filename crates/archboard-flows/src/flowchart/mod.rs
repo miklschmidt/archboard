@@ -179,6 +179,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                     responsibility: node.responsibility.as_deref(),
                     path: None,
                     drills: false,
+                    door: false,
                 };
                 let measured = measure::measure_node(node.facts(), &words, container);
                 return (node.id.clone(), measured);

@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     blocks::assembly::PlacedLine,
-    geometry::{Point, Side},
+    geometry::{Point, Rect, Side},
 };
 pub(super) fn ends(
     model: &Model<'_>,
@@ -88,7 +88,7 @@ pub(super) fn aligned(
     if !vertical && !horizontal {
         return pairs;
     }
-    let extent = |r: crate::geometry::Rect| {
+    let extent = |r: Rect| {
         if vertical {
             (r.x, r.width)
         } else {
@@ -122,6 +122,38 @@ pub(super) fn aligned(
     pairs
 }
 
+/// Where a relationship's own slot stands along a wall, among all that end there.
+fn wall_slot(
+    model: &Model<'_>,
+    shape: &Shape,
+    incidents: &[(usize, bool)],
+    (edge, source): (usize, bool),
+    (side, at): (Side, Rect),
+) -> Point {
+    let horizontal = matches!(side, Side::Bottom | Side::Top);
+    let mut ordered = incidents.to_vec();
+    ordered.sort_by(|&(one, os), &(two, ts)| {
+        let coord = |e: usize, s: bool| {
+            let other = if s { model.ends[e].1 } else { model.ends[e].0 };
+            let p = center(shape.endpoints[&other]);
+            if horizontal { p.x } else { p.y }
+        };
+        coord(one, os)
+            .total_cmp(&coord(two, ts))
+            .then(one.cmp(&two))
+            .then(os.cmp(&ts))
+    });
+    let index = ordered
+        .iter()
+        .position(|v| *v == (edge, source))
+        .expect("the incident relationship has an endpoint slot");
+    let fraction = (index + 1) as f64 / (ordered.len() + 1) as f64;
+    Point {
+        x: at.x + 20.0 + (at.width - 40.0) * fraction,
+        y: at.y + 20.0 + (at.height - 40.0) * fraction,
+    }
+}
+
 fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<super::ports::Port> {
     let (from, to) = model.ends[edge];
     let a = center(shape.endpoints[&from]);
@@ -132,38 +164,20 @@ fn extra(model: &Model<'_>, edge: usize, source: bool, shape: &Shape) -> Vec<sup
     if super::points::pointed(model, endpoint) {
         return ports;
     }
-    let at = shape.endpoints[&endpoint];
     let incidents: Vec<_> = model.outgoing[endpoint]
         .iter()
         .map(|&e| (e, true))
         .chain(model.incoming[endpoint].iter().map(|&e| (e, false)))
         .collect();
     let margin = if source { 12.0 } else { 20.0 };
+    let walls = model.endpoints[endpoint].walls;
     for side in [Side::Bottom, Side::Right, Side::Top, Side::Left] {
-        ports.push(super::ports::on_wall(at, side, toward, margin));
-        let horizontal = matches!(side, Side::Bottom | Side::Top);
-        let mut ordered = incidents.clone();
-        ordered.sort_by(|&(one, os), &(two, ts)| {
-            let coord = |e: usize, s: bool| {
-                let other = if s { model.ends[e].1 } else { model.ends[e].0 };
-                let p = center(shape.endpoints[&other]);
-                if horizontal { p.x } else { p.y }
-            };
-            coord(one, os)
-                .total_cmp(&coord(two, ts))
-                .then(one.cmp(&two))
-                .then(os.cmp(&ts))
-        });
-        let index = ordered
-            .iter()
-            .position(|v| *v == (edge, source))
-            .expect("the incident relationship has an endpoint slot");
-        let fraction = (index + 1) as f64 / (ordered.len() + 1) as f64;
-        let toward = Point {
-            x: at.x + 20.0 + (at.width - 40.0) * fraction,
-            y: at.y + 20.0 + (at.height - 40.0) * fraction,
-        };
-        ports.push(super::ports::on_wall(at, side, toward, 20.0));
+        if walls.contains(&side) {
+            let at = shape.wall(endpoint, side);
+            ports.push(super::ports::on_wall(at, side, toward, margin));
+            let slot = wall_slot(model, shape, &incidents, (edge, source), (side, at));
+            ports.push(super::ports::on_wall(at, side, slot, 20.0));
+        }
     }
     ports
 }

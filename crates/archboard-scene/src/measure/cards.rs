@@ -7,9 +7,11 @@ use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun};
 use crate::measure::{keep_tail, paragraph, width};
 use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
-    CARD_PATH_FONT, CARD_TITLE_FONT, DRILL_MARK_ROOM, HEADER_SLAB_INSET, ICON_CHIP_SIZE,
-    PARENT_TITLE_SIZE, PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_LINE, PART_PATH_SIZE,
-    PART_TITLE_LINE, PART_TITLE_SIZE,
+    CARD_PATH_FONT, CARD_TITLE_FONT, DOOR_ARROW_ROOM, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON,
+    DOOR_PADDING, DRILL_MARK_ROOM, ICON_CHIP_SIZE, PARENT_TITLE_SIZE, PART_NOTE_LINE,
+    PART_NOTE_SIZE, PART_PATH_LINE, PART_PATH_SIZE, PART_TITLE_LINE, PART_TITLE_SIZE, TAB_CHIP,
+    TAB_FAR_CHIP, TAB_FAR_NAME, TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING,
+    TAB_PATH_GAP, TAB_SHOULDER,
 };
 use crate::paint::far_name_width;
 
@@ -57,6 +59,8 @@ pub struct CardWords<'a> {
     pub path: Option<&'a str>,
     /// Whether it opens another board, which puts a mark beside its name.
     pub drills: bool,
+    /// Whether it stands outside the open frame as a door.
+    pub door: bool,
 }
 
 impl CardWords<'_> {
@@ -104,41 +108,114 @@ struct Size {
     height: f64,
 }
 
-/// Measure a card or a parent's compact header before layout. A parent keeps
-/// the normal card width rules and one measured box, regardless of frame size.
+/// Measure a card or a frame's edge tab before layout.
 pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -> MeasuredNode<N> {
+    if container {
+        return one_line(node, words, TAB_SHOULDER);
+    }
+    if words.door {
+        return door(node, words);
+    }
     let size = Size {
         least: CARD_LEAST,
         most: CARD_MOST,
         height: CARD_HEIGHT,
     };
-    let title = if container {
-        Style {
-            size: PARENT_TITLE_SIZE,
-            ..TITLE
-        }
-    } else {
-        TITLE
+    slab(node, words, size, TITLE)
+}
+
+/// Where a tab's words stand on its one line: their baseline and sizes.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct TabLine {
+    /// Where its name starts.
+    pub left: f64,
+    /// The baseline its name and path share.
+    pub baseline: f64,
+    pub name: f64,
+    pub path: f64,
+}
+
+/// A tab's line as the picture draws it near.
+pub(crate) const TAB_NEAR: TabLine = TabLine {
+    left: TAB_PADDING + TAB_CHIP + TAB_ICON_GAP,
+    baseline: 23.0,
+    name: PARENT_TITLE_SIZE,
+    path: PART_PATH_SIZE,
+};
+
+/// A tab's line as the picture draws it from far away.
+pub(crate) const TAB_FAR: TabLine = TabLine {
+    left: TAB_PADDING + TAB_FAR_CHIP + TAB_ICON_GAP,
+    baseline: 25.0,
+    name: TAB_FAR_NAME,
+    path: TAB_FAR_PATH,
+};
+
+/// A door's line as the picture draws it near.
+const DOOR_NEAR: TabLine = TabLine {
+    left: DOOR_PADDING + DOOR_ICON + TAB_ICON_GAP - 2.0,
+    baseline: 22.0,
+    name: PARENT_TITLE_SIZE,
+    path: PART_PATH_SIZE,
+};
+
+/// A door's line as the picture draws it from far away.
+pub(crate) const DOOR_FAR: TabLine = TabLine {
+    left: DOOR_PADDING + DOOR_FAR_ICON + TAB_ICON_GAP - 2.0,
+    baseline: 24.0,
+    name: TAB_FAR_NAME,
+    path: TAB_FAR_PATH,
+};
+
+/// A tab's name and path on its one line. A name is never cut, and a path keeps its tail.
+pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<TextRun> {
+    let set = |text: String, x: f64, size: f64, style: Style| TextRun {
+        width: width(&text, style.font, size),
+        text,
+        x,
+        y: line.baseline,
+        font: style.font,
+        font_size: size,
+        role: style.role,
     };
-    let slab = slab(node, words, size, title);
-    if !container {
-        return slab;
-    }
-    let height = HEADER_SLAB_INSET + slab.height;
+    let title = set(name.to_owned(), line.left, line.name, TITLE);
+    let start = line.left + title.width + TAB_PATH_GAP;
+    let room = TAB_MOST - start;
+    let shown = path.map(|path| keep_tail(path, PATH.font, line.path, room));
+    let path = shown.map(|text| set(text, start, line.path, PATH));
+    std::iter::once(title).chain(path).collect()
+}
+
+/// A door: its name on one line, as wide as the name from far away, with its arrow.
+fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
+    let far = tab_runs(DOOR_FAR, words.name, None);
+    let end = far.last().map_or(0.0, |run| run.x + run.width);
     MeasuredNode {
-        width: slab.width + 2.0 * HEADER_SLAB_INSET,
-        height,
-        header_height: height,
-        runs: slab
-            .runs
-            .into_iter()
-            .map(|run| TextRun {
-                x: run.x + HEADER_SLAB_INSET,
-                y: run.y + HEADER_SLAB_INSET,
-                ..run
-            })
-            .collect(),
-        ..slab
+        node,
+        width: end + DOOR_ARROW_ROOM,
+        height: DOOR_HEIGHT,
+        header_height: 0.0,
+        runs: tab_runs(DOOR_NEAR, words.name, None),
+        headers: None,
+        pointed: None,
+    }
+}
+
+/// A frame's edge tab: one line with its name and code path. It is as wide as
+/// its words from far away, and its frame keeps a shoulder beside it. Its
+/// responsibility stays out of the picture.
+fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
+    let far = tab_runs(TAB_FAR, words.name, words.path);
+    let end = far.last().map_or(0.0, |run| run.x + run.width);
+    let width = end + TAB_PADDING + words.marked() + beside;
+    MeasuredNode {
+        node,
+        width,
+        height: TAB_HEIGHT,
+        header_height: TAB_HEIGHT,
+        runs: tab_runs(TAB_NEAR, words.name, words.path),
+        headers: None,
+        pointed: None,
     }
 }
 
@@ -240,6 +317,7 @@ mod tests {
             responsibility: Some("Checks the rules from one author run."),
             path,
             drills: false,
+            door: false,
         };
         measure_node((), &words, false)
     }
@@ -269,6 +347,7 @@ mod tests {
             responsibility: None,
             path: None,
             drills: false,
+            door: false,
         };
         let far = far_name_width(words.name, 0.0);
         assert!(far > CARD_LEAST);
@@ -276,26 +355,21 @@ mod tests {
     }
 
     #[test]
-    fn parents_use_normal_card_width_and_one_measured_header() {
+    fn a_frame_measures_one_line_and_its_far_words_fit_the_tab() {
         let words = CardWords {
-            name: "Run checks",
-            responsibility: Some(
-                "Checks the rules, outcomes, captures, and commands from one author run.",
-            ),
-            path: None,
+            name: "Command startup",
+            responsibility: Some("Takes argv from the process to one selected command."),
+            path: Some("apps/cli/src"),
             drills: false,
+            door: false,
         };
-        let card = measure_node((), &words, false);
-        let parent = measure_node((), &words, true);
-        assert_eq!(parent.width - 2.0 * HEADER_SLAB_INSET, card.width);
-        assert!(parent.headers.is_none());
-        let title_size = |node: &MeasuredNode<()>| {
-            node.runs
-                .iter()
-                .find(|run| run.role == TextRole::Title)
-                .expect("a name")
-                .font_size
-        };
-        assert!(title_size(&parent) > title_size(&card));
+        let tab = measure_node((), &words, true);
+        assert_eq!(tab.height, TAB_HEIGHT);
+        assert_eq!(tab.header_height, TAB_HEIGHT);
+        assert!(tab.runs.iter().all(|run| run.y == tab.runs[0].y));
+        assert!(tab.runs.iter().all(|run| !run.text.contains("argv")));
+        let far = tab_runs(TAB_FAR, words.name, words.path);
+        let end = far.last().map_or(0.0, |run| run.x + run.width);
+        assert!(end + TAB_PADDING + TAB_SHOULDER <= tab.width);
     }
 }

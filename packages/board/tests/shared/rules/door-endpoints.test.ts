@@ -23,8 +23,8 @@ test("a door lists its real endpoints, grouped by the child that reaches them", 
 	const groups = doorEndpoints(projectModel(model, "open"), "door");
 	expect(groups.map(({ part, edges }) => [part, edges.map((edge) => edge.id)])).toEqual([
 		["part", ["deep", "near"]],
-		["open", ["own"]],
 		["other", ["back"]],
+		["open", ["own"]],
 	]);
 });
 

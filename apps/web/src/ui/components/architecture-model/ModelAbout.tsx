@@ -194,7 +194,7 @@ function interfaceSection(props: ScopePageProps): AboutPageSection | null {
  */
 function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 	const { model, projection, selection, look, onShow, walkthroughs } = props;
-	const { listed, reference } = projection;
+	const { connections, reference } = projection;
 	const places = useScopePlaces(props);
 	const list = { model, projection, selection, look, onShow };
 	return shownSections([
@@ -230,10 +230,10 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 			"connections",
 			"Connections",
 			RiArrowLeftRightLine,
-			listed.length,
+			connections.length,
 			<ModelConnectionTable
 				model={model}
-				connections={listed}
+				connections={connections}
 				reference={reference}
 				selected={selection.ids}
 				look={look}

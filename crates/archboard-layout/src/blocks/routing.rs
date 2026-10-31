@@ -57,10 +57,9 @@ pub(super) fn routed(
         if let (Some(&item), Some(header)) = (scene.cards.get(&id), block.header.as_ref()) {
             let one = scene.item_mut(item);
             one.bx.x = block.lone.as_ref().map_or(0.0, super::lone::room_of) - insets.side;
-            one.bx.width = header.painted(placed.header).width;
-            one.inset = Some(crate::constants::HEADER_SLAB_INSET);
-            one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of)
-                + crate::constants::HEADER_SLAB_INSET;
+            one.bx.width = header.painted(placed.header).width - crate::constants::TAB_SHOULDER;
+            one.inset = Some(0.0);
+            one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of);
         }
     }
     let inline = tree.nesting != Nesting::Blocks;

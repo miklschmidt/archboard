@@ -2,20 +2,22 @@
 
 use crate::{
     blocks::assembly::Placed,
+    constants::CONTAINER_INSET,
     geometry::{Point, Rect},
 };
 
-use super::shape::{CLEAR, Shape};
+use super::shape::Shape;
 
 /// Occupied intervals on one axis, with the routing clearance kept at each end.
-#[derive(Default)]
 struct Axis {
+    clear: f64,
     occupied: Vec<(f64, f64)>,
 }
 
 impl Axis {
     fn protect(&mut self, start: f64, size: f64) {
-        self.occupied.push((start - CLEAR, start + size + CLEAR));
+        self.occupied
+            .push((start - self.clear, start + size + self.clear));
     }
 
     fn gaps(mut self) -> Gaps {
@@ -66,7 +68,6 @@ impl Gaps {
     }
 }
 
-#[derive(Default)]
 struct Space {
     x: Axis,
     y: Axis,
@@ -81,6 +82,15 @@ impl Space {
     fn point(&mut self, point: Point) {
         self.x.protect(point.x, 0.0);
         self.y.protect(point.y, 0.0);
+    }
+
+    /// A frame keeps its whole inset: a line can run in it, but no contraction takes it.
+    fn inset(&mut self, frame: Rect) {
+        self.x.protect(frame.x, CONTAINER_INSET);
+        self.x
+            .protect(frame.x + frame.width - CONTAINER_INSET, CONTAINER_INSET);
+        self.y
+            .protect(frame.y + frame.height - CONTAINER_INSET, CONTAINER_INSET);
     }
 
     fn boundary(&mut self, rect: Rect) {
@@ -158,12 +168,19 @@ impl Contraction {
 /// Remove bands that hold no card, header, caption, label, bend or boundary.
 /// Long straight runs can contract, but every turn and attachment keeps its room.
 /// The caller must place the labels again and apply the complete geometry guard.
-pub(super) fn drawing(shape: &Shape) -> Option<Placed> {
-    let mut space = Space::default();
+pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
+    let axis = || Axis {
+        clear,
+        occupied: Vec::new(),
+    };
+    let mut space = Space {
+        x: axis(),
+        y: axis(),
+    };
     let boxes = shape
         .endpoints
-        .values()
-        .copied()
+        .keys()
+        .map(|&endpoint| shape.solid(endpoint))
         .chain(shape.drawing.regions.iter().map(|region| region.caption))
         .chain(shape.drawing.titles.iter().map(|title| title.bx))
         .chain(shape.routes.iter().filter_map(|line| line.label));
@@ -175,6 +192,13 @@ pub(super) fn drawing(shape: &Shape) -> Option<Placed> {
     }
     for scope in shape.scopes.values() {
         space.boundary(scope.bounds);
+    }
+    for frame in &shape.drawing.frames {
+        space.inset(frame.bx);
+    }
+    for title in &shape.drawing.titles {
+        let foot = title.band.y + title.band.height;
+        space.y.protect(foot, CONTAINER_INSET - 2.0 * clear);
     }
     let contraction = Contraction {
         x: space.x.gaps(),
@@ -189,7 +213,10 @@ mod tests {
 
     #[test]
     fn contraction_keeps_occupied_sizes_and_subpixel_alignment_at_gap_boundaries() {
-        let mut axis = Axis::default();
+        let mut axis = Axis {
+            clear: 32.0,
+            occupied: Vec::new(),
+        };
         for start in [0.25, 100.5, 210.75] {
             axis.protect(start, 20.0);
         }

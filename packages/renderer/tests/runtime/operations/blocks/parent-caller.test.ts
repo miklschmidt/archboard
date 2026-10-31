@@ -34,7 +34,7 @@ test.each([false, true])(
 		expectDrawingIntact(drawing, content, "track");
 		const caller = drawing.atlas.nodes["session"]!,
 			header = headerCards(drawing).get("scope")!;
-		expect(caller.y).toBeGreaterThanOrEqual(drawing.atlas.nodes["scope"]!.y);
 		expect(caller.y).toBeLessThan(header.y + header.height);
+		expect(caller.y + caller.height).toBeGreaterThan(header.y);
 	},
 );

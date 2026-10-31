@@ -175,17 +175,10 @@ impl Pool {
 
 fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape) -> Vec<Rect> {
     let (from, to) = model.ends[edge];
-    let route = &topology.routes[edge];
     let mut obstacles: Vec<_> = shape
         .endpoints
-        .iter()
-        .map(|(&id, &r)| {
-            if id == from || id == to {
-                r
-            } else {
-                inflate(r, 16.0)
-            }
-        })
+        .keys()
+        .map(|&id| shape.clearance((from, to), model.endpoints[id].foot, id))
         .collect();
     obstacles.extend(
         shape
@@ -204,11 +197,7 @@ fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape)
     let foreign: Vec<_> = shape
         .scopes
         .iter()
-        .filter(|(id, _)| {
-            !route.outward.contains(id)
-                && !route.inward.contains(id)
-                && !super::channel::ancestor(model, route.scope, **id)
-        })
+        .filter(|(id, _)| super::channel::foreign(model, topology, edge, **id))
         .map(|(_, s)| inflate(s.bounds, 16.0))
         .collect();
     obstacles.retain(|r| !foreign.iter().any(|&outer| contains(outer, *r)));

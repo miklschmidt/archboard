@@ -20,7 +20,6 @@ interface ModelAddress {
 	readonly hideKinds?: readonly string[] | undefined;
 	readonly showGroups?: readonly string[] | undefined;
 	/** Set when the reader asked for every line, with any value. */
-	readonly everyLine?: string | undefined;
 }
 
 /** One pane in an address: which pane, the board it shows, and how it reads it. */
@@ -218,7 +217,6 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"subject",
 				"grammar",
 				"flow",
-				"everyLine",
 			] as const
 		).every((field) => one[field] === other[field]) &&
 		(["focus", "hideKinds", "showGroups"] as const).every((field) =>

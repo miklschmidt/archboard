@@ -7,14 +7,14 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
-import { doorEnds, drawnEnds, joinedLines, readingLines } from "#shared/rules/model-lines.ts";
+import { busLines, drawnEnds, joinedLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
 type ModelFilters = Pick<
 	z.infer<typeof ArchitectureRenderRequestSchema>,
-	"hideKinds" | "showGroups" | "everyLine"
+	"hideKinds" | "showGroups"
 >;
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 type Standing = Readonly<Record<string, ChangeKind>>;
@@ -22,7 +22,14 @@ type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
-type DrawnNode = Node & { readonly codePath?: string };
+type DrawnNode = Node & {
+	readonly codePath?: string;
+	readonly door?: DoorWay;
+	/** A door's groups, which colour it whether or not the reading shows group regions. */
+	readonly doorGroups?: readonly string[];
+};
+/** Where a door lies in the tree from the open module. */
+type DoorWay = "up" | "across" | "down";
 /** What a reading hands the renderer. */
 type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 	nodes: DrawnNode[];
@@ -30,7 +37,7 @@ type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 };
 
 /** What decides which lines a reading draws. */
-type LineChoices = Pick<ModelFilters, "hideKinds" | "everyLine">;
+type LineChoices = Pick<ModelFilters, "hideKinds">;
 
 /**
  * Adapt canonical meaning to the existing renderer content contract.
@@ -83,34 +90,27 @@ function projectScope(
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
 	const open = new Set(scope === null ? [] : [scope]);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
-	const listed = joinedLines(
-		complete,
-		shown,
-		doorEnds(shown, drawnAs, inside, scope),
-		open,
-		standing,
-	);
+	/**
+	 * Every line runs between the drawn ends of its relationship.
+	 * @param edge The relationship.
+	 * @returns Both drawn ends.
+	 */
+	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
+	const connections = joinedLines(complete, shown, endsOf, open, standing);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
 	const visible = new Set([
 		...children.map((node) => node.id),
-		...listed.flatMap(({ line }) => [line.from, line.to]),
+		...connections.flatMap(({ line }) => [line.from, line.to]),
 	]);
 	const scoped = byId.get(scope ?? "");
 	if (scoped !== undefined) visible.add(scoped.id);
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !inside.has(node.id));
-	const lines = readingLines(listed, children, standing, choices.everyLine);
 	return {
 		focused: null as ReadonlySet<string> | null,
 		missingFocus: [] as string[],
 		complete,
-		...lines,
-		allConnections: joinedLines(
-			complete,
-			relevant,
-			doorEnds(relevant, drawnAs, inside, scope),
-			open,
-			standing,
-		),
+		connections,
+		allConnections: joinedLines(complete, relevant, endsOf, open, standing),
 		children,
 		context,
 		trail: trail.flatMap((id) => {
@@ -119,7 +119,7 @@ function projectScope(
 		}),
 		missing: scope !== null && scoped === undefined,
 		inspection: interfaceOf(complete, scoped),
-		content: drawingContent(complete, visible, lines.connections, {
+		content: drawingContent(complete, visible, connections, {
 			parents: open,
 			doors: context,
 		}),
@@ -162,7 +162,7 @@ function projectModel(
 		opened,
 		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
-		held: heldContent(reference, () => read(context.complete, { ...filters, everyLine: true }), {
+		held: heldContent(reference, () => read(context.complete, filters), {
 			depicted: projection.content,
 			filters,
 		}),
@@ -297,8 +297,6 @@ function projectVisible(
 		children: complete.nodes.filter((node) => visible.has(node.id)),
 		context: [],
 		connections,
-		listed: connections,
-		implied: [],
 		allConnections,
 		content: drawingContent(complete, visible, connections, { parents: visible, doors: [] }),
 	};
@@ -379,17 +377,16 @@ function projectFocused(
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
-	const listed = joinedLines(complete, shown, ends, openSelf, standing);
+	const connections = joinedLines(complete, shown, ends, openSelf, standing);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
-	const visible = new Set([...anchors, ...listed.flatMap(({ line }) => [line.from, line.to])]);
+	const visible = new Set([...anchors, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !anchors.has(node.id));
-	const lines = readingLines(listed, children, standing, choices.everyLine);
 	return {
 		focused,
 		missingFocus: focus.filter((id) => !known.has(id)),
 		complete,
-		...lines,
+		connections,
 		allConnections: joinedLines(complete, relevant, ends, openSelf, standing),
 		children,
 		context,
@@ -401,7 +398,7 @@ function projectFocused(
 						.flatMap((id) => byId.get(id) ?? []),
 		missing: false,
 		inspection: interfaceOf(complete, byId.get(scope ?? "")),
-		content: drawingContent(complete, visible, lines.connections, {
+		content: drawingContent(complete, visible, connections, {
 			parents: anchors,
 			doors: context,
 		}),
@@ -463,33 +460,58 @@ function drawingContent(
 	framing: { parents: ReadonlySet<string>; doors: readonly Node[] },
 ): DrawnContent {
 	const doors = new Set(framing.doors.map((node) => node.id));
+	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
+	const [open] = framing.parents;
 	const childrenOf = containment(complete);
+	const onTrunk = busLines(connections, doors);
 	return {
 		nodes: complete.nodes
 			.filter((node) => visible.has(node.id))
 			.map((node) => {
 				const { description: _description, binding: _binding, ...drawn } = node;
-				const card = doors.has(node.id) ? nameOnly(drawn) : withCodePath(drawn, node, childrenOf);
+				const card = doors.has(node.id)
+					? nameOnly(drawn, doorWay(byId, node.id, open))
+					: withCodePath(drawn, node, childrenOf);
 				if (node.parent !== undefined && framing.parents.has(node.parent)) return card;
 				const { parent: _parent, ...unframed } = card;
 				return unframed;
 			}),
-		edges: connections.map(
-			({ line: { anchor: _anchor, description: _description, ...line } }) => line,
-		),
+		edges: connections.map((connection) => {
+			const { anchor: _anchor, description: _description, ...line } = connection.line;
+			if (!onTrunk.has(connection)) return line;
+			const { label: _label, ...quiet } = line;
+			return quiet;
+		}),
 		flows: [],
 		walkthroughs: [],
 	};
 }
 
 /**
- * A door says only what it is called.
+ * A door says only what it is called, and which way it lies.
  * @param card The drawn module.
+ * @param door Which way it lies from the open module.
  * @returns The card without its responsibility.
  */
-function nameOnly(card: DrawnNode): DrawnNode {
+function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return named;
+	return card.groups === undefined
+		? { ...named, door }
+		: { ...named, door, doorGroups: card.groups };
+}
+
+/**
+ * Where a door lies in the tree from the open module.
+ * @param byId Every module by its identity.
+ * @param door The door's module.
+ * @param open The open module, if the reading has one.
+ * @returns Whether it lies higher, level or deeper.
+ */
+function doorWay(byId: ReadonlyMap<string, Node>, door: string, open: string | undefined): DoorWay {
+	const levels =
+		open === undefined ? 0 : ancestors(byId, door).length - ancestors(byId, open).length;
+	if (levels === 0) return "across";
+	return levels < 0 ? "up" : "down";
 }
 
 /**

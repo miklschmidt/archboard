@@ -4,13 +4,7 @@ import { SemanticPolicySchema } from "@archboard/board/policy";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import {
-	chromaOf,
-	colourIn,
-	hueOf,
-	lightnessOf,
-	paintedIn,
-} from "#tests/runtime/support/drawn-colours.ts";
+import { chromaOf, hueOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 
 /**
  * A card's or a container's block as painted: the front edge is its body, the
@@ -25,16 +19,23 @@ function blockOf(markup: string): { edge: string; face: string } {
 }
 
 /**
- * The opaque rects a subject paints after its selection ring, in order: for a
- * container's tray, its lip, its top wall, its side walls and its floor, then
- * its header slab's front edge, highlight and face (`[lip, top, side, floor,
- * edge, highlight, face]`).
+ * The opaque rects a subject paints after its selection ring, in order.
  * @param markup The subject's group, painted in literals.
  * @returns Their colours.
  */
 function opaqueRects(markup: string): string[] {
 	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
 	return [...afterHalo.matchAll(/<rect[^>]* fill="(#[0-9a-f]{6})"\/>/gu)].map((found) => found[1]!);
+}
+
+/**
+ * Every opaque colour of a frame: its tray, its floor and its tab.
+ * @param markup The frame's group, painted in literals.
+ * @returns Their colours.
+ */
+function frameFills(markup: string): string[] {
+	const afterHalo = markup.slice(markup.indexOf('class="ab-halo"'));
+	return [...afterHalo.matchAll(/ fill="(#[0-9a-f]{6})"/gu)].map((found) => found[1]!);
 }
 
 /**
@@ -130,32 +131,24 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
 			expect(frame).toContain('data-body-color="neutral"');
-			const [lip, top, side, floor, edge, , face] = opaqueRects(frame);
-			// Its well and its header are neutral: no colour of its kind or its group.
-			for (const well of [lip!, top!, side!, floor!, edge!, face!])
-				expect(chromaOf(well), well).toBeLessThan(0.012);
-			// Its header is made of the page it is cut into, so it reads as the head
-			// of the well and not as a card: the page's colour, its front edge that
-			// colour in shade.
-			expect(face).toBe(colourIn("var(--background)", theme));
-			expect(lightnessOf(edge!)).toBeLessThan(lightnessOf(face!));
+			// Its well and its tab are neutral: no colour of its kind or its group.
+			const fills = frameFills(frame);
+			expect(fills.length).toBeGreaterThan(0);
+			for (const well of fills) expect(chromaOf(well), well).toBeLessThan(0.012);
 			// A group's only member at its level still takes the group's colour (ADR 0038).
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.
 			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-type-color="violet"');
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-type-color="green"');
 			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-type-color="blue"');
-			// A container no group places has a neutral header slab, whatever its kind's
-			// colour. One nested in another is made of the floor of the one around it.
+			// A container no group places has a neutral tab, whatever its kind's colour.
 			const plain = paintedIn(
 				(await renderArchitecture({ content: orderedFixture({ nodes }), policy })).svg,
 				theme,
 			);
 			const unplaced = groupOf(plain, "region", "cloud")!.markup;
 			expect(unplaced).toContain('data-body-color="neutral"');
-			expect(chromaOf(opaqueRects(unplaced)[4]!)).toBeLessThan(0.012);
-			const nested = opaqueRects(groupOf(plain, "region", "cluster")!.markup);
-			expect(nested[6]).toBe(opaqueRects(unplaced)[3]);
+			for (const well of frameFills(unplaced)) expect(chromaOf(well), well).toBeLessThan(0.012);
 			const unknown = await renderArchitecture({
 				content: orderedFixture({ nodes: [{ id: "u", name: "Old kind", kind: "retired" }] }),
 				policy: grouped,

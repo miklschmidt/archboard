@@ -10,6 +10,7 @@ mod choices;
 mod clearance;
 mod compact;
 mod corridors;
+mod dense;
 mod endpoint_choices;
 mod fallback;
 mod geometry;
@@ -114,6 +115,65 @@ pub(super) fn route_candidates(
         }
     }
     Ok(best.ok_or(failure))
+}
+
+/// How many dense placements a reading of some lines routes, the most promising
+/// first: one route of a large reading costs as much as the budget of a drawing.
+fn dense_routes(lines: usize) -> usize {
+    match lines {
+        0..=15 => 6,
+        16..=40 => 2,
+        _ => 1,
+    }
+}
+
+/// How many placements past that budget a room can refuse: a refusal costs about a route.
+const DENSE_REFUSALS: usize = 1;
+
+/// The room a dense placement of some lines adds to its gaps, tightest first:
+/// each refusal costs a whole route, so a crowded reading starts wider.
+fn dense_rooms(lines: usize) -> [f64; 2] {
+    match lines {
+        0..=24 => [0.0, 48.0],
+        25..=40 => [48.0, 96.0],
+        41..=64 => [96.0, 144.0],
+        _ => [288.0, 384.0],
+    }
+}
+
+/// The best dense drawing of a reading, if one passes every guard. A wider room
+/// runs only while no drawing lands whole, and a reading past the placement search
+/// keeps the first drawing it finds.
+pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
+    let mut best = None;
+    let lines = relationships(graph);
+    for room in dense_rooms(lines) {
+        dense_room(graph, room, dense_routes(lines), &mut best);
+        let settled = |one: &(reading::Order, _)| !one.0.0 || lines > PLACEMENT_REFINEMENT_LIMIT;
+        if best.as_ref().is_some_and(settled) {
+            break;
+        }
+    }
+    best.map(|(_, drawing)| drawing)
+}
+
+/// Route a reading's placements at one room, as many as a reading of its size affords.
+fn dense_room(
+    graph: &crate::graph::Node,
+    room: f64,
+    most: usize,
+    best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
+) {
+    let routed = dense::drawings(graph, room)
+        .into_iter()
+        .take(most + DENSE_REFUSALS)
+        .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
+    for next in routed.take(most) {
+        let order = reading::order(&next);
+        if best.as_ref().is_none_or(|one| order < one.0) {
+            *best = Some((order, next));
+        }
+    }
 }
 
 mod direct;

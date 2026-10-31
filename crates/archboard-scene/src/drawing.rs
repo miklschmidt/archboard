@@ -255,6 +255,22 @@ pub struct NodeFacts {
     #[serde(rename = "codePath", skip_serializing_if = "Option::is_none")]
     #[ts(rename = "codePath", optional)]
     pub code_path: Option<String>,
+    /// Which way it lies from the open frame, when it stands outside it as a door.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub door: Option<DoorWay>,
+}
+
+/// Where a door lies in the tree from the open module.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum DoorWay {
+    /// It lies at a higher level.
+    Up,
+    /// It lies at the same level.
+    Across,
+    /// It lies deeper.
+    Down,
 }
 
 /// How loudly a line speaks.

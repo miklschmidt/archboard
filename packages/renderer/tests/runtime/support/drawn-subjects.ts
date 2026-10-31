@@ -124,11 +124,12 @@ function groupOf(svg: string, kind: string, id: string): DrawnGroup | undefined 
  */
 function headerFoot(svg: string, id: string): number {
 	const group = groupOf(svg, "region", id);
-	const slab = /<rect x="[\d.-]+" y="([\d.-]+)" width="[\d.]+" height="([\d.]+)" rx="8"/.exec(
-		group?.markup ?? "",
+	// A frame seats its body first and its edge tab second.
+	const [, tab] = (group?.markup ?? "").matchAll(
+		/<rect x="[\d.-]+" y="([\d.-]+)" width="[\d.]+" height="([\d.]+)" rx="10" pointer-events="all"/g,
 	);
-	if (slab === null) throw new Error(`container ${id} drew no header slab`);
-	return Number(slab[1]) + Number(slab[2]) + bodyShift(svg).y;
+	if (tab === undefined) throw new Error(`container ${id} drew no tab`);
+	return Number(tab[1]) + Number(tab[2]) + bodyShift(svg).y;
 }
 
 /** The standing pin: a translated group holding a disc and the mark on it. */

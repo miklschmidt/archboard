@@ -4,9 +4,7 @@
 
 use crate::geometry::Rect;
 use crate::paint::build::{Items, lines, shape};
-use crate::paint::design::{
-    BAND_RADIUS, HEADER_SLAB_INSET, SLAB_RADIUS, TRAY_CREASE, TRAY_LIP, TRAY_WALL,
-};
+use crate::paint::design::{BAND_RADIUS, SLAB_RADIUS, TRAY_CREASE, TRAY_LIP, TRAY_WALL};
 use crate::paint::palette::Palette;
 use crate::paint::slab::{Lift, SlabLook, across, plate, slab, slab_shadow};
 use crate::request::Standing;
@@ -23,7 +21,7 @@ pub(super) struct TrayLook {
 }
 
 /// The corners of a tray's floor.
-const FLOOR_RADIUS: f64 = BAND_RADIUS - TRAY_WALL;
+pub(super) const FLOOR_RADIUS: f64 = BAND_RADIUS - TRAY_WALL;
 
 /// The short, soft shadow the top wall throws straight down on the floor.
 const WALL_SHADOW: [f64; 2] = [0.5, 0.2];
@@ -39,14 +37,16 @@ pub(super) fn floor_of(rect: Rect) -> Rect {
     }
 }
 
-/// The box of a tray's header slab.
-pub(super) fn header_of(rect: Rect, height: f64) -> Rect {
-    Rect {
-        x: rect.x + HEADER_SLAB_INSET,
-        y: rect.y + HEADER_SLAB_INSET,
-        width: rect.width - 2.0 * HEADER_SLAB_INSET,
-        height: height - HEADER_SLAB_INSET,
-    }
+/// The shadow the top wall throws down on a run of floor.
+pub(super) fn wall_shadow(floor: Rect, palette: &Palette) -> Items {
+    let strip = |(index, share): (usize, &f64)| {
+        across(
+            floor,
+            floor.y + (index as f64 + 0.5) * SHADOW_BAND,
+            Stroke::new(&palette.slab_shadow, SHADOW_BAND).at(*share),
+        )
+    };
+    lines(WALL_SHADOW.iter().enumerate().map(strip).collect())
 }
 
 /// One tray; a removed container draws nothing here.
@@ -90,13 +90,7 @@ pub(super) fn tray(
         ),
         shape(plate(floor, FLOOR_RADIUS).filled(&look.floor)),
     ];
-    for (index, share) in WALL_SHADOW.iter().enumerate() {
-        parts.push(across(
-            floor,
-            floor.y + (index as f64 + 0.5) * SHADOW_BAND,
-            Stroke::new(&palette.slab_shadow, SHADOW_BAND).at(*share),
-        ));
-    }
+    parts.push(wall_shadow(floor, palette));
     parts.push(slab_shadow(
         look.header,
         SLAB_RADIUS,

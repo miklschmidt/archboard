@@ -102,6 +102,40 @@ pub const DIAGRAM_MARGIN: f64 = 20.0;
 pub(crate) const PLANNED_FRAME_MARGIN: f64 = 16.0;
 /// The distance from the page edge to a planned board's dashed frame.
 pub(crate) const PLANNED_FRAME_INSET: f64 = 8.0;
+/// How tall a door stands, and how round its corners are.
+pub const DOOR_HEIGHT: f64 = 34.0;
+pub(crate) const DOOR_RADIUS: f64 = 8.0;
+/// The room inside a door, on either side of its words.
+pub(crate) const DOOR_PADDING: f64 = 10.0;
+/// A door's icon when the picture is seen near, and from far away.
+pub(crate) const DOOR_ICON: f64 = 18.0;
+pub(crate) const DOOR_FAR_ICON: f64 = 22.0;
+/// How far in from a door's right end its arrow stands.
+pub(crate) const DOOR_ARROW_INSET: f64 = 18.0;
+/// The room a door keeps past its name for its arrow.
+pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
+
+/// How tall a frame's edge tab stands: the room its far name and path take on one line.
+pub const TAB_HEIGHT: f64 = 36.0;
+/// The room inside a frame's edge tab, on either side of its words.
+pub(crate) const TAB_PADDING: f64 = 12.0;
+/// A tab's chip when the picture is seen near, and from far away.
+pub(crate) const TAB_CHIP: f64 = 22.0;
+pub(crate) const TAB_FAR_CHIP: f64 = 26.0;
+/// The room between a tab's chip and its name.
+pub(crate) const TAB_ICON_GAP: f64 = 8.0;
+/// The room between a tab's name and its code path.
+pub(crate) const TAB_PATH_GAP: f64 = 14.0;
+/// The widest a tab's words are set from far away, past which a path keeps its tail.
+pub(crate) const TAB_MOST: f64 = 620.0;
+/// A tab's name and path from far away: 12 px and 9 px at the lowest scale a reading lands at.
+pub(crate) const TAB_FAR_NAME: f64 = 20.0;
+pub(crate) const TAB_FAR_PATH: f64 = 15.0;
+/// The radius of a tab's top right corner and of its foot, where it meets the frame.
+pub(crate) const TAB_CORNER: f64 = 8.0;
+/// The room a frame keeps to the right of its tab: the tab's foot, then the frame's corner.
+pub const TAB_SHOULDER: f64 = TAB_CORNER + BAND_RADIUS;
+
 /// The space below a group region's caption tab and at its sides and bottom.
 pub const REGION_INSET: f64 = 14.0;
 /// The room between an architecture card's edge and its chip and words.

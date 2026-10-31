@@ -125,7 +125,8 @@ function pipeline(length: number, framed = false): VariantContent {
 }
 
 // Where a chain folds into columns is each engine's choice; a fold only
-// continues the chain at the top of a column to the right.
+// continues the chain at the top of a column to the right. A frame's grid folds
+// by rows, and a row can run back so that every step stays one cell long.
 test.each(
 	LayoutEngineSchema.options.flatMap((layout) =>
 		[false, true].map((framed) => [layout, framed] as const),
@@ -146,7 +147,7 @@ test.each(
 			const before = drawing.atlas.nodes[`s${index - 1}`]!;
 			const after = drawing.atlas.nodes[`s${index}`]!;
 			if (layout === "blocks" && after.y === before.y) {
-				expect(after.x).toBeGreaterThan(before.x + before.width);
+				if (!framed) expect(after.x).toBeGreaterThan(before.x + before.width);
 			} else if (after.y < before.y) {
 				expect(after.x).toBeGreaterThan(before.x + before.width);
 				expect(after.y).toBe(drawing.atlas.nodes["s0"]!.y);

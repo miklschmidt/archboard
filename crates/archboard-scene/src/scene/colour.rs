@@ -89,6 +89,11 @@ pub enum Colour {
         /// Which colour.
         color: PaletteColor,
     },
+    /// One of the policy's named colours at its bright value, on either theme.
+    Bright {
+        /// Which colour.
+        color: PaletteColor,
+    },
     /// Black, which a mask hides through.
     Black,
     /// White, which a mask shows through.
@@ -121,6 +126,15 @@ pub enum Colour {
         /// The most of the ink's chroma that counts.
         cap: f64,
         /// The share of that chroma the tone keeps.
+        chroma: f64,
+    },
+    /// An ink moved in OKLCH: `oklch(L + lightness, C + chroma, H)`.
+    Shifted {
+        /// The ink.
+        ink: Box<Colour>,
+        /// What it adds to the ink's lightness.
+        lightness: f64,
+        /// What it adds to the ink's chroma.
         chroma: f64,
     },
     /// An ink with its OKLCH lightness held between two bounds.

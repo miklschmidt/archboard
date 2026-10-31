@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|focus|hideKinds|showGroups|everyLine|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|focus|hideKinds|showGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -221,7 +221,6 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		focus: searchList(search[`focus${paneId}`]),
 		hideKinds: searchList(search[`hideKinds${paneId}`]),
 		showGroups: searchList(search[`showGroups${paneId}`]),
-		everyLine: search[`everyLine${paneId}`],
 	};
 }
 
@@ -299,7 +298,6 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 					"subject",
 					"grammar",
 					"flow",
-					"everyLine",
 				] as const
 			).flatMap((field) => {
 				const value = model[field];

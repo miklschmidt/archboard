@@ -147,6 +147,10 @@ fn view(group: &Group, out: &mut Attributes) -> bool {
                 .set("data-drill", word(direction));
             transform(group, out);
         }
+        Role::DoorArrow => {
+            out.set("class", "ab-door-arrow");
+            transform(group, out);
+        }
         Role::Icon(asked) => {
             transform(group, out);
             out.maybe("data-type-icon", asked.as_deref());

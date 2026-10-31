@@ -49,7 +49,7 @@ const GLINT: Share = Share {
 };
 
 /// The fine highlight along the top edge of a face.
-fn glint_of(face: &Colour, palette: &Palette) -> Colour {
+pub(super) fn glint_of(face: &Colour, palette: &Palette) -> Colour {
     tinted(face, Some(&palette.slab_glint), GLINT)
 }
 
@@ -135,7 +135,7 @@ pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
 }
 
 /// The border a standing draws round a face, inside its edge.
-fn standing_border(
+pub(super) fn standing_border(
     face: Rect,
     radius: f64,
     standing: Option<Standing>,

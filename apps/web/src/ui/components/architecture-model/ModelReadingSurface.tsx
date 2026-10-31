@@ -117,14 +117,12 @@ function ReadingCaption(props: {
 }): JSX.Element {
 	const { reader } = props;
 	const { location, accepted } = reader;
-	const { focus, filters, grammar, setFocus } = location;
+	const { focus, grammar, setFocus } = location;
 	const clearFocus = useCallback((): void => setFocus(null), [setFocus]);
 	return (
 		<ModelCaption
 			model={accepted.shown.model}
 			projection={accepted.shown.projection}
-			everyLine={filters.everyLine}
-			onToggle={location.toggleEveryLine}
 			comparison={props.comparison}
 		>
 			{grammar === "architecture" && focus !== null && (

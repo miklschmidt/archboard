@@ -159,6 +159,8 @@ pub enum Role {
     },
     /// The mark of a board a part opens, and which way that board lies.
     DrillMark(DrillDirection),
+    /// The arrow of a door.
+    DoorArrow,
     /// A standing's pin on a corner.
     Pin,
     /// The warning on a subject nobody has decided yet.
@@ -218,6 +220,11 @@ pub struct Group {
     pub pointer: Option<Pointer>,
     /// The subjects it stands with, which a viewer lights and recedes it with.
     pub members: Vec<String>,
+    /// What a reader of the picture's file can read about the group's subject,
+    /// which the picture draws nowhere.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub title: Option<String>,
     /// What it holds, in the order it is drawn.
     pub items: Vec<Item>,
 }
@@ -233,8 +240,16 @@ impl Group {
             mask: None,
             pointer: None,
             members: Vec::new(),
+            title: None,
             items,
         }
+    }
+
+    /// The group with words for a reader of the picture's file.
+    #[must_use]
+    pub fn titled(mut self, title: Option<String>) -> Self {
+        self.title = title;
+        self
     }
 
     /// The group drawing a subject.

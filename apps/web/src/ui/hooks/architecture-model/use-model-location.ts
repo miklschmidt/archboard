@@ -43,14 +43,12 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
 	const shownGroups = search[`showGroups${paneId}`];
-	const everyLine = search[`everyLine${paneId}`];
 	const filters = useMemo(
 		() => ({
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
 			showGroups: shownGroups ? shownGroups.split(",") : [],
-			everyLine: everyLine !== undefined,
 		}),
-		[hiddenKinds, shownGroups, everyLine],
+		[hiddenKinds, shownGroups],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -96,13 +94,12 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							flow: flow ?? undefined,
 							hideKinds: filters.hideKinds,
 							showGroups: filters.showGroups,
-							everyLine,
 							bookmark: undefined,
 						}),
 				...patch,
 			});
 		},
-		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, everyLine, userChanged],
+		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, userChanged],
 	);
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
@@ -115,7 +112,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				flow: undefined,
 				hideKinds: undefined,
 				showGroups: undefined,
-				everyLine: undefined,
 				subject: undefined,
 			});
 		},
@@ -140,7 +136,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				flow: undefined,
 				hideKinds: undefined,
 				showGroups: undefined,
-				everyLine: undefined,
 				subject: undefined,
 				against: undefined,
 			});
@@ -171,7 +166,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					focus: undefined,
 					hideKinds: undefined,
 					showGroups: undefined,
-					everyLine: undefined,
 				},
 				false,
 				repository,
@@ -197,7 +191,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					focus: reading.focus,
 					hideKinds: reading.hideKinds,
 					showGroups: reading.showGroups,
-					everyLine: reading.everyLine === true ? "1" : undefined,
 				},
 				!push,
 				repository ?? undefined,
@@ -249,10 +242,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[filters, navigate, userChanged],
 	);
-	const toggleEveryLine = useCallback((): void => {
-		userChanged?.("view");
-		void navigate({ everyLine: everyLine === undefined ? "1" : undefined });
-	}, [everyLine, navigate, userChanged]);
 	const reveal = useCallback(
 		(ids: readonly string[], kinds: readonly string[]): void => {
 			const hidden = filters.hideKinds.filter((kind) => !kinds.includes(kind));
@@ -357,7 +346,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		focus,
 		filters,
 		toggleFilter,
-		toggleEveryLine,
 		reveal,
 		setFocus,
 		open,
@@ -391,7 +379,6 @@ function referenceAddress(reading: Model): ModelAddress {
 		focus: referenceFocus(reading, location.subject),
 		hideKinds: undefined,
 		showGroups: undefined,
-		everyLine: undefined,
 	};
 }
 

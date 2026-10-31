@@ -7,7 +7,7 @@
 import type { projectModel } from "#shared/rules/model-projection.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type Edge = Projection["listed"][number]["joins"][number];
+type Edge = Projection["connections"][number]["joins"][number];
 
 /** One child of the open module, or the module itself, with what it exchanges with a door. */
 interface DoorEndpoints {
@@ -44,7 +44,7 @@ function doorEndpoints(projection: Projection, door: string): DoorEndpoints[] {
 	const parts = new Set(projection.children.map((node) => node.id));
 	const doorSide = new Set([door]);
 	const groups = new Map<string, Edge[]>();
-	const lines = projection.listed.filter(({ line }) => line.from === door || line.to === door);
+	const lines = projection.connections.filter(({ line }) => line.from === door || line.to === door);
 	for (const { joins } of lines) {
 		for (const edge of joins) {
 			const inDoor = holdingPart(edge.from, parents, doorSide) === door;

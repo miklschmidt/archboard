@@ -43,6 +43,7 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
                 responsibility: node.responsibility.as_deref(),
                 path: node.code_path.as_deref(),
                 drills: node.drills,
+                door: node.door.is_some(),
             };
             let container = containers.contains(node.id.as_str());
             (

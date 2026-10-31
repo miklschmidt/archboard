@@ -69,7 +69,9 @@ test.each(["M50,120 L200,120", "M40,120 L190,120"])(
 );
 
 test("parent header checks reject ink through the face and allow its boundary", () => {
-	const header = `<g data-semantic-kind="region" data-semantic-id="parent"><rect x="50" y="10" width="100" height="40" rx="8"/></g>`;
+	const seat = (y: number) =>
+		`<rect x="50" y="${y}" width="100" height="40" rx="10" pointer-events="all"/>`;
+	const header = `<g data-semantic-kind="region" data-semantic-id="parent">${seat(50)}${seat(10)}</g>`;
 	expect(routesThroughParentHeaders(drawing(header + route("M0,10 L200,10")))).toEqual([]);
 	expect(routesThroughParentHeaders(drawing(header + route("M0,30 L200,30")))).toHaveLength(1);
 });

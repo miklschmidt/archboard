@@ -74,7 +74,8 @@
    by the sill catches the light (--port-lip). The lip is lighter than the
    front edge round it, so a lip a unit thick reads at 2x. The owner found a
    white lip a little too bright, so in each theme the lip now gives about
-   four fifths of the light it gave before (TASK-435).
+   four fifths of the light it gave before (TASK-435). The depth stays a step
+   below the front edge, so that a port does not read as a dark spot on a card.
 
    On the light ground the picture is crisp and vivid rather than pastel. Its
    own neutrals are clean and cool (hue near 255): a card face a soft
@@ -205,9 +206,29 @@
 	--tray-floor: oklch(0.974 0.003 255);
 	--tray-sink: oklch(0.95 0.005 255);
 	--tray-lip: oklch(1 0 0);
-	--port-wall: oklch(0.52 0.01 260);
+	--port-wall: oklch(0.68 0.008 258);
 	--port-lip: oklch(0.93 0.004 255);
-	--port-deep: oklch(0.3 0.012 262);
+	--port-deep: oklch(0.6 0.01 260);
+
+	/* A door's button keeps these bright values on both themes: the dark theme's
+	   named colours, which the light theme's darker ones must not replace. */
+	--bright-red: oklch(0.71062735 0.16614792 22.216224);
+	--bright-orange: oklch(0.7576398 0.15903746 55.934415);
+	--bright-amber: oklch(0.83686057 0.16442159 84.428628);
+	--bright-yellow: oklch(0.86 0.125 86);
+	--bright-lime: oklch(0.84931542 0.20733982 128.849744);
+	--bright-green: oklch(0.80034877 0.18206039 151.711031);
+	--bright-emerald: oklch(0.77294438 0.15349041 163.223075);
+	--bright-teal: oklch(0.78451984 0.13252856 181.911977);
+	--bright-cyan: oklch(0.79711582 0.13388753 211.530189);
+	--bright-sky: oklch(0.75351288 0.13898886 232.66148);
+	--bright-blue: oklch(0.71374005 0.14338051 254.624021);
+	--bright-indigo: oklch(0.6801126 0.15830252 276.934902);
+	--bright-violet: oklch(0.70896895 0.15916821 293.541199);
+	--bright-purple: oklch(0.72168539 0.1766884 305.503759);
+	--bright-fuchsia: oklch(0.74772013 0.20697173 322.160432);
+	--bright-pink: oklch(0.72526641 0.17522733 349.760748);
+	--bright-rose: oklch(0.71918609 0.16898359 13.427993);
 }
 
 /* Dark: warm graphite, bone-white text, the same gold. */
@@ -295,7 +316,7 @@
 	--tray-floor: oklch(0.185 0.006 75);
 	--tray-sink: oklch(0.15 0.005 75);
 	--tray-lip: oklch(0.3 0.007 75);
-	--port-wall: oklch(0.13 0.005 75);
+	--port-wall: oklch(0.17 0.005 75);
 	--port-lip: oklch(0.61 0.004 75);
-	--port-deep: oklch(0.06 0.004 75);
+	--port-deep: oklch(0.14 0.004 75);
 }

@@ -213,7 +213,6 @@ test("canonical aggregates say what they join while retaining authored relations
 		.parseFromString(picture.svg, "image/svg+xml")
 		.querySelectorAll(`[data-semantic-id="${aggregate.line.id}"] text`);
 	expect([...texts].map((text) => text.textContent).join(" ")).toContain("with Handler");
-	expect(picture.leftOutLines).toBe(0);
 });
 
 test("canonical exports retain default comparison and unresolved subject marks through exact recipes", async () => {

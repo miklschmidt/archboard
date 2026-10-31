@@ -49,13 +49,6 @@ const modelRenderContract = defineCommand({
 		})),
 		{
 			kind: "option",
-			key: "everyLine",
-			spellings: ["--every-line"],
-			value: "none",
-			description: "Draw the lines that a crowded picture leaves out",
-		},
-		{
-			kind: "option",
 			key: "flow",
 			spellings: ["--flow"],
 			value: "required",

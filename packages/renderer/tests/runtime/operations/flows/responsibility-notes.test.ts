@@ -105,14 +105,10 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 			}
 		}
 		if (grammar === "architecture") {
-			const header = texts.filter((drawn) => drawn.subject.id === "system");
-			const notes = header.filter((run) => run.weight === 400);
-			expect(notes.map((run) => run.text)).toEqual(content.nodes[0]!.responsibility!.split("\n"));
-			for (const child of ["api", "store"]) {
-				expect(notes.at(-1)!.y + notes.at(-1)!.size * 0.3).toBeLessThan(
-					rendered.atlas.nodes[child]!.y,
-				);
-			}
+			// A frame's tab holds one line. The file keeps what the frame is for as its title.
+			const tab = texts.filter((drawn) => drawn.subject.id === "system");
+			expect(tab.filter((run) => run.weight === 400)).toEqual([]);
+			expect(rendered.svg).toContain(content.nodes[0]!.responsibility!.split("\n")[0]!);
 		}
 	});
 

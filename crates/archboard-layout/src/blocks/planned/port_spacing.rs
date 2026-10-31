@@ -26,6 +26,13 @@ fn endpoint(model: &Model<'_>, edge: usize, source: bool) -> usize {
     }
 }
 
+/// Whether two endpoints are one thing on the page: a frame and the foot of its tab.
+fn one_subject(model: &Model<'_>, one: usize, other: usize) -> bool {
+    one == other
+        || model.endpoints[one].foot == Some(other)
+        || model.endpoints[other].foot == Some(one)
+}
+
 fn opposite_offset((at, next): (Point, Point), (other, away): (Point, Point)) -> Option<f64> {
     let horizontal = at.y == next.y && other.y == away.y;
     let vertical = at.x == next.x && other.x == away.x;
@@ -48,9 +55,12 @@ fn conflicts_at(
     let other = model.edge_index[old.id.as_str()];
     edge != other
         && [true, false].into_iter().any(|os| {
-            endpoint(model, edge, source) == endpoint(model, other, os)
-                && opposite_offset(end(points, source), end(&old.points, os))
-                    .is_some_and(|by| by.abs() < APART)
+            one_subject(
+                model,
+                endpoint(model, edge, source),
+                endpoint(model, other, os),
+            ) && opposite_offset(end(points, source), end(&old.points, os))
+                .is_some_and(|by| by.abs() < APART)
         })
 }
 
@@ -91,7 +101,13 @@ fn offsets(
     for old in peers {
         let other = model.edge_index[old.id.as_str()];
         for os in [true, false] {
-            if edge == other || endpoint(model, edge, source) != endpoint(model, other, os) {
+            if edge == other
+                || !one_subject(
+                    model,
+                    endpoint(model, edge, source),
+                    endpoint(model, other, os),
+                )
+            {
                 continue;
             }
             if let Some(by) = opposite_offset(end(points, source), end(&old.points, os)) {
@@ -113,7 +129,9 @@ pub(super) fn alternatives(model: &Model<'_>, shape: &Shape, line: &PlacedLine) 
         .iter()
         .filter(|old| {
             let (a, b) = model.ends[model.edge_index[old.id.as_str()]];
-            a == from || a == to || b == from || b == to
+            [a, b]
+                .iter()
+                .any(|&end| one_subject(model, end, from) || one_subject(model, end, to))
         })
         .collect();
     let mut paths = vec![line.points.clone()];

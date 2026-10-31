@@ -82,8 +82,10 @@ impl<'a> Building<'a> {
             parent: Some(self.flow.clone()),
             responsibility,
             code_path: None,
+            door: None,
             groups: Vec::new(),
             drills: false,
+            door_groups: Vec::new(),
         });
     }
 
@@ -214,8 +216,10 @@ impl<'a> Building<'a> {
             parent: None,
             responsibility: flow.summary.clone(),
             code_path: None,
+            door: None,
             groups: Vec::new(),
             drills: false,
+            door_groups: Vec::new(),
         });
         self.subject(&flow.id);
         self.flow.clone_from(&flow.id);

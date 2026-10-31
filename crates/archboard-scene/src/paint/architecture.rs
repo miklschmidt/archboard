@@ -11,15 +11,15 @@ use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
+use crate::paint::door::{door_definitions, door_shadow, paint_door};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
 };
+use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::far_card::Part;
 use crate::paint::flowchart_shapes::FlowchartShapes;
 use crate::paint::junctions::junction_marks;
-use crate::paint::measured_cards::{
-    paint_measured_card, paint_measured_frame, paint_measured_header,
-};
+use crate::paint::measured_cards::paint_measured_card;
 use crate::paint::page::{PaintedPage, atlas_boxes, shifted};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, PortPlan, Ports, ends_in_port, port_plan, ports_of, ride_into};
@@ -195,8 +195,12 @@ impl<'p> Painting<'p> {
         cutouts.extend(label_cutouts(edges, &see_through));
         let masks = crossing_masks(edges, cutouts);
         let shaped = |id: &str| page.shapes.is_some_and(|shapes| shapes.has(id));
+        let doors: HashSet<&str> = (drawing.drawing.cards.iter())
+            .filter(|card| card.measured.node.door.is_some())
+            .map(|card| card.measured.node.id.as_str())
+            .collect();
         let ports = ports_of(&drawing.drawing.cards, edges, &|id| {
-            !removed(id) && !shaped(id)
+            !removed(id) && !shaped(id) && !doors.contains(id)
         });
         let plan = port_plan(&ports, edges);
         Painting {
@@ -288,6 +292,9 @@ impl<'p> Painting<'p> {
     /// The shadow under a card: its shape's own, or the slab's.
     fn card_shadow(&self, card: &Node) -> Items {
         let id = &card.measured.node.id;
+        if card.measured.node.door.is_some() {
+            return door_shadow(id, card.bounds, self.palette, self.standings.of(id));
+        }
         let standing = self.standings.of(id);
         match self.shapes_of(id) {
             Some(shapes) => shapes.shadow(card, standing),
@@ -375,6 +382,9 @@ impl<'p> Painting<'p> {
             standing,
             unsettled,
         };
+        if let Some(way) = card.measured.node.door {
+            return paint_door(self.ctx, card, way, &part, self.palette);
+        }
         let cut = self.plan.cut_of(id);
         paint_measured_card(self.ctx, card, &part, self.palette, cut)
     }
@@ -391,7 +401,7 @@ impl<'p> Painting<'p> {
         )
     }
 
-    /// A container's header slab with its name and responsibility, painted over its contents.
+    /// A container's edge tab, painted over its contents.
     fn header(&self, held: &Node) -> Items {
         let id = &held.measured.node.id;
         paint_measured_header(
@@ -408,8 +418,14 @@ impl<'p> Painting<'p> {
     fn layers(&self, stacked: &Stacked<'_>, traffic: &HashMap<String, Items>) -> Vec<Items> {
         let edges = &self.drawing.bridged.edges;
         let routes: Vec<&Curve> = edges.iter().map(|routed| &routed.curve).collect();
-        let mut painted: Vec<Items> =
-            vec![definitions(self.masks.definitions.clone()), self.cuts()];
+        let doors = (self.drawing.drawing.cards.iter())
+            .filter(|card| card.measured.node.door.is_some())
+            .map(|card| self.appearance_of(&card.measured.node.id));
+        let mut painted: Vec<Items> = vec![
+            definitions(self.masks.definitions.clone()),
+            self.cuts(),
+            definitions(door_definitions(doors)),
+        ];
         painted.extend(stacked.containers.iter().map(|held| self.frame(held)));
         painted.extend(
             stacked

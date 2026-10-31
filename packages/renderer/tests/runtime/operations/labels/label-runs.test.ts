@@ -26,8 +26,11 @@ const LABEL_CARD_CLEARANCE = 16;
 /** The room one line's words keep from another's: archboard_layout::constants::LABEL_LABEL_CLEARANCE. */
 const LABEL_LABEL_CLEARANCE = 24;
 
+/** The room a line's words keep from a card in a planned drawing: planned/label_space.rs. */
+const PLANNED_LABEL_CARD_CLEARANCE = 12;
+
 /** The room a badge keeps from a card and from the ends of its run. */
-const AIR = LABEL_CARD_CLEARANCE;
+const AIR = { blocks: PLANNED_LABEL_CARD_CLEARANCE, track: LABEL_CARD_CLEARANCE };
 /** The room a badge keeps from another badge. */
 const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
@@ -81,7 +84,7 @@ test.each(
 			}
 			const others = [...labels].filter(([id]) => id !== labelId).map(([, box]) => box);
 			for (const [box, air] of [
-				...cards.map((card) => [card, AIR] as const),
+				...cards.map((card) => [card, AIR[layout]] as const),
 				...others.map((other) => [other, LABEL_AIR] as const),
 			]) {
 				const xGap = Math.max(box.x - label.x - label.width, label.x - box.x - box.width);

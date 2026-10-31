@@ -72,6 +72,49 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
+/// How a finished drawing ranks: whether it lands whole, its long detours, its
+/// crowded approaches, then the work of tracing its lines times the room it takes.
+pub(super) type Order = (bool, usize, usize, f64);
+
+/// The pane's shape, width over height.
+const PANE_SHAPE: f64 = 1.65;
+/// The largest page that lands whole in a pane of 1551 by 960 at the reader's floor of 0.6.
+const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
+/// A line is a long detour past this much extra travel, and half again its direct way.
+const LONG_DETOUR: f64 = 300.0;
+
+/// The smallest box of the pane's shape that holds a drawing.
+fn room_taken(drawing: &crate::blocks::assembly::Placed) -> f64 {
+    let width = drawing.width.max(drawing.height * PANE_SHAPE);
+    width * (width / PANE_SHAPE)
+}
+
+/// What a dense placement promises before it is routed: the straight way of
+/// its lines times the room it takes, so a long thin page pays for its shape.
+pub(super) fn promise(drawing: &crate::blocks::assembly::Placed, reach: f64) -> f64 {
+    (1.0 + reach) * room_taken(drawing)
+}
+
+fn long_detours(lines: &[PlacedLine]) -> usize {
+    lines
+        .iter()
+        .filter(|line| {
+            let (length, direct) = distances(&line.points);
+            length > direct * 1.5 && length - direct > LONG_DETOUR
+        })
+        .count()
+}
+
+pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
+    let (approaches, cost) = rank(&drawing.edges);
+    (
+        drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
+        long_detours(&drawing.edges),
+        approaches,
+        (1.0 + f64::from_bits(cost)) * room_taken(drawing),
+    )
+}
+
 /// A larger drawing needs a ten-percent gain after its route cost pays for
 /// the extra area. Compare every candidate with the first guarded drawing.
 /// A cheaper total must not hide a new long detour on an individual route.
