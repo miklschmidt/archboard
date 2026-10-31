@@ -7,8 +7,74 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#vAvBY0p6",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "subscribe to current model updates",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "useArchitectureFeed"
+      },
+      "id": "vKEsyHFk/yejBBUFY#m551U9Gl",
+      "to": "vKEsyHFk/yejBBUFY#JrTKhhoI"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "Read current or retained content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "CanonicalModelReader"
+      },
+      "id": "vKEsyHFk/yejBBUFY#R8xiiNXP",
+      "to": "vKEsyHFk#yJLKjWe5"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "Read the legacy board listing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "ArchitectureModelStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#uZDbu609",
+      "to": "vKEsyHFk#VjrUPzEn"
+    },
+    {
+      "order": 100100,
+      "kind": "call",
+      "label": "useModelLocation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "useModelLocation"
+      },
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
+      "id": "vKEsyHFk#vJkhM3q6"
+    },
+    {
+      "order": 100110,
+      "kind": "call",
+      "label": "retryFailedDrawings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ArchitectureModelStage.tsx",
+        "symbol": "retryFailedDrawings"
+      },
+      "to": "vKEsyHFk#l1BdEgsR",
+      "id": "vKEsyHFk#t1A33Ubr"
+    }
+  ]
 }

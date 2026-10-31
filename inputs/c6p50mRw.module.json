@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/architecture-model/events.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "schemaVersion": 1,
   "id": "vKEsyHFk#c6p50mRw",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 100080,
+      "kind": "call",
+      "label": "semanticBoardKeys",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/events.ts",
+        "symbol": "semanticBoardKeys"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje",
+      "id": "vKEsyHFk#3e3seLde"
+    }
+  ]
 }

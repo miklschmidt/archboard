@@ -10,5 +10,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#Y5mCjHvB",
   "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "projectModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts",
+        "symbol": "projectModel"
+      },
+      "id": "vKEsyHFk/yejBBUFY#scByKwmU",
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+    }
+  ]
 }

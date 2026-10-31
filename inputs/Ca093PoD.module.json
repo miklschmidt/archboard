@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/state/pane-session/pane-core.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Ca093PoD",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "outgoing": [
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "open the bound code",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "symbol": "activateCodeTarget"
+      },
+      "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    }
+  ]
 }

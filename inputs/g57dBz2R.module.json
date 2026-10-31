@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#g57dBz2R",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 70016,
+      "kind": "call",
+      "label": "show shared reading controls",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+        "symbol": "WarningCount"
+      },
+      "id": "vKEsyHFk#5Fd9qq2B",
+      "to": "vKEsyHFk#sd8cirOo"
+    },
+    {
+      "order": 100160,
+      "kind": "call",
+      "label": "CodeBlock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
+        "symbol": "CodeBlock"
+      },
+      "to": "vKEsyHFk#zAnua4yB",
+      "id": "vKEsyHFk#ilnuwfQ5"
+    }
+  ]
 }

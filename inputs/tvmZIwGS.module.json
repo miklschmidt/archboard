@@ -7,8 +7,88 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
   "schemaVersion": 1,
   "id": "vKEsyHFk#tvmZIwGS",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#aixSjfNe",
+  "outgoing": [
+    {
+      "order": 34000,
+      "kind": "call",
+      "label": "read boards from the talk",
+      "description": "The page or replay imports the semantic-board-canvas root. It re-exports readBoardsFrom from the implementing child, so the relationship ends on that public entry point.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "readBoardsFrom"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "order": 33000,
+      "kind": "call",
+      "label": "install the stepped clock; step it a frame at a time",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "createSteppedClock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#f2n9GAXv",
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 35000,
+      "kind": "call",
+      "label": "install the stepped clock; step it each frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "driveFramesFrom"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#qu6pVEXF",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    },
+    {
+      "order": 45000,
+      "kind": "call",
+      "label": "a board cache of its own, under the tab's defaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "createBoardQueryClient"
+      },
+      "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
+      "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "order": 35000,
+      "kind": "data",
+      "label": "the talk's board and policy, in place of the server's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "readBoardsFrom"
+      },
+      "id": "vKEsyHFk/yejBBUFY#TGkTEPYM",
+      "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
+    },
+    {
+      "order": 120000,
+      "kind": "call",
+      "label": "draw every picture against the talk's variant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "drawAgainst"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#VIqC762A",
+      "to": "vKEsyHFk/UOXNWLhR#38hwLCO1"
+    }
+  ]
 }

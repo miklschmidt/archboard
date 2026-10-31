@@ -7,8 +7,74 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#zAnua4yB",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 100440,
+      "kind": "call",
+      "label": "usePaneChrome",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeaderFrame.tsx",
+        "symbol": "usePaneChrome"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL",
+      "id": "vKEsyHFk#JYzI36yu"
+    },
+    {
+      "order": 100470,
+      "kind": "call",
+      "label": "LAYOUT_ENGINES",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticEngineBar.tsx",
+        "symbol": "LAYOUT_ENGINES"
+      },
+      "to": "vKEsyHFk#yMlMb9lh",
+      "id": "vKEsyHFk#EvIUScrY"
+    },
+    {
+      "order": 100480,
+      "kind": "call",
+      "label": "vaultCheckQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
+        "symbol": "vaultCheckQuery"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
+      "id": "vKEsyHFk#2R3mnRC9"
+    },
+    {
+      "order": 100490,
+      "kind": "call",
+      "label": "usePaneVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
+        "symbol": "usePaneVault"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY",
+      "id": "vKEsyHFk#mD8cUJRM"
+    },
+    {
+      "order": 100500,
+      "kind": "call",
+      "label": "tipAnchor",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
+        "symbol": "tipAnchor"
+      },
+      "to": "vKEsyHFk#3hUDSnkm",
+      "id": "vKEsyHFk#hyt7f5oq"
+    }
+  ]
 }

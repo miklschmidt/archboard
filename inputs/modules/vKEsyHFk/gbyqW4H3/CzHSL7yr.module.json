@@ -10,45 +10,5 @@
   "formerNames": [
     "Board viewer"
   ],
-  "outgoing": [
-    {
-      "order": 53000,
-      "kind": "call",
-      "label": "read the picture's key",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx",
-        "symbol": "SemanticLegend"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
-      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
-    },
-    {
-      "order": 64000,
-      "kind": "call",
-      "label": "reuse the relationship ink for the subject tip",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
-        "symbol": "lineInk"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#N8eFnJ9p",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "draw the code warning glyph",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspectorCode.tsx",
-        "symbol": "lineWarning"
-      },
-      "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",
-      "to": "vKEsyHFk#Ut8M2UHc"
-    }
-  ]
+  "outgoing": []
 }

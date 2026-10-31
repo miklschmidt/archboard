@@ -13,19 +13,6 @@
   "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "outgoing": [
     {
-      "order": 81000,
-      "kind": "call",
-      "description": "At page start, this page's renderer is fetched and started.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "startBrowserRenderer"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#eK0DABEt",
-      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
-    },
-    {
       "order": 82000,
       "kind": "call",
       "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
@@ -36,7 +23,45 @@
         "symbol": "startWalkthroughReplay"
       },
       "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
-      "to": "vKEsyHFk/yejBBUFY#aixSjfNe"
+      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
+    },
+    {
+      "order": 11000,
+      "kind": "http",
+      "label": "the page",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "frontendRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "order": 102000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startBrowserRenderer"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
+      "to": "vKEsyHFk#PUaKdRn3"
+    },
+    {
+      "order": 125000,
+      "kind": "call",
+      "label": "Start local layout workers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "renderer"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
+      "to": "vKEsyHFk#PUaKdRn3"
     }
   ]
 }
