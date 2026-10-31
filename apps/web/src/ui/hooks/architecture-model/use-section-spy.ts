@@ -1,7 +1,7 @@
 // Which section of a scrolling page is being read, from where the page is
 // scrolled to: the last section whose top has reached a line a little below
 // the top of the page's room, or the first while none has. The page's last
-// section is as tall as the page's room (`AboutPage`), so every section can
+// section is as tall as the page's room (`ABOUT_SHEET`), so every section can
 // reach the line and be marked. The scroll position is the browser's, so this
 // is read from the page as an outside store rather than kept as state.
 

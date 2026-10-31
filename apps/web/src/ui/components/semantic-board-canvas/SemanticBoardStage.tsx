@@ -41,7 +41,6 @@ import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-sem
 import { useSettledFocus } from "#ui/hooks/semantic-board-canvas/use-settled-focus.ts";
 import { useSidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import { useStageAppearances } from "#ui/hooks/semantic-board-canvas/use-stage-appearances.ts";
-import { useStageTab } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import { useSubjectFocus } from "#ui/hooks/semantic-board-canvas/use-subject-focus.ts";
 import { useVariantReading } from "#ui/hooks/semantic-board-canvas/use-variant-reading.ts";
 import {
@@ -370,9 +369,8 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
-	const { tab, onTab, place } = useStageTab(drill.board, narrative.open !== null, choose);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, resting, narrative.open !== null, tab === "about");
+	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion, sidebarWidth);
 	const onPickInPicture = useReveal({
 		camera,
@@ -385,25 +383,16 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	});
 	const { appearances, key } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
-	const { goTo } = narrative;
-	const onReadBeat = useCallback(
-		(walkthrough: string, beat: number): void => {
-			choose(walkthrough);
-			goTo(beat);
-		},
-		[choose, goTo],
-	);
-	// The stage fits the subject, not the About page or the code warning that
-	// asks: the page goes as the diagram comes back, and a subject the view on
-	// screen does not draw is fitted only once the whole board's picture arrives.
+	// The stage fits the subject, not the code warning that asks: a subject the
+	// view on screen does not draw is fitted only once the whole board's picture
+	// arrives.
 	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
 	const onShow = useCallback(
 		(id: string): void => {
 			onPick(id);
-			onTab("diagram");
 			fitSubject(id);
 		},
-		[onPick, onTab, fitSubject],
+		[onPick, fitSubject],
 	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
@@ -433,10 +422,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			sidebar={sidebar}
 			pictureKey={key}
 			look={look}
-			tab={tab}
-			onTab={onTab}
-			place={place}
-			onReadBeat={onReadBeat}
 			onShow={onShow}
 			attachPicture={attachPicture}
 			heading={departure.heading}

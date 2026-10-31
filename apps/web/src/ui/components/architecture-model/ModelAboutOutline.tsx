@@ -1,5 +1,5 @@
 // The parts of a page about a subject that scrolls: an outline of its sections and the frame
-// of one section. Both About pages are laid out with them.
+// of one section. About is laid out with them.
 
 import type { RemixiconComponentType } from "@remixicon/react";
 import { useCallback, useId, type JSX, type ReactNode } from "react";

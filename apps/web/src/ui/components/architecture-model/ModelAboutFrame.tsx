@@ -16,9 +16,9 @@ import {
 	AboutSectionFrame,
 	scrollToSection,
 	type AboutSection,
-} from "#ui/components/semantic-board-canvas/AboutOutline.tsx";
+} from "#ui/components/architecture-model/ModelAboutOutline.tsx";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
-import { useSectionSpy } from "#ui/hooks/semantic-board-canvas/use-section-spy.ts";
+import { useSectionSpy } from "#ui/hooks/architecture-model/use-section-spy.ts";
 import type { TimelineEntry } from "#ui/rules/architecture-model/state-timeline.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
