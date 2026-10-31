@@ -35,7 +35,7 @@
         "symbol": "threadInjectItems"
       },
       "id": "vKEsyHFk/9ncuT5DP#8g1SNngD",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 28000,
@@ -74,33 +74,7 @@
         "symbol": "ADDITIONAL_CONTEXT_POLICY"
       },
       "id": "vKEsyHFk#lBMb2LoN",
-      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
-    },
-    {
-      "order": 70046,
-      "kind": "call",
-      "label": "apply shared thread profiles",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
-        "symbol": "captureExecutionContext"
-      },
-      "id": "vKEsyHFk#C12Ez7nd",
-      "to": "vKEsyHFk#s0GbdiHw"
-    },
-    {
-      "order": 101650,
-      "kind": "call",
-      "label": "createWorkbenchThreadInjectItemsParams",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
-        "symbol": "createWorkbenchThreadInjectItemsParams"
-      },
-      "to": "vKEsyHFk#6nQOarel",
-      "id": "vKEsyHFk#94aAg2Ik"
+      "to": "vKEsyHFk/SJ2JMVyz#5Pg20iSq"
     }
   ]
 }

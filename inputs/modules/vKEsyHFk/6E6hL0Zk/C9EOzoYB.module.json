@@ -45,20 +45,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/6E6hL0Zk#BNTbGuis",
-      "to": "vKEsyHFk#92f9M6zF"
-    },
-    {
-      "order": 121890,
-      "kind": "call",
-      "label": "unavailableCanonical",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/canonical-context.ts",
-        "symbol": "unavailableCanonical"
-      },
-      "to": "vKEsyHFk#90JSzuO0",
-      "id": "vKEsyHFk#ojyD2lvC"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

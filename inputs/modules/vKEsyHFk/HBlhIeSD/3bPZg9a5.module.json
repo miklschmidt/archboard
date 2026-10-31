@@ -70,32 +70,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#hYCgIdBo",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 65000,
-      "kind": "call",
-      "label": "runs the code check: boards, plans, pass and behind",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
-        "symbol": "createCodeCheck"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#D9dCZCLo",
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
-    },
-    {
-      "order": 67000,
-      "kind": "call",
-      "label": "keep what a finished pass found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
-        "symbol": "createCodeFindingsMemory"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#gjUcUvHu",
-      "to": "vKEsyHFk/6E6hL0Zk#SmrySjjM"
     }
   ]
 }

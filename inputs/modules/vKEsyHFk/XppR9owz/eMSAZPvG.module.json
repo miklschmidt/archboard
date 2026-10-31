@@ -33,32 +33,6 @@
   ],
   "outgoing": [
     {
-      "order": 33000,
-      "kind": "dependency",
-      "label": "the Codex executable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
-      "to": "vKEsyHFk#CrUba3iq"
-    },
-    {
-      "order": 45000,
-      "kind": "dependency",
-      "label": "observe and stop the server process",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "readProcessObservation"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
-      "to": "vKEsyHFk#r4NA47YB"
-    },
-    {
       "order": 57000,
       "kind": "call",
       "label": "spawn it detached",
@@ -69,7 +43,7 @@
         "symbol": "spawn"
       },
       "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     },
     {
       "order": 58000,
@@ -83,45 +57,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#qXImR60k",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 101940,
-      "kind": "call",
-      "label": "codedError",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/server-spawn-target.ts",
-        "symbol": "codedError"
-      },
-      "id": "vKEsyHFk#FiHABPZP",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 121610,
-      "kind": "call",
-      "label": "readPidFile",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "readPidFile"
-      },
-      "to": "vKEsyHFk#EKWB6PGZ",
-      "id": "vKEsyHFk#jWHJnj93"
-    },
-    {
-      "order": 121660,
-      "kind": "call",
-      "label": "validateTiming",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/server-startup-cleanup.ts",
-        "symbol": "validateTiming"
-      },
-      "to": "vKEsyHFk#EPFoLCRu",
-      "id": "vKEsyHFk#LZWZqa80"
     }
   ]
 }

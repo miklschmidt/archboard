@@ -52,7 +52,7 @@
         "symbol": "interrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 70014,
@@ -81,45 +81,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
-      "order": 70057,
-      "kind": "call",
-      "label": "publish structured local diagnostics",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
-        "symbol": "logger"
-      },
-      "id": "vKEsyHFk#e00V8dhv",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 102360,
-      "kind": "call",
-      "label": "parseTabSessionId",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
-        "symbol": "parseTabSessionId"
-      },
-      "id": "vKEsyHFk#XovrgGmf",
-      "to": "vKEsyHFk#E2UB4mCE"
-    },
-    {
-      "order": 102370,
-      "kind": "call",
-      "label": "checkoutOfVault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/start.ts",
-        "symbol": "checkoutOfVault"
-      },
-      "id": "vKEsyHFk#jHYCjjKu",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
       "order": 126000,
       "kind": "call",
       "emphasis": "normal",
@@ -129,20 +90,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk#92f9M6zF"
-    },
-    {
-      "order": 122350,
-      "kind": "call",
-      "label": "ExplanationActionRequestSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
-        "symbol": "ExplanationActionRequestSchema"
-      },
-      "to": "vKEsyHFk#0pGqaxrM",
-      "id": "vKEsyHFk#qmLomtsE"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

@@ -28,5 +28,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 3000,
+      "kind": "call",
+      "label": "restore through the workspace port, repository by pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+        "symbol": "open"
+      },
+      "id": "vKEsyHFk/yejBBUFY#zfz9dQDf",
+      "to": "vKEsyHFk/yejBBUFY#HggZR41l"
+    }
+  ]
 }

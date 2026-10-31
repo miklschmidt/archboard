@@ -1,0 +1,14 @@
+{
+  "order": 13000,
+  "name": "Browser failures",
+  "kind": "module",
+  "responsibility": "The failures of a headless browser, by what the caller can do",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/processes/headless-chromium/errors.ts"
+  },
+  "parent": "vKEsyHFk/SMjRfwN3#IzgAi2R1",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#1I0gumBA",
+  "outgoing": []
+}

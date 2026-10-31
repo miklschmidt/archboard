@@ -23,46 +23,7 @@
         "symbol": "readPngDimensions"
       },
       "id": "vKEsyHFk#wsEMWmNJ",
-      "to": "vKEsyHFk/SMjRfwN3#ctgF3OPk"
-    },
-    {
-      "order": 101870,
-      "kind": "call",
-      "label": "pngRecipeText",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/recipe/read-recipe.ts",
-        "symbol": "pngRecipeText"
-      },
-      "to": "vKEsyHFk/SMjRfwN3#H2MUNwiC",
-      "id": "vKEsyHFk#cDB1ulPM"
-    },
-    {
-      "order": 101880,
-      "kind": "call",
-      "label": "LayoutEngineSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/recipe/schema.ts",
-        "symbol": "LayoutEngineSchema"
-      },
-      "to": "vKEsyHFk#mk8nMShK",
-      "id": "vKEsyHFk#oW1C1jv0"
-    },
-    {
-      "order": 101890,
-      "kind": "call",
-      "label": "nullable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/operations/recipe/schema.ts",
-        "symbol": "LayoutEngineSchema.nullable"
-      },
-      "to": "vKEsyHFk#FqLZ2AuG",
-      "id": "vKEsyHFk#rLYtGPe6"
+      "to": "vKEsyHFk/SMjRfwN3#KeEVHJEm"
     }
   ]
 }

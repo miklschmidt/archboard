@@ -1,0 +1,14 @@
+{
+  "order": 57000,
+  "name": "Voice contracts",
+  "kind": "module",
+  "responsibility": "The schemas that the voice server and browser share",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/shared"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#IDqYdDcJ",
+  "outgoing": []
+}

@@ -38,7 +38,7 @@
         "symbol": "handleBrowserMessage"
       },
       "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
-      "to": "vKEsyHFk#XwSp38Fy"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 15000,
@@ -128,20 +128,7 @@
         "symbol": "parseBoardKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
-      "to": "vKEsyHFk#LKzM5UTh"
-    },
-    {
-      "order": 121320,
-      "kind": "call",
-      "label": "isArchitectureFeed",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "isArchitectureFeed"
-      },
-      "to": "vKEsyHFk#e36HfOzg",
-      "id": "vKEsyHFk#rhZXLR07"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

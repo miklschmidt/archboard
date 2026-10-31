@@ -30,32 +30,6 @@
       },
       "id": "vKEsyHFk#zeayswzH",
       "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
-    },
-    {
-      "order": 102420,
-      "kind": "call",
-      "label": "readArchitectureModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "to": "vKEsyHFk#92f9M6zF",
-      "id": "vKEsyHFk#QswnZqm0"
-    },
-    {
-      "order": 102430,
-      "kind": "call",
-      "label": "watchArchitectureModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-context-source.ts",
-        "symbol": "watchArchitectureModel"
-      },
-      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5",
-      "id": "vKEsyHFk#BkFSP6uc"
     }
   ]
 }

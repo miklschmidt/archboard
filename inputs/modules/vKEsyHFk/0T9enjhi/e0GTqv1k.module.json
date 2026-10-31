@@ -47,19 +47,6 @@
       "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
     },
     {
-      "order": 101040,
-      "kind": "call",
-      "label": "correctionCandidate",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
-        "symbol": "correctionCandidate"
-      },
-      "id": "vKEsyHFk#cqq8s6IH",
-      "to": "vKEsyHFk#VEIHlGvr"
-    },
-    {
       "order": 147000,
       "kind": "call",
       "label": "decodeModel",
@@ -70,7 +57,7 @@
         "symbol": "decodeModel"
       },
       "id": "vKEsyHFk/0T9enjhi#wP2zZutN",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 169000,
@@ -96,7 +83,7 @@
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#JVhp6YbR",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 181000,
@@ -148,7 +135,7 @@
         "symbol": "retainedReservations"
       },
       "id": "vKEsyHFk/0T9enjhi#ZcLsTS33",
-      "to": "vKEsyHFk#eOGHGwGK"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     },
     {
       "order": 240000,
@@ -161,20 +148,7 @@
         "symbol": "walkthroughDependencies"
       },
       "id": "vKEsyHFk/0T9enjhi#bMnT3nY6",
-      "to": "vKEsyHFk#YxQRiBCk"
-    },
-    {
-      "order": 123140,
-      "kind": "call",
-      "label": "readModelFiles",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
-        "symbol": "readModelFiles"
-      },
-      "to": "vKEsyHFk#LKzM5UTh",
-      "id": "vKEsyHFk#O4BPSXfx"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     }
   ]
 }

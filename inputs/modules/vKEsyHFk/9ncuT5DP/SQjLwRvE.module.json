@@ -56,32 +56,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#GFyFbH49",
       "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
-      "order": 102400,
-      "kind": "call",
-      "label": "checkoutOfVault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
-        "symbol": "checkoutOfVault"
-      },
-      "id": "vKEsyHFk#MiG7GbY4",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 122230,
-      "kind": "call",
-      "label": "archboardPayloadOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
-        "symbol": "archboardPayloadOf"
-      },
-      "to": "vKEsyHFk#VCUZ3sJA",
-      "id": "vKEsyHFk#KXrzy9nB"
     }
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "order": 97000,
+  "name": "Flow state",
+  "kind": "module",
+  "responsibility": "Finds collections, flows and steps in the candidate of an edit",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/flow-state.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#vm8xM0R5",
+  "outgoing": []
+}

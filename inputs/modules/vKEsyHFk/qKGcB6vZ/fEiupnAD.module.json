@@ -54,20 +54,7 @@
         "symbol": "createWorkbenchTurnStartParams"
       },
       "id": "vKEsyHFk/qKGcB6vZ#ZSSbttgn",
-      "to": "vKEsyHFk#6nQOarel"
-    },
-    {
-      "order": 122100,
-      "kind": "call",
-      "label": "sameBinding",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/spoken-approval/classifier-turn.ts",
-        "symbol": "sameBinding"
-      },
-      "to": "vKEsyHFk#upkxFKdx",
-      "id": "vKEsyHFk#7sWuHyZ4"
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     }
   ]
 }

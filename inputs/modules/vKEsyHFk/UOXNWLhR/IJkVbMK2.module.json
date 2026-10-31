@@ -16,23 +16,6 @@
   "parent": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
   "outgoing": [
     {
-      "order": 10000,
-      "kind": "call",
-      "label": "draw this board here",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-        "symbol": "draw"
-      },
-      "id": "vKEsyHFk/yejBBUFY#G55H6teG",
-      "to": "vKEsyHFk#YmWCEFDe"
-    },
-    {
       "order": 13000,
       "kind": "data",
       "label": "the board and policy it draws from",
@@ -70,19 +53,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#9yW8SET1",
       "to": "vKEsyHFk/UOXNWLhR#F90402mH"
-    },
-    {
-      "order": 70031,
-      "kind": "call",
-      "label": "identify the captured picture",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-        "symbol": "sameBoardName"
-      },
-      "id": "vKEsyHFk#J52Bs9ep",
-      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
     },
     {
       "order": 76000,
@@ -135,19 +105,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#ld2PjHvA",
       "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
-    },
-    {
-      "order": 121800,
-      "kind": "call",
-      "label": "layoutEngineNow",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-        "symbol": "layoutEngineNow"
-      },
-      "to": "vKEsyHFk#b3RjWlpQ",
-      "id": "vKEsyHFk#4KuuNLuN"
     }
   ]
 }

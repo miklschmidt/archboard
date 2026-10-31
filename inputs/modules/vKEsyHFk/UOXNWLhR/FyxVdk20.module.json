@@ -38,19 +38,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#RSxtiSv5",
       "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
-    },
-    {
-      "order": 121850,
-      "kind": "call",
-      "label": "openableAt",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
-        "symbol": "openableAt"
-      },
-      "to": "vKEsyHFk#mwEYjSuY",
-      "id": "vKEsyHFk#sBYX2UFY"
     }
   ]
 }

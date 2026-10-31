@@ -1,0 +1,14 @@
+{
+  "order": 45000,
+  "name": "Source history",
+  "kind": "module",
+  "responsibility": "Reads a repository's source at a ref through Git",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-intel/src/runtime/clients/history-lens/source-history.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#SIoMzFmv",
+  "outgoing": []
+}

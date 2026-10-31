@@ -1,0 +1,14 @@
+{
+  "order": 12001,
+  "name": "Transport failures",
+  "kind": "module",
+  "responsibility": "The failures of the transport, by what the caller can do",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/clients/transport-errors.ts"
+  },
+  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#vi5P5qlJ",
+  "outgoing": []
+}

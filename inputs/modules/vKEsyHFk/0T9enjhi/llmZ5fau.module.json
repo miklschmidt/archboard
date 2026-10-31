@@ -34,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 123550,
-      "kind": "call",
-      "label": "everyStep",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
-        "symbol": "everyStep"
-      },
-      "id": "vKEsyHFk#TKgTkSI2",
-      "to": "vKEsyHFk#nRX8oZ5h"
-    },
-    {
       "order": 182000,
       "kind": "call",
       "label": "applyFlowChanges",
@@ -70,7 +57,7 @@
         "symbol": "selectedId"
       },
       "id": "vKEsyHFk/0T9enjhi#erkB0gWt",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 188000,
@@ -97,19 +84,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#JGBxddlN",
       "to": "vKEsyHFk/0T9enjhi#d8uON4nq"
-    },
-    {
-      "order": 124960,
-      "kind": "call",
-      "label": "assignFields",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
-        "symbol": "assignFields"
-      },
-      "to": "vKEsyHFk#tDBMuSDV",
-      "id": "vKEsyHFk#61nA8DjZ"
     }
   ]
 }

@@ -29,7 +29,7 @@
         "symbol": "onChange"
       },
       "id": "vKEsyHFk/9ncuT5DP#YOaSBuBr",
-      "to": "vKEsyHFk/9ncuT5DP#8DmvR3O6"
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
     },
     {
       "order": 31000,
@@ -69,46 +69,7 @@
         "symbol": "respond"
       },
       "id": "vKEsyHFk/9ncuT5DP#5gcxxoqv",
-      "to": "vKEsyHFk#rIA2tehz"
-    },
-    {
-      "order": 66000,
-      "kind": "dependency",
-      "label": "approval, realtime and session durations",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/broker.ts",
-        "symbol": "CODEX_APPROVAL_MS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#aDY2uOmY",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    },
-    {
-      "order": 101630,
-      "kind": "call",
-      "label": "CodexServerResponseSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/response.ts",
-        "symbol": "CodexServerResponseSchema"
-      },
-      "to": "vKEsyHFk#PYiU5DKD",
-      "id": "vKEsyHFk#iRWmeeXp"
-    },
-    {
-      "order": 101640,
-      "kind": "call",
-      "label": "safeParse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/approvals/response.ts",
-        "symbol": "CodexServerResponseSchema.safeParse"
-      },
-      "to": "vKEsyHFk#UxeumIR2",
-      "id": "vKEsyHFk#hXlZ8gGn"
+      "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
     }
   ]
 }

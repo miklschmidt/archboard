@@ -1,0 +1,14 @@
+{
+  "order": 41000,
+  "name": "Operation owner",
+  "kind": "module",
+  "responsibility": "Owns one workhorse's operations and publishes their events",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/operations.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#tlC2W839",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Qn3agI8k",
+  "outgoing": []
+}

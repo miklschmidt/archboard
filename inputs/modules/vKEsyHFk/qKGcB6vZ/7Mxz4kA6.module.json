@@ -43,19 +43,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#rHTIxHOa",
       "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
-    },
-    {
-      "order": 17000,
-      "kind": "call",
-      "label": "the coordinator namespace, named by the host",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/toolset.ts",
-        "symbol": "renderCoordinatorCallbackNamespace"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#uLGJACZb",
-      "to": "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ"
     }
   ]
 }

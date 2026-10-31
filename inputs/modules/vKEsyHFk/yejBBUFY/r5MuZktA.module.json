@@ -37,7 +37,7 @@
         "symbol": "modelWalkthroughQuery"
       },
       "id": "vKEsyHFk/yejBBUFY#tEO0oHDD",
-      "to": "vKEsyHFk#5rt5ufIt"
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
     },
     {
       "order": 91000,
@@ -51,19 +51,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#GgQoJfiQ",
       "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
-    },
-    {
-      "order": 100380,
-      "kind": "call",
-      "label": "useModelLocation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthroughReader.tsx",
-        "symbol": "useModelLocation"
-      },
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
-      "id": "vKEsyHFk#fxMJVzGH"
     }
   ]
 }

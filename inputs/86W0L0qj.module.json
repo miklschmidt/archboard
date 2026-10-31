@@ -1,0 +1,14 @@
+{
+  "order": 95000,
+  "name": "Edit fields",
+  "kind": "module",
+  "responsibility": "Preserves omitted fields and refuses contradictory clearing",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/fields.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#86W0L0qj",
+  "outgoing": []
+}

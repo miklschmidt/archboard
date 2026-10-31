@@ -1,0 +1,14 @@
+{
+  "order": 77000,
+  "name": "Semantics check",
+  "kind": "module",
+  "responsibility": "What the semantics check says about one state of a model",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/check"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#oB5Tk0LU",
+  "outgoing": []
+}

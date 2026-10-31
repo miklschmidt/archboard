@@ -82,7 +82,7 @@
         "symbol": "readCheckpointModel"
       },
       "id": "vKEsyHFk/0T9enjhi#AjGkFCES",
-      "to": "vKEsyHFk#fbXmgVn2"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     },
     {
       "order": 226000,
@@ -95,7 +95,7 @@
         "symbol": "failure"
       },
       "id": "vKEsyHFk/0T9enjhi#WdOzlOvq",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 228000,
@@ -122,19 +122,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",
       "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
-    },
-    {
-      "order": 124890,
-      "kind": "call",
-      "label": "selectReferenceSubject",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-navigation.ts",
-        "symbol": "selectReferenceSubject"
-      },
-      "to": "vKEsyHFk#HCueketd",
-      "id": "vKEsyHFk#MRfn173L"
     }
   ]
 }

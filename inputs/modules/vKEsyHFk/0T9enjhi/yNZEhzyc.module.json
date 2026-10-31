@@ -34,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 101080,
-      "kind": "call",
-      "label": "ArchiveError",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/flows.ts",
-        "symbol": "ArchiveError"
-      },
-      "id": "vKEsyHFk#L4MYGwwd",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
-    },
-    {
       "order": 185000,
       "kind": "call",
       "label": "FlowChangeSchema",
@@ -58,45 +45,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#yUvd87du",
       "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
-    },
-    {
-      "order": 124950,
-      "kind": "call",
-      "label": "assignFields",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/flows.ts",
-        "symbol": "assignFields"
-      },
-      "to": "vKEsyHFk#tDBMuSDV",
-      "id": "vKEsyHFk#2e3BnNaM"
-    },
-    {
-      "order": 124980,
-      "kind": "call",
-      "label": "materialize",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/flows.ts",
-        "symbol": "materialize"
-      },
-      "to": "vKEsyHFk#OODdTfsS",
-      "id": "vKEsyHFk#z5HlZ3ys"
-    },
-    {
-      "order": 125000,
-      "kind": "call",
-      "label": "moduleSelector",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/flows.ts",
-        "symbol": "moduleSelector"
-      },
-      "to": "vKEsyHFk#XqJRSGKy",
-      "id": "vKEsyHFk#cfxKIski"
     }
   ]
 }

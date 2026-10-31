@@ -1,0 +1,14 @@
+{
+  "order": 14004,
+  "name": "Browser renderer start",
+  "kind": "function",
+  "responsibility": "Installs the renderer core in the page and draws through its workers",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui/state/browser-renderer.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#7ElpT3ls",
+  "outgoing": []
+}

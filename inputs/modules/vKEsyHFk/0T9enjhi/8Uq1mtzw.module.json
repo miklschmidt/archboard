@@ -73,7 +73,7 @@
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#gj0AysX5",
-      "to": "vKEsyHFk#FLJEC9yO"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 157000,
@@ -137,7 +137,7 @@
         "symbol": "readCurrentModel"
       },
       "id": "vKEsyHFk/0T9enjhi#WIHdjwjn",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 229000,
@@ -151,19 +151,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#OkD6iLu5",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
-    },
-    {
-      "order": 122700,
-      "kind": "call",
-      "label": "StateMetadataSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/prepare.ts",
-        "symbol": "StateMetadataSchema"
-      },
-      "to": "vKEsyHFk#TqtKogi0",
-      "id": "vKEsyHFk#hrtXHmG7"
     }
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "order": 92000,
+  "name": "Reference subject",
+  "kind": "module",
+  "responsibility": "Selects an explicit subject without changing its kind or ownership",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/read/reference-subject.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ZFPbsdoT",
+  "outgoing": []
+}

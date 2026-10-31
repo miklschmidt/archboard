@@ -37,32 +37,6 @@
   ],
   "outgoing": [
     {
-      "order": 101150,
-      "kind": "call",
-      "label": "modelBoundaryFailure",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
-        "symbol": "modelBoundaryFailure"
-      },
-      "id": "vKEsyHFk#M0qwALKU",
-      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
-    },
-    {
-      "order": 101160,
-      "kind": "call",
-      "label": "logger",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
-        "symbol": "logger"
-      },
-      "id": "vKEsyHFk#X2XjQJsx",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
       "order": 140000,
       "kind": "call",
       "label": "subscribe to local durable news",
@@ -73,7 +47,7 @@
         "symbol": "onArchitectureNews"
       },
       "id": "vKEsyHFk/0T9enjhi#dsLuZ7fl",
-      "to": "vKEsyHFk#klNJGGEX"
+      "to": "vKEsyHFk/0T9enjhi#IyV7OF9L"
     },
     {
       "order": 141000,
@@ -86,7 +60,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#U1wBMUoF",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 142000,
@@ -113,19 +87,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#GnhBsOl1",
       "to": "vKEsyHFk/0T9enjhi#MI2LKBji"
-    },
-    {
-      "order": 123170,
-      "kind": "call",
-      "label": "modelFilesToken",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
-        "symbol": "modelFilesToken"
-      },
-      "to": "vKEsyHFk#LKzM5UTh",
-      "id": "vKEsyHFk#zWTBFedN"
     }
   ]
 }

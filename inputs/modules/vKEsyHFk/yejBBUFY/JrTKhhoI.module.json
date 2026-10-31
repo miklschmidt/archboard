@@ -25,19 +25,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 122630,
-      "kind": "call",
-      "label": "architectureFeed",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/architecture-model/use-architecture-feed.ts",
-        "symbol": "architectureFeed"
-      },
-      "to": "vKEsyHFk#t1YK6efz",
-      "id": "vKEsyHFk#MzF7LLLe"
-    }
-  ]
+  "outgoing": []
 }

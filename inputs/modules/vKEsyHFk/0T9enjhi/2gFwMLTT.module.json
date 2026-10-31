@@ -57,7 +57,7 @@
         "symbol": "installJournal"
       },
       "id": "vKEsyHFk/0T9enjhi#5PFwNTjm",
-      "to": "vKEsyHFk#YYw5CyVj"
+      "to": "vKEsyHFk/0T9enjhi#CLdaoYy3"
     },
     {
       "order": 249000,
@@ -70,7 +70,7 @@
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#S8zTZBw6",
-      "to": "vKEsyHFk#FLJEC9yO"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 250000,
@@ -96,7 +96,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#W1fBWglm",
-      "to": "vKEsyHFk#92f9M6zF"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 252000,
@@ -109,7 +109,7 @@
         "symbol": "historyResult"
       },
       "id": "vKEsyHFk/0T9enjhi#IyzXWhR8",
-      "to": "vKEsyHFk#QdaDrU3Z"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     },
     {
       "order": 253000,
@@ -122,7 +122,7 @@
         "symbol": "notifyArchitecture"
       },
       "id": "vKEsyHFk/0T9enjhi#J7A3jU0T",
-      "to": "vKEsyHFk#klNJGGEX"
+      "to": "vKEsyHFk/0T9enjhi#IyV7OF9L"
     },
     {
       "order": 254000,
@@ -149,45 +149,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#8KIXscUH",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
-    },
-    {
-      "order": 122680,
-      "kind": "call",
-      "label": "StateMetadataSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/portable.ts",
-        "symbol": "StateMetadataSchema"
-      },
-      "to": "vKEsyHFk#TqtKogi0",
-      "id": "vKEsyHFk#7vTwOGAy"
-    },
-    {
-      "order": 123110,
-      "kind": "call",
-      "label": "readModelFiles",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/portable.ts",
-        "symbol": "readModelFiles"
-      },
-      "to": "vKEsyHFk#LKzM5UTh",
-      "id": "vKEsyHFk#eyPWLlEI"
-    },
-    {
-      "order": 123290,
-      "kind": "call",
-      "label": "ArchitecturePortableBundleSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/portable.ts",
-        "symbol": "ArchitecturePortableBundleSchema"
-      },
-      "to": "vKEsyHFk#OAnOdFft",
-      "id": "vKEsyHFk#JDzlkz5z"
     }
   ]
 }

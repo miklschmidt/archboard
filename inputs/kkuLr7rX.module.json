@@ -1,0 +1,14 @@
+{
+  "order": 65000,
+  "name": "Semantic inspector",
+  "kind": "ui",
+  "responsibility": "The sidebar that reads the selected subject",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx"
+  },
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#kkuLr7rX",
+  "outgoing": []
+}

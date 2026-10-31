@@ -29,23 +29,6 @@
   ],
   "outgoing": [
     {
-      "order": 10000,
-      "kind": "event",
-      "label": "lease, commands, snapshots",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway.ts",
-        "symbol": "connect"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
-      "to": "vKEsyHFk#gTO8fRs6"
-    },
-    {
       "order": 20000,
       "kind": "event",
       "label": "agent commands and snapshots",
@@ -56,33 +39,7 @@
         "symbol": "send"
       },
       "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk#e36HfOzg"
-    },
-    {
-      "order": 122340,
-      "kind": "call",
-      "label": "browserSnapshotRelationshipIssues",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/stream.ts",
-        "symbol": "browserSnapshotRelationshipIssues"
-      },
-      "to": "vKEsyHFk#6kbdM85r",
-      "id": "vKEsyHFk#PbSviqUD"
-    },
-    {
-      "order": 122390,
-      "kind": "call",
-      "label": "commandSupported",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/command.ts",
-        "symbol": "commandSupported"
-      },
-      "to": "vKEsyHFk#1m84Tfcc",
-      "id": "vKEsyHFk#iP66oL05"
+      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
     }
   ]
 }

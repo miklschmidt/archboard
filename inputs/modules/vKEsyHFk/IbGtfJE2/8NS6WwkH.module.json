@@ -10,19 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#8NS6WwkH",
   "parent": "vKEsyHFk/IbGtfJE2#8O4XNZOZ",
-  "outgoing": [
-    {
-      "order": 120770,
-      "kind": "call",
-      "label": "runProcess",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/processes/flask.ts",
-        "symbol": "runProcess"
-      },
-      "to": "vKEsyHFk#nLuz2WXh",
-      "id": "vKEsyHFk#Ib0H9pst"
-    }
-  ]
+  "outgoing": []
 }

@@ -24,45 +24,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "move the pane into the repository a drill-down names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
-        "symbol": "useDrillRepositories"
-      },
-      "id": "vKEsyHFk/yejBBUFY#A19ksdGe",
-      "to": "vKEsyHFk#idEKSUcN"
-    },
-    {
-      "order": 100510,
-      "kind": "call",
-      "label": "repositoriesQuery",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
-        "symbol": "repositoriesQuery"
-      },
-      "to": "vKEsyHFk#dneK7oM5",
-      "id": "vKEsyHFk#M9y2mUqd"
-    },
-    {
-      "order": 100520,
-      "kind": "call",
-      "label": "boardKeyFor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
-        "symbol": "boardKeyFor"
-      },
-      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
-      "id": "vKEsyHFk#LzfsCynr"
-    }
-  ]
+  "outgoing": []
 }

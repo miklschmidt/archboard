@@ -1,0 +1,14 @@
+{
+  "order": 60000,
+  "name": "Code warnings",
+  "kind": "ui",
+  "responsibility": "Lists the code check's findings for a subject",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/CodeWarnings.tsx"
+  },
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ty7EOIU4",
+  "outgoing": []
+}

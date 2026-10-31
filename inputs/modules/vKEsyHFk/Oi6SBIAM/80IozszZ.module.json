@@ -65,7 +65,7 @@
         "symbol": "liveWorkhorseCheckouts"
       },
       "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
-      "to": "vKEsyHFk#XwSp38Fy"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 72000,
@@ -79,45 +79,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
-    },
-    {
-      "order": 102600,
-      "kind": "call",
-      "label": "logger",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
-        "symbol": "logger"
-      },
-      "id": "vKEsyHFk#t1YcNpe1",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 121940,
-      "kind": "call",
-      "label": "bodyOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
-        "symbol": "bodyOf"
-      },
-      "to": "vKEsyHFk#90JSzuO0",
-      "id": "vKEsyHFk#hmtoBbP6"
-    },
-    {
-      "order": 122370,
-      "kind": "call",
-      "label": "ShownConversationRequestSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
-        "symbol": "ShownConversationRequestSchema"
-      },
-      "to": "vKEsyHFk#0pGqaxrM",
-      "id": "vKEsyHFk#r6kLxpf6"
     }
   ]
 }

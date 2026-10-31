@@ -47,7 +47,7 @@
         "symbol": "advanceObservation"
       },
       "id": "vKEsyHFk/0T9enjhi#E7MfWknr",
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 232000,
@@ -60,7 +60,7 @@
         "symbol": "completions"
       },
       "id": "vKEsyHFk/0T9enjhi#1H1Ks46q",
-      "to": "vKEsyHFk#QdaDrU3Z"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     },
     {
       "order": 233000,
@@ -87,32 +87,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#iKreIhYm",
       "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
-    },
-    {
-      "order": 101250,
-      "kind": "call",
-      "label": "errnoCode",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
-        "symbol": "errnoCode"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#9MvUpQJE"
-    },
-    {
-      "order": 101260,
-      "kind": "call",
-      "label": "archiveTip",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-history-news.ts",
-        "symbol": "archiveTip"
-      },
-      "to": "vKEsyHFk#FLJEC9yO",
-      "id": "vKEsyHFk#X7ZgApgA"
     }
   ]
 }

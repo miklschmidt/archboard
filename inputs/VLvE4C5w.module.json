@@ -1,0 +1,14 @@
+{
+  "order": 38000,
+  "name": "State directory",
+  "kind": "module",
+  "responsibility": "Finds Archboard's state storage",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/services/state-dir.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#VLvE4C5w",
+  "outgoing": []
+}

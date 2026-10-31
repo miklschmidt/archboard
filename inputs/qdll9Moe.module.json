@@ -1,0 +1,14 @@
+{
+  "order": 93000,
+  "name": "Backend projections",
+  "kind": "module",
+  "responsibility": "Projects the backend state into what the browser reads",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/projections"
+  },
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#qdll9Moe",
+  "outgoing": []
+}

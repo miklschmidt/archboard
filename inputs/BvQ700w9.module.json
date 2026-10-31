@@ -1,0 +1,14 @@
+{
+  "order": 54000,
+  "name": "Realtime rules",
+  "kind": "module",
+  "responsibility": "Choose how a presentation speaks",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/realtime"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#BvQ700w9",
+  "outgoing": []
+}
