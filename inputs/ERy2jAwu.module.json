@@ -1,0 +1,14 @@
+{
+  "order": 960050,
+  "name": "Pane requests",
+  "kind": "function",
+  "responsibility": "A pane's calls to the server: its report, its readings, its inventory and the checkout a person activated",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ERy2jAwu",
+  "outgoing": []
+}

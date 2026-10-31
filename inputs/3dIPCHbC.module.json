@@ -1,0 +1,14 @@
+{
+  "order": 960080,
+  "name": "Workbench owners",
+  "kind": "function",
+  "responsibility": "Holds the page's agent setup, its voice session and one conversation controller set for each pane",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/application/workbench-owners.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#3dIPCHbC",
+  "outgoing": []
+}
