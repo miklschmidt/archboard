@@ -73,7 +73,7 @@
         "symbol": "openVideoEncoder"
       },
       "id": "vKEsyHFk/SMjRfwN3#eq4BIHlx",
-      "to": "vKEsyHFk/SMjRfwN3#peB5Bs5R"
+      "to": "vKEsyHFk#dBGk8P78"
     },
     {
       "order": 41000,
@@ -113,6 +113,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#uJ0o2UWM",
       "to": "vKEsyHFk/SMjRfwN3#XtzfRQkG"
+    },
+    {
+      "order": 102160,
+      "kind": "call",
+      "label": "voiceSamples",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "symbol": "voiceSamples"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
+      "id": "vKEsyHFk#vxAAYvJQ"
     }
   ]
 }

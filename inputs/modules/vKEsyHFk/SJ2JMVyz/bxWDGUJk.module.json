@@ -52,7 +52,7 @@
         "symbol": "interrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 70014,
@@ -90,7 +90,46 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "to": "vKEsyHFk#YxSPoGVG"
+    },
+    {
+      "order": 70057,
+      "kind": "call",
+      "label": "publish structured local diagnostics",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/dispatch.ts",
+        "symbol": "logger"
+      },
+      "id": "vKEsyHFk#e00V8dhv",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 102360,
+      "kind": "call",
+      "label": "parseTabSessionId",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "parseTabSessionId"
+      },
+      "to": "vKEsyHFk#GjVCWdqC",
+      "id": "vKEsyHFk#ubCZcaMA"
+    },
+    {
+      "order": 102370,
+      "kind": "call",
+      "label": "checkoutOfVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/start.ts",
+        "symbol": "checkoutOfVault"
+      },
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
+      "id": "vKEsyHFk#j7MaCOlT"
     }
   ]
 }

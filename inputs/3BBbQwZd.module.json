@@ -7,8 +7,61 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/components/thread"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
   "schemaVersion": 1,
   "id": "vKEsyHFk#3BBbQwZd",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 102770,
+      "kind": "call",
+      "label": "clockDuration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/thread/TurnParts.tsx",
+        "symbol": "clockDuration"
+      },
+      "to": "vKEsyHFk#LvyHYvBp",
+      "id": "vKEsyHFk#9vC9VCJY"
+    },
+    {
+      "order": 102780,
+      "kind": "call",
+      "label": "useClock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/thread/TurnParts.tsx",
+        "symbol": "useClock"
+      },
+      "to": "vKEsyHFk#asINbd7Q",
+      "id": "vKEsyHFk#slF8EUv7"
+    },
+    {
+      "order": 102790,
+      "kind": "call",
+      "label": "Tooltip",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
+        "symbol": "Tooltip"
+      },
+      "to": "vKEsyHFk#Kayrf3gV",
+      "id": "vKEsyHFk#mDmktsKz"
+    },
+    {
+      "order": 102800,
+      "kind": "call",
+      "label": "Tooltip.Provider",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
+        "symbol": "Tooltip.Provider"
+      },
+      "to": "vKEsyHFk#xHJMa8m8",
+      "id": "vKEsyHFk#TfPGPaw4"
+    }
+  ]
 }

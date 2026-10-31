@@ -7,8 +7,74 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/components/dock"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
   "schemaVersion": 1,
   "id": "vKEsyHFk#uP4CVW1v",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 61000,
+      "kind": "call",
+      "label": "the dock's actions: send, Talk, pick a workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "to": "vKEsyHFk#oS1YUa8j"
+    },
+    {
+      "order": 102670,
+      "kind": "call",
+      "label": "useClock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "useClock"
+      },
+      "to": "vKEsyHFk#asINbd7Q",
+      "id": "vKEsyHFk#Txrk15hq"
+    },
+    {
+      "order": 102680,
+      "kind": "call",
+      "label": "cn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "cn"
+      },
+      "to": "vKEsyHFk#LvyHYvBp",
+      "id": "vKEsyHFk#jWNaqNHC"
+    },
+    {
+      "order": 102690,
+      "kind": "call",
+      "label": "Tooltip",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/IconAction.tsx",
+        "symbol": "Tooltip"
+      },
+      "to": "vKEsyHFk#Kayrf3gV",
+      "id": "vKEsyHFk#sy34TBNM"
+    },
+    {
+      "order": 102700,
+      "kind": "call",
+      "label": "Tooltip.Trigger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/IconAction.tsx",
+        "symbol": "Tooltip.Trigger"
+      },
+      "to": "vKEsyHFk#xHJMa8m8",
+      "id": "vKEsyHFk#cgwR2Kc0"
+    }
+  ]
 }

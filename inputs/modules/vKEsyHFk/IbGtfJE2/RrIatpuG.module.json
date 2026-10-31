@@ -6,19 +6,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#RrIatpuG",
   "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
-  "outgoing": [
-    {
-      "order": 70025,
-      "kind": "call",
-      "label": "inspect captured image regions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/store/grading-images.ts",
-        "symbol": "tileRegions"
-      },
-      "id": "vKEsyHFk#0teCdOOO",
-      "to": "vKEsyHFk/IbGtfJE2#hu0RfGwG"
-    }
-  ]
+  "outgoing": []
 }

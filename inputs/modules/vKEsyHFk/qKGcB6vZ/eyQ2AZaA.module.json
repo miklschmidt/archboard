@@ -28,7 +28,7 @@
         "symbol": "realtimeAppendText"
       },
       "id": "vKEsyHFk/qKGcB6vZ#1joDYyhX",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 22000,
@@ -68,7 +68,59 @@
         "symbol": "canonicalJson"
       },
       "id": "vKEsyHFk/qKGcB6vZ#sQ7mZuI3",
-      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+      "to": "vKEsyHFk#8v0irxE0"
+    },
+    {
+      "order": 22000,
+      "kind": "rpc",
+      "label": "a context change: realtime/appendText for the voice",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "symbol": "realtimeAppendText"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#4DGyP7RO",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "order": 24000,
+      "kind": "rpc",
+      "label": "news as a turn/start; a context change injected or appended",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/realtime.ts",
+        "symbol": "realtimeAppendText"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#biUWQZMB",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "a callback as canonical JSON, kept on its record",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "canonicalJson"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#HiOX9Fc5",
+      "to": "vKEsyHFk#8v0irxE0"
+    },
+    {
+      "order": 18000,
+      "kind": "call",
+      "label": "check the link of the workhorse the news names",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/deliver.ts",
+        "symbol": "classify"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#kJ4DsUAw",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     }
   ]
 }

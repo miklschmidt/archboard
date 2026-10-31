@@ -23,6 +23,71 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#ETX9M5TU",
       "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    },
+    {
+      "order": 102020,
+      "kind": "call",
+      "label": "SemanticPolicySchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "symbol": "SemanticPolicySchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#ySCQLxVI"
+    },
+    {
+      "order": 102030,
+      "kind": "call",
+      "label": "SemanticPolicySchema.parse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "symbol": "SemanticPolicySchema.parse"
+      },
+      "to": "vKEsyHFk#PecEiDcH",
+      "id": "vKEsyHFk#J3sIukfA"
+    },
+    {
+      "order": 102040,
+      "kind": "call",
+      "label": "ArchitectureModelReadSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "symbol": "ArchitectureModelReadSchema"
+      },
+      "to": "vKEsyHFk#DDYjjcyl",
+      "id": "vKEsyHFk#YTsdqvuA"
+    },
+    {
+      "order": 102050,
+      "kind": "call",
+      "label": "modelContent",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "symbol": "modelContent"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "id": "vKEsyHFk#wdh2JjwV"
+    },
+    {
+      "order": 102060,
+      "kind": "call",
+      "label": "inspectSemanticGroup",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/vault.ts",
+        "symbol": "inspectSemanticGroup"
+      },
+      "to": "vKEsyHFk#VjHIz7Ds",
+      "id": "vKEsyHFk#oaLyKUrH"
     }
   ]
 }

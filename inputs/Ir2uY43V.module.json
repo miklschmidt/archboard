@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/rules/outcomes"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Ir2uY43V",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 102070,
+      "kind": "call",
+      "label": "resolveVariant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/rules/outcomes/naming.ts",
+        "symbol": "resolveVariant"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#gcXBnIn5"
+    },
+    {
+      "order": 102080,
+      "kind": "call",
+      "label": "EdgeTrafficSchema.parse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/rules/outcomes/outcomes-board.ts",
+        "symbol": "EdgeTrafficSchema.parse"
+      },
+      "to": "vKEsyHFk#PecEiDcH",
+      "id": "vKEsyHFk#WzF9wN5h"
+    },
+    {
+      "order": 102090,
+      "kind": "call",
+      "label": "comparedWith",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/rules/outcomes/outcomes-comparison.ts",
+        "symbol": "comparedWith"
+      },
+      "to": "vKEsyHFk#VjHIz7Ds",
+      "id": "vKEsyHFk#uWpDYBzs"
+    }
+  ]
 }

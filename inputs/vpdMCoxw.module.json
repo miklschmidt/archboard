@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts"
   },
-  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
   "schemaVersion": 1,
   "id": "vKEsyHFk#vpdMCoxw",
-  "outgoing": []
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "outgoing": [
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "the coordinator turns the shown conversation keeps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "coordinatorTurnsShownIn"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#vScn8k62",
+      "to": "vKEsyHFk/9ncuT5DP#qTmIytbT"
+    },
+    {
+      "order": 69000,
+      "kind": "call",
+      "label": "the tab's live workhorses, for the page's list",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "readWorkhorseList"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#kUptUGCI",
+      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
+    }
+  ]
 }

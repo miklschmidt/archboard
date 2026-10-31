@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/ui/state/browser-renderer.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
   "schemaVersion": 1,
   "id": "vKEsyHFk#7ElpT3ls",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "outgoing": [
+    {
+      "order": 74000,
+      "kind": "call",
+      "label": "render scoped semantic content",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "renderSemanticView"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#3EvpTPuC",
+      "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "Web Workers, as the host's solve",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "createEnginePool"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#mKaf3NN2",
+      "to": "vKEsyHFk/gbyqW4H3#JzHM3KOY"
+    },
+    {
+      "order": 11000,
+      "kind": "call",
+      "label": "installRendererHost",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+        "symbol": "installRendererHost"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#aN2ABUiR",
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY"
+    }
+  ]
 }

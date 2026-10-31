@@ -25,6 +25,19 @@
       "emphasis": "normal",
       "id": "vKEsyHFk/9ncuT5DP#iZim0JO9",
       "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
+    },
+    {
+      "order": 102440,
+      "kind": "call",
+      "label": "JsonValueSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/host/archboard-presentation.ts",
+        "symbol": "JsonValueSchema"
+      },
+      "to": "vKEsyHFk#IDqYdDcJ",
+      "id": "vKEsyHFk#8712sz9a"
     }
   ]
 }

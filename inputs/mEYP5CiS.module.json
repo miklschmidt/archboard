@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/ui/workers/layout-worker.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
   "schemaVersion": 1,
   "id": "vKEsyHFk#mEYP5CiS",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "outgoing": [
+    {
+      "order": 60600,
+      "kind": "call",
+      "label": "serve solves in a Web Worker",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/ui/workers/layout-worker.ts",
+        "symbol": "serveLayoutEngine"
+      },
+      "id": "vKEsyHFk#EwDGu9IN",
+      "to": "vKEsyHFk/OjRLKb74#JwgvpLYJ"
+    }
+  ]
 }

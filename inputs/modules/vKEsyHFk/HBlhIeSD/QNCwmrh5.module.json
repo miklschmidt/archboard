@@ -45,6 +45,45 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 40000,
+      "kind": "data",
+      "label": "resolve bindings through the chosen checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#0SFK7vbb",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 25000,
+      "kind": "dependency",
+      "label": "the chosen checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 101360,
+      "kind": "call",
+      "label": "gitCheckoutOfVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "gitCheckoutOfVault"
+      },
+      "to": "vKEsyHFk#YaXkZmP6",
+      "id": "vKEsyHFk#RMcmM89Y"
     }
   ]
 }

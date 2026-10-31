@@ -7,8 +7,61 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/rules/instructions"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#pk2hibEi",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 57000,
+      "kind": "dependency",
+      "label": "interpret selected board subjects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+        "symbol": "SemanticSubjectKindSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#xEGElQkc",
+      "to": "vKEsyHFk#rFcG6JwD"
+    },
+    {
+      "order": 102240,
+      "kind": "call",
+      "label": "createTextUserInput",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/instructions/bodies.ts",
+        "symbol": "createTextUserInput"
+      },
+      "to": "vKEsyHFk#1rqtkJkn",
+      "id": "vKEsyHFk#36Mm459B"
+    },
+    {
+      "order": 102250,
+      "kind": "call",
+      "label": "ADDITIONAL_CONTEXT_POLICY",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY"
+      },
+      "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM",
+      "id": "vKEsyHFk#7z4spJuS"
+    },
+    {
+      "order": 102260,
+      "kind": "call",
+      "label": "ADDITIONAL_CONTEXT_POLICY.threadLink",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/instructions/context.ts",
+        "symbol": "ADDITIONAL_CONTEXT_POLICY.threadLink"
+      },
+      "to": "vKEsyHFk#MEjN5Ev4",
+      "id": "vKEsyHFk#OodhSKJN"
+    }
+  ]
 }

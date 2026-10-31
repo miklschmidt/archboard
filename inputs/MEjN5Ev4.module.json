@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#MEjN5Ev4",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "outgoing": [
+    {
+      "order": 101620,
+      "kind": "call",
+      "label": "logicalToolCallKey",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
+        "symbol": "logicalToolCallKey"
+      },
+      "to": "vKEsyHFk#zak0fJpW",
+      "id": "vKEsyHFk#vjHbtU2b"
+    }
+  ]
 }

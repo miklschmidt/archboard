@@ -30,6 +30,32 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#FdocgDPR",
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 70004,
+      "kind": "call",
+      "label": "read narrated presentation position",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+        "symbol": "panePresentations"
+      },
+      "id": "vKEsyHFk#ItrMo4q3",
+      "to": "vKEsyHFk/Oi6SBIAM#74SVrhRe"
+    },
+    {
+      "order": 102320,
+      "kind": "call",
+      "label": "panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+        "symbol": "panes"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
+      "id": "vKEsyHFk#ea177Qo1"
     }
   ]
 }

@@ -37,6 +37,45 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
       "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
+    },
+    {
+      "order": 102130,
+      "kind": "call",
+      "label": "VariantLifecycleSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "symbol": "VariantLifecycleSchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#qEFknAWX"
+    },
+    {
+      "order": 102140,
+      "kind": "call",
+      "label": "VariantLifecycleSchema.optional",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "symbol": "VariantLifecycleSchema.optional"
+      },
+      "to": "vKEsyHFk#PecEiDcH",
+      "id": "vKEsyHFk#DwpA4v5a"
+    },
+    {
+      "order": 102150,
+      "kind": "call",
+      "label": "DiagramThemeSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "symbol": "DiagramThemeSchema"
+      },
+      "to": "vKEsyHFk#rFcG6JwD",
+      "id": "vKEsyHFk#qtz4ywnE"
     }
   ]
 }

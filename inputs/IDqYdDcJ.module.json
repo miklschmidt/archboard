@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/shared"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#IDqYdDcJ",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "outgoing": [
+    {
+      "order": 101820,
+      "kind": "call",
+      "label": "createCodexCommandExecutionApprovalDecisionSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/shared/schemas/browser/approvals.ts",
+        "symbol": "createCodexCommandExecutionApprovalDecisionSchema"
+      },
+      "to": "vKEsyHFk#zak0fJpW",
+      "id": "vKEsyHFk#oQPEvFBv"
+    }
+  ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/rules/realtime"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#BvQ700w9",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 37000,
+      "kind": "dependency",
+      "label": "narrated walkthroughs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/realtime/presentation-mode.ts",
+        "symbol": "languageName"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
+      "to": "vKEsyHFk#r5pBkwgu"
+    }
+  ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/model.ts"
   },
-  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#zurJvFGP",
-  "outgoing": []
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "outgoing": [
+    {
+      "order": 44000,
+      "kind": "dependency",
+      "label": "read composed coordinator instructions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/model.ts",
+        "symbol": "createCoordinatorThreadStartParams"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#X6q6P132",
+      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
+    }
+  ]
 }

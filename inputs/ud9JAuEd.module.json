@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/components/panel"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
   "schemaVersion": 1,
   "id": "vKEsyHFk#ud9JAuEd",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 102710,
+      "kind": "call",
+      "label": "usesCommandKey",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
+        "symbol": "usesCommandKey"
+      },
+      "to": "vKEsyHFk#LvyHYvBp",
+      "id": "vKEsyHFk#yri3fNxM"
+    },
+    {
+      "order": 102720,
+      "kind": "call",
+      "label": "DropdownMenu",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "DropdownMenu"
+      },
+      "to": "vKEsyHFk#Kayrf3gV",
+      "id": "vKEsyHFk#uJumyMxY"
+    },
+    {
+      "order": 102730,
+      "kind": "call",
+      "label": "DropdownMenu.Trigger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "DropdownMenu.Trigger"
+      },
+      "to": "vKEsyHFk#xHJMa8m8",
+      "id": "vKEsyHFk#QXy6mZQ2"
+    }
+  ]
 }

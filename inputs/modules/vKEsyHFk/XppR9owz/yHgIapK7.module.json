@@ -47,7 +47,20 @@
         "symbol": "fetch"
       },
       "id": "vKEsyHFk/XppR9owz#pB6BrbXY",
-      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
+      "order": 12000,
+      "kind": "http",
+      "label": "health: is this the server of this checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "healthRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
     },
     {
       "order": 63000,
@@ -89,17 +102,17 @@
       "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
     },
     {
-      "order": 12000,
-      "kind": "http",
-      "label": "health: is this the server of this checkout",
-      "emphasis": "normal",
+      "order": 70056,
+      "kind": "call",
+      "label": "report local request failures",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/service/service-routes.ts",
-        "symbol": "healthRoute"
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "isRecord"
       },
-      "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
-      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+      "id": "vKEsyHFk#V2ti26xJ",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     }
   ]
 }
