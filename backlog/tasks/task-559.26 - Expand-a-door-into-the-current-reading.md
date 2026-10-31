@@ -73,4 +73,6 @@ Measures on the real core under Bun, milliseconds. Base readings: Commands 176, 
 Measures in a cold browser, click to new picture: 447 to 523 ms for the small expansions and 672 to 1005 ms for those with Workspace packages. One long task of about 330 ms comes before the picture, where the core takes about 100 ms under Bun. A door's navigation stays quicker because its picture is drawn ahead on hover. AC 5 stays unchecked: transitions, reduced motion and the landing hold, but the time does not hold on every expansion.
 
 Merged to integrate/pr19, gate 21 of 21 in 165 s, server 17842 restarted. Criterion 5 stays open: 11 of 33 measured expanded readings pass 500 ms, the worst 1448 ms, and the router's greedy pass takes most of that time. Criterion 6 waits for the owner.
+
+Correction to the note above: 11 of 33 measured expanded readings take more than 500 ms, and 22 stay under it.
 <!-- SECTION:NOTES:END -->
