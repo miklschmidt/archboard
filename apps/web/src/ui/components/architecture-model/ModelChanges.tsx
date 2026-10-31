@@ -6,15 +6,20 @@ import { StandingSample } from "#ui/components/semantic-board-canvas/SemanticTyp
 import { Tree } from "#ui/components/shell/Tree.tsx";
 import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import type { Change, ChangeList } from "#ui/rules/architecture-model/change-list.ts";
-import { ROW_HEIGHT } from "#ui/rules/shell/tree-grid.ts";
+import {
+	interfaceRowWords,
+	type InterfaceFact,
+	type InterfaceRow,
+} from "#ui/rules/architecture-model/interface-changes.ts";
+import { NAME_GAP, ROW_HEIGHT } from "#ui/rules/shell/tree-grid.ts";
 
-/** One row of the tree of changes. */
-interface ChangeTreeRow {
+/** One row of a flat tree, and what it stands for. */
+interface FlatRow<Item> {
 	readonly id: string;
 	readonly parent: null;
 	readonly branch: false;
 	readonly open: false;
-	readonly change: Change;
+	readonly item: Item;
 }
 
 /** Inputs for the list. */
@@ -23,6 +28,31 @@ interface ChangesListProps {
 	/** The change the reader stands on. */
 	readonly place: string | null;
 	readonly onShow: (change: Change) => void;
+}
+
+/** Inputs for the interface changes. */
+interface InterfaceChangesProps {
+	readonly rows: readonly InterfaceRow[];
+	/** The one selected subject. */
+	readonly selected: string | null;
+	readonly onShow: (row: InterfaceRow) => void;
+}
+
+/** How many parts a fact names before it says how many more, as a list of the panel does. */
+const NAMES_SHOWN = 4;
+
+/** What a row says of its module starts where its name does. */
+const ROW_DETAILS_STYLE = { marginLeft: NAME_GAP } as const;
+
+/**
+ * What a list says to the keys of a tree: rows with nothing under them.
+ * @param items What it lists.
+ * @returns The rows.
+ */
+function flatRows<Item extends { readonly id: string }>(
+	items: readonly Item[],
+): readonly FlatRow<Item>[] {
+	return items.map((item) => ({ id: item.id, parent: null, branch: false, open: false, item }));
 }
 
 /**
@@ -50,18 +80,8 @@ function useKeptInView(place: string | null) {
 function ChangesList(props: ChangesListProps): JSX.Element {
 	const { list, place, onShow } = props;
 	const box = useKeptInView(place);
-	const rows = useMemo(
-		() =>
-			list.changes.map((change): ChangeTreeRow => ({
-				id: change.id,
-				parent: null,
-				branch: false,
-				open: false,
-				change,
-			})),
-		[list],
-	);
-	const open = useCallback((row: ChangeTreeRow): void => onShow(row.change), [onShow]);
+	const rows = useMemo(() => flatRows(list.changes), [list]);
+	const open = useCallback((row: FlatRow<Change>): void => onShow(row.item), [onShow]);
 	if (list.changes.length === 0)
 		return (
 			<p className="text-body text-muted-foreground px-4 py-3">Nothing differs from the base.</p>
@@ -117,6 +137,122 @@ function ChangeRowOf(props: {
 
 /** The rows change one at a time, and a long list holds thousands. */
 const ChangeRow = memo(ChangeRowOf);
+
+/**
+ * What a proposal changes about interfaces, which stands above every other change because an
+ * interface change costs every caller (ADR 0044). A proposal with none says so, so that a reader
+ * learns that it costs no caller a change.
+ * @param props The modules, the selection and what a row does.
+ * @returns The section.
+ */
+function InterfaceChanges(props: InterfaceChangesProps): JSX.Element {
+	const { rows, selected, onShow } = props;
+	const tree = useMemo(() => flatRows(rows), [rows]);
+	const open = useCallback((row: FlatRow<InterfaceRow>): void => onShow(row.item), [onShow]);
+	if (rows.length === 0)
+		return (
+			<p
+				data-slot="model-interface-unchanged"
+				className="text-body text-muted-foreground border-border border-b px-4 py-3"
+			>
+				No interface changes, so no caller has to change.
+			</p>
+		);
+	return (
+		<div data-slot="model-interface-changes" className="border-border border-b">
+			<Tree label="Interface changes" rows={tree} home={selected} onOpen={open}>
+				<Tree.Section label="Interface changes" depth={0}>
+					{rows.map((row) => (
+						<InterfaceChangeRow key={row.id} row={row} lit={row.id === selected} onShow={onShow} />
+					))}
+				</Tree.Section>
+			</Tree>
+		</div>
+	);
+}
+
+/**
+ * One module, once: its name, what moved and the counts that differ.
+ * @param props The module, whether it is selected, and what a click does.
+ * @param props.row The module.
+ * @param props.lit Whether it is selected.
+ * @param props.onShow Select it on the picture.
+ * @returns The row.
+ */
+function InterfaceChangeRow(props: {
+	readonly row: InterfaceRow;
+	readonly lit: boolean;
+	readonly onShow: (row: InterfaceRow) => void;
+}): JSX.Element {
+	const { row, lit, onShow } = props;
+	const open = useCallback((): void => onShow(row), [onShow, row]);
+	const dataset = useMemo(() => ({ "data-interface-change": row.id }), [row.id]);
+	return (
+		<Tree.Row
+			id={row.id}
+			depth={0}
+			selected={lit}
+			current={lit}
+			label={interfaceRowWords(row)}
+			dataset={dataset}
+			onOpen={open}
+		>
+			<span className="flex min-w-0 flex-1 flex-col gap-0.5">
+				<Tree.Name text={row.name} />
+				<span style={ROW_DETAILS_STYLE} className="flex flex-col gap-0.5">
+					{row.facts.map((fact) => (
+						<InterfaceFactLine key={fact.key} fact={fact} />
+					))}
+					<InterfaceCounts row={row} />
+				</span>
+			</span>
+		</Tree.Row>
+	);
+}
+
+/**
+ * One fact: what moved, then the parts it names, with the whole list on hover.
+ * @param props The fact.
+ * @param props.fact The fact.
+ * @returns The line.
+ */
+function InterfaceFactLine(props: { readonly fact: InterfaceFact }): JSX.Element {
+	const { key, label, names } = props.fact;
+	const more = names.length - NAMES_SHOWN;
+	const shown = names.slice(0, NAMES_SHOWN).join(", ");
+	return (
+		<span
+			data-fact={key}
+			title={names.join(", ")}
+			className="text-body text-muted-foreground break-words"
+		>
+			{label} <span className="text-foreground">{more > 0 ? `${shown} +${more}` : shown}</span>
+		</span>
+	);
+}
+
+/**
+ * The counts that differ, each kept whole, so that a narrow column breaks between them.
+ * @param props The module.
+ * @param props.row The module.
+ * @returns The counts, or nothing for a module with no count to set side by side.
+ */
+function InterfaceCounts(props: { readonly row: InterfaceRow }): JSX.Element | null {
+	const { measures } = props.row;
+	if (measures.length === 0) return null;
+	return (
+		<span className="text-body text-muted-foreground flex flex-wrap gap-x-2">
+			{measures.map(({ key, label, before, after }) => (
+				<span key={key} className="whitespace-nowrap">
+					{label}{" "}
+					<span className="text-technical font-mono">
+						{before} → {after}
+					</span>
+				</span>
+			))}
+		</span>
+	);
+}
 
 /**
  * A key that a control answers to, in the look of the one that brings up Find.
@@ -177,6 +313,6 @@ function ChangesWalker(props: { readonly walk: ChangeWalk }): JSX.Element {
 }
 
 /** The parts a proposal puts in the left column. */
-const ModelChanges = { List: ChangesList, Walker: ChangesWalker };
+const ModelChanges = { Interfaces: InterfaceChanges, List: ChangesList, Walker: ChangesWalker };
 
 export { ModelChanges };

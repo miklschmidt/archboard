@@ -12,6 +12,10 @@ import {
 	type Model,
 	type SemanticEdge,
 } from "@archboard/board/content";
+import {
+	interfaceRows,
+	type InterfaceRow,
+} from "#ui/rules/architecture-model/interface-changes.ts";
 import type { ChangeStep } from "#ui/rules/architecture-model/reader-keys.ts";
 
 type Comparison = NonNullable<Model["comparison"]>;
@@ -50,6 +54,8 @@ interface ChangeList {
 	readonly changes: readonly Change[];
 	/** Where each subject stands in the walk. */
 	readonly positions: ReadonlyMap<string, number>;
+	/** What it changes about interfaces, which stands first and is no step of the walk. */
+	readonly interfaces: readonly InterfaceRow[];
 }
 
 /** Where a reader stands in a list. */
@@ -386,7 +392,7 @@ function walkthroughGroups(model: Model, reference: Model, reading: ChangeReadin
 }
 
 /** A list with nothing in it. */
-const NO_CHANGES: ChangeList = { groups: [], changes: [], positions: new Map() };
+const NO_CHANGES: ChangeList = { groups: [], changes: [], positions: new Map(), interfaces: [] };
 
 /**
  * What a reading changes against its base, grouped by owner.
@@ -409,7 +415,12 @@ function changeList(model: Model, reference: Model): ChangeList {
 		...walkthroughGroups(model, reference, reading),
 	];
 	const changes = groups.flatMap((group) => group.changes);
-	return { groups, changes, positions: new Map(changes.map(({ id }, index) => [id, index])) };
+	return {
+		groups,
+		changes,
+		positions: new Map(changes.map(({ id }, index) => [id, index])),
+		interfaces: interfaceRows(model, reading.parents),
+	};
 }
 
 /**

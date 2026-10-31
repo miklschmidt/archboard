@@ -448,6 +448,19 @@ those parts the tag is on: its gradient turns over, its shadow moves inside and 
 Gold Mark stands under it. Under the pointer the tag lights a step. A group whose parts a
 filter took off the picture keeps its tag, dimmed and held.
 
+### Change list
+
+A proposal read against its base adds `Changes` to the left column. Its interface changes
+stand first, over a thin rule, because an interface change costs every caller. Each module
+reads once, as one row: its name, one line for each thing that moved, such as `Callers gained`
+with the parts it names, then the counts that differ as before and after, with the numbers in
+the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects
+the module on the picture that holds it and lights the row, and from About it brings the
+picture back. A module that the state lacks says `Not in this state`, and its row selects it
+on the drawing of the comparison. These rows wear no standing mark, score or warning color.
+With no interface change, one quiet line in place of the rows says so. The change list follows
+under the rule, with a section for each owner. `N` and `P` walk only that list.
+
 ### Pane sidebar
 
 A retained board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
