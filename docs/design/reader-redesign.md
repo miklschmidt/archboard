@@ -128,13 +128,23 @@ entered or selected subject. If geometry has no real correspondence, change plai
 
 ## History and proposals
 
-`History` lists proposals first, then states with their checkpoints folded. A click carries the picture to
-that record, and the panel holds its text. Proposals and history stay distinct, because a draft is future work.
+`History` has four sections: `Proposals`, `Current`, `Earlier` and `Shelved`. Proposals stay apart from the rest,
+because a draft is future work. Each row leads with its summary, then its name, and a person chooses by those
+words, so no row shows an identity. Drafts that share a name differ by the modules they touch. A click carries the
+picture to that record, and the panel holds its text.
+
+Each state folds the run of its own checkpoints into one row with a count and the latest time, because the 120
+checkpoints of this repository are a record, not a list to read. A checkpoint row offers `Compare`.
 
 A proposal opens against its base. If it has `predecessorCheckpoint`, the base is that checkpoint, because
 `against=<predecessor>` refuses the eight imported drafts. A draft then shows 2 to 61 changes, not about 3,000.
-One line offers `Compare with current`. Current can also compare with a checkpoint. `compare: false` reaches the
-browser as an explicit After choice.
+
+One control stands in the caption line, beside the picture, on every reading that can compare. It says what the
+picture is compared with, and it is the way out. It offers `No comparison`, `Current`, the draft's own base as
+`Its base`, and the other drafts by summary. A draft with no comparison looks like a plain draft: no marks, no
+`Changes` tab. A checkpoint is not a choice in the control, because 50 rows that differ by a time and a hash are
+no choice. A base that came from `Compare` stands in the control only while it is compared with. `compare: false`
+reaches the browser as `againstX=after`, which no person reads.
 
 Review uses a change list in the left column, grouped by owner, because most changes are flow steps that have
 no tree row. A proposal opens on it. `N` and `P` walk the list, and visible `Previous` and `Next` controls show

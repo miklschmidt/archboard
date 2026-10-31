@@ -6,7 +6,6 @@ import {
 	architectureRecordQuery,
 } from "#ui/clients/architecture-model/queries.ts";
 import { ModelColumn, type Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
-import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
 import { ModelReadingSelector } from "#ui/components/architecture-model/ModelReadingSelector.tsx";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 
@@ -16,35 +15,18 @@ type ModelRecordsProps = Omit<
 	"history" | "catalogue"
 > & {
 	readonly vault: string;
-	readonly against: string | null;
-	readonly onCompare: (against: string | null) => void;
-	/** Whether the reading has a comparison to turn off: Current has none. */
-	readonly offersAfter: boolean;
 };
 
 /**
  * The History destination. Its rows are read here, so they load only when it opens.
  * @param props The selected reading and what a choice does.
- * @returns The comparison choice and the record of the model.
+ * @returns The record of the model.
  */
 function ModelRecords(props: ModelRecordsProps): JSX.Element {
-	const { vault, against, onCompare, offersAfter, ...reading } = props;
+	const { vault, ...reading } = props;
 	const history = useQuery({ ...architectureCheckpointsQuery(vault), enabled: true });
 	const catalogue = useQuery(architectureRecordQuery(vault));
-	return (
-		<>
-			<div className="px-4 pt-3">
-				<ModelComparisonSelector
-					against={against}
-					onSelect={onCompare}
-					offersAfter={offersAfter}
-					catalogue={catalogue}
-					history={history}
-				/>
-			</div>
-			<ModelReadingSelector {...reading} catalogue={catalogue} history={history} />
-		</>
-	);
+	return <ModelReadingSelector {...reading} catalogue={catalogue} history={history} />;
 }
 
 /** A reading that failed has only its record to offer. */
@@ -79,7 +61,6 @@ function ModelFailedRecords(props: {
 			<ModelColumn.List value="history">
 				<ModelRecords
 					vault={vault}
-					offersAfter
 					checkpoint={checkpoint}
 					state={state}
 					selected={undefined}

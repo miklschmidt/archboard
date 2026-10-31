@@ -1,8 +1,9 @@
 {
   "id": "G7qK7B9v",
-  "name": "TASK-447 after TASK-482.07",
+  "name": "Coordinator instructions add the architecture role and handoff",
   "formerNames": [
-    "TASK-447 (with flows)"
+    "TASK-447 (with flows)",
+    "TASK-447 after TASK-482.07"
   ],
   "summary": "Architecture roles and saved briefs for external implementation",
   "migration": {

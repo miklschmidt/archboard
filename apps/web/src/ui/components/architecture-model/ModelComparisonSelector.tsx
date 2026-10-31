@@ -1,110 +1,135 @@
-import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
-import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
-import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
-import { useCallback, type ComponentProps, type JSX } from "react";
+import { useCallback, type JSX } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { Model } from "@archboard/board/content";
 import { Select } from "@archboard/ui-kit/components";
+import { architectureCheckpointsQuery } from "#ui/clients/architecture-model/queries.ts";
+import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import {
-	ModelReadingSelector,
-	HistoryStatus,
-} from "#ui/components/architecture-model/ModelReadingSelector.tsx";
-import { useRetainedRead } from "#ui/hooks/architecture-model/use-retained-read.ts";
+	chosenComparison,
+	comparedWith,
+	comparisonAddress,
+	comparisonChoices,
+	type ComparisonChoice,
+} from "#ui/rules/architecture-model/comparison-choices.ts";
 
-type ComparisonSelectorProps = Pick<
-	ComponentProps<typeof ModelReadingSelector>,
-	"catalogue" | "history"
-> & {
-	against: string | null;
-	onSelect: (against: string | null) => void;
-	/** Whether this reading has a comparison to turn off: Current has none by default. */
-	offersAfter: boolean;
-};
+/** Inputs for the control. */
+interface ModelComparisonSelectorProps {
+	/** The reading on show. */
+	readonly model: Model;
+	/** The current catalogue. */
+	readonly catalogue: Model | undefined;
+	readonly vault: string;
+	readonly paneId: string;
+}
 
 /**
- * An explicit comparison belongs to the address, independently of the selected state.
- * @param props The requested base and available state and checkpoint catalogues.
- * @returns A comparison control that preserves unavailable choices.
+ * When an exact base was saved. Only the retained list knows, and only a reading compared with a
+ * saved reading asks it.
+ * @param vault The addressed vault.
+ * @param comparison The comparison on show.
+ * @returns The time, once the list has said.
  */
-function ModelComparisonSelector(props: ComparisonSelectorProps): JSX.Element {
-	const { against, onSelect, catalogue, history } = props;
+function useSavedAt(vault: string, comparison: Model["comparison"]): string | undefined {
+	const exact = comparison?.reason === "explicit" ? comparison.checkpoint : undefined;
+	const rows = useQuery({ ...architectureCheckpointsQuery(vault), enabled: exact !== undefined });
+	if (rows.data?.success !== true) return undefined;
+	return rows.data.checkpoints.find(({ id }) => id === exact)?.createdAt;
+}
+
+/**
+ * The one control of a comparison, beside the picture: it says what the picture is compared with,
+ * and it is the way out. A checkpoint is compared from its row in History.
+ * @param props The reading.
+ * @returns The control, or nothing for a reading with nothing to compare with.
+ */
+function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Element | null {
+	const { model, catalogue, vault, paneId } = props;
+	const { against, compareAgainst } = useModelLocation(paneId);
+	const savedAt = useSavedAt(vault, model.comparison);
 	const choose = useCallback(
-		(value: string | null): void => {
-			if (value !== null) onSelect(value === "automatic" ? null : value.slice(9));
+		(value: string | null, change: { readonly reason: string }): void => {
+			// The address owns the value. When a chosen row leaves the list, the select resets itself to
+			// the value it first held, and that must not reach the address. Only a press may.
+			if (value !== null && change.reason === "item-press")
+				compareAgainst(comparisonAddress(value, model));
 		},
-		[onSelect],
+		[compareAgainst, model],
 	);
-	const opened = useRetainedRead(history, catalogue);
-	const choices = comparisonChoices(props);
+	const inputs = { reading: model, against, catalogue, savedAt };
+	const choices = comparisonChoices(inputs);
+	const line = comparedWith(inputs);
+	if (choices.length < 2) return null;
 	return (
-		<Select
-			value={against === null ? "automatic" : `selected:${against}`}
-			onValueChange={choose}
-			onOpenChange={opened}
-		>
-			<Select.Trigger size="sm" data-slot="model-comparison-selector" aria-label="Compare with">
-				<Select.Value>Compare · {against === null ? "Default" : choices.get(against)}</Select.Value>
+		<Select value={chosenComparison(inputs)} onValueChange={choose}>
+			<Select.Trigger
+				size="sm"
+				data-slot="model-comparison-selector"
+				aria-label="Compare with"
+				title={line}
+				className="ml-auto max-w-96 min-w-0 shrink-0"
+			>
+				<Select.Value>
+					<ComparisonLine comparison={model.comparison} line={line} />
+				</Select.Value>
 			</Select.Trigger>
-			<Select.Content align="end" alignItemWithTrigger={false} className="w-auto max-w-xl min-w-80">
-				<Select.Item value="automatic" data-against-id="default">
-					Default comparison
-				</Select.Item>
-				{[...choices].map(([id, label]) => (
-					<Select.Item key={id} value={`selected:${id}`} data-against-id={id}>
-						{label}
-					</Select.Item>
+			<Select.Content align="end" alignItemWithTrigger={false} className="w-120 max-w-[80vw]">
+				{choices.map((choice) => (
+					<ComparisonItem key={choice.value} choice={choice} />
 				))}
-				{catalogue.isError && (
-					<p role="alert" className="text-body max-w-prose p-3">
-						Architecture states are unavailable. Reopen this menu to retry.
-					</p>
-				)}
-				<HistoryStatus history={history} />
 			</Select.Content>
 		</Select>
 	);
 }
 
 /**
- * Mutable state identities and exact checkpoint identities remain distinct choices.
- * @param props The current catalogue, retained catalogue, and requested base.
- * @returns Ordered comparison choices, including unavailable requested intent.
+ * What the control says, which names the base for a page that reads it.
+ * @param props The comparison and the words.
+ * @param props.comparison The comparison on show.
+ * @param props.line What the control says.
+ * @returns The line.
  */
-function comparisonChoices(props: ComparisonSelectorProps): Map<string, string> {
-	const choices = new Map(props.offersAfter ? [[AFTER, "After"]] : []);
-	for (const [id, label] of stateChoices(props.catalogue.data)) choices.set(id, label);
-	for (const [id, label] of savedChoices(props.history.data)) choices.set(id, label);
-	if (props.against !== null && !choices.has(props.against))
-		choices.set(props.against, `Selected base · ${props.against}`);
-	return choices;
+function ComparisonLine(props: {
+	readonly comparison: Model["comparison"];
+	readonly line: string;
+}): JSX.Element {
+	const { comparison, line } = props;
+	if (comparison === undefined)
+		return (
+			<span data-slot="model-no-comparison" className="truncate">
+				{line}
+			</span>
+		);
+	return (
+		<span
+			data-slot="model-comparison"
+			data-against={comparison.against?.id ?? ""}
+			data-reason={comparison.reason}
+			className="truncate"
+		>
+			{line}
+		</span>
+	);
 }
 
 /**
- * Current, draft, and completed choices follow the public state catalogue.
- * @param model The latest available catalogue.
- * @returns Explicit current and retained state labels.
+ * One choice: what it is, then what tells it from the others.
+ * @param props The choice.
+ * @param props.choice The choice.
+ * @returns The item.
  */
-function stateChoices(model: ComparisonSelectorProps["catalogue"]["data"]): Map<string, string> {
-	const choices = new Map<string, string>();
-	if (model === undefined) return choices;
-	if (model.manifest.current !== null) choices.set("current", "Current");
-	for (const state of stateCatalogue(model))
-		choices.set(state.id, `${state.name} · ${state.lifecycle}`);
-	return choices;
-}
-
-/**
- * Saved bases always name an exact checkpoint, even when state names repeat.
- * @param history The retained catalogue response.
- * @returns Newest-first labels with a distinct checkpoint suffix.
- */
-function savedChoices(history: ComparisonSelectorProps["history"]["data"]): Map<string, string> {
-	if (!history?.success) return new Map();
-	return new Map(
-		history.checkpoints
-			.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
-			.map((checkpoint) => [
-				checkpoint.id,
-				`${checkpoint.state?.name ?? "Planning model"} · ${checkpointTime(checkpoint.createdAt)} · ${checkpoint.id.slice(0, 8)}`,
-			]),
+function ComparisonItem({ choice }: { readonly choice: ComparisonChoice }): JSX.Element {
+	const { value, label, detail } = choice;
+	return (
+		<Select.Item value={value} data-against-id={value} title={label}>
+			<span className="flex min-w-0 flex-1 flex-col">
+				<span className="whitespace-normal">{label}</span>
+				{detail && (
+					<span className="text-body text-muted-foreground line-clamp-2 whitespace-normal">
+						{detail}
+					</span>
+				)}
+			</span>
+		</Select.Item>
 	);
 }
 

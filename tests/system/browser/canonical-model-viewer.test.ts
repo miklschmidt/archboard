@@ -392,10 +392,10 @@ test("saved readings stay exact after current inputs change and expose missing e
 	await openAbout(browser);
 	await pollUntil(
 		() =>
-			browser.eval<string>(
-				`document.querySelector('[data-slot="model-checkpoint"]')?.textContent ?? ''`,
+			browser.eval<string | null>(
+				`document.querySelector('[data-slot="model-checkpoint"]')?.getAttribute('data-checkpoint-id') ?? null`,
 			),
-		(text) => text.includes(checkpoint),
+		(id) => id === checkpoint,
 		"the retained checkpoint in the sidebar",
 		WAIT,
 	);

@@ -432,7 +432,7 @@ export { useModelLocation };
 /**
  * The address field of a resolved request's comparison.
  * @param reading The resolved navigation request.
- * @returns The named base, or After when the request turned the comparison off.
+ * @returns The named base, or `after` when the request turned the comparison off.
  */
 function requestedComparison(reading: PaneModelRequest["reading"]): ModelAddress["against"] {
 	return reading.compare === false ? AFTER : reading.against;

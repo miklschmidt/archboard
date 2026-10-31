@@ -53,7 +53,7 @@ function DrawingFailure(
 ): JSX.Element {
 	const { request, failure, paneId } = props;
 	const { compareAgainst } = useModelLocation(paneId);
-	const showAfter = useCallback((): void => compareAgainst(AFTER), [compareAgainst]);
+	const showPlain = useCallback((): void => compareAgainst(AFTER), [compareAgainst]);
 	return (
 		<ModelError
 			compact
@@ -64,7 +64,7 @@ function DrawingFailure(
 			<p className="text-muted-foreground">The picture below is the last reading that drew.</p>
 			<ModelFailureActions
 				onRetry={props.onRetry}
-				onAfter={request.model.comparison === undefined ? undefined : showAfter}
+				onPlain={request.model.comparison === undefined ? undefined : showPlain}
 			/>
 		</ModelError>
 	);

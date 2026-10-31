@@ -22,7 +22,7 @@ If the existing architecture stays accurate, record why no proposal is needed.
 Documentation of an already-implemented proposal needs no second proposal.
 
 Before implementation, create one compact proposal for each independent architectural intent.
-Use the task ID as its discoverable name.
+Name it for what it changes and give it a summary, as the consumer skill says.
 Record its stable state ID, predecessor, model, and vault in the task plan.
 One proposal can span several modules and flow collections.
 Matching names never combine independent proposals.

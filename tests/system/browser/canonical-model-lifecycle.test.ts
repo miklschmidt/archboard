@@ -18,8 +18,8 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectReading } from "./support/canonical-model.ts";
-import { refreshModel, openAbout } from "./support/canonical-page.ts";
+import { initializeSource, selectComparison, selectReading } from "./support/canonical-model.ts";
+import { openAbout, openDiagram, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -107,10 +107,13 @@ async function chooseState(
 }
 
 async function openHistory(browser: AgentBrowserSession): Promise<void> {
+	const summary = '[data-slot="model-state-history"] summary';
 	const open = await browser.eval<boolean>(
 		`document.querySelector('[data-slot="model-state-history"]')?.open === true`,
 	);
-	if (!open) await browser.run(["click", '[data-slot="model-state-history"] summary']);
+	if (open) return;
+	await browser.run(["scrollintoview", summary]);
+	await browser.run(["click", summary]);
 }
 
 async function fitted(browser: AgentBrowserSession): Promise<void> {
@@ -199,24 +202,18 @@ test("adopted and shelved states remain discoverable with decisions and recovera
 		),
 	).toContain("docs/queued.md");
 	await fitted(browser);
-	await browser.run(["click", '[data-destination="history"]']);
-	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
-	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-against-id="Current"]') !== null`),
-		Boolean,
-		"the displaced current comparison choice",
-		WAIT,
-	);
-	await browser.run(["click", '[data-against-id="Current"]']);
+	await openDiagram(browser);
+	await selectComparison(browser, "current");
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
 				`document.querySelector('[data-slot="model-comparison"]')?.getAttribute('data-against') ?? null`,
 			),
-		(id) => id === "Current",
-		"comparison with the old implemented state",
+		(id) => id === direct.target.state,
+		"comparison with the adopted state",
 		WAIT,
 	);
+	await openAbout(browser);
 	expect(await gatewayName(browser)).toBe("Queued API");
 	await openHistory(browser);
 	await browser.run(["click", '[data-state-link="Current"]']);

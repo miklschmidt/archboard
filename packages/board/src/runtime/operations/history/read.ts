@@ -489,7 +489,14 @@ async function listArchitectureCheckpointRows(vault: string): Promise<Architectu
 			checkpoints: records.map(({ id, record }) => ({
 				id,
 				createdAt: record.createdAt,
-				state: record.state === null ? null : { id: record.state.id, name: record.state.name },
+				state:
+					record.state === null
+						? null
+						: {
+								id: record.state.id,
+								name: record.state.name,
+								summary: record.state.summary,
+							},
 				doing: record.request.doing,
 			})),
 		};

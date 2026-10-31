@@ -19,7 +19,7 @@ import {
 	type ReactNode,
 } from "react";
 
-import { cn } from "@archboard/ui-kit/components";
+import { Button, cn } from "@archboard/ui-kit/components";
 import { treeKey, type TreeKeyAction, type TreeKeyRow } from "#ui/rules/shell/tree-keys.ts";
 import {
 	DISCLOSURE_WIDTH,
@@ -427,6 +427,54 @@ function TreeFacts(props: { readonly children: ReactNode }): JSX.Element {
 	);
 }
 
+/**
+ * An action at the end of a row, which does not open the row. Only the row that holds the tab stop
+ * puts it in the tab order, so a long list stays one stop.
+ * @param props The row, the action and its words.
+ * @param props.row The row's id.
+ * @param props.slot What names the action for a reader of the page.
+ * @param props.onAction What it does.
+ * @param props.children Its words.
+ * @returns The action.
+ */
+function TreeAction(props: {
+	readonly row: string;
+	readonly slot: string;
+	readonly onAction: () => void;
+	readonly children: ReactNode;
+}): JSX.Element {
+	const frame = useContext(TreeContext);
+	const { onAction } = props;
+	const act = useCallback(
+		(event: MouseEvent) => {
+			event.stopPropagation();
+			onAction();
+		},
+		[onAction],
+	);
+	return (
+		<Button
+			variant="ghost"
+			size="xs"
+			data-slot={props.slot}
+			tabIndex={frame?.stop === props.row ? 0 : -1}
+			onClick={act}
+			onKeyDown={keepOwnKeys}
+			className="text-muted-foreground shrink-0"
+		>
+			{props.children}
+		</Button>
+	);
+}
+
+/**
+ * Keep the keys that press an action from opening its row as well.
+ * @param event The key event.
+ */
+function keepOwnKeys(event: KeyboardEvent<HTMLElement>): void {
+	if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+}
+
 /** A tree, with its parts on it. */
 const Tree = Object.assign(TreeRoot, {
 	Row: TreeRow,
@@ -435,6 +483,7 @@ const Tree = Object.assign(TreeRoot, {
 	Marker: TreeMarker,
 	Name: TreeName,
 	Facts: TreeFacts,
+	Action: TreeAction,
 });
 
 export { Tree };

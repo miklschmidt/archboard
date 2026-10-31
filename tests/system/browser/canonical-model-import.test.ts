@@ -13,7 +13,12 @@ import {
 	registerServerBase,
 	serverTestEnvironment,
 } from "./support/agent-browser.ts";
-import { fixtureGit, initializeSource, selectReading } from "./support/canonical-model.ts";
+import {
+	compareCheckpoint,
+	fixtureGit,
+	initializeSource,
+	selectReading,
+} from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
 import { openAbout } from "./support/canonical-page.ts";
 
@@ -82,18 +87,8 @@ test("imported planning models remain readable through exact history and compari
 		"the retained reading",
 		WAIT,
 	);
-	await browser.run(["click", '[data-destination="history"]']);
-	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const choice = document.querySelector('[data-against-id="${imported.checkpoint.id}"]'); if (!choice) return false; const r = choice.getBoundingClientRect(); return r.height > 0 && choice.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
-			),
-		Boolean,
-		"the planning checkpoint as a comparison base",
-		WAIT,
-	);
-	await browser.run(["click", `[data-against-id="${imported.checkpoint.id}"]`]);
+	await browser.run(["open", `${server.base}/?modelA=Shop`]);
+	await compareCheckpoint(browser, imported.checkpoint.id);
 	await pollUntil(
 		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('againstA')`),
 		(id) => id === imported.checkpoint.id,

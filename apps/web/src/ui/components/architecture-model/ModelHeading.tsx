@@ -4,7 +4,8 @@ import { createPortal } from "react-dom";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/board/content";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
-import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
+import { sharedNameTouches } from "#ui/rules/architecture-model/draft-touches.ts";
+import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import { standingSuffix } from "#ui/rules/architecture-model/standing.ts";
 import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
 
@@ -78,7 +79,7 @@ function ModelCodePath(props: { readonly path: string | undefined }): JSX.Elemen
  * @param props.model The reading.
  * @param props.state The requested state.
  * @param props.checkpoint The requested checkpoint.
- * @returns Its explicit current, draft, or retained label.
+ * @returns Its explicit current, draft, or retained label, with no identity in it.
  */
 function readingLabel(props: {
 	readonly model: Model;
@@ -86,13 +87,26 @@ function readingLabel(props: {
 	readonly checkpoint: string | null;
 }): string {
 	const { model, state, checkpoint } = props;
-	if (checkpoint !== null) return `Saved · ${checkpoint.slice(0, 8)}`;
+	if (checkpoint !== null) return savedLabel(model, checkpoint);
 	if (state === null) return model.manifest.current === null ? "Planning" : "Current";
 	const selected = model.selectedState;
-	if (selected === null) return state;
+	if (selected === null) return "Unavailable state";
 	const { id, name, lifecycle } = selected;
-	const shared = stateCatalogue(model).filter((one) => one.name === name).length > 1;
-	return `${name}${shared ? ` · ${id}` : ""} · ${lifecycle}${standingSuffix(selected)}`;
+	const word = `${lifecycle.charAt(0).toUpperCase()}${lifecycle.slice(1)}`;
+	const touches = sharedNameTouches(model).get(id);
+	// Where the reading stands comes first, because a long name is what the chip cuts.
+	return [`${word}${standingSuffix(selected)}`, name, touches].filter(Boolean).join(" · ");
+}
+
+/**
+ * Label a saved reading by when it was saved, once the reading on show is that one.
+ * @param model The reading on show.
+ * @param checkpoint The requested checkpoint.
+ * @returns The label.
+ */
+function savedLabel(model: Model, checkpoint: string): string {
+	const saved = model.checkpoint;
+	return saved?.id === checkpoint ? `Saved · ${checkpointTime(saved.createdAt)}` : "Saved reading";
 }
 
 /**
@@ -121,7 +135,7 @@ function ModelStateChip(props: {
 			aria-label={`Reading ${label}. Open History.`}
 			title={label}
 			onClick={open}
-			className="max-w-80 shrink-0 font-medium"
+			className="max-w-96 shrink-0 font-medium"
 		>
 			<span className="truncate">{label}</span>
 		</Button>

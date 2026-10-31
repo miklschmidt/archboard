@@ -106,7 +106,7 @@ function CorrectionReading(props: {
 			data-correction-previous={props.previous ? id : undefined}
 			data-correction-reading={props.previous ? undefined : id}
 		>
-			{props.previous ? "Previous" : "Corrected"} · <code>{id.slice(0, 8)}</code>
+			{props.previous ? "Previous" : "Corrected"}
 		</Button>
 	);
 }

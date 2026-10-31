@@ -148,7 +148,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Explicit canonical intent remains visible even when the server remembers an old address.
   Each reader instance belongs to its resolved vault. A foreign destination replaces that instance and its native reading controls.
   `stateX` names a mutable proposal, and `againstX` names an explicit comparison base.
-  `againstX=after` asks for the state alone, and reads with `compare: false`. The reading says so, because it looks like any plain state.
+  `againstX=after` asks for the state alone, and reads with `compare: false`. The control beside the picture says `No comparison`.
   `subjectX` names an explicit reference destination and seeds selection when that reading opens.
   Later pointer selection stays temporary and does not rewrite that destination.
   For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
@@ -175,7 +175,7 @@ Each behavior keeps its existing public boundary and one state owner.
   The selected state metadata supplies lifecycle labels, including retained drafts.
   It also supplies unresolved issues and blocked ancestry, independently of comparison changes.
   The current catalogue also supplies adopted and shelved logical states.
-  Reading and comparison controls share those identities and keep exact checkpoints distinct.
+  History and the comparison control share those identities and keep exact checkpoints distinct.
   Selected state details expose recorded decisions, dates, ancestry, and document references.
 
   The same bounded history disclosure exposes correction reasons, source commits, and exact prior and corrected reading links.
@@ -236,7 +236,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Reconnect and repository changes refresh discovery through the existing catalogue owner.
 - Define freshness, cancellation, retry, and unavailable states for each resource.
   Preserve healthy exact checkpoints when mutable architecture changes.
-  Retained checkpoint rows load when a person opens a reading or comparison menu, and completions keep them fresh after that.
+  Retained checkpoint rows load when a person opens History or compares with a saved reading, and completions keep them fresh after that.
   A canonical drawing is kept under a digest of the exact render request, whose whole-model part holds only containment and relationship ends.
   An edit that the drawing does not read keeps its entry. The browser keeps a bounded number of drawings for one renderer build.
   A retained reading with a live comparison base refreshes its comparison metadata through the same reader.
@@ -356,7 +356,7 @@ The picture, inspection, Ask and pane reports read the accepted scene, through `
 A pane reports a reading as drawn only when `ready` is true.
 An empty or unavailable reading is an accepted scene with no picture, so the last picture never stands in for it.
 A failed drawing or a failed read of a destination leaves the accepted scene where it is, and `pending` is false, because nothing is on its way.
-The failure lies over the picture with Retry and Back, and with After when a comparison can be what failed.
+The failure lies over the picture with Retry and Back, and with `No comparison` when a comparison can be what failed.
 Back is the browser's, so a reading opened directly has none.
 Every notice about a reading lies over the picture in `model-notices`, so no failure and no lost server moves it.
 A cached reading is stale only when a read failed or the stream was lost. An event being applied is healthy and shows nothing.

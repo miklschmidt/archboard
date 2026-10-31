@@ -195,7 +195,6 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 					<ModelColumn.List value="history">
 						<ModelRecords
 							vault={reader.vault}
-							offersAfter={model.selectedState?.lifecycle !== "current"}
 							checkpoint={location.checkpoint}
 							state={location.state}
 							selected={model.selectedState}

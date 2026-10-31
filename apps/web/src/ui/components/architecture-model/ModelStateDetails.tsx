@@ -1,18 +1,12 @@
 import { ModelStateHistory } from "#ui/components/architecture-model/ModelStateHistory.tsx";
-import { useCallback, useMemo, type JSX } from "react";
+import { useMemo, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import { Standing } from "#ui/components/semantic-board-canvas/SemanticInspectorStanding.tsx";
 import type { useModelComparison } from "#ui/hooks/architecture-model/use-model-comparison.ts";
 import type { Model } from "@archboard/board/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
-import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import {
-	changedCount,
-	namedField,
-	reviewsChanges,
-} from "#ui/rules/architecture-model/change-list.ts";
-import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
+import { namedField } from "#ui/rules/architecture-model/change-list.ts";
 
 /**
  * What the selected state says of itself, inside its entry on the timeline. The selected state,
@@ -58,7 +52,6 @@ function ModelStateDetails({
 			data-standing={proposalStanding(state)}
 			className="space-y-2"
 		>
-			{state.summary && <p className="text-control max-w-[72ch] font-normal">{state.summary}</p>}
 			<ModelStateHistory
 				state={state}
 				comparison={model.comparison}
@@ -67,101 +60,6 @@ function ModelStateDetails({
 			/>
 			<ModelReconciliation model={model} paneId={paneId} />
 		</section>
-	);
-}
-
-/**
- * What this reading is compared with, and the one other comparison a reader asks for most.
- * A reading with its comparison turned off says so, because it looks like any plain state.
- * @param props The reading.
- * @param props.model The reading on show.
- * @param props.paneId The pane that owns the address.
- * @param props.hasCurrent Whether the model has a Current to compare with.
- * @returns The line, or nothing for a reading with no comparison.
- */
-function ModelComparisonLine({
-	model,
-	paneId,
-	hasCurrent,
-}: {
-	model: Model;
-	paneId: string;
-	hasCurrent: boolean;
-}): JSX.Element | null {
-	const { against, compareAgainst } = useModelLocation(paneId);
-	const compareWithCurrent = useCallback((): void => compareAgainst("current"), [compareAgainst]);
-	const { comparison } = model;
-	if (comparison === undefined && against !== AFTER) return null;
-	return (
-		<div className="flex shrink-0 items-center gap-x-3">
-			{comparison === undefined ? (
-				<p data-slot="model-after" className="text-body text-muted-foreground">
-					After, with no comparison
-				</p>
-			) : (
-				<ComparisonSummary comparison={comparison} counted={!reviewsChanges(model)} />
-			)}
-			{hasCurrent && !readsCurrent(model) && (
-				<Button
-					variant="link"
-					size="sm"
-					data-slot="model-compare-current"
-					className="h-auto p-0"
-					onClick={compareWithCurrent}
-				>
-					Compare with current
-				</Button>
-			)}
-		</div>
-	);
-}
-
-/**
- * Whether a reading has Current on either side already.
- * @param model The reading.
- * @returns True for Current itself, or for a comparison with it.
- */
-function readsCurrent(model: Model): boolean {
-	return [model.selectedState, model.comparison?.against].some(
-		(state) => state?.lifecycle === "current",
-	);
-}
-
-/**
- * Name the base of a comparison.
- * @param comparison The comparison.
- * @returns Its name, marked when it is the proposal's own base.
- */
-function baseName(comparison: NonNullable<Model["comparison"]>): string {
-	const name = comparison.against?.name ?? "empty planning baseline";
-	return comparison.reason === "predecessor" ? `its base, ${name}` : name;
-}
-
-/**
- * Comparison metadata describes the complete states before visual filtering.
- * @param props The shared runtime comparison.
- * @param props.comparison Its base and subject changes.
- * @param props.counted Whether to count them: the Changes tab counts those of a proposal.
- * @returns The explicit base, and the number of changed subjects.
- */
-function ComparisonSummary({
-	comparison,
-	counted,
-}: {
-	comparison: NonNullable<Model["comparison"]>;
-	counted: boolean;
-}): JSX.Element {
-	const changed = changedCount(comparison);
-	return (
-		<p
-			data-slot="model-comparison"
-			data-against={comparison.against?.id ?? ""}
-			data-reason={comparison.reason}
-			className="text-body text-muted-foreground"
-		>
-			Compared with {baseName(comparison)}
-			{counted && ` · ${changed} changed ${changed === 1 ? "subject" : "subjects"}`}
-		</p>
 	);
 }
 
@@ -252,4 +150,4 @@ function ModelSubjectStanding({
 	return <Standing against={against} open={open} code={null} />;
 }
 
-export { ModelComparisonLine, ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };
+export { ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };

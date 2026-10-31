@@ -87,6 +87,15 @@ Add an `edit-flow` change with `set.summary` to the same intent.
 A reader can still read that model, and a write that leaves the flow alone still succeeds.
 Retained readings keep their exact original content.
 
+## Say what each proposal changes
+
+A person chooses a proposal from its name and summary, beside the picture and in History.
+Name a proposal for what it changes, for example `Workbench Stop ends a workhorse's whole work tree`.
+A task ID in a name means nothing to the reader. Put it in the task plan.
+Give every proposal a `summary`: one sentence that states the change and why it matters.
+If two proposals change similar parts, write names that tell them apart.
+Rename a proposal through `proposal.set`. Its former names stay on the state.
+
 ## Choose a reading
 
 Architecture answers which parts exist and how they depend on one another.

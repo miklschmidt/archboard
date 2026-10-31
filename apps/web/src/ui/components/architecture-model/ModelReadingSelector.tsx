@@ -1,48 +1,50 @@
-import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
-import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { useCallback, useMemo, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
 import type { Model } from "@archboard/board/content";
 import { Tree } from "#ui/components/shell/Tree.tsx";
+import { sharedNameTouches } from "#ui/rules/architecture-model/draft-touches.ts";
+import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";
 import {
-	proposalStanding,
-	standingLabel,
-	standingSuffix,
-} from "#ui/rules/architecture-model/standing.ts";
-
-type Checkpoint = Extract<CheckpointRows, { success: true }>["checkpoints"][number];
+	CURRENT,
+	recordRows,
+	recordSections,
+	type ListedState,
+	type RecordEntry,
+	type RecordRow,
+	type RecordWords as Words,
+} from "#ui/rules/architecture-model/record-rows.ts";
+import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
+import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
+import { NAME_GAP } from "#ui/rules/shell/tree-grid.ts";
 
 interface ModelReadingSelectorProps {
 	checkpoint: string | null;
 	state: string | null;
 	selected: Model["selectedState"] | undefined;
+	/** The comparison that the address names. */
+	against: string | null;
 	catalogue: UseQueryResult<Model>;
 	onState: (state: string) => void;
 	onSelect: (checkpoint: string | null) => void;
+	onCompare: (against: string) => void;
 	history: UseQueryResult<CheckpointRows>;
 }
 
-/** One row of the record of states. */
-interface StateRow {
-	readonly id: string;
-	readonly parent: string | null;
-	readonly branch: boolean;
-	readonly open: boolean;
-	readonly state: Model["selectedState"] | undefined;
-	readonly stateId: string | null;
-	/** The exact retained reading the row opens. */
-	readonly checkpoint: string | null;
-	/** What the list says of that reading, which an exact address can outrun. */
-	readonly saved: Checkpoint | undefined;
-	/** Whether another record has its name, so that only its identity tells them apart. */
-	readonly shared?: boolean | undefined;
+/** What every row of the list does. */
+interface RecordActions {
+	/** The record on screen. */
+	readonly lit: string;
+	/** The base of the comparison on show, which its row says. */
+	readonly against: string | null;
+	readonly onOpen: (row: RecordRow) => void;
+	readonly onToggle: (row: RecordRow) => void;
+	readonly onCompare: (against: string) => void;
 }
 
-/** The row of the architecture that is current. */
-const CURRENT = "current";
-/** The group of checkpoints that belong to no state: those of a planning model. */
-const NO_STATE = "no-state";
+const WORDS_STYLE = { marginLeft: NAME_GAP } as const;
+const NO_CHECKPOINTS: readonly never[] = [];
+const NO_TOUCHES: ReadonlyMap<string, string> = new Map();
 
 /**
  * Read what the catalogue says of the selected reading, keeping a requested state that it lacks.
@@ -50,7 +52,7 @@ const NO_STATE = "no-state";
  * @returns Proposals and the states, in the catalogue's order.
  */
 function logicalStates(props: ModelReadingSelectorProps) {
-	const entries = new Map<string, Model["selectedState"] | undefined>(
+	const entries = new Map<string, ListedState["state"]>(
 		stateCatalogue(props.catalogue.data).map((entry) => [entry.id, entry]),
 	);
 	if (props.state !== null) entries.set(props.state, entries.get(props.state) ?? props.selected);
@@ -62,46 +64,29 @@ function logicalStates(props: ModelReadingSelectorProps) {
 }
 
 /**
- * The checkpoints of each state, newest first.
- * @param history The retained metadata.
- * @returns The checkpoints by state.
- */
-function checkpointsByState(
-	history: ModelReadingSelectorProps["history"],
-): ReadonlyMap<string, readonly Checkpoint[]> {
-	const grouped = new Map<string, Checkpoint[]>();
-	for (const entry of newestFirst(history)) {
-		const key = entry.state?.id ?? NO_STATE;
-		grouped.set(key, [...(grouped.get(key) ?? []), entry]);
-	}
-	return grouped;
-}
-
-/**
- * The retained checkpoints, newest first.
- * @param history The retained metadata.
- * @returns The checkpoints, or none while the metadata is unavailable.
- */
-function newestFirst(history: ModelReadingSelectorProps["history"]): Checkpoint[] {
-	if (history.data?.success !== true) return [];
-	return history.data.checkpoints.toSorted(
-		(left, right) =>
-			right.createdAt.localeCompare(left.createdAt) || left.id.localeCompare(right.id),
-	);
-}
-
-/**
- * The record of a model: proposals first, because they are future work, then the states with
- * their checkpoints folded. Choosing a record carries the picture to it.
+ * The record of a model, folded as the reader left it.
  * @param props The selected identity and retained metadata.
- * @returns The lists, with their recovery.
+ * @param unfolded The rows that the reader opened.
+ * @returns Its sections.
+ */
+function recordOf(props: ModelReadingSelectorProps, unfolded: ReadonlySet<string>) {
+	const { history, catalogue, checkpoint } = props;
+	const checkpoints = history.data?.success === true ? history.data.checkpoints : NO_CHECKPOINTS;
+	const touches = catalogue.data === undefined ? NO_TOUCHES : sharedNameTouches(catalogue.data);
+	return recordSections({ ...logicalStates(props), checkpoints, unfolded, checkpoint, touches });
+}
+
+/**
+ * The record of a model: what is proposed, because it is future work, then what is current, what
+ * came before and what was let go. Choosing a record carries the picture to it, and a saved
+ * checkpoint offers Compare.
+ * @param props The selected identity and retained metadata.
+ * @returns The list, with its recovery.
  */
 function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
-	const { proposals, states } = logicalStates(props);
-	const { checkpoint, state, onSelect, onState, history } = props;
+	const { checkpoint, state, against, onSelect, onState, onCompare, history } = props;
 	const [unfolded, setUnfolded] = useState<ReadonlySet<string>>(new Set());
-	const groups = useMemo(() => checkpointsByState(history), [history]);
-	const toggle = useCallback((row: StateRow): void => {
+	const toggle = useCallback((row: RecordRow): void => {
 		setUnfolded((current) => {
 			const next = new Set(current);
 			if (!next.delete(row.id)) next.add(row.id);
@@ -109,27 +94,39 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 		});
 	}, []);
 	const open = useCallback(
-		(row: StateRow): void => {
+		(row: RecordRow): void => {
 			if (row.checkpoint !== null) onSelect(row.checkpoint);
 			else if (row.stateId === null) onSelect(null);
 			else onState(row.stateId);
 		},
 		[onSelect, onState],
 	);
-	const shared = useMemo(() => sharedNames([...proposals, ...states]), [proposals, states]);
-	const rows = useMemo(
-		() => stateRows({ states, groups, unfolded, checkpoint, shared }),
-		[states, groups, unfolded, checkpoint, shared],
-	);
-	const proposalRows = useMemo(() => proposalRowsOf(proposals, shared), [proposals, shared]);
+	const sections = recordOf(props, unfolded);
 	const lit = checkpoint ?? state ?? CURRENT;
+	const actions = useMemo(
+		() => ({ lit, against, onOpen: open, onToggle: toggle, onCompare }),
+		[lit, against, open, toggle, onCompare],
+	);
 	return (
 		<div data-slot="model-history" className="flex flex-col">
-			<RecordList label="Proposals" rows={proposalRows} lit={lit} onOpen={open} onToggle={toggle} />
-			{/* A checkpoint folds under its state, so the rows wait for the checkpoints: none moves
-			    under a pointer when they arrive. */}
+			{/* A state folds its checkpoints, so the rows wait for them: none moves under a pointer
+			    when they arrive. */}
 			{!history.isPending && (
-				<RecordList label="States" rows={rows} lit={lit} onOpen={open} onToggle={toggle} />
+				<Tree
+					label="History"
+					rows={recordRows(sections)}
+					home={lit}
+					onOpen={open}
+					onToggle={toggle}
+				>
+					{sections.map(({ label, entries }) => (
+						<Tree.Section key={label} label={label} depth={0}>
+							{entries.map((entry) => (
+								<RecordBranch key={entry.head.id} entry={entry} actions={actions} />
+							))}
+						</Tree.Section>
+					))}
+				</Tree>
 			)}
 			{props.catalogue.isError && (
 				<p role="alert" className="text-body max-w-prose p-3">
@@ -142,179 +139,59 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 }
 
 /**
- * The names that more than one record has.
- * @param records The proposals and the states.
- * @returns The names.
+ * A record and, while it is open, the checkpoints it folds.
+ * @param props The record and what its rows do.
+ * @param props.entry The record.
+ * @param props.actions What the rows do.
+ * @returns The rows.
  */
-function sharedNames(records: readonly { readonly state: StateRow["state"] }[]) {
-	const names = records.map(({ state }) => state?.name);
-	return new Set(names.filter((name, at) => name !== undefined && names.indexOf(name) !== at));
-}
-
-/**
- * The rows of the proposals.
- * @param proposals The proposals.
- * @param shared The names that more than one record has.
- * @returns A row for each.
- */
-function proposalRowsOf(
-	proposals: readonly { readonly id: string; readonly state: StateRow["state"] }[],
-	shared: ReadonlySet<string | undefined>,
-): StateRow[] {
-	return proposals.map(({ id, state }) => ({
-		id,
-		parent: null,
-		branch: false,
-		open: false,
-		state,
-		stateId: id,
-		checkpoint: null,
-		saved: undefined,
-		shared: shared.has(state?.name),
-	}));
-}
-
-/**
- * A heading and its records, or nothing when there are none.
- * @param props The rows and what they do.
- * @param props.label The heading.
- * @param props.rows The rows.
- * @param props.lit The record on screen.
- * @param props.onOpen Carry the picture to a record.
- * @param props.onToggle Fold a state's checkpoints.
- * @returns The list.
- */
-function RecordList(props: {
-	readonly label: string;
-	readonly rows: readonly StateRow[];
-	readonly lit: string;
-	readonly onOpen: (row: StateRow) => void;
-	readonly onToggle: (row: StateRow) => void;
-}): JSX.Element | null {
-	const { label, rows, lit, onOpen, onToggle } = props;
-	if (rows.length === 0) return null;
+function RecordBranch(props: {
+	readonly entry: RecordEntry;
+	readonly actions: RecordActions;
+}): JSX.Element {
+	const { entry, actions } = props;
+	if (entry.head.words === null) return <CheckpointRow row={entry.head} actions={actions} />;
 	return (
 		<>
-			<h3 className="text-body text-muted-foreground px-4 pt-3 pb-1 font-semibold">{label}</h3>
-			<Tree label={label} rows={rows} home={lit} onOpen={onOpen} onToggle={onToggle}>
-				{rows.map((row) => (
-					<RecordRow key={row.id} row={row} lit={lit} onOpen={onOpen} onToggle={onToggle} />
-				))}
-			</Tree>
+			<StateRow row={entry.head} words={entry.head.words} actions={actions} />
+			{entry.held.length > 0 && (
+				<Tree.Group depth={0}>
+					{entry.held.map((row) => (
+						<CheckpointRow key={row.id} row={row} actions={actions} />
+					))}
+				</Tree.Group>
+			)}
 		</>
 	);
 }
 
-/** What the rows of the states are made from. */
-interface StateRowInputs {
-	readonly states: readonly { id: string; state: Model["selectedState"] | undefined }[];
-	readonly groups: ReadonlyMap<string, readonly Checkpoint[]>;
-	readonly unfolded: ReadonlySet<string>;
-	readonly checkpoint: string | null;
-	/** The names that more than one record has. */
-	readonly shared: ReadonlySet<string | undefined>;
-}
-
 /**
- * The states with their checkpoints, folded unless the reader opened them or stands on one.
- * @param inputs The states, the checkpoints and what is open.
- * @returns The rows, in order.
- */
-function stateRows(inputs: StateRowInputs): StateRow[] {
-	const { states, groups, unfolded, checkpoint, shared } = inputs;
-	/**
-	 * One state and its checkpoints.
-	 * @param id The row's identity.
-	 * @param stateId The state it opens, or null for current.
-	 * @param state What the catalogue says of it.
-	 * @param held Its checkpoints.
-	 * @returns Its rows.
-	 */
-	const rowsOf = (
-		id: string,
-		stateId: string | null,
-		state: StateRow["state"],
-		held: readonly Checkpoint[],
-	): StateRow[] => {
-		const open = unfolded.has(id) || held.some((entry) => entry.id === checkpoint);
-		const twin = shared.has(state?.name);
-		const head = { id, parent: null, branch: held.length > 0, open, state, stateId, shared: twin };
-		return [
-			{ ...head, checkpoint: null, saved: undefined },
-			...(open
-				? held.map((entry) => ({
-						id: entry.id,
-						parent: id,
-						branch: false,
-						open: false,
-						state,
-						stateId,
-						checkpoint: entry.id,
-						saved: entry,
-					}))
-				: []),
-		];
-	};
-	const current = states.find(({ state }) => state?.lifecycle === "current");
-	const others = states.filter((entry) => entry !== current);
-	// A checkpoint of a state that the catalogue does not list stays reachable under Current.
-	const listed = new Set(others.map(({ id }) => id));
-	const unlisted = [...groups].filter(([id]) => !listed.has(id)).flatMap(([, held]) => held);
-	const rows = [
-		...rowsOf(CURRENT, null, current?.state, unlisted),
-		...others.flatMap(({ id, state }) => rowsOf(id, id, state, groups.get(id) ?? [])),
-	];
-	const known = checkpoint === null || rows.some((row) => row.id === checkpoint);
-	return known ? rows : [outrunning(checkpoint), ...rows];
-}
-
-/**
- * The row of an exact address that the list does not hold, so the reader can see where they are.
- * @param checkpoint The requested checkpoint.
- * @returns Its row.
- */
-function outrunning(checkpoint: string): StateRow {
-	return {
-		id: checkpoint,
-		parent: null,
-		branch: false,
-		open: false,
-		state: undefined,
-		stateId: null,
-		checkpoint,
-		saved: undefined,
-	};
-}
-
-/**
- * What a state's row is called.
+ * What names a record for a reader of the page.
  * @param row The row.
- * @returns The name.
+ * @returns The data attributes of the row.
  */
-function recordName(row: StateRow): string {
-	if (row.id === CURRENT) return row.state === undefined ? "No implemented state" : "Current";
-	return row.state?.name ?? `Unavailable state · ${row.id}`;
+function recordData(row: RecordRow): Record<string, string> {
+	if (row.id === CURRENT) return { "data-reading-id": CURRENT };
+	return { "data-state-id": row.id, "data-standing": proposalStanding(row.standing) };
 }
 
 /**
- * One proposal, state or checkpoint.
- * @param props The row, the record on screen, and the row's actions.
+ * One proposal or state: what it does, what it is called, and what it folds.
+ * @param props The row, its words and what it does.
  * @param props.row The row.
- * @param props.lit The record on screen.
- * @param props.onOpen Carry the picture to it.
- * @param props.onToggle Fold its checkpoints.
+ * @param props.words What it says.
+ * @param props.actions What it does.
  * @returns The row.
  */
-function RecordRow(props: {
-	readonly row: StateRow;
-	readonly lit: string;
-	readonly onOpen: (row: StateRow) => void;
-	readonly onToggle: (row: StateRow) => void;
+function StateRow(props: {
+	readonly row: RecordRow;
+	readonly words: Words;
+	readonly actions: RecordActions;
 }): JSX.Element {
-	const { row, lit, onOpen, onToggle } = props;
+	const { row, words, actions } = props;
+	const { onOpen, onToggle, lit } = actions;
 	const open = useCallback(() => onOpen(row), [onOpen, row]);
 	const fold = useCallback(() => onToggle(row), [onToggle, row]);
-	if (row.checkpoint !== null) return <CheckpointRow {...props} />;
 	return (
 		<Tree.Row
 			id={row.id}
@@ -325,86 +202,91 @@ function RecordRow(props: {
 			onOpen={open}
 			onToggle={fold}
 		>
-			<Tree.Name text={recordName(row)} title={row.state?.summary} />
-			<RecordFacts row={row} />
+			<span style={WORDS_STYLE} title={words.lead} className="flex min-w-0 flex-1 flex-col">
+				<span className="text-control line-clamp-2 font-normal">{words.lead}</span>
+				{words.name !== undefined && (
+					<span className="text-body text-muted-foreground truncate">{words.name}</span>
+				)}
+				{words.facts !== undefined && (
+					<span className="text-technical text-muted-foreground truncate font-mono">
+						{words.facts}
+					</span>
+				)}
+			</span>
 		</Tree.Row>
 	);
 }
 
 /**
- * What a row says beside its name: what tells it from a record with the same name, then where
- * it stands. A proposal says that only when something stands in its way.
- * @param props The row.
- * @param props.row The row.
- * @returns The facts, or nothing.
+ * What was being done when a checkpoint was saved.
+ * @param saved What the list says of it.
+ * @returns The words, when it says.
  */
-function RecordFacts(props: { readonly row: StateRow }): JSX.Element | null {
-	const { id } = props.row;
-	const words = id === CURRENT ? null : recordFact(props.row);
-	return words === null ? null : <Tree.Facts>{words}</Tree.Facts>;
+function checkpointPurpose(saved: RecordRow["saved"]): string | undefined {
+	return saved?.state === null ? "Planning model" : saved?.doing;
 }
 
 /**
- * The fact a record shows.
- * @param row The row.
- * @returns The words, or null for a proposal with its own name that nothing stands in the way of.
- */
-function recordFact(row: StateRow): string | null {
-	const facts = [row.shared === true ? row.id : null, stateFact(row.state)];
-	return facts.filter((fact) => fact !== null).join(" · ") || null;
-}
-
-/**
- * Where a record stands.
- * @param state What the catalogue says of it.
- * @returns The words, or null for a proposal that nothing stands in the way of.
- */
-function stateFact(state: StateRow["state"]): string | null {
-	if (state?.lifecycle === "draft") return standingLabel(state);
-	return (state?.lifecycle ?? "Unavailable") + standingSuffix(state);
-}
-
-/**
- * What names a record for a reader of the page.
- * @param row The row.
- * @returns The data attributes of the row.
- */
-function recordData(row: StateRow): Record<string, string> {
-	if (row.id === CURRENT) return { "data-reading-id": CURRENT };
-	return { "data-state-id": row.id, "data-standing": proposalStanding(row.state) };
-}
-
-/**
- * One exact retained reading.
+ * One exact retained reading: when it was saved and what was being done. Its identity stays in the
+ * tooltip for somebody who needs it.
  * @param props The row and what it does.
- * @param props.lit The record on screen.
- * @param props.onOpen Carry the picture to it.
  * @param props.row Its row.
+ * @param props.actions What it does.
  * @returns The row.
  */
 function CheckpointRow(props: {
-	readonly row: StateRow;
-	readonly lit: string;
-	readonly onOpen: (row: StateRow) => void;
+	readonly row: RecordRow;
+	readonly actions: RecordActions;
 }): JSX.Element {
-	const { row, onOpen } = props;
+	const { row, actions } = props;
 	const { saved } = row;
+	const { onOpen } = actions;
 	const open = useCallback(() => onOpen(row), [onOpen, row]);
 	const dataset = useMemo(() => ({ "data-reading-id": row.id }), [row.id]);
+	const purpose = checkpointPurpose(saved);
+	const tip = [purpose, row.id].filter(Boolean).join("\n");
 	return (
 		<Tree.Row
 			id={row.id}
 			depth={row.parent === null ? 0 : 1}
-			selected={row.id === props.lit}
+			selected={row.id === actions.lit}
 			dataset={dataset}
 			onOpen={open}
 		>
-			<Tree.Name
-				text={saved === undefined ? "Selected reading" : checkpointTime(saved.createdAt)}
-				title={saved?.doing ?? row.id}
-			/>
-			<Tree.Facts>{row.id.slice(0, 8)}</Tree.Facts>
+			<span style={WORDS_STYLE} title={tip} className="flex min-w-0 flex-1 flex-col">
+				<span className="text-technical truncate font-mono">
+					{saved === undefined ? "Selected reading" : checkpointTime(saved.createdAt)}
+				</span>
+				{purpose !== undefined && (
+					<span className="text-body text-muted-foreground truncate">{purpose}</span>
+				)}
+			</span>
+			<CheckpointCompare row={row} actions={actions} />
 		</Tree.Row>
+	);
+}
+
+/**
+ * What a checkpoint offers beside itself: nothing while it is on screen, because a reading does not
+ * compare with itself, and no action while it is the base.
+ * @param props The row and what it does.
+ * @param props.row Its row.
+ * @param props.actions What it does.
+ * @returns The offer.
+ */
+function CheckpointCompare(props: {
+	readonly row: RecordRow;
+	readonly actions: RecordActions;
+}): JSX.Element | null {
+	const { id } = props.row;
+	const { lit, against, onCompare } = props.actions;
+	const compare = useCallback(() => onCompare(id), [onCompare, id]);
+	if (id === lit) return null;
+	if (id === against) return <Tree.Facts>Compared</Tree.Facts>;
+	return (
+		<Tree.Action row={id} slot="model-compare" onAction={compare}>
+			Compare
+		</Tree.Action>
 	);
 }
 
@@ -424,7 +306,7 @@ function HistoryStatus(props: Pick<ModelReadingSelectorProps, "history">): JSX.E
 	if (history.isError)
 		return (
 			<p role="alert" className="text-body max-w-prose p-3">
-				{history.error.message} Reopen this menu to retry.
+				{history.error.message} Reopen History to retry.
 			</p>
 		);
 	if (!history.data.success)
@@ -434,7 +316,7 @@ function HistoryStatus(props: Pick<ModelReadingSelectorProps, "history">): JSX.E
 				{[...new Set(history.data.diagnostics.map((entry) => entry.recovery))].map((recovery) => (
 					<p key={recovery}>{recovery}</p>
 				))}
-				<p>Reopen this menu after recovery.</p>
+				<p>Reopen History after recovery.</p>
 			</div>
 		);
 	if (history.data.checkpoints.length === 0)
@@ -442,4 +324,4 @@ function HistoryStatus(props: Pick<ModelReadingSelectorProps, "history">): JSX.E
 	return null;
 }
 
-export { ModelReadingSelector, HistoryStatus };
+export { ModelReadingSelector };

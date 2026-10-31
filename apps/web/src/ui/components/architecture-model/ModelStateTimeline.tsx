@@ -80,16 +80,6 @@ function ModelStateTimeline(props: ModelStateTimelineProps): JSX.Element {
 }
 
 /**
- * Why a state stands where it does, in the record's words: why it was adopted or let go, and for a
- * proposal, what it says about itself.
- * @param entry The state on the timeline.
- * @returns The words, or undefined.
- */
-function reasonOf(entry: TimelineEntry): string | undefined {
-	return entry.state.reason ?? entry.state.summary;
-}
-
-/**
  * The state on screen, as the title of the page names it: its lifecycle's mark, its name and where
  * it stands, in the words of its row.
  * @param props The state on the timeline.
@@ -172,8 +162,8 @@ function StateRow(props: {
 }
 
 /**
- * What a row says of its state: its name, where it stands, and why it stands there. The state on
- * screen says why under its row.
+ * What a row says of its state: what it does, then what it is called and where it stands, and why
+ * it stands there. The state on screen says why under its row.
  * @param props The state, and whether it is on screen.
  * @param props.entry The state on the timeline.
  * @param props.drawn Whether it is on screen.
@@ -184,32 +174,44 @@ function StateWords(props: {
 	readonly drawn: boolean;
 }): JSX.Element {
 	const { entry, drawn } = props;
-	const reason = drawn ? undefined : reasonOf(entry);
+	const { summary, name, reason } = entry.state;
 	return (
 		<span className="flex min-w-0 flex-1 flex-col gap-0.5">
 			<span className="flex min-w-0 items-baseline gap-3">
-				<span className="title-name truncate">{entry.state.name}</span>
-				<span
-					className={cn(
-						"text-body shrink-0",
-						entry.state.lifecycle === "current"
-							? "text-foreground font-medium"
-							: "text-muted-foreground",
-					)}
-				>
-					{standingWords(entry)}
-				</span>
+				<span className="text-title min-w-0 flex-1">{summary ?? name}</span>
 				{drawn && (
-					<span className="text-body text-primary-text ml-auto shrink-0 font-medium">
-						On screen
-					</span>
+					<span className="text-body text-primary-text shrink-0 font-medium">On screen</span>
 				)}
 			</span>
-			{reason !== undefined && (
+			<StateStanding entry={entry} />
+			{!drawn && reason !== undefined && (
 				<span className="text-control text-muted-foreground max-w-[72ch] font-normal">
 					{reason}
 				</span>
 			)}
+		</span>
+	);
+}
+
+/**
+ * The name of a state that leads with its summary, and where the state stands.
+ * @param props The state.
+ * @param props.entry The state on the timeline.
+ * @returns The line.
+ */
+function StateStanding({ entry }: { readonly entry: TimelineEntry }): JSX.Element {
+	const { summary, name, lifecycle } = entry.state;
+	return (
+		<span className="flex min-w-0 items-baseline gap-3">
+			{summary !== undefined && <span className="text-body truncate">{name}</span>}
+			<span
+				className={cn(
+					"text-body shrink-0",
+					lifecycle === "current" ? "text-foreground font-medium" : "text-muted-foreground",
+				)}
+			>
+				{standingWords(entry)}
+			</span>
 		</span>
 	);
 }

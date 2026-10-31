@@ -55,6 +55,55 @@ async function selectReading(browser: AgentBrowserSession, id: string): Promise<
 }
 
 /**
+ * Compare the picture from the control beside it.
+ * @param browser The page.
+ * @param id The choice: `after`, `current`, or a state.
+ */
+async function selectComparison(browser: AgentBrowserSession, id: string): Promise<void> {
+	const item = `[data-against-id="${id}"]`;
+	const trigger = '[data-slot="model-comparison-selector"]';
+	// A reading that settles can take a click with it, so each pass takes the step that is left.
+	await pollUntil(
+		async () => {
+			const page = await browser.eval<{ open: boolean; clickable: boolean }>(`(() => {
+				const item = document.querySelector('${item}');
+				const rect = item?.getBoundingClientRect();
+				return {
+					open: document.querySelector('${trigger}')?.getAttribute('aria-expanded') === 'true',
+					clickable: rect !== undefined && rect.height > 0 &&
+						item.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)),
+				};
+			})()`);
+			if (!page.open) await browser.run(["click", trigger]).catch(() => undefined);
+			return page.clickable;
+		},
+		Boolean,
+		"the comparison choice",
+		WAIT,
+	);
+	await browser.run(["click", item]);
+}
+
+/**
+ * Compare the picture with a saved checkpoint, from its row in History.
+ * @param browser The page.
+ * @param id The checkpoint.
+ */
+async function compareCheckpoint(browser: AgentBrowserSession, id: string): Promise<void> {
+	const compare = `[data-reading-id="${id}"] [data-slot="model-compare"]`;
+	await pollUntil(
+		async () => {
+			await unfoldedHistory(browser);
+			return browser.eval<boolean>(`document.querySelector('${compare}') !== null`);
+		},
+		Boolean,
+		"the checkpoint's Compare",
+		WAIT,
+	);
+	await browser.run(["click", compare]);
+}
+
+/**
  * Select a module from the list on About and read its details there. A reading that settles
  * replaces the rows and drops the selection, so each pass takes the one step that is left.
  * @param browser The page.
@@ -115,8 +164,10 @@ async function selectState(browser: AgentBrowserSession, id: string): Promise<vo
 }
 
 export {
+	compareCheckpoint,
 	fixtureGit,
 	initializeSource,
+	selectComparison,
 	selectModule,
 	selectReading,
 	selectState,
