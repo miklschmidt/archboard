@@ -70,6 +70,20 @@ test("canonical modules open their authored details without writing architecture
 		),
 	).toBe(true);
 	expect(await listedParts(browser)).toEqual(["Shop#Gateway", "Shop#Worker"]);
+	await browser.run([
+		"click",
+		'[data-slot="module-list"] li:has([data-module-id="Shop#Worker"]) [data-slot="about-show"]',
+	]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-about"]') === null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"].is-selected') !== null`,
+			),
+		Boolean,
+		"the row shown on the diagram",
+		WAIT,
+	);
+	await openAbout(browser);
 	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Gateway"]']);
 	await openAbout(browser, "selection");
 	await pollUntil(
