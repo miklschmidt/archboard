@@ -182,7 +182,8 @@ function LineTitle(props: {
 }
 
 /**
- * A projected line keeps every authored relationship with all that it says.
+ * A projected line keeps every authored relationship with all that it says. The page's title says
+ * the ends, the kind and the label of a line of one relationship, so here it adds the rest.
  * @param props The selected line and complete model.
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
@@ -195,17 +196,26 @@ function ConnectionDetails(props: {
 	reference: Model | undefined;
 }): JSX.Element {
 	const { connection, model, reference } = props;
+	const several = connection.joins.length > 1;
 	return (
 		<article data-slot="model-connection-details" className="space-y-8">
 			<ol className="space-y-6">
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
-						<p className="text-control">{lineEnds(edge, model, reference)}</p>
-						<p className="text-muted-foreground">
-							{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
-						</p>
-						{edge.label && <p>{edge.label}</p>}
-						{edge.description && <p className="whitespace-pre-wrap">{edge.description}</p>}
+						{several && (
+							<>
+								<p className="text-control">{lineEnds(edge, model, reference)}</p>
+								<p className="text-muted-foreground">
+									{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
+								</p>
+								{edge.label && <p>{edge.label}</p>}
+							</>
+						)}
+						{edge.description && (
+							<p className="text-control max-w-[72ch] font-normal whitespace-pre-wrap">
+								{edge.description}
+							</p>
+						)}
 						<code className="text-technical text-muted-foreground font-mono break-all">
 							{edge.id}
 						</code>

@@ -264,23 +264,51 @@ function ModelOwnership(): JSX.Element {
 }
 
 /**
- * What the page says of the open scope: what it is, then its long lists. The roots have no
- * responsibility of their own, so the state on screen says what they are.
+ * What the head of the page says: a flow reading is about its flow, a scope about its module. The
+ * roots have no responsibility of their own, so the state on screen says what they are.
+ * @param props The page's inputs.
+ * @returns The head's parts.
+ */
+function scopeHead(props: ScopePageProps) {
+	const { model, scope, tree } = props;
+	const { flow } = props.projection;
+	if (flow !== null)
+		return { name: flow.name, kindName: "Flow", lead: flow.summary ?? undefined };
+	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
+	if (module === undefined)
+		return { name: model.manifest.name, lead: model.selectedState?.summary ?? undefined };
+	return {
+		name: module.name,
+		kind: module.kind,
+		path: scope === null ? undefined : tree.owner.get(scope)?.path,
+		lead: module.responsibility,
+		description: module.description,
+	};
+}
+
+/**
+ * What the page says of the open scope: what it is, then its long lists.
  * @param props The page's inputs.
  * @returns The page.
  */
 function ScopePage(props: ScopePageProps): JSX.Element {
 	const sections = useScopeSections(props);
-	const { model, scope, look, state, tree } = props;
-	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
-	const name = module?.name ?? model.manifest.name;
-	const path = scope === null ? undefined : tree.owner.get(scope)?.path;
+	const { model, scope, look, state } = props;
+	const head = scopeHead(props);
 	return (
 		<ModelAboutFrame
-			name={name}
-			facts={<AboutFacts look={look} kind={module?.kind} path={path} state={state} />}
-			lead={module === undefined ? (model.selectedState?.summary ?? undefined) : module.responsibility}
-			description={module?.description}
+			name={head.name}
+			facts={
+				<AboutFacts
+					look={look}
+					kind={head.kind}
+					kindName={head.kindName}
+					path={head.path}
+					state={state}
+				/>
+			}
+			lead={head.lead}
+			description={head.description}
 			tools={props.tools}
 			standing={<ModelSubjectStanding model={model} subject={scope} />}
 			sections={sections}
