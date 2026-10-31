@@ -1,0 +1,15 @@
+{
+  "order": 62000,
+  "name": "Module interface",
+  "kind": "module",
+  "responsibility": "Derives a module's interface from the relationships that reach it, with the counts that describe it",
+  "description": "One derivation serves the reader, model inspect and a comparison. Nothing here is authored or stored.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/shared/rules/inspect/container-interface.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#DKzh4lMo",
+  "outgoing": []
+}

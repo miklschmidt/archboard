@@ -2,7 +2,7 @@
   "order": 25000,
   "name": "Export legend",
   "kind": "function",
-  "responsibility": "Lays out the key of an exported picture in a row or a column and draws each entry with the picture's own symbol",
+  "responsibility": "Lays out the legend of an exported picture in a row or a column and draws each entry with the picture's own symbol",
   "description": "legend_of lists the comparison's marks with their counts, each node kind with its chip and icon, each relationship kind with its ink, dash and head, and the two line marks, in the order the page's legend lists them. A row wraps at the picture's width; a column stands beside it.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

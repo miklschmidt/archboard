@@ -1,6 +1,6 @@
 {
   "order": 17000,
-  "name": "Agent CLI",
+  "name": "CLI under test",
   "kind": "service",
   "responsibility": "The CLI under test, both as the author's tool and as the harness's own way of laying a fixture and reading a vault",
   "description": "Finds the run's vault from the Flask checkout it runs in, as it does for any repository. The first command there registers the checkout.",
@@ -25,5 +25,8 @@
       "id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
       "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     }
+  ],
+  "formerNames": [
+    "Agent CLI"
   ]
 }

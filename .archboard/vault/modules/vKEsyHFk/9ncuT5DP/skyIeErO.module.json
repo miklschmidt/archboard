@@ -3,7 +3,7 @@
   "name": "Generation composition",
   "kind": "module",
   "responsibility": "Starts the private child, then builds each generation's object graph over a transport and identity ledger that outlive it",
-  "description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory. The factories (codex-workbench-factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed.",
+  "description": "installProductionCodexWorkbench hands the owner lifecycle createCodexProcess and a generation factory. The factories (generation/factories.ts) build the components in the order they depend on each other, the gateway last. codex-workbench-session-factories.ts builds one tab session's owners when the tab sessions open it. A child's exit drops every tab session, and nothing is resumed.",
   "groups": [
     "child"
   ],
@@ -72,6 +72,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
       "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "order": 1007000,
+      "kind": "call",
+      "label": "open the epoch store for this generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexEpochStore"
+      },
+      "id": "vKEsyHFk#Ao3t2Mgx",
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
     }
   ]
 }

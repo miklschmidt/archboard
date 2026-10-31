@@ -15,7 +15,7 @@
     {
       "order": 50000,
       "kind": "call",
-      "label": "lay out the key",
+      "label": "lay out the legend",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -48,8 +48,8 @@
         "path": "crates/archboard-scene/src/paint/export.rs",
         "symbol": "width_of"
       },
-      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-      "id": "vKEsyHFk#2DOiQ4Pi"
+      "id": "vKEsyHFk#2DOiQ4Pi",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     }
   ]
 }

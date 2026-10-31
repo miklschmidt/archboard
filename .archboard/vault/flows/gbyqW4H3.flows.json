@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/gbyqW4H3#ts6X9FtG",
       "name": "Draw a view",
+      "summary": "Renders a reading to one self-contained SVG document through its sequence, flowchart or architecture grammar. Every grammar runs in the same core, so the CLI, exports and the reader draw the same picture.",
       "participants": [
         "vKEsyHFk/gbyqW4H3#wpI1LbzG",
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
@@ -398,12 +399,12 @@
             }
           ]
         }
-      ],
-      "summary": "Renders a reading to one self-contained SVG document through its sequence, flowchart or architecture grammar. Every grammar runs in the same core, so the CLI, exports and the reader draw the same picture."
+      ]
     },
     {
       "id": "vKEsyHFk/gbyqW4H3#APiBh4ih",
       "name": "Draw a sequence",
+      "summary": "Lays out the columns, messages and frames of a behavioral reading, paints them and records where each subject landed. That atlas lets the reader and walkthroughs find a step in the finished picture.",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
         "vKEsyHFk/gbyqW4H3#wLF1X11D",
@@ -641,12 +642,12 @@
             "symbol": "document"
           }
         }
-      ],
-      "summary": "Lays out the columns, messages and frames of a behavioral reading, paints them and records where each subject landed. That atlas lets the reader and walkthroughs find a step in the finished picture."
+      ]
     },
     {
       "id": "vKEsyHFk/gbyqW4H3#VbVMzrrT",
       "name": "Frame a picture for export",
+      "summary": "Adds an export's legend and title around a finished picture. The drawing is never laid out again, and the page grows to hold what it carries.",
       "participants": [
         "vKEsyHFk/gbyqW4H3#m6HOX0lf",
         "vKEsyHFk/gbyqW4H3#iXrVyvHz",
@@ -718,7 +719,7 @@
                   "id": "vKEsyHFk/gbyqW4H3#XqwcLlCR",
                   "from": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
                   "to": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
-                  "label": "lay out the key",
+                  "label": "lay out the legend",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -754,7 +755,7 @@
                   "id": "vKEsyHFk/gbyqW4H3#PKofi6GZ",
                   "from": "vKEsyHFk/gbyqW4H3#YhQnj9ID",
                   "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz",
-                  "label": "the key, laid out and drawn",
+                  "label": "the legend, laid out and drawn",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -852,8 +853,7 @@
             "symbol": "framed_for_export"
           }
         }
-      ],
-      "summary": "Adds an export's legend and title around a finished picture. The drawing is never laid out again, and the page grows to hold what it carries."
+      ]
     }
   ]
 }
