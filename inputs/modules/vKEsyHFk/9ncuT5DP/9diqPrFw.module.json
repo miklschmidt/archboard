@@ -59,6 +59,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
       "to": "vKEsyHFk/vKEsyHFk#zs8yTQLI"
+    },
+    {
+      "order": 43000,
+      "kind": "dependency",
+      "label": "own the Codex process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
+      "to": "vKEsyHFk#R3jPedS8"
     }
   ]
 }

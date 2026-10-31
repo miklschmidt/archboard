@@ -19,6 +19,32 @@
   ],
   "outgoing": [
     {
+      "order": 70035,
+      "kind": "call",
+      "label": "compose the host role profile",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/agent/voice-agent.ts",
+        "symbol": "createWorkbenchThreadProfile"
+      },
+      "id": "vKEsyHFk#zAQcPUKN",
+      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
+    },
+    {
+      "order": 70036,
+      "kind": "call",
+      "label": "admit addressed browser sessions",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
+        "symbol": "surfaceIn"
+      },
+      "id": "vKEsyHFk#cWzsQnxC",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
       "order": 86000,
       "kind": "call",
       "label": "one workbench, with the host's role profiles",
@@ -42,33 +68,7 @@
         "symbol": "openBrowserSocket"
       },
       "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
-      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
-    },
-    {
-      "order": 70035,
-      "kind": "call",
-      "label": "compose the host role profile",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/agent/voice-agent.ts",
-        "symbol": "createWorkbenchThreadProfile"
-      },
-      "id": "vKEsyHFk#zAQcPUKN",
-      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 70036,
-      "kind": "call",
-      "label": "admit addressed browser sessions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
-        "symbol": "parseTabSessionId"
-      },
-      "id": "vKEsyHFk#cWzsQnxC",
-      "to": "vKEsyHFk/6E6hL0Zk#MYbmjfIR"
+      "to": "vKEsyHFk#sZUpSKaS"
     }
   ]
 }

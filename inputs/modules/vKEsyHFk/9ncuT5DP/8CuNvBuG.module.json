@@ -45,6 +45,20 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#2ed6AqSF",
       "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK"
+    },
+    {
+      "order": 12000,
+      "kind": "event",
+      "label": "operation events; only an unknown outcome is told",
+      "description": "The callback queue subscribes to the operations and host-context ports passed to the public createCodexCoordinatorCallbacks factory. The incoming event reaches its subscribed callback, not a private import by the publisher.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator-callbacks/callbacks.ts",
+        "symbol": "subscribe"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#5QnOXTuc",
+      "to": "vKEsyHFk/qKGcB6vZ#5uPyMgoI"
     }
   ]
 }
