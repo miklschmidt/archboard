@@ -1291,3 +1291,25 @@ These are the sources that TASK-367.01 rejected:
 - `CONTEXT.md` gains code check, anchor, symbol, code facts, evidence kind,
   candidate and finding. Its Binding and Logical address entries name the
   symbol.
+
+## Amendment of 2026-10-31: a relationship between two sides stands for their calls
+
+TASK-559.33 changes two rows of the findings table.
+
+`RELATIONSHIP_ON_CONTAINER` leaves the code check. It is now an error of the
+semantic check, because a code finding cannot be an error
+([ADR 0044](0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
+
+`RELATIONSHIP_UNDRAWN` keeps its evidence, but its severity changes in one case.
+Two parts meet at the children of their nearest holder, and those two children
+are the sides. If a relationship or a flow step joins the two sides, the finding
+is information, and it says that the relationship stands for the call. Otherwise
+the severity rule above holds.
+
+Before this change, a relationship between the holders of two parts counted as
+drawn. On this repository, frame relationships alone covered 554 pairs of parts.
+A frame end is now an error, and a relationship is not copied to give each call
+its own line, so those calls have no relationship of their own. A warning for
+each one asks for an import map. Removing the finding hides what the model leaves
+out. Information keeps the fact and stays out of the exit status. The model holds
+153 such findings after the repair.

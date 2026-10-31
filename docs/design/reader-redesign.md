@@ -268,9 +268,10 @@ model before they left, and 8 other containers of 130. A model that binds no cod
 container then says nothing. `ROOT_UNCONNECTED` names a root with no relationship to another root. A relationship
 of a part inside it counts, and a lone root is exempt. `CONTAINER_LINE_TO_OWN_PART` names a relationship between a
 module and a part that it holds, at any depth. The nesting already shows it, so a reading that opens the module draws no
-line for it, and the panel and About still list it. `RELATIONSHIP_ON_CONTAINER`, at information level in the code
-check, names a relationship with an end on a module with parts. That end makes a caller and no entry point there, and it
-stays acceptable when no part stands for the call.
+line for it, and the panel and About still list it. `RELATIONSHIP_ON_CONTAINER` is an error, not a signal. It names a
+relationship with an end on a module with parts, unless one end holds the other. A module with parts cannot point at
+anything, so the end moves to the part that owns the code. If no part owns it, the author adds one for what the module
+does at that seam.
 
 A flow must say what it does, because only 1 of this repository's 72 flows did, and a reader could not tell that
 `One author run` belongs to the skill evaluation. Every flow has a summary, and this rule is an error, not a

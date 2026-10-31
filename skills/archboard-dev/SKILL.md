@@ -48,7 +48,7 @@ Make sure that proposal standing and affected descendants are settled.
 
 Run focused semantic and code inspection for the affected model state.
 Inspect source for claims that the automated evidence cannot assess.
-Fix findings caused by the task, including `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART` on subjects that it touched.
+Fix findings caused by the task, including `RELATIONSHIP_ON_CONTAINER`, `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART` on subjects that it touched.
 Record unavailable source and other evidence limits in the task notes.
 Use the narrow validation owners required by the changed behavior.
 Reserve the complete repository gate for integration acceptance or an explicit request.
