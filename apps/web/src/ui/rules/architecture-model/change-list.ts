@@ -95,7 +95,7 @@ function changedCount(comparison: Comparison | undefined): number {
 /**
  * Whether a reading has changes to walk: a proposal, read against a base.
  * @param model The reading.
- * @returns True for a draft with a comparison, which After turns off.
+ * @returns True for a draft with a comparison.
  */
 function reviewsChanges(model: Model): boolean {
 	const { comparison, selectedState, migrationPreview } = model;

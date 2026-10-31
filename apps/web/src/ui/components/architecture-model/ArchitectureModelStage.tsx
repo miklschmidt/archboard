@@ -35,10 +35,8 @@ import {
 	architectureModelQuery,
 	architectureModelKeys,
 } from "#ui/clients/architecture-model/queries.ts";
-import {
-	ModelComparisonLine,
-	ModelStateDetails,
-} from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import { ModelComparisonSelector } from "#ui/components/architecture-model/ModelComparisonSelector.tsx";
+import { ModelStateDetails } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { ModelWalkthroughReader } from "#ui/components/architecture-model/ModelWalkthroughReader.tsx";
 import { ModelReading } from "#ui/components/architecture-model/ModelReading.tsx";
 import { ModelFailedRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
@@ -219,7 +217,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				query={query}
 				destination={props.repository ?? requestedModel}
 				states={stateCatalogue(catalogue.data)}
-				hasCurrent={hasCurrentState(catalogue.data)}
+				catalogue={catalogue.data}
 				current={current}
 				stale={stale}
 				lost={feed.connection === "unavailable"}
@@ -234,15 +232,6 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 			/>
 		</section>
 	);
-}
-
-/**
- * Whether a model has a Current. Only the catalogue knows: a proposal's base can predate it.
- * @param catalogue The current catalogue.
- * @returns True when the model has one.
- */
-function hasCurrentState(catalogue: ModelQuery["data"]): boolean {
-	return catalogue !== undefined && catalogue.manifest.current !== null;
 }
 
 /**
@@ -410,7 +399,8 @@ interface ModelResponseProps extends Pick<
 	/** What the reader waits for, in words. */
 	destination: string | null | undefined;
 	states: ReturnType<typeof stateCatalogue>;
-	hasCurrent: boolean;
+	/** The current catalogue: only it knows the drafts, and whether the model has a Current. */
+	catalogue: ModelQuery["data"];
 	current: boolean;
 	stale: boolean;
 	/** Whether the update stream lost the server. */
@@ -429,7 +419,7 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	const { query } = props;
 	const model = useVisibleModel(query, props.current);
 	const problem = readingProblem(query.error, props.current ? props.failure : null);
-	const { paneId, states, hasCurrent } = props;
+	const { paneId, states, vault, catalogue } = props;
 	const overview = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
 			<>
@@ -441,9 +431,9 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 	);
 	const comparison = useCallback(
 		(shown: NonNullable<typeof model>): JSX.Element => (
-			<ModelComparisonLine model={shown} paneId={paneId} hasCurrent={hasCurrent} />
+			<ModelComparisonSelector model={shown} catalogue={catalogue} vault={vault} paneId={paneId} />
 		),
-		[paneId, hasCurrent],
+		[paneId, vault, catalogue],
 	);
 	// One frame for every answer: its header keeps an open menu while a read fails, retries or arrives.
 	return (

@@ -168,7 +168,7 @@ The browser commands address its existing panes:
 
 `browser panes` reports each pane's canonical architecture capture, repository, and chosen checkout.
 The capture includes its reading, selection, and exact revision.
-The state picker exposes current architecture, proposals, and retained readings.
+History exposes current architecture, proposals, and retained readings.
 Recursive navigation, selection, focus, filters, and walkthrough controls change presentation only.
 Agent navigation never activates another workhorse conversation.
 

@@ -60,12 +60,12 @@ function ModelError(props: ModelErrorProps): JSX.Element {
  * directly has none.
  * @param props The recovery actions.
  * @param props.onRetry Try the failed step again.
- * @param props.onAfter Show the state alone, when a comparison can be what failed.
+ * @param props.onPlain Show the state alone, when a comparison can be what failed.
  * @returns The actions.
  */
 function ModelFailureActions(props: {
 	onRetry: () => void;
-	onAfter?: (() => void) | undefined;
+	onPlain?: (() => void) | undefined;
 }): JSX.Element {
 	const { history } = useRouter();
 	const back = useCallback((): void => history.back(), [history]);
@@ -79,9 +79,9 @@ function ModelFailureActions(props: {
 					Back
 				</Button>
 			)}
-			{props.onAfter !== undefined && (
-				<Button variant="outline" size="sm" data-slot="model-show-after" onClick={props.onAfter}>
-					Show After
+			{props.onPlain !== undefined && (
+				<Button variant="outline" size="sm" data-slot="model-show-plain" onClick={props.onPlain}>
+					No comparison
 				</Button>
 			)}
 		</div>

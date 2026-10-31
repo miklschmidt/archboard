@@ -18,7 +18,12 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { fixtureGit, initializeSource, selectModule } from "./support/canonical-model.ts";
+import {
+	compareCheckpoint,
+	fixtureGit,
+	initializeSource,
+	selectModule,
+} from "./support/canonical-model.ts";
 import { openAbout, refreshModel } from "./support/canonical-page.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
@@ -212,18 +217,7 @@ test("historical corrections refresh the lasting reading and expose exact origin
 	expect(
 		await browser.eval<number>(`document.querySelectorAll('[data-correction-checkpoint]').length`),
 	).toBe(0);
-	await browser.run(["click", '[data-destination="history"]']);
-	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const node = document.querySelector('[data-against-id="${corrected.checkpoint.id}"]'); if (!node) return false; const r = node.getBoundingClientRect(); return r.height > 0 && node.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
-			),
-		Boolean,
-		"the retained comparison choice",
-		WAIT,
-	);
-	await browser.run(["click", `[data-against-id="${corrected.checkpoint.id}"]`]);
+	await compareCheckpoint(browser, corrected.checkpoint.id);
 	await description(browser, "An incorrect recorded description.");
 	await openHistory(browser);
 	expect(

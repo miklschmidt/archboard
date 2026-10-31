@@ -18,7 +18,12 @@ import {
 	registerServerBase,
 	type AgentBrowserSession,
 } from "./support/agent-browser.ts";
-import { initializeSource, selectReading } from "./support/canonical-model.ts";
+import {
+	compareCheckpoint,
+	initializeSource,
+	selectComparison,
+	selectReading,
+} from "./support/canonical-model.ts";
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -80,21 +85,6 @@ async function standsOn(browser: AgentBrowserSession, id: string, position: stri
 		`the walk at ${position} on ${id}`,
 		WAIT,
 	);
-}
-
-async function selectComparison(browser: AgentBrowserSession, id: string): Promise<void> {
-	await browser.run(["click", '[data-destination="history"]']);
-	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
-	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`(() => { const item = document.querySelector('[data-against-id="${id}"]'); if (!item) return false; const r = item.getBoundingClientRect(); return r.height > 0 && item.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`,
-			),
-		Boolean,
-		"the comparison base choice",
-		WAIT,
-	);
-	await browser.run(["click", `[data-against-id="${id}"]`]);
 }
 
 test("proposal comparison draws removed definitions from its coherent base and explains changed fields", async () => {
@@ -333,24 +323,33 @@ test("proposal comparison draws removed definitions from its coherent base and e
 		"the explicit base after reload",
 		WAIT,
 	);
+	const saved = created.body.checkpoint.id;
+	await compareCheckpoint(browser, saved);
+	await pollUntil(
+		() => browser.eval<string | null>(`new URLSearchParams(location.search).get('againstA')`),
+		(against) => against === saved,
+		"the checkpoint as the exact base",
+		WAIT,
+	);
 	await selectComparison(browser, "after");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-after"]') !== null && document.querySelector('[data-slot="model-comparison"]') === null`,
+				`document.querySelector('[data-slot="model-no-comparison"]') !== null && document.querySelector('[data-slot="model-comparison"]') === null && new URLSearchParams(location.search).get('againstA') === 'after'`,
 			),
 		Boolean,
-		"the state alone, marked as After",
+		"the state alone, with no comparison",
 		WAIT,
 	);
 	await browser.run(["reload"]);
 	await pollUntil(
-		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-after"]') !== null`),
+		() =>
+			browser.eval<boolean>(`document.querySelector('[data-slot="model-no-comparison"]') !== null`),
 		Boolean,
-		"After through a reload",
+		"no comparison through a reload",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-compare-current"]']);
+	await selectComparison(browser, "current");
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

@@ -190,25 +190,47 @@ function StateLineage({
 	return (
 		<>
 			{predecessor && (
-				<HistoryLink
+				<StateLink
 					label={
 						predecessor === previous ? "Predecessor and previous implementation" : "Predecessor"
 					}
 					id={predecessor}
-					name={stateName(states, predecessor)}
+					states={states}
 					onSelect={onSelect}
 				/>
 			)}
 			{previous && previous !== predecessor && (
-				<HistoryLink
+				<StateLink
 					label="Previous implementation"
 					id={previous}
-					name={stateName(states, previous)}
+					states={states}
 					onSelect={onSelect}
 				/>
 			)}
 		</>
 	);
+}
+
+/**
+ * The way to an ancestor that the catalogue names. An ancestor it does not list cannot be opened
+ * as a state, and the baseline holds its reading.
+ * @param props The ancestor and its role.
+ * @param props.label Its role in the lineage.
+ * @param props.id Its stable identity.
+ * @param props.states The catalogue.
+ * @param props.onSelect Opens a logical state.
+ * @returns The link, or nothing for an ancestor the catalogue lacks.
+ */
+function StateLink(props: {
+	label: string;
+	id: string;
+	states: HistoryProps["states"];
+	onSelect: (id: string) => void;
+}): JSX.Element | null {
+	const { label, id, onSelect } = props;
+	const name = props.states.find((entry) => entry.id === id)?.name;
+	if (name === undefined) return null;
+	return <HistoryLink label={label} id={id} name={name} onSelect={onSelect} />;
 }
 
 /**
@@ -237,11 +259,12 @@ function HistoryLink(props: {
 				<Button
 					variant="ghost"
 					size="sm"
+					title={id}
 					data-state-link={props.exact ? undefined : id}
 					data-checkpoint-link={props.exact ? id : undefined}
 					onClick={open}
 				>
-					<code>{props.exact ? id.slice(0, 8) : (props.name ?? id)}</code>
+					{props.exact ? "Saved reading" : props.name}
 				</Button>
 			</dd>
 		</>
@@ -273,16 +296,6 @@ function StateDocuments({ state }: { state: State }): JSX.Element | null {
 			</dd>
 		</>
 	);
-}
-
-/**
- * Name an ancestor without replacing an unavailable identity.
- * @param states The public catalogue.
- * @param id The exact logical destination.
- * @returns Its authored name or its unresolved identity.
- */
-function stateName(states: HistoryProps["states"], id: string): string {
-	return states.find((entry) => entry.id === id)?.name ?? id;
 }
 
 export { ModelStateHistory };

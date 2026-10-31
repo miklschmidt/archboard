@@ -17,10 +17,13 @@ function CheckpointEvidence(props: CheckpointEvidenceProps): JSX.Element | null 
 		<div data-slot="model-checkpoint" data-checkpoint-id={checkpoint.id} className="text-control">
 			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
 				<span className="font-semibold">Retained architecture</span>
-				<time className="text-muted-foreground" dateTime={checkpoint.createdAt}>
+				<time
+					className="text-muted-foreground"
+					dateTime={checkpoint.createdAt}
+					title={checkpoint.id}
+				>
 					{new Date(checkpoint.createdAt).toLocaleString()}
 				</time>
-				<code className="select-text">{checkpoint.id}</code>
 			</div>
 			{sourceEvidence?.map((source) => (
 				<div
@@ -29,14 +32,9 @@ function CheckpointEvidence(props: CheckpointEvidenceProps): JSX.Element | null 
 					data-status={source.status}
 					className="mt-3 max-w-prose space-y-1"
 				>
-					<p>
+					<p title={source.commit ?? undefined}>
 						{evidenceLabel[source.status]} · {source.repo}
 					</p>
-					{source.commit !== null && (
-						<code className="text-muted-foreground block break-all select-text">
-							{source.commit}
-						</code>
-					)}
 					{source.recovery && (
 						<p data-slot="model-source-recovery" className="text-body">
 							{source.recovery}

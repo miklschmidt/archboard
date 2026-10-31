@@ -137,7 +137,7 @@ afterEach(() => {
 });
 afterAll(() => GlobalRegistrator.unregister());
 
-test("a failed drawing offers Retry and Back, and After when a comparison can be what failed", () => {
+test("a failed drawing offers Retry and Back, and a way out when a comparison can be what failed", () => {
 	const onRetry = mock(nothing);
 	const request = { ...shopRequest({ scope: "Shop#Worker" }), model: COMPARED };
 	mount(
@@ -152,13 +152,13 @@ test("a failed drawing offers Retry and Back, and After when a comparison can be
 	expect(screen.getByRole("alert").getAttribute("data-code")).toBe("DRAW_FAILED");
 	fireEvent.click(action("model-retry")!);
 	fireEvent.click(action("model-back")!);
-	fireEvent.click(action("model-show-after")!);
+	fireEvent.click(action("model-show-plain")!);
 	expect(onRetry).toHaveBeenCalledTimes(1);
 	expect(went).toEqual(["back"]);
 	expect(compared).toEqual(["after"]);
 });
 
-test("a reading with no comparison and no history offers neither After nor Back", () => {
+test("a reading with no comparison and no history offers neither a way out nor Back", () => {
 	canGoBack = false;
 	mount(
 		createElement(ModelDestinationNotice, {
@@ -171,7 +171,7 @@ test("a reading with no comparison and no history offers neither After nor Back"
 	);
 	expect(action("model-retry")).not.toBeNull();
 	expect(action("model-back")).toBeNull();
-	expect(action("model-show-after")).toBeNull();
+	expect(action("model-show-plain")).toBeNull();
 });
 
 test("a removed module offers its retained reading", async () => {
