@@ -95,7 +95,7 @@
         "symbol": "decodeModel"
       },
       "id": "vKEsyHFk/0T9enjhi#mIgQpKmS",
-      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      "to": "vKEsyHFk#dpoZTtr0"
     },
     {
       "order": 242000,
@@ -134,7 +134,7 @@
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#zIB2QVeH",
-      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      "to": "vKEsyHFk#mRcSpKne"
     },
     {
       "order": 246000,
@@ -239,6 +239,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#FngTyF3H",
       "to": "vKEsyHFk/0T9enjhi#e0GTqv1k"
+    },
+    {
+      "order": 70028,
+      "kind": "call",
+      "label": "retain original migration trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/install-candidate.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#N8bivOLt",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
     }
   ]
 }
