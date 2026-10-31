@@ -47,6 +47,10 @@ const QuerySchema = z
 			.optional(),
 		state: z.string().min(1).optional(),
 		against: z.string().min(1).optional(),
+		beside: z
+			.union([z.string().min(1), z.array(z.string().min(1))])
+			.transform((value) => [value].flat())
+			.optional(),
 		compare: z
 			.enum(["true", "false"])
 			.transform((value) => value === "true")

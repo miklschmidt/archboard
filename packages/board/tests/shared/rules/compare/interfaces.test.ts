@@ -1,11 +1,14 @@
 // What a variant changed about the interface of each container (ADR 0044): the
 // entry points added and removed, the parts that moved between the interface
-// and the hidden parts, and the callers gained and lost. That the reading sets
-// no comparison status is owned where both sit in one answer
-// (`apps/cli/tests/cli/operations/semantic/compare/comparison-answer.test.ts`).
+// and the hidden parts, and the callers gained and lost. The measures of several
+// readings side by side are the same derivation, and mark no change.
 
 import { describe, expect, test } from "bun:test";
-import { compareInterfaces, type InterfaceChange } from "#shared/rules/compare/interfaces.ts";
+import {
+	compareInterfaces,
+	measureInterfaces,
+	type InterfaceChange,
+} from "#shared/rules/compare/interfaces.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
@@ -194,5 +197,56 @@ describe("what a comparison says about a container's interface", () => {
 		const comparison = compareInterfaces(before, after);
 		expect(ids(comparison.changed.map((one) => one.container))).toEqual(["index"]);
 		expect(ids(comparison.unchanged)).toEqual(["store"]);
+	});
+});
+
+describe("the measures of several readings, side by side", () => {
+	test("each row holds one container's counts in the order of the readings", () => {
+		const after = content({
+			nodes: STORE,
+			edges: [edge("server", "index"), edge("index", "ledger"), edge("cron", "cache")],
+		});
+		const [row, ...others] = measureInterfaces([after, BEFORE]);
+		expect(others).toEqual([]);
+		expect(row?.container).toEqual({ id: "store", name: "Store", kind: "module" });
+		expect(row?.byState.map((on) => (on.holdsParts ? on.measures : null))).toEqual([
+			{ entryPoints: 2, hiddenParts: 1, callers: 2, outgoing: 0, passThrough: 1 },
+			{ entryPoints: 1, hiddenParts: 2, callers: 1, outgoing: 0, passThrough: 1 },
+		]);
+	});
+
+	test("a module with no parts on a reading holds no parts there, and is not zero entry points", () => {
+		const leaf = content({ nodes: [node("Store"), node("Server")], edges: [] });
+		const [row] = measureInterfaces([
+			leaf,
+			BEFORE,
+			content({ nodes: [node("Server")], edges: [] }),
+		]);
+		// Named as the first reading that has it as a container, though the first reading has it too.
+		expect(row?.container.id).toBe("store");
+		expect(row?.byState.map((on) => on.holdsParts)).toEqual([false, true, false]);
+		expect(row?.byState[0]).toEqual({ holdsParts: false });
+	});
+
+	test("rows follow the first reading, then the containers only a later one has", () => {
+		const other = content({
+			nodes: [node("Queue"), node("Topic", "queue"), node("Store"), node("Index", "store")],
+			edges: [],
+		});
+		expect(ids(measureInterfaces([BEFORE, other]).map((row) => row.container))).toEqual([
+			"store",
+			"queue",
+		]);
+	});
+
+	test("the parts behind the counts are named, and a pass-through entry point among them", () => {
+		const reading = content({
+			nodes: [node("Store"), node("Server"), node("Index", "store"), node("Ledger", "store")],
+			edges: [edge("server", "index"), edge("index", "ledger")],
+		});
+		const on = measureInterfaces([reading])[0]?.byState[0];
+		if (!on?.holdsParts) throw new Error("Store holds parts");
+		expect(ids(on.entryPoints)).toEqual(["index"]);
+		expect(ids(on.passThrough)).toEqual(["index"]);
 	});
 });

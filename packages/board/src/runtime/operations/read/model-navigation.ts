@@ -83,13 +83,14 @@ async function localReading(
 	if (options.legacyAddress !== undefined) return installedOriginal(vault, module, flow, options);
 	if (options.walkthrough !== undefined) return readPlayback(vault, module, flow, options);
 	const { readSelectedState } = await import("#runtime/operations/proposals/read.ts");
-	const selection = { state: options.state, against: options.against, compare: options.compare };
+	const comparison = {
+		against: options.against,
+		compare: options.compare,
+		beside: options.beside,
+	};
 	const reading = await (options.checkpoint === undefined
-		? readSelectedState(vault, module, flow, selection)
-		: readCheckpointModel(vault, options.checkpoint, module, flow, {
-				against: options.against,
-				compare: options.compare,
-			}));
+		? readSelectedState(vault, module, flow, { state: options.state, ...comparison })
+		: readCheckpointModel(vault, options.checkpoint, module, flow, comparison));
 	return selectBookmark(reading, options.bookmark);
 }
 

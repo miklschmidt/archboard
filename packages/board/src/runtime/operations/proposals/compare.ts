@@ -1,9 +1,11 @@
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import { compareVariants } from "#shared/rules/compare/variants.ts";
+import { compareInterfaces, measureInterfaces } from "#shared/rules/compare/interfaces.ts";
 import { subjectsOf, type Subject } from "#runtime/operations/proposals/subjects.ts";
 import { sameSemanticValue } from "#shared/rules/semantic-value.ts";
-type Comparison = NonNullable<ArchitectureModel["comparison"]>["subjects"][number];
+type ModelComparison = NonNullable<ArchitectureModel["comparison"]>;
+type Comparison = ModelComparison["subjects"][number];
 /**
  * Adapt canonical meaning to existing whole-state semantic comparison.
  * @param model One complete architecture.
@@ -166,12 +168,27 @@ function placementChanges(
 }
 
 /**
+ * Name one reading in the interface measures.
+ * @param model One complete architecture.
+ * @returns Its state, and its checkpoint when it is retained.
+ */
+function measuredState(
+	model: ArchitectureModel,
+): ModelComparison["interfaceMeasures"]["states"][number] {
+	const { selectedState: state, checkpoint } = model;
+	return {
+		state: state === null ? null : { id: state.id, name: state.name, lifecycle: state.lifecycle },
+		...(checkpoint === undefined ? {} : { checkpoint: checkpoint.id }),
+	};
+}
+
+/**
  * Compare stable subjects through the existing semantic rules.
  * @param before The complete comparison base.
  * @param after The complete selected architecture.
  * @returns Serializable standing and changed fields.
  */
-function comparisonOf(before: ArchitectureModel, after: ArchitectureModel): Comparison[] {
+function subjectChanges(before: ArchitectureModel, after: ArchitectureModel): Comparison[] {
 	const comparison = compareVariants(contentOf(before), contentOf(after));
 	const owners = [
 		{ kind: "module", subjects: comparison.nodes },
@@ -203,5 +220,28 @@ function comparisonOf(before: ArchitectureModel, after: ArchitectureModel): Comp
 		...collections,
 		...narratives,
 	];
+}
+
+/**
+ * Say what one state changed against another, interfaces first (ADR 0044).
+ * @param before The complete comparison base.
+ * @param after The complete selected architecture.
+ * @param beside Competing states whose measures go beside these two.
+ * @returns The derived sections of a comparison.
+ */
+function comparisonOf(
+	before: ArchitectureModel,
+	after: ArchitectureModel,
+	beside: readonly ArchitectureModel[] = [],
+): Pick<ModelComparison, "interfaceChanges" | "interfaceMeasures" | "subjects"> {
+	const readings = [after, before, ...beside];
+	return {
+		interfaceChanges: compareInterfaces(contentOf(before), contentOf(after)),
+		interfaceMeasures: {
+			states: readings.map(measuredState),
+			containers: measureInterfaces(readings.map(contentOf)),
+		},
+		subjects: subjectChanges(before, after),
+	};
 }
 export { comparisonOf, contentOf };

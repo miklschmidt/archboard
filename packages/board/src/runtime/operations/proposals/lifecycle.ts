@@ -68,7 +68,7 @@ function requireComparison(
 		reason: "explicit",
 		against: current.selectedState,
 		revision: current.revision,
-		subjects: comparisonOf(current, selected),
+		...comparisonOf(current, selected),
 	};
 	if (current.selectedState === null || !sameSemanticValue(comparison, expected))
 		throw new ArchiveError(

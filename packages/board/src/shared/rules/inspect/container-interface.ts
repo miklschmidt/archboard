@@ -28,7 +28,9 @@
 //   the pass-through rule compares two kinds, and only to ask whether they are
 //   the same.
 
+import type { z } from "zod";
 import type { SemanticEdge, SemanticNode, VariantContent } from "#shared/schemas/content.ts";
+import type { InterfaceCountsSchema } from "#shared/schemas/model-interfaces.ts";
 
 /** A child of a container that a relationship from outside it reaches. */
 interface EntryPoint {
@@ -85,13 +87,7 @@ interface ContainerInterface {
 type ContainerInspection = ContainerInterface | PartlessNode;
 
 /** The five counts, each of them read off one container on one variant. */
-interface InterfaceMeasures {
-	readonly entryPoints: number;
-	readonly hiddenParts: number;
-	readonly callers: number;
-	readonly outgoing: number;
-	readonly passThrough: number;
-}
+type InterfaceMeasures = z.infer<typeof InterfaceCountsSchema>;
 
 /**
  * The ids from a node up through its containers to the top, the node first.

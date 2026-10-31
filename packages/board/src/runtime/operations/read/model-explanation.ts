@@ -225,7 +225,7 @@ async function readRequestedArchitecture(
 	const { model: expectedModel, code, references, reference, ...intent } = input;
 	const parsed = StateSelectionSchema.safeParse(intent);
 	if (!parsed.success) return refuse("MODEL_INVALID", [], "The reading request is invalid.");
-	const { explain, ...selection } = parsed.data;
+	const { explain, beside: _beside, ...selection } = parsed.data;
 	const invalidSelection = selectionFailure(parsed.data);
 	if (invalidSelection !== undefined) return invalidSelection;
 	const model = await requestedReading(vault, module, flow, {
@@ -263,7 +263,7 @@ function previewSelectionFailure(selection: z.infer<typeof StateSelectionSchema>
 			"Select an exact qualified legacy state identity from the migration history.",
 		);
 	if (
-		[selection.against, selection.explain].some((value) => value !== undefined) ||
+		[selection.against, selection.beside, selection.explain].some((value) => value !== undefined) ||
 		selection.compare === true
 	)
 		return refuse(
@@ -283,7 +283,7 @@ function previewSelectionFailure(selection: z.infer<typeof StateSelectionSchema>
 function attachCapture(
 	model: ArchitectureModel,
 	explain: Request,
-	selection: z.infer<typeof StateSelectionSchema>,
+	selection: Omit<z.infer<typeof StateSelectionSchema>, "beside" | "explain">,
 ): ArchitectureModelRead {
 	return (
 		captureFailure(model, explain) ?? {

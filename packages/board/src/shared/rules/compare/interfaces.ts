@@ -28,37 +28,28 @@
 // point and caller is added or removed with it. Its interface changed even when
 // nothing outside reaches it, because a node with no children has no interface
 // and a container with no entry points has an empty one: two different facts.
+//
+// The same derivation puts the measures of several readings side by side, for
+// design it twice. That answer marks no change: it holds each reading's counts
+// beside the others, combines them into no score and ranks no reading.
 
+import type { z } from "zod";
 import type { SemanticNode, VariantContent } from "#shared/schemas/content.ts";
-import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
+import type {
+	InterfaceChangeSchema,
+	InterfaceChangesSchema,
+	MeasuredContainerSchema,
+} from "#shared/schemas/model-interfaces.ts";
+import { inspectContainer, interfaceMeasures } from "#shared/rules/inspect/container-interface.ts";
 
 /** What one container's interface changed between two variants. */
-interface InterfaceChange {
-	/** The container as the later variant has it, or as the earlier one has it when it is gone. */
-	readonly container: SemanticNode;
-	/** Whether the node has children on each variant. */
-	readonly holdsParts: { readonly before: boolean; readonly after: boolean };
-	/** Entry points of the later variant that are not children of the container on the earlier. */
-	readonly entryPointsAdded: readonly SemanticNode[];
-	/** Entry points of the earlier variant that are not children of the container on the later. */
-	readonly entryPointsRemoved: readonly SemanticNode[];
-	/** Children on both variants that a relationship from outside reaches only on the later. */
-	readonly becameEntryPoints: readonly SemanticNode[];
-	/** Children on both variants that a relationship from outside reaches only on the earlier. */
-	readonly becameHidden: readonly SemanticNode[];
-	/** Parts that call the container on the later variant and did not on the earlier. */
-	readonly callersGained: readonly SemanticNode[];
-	/** Parts that called the container on the earlier variant and do not on the later. */
-	readonly callersLost: readonly SemanticNode[];
-}
+type InterfaceChange = z.infer<typeof InterfaceChangeSchema>;
 
 /** The interface changes of every container either variant has. */
-interface InterfaceComparison {
-	/** The containers whose interface changed, in the order their variants list them. */
-	readonly changed: readonly InterfaceChange[];
-	/** The containers whose interface did not change, so that "no change" is a claim that can be read. */
-	readonly unchanged: readonly SemanticNode[];
-}
+type InterfaceComparison = z.infer<typeof InterfaceChangesSchema>;
+
+/** One container with its measures on every reading. */
+type MeasuredContainer = z.infer<typeof MeasuredContainerSchema>;
 
 /** What one variant says about one node as a container. */
 interface Side {
@@ -113,6 +104,15 @@ function idsOf(nodes: readonly SemanticNode[]): Set<string> {
 }
 
 /**
+ * One module named in an interface section.
+ * @param node The module.
+ * @returns Its identity, name and kind.
+ */
+function interfacePart(node: SemanticNode): InterfaceChange["container"] {
+	return { id: node.id, name: node.name, kind: node.kind };
+}
+
+/**
  * What one container's interface changed.
  * @param before The earlier variant's content.
  * @param after The later variant's content.
@@ -129,20 +129,20 @@ function interfaceChange(
 	const wasEntryIds = idsOf(was.entryPoints);
 	const isEntryIds = idsOf(is.entryPoints);
 	return {
-		container,
+		container: interfacePart(container),
 		holdsParts: { before: was.holdsParts, after: is.holdsParts },
-		entryPointsAdded: outside(is.entryPoints, was.children),
-		entryPointsRemoved: outside(was.entryPoints, is.children),
+		entryPointsAdded: outside(is.entryPoints, was.children).map(interfacePart),
+		entryPointsRemoved: outside(was.entryPoints, is.children).map(interfacePart),
 		becameEntryPoints: outside(
 			is.entryPoints.filter((node) => was.children.has(node.id)),
 			wasEntryIds,
-		),
+		).map(interfacePart),
 		becameHidden: outside(
 			was.entryPoints.filter((node) => is.children.has(node.id)),
 			isEntryIds,
-		),
-		callersGained: outside(is.callers, idsOf(was.callers)),
-		callersLost: outside(was.callers, idsOf(is.callers)),
+		).map(interfacePart),
+		callersGained: outside(is.callers, idsOf(was.callers)).map(interfacePart),
+		callersLost: outside(was.callers, idsOf(is.callers)).map(interfacePart),
 	};
 }
 
@@ -201,4 +201,42 @@ function compareInterfaces(before: VariantContent, after: VariantContent): Inter
 	};
 }
 
-export { type InterfaceChange, type InterfaceComparison, compareInterfaces };
+/**
+ * One module on one reading, measured.
+ * @param content The reading's whole content.
+ * @param id The module's id.
+ * @returns Its counts there, or the fact that it holds no parts there.
+ */
+function measuredOn(content: VariantContent, id: string): MeasuredContainer["byState"][number] {
+	const node = content.nodes.find((one) => one.id === id);
+	const inspection = node === undefined ? undefined : inspectContainer(content, node);
+	if (inspection?.holdsParts !== true) return { holdsParts: false };
+	return {
+		holdsParts: true,
+		measures: interfaceMeasures(inspection),
+		entryPoints: inspection.entryPoints.map((entry) => interfacePart(entry.node)),
+		passThrough: inspection.passThrough.map(interfacePart),
+	};
+}
+
+/**
+ * The interface measures of every container on every reading, side by side.
+ *
+ * A container is a module that has parts on any of them, by identity, named as
+ * the first reading that has it names it. Each row lists the readings in the
+ * order given. It sets no comparison status.
+ * @param readings The whole content of each reading.
+ * @returns One row for each container.
+ */
+function measureInterfaces(readings: readonly VariantContent[]): MeasuredContainer[] {
+	const containers = new Map<string, SemanticNode>();
+	for (const node of readings.flatMap(containersOf)) {
+		if (!containers.has(node.id)) containers.set(node.id, node);
+	}
+	return [...containers.values()].map((container) => ({
+		container: interfacePart(container),
+		byState: readings.map((content) => measuredOn(content, container.id)),
+	}));
+}
+
+export { type InterfaceChange, type InterfaceComparison, compareInterfaces, measureInterfaces };
