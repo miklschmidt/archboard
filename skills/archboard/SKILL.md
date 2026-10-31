@@ -71,7 +71,14 @@ A numbered layer or a tidy box is not a job. Use a configured group for a gather
 Connect each root to another root, or move it into the module that uses it.
 A call inside a container starts at the part that makes it.
 A reading that opens a module draws no line between it and a part that it holds, because the nesting already shows it.
+Prefer to end each relationship on a part that makes or answers the call, at the deepest level that the model states.
+A relationship that ends on a module with parts makes a caller and no entry point there, and its line stays on the frame.
+That end stays acceptable when no part stands for the call, such as a call from the module's own file.
+If two parts make the same kind of call, state two relationships.
+Add a part only for a seam that a caller would name and that an architect wants to see as a card.
+Do not add a part for a file only to give a line an end. Each new part makes the code check ask for every call of its file, and those lines make an import map.
 `archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART`.
+It reports an end on a module with parts as information with `RELATIONSHIP_ON_CONTAINER`.
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 

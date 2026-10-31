@@ -44,19 +44,6 @@
       "to": "vKEsyHFk/vKEsyHFk#5zIYNuw1"
     },
     {
-      "order": 38000,
-      "kind": "dependency",
-      "label": "dock and voice parts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
-        "symbol": "cn"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#yRl53uvR",
-      "to": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
-    },
-    {
       "order": 50000,
       "kind": "dependency",
       "label": "name the checkout in board context",

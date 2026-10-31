@@ -16,6 +16,19 @@
   "parent": "vKEsyHFk/SMjRfwN3#itWd9ux7",
   "outgoing": [
     {
+      "order": 15000,
+      "kind": "call",
+      "label": "encode the frames and the voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+        "symbol": "spawn"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#FCRYdY4h",
+      "to": "vKEsyHFk/vKEsyHFk#nugpFSIX"
+    },
+    {
       "order": 38000,
       "kind": "call",
       "description": "list its encoders; then frames on stdin, voice.wav beside",
@@ -31,19 +44,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#KIRE5kGi",
       "to": "vKEsyHFk/SMjRfwN3#PhFc1AJ9"
-    },
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
-        "symbol": "NIX_ARGV"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
-      "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
     }
   ]
 }

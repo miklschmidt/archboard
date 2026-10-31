@@ -1,0 +1,28 @@
+{
+  "order": 908000,
+  "name": "Stage view",
+  "kind": "ui",
+  "responsibility": "Lays out the picture, the sidebar and their states",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#IiRpIrVu",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "over the picture and the sidebar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx",
+        "symbol": "PeekProvider"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
+      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
+    }
+  ]
+}

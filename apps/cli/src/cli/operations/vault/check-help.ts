@@ -18,6 +18,7 @@ const CHECK_CODE_HELP = [
 	"Information, which never changes the exit status:",
 	"- RELATIONSHIP_BACKWARDS: a relationship with no anchor whose evidence runs only the other way.",
 	"- RELATIONSHIP_UNSUPPORTED: a relationship with no anchor whose evidence does not join its ends. Its missing field names the side with no evidence, code or infrastructure. The evidence list of each relationship kind in the vault configuration says what it accepts.",
+	"- RELATIONSHIP_ON_CONTAINER: a relationship with an end on a module with parts, which makes a caller and no entry point there. Prefer the part that makes or answers the call. The end is right when no part stands for the call.",
 	"- EXPOSED_UNUSED: the names that a module exposes and no file outside it uses.",
 	"- VARIABLE_PASSED_THROUGH: a Terraform or OpenTofu module that passes a variable unchanged to one argument of a resource.",
 	"- MODULE_SHALLOW: a Terraform or OpenTofu module that wraps one resource and passes every variable through.",

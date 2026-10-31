@@ -24,6 +24,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#5TtCOktb",
       "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    },
+    {
+      "order": 58000,
+      "kind": "dependency",
+      "label": "interpret rasterization receipts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+        "symbol": "SemanticRasterReceiptSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
+      "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
     }
   ]
 }

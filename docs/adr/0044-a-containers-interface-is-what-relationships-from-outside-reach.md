@@ -505,3 +505,47 @@ canonical read carries `interfaceChanges` and `interfaceMeasures` in its
 says them first, and `--beside` adds a competing state to the measures. These
 two sections are required parts of a comparison, so a forced adoption must copy
 them from a fresh read with no `--beside`.
+
+## Amendment of 2026-10-31: an author prefers the part that makes or answers a call
+
+TASK-559.28 sharpens the guidance above. The owner decided that a module cannot
+point at anything when the view is only that module. Its entry points can, and
+they need a card. A relationship to a container stays allowed, and it stays no
+warning, but an author now prefers the part. The end is not only for a
+whole-module dependency: it is acceptable for any call that no part stands for.
+
+The derivation does not change. A relationship that ends on the container
+itself still makes a caller and no entry point. What changes is what an author
+does with one. Measured on this repository before the repair, 70 of 114
+containers held such an end, and 9 read as no entry points although callers
+reached them.
+
+The author reads the source and moves the end to a part that already makes or
+answers the call, at the deepest level that the model states. If two parts make
+the same kind of call, the model states two relationships. The author adds a
+part only for an interface that a caller would name and that an architect wants
+to see as a card. Everything else stays on the frame. The interface line says
+`to module`, and the frame line stays drawn.
+
+`archboard check code` reports `RELATIONSHIP_ON_CONTAINER` as information on a
+relationship with an end on a container and neither end inside the other. The
+store cannot tell a whole-module dependency from a call that belongs on a
+child, so the finding is a signal and no write refuses it. It is information
+and not a warning, because many frame ends stay by design, and a warning for
+each one in the bell would hide real warnings.
+
+A first repair gave every file that makes a call a part. The owner rejected it.
+Measured on every reading, it took the lines drawn from 1,694 to 2,605, the
+total area from 148.5 M to 243.5 M, and the readings that pass the fit gate from
+107 to 94 of 115. `Canonical checkpoint operations` went from 3 parts and 23
+lines to 13 parts and 90 lines, and most of those lines were file imports named
+after symbols. A part that binds a file makes the code check ask for every call
+of that file, so the rule drew an import map, in which an architect cannot see a
+smell.
+
+The accepted repair moved 202 ends to existing parts, added 15 parts and 5
+relationships, and removed 28 relationships that repeated a kept statement. It
+took the lines drawn from 1,694 to 1,765, the total area from 148.5 M to 156.0 M,
+and the readings that pass the fit gate from 107 to 109 of 115. No module with
+parts reads as no entry points although callers reach it. Of the 1,074
+relationships, 339 keep a frame end.

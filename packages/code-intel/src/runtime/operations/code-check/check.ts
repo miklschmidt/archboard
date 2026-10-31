@@ -72,6 +72,7 @@ import {
 	judgeInterfaces,
 	type ModuleReadings,
 } from "#runtime/operations/code-check/interfaces/interfaces.ts";
+import { frameEndFindings } from "#runtime/operations/code-check/evidence/frame-ends.ts";
 import { lineagesOf } from "#runtime/operations/code-check/evidence/ownership.ts";
 import { kubernetesEvidenceOf } from "#runtime/operations/code-check/evidence/kubernetes-evidence.ts";
 import { partCodesOf } from "#runtime/operations/code-check/part-code.ts";
@@ -418,7 +419,11 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		facts: pass.facts,
 		modules: pass.modules,
 	});
-	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
+	pass.outcome.findings.push(
+		...judged.findings,
+		...frameEndFindings(read, lineages),
+		...interfaces.findings,
+	);
 	pass.outcome.skipped.push(...judged.skipped, ...interfaces.skipped);
 }
 

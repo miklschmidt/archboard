@@ -66,8 +66,10 @@ The model derives incoming relationships, so a relationship has one definition a
 _Avoid_: edge, arrow, link, connector, relation, line (that is what a picture draws)
 
 **Whole-module endpoint**:
-The end of a relationship that names a module and none of its parts.
+The end of a relationship that names a module with parts and none of those parts.
 It stays on the module's boundary, and a reading never invents an inner end for it.
+It makes a caller and no entry point, so `archboard check code` reports it as information with `RELATIONSHIP_ON_CONTAINER`.
+An author prefers the part that makes or answers the call, and the end stays acceptable when no part stands for the call.
 _Avoid_: port (that is where the renderer attaches a line)
 
 **Flow collection**:
@@ -224,7 +226,7 @@ _Avoid_: private part, internal part, implementation detail
 
 **Caller**:
 A module outside a container where a relationship into the container starts, whatever the relationship's kind.
-A relationship that ends on the container itself makes a caller and no entry point.
+A relationship that ends on the container itself makes a caller and no entry point, so an author moves it to the part that answers the call.
 _Avoid_: client, consumer, dependent, user (that is whoever reads the canvas)
 
 **Interface change**:
