@@ -60,19 +60,6 @@
       "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
-      "order": 70027,
-      "kind": "call",
-      "label": "report the server phase",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/service/service-routes.ts",
-        "symbol": "serverPhase"
-      },
-      "id": "vKEsyHFk#Lot1YAoW",
-      "to": "vKEsyHFk/6E6hL0Zk#Wcng1nxx"
-    },
-    {
       "order": 120000,
       "kind": "call",
       "label": "whether writes are admitted, and how many run",

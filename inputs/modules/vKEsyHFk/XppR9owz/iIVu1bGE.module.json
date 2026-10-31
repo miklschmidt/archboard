@@ -50,19 +50,6 @@
       "to": "vKEsyHFk/XppR9owz#PQcK5dF2"
     },
     {
-      "order": 47000,
-      "kind": "call",
-      "label": "a contract per command",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "modelClaimContract"
-      },
-      "id": "vKEsyHFk/XppR9owz#TVFLwNL6",
-      "to": "vKEsyHFk/XppR9owz#bLpk2XKU"
-    },
-    {
       "order": 48000,
       "kind": "call",
       "label": "its contract",

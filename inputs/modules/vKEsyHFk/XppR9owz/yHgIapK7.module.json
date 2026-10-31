@@ -50,23 +50,6 @@
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
-      "order": 6000,
-      "kind": "http",
-      "label": "JSON",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "fetch"
-      },
-      "id": "vKEsyHFk/XppR9owz#pB6BrbXY",
-      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
-    },
-    {
       "order": 12000,
       "kind": "http",
       "label": "health: is this the server of this checkout",
@@ -106,19 +89,6 @@
       "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     },
     {
-      "order": 76000,
-      "kind": "call",
-      "label": "address each request with its board, vault, and write claims",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "withVault"
-      },
-      "id": "vKEsyHFk/XppR9owz#AvVUuBuI",
-      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
-    },
-    {
       "order": 70056,
       "kind": "call",
       "label": "report local request failures",
@@ -130,6 +100,19 @@
       },
       "id": "vKEsyHFk#V2ti26xJ",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "address each request with its board, vault, and write claims",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "withVault"
+      },
+      "id": "vKEsyHFk/XppR9owz#AvVUuBuI",
+      "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
     }
   ]
 }

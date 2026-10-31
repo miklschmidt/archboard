@@ -34,19 +34,6 @@
       "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
     },
     {
-      "order": 13000,
-      "kind": "call",
-      "label": "queue a delegation behind the running turn",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
-        "symbol": "add"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#uK6QAuru",
-      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
-    },
-    {
       "order": 16000,
       "kind": "rpc",
       "label": "turn/start when idle, turn/steer",
@@ -100,32 +87,6 @@
         "symbol": "stage"
       },
       "id": "vKEsyHFk/SJ2JMVyz#iK5V95pN",
-      "to": "vKEsyHFk/9ncuT5DP#8CuNvBuG"
-    },
-    {
-      "order": 77000,
-      "kind": "call",
-      "label": "classify and recheck the captured links",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
-        "symbol": "classify"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#aLUB44Jp",
-      "to": "vKEsyHFk/9ncuT5DP#75E6lJHK"
-    },
-    {
-      "order": 78000,
-      "kind": "call",
-      "label": "stage and follow the operation",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/turns.ts",
-        "symbol": "stage"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#0ULeTEej",
       "to": "vKEsyHFk/9ncuT5DP#8CuNvBuG"
     }
   ]

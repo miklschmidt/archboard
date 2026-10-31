@@ -23,19 +23,6 @@
   ],
   "outgoing": [
     {
-      "order": 38000,
-      "kind": "dependency",
-      "label": "domain instructions for the workhorse profile",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/services/host/archboard.ts",
-        "symbol": "WORKHORSE_DOMAIN_INSTRUCTIONS"
-      },
-      "id": "vKEsyHFk/SJ2JMVyz#D4d4rLZt",
-      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
-    },
-    {
       "order": 40000,
       "kind": "dependency",
       "label": "retain the shared link reasons and refusal order",
