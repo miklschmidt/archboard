@@ -23,6 +23,59 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
       "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
+    },
+    {
+      "order": 26000,
+      "kind": "event",
+      "label": "voice as a recording in its language; each step shown",
+      "description": "The page asks the server's agent for voice narrating this walkthrough as a recording in the language it was opened with, and reports each step it shows, which the server tells the voice model as it does a step chosen by hand. Only a recording carries a language: the voice is told to speak only that language, whatever language a step is written in.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "WalkthroughRecorder.start"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#4SigiIMB",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+    },
+    {
+      "order": 29000,
+      "kind": "call",
+      "label": "Talk as a recording, in its own tab session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "talk"
+      },
+      "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
+      "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+    },
+    {
+      "order": 31000,
+      "kind": "data",
+      "label": "the step to show",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "recordedStep"
+      },
+      "id": "vKEsyHFk/yejBBUFY#Gxh1Pbx3",
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    },
+    {
+      "order": 40000,
+      "kind": "event",
+      "label": "each change of the voice's transcript",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "subscribe"
+      },
+      "id": "vKEsyHFk/yejBBUFY#pNlMVRMt",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
     }
   ]
 }

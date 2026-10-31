@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/application/workspace-port.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "schemaVersion": 1,
   "id": "vKEsyHFk#fLxtu2P4",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "to": "vKEsyHFk#gaC5nahN"
+    }
+  ]
 }

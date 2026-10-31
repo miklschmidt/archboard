@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/architecture-model"
   },
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "schemaVersion": 1,
   "id": "vKEsyHFk#guvtYApo",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 67000,
+      "kind": "call",
+      "label": "Fetch the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 105000,
+      "kind": "http",
+      "label": "Read the canonical model",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
+        "symbol": "readModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#NcnDdoyZ",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    }
+  ]
 }

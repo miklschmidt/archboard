@@ -7,19 +7,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
   "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
-  "outgoing": [
-    {
-      "order": 70031,
-      "kind": "call",
-      "label": "identify the captured picture",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/local-pictures.ts",
-        "symbol": "sameBoardName"
-      },
-      "id": "vKEsyHFk#J52Bs9ep",
-      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
-    }
-  ]
+  "outgoing": []
 }

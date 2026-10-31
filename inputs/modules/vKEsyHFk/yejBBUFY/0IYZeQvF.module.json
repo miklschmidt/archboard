@@ -25,19 +25,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 79000,
-      "kind": "call",
-      "label": "activate selected code",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx",
-        "symbol": "BoundCode"
-      },
-      "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
-    }
-  ]
+  "outgoing": []
 }
