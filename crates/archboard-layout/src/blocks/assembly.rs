@@ -56,6 +56,9 @@ pub(crate) struct Placed {
     pub regions: Vec<PlacedArea>,
     pub edges: Vec<PlacedLine>,
     pub titles: Vec<Title>,
+    /// The drawing as routed, before contraction took its empty bands: a planned drawing
+    /// keeps it for the words that its lines take back. It is never serialized.
+    pub routed: Option<std::rc::Rc<Placed>>,
 }
 
 /// A box as the drawing spells it.
@@ -531,6 +534,7 @@ impl<'a> Assembly<'a> {
             regions,
             titles: self.titles(),
             edges,
+            routed: None,
         }
     }
 

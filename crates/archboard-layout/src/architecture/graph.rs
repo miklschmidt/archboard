@@ -174,6 +174,9 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
     ));
     let traffic = if edge.traffic.is_some() { "on" } else { "off" };
     options.push(("archboard.relationship.traffic".to_owned(), J::str(traffic)));
+    if edge.two_way {
+        options.push(("archboard.relationship.two-way".to_owned(), J::str("true")));
+    }
     if let Some(standing) = standing {
         options.push((
             "archboard.relationship.standing".to_owned(),

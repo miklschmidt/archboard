@@ -27,6 +27,7 @@ mod reading;
 mod runs;
 mod shape;
 mod topology;
+mod words;
 
 fn relationships(graph: &crate::graph::Node) -> usize {
     graph.edges.as_deref().unwrap_or_default().len()
@@ -74,6 +75,8 @@ impl From<&str> for Refused {
         message.to_owned().into()
     }
 }
+
+pub(super) use words::{dress, without_trunk_words};
 
 mod fixed;
 /// Rank guarded candidates against one fixed reference, so an intermediate

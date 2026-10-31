@@ -70,7 +70,8 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 
 5. A door is a card with a name only. If exactly one part reaches a door, the line ends on that part.
    Otherwise the line ends on the frame, so a line on the frame means several parts. Selecting a door lists
-   its real endpoints, grouped by child.
+   its real endpoints, grouped by child. From three lines of one kind to one door, each way, the lines share a
+   trunk, and each line wears its words on its own branch, beside the part that owns it.
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
    Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
    caption states the count, and one control shows every line.

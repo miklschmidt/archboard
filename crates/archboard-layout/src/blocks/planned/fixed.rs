@@ -27,15 +27,32 @@ pub(super) fn route(
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
+    let routed = Placed {
+        edges: shape.routes.clone(),
+        ..(*shape.drawing).clone()
+    };
+    let mut drawing = settled(&model, &topology, &mut shape)?;
+    drawing.routed = Some(std::rc::Rc::new(routed));
+    Ok(drawing)
+}
+
+/// Take a routed shape's empty bands and guard what is left.
+pub(super) fn settled(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &mut Shape,
+) -> Result<Placed, super::Refused> {
     for clear in [8.0, 12.0, 16.0, 24.0, 32.0] {
-        if let Some(drawing) = super::compact::drawing(&shape, clear)
-            && let Ok(mut compact) = placement(&model, drawing)
-            && let Ok(drawing) = finish(&model, &topology, &mut compact)
+        if let Some(drawing) = super::compact::drawing(shape, clear)
+            && let Ok(mut compact) = placement(model, drawing)
         {
-            return Ok(drawing);
+            compact.trunk = std::rc::Rc::clone(&shape.trunk);
+            if let Ok(drawing) = finish(model, topology, &mut compact) {
+                return Ok(drawing);
+            }
         }
     }
-    finish(&model, &topology, &mut shape)
+    finish(model, topology, shape)
 }
 
 /// Place each label on the final runs and guard every emitted part of the drawing.
@@ -162,7 +179,7 @@ fn scope_bounds(model: &Model<'_>, scope: &Scope<'_>, drawing: &Placed) -> Optio
     })
 }
 
-fn placement(model: &Model<'_>, drawing: Placed) -> Result<Shape, String> {
+pub(super) fn placement(model: &Model<'_>, drawing: Placed) -> Result<Shape, String> {
     let mut shape = Shape::new(drawing);
     for (index, endpoint) in model.endpoints.iter().enumerate() {
         let (at, tab) = endpoint_box(endpoint, &shape.drawing)?;
@@ -419,6 +436,7 @@ mod tests {
             regions: vec![],
             edges: vec![],
             titles: vec![],
+            routed: None,
         };
         let result = route(&graph, drawing, &super::super::selection::ORDERS).unwrap();
         let left = &result.edges.iter().find(|e| e.id == "ab").unwrap().points;

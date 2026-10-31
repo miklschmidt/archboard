@@ -7,7 +7,7 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
-import { busLines, drawnEnds, joinedLines } from "#shared/rules/model-lines.ts";
+import { drawnEnds, joinedLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -463,7 +463,6 @@ function drawingContent(
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
 	const [open] = framing.parents;
 	const childrenOf = containment(complete);
-	const onTrunk = busLines(connections, doors);
 	return {
 		nodes: complete.nodes
 			.filter((node) => visible.has(node.id))
@@ -478,9 +477,7 @@ function drawingContent(
 			}),
 		edges: connections.map((connection) => {
 			const { anchor: _anchor, description: _description, ...line } = connection.line;
-			if (!onTrunk.has(connection)) return line;
-			const { label: _label, ...quiet } = line;
-			return quiet;
+			return line;
 		}),
 		flows: [],
 		walkthroughs: [],
