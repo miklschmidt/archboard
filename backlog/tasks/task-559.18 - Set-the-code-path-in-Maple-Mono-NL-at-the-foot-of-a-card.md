@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T00:24:00Z'
-updated_date: '2026-10-31T06:19:00Z'
+updated_date: '2026-10-31T06:35:00Z'
 labels:
   - renderer
   - frontend
@@ -51,4 +51,6 @@ Owner agreed: subset Maple Mono NL to the characters the product needs. It is 24
 One mono family remains. The DM Mono files left the repository, and packages/renderer/assets/fonts/subset-mono.sh reproduces the subsets. Every drawing stays under 500 ms: the slowest takes 467 ms.
 
 Gate on the final code: bun check:all exit 0 after 144 s, 21 of 21 tasks, 44 of 44 browser files, drawn-glyphs included. An earlier run failed once in tests/system/process-contracts/codex-realtime.test.ts at load 43. That test passed 5 of 5 alone, and no file on its path changed.
+
+Merged to integrate/pr19 at 6539189f3. Open: owner by eye.
 <!-- SECTION:NOTES:END -->

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T00:14:00Z'
-updated_date: '2026-10-31T06:08:00Z'
+updated_date: '2026-10-31T06:35:00Z'
 labels:
   - renderer
   - frontend
@@ -52,4 +52,6 @@ Sweep of the final corpus: 1165 cards, every card has far words, none overflows 
 Gate 2 on the final code: 83 readings of at most 18 lines, worst name 11.93 px and worst path 8.99 px. One reading misses, Codex session, by 0.07 px at landing 0.596.
 Criterion 2 stays open for doors: the layout reserves a door at 20 far units, because F is known only after layout, so a door's words stand at about 7 px at the lowest landing of 0.352. The edge tab scales with the picture inside its reserved room.
 Corpus screenshots: /tmp/integrate/slice16/final-*-far.png. Tab close views: /tmp/integrate/slice16/tab-*.png for architecture, sequence, flowchart and legacy frames, near and far, both themes.
+
+Merged to integrate/pr19 at 6539189f3. Open: criterion 2, a door's words are about 7 px at the lowest landing, because the layout reserves a door before the far scale is known.
 <!-- SECTION:NOTES:END -->

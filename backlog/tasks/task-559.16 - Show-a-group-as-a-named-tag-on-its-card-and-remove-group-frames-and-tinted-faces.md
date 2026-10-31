@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T00:13:00Z'
-updated_date: '2026-10-31T06:08:00Z'
+updated_date: '2026-10-31T06:35:00Z'
 labels:
   - renderer
   - frontend
@@ -56,4 +56,6 @@ Sequence participants and flowchart boxes show no tag: a column head and a step 
 Tag ink on the owner's recipe reaches APCA Lc 37 to 83 over the two gradient stops. The weakest is indigo on its lower stop. That is under the 60 of content text, and the test holds the floor of 30.
 Region placement stays dormant in crates/archboard-layout/src/blocks and track: no reading reaches it. Removing it is about 425 references, so it stays out of this change.
 Final measures: 103 of 115 readings land at 0.6 or more (105 before), total area 148.9 M (135.9 M before), slowest drawing 467 ms.
+
+Merged to integrate/pr19 with .17 and .18, gate 21 of 21 in 166 s, server 17842 restarted. Every model merged: 106 of 115 readings at 0.6 or more, 1 below 0.4 (Workspace packages 0.20), area 186.0 M, slowest drawing 475 ms, 1765 lines. Open: owner by eye, and the tag ink reaches only APCA Lc 37 to 83 over its gradient.
 <!-- SECTION:NOTES:END -->

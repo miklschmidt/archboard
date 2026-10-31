@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T06:08:00Z'
+updated_date: '2026-10-31T06:35:00Z'
 labels:
   - frontend
 dependencies:
@@ -86,4 +86,6 @@ Design pass beyond the brief: the legend is a tray (bg-raised, shadow-edge-up), 
 Evidence on the final code: check:all exit 0 after 212 s, 21 of 21 tasks, 45 of 45 browser files, 5336 pass, 0 fail. Corpus sweep at 1920 by 1080 on 112 readings: whole legend on screen on all, tallest 289 px, at least 714 px left for the subject, no clipped name, nothing over the column edge. Screenshots in /tmp/integrate/slice19b/.
 
 Criterion 4 closes on feat/reader-cards. A module's picture lands whole at the scale that fits the room, with a ceiling of 1, and every one of the 115 readings fits: the lowest landing is 0.352. Before, 10 readings stopped at the 0.6 floor. A selection still never refits. A sequence or a flowchart keeps its landing at 0.6 on the head of its frame, because a tall flowchart whole lands at about 0.19 and cannot be read. Transitions are unchanged.
+
+Merged to integrate/pr19 at 6539189f3. Criterion 4 closed by landing whole.
 <!-- SECTION:NOTES:END -->
