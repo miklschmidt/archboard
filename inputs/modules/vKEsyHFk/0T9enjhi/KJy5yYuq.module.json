@@ -57,7 +57,7 @@
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#HuWEB6r9",
-      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      "to": "vKEsyHFk#YxSPoGVG"
     },
     {
       "order": 194000,
@@ -70,7 +70,7 @@
         "symbol": "proposalBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#26VVxTms",
-      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      "to": "vKEsyHFk#jW34VeDK"
     },
     {
       "order": 195000,
@@ -109,7 +109,7 @@
         "symbol": "retainBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#pOm4j7QN",
-      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
+      "to": "vKEsyHFk#p631X5Hn"
     },
     {
       "order": 198000,
@@ -122,7 +122,7 @@
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
-      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+      "to": "vKEsyHFk#DDYjjcyl"
     },
     {
       "order": 199000,
@@ -175,6 +175,45 @@
       },
       "id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
       "to": "vKEsyHFk/0T9enjhi#Jx4O72DO"
+    },
+    {
+      "order": 101090,
+      "kind": "call",
+      "label": "walkthroughDependencies",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "symbol": "walkthroughDependencies"
+      },
+      "to": "vKEsyHFk#33V6sZtB",
+      "id": "vKEsyHFk#mGv9Ab8m"
+    },
+    {
+      "order": 101100,
+      "kind": "call",
+      "label": "retainedStates",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/lifecycle.ts",
+        "symbol": "retainedStates"
+      },
+      "to": "vKEsyHFk#4oqzZBp2",
+      "id": "vKEsyHFk#t6bwc9fd"
+    },
+    {
+      "order": 101110,
+      "kind": "call",
+      "label": "historyResult",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/proposals/read.ts",
+        "symbol": "historyResult"
+      },
+      "to": "vKEsyHFk#4czF1NpR",
+      "id": "vKEsyHFk#1KIQNQy3"
     }
   ]
 }

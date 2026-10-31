@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/history/retained-module.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "schemaVersion": 1,
   "id": "vKEsyHFk#S4kpyzjM",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "outgoing": [
+    {
+      "order": 100950,
+      "kind": "call",
+      "label": "decodeModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retained-module.ts",
+        "symbol": "decodeModel"
+      },
+      "to": "vKEsyHFk#YxSPoGVG",
+      "id": "vKEsyHFk#X1wZyTb8"
+    },
+    {
+      "order": 100960,
+      "kind": "call",
+      "label": "readCheckpointInputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retained-module.ts",
+        "symbol": "readCheckpointInputs"
+      },
+      "to": "vKEsyHFk#p631X5Hn",
+      "id": "vKEsyHFk#nAzDCcjH"
+    },
+    {
+      "order": 100970,
+      "kind": "call",
+      "label": "readingArchive",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retained-module.ts",
+        "symbol": "readingArchive"
+      },
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
+      "id": "vKEsyHFk#sXdAJ6Mg"
+    }
+  ]
 }
