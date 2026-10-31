@@ -1,11 +1,11 @@
 ---
 id: TASK-559.09
 title: Remove the dead space that the content rules leave
-status: To Do
+status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:45:00Z'
-updated_date: '2026-10-30T19:52:00Z'
+updated_date: '2026-10-31T03:28:00Z'
 labels:
   - renderer
 dependencies:
@@ -29,3 +29,9 @@ The owner saw obscene dead space in Blocks. The content rules remove most of it,
 - [ ] #2 Names, paths, arrows and essential labels stay readable, and no reading regresses on a guard
 - [ ] #3 The grading corpus of Gate 6 passes in the real pane
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Compaction landed through feat/blocks-dead-space: Gate 1 113 of 115 at 135.9 M from 94 of 115 at 192.9 M, frames below fill 0.25 fell from 42 to 5. Gate 4 passes, Stock API 0.708.
+<!-- SECTION:NOTES:END -->
