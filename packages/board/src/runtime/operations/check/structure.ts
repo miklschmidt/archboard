@@ -2,9 +2,11 @@
 // read its shape: a container that gathers nothing, a root that nothing connects,
 // and a relationship between a module and a part that it holds. A shape is a
 // signal and never proves that a module has no job, so these are warnings and no
-// write reads them. No rule reads a name, a count or a folder. The fourth rule is
-// an error: a current flow with no summary breaks what every write of a flow now
-// keeps, and a reader can still read it.
+// write reads them. No rule reads a name, a count or a folder. Two rules are
+// errors. A current flow with no summary breaks what every write of a flow now
+// keeps. A relationship that ends on a module with parts says that the frame acts,
+// and a module cannot point at anything, so it hides the part that does (ADR 0044).
+// A reader can still read both.
 
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import { containersOf } from "#shared/rules/scope.ts";
@@ -115,6 +117,25 @@ function unconnectedRoots(
 }
 
 /**
+ * The modules with parts that a relationship ends on.
+ * @param relationship The relationship.
+ * @param modules The modules of the state.
+ * @param containers The modules with parts.
+ * @returns Their names, one or two.
+ */
+function framedEnds(
+	relationship: ModelStructure["relationships"][number],
+	modules: ModelStructure["modules"],
+	containers: ReadonlySet<string>,
+): string {
+	const ends = new Set([relationship.from, relationship.to]);
+	return modules
+		.filter(({ id }) => ends.has(id) && containers.has(id))
+		.map(({ name }) => name)
+		.join(" and ");
+}
+
+/**
  * Warn about a relationship between a module and a part that it holds, at any depth. The nesting
  * already shows that, so a reading that opens the module draws no line for it. A call inside a
  * container starts at the part that makes it (ADR 0052).
@@ -141,6 +162,38 @@ function linesToOwnParts(
 				subject: subject(relationship),
 				message:
 					"It joins a module and a part inside it, which the nesting already shows, so a reading that opens the module draws no line for it. Read the source, then start or end it at the part that makes or answers the call: an edit-relationship change with source or set.to. If the source shows no such call, remove it.",
+			})),
+	);
+}
+
+/**
+ * Name each relationship with an end on a module with parts, unless one end holds the other, which
+ * `linesToOwnParts` names. The code decides which part owns the end, so no write refuses it.
+ * @param model The modules and relationships of one state.
+ * @param parents Each contained module's parent.
+ * @returns One error for each such relationship, on the file of the module that owns it.
+ */
+function endsOnContainers(
+	model: ModelStructure,
+	parents: ReadonlyMap<string, string>,
+): VaultDiagnostic[] {
+	const containers = new Set(parents.values());
+	const framed = model.relationships.filter(
+		({ from, to }) =>
+			(containers.has(from) || containers.has(to)) &&
+			!containersOf(parents, to).includes(from) &&
+			!containersOf(parents, from).includes(to),
+	);
+	const subject = edgeSubjects({ nodes: model.modules });
+	return model.modules.flatMap((module) =>
+		framed
+			.filter(({ from }) => from === module.id)
+			.map((relationship) => ({
+				severity: "error" as const,
+				code: "RELATIONSHIP_ON_CONTAINER",
+				file: module.file,
+				subject: subject(relationship),
+				message: `It ends on ${framedEnds(relationship, model.modules, containers)}, and a module with parts cannot act for them. Read the code that its anchor names, then end it on the part that owns that code: an edit-relationship change with source or set.to. If no part owns the code, add one for what the module does at this seam.`,
 			})),
 	);
 }
@@ -180,6 +233,7 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 		...passThroughContainers(model, parents),
 		...unconnectedRoots(model, parents),
 		...linesToOwnParts(model, parents),
+		...endsOnContainers(model, parents),
 		...unexplainedFlows(model),
 	];
 }

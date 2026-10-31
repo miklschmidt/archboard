@@ -48,9 +48,6 @@
 // a warning on a document reference of a variant the check reads whose file is
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
-// TASK-559.28 adds `RELATIONSHIP_ON_CONTAINER`, information on a relationship
-// with an end on a module with parts, which makes a caller and no entry point
-// there (ADR 0044).
 
 import { ArchitectureModelReadSchema } from "@archboard/board/model";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";

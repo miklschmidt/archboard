@@ -186,10 +186,9 @@ afterAll(() => {
 });
 
 test("anchors, binding symbols and the relationships between parts bound to Objective-C files are judged by the Objective-C adapter", () => {
-	// An end on a module with parts reads no code, and relationships.test.ts owns it.
-	const found = outcome.findings
-		.filter((each) => each.code !== "RELATIONSHIP_ON_CONTAINER")
-		.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
+	const found = outcome.findings.map(
+		(each) => `${each.code} ${each.subject?.id} ${each.severity}`,
+	);
 	expect(found.toSorted()).toEqual(
 		[
 			"ANCHOR_SYMBOL_MISSING e2 warning",
