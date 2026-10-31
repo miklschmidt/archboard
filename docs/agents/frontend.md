@@ -194,10 +194,11 @@ Each behavior keeps its existing public boundary and one state owner.
   They name the reading that they belong to. Its state, checkpoint, and revision must match the inspected architecture.
   Remembered code findings also match the model identity, state, and exact revision.
   The existing warning control, diagram marks, and evidence panel show only that matching pass.
-  A person asks for a bound canonical module's local Git history through the action in its history region.
-  A selection reads no history, and neither does a timer, a focus change, or a reconnect.
-  The response must match the inspected model, state, checkpoint, and revision, and later selections reuse it.
-  A source failure remains explicit, and the same action reads again.
+  A selection of a bound canonical module reads the model's local Git history, and so does `Measures` when it opens (ADR 0045).
+  One answer holds every module, so a later selection reads nothing, and neither does a timer, a focus change, or a reconnect.
+  The response must match the inspected model, state, checkpoint, and revision. A new revision reads again, and `Refresh` reads a moved HEAD.
+  The read takes no signal, because a selection that moves on must not stop a read that the next selection joins.
+  A source failure remains explicit, and its action reads again.
   A foreign activation requires the returned address to match the resolved link the reader selected.
   A change of source context cancels its pending activation.
   An unavailable base stays explicit, and the selected reading supplies its own complete interface facts.
@@ -385,6 +386,10 @@ The pane header slot takes the crumbs, the code path, the state chip, and `Diagr
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
 A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
+`ModelMeasures` is the `Measures` destination. It draws the accepted scene, and `rules/architecture-model/module-measures.ts` joins each module's interface, which needs no server, with what the one locality answer says of it.
+That rule also holds the one order of each measure.
+A row selects through `findModule`, the path of Find and of a count in the interface line.
+A closed tab draws nothing, so `ReadingColumn` keeps the sort.
 
 Find reads the complete selected model, including modules outside the visible scope.
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.

@@ -23,9 +23,9 @@ interface HistoryProps {
 }
 
 /**
- * A bound canonical module exposes source history without starting a code check.
+ * A bound canonical module shows its source history without starting a code check.
  * @param props The module, its coherent architecture, and the selection action.
- * @returns Its local Git evidence, or no history action for an unbound or original-only module.
+ * @returns Its local Git evidence, or nothing for an unbound or original-only module.
  */
 function ModelHistory(props: HistoryProps): JSX.Element | null {
 	if (props.module.binding === undefined || props.model.migrationPreview !== undefined) return null;
@@ -46,15 +46,9 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 	const look = useMemo(() => kindLookOf(props.model.policy, new Map()), [props.model.policy]);
 	return (
 		<div data-slot="semantic-inspector-history" className="flex max-w-[72ch] flex-col gap-4">
-			<Button
-				variant="outline"
-				className="self-start"
-				onClick={read}
-				disabled={query.isFetching}
-				data-slot="module-read-history"
-			>
-				{query.data === undefined ? "Read local Git history" : "Refresh"}
-			</Button>
+			{!query.isPending && (
+				<ReadAgain failed={query.error !== null} busy={query.isFetching} onRead={read} />
+			)}
 			{query.isFetching && (
 				<output className="text-body text-muted-foreground">Reading Git history…</output>
 			)}
@@ -73,6 +67,32 @@ function HistoryReading(props: HistoryProps): JSX.Element {
 				/>
 			)}
 		</div>
+	);
+}
+
+/**
+ * The action that reads the history again, which a read needs only once it has answered.
+ * @param props What the last read did and what the action does.
+ * @param props.failed Whether the last read failed.
+ * @param props.busy Whether a read runs.
+ * @param props.onRead Read.
+ * @returns The action.
+ */
+function ReadAgain(props: {
+	readonly failed: boolean;
+	readonly busy: boolean;
+	readonly onRead: () => void;
+}): JSX.Element {
+	return (
+		<Button
+			variant="outline"
+			className="self-start"
+			onClick={props.onRead}
+			disabled={props.busy}
+			data-slot="module-read-history"
+		>
+			{props.failed ? "Read again" : "Refresh"}
+		</Button>
 	);
 }
 

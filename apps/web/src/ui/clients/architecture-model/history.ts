@@ -9,10 +9,14 @@ import {
 } from "#ui/clients/architecture-model/queries.ts";
 
 /**
- * Read the existing Git analysis for the exact canonical architecture on screen.
+ * Read the existing Git analysis for the exact canonical architecture on screen. The first read of
+ * a revision walks a year of Git, and its one answer holds every module, so a consumer that mounts
+ * shares it and nothing reads again until the revision moves or a person asks. A failed read waits
+ * for a person too. The read takes no signal: a selection that moves on drops its subscriber
+ * before the next one mounts, and letting go must not stop a read that the next one joins.
  * @param vault The explicitly addressed vault.
  * @param model The coherent model, state, and optional checkpoint.
- * @returns One cached locality request, which runs only when a person asks for it.
+ * @returns One cached locality request.
  */
 function modelHistoryQuery(
 	vault: string,
@@ -57,8 +61,11 @@ function modelHistoryQuery(
 				);
 			return result;
 		},
-		enabled: false,
+		staleTime: Number.POSITIVE_INFINITY,
 		retry: false,
+		retryOnMount: false,
+		refetchOnReconnect: false,
+		refetchOnWindowFocus: false,
 	});
 }
 

@@ -5,9 +5,12 @@ import type { Wiring } from "#ui/rules/semantic-board-canvas/board/connections.t
 type Interface = Extract<ModuleInterface, { readonly holdsParts: true }>;
 type Parents = ReadonlyMap<string, string | undefined>;
 
+/** What the interface line counts. */
+type InterfaceKey = "entryPoints" | "hiddenParts" | "callers" | "wholeModule" | "passThrough";
+
 /** One count of a module's interface, and what it selects on the module's own picture. */
 interface InterfaceCount {
-	readonly key: string;
+	readonly key: InterfaceKey;
 	readonly count: number;
 	/** What the count counts, in words. */
 	readonly label: string;
@@ -53,7 +56,7 @@ function interfaceCounts(inspection: Interface, nodes: Wiring["nodes"]): readonl
 	const parents = new Map(nodes.map(({ id, parent }) => [id, parent]));
 	const whole = [...new Set(onContainer.map((edge) => edge.from))];
 	const callerIds = callers.map(({ node }) => node.id);
-	const counts = [
+	const counts: readonly InterfaceCount[] = [
 		{
 			key: "entryPoints",
 			count: measures.entryPoints,
@@ -88,4 +91,4 @@ function interfaceCounts(inspection: Interface, nodes: Wiring["nodes"]): readonl
 	return counts.filter(({ key, count }) => key !== "wholeModule" || count > 0);
 }
 
-export { interfaceCounts, type Interface, type InterfaceCount };
+export { interfaceCounts, type Interface, type InterfaceCount, type InterfaceKey };

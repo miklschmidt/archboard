@@ -17,9 +17,9 @@ The left column lists where to go. The middle shows it. The right column explain
 what the marks of the picture mean.
 
 - Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
-  `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` list the whole model and show its count,
-  so a list here never changes under a reader. A proposal read against its base adds `Changes`, with its count and
-  the reader's position.
+  `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk. `Flows` and `Walkthroughs` list the whole model and
+  show its count, so a list here never changes under a reader. Five tabs do not fit the column, so `Measures` starts
+  a second row. A proposal read against its base adds `Changes` to that row, with its count and the reader's position.
 - Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
@@ -47,6 +47,15 @@ what the marks of the picture mean.
   adds `to module`, their count, as a fact and not a warning. Otherwise a module that callers reach only as a whole
   would read as having nothing to offer. The heading's `Open in About` opens the Interface section of About, which a
   selected module with parts now also has, and which names its hidden parts.
+- Measures: the interface line answers for a module that a reader already picked, so `Measures` answers where to
+  look across the whole model (TASK-559.29). The list holds every module with its entries, hidden parts, callers,
+  `to module` and pass-through entry points, its commits and its unjoined pairs. One sort control orders the list by
+  one count, the most first. A tie goes by name, and a module with no such measure comes last, because no count is
+  not a count of none. A row selects its module on its picture through the same path as a count in the interface
+  line, opening what it must. The interface counts need no server and show at once, and the history counts arrive
+  with the read. A module the read skipped says why, a failed read says what happened and offers `Read again`, and a
+  model with no bindings says that history needs them. Counts only: no score, no color, no rank and no mark on the
+  picture (ADR 0044).
 - Trace: with one module selected, the head of `Sends to` holds `Trace onward` and the head of `Receives from` holds
   `Trace back`, each with how many cards it reaches (TASK-559.22). Each further hop lights more faintly, nothing is
   written, and a trace goes with the pick. The walk covers the whole model, because a path can leave through one door

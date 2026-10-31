@@ -130,8 +130,8 @@ async function mountHistory(initial = "h") {
 	};
 }
 
-/** Press the region's read action, as a person does. */
-async function readHistory(): Promise<void> {
+/** Press the region's action, which reads again, as a person does. */
+async function readAgain(): Promise<void> {
 	await act(async () => {
 		fireEvent.click(document.querySelector('[data-slot="module-read-history"]')!);
 	});
@@ -272,21 +272,17 @@ function partnerRows(): HTMLElement[] {
 	return [...document.querySelectorAll<HTMLElement>("[data-slot='semantic-inspector-partner']")];
 }
 
-test("a selection reads no history until a person asks for it", async () => {
+test("a selection reads its history with no action, and the next selection asks nothing", async () => {
 	const pane = await mountHistory();
-	await pane.choose("q");
-	expect(requested).toHaveLength(0);
-	expect(region("semantic-inspector-commits")).toBeNull();
-	await readHistory();
-	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("5"));
-	await pane.choose("h");
 	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("6"));
+	expect(requested).toHaveLength(1);
+	await pane.choose("q");
+	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("5"));
 	expect(requested).toHaveLength(1);
 });
 
 test("canonical history shows bounded commits and exact coupled-subject callbacks", async () => {
 	await mountHistory();
-	await readHistory();
 	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("6"));
 	expect(requested[0]?.searchParams.get("vault")).toBe(VAULT);
 	expect(requested[0]?.searchParams.get("state")).toBe("Current");
@@ -324,7 +320,6 @@ test("unbound modules ask nothing while skipped and unchanged modules remain dis
 	expect(document.querySelector('[data-slot="semantic-inspector-history"]')).toBeNull();
 	expect(requested).toHaveLength(0);
 	await pane.choose("orders");
-	await readHistory();
 	await waitFor(() =>
 		expect(region("semantic-inspector-history-skipped")?.getAttribute("data-reason")).toBe(
 			"checkout-unavailable",
@@ -339,27 +334,26 @@ test("unbound modules ask nothing while skipped and unchanged modules remain dis
 
 test("a refused history read retries only through the visible action", async () => {
 	status = 500;
-	await mountHistory();
-	await readHistory();
+	const pane = await mountHistory();
 	await waitFor(() => expect(document.querySelector('[role="alert"]')).not.toBeNull());
 	expect(requested).toHaveLength(1);
+	await pane.choose("q");
+	expect(requested).toHaveLength(1);
 	status = 200;
-	await readHistory();
-	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("6"));
+	await readAgain();
+	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("5"));
 	expect(requested).toHaveLength(2);
 	expect(document.querySelector('[role="alert"]')).toBeNull();
 });
 
 test("another architecture revision never displays the previous revision's history", async () => {
 	const pane = await mountHistory();
-	await readHistory();
 	await waitFor(() => expect(count("semantic-inspector-commits")).toBe("6"));
 	const waiting = Promise.withResolvers<HistoryAnswer>();
 	response = waiting.promise;
 	const next = { ...MODEL, revision: { digest: "b".repeat(64), files: [] } };
 	await pane.choose("h", next);
 	expect(region("semantic-inspector-commits")).toBeNull();
-	await readHistory();
 	await waitFor(() => expect(requested).toHaveLength(2));
 	expect(region("semantic-inspector-commits")).toBeNull();
 	waiting.resolve({

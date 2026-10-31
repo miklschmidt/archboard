@@ -376,6 +376,16 @@ const small = (version: number): SemanticBoard =>
 		],
 	});
 
+test("a new version of a board that binds the same code needs a new answer and no new walk", async () => {
+	const reading = lens.createVariantLocality();
+	const first = small(1);
+	const next = small(2);
+	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
+	const moved = await reading.read(scratch, next, variantOf(next, "v1"), undefined);
+	expect(moved.hotspots).not.toBe(answer.hotspots);
+	expect(moved.periods[0]).toBe(answer.periods[0]!);
+});
+
 test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
 	const reading = lens.createVariantLocality();
 	const first = small(1);

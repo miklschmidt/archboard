@@ -15,6 +15,7 @@ const BROWSER_TEST_PATHS = [
 	"tests/system/browser/canonical-model-modes.test.ts",
 	"tests/system/browser/reader-column.test.ts",
 	"tests/system/browser/reader-context.test.ts",
+	"tests/system/browser/reader-measures.test.ts",
 	"tests/system/browser/reader-trace.test.ts",
 	"tests/system/browser/canonical-model-walkthroughs.test.ts",
 	"tests/system/browser/canonical-model-narration.test.ts",

@@ -30,6 +30,11 @@ information and never fails the check.
 [ADR 0057](0057-a-board-render-carries-its-recipe-and-the-check-keeps-embeds-current.md)
 decides the split.
 
+TASK-559.29 amended this ADR on 2026-10-31. The canonical reader asks on a
+selection and when `Measures` opens, and a measurement replaced the one of
+2026-10-06. The amendment after the section on derived readings gives the
+reasons.
+
 The history lens maps commits through bindings to give four readings.
 A board is behind its code by the commits that changed its parts after the
 board last changed. A footprint says what a branch changed, against what its
@@ -424,6 +429,52 @@ code pass. It reads only Git, and it took less than a second here. Also, every
 commit can change its answer. A pane that only reads what an agent left then
 shows nothing most of the time. This decision does not change the
 rule of TASK-367.24 for the code pass.
+
+## Amendment of 2026-10-31: when the reader asks
+
+TASK-559.29 amended the section above for the canonical reader. Everything else
+stands.
+
+The canonical reader has no pane inspector. About holds the commits and the
+coupled parts of one module. The left column holds `Measures`, which lists the
+commits and the unjoined pairs of every module. So `Measures` is a second place
+where a user sees a reading. It is still derived on request, stored nowhere and
+drawn on no picture.
+
+A selection of a bound module asks the route, on the picture too, and About and
+`Measures` find the answer. `Measures` asks when it opens. Nothing asks while a
+reader holds no bound module and `Measures` is closed. The answer covers every
+module, so the browser keeps one answer for each model revision, and a later
+selection asks nothing. This replaces the rule that a later selection reads the
+server's memory, and the words that the next selection reads the HEADs. A HEAD
+that moves keeps the shown answer until `Refresh` or a new revision. A failed
+read waits for a person, because a walk costs seconds and a selection is not a
+retry.
+
+The measurement above no longer holds. On this repository on 2026-10-31, the
+model held 524 modules, 40 of them bound to a symbol, and the period held 5,089
+commits. A first read took 19 seconds. The server answered no other request for
+11 of those seconds, because the mapping of commits onto bound paths ran in one
+turn of its event loop. That is not acceptable for a read that a selection
+starts. The mapping now looks up each commit's paths once, so a commit that
+touches none of a path's names costs one set lookup. It took 8.5 seconds and now
+takes 0.34 seconds. A first read now takes about 10 seconds, and about 18 seconds
+while other requests run all the time. A request for a kept answer takes under
+0.2 seconds. Another request waited one second at most. Most of what remains is
+the declaration mapping of the 40 symbols, which gives way to other requests at
+each Git read.
+
+The server now keeps a walk apart from an answer. A walk derives only from the
+checkout's HEAD, the period and what the parts bind. So a model edit that moves
+no binding needs a new answer and no new walk, and an agent that writes a model
+while a reader looks at it starts no walks. The server keeps four walks, because
+a walk holds every file of a year of commits.
+
+The browser passes no signal to the read. Each selection mounts its own
+subscriber, and the last subscriber of a read leaves before the next one mounts.
+A signal then stops a read that the next selection needs, and a reader who moves
+from module to module never gets an answer. An obsolete read ends on the server
+and its answer stays in the memory.
 
 ## What this assumes about the code check
 
