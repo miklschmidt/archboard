@@ -134,38 +134,42 @@ fn dense_rooms(lines: usize) -> [f64; 2] {
     match lines {
         0..=24 => [0.0, 48.0],
         25..=40 => [48.0, 96.0],
-        _ => [96.0, 144.0],
+        41..=64 => [96.0, 144.0],
+        _ => [288.0, 384.0],
     }
 }
 
-/// The best dense drawing of a reading of one open frame, if one passes every guard.
+/// The best dense drawing of a reading, if one passes every guard. A wider room
+/// runs only while no drawing lands whole.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
-    let mut best: Option<(reading::Order, crate::blocks::assembly::Placed)> = None;
+    let mut best = None;
     let lines = relationships(graph);
-    let most = dense_routes(lines);
     for room in dense_rooms(lines) {
-        let mut routed = 0;
-        for drawing in dense::drawings(graph, room) {
-            let Ok(next) = fixed::route(graph, drawing, &selection::ORDERS[..1]) else {
-                continue;
-            };
-            let order = reading::order(&next);
-            if best
-                .as_ref()
-                .is_none_or(|one| reading::before(&order, &one.0))
-            {
-                best = Some((order, next));
-            }
-            routed += 1;
-            if routed == most {
-                break;
-            }
-        }
-        if best.is_some() {
+        dense_room(graph, room, dense_routes(lines), &mut best);
+        let landed = |one: &(reading::Order, _)| !one.0.0;
+        if best.as_ref().is_some_and(landed) {
             break;
         }
     }
     best.map(|(_, drawing)| drawing)
+}
+
+/// Route a reading's placements at one room, as many as a reading of its size affords.
+fn dense_room(
+    graph: &crate::graph::Node,
+    room: f64,
+    most: usize,
+    best: &mut Option<(reading::Order, crate::blocks::assembly::Placed)>,
+) {
+    let routed = dense::drawings(graph, room)
+        .into_iter()
+        .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
+    for next in routed.take(most) {
+        let order = reading::order(&next);
+        if best.as_ref().is_none_or(|one| order < one.0) {
+            *best = Some((order, next));
+        }
+    }
 }
 
 mod direct;

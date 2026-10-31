@@ -27,6 +27,9 @@ const MOST_COLUMNS: usize = 6;
 /// Contraction takes back what no line uses.
 const FOOT_ROOM: f64 = 72.0;
 
+/// The tallest placement that contraction can still bring into the pane.
+const TALLEST: f64 = 1950.0;
+
 /// One way to set a reading out.
 #[derive(Clone, Copy, Debug)]
 struct Way {
@@ -47,6 +50,8 @@ struct Set {
 struct Reading<'a> {
     graph: &'a Node,
     frame: &'a Node,
+    /// Whether a frame stands round the grid: the reading's own cards have none.
+    framed: bool,
     /// The size of the frame's edge tab, with the shoulder of the frame beside it.
     tab: Point,
     /// Where the first row stands from the frame's top.
@@ -56,10 +61,11 @@ struct Reading<'a> {
     joins: Vec<Join>,
 }
 
-/// The one frame a reading opens, when it opens exactly one, holding cards alone.
-fn open_frame(graph: &Node) -> Option<&Node> {
+/// What a reading sets on a grid: the one frame it opens, holding cards alone,
+/// or the reading itself when it opens no frame.
+fn holder(graph: &Node) -> Option<&Node> {
     let mut frames = graph.kids().iter().filter(|node| node.has_children());
-    let frame = frames.next()?;
+    let frame = frames.next().unwrap_or(graph);
     let flat = !frame.kids().iter().any(Node::has_children);
     let grouped = |node: &Node| node.option(PLACING_GROUP).is_some();
     let plain = !graph.kids().iter().chain(frame.kids()).any(grouped);
@@ -108,7 +114,8 @@ fn joins_of<'a>(edges: &'a [std::rc::Rc<Edge>], items: &mut [Item<'a>]) -> Vec<J
 
 impl<'a> Reading<'a> {
     fn of(graph: &'a Node) -> Option<Reading<'a>> {
-        let frame = open_frame(graph)?;
+        let frame = holder(graph)?;
+        let framed = !std::ptr::eq(frame, graph);
         let mut items: Vec<Item<'a>> = frame.kids().iter().map(Item::of).collect();
         items.sort_by(|a, b| {
             semantic_order(a.node.layout_options.as_ref())
@@ -132,15 +139,24 @@ impl<'a> Reading<'a> {
         Some(Reading {
             graph,
             frame,
-            tab: Point {
-                x: frame.w(),
-                y: frame.h(),
+            framed,
+            tab: if framed {
+                Point {
+                    x: frame.w(),
+                    y: frame.h(),
+                }
+            } else {
+                Point { x: 0.0, y: 0.0 }
             },
-            first_row: frame.h() + CONTAINER_INSET + FOOT_ROOM,
+            first_row: if framed {
+                frame.h() + CONTAINER_INSET + FOOT_ROOM
+            } else {
+                0.0
+            },
             doors: graph
                 .kids()
                 .iter()
-                .filter(|node| !node.has_children())
+                .filter(|node| framed && !node.has_children())
                 .collect(),
             items,
             joins,
@@ -247,18 +263,26 @@ impl<'a> Reading<'a> {
             width: page.width,
             height: page.height,
             cards: parts.chain(page.doors).collect(),
-            frames: vec![PlacedCard {
-                id: self.frame.id.clone(),
-                bx,
-                depth: 0,
-                header: None,
-            }],
+            frames: self
+                .framed
+                .then(|| PlacedCard {
+                    id: self.frame.id.clone(),
+                    bx,
+                    depth: 0,
+                    header: None,
+                })
+                .into_iter()
+                .collect(),
             regions: Vec::new(),
             edges: Vec::new(),
-            titles: vec![Title {
-                bx: title,
-                band: title,
-            }],
+            titles: self
+                .framed
+                .then_some(Title {
+                    bx: title,
+                    band: title,
+                })
+                .into_iter()
+                .collect(),
         }
     }
 
@@ -323,5 +347,10 @@ pub(super) fn drawings(graph: &Node, room: f64) -> Vec<Placed> {
     placed.sort_by(|a, b| a.0.total_cmp(&b.0));
     // A reading whose doors never take a side gives the same placement both ways.
     placed.dedup_by(|a, b| a.0.total_cmp(&b.0).is_eq());
-    placed.into_iter().map(|(_, drawing)| drawing).collect()
+    let drawings: Vec<Placed> = placed.into_iter().map(|(_, drawing)| drawing).collect();
+    let short = |drawing: &Placed| drawing.height <= TALLEST;
+    if drawings.iter().any(short) {
+        return drawings.into_iter().filter(short).collect();
+    }
+    drawings
 }

@@ -72,12 +72,14 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
-/// How a finished drawing ranks: its long detours, its crowded approaches, then
-/// the work of tracing its lines times the room it takes in the pane.
-pub(super) type Order = (usize, usize, f64);
+/// How a finished drawing ranks: whether it lands whole, its long detours, its
+/// crowded approaches, then the work of tracing its lines times the room it takes.
+pub(super) type Order = (bool, usize, usize, f64);
 
 /// The pane's shape, width over height.
 const PANE_SHAPE: f64 = 1.65;
+/// The largest page that lands whole in a pane of 1551 by 960 at the reader's floor of 0.6.
+const LANDS_WHOLE: (f64, f64) = (2505.0, 1520.0);
 /// A line is a long detour past this much extra travel, and half again its direct way.
 const LONG_DETOUR: f64 = 300.0;
 
@@ -106,14 +108,11 @@ fn long_detours(lines: &[PlacedLine]) -> usize {
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     let (approaches, cost) = rank(&drawing.edges);
     (
+        drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         long_detours(&drawing.edges),
         approaches,
         f64::from_bits(cost) * room_taken(drawing),
     )
-}
-
-pub(super) fn before(one: &Order, other: &Order) -> bool {
-    (one.0, one.1) < (other.0, other.1) || ((one.0, one.1) == (other.0, other.1) && one.2 < other.2)
 }
 
 /// A larger drawing needs a ten-percent gain after its route cost pays for
