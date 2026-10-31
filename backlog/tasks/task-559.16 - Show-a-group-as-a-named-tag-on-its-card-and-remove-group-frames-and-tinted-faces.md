@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-31T00:13:00Z'
-updated_date: '2026-10-31T00:24:00Z'
+updated_date: '2026-10-31T01:58:00Z'
 labels:
   - renderer
   - frontend
@@ -29,10 +29,10 @@ The owner compared ten ways to show a group colour in /tmp/integrate/header-mock
 <!-- AC:BEGIN -->
 - [ ] #1 A card in a group shows the group name in a bright tag, in both themes, and its face stays neutral
 - [ ] #2 No reading draws a group frame or region, and cards of one group still stand together
-- [ ] #3 The Key and rule 7 no longer offer group regions, and the Key names each group in the look of its tag
-- [ ] #4 A long group name and a module in several groups stay readable and never cover the name of the card
-- [ ] #5 A far card still shows its group
-- [ ] #6 Gates 1 to 4 are measured again and the owner accepts the result by eye
+- [ ] #3 A long group name and a module in several groups stay readable and never cover the name of the card
+- [ ] #4 A far card still shows its group
+- [ ] #5 Gates 1 to 4 are measured again and the owner accepts the result by eye
+- [ ] #6 Rule 7 and every group region control are gone, and the legend tags from TASK-559.19 use the tag finish of the card
 <!-- AC:END -->
 
 ## Implementation Notes
