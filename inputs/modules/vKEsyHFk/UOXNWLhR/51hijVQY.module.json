@@ -15,5 +15,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#51hijVQY",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 50000,
+      "kind": "call",
+      "label": "every read takes the vault from the pane",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-pane-vault.ts",
+        "symbol": "PaneVaultContext"
+      },
+      "id": "vKEsyHFk/yejBBUFY#yIlWm0s3",
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
+    }
+  ]
 }
