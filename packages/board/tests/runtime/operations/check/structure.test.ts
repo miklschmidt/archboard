@@ -199,11 +199,7 @@ describe("RELATIONSHIP_ON_CONTAINER", () => {
 
 	test("stays quiet on a relationship between parts, and leaves a module's own part to its rule", () => {
 		expect(
-			onFrame([
-				relationship(other, first),
-				relationship(first, second),
-				relationship(box, first),
-			]),
+			onFrame([relationship(other, first), relationship(first, second), relationship(box, first)]),
 		).toEqual([]);
 	});
 });
