@@ -145,6 +145,32 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
+    },
+    {
+      "order": 17000,
+      "kind": "data",
+      "label": "a fixture's talk, read back to replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "readTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 35000,
+      "kind": "dependency",
+      "label": "keep a run's talks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "keepTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
     }
   ]
 }

@@ -132,12 +132,10 @@ test("projected connections retain unresolved joined identities and behavioral p
 	const reading = await selected(vault, draft.target.state!);
 	const projection = projectModel(reading);
 	expect(projection.connections[0]!.joins.map((entry) => entry.id)).toEqual([
-		"Shop#Dispatch",
 		edge,
+		"Shop#Dispatch",
 	]);
-	expect(projection.unsettled).toEqual(
-		expect.arrayContaining(["Shop#Gateway", edge, "Shop#Send", "Shop#Dispatch"]),
-	);
+	expect(projection.unsettled).toEqual(expect.arrayContaining(["Shop#Gateway", edge, "Shop#Send"]));
 	const flow = projectFlow(projection, reading.collections[0]!.flows[0]!);
 	expect(flow.unsettled).toEqual(expect.arrayContaining(["Shop#Gateway", "Shop#Send"]));
 	expect(projectModel(second).unsettled).toEqual([]);

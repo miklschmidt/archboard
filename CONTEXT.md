@@ -66,8 +66,9 @@ The model derives incoming relationships, so a relationship has one definition a
 _Avoid_: edge, arrow, link, connector, relation, line (that is what a picture draws)
 
 **Whole-module endpoint**:
-The end of a relationship that names a module with parts and none of those parts, so it stays on the module's boundary and makes a caller and no entry point.
-An author prefers the part that makes or answers the call, and `archboard check code` reports the end as information with `RELATIONSHIP_ON_CONTAINER`.
+The end of a relationship that names a module with parts and none of those parts, which makes a caller and no entry point.
+A module with parts cannot point at anything, so `archboard check` fails on this end with `RELATIONSHIP_ON_CONTAINER`, and the author moves it to the part that owns the code.
+The only exception joins a module to a part that it holds.
 _Avoid_: port (that is where the renderer attaches a line)
 
 **Flow collection**:

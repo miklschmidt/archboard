@@ -27,10 +27,10 @@
   ],
   "outgoing": [
     {
-      "order": 12000,
+      "order": 2000,
       "kind": "http",
-      "label": "JSON",
-      "emphasis": "normal",
+      "label": "views and controls",
+      "emphasis": "hero",
       "traffic": {
         "speed": 40,
         "volume": 0.5
@@ -40,7 +40,7 @@
         "path": "packages/server-requests/src/ui/clients/server-requests.ts",
         "symbol": "fetch"
       },
-      "id": "vKEsyHFk/yejBBUFY#chjmKQLj",
+      "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     }
   ]

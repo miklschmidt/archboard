@@ -40,19 +40,6 @@
       },
       "id": "vKEsyHFk/nAmiQ3Vc#Ml9zYVzq",
       "to": "vKEsyHFk/nAmiQ3Vc#45uNvMac"
-    },
-    {
-      "order": 13000,
-      "kind": "call",
-      "label": "routes built with contract and child",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/run.ts",
-        "symbol": "contract"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#nYQ1B3GK",
-      "to": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX"
     }
   ]
 }

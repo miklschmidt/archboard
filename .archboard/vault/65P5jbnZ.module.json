@@ -1,0 +1,41 @@
+{
+  "order": 960160,
+  "name": "Reading preparation",
+  "kind": "function",
+  "responsibility": "Prepares a projected reading for the local renderer and the picture cache",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/architecture-model/drawing.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#65P5jbnZ",
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 76000,
+      "kind": "call",
+      "label": "prepareContentHere",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "prepareContentHere"
+      },
+      "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+    },
+    {
+      "order": 70017,
+      "kind": "call",
+      "label": "cache and interact with pictures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+        "symbol": "browserPictureStorage"
+      },
+      "id": "vKEsyHFk#f0RC9khM",
+      "to": "vKEsyHFk/UOXNWLhR#AaCxSfhT"
+    }
+  ]
+}

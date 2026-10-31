@@ -27,32 +27,6 @@
   ],
   "outgoing": [
     {
-      "order": 90000,
-      "kind": "call",
-      "label": "draw recorded canonical beats",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "ModelWalkthrough"
-      },
-      "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",
-      "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
-    },
-    {
-      "order": 53000,
-      "kind": "render",
-      "label": "gives the stage the recorded talk as its vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "PaneVaultContext"
-      },
-      "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
-      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
-    },
-    {
       "order": 33000,
       "kind": "render",
       "label": "mount on the talk's board, its step driven",
@@ -64,6 +38,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
       "to": "vKEsyHFk/UOXNWLhR#aYC7if1N"
+    },
+    {
+      "order": 36000,
+      "kind": "render",
+      "label": "the voice box, with the talk's lines as they were said",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "VoiceBox"
+      },
+      "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
+      "to": "vKEsyHFk#ZTh8T7Ym"
     },
     {
       "order": 47000,
@@ -79,17 +66,43 @@
       "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
     },
     {
-      "order": 36000,
+      "order": 53000,
       "kind": "render",
-      "label": "the voice box, with the talk's lines as they were said",
+      "label": "gives the stage the recorded talk as its vault",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "VoiceBox"
+        "symbol": "PaneVaultContext"
       },
-      "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
-      "to": "vKEsyHFk/yejBBUFY#0x47EMoO"
+      "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
+      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "draw recorded canonical beats",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "ModelWalkthrough"
+      },
+      "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",
+      "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
+    },
+    {
+      "order": 37000,
+      "kind": "render",
+      "label": "the recording's stage, so both pages draw alike",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "RecordingStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
+      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
     }
   ]
 }

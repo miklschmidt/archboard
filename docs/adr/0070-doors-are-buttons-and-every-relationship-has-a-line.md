@@ -104,3 +104,20 @@ lands at about 0.19 when whole, and nobody can read it there.
 - More lines cost more room. The door work took crossings from 465 to 1,848
   and bends from 1,298 to 3,545. Words on the branches then took the readings
   that pass the fit gate from 113 to 106 of 115.
+
+## Amendment of 2026-10-31: no relationship of current architecture reaches a frame
+
+TASK-559.33 closes the exception in "A line ends on the part that owns it".
+`archboard check` now fails on a relationship that names a module with parts, so
+current architecture holds no such end
+([ADR 0044](0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
+A relationship between a module and a part that it holds stays allowed, and a
+reading that opens the module draws no line for it.
+
+A retained reading or a draft can still hold a frame end, and the reader draws it
+as it stands, because those readings are exact. A line to a part inside a closed
+module ends on that module's card, which stands for the part.
+
+The repair took the lines drawn from 1,794 to 1,807 and the total area from
+187.8 M to 173.7 M. The readings that pass the fit gate went from 107 of 115 to
+104 of 112, and the same 8 readings miss.

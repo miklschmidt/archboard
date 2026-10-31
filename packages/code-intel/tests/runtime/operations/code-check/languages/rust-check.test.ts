@@ -150,8 +150,9 @@ test("anchors, binding symbols and the relationships between parts bound to Rust
 			// The library exposes `audit`, `Entry` and three names of `money` that the shop does not use.
 			"EXPOSED_UNUSED pLed information",
 			"RELATIONSHIP_BACKWARDS e3 information",
-			"RELATIONSHIP_UNDRAWN pLed warning",
-			"RELATIONSHIP_UNDRAWN pMoney warning",
+			// The cart's relationship to the entry stands for these two calls into the ledger.
+			"RELATIONSHIP_UNDRAWN pLed information",
+			"RELATIONSHIP_UNDRAWN pMoney information",
 		].toSorted(),
 	);
 	expect(outcome.skipped.map((each) => each.reason)).not.toContain("text-only");

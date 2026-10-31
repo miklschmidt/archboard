@@ -562,3 +562,43 @@ module by one count at a time, and nothing combines the counts.
 
 The derivation now lives in
 `packages/board/src/shared/rules/inspect/container-interface.ts`.
+
+## Amendment of 2026-10-31: no relationship ends on a module with parts
+
+TASK-559.33 replaces the amendment above that prefers the part. The owner
+decided that a connection that reaches a container header is always a bug or
+badly authored data. The rules above that allow an end on a container no longer
+hold, and neither does a frame end for a call that no part stands for. A
+relationship ends on the part that owns it. The only exception joins a module
+to a part that it holds, and `CONTAINER_LINE_TO_OWN_PART` warns on that shape.
+
+`archboard check` fails on such an end with `RELATIONSHIP_ON_CONTAINER`. The
+finding left the code check, because a code finding cannot be an error, and the
+rule reads only the model. It judges current architecture, like the other
+semantic errors. So a draft that inherits a frame end from its retained
+predecessor passes until a reconciliation settles it. No write refuses the end.
+
+The derivation does not change. A relationship that names a module with parts
+still makes a caller and no entry point, because a retained reading or a draft
+can hold one. The reader keeps its `to module` count for that reason.
+
+The author reads the code that the anchor names and moves the end to the part
+that owns that code. The relationship keeps its identity and is not copied. Two
+relationships merge only when they have the same kind, the same ends and the
+same meaning. If no part owns the code, the author adds one part for what the
+module does at that seam, and names it for that responsibility.
+
+A group needed one change. A relationship now reaches a part of a member, so
+`model inspect --group` counts it at that member. Before this change, the group
+lost every such call from its boundary. A relationship between two parts of one
+member crosses nothing.
+
+The repair moved 335 ends on 69 containers, of which 62 relationships had both
+ends on containers. It added 39 parts and removed 3 modules that had no job of
+their own. It removed 33 relationships that repeated a kept statement and added
+29 that the new parts need. Relationships went from 1,091 to 1,087, and modules
+from 544 to 580. Modules with parts that read as no entry points stayed at 0.
+Measured on every reading, the lines drawn went from 1,794 to 1,807 and the total
+area from 187.8 M to 173.7 M. Readings below 0.4 went from 3 to 0. The readings
+that pass the fit gate went from 107 of 115 to 104 of 112. The same 8 readings
+miss, and the 3 readings that left passed the gate.

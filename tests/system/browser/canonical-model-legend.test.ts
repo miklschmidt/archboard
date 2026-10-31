@@ -73,12 +73,17 @@ function seedReading(vault: string): void {
 		outgoing: [line("Settle", "Bank", "event")],
 	});
 	const handlerPath = join(vault, "internal/handler.module.json");
+	const handler = JSON.parse(readFileSync(handlerPath, "utf8"));
 	writeFileSync(
 		handlerPath,
 		JSON.stringify({
-			...JSON.parse(readFileSync(handlerPath, "utf8")),
+			...handler,
 			groups: ["public"],
-			outgoing: [line("Route", "Router", "call"), line("Copy", "Router", "data")],
+			outgoing: [
+				...handler.outgoing,
+				line("Route", "Router", "call"),
+				line("Copy", "Router", "data"),
+			],
 		}),
 	);
 }

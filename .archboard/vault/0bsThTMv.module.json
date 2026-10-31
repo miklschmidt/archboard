@@ -1,0 +1,133 @@
+{
+  "order": 960020,
+  "name": "Diagram surface",
+  "kind": "ui",
+  "responsibility": "Draws the picture and wires the camera, the gestures, the lighting and the marks to it",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#0bsThTMv",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "call",
+      "label": "pan and zoom by hand",
+      "description": "SemanticDiagram reads the supplied camera controller through useCameraWith; the viewer entry point creates it once for the pane.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useCameraWith"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "pick attention",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "surfaceMarks"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "carry the drawn picture in from the last",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "usePictureTransition"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "the pointer on the picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useDiagramGestures"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
+      "to": "vKEsyHFk/UOXNWLhR#FyxVdk20"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "label": "the pick, and the part the pointer rests on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useLighting"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
+    },
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "the relationships that are lit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+        "symbol": "lightInk"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
+      "to": "vKEsyHFk/UOXNWLhR#WT3s42AE"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "the code check's warnings on the picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useCodeMarks"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
+      "to": "vKEsyHFk/UOXNWLhR#ZUQ9Usdh"
+    },
+    {
+      "order": 103000,
+      "kind": "call",
+      "label": "the card picked, when it links down",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useDrillOpen"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
+      "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu"
+    },
+    {
+      "order": 113000,
+      "kind": "call",
+      "label": "the camera as a transform",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "symbol": "cameraTransform"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
+    }
+  ]
+}

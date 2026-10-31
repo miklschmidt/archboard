@@ -23,19 +23,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "own Codex threads and negotiate realtime voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
-        "symbol": "createCodexProcess"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
-    }
-  ]
+  "outgoing": []
 }

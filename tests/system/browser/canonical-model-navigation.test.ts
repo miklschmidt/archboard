@@ -311,10 +311,10 @@ test("projected connections expose complete ordered relationships and module int
 	writeFileSync(gatewayPath, JSON.stringify(gateway));
 	const handlerPath = join(vault, "internal/handler.module.json");
 	const handler = JSON.parse(readFileSync(handlerPath, "utf8"));
-	handler.outgoing = [
+	handler.outgoing.push(
 		{ id: "Shop#OutA", to: "Shop#Worker", kind: "call", order: 20, label: "Deliver" },
 		{ id: "Shop#Web", to: "Shop#Worker", kind: "http", order: 40, label: "Request" },
-	];
+	);
 	writeFileSync(handlerPath, JSON.stringify(handler));
 	writeFileSync(
 		join(vault, "decode.module.json"),

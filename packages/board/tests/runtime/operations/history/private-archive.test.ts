@@ -94,7 +94,7 @@ test("private structural batches honor signing, retain dependency history and pu
 		target,
 		writer: "agent",
 		reason: "changing local architecture",
-		subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"],
+		subjects: ["Shop#Gateway", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"],
 	});
 	if (!claim.success) throw new Error(JSON.stringify(claim));
 	const request = {
@@ -143,7 +143,7 @@ test("private structural batches honor signing, retain dependency history and pu
 	git(archive, "merge-base", "--is-ancestor", baseline.checkpoint.id, edited.checkpoint.id);
 	expect(edited).toMatchObject({
 		applied: true,
-		subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Worker"],
+		subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Handler", "Shop#Worker"],
 		checkpoint: { sources: [], publication: "saved-locally" },
 	});
 	expect(await editArchitectureModule(vault, request)).toEqual(edited);

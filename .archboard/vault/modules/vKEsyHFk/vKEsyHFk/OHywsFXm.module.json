@@ -39,19 +39,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 29000,
-      "kind": "dependency",
-      "label": "the board document",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
-        "symbol": "addressedVariant"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
-      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
-    }
-  ]
+  "outgoing": []
 }

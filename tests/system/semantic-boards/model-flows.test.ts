@@ -306,7 +306,7 @@ test("structural exports use canonical recursive scope and preserve reproducible
 					code: "ANCHOR_PATH_MISSING",
 					model: "Shop",
 					state: "Current",
-					file: "gateway.module.json",
+					file: "internal/handler.module.json",
 				}),
 			]),
 		},

@@ -24,6 +24,32 @@
       },
       "id": "vKEsyHFk#i32p6taI",
       "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "order": 5020,
+      "kind": "call",
+      "label": "read model authority",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "architectureSummaryQuery"
+      },
+      "id": "vKEsyHFk#7EsWuSSD",
+      "to": "vKEsyHFk#guvtYApo"
+    },
+    {
+      "order": 44000,
+      "kind": "http",
+      "label": "list the repositories; choose a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "mountRepositoryRoutes"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#j3HPQ3Ng",
+      "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
     }
   ]
 }

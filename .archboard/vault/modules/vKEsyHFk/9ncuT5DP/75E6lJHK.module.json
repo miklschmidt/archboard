@@ -35,20 +35,6 @@
       "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
     },
     {
-      "order": 14000,
-      "kind": "call",
-      "label": "classify both linked threads through the thread-link port",
-      "description": "The validation wrapper calls options.threadLink.classify for both the coordinator and the workhorse, then requires executable provenance for the operation.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/validation.ts",
-        "symbol": "classify"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#NeJ30W7X",
-      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
-    },
-    {
       "order": 41000,
       "kind": "call",
       "label": "the role a call came through, by name and digest",

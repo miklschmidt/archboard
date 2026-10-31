@@ -8,9 +8,14 @@
 // between the two parts, or between parts that hold them, counts as drawn.
 // Only a call, a configured path or a build dependency is a dependency: a
 // permission, an import that only types use and provisioning never are. The
-// finding is a warning when some of its evidence is resolved, because the
-// check is sure of it and drawing the relationship clears it, and information
-// when all of it is a candidate, which nothing on a board can clear.
+// finding is a warning when some of its evidence is resolved and nothing
+// stands for it, because the check is sure of it and drawing the relationship
+// clears it. It is information when all of it is a candidate, which nothing on
+// a board can clear, and when a relationship joins the two sides where the parts
+// meet, the children of their nearest holder. A reading draws that relationship
+// between those two sides, and a relationship ends on the part that owns it
+// (ADR 0044), so the holder cannot state it. Asking for one relationship for
+// each such call draws an import map.
 //
 // A relationship with no anchor whose ends are both read is judged by the
 // evidence its kind accepts (the `evidence` key of its kind in the vault
@@ -46,6 +51,7 @@ import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
 import type { ClaimSite } from "#runtime/operations/code-check/claims/claims.ts";
 import type { EnvironmentJoin } from "#runtime/operations/code-check/evidence/environment-join.ts";
 import type { BoardEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
+import { sideOf, sidesJoined } from "#runtime/operations/code-check/evidence/sides.ts";
 import { differingCode } from "#runtime/operations/code-check/part-code.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/operations/code-check/part-code.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
@@ -207,8 +213,13 @@ function candidateSentence(reading: RelationshipReading, pieces: readonly Piece[
 function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piece[]): CodeFinding {
 	const subject = nodeSubject(to.node);
 	const from = pieces.map((piece) => nameOf(reading, piece.from)).join(", ");
-	const resolved = pieces.some((piece) => piece.resolution === "resolved");
+	const open = pieces.filter((piece) => !sidesJoined(reading, piece.from, piece.to));
+	const resolved = open.some((piece) => piece.resolution === "resolved");
 	const unsure = candidateSentence(reading, pieces);
+	const next =
+		open.length === 0
+			? "A relationship between the two sides where they meet stands for it, so add one only if a reader needs to see this call."
+			: "Add the relationship between the parts that make and answer the call.";
 	return {
 		...siteOf(reading.read, `nodes.${to.node.id}`, subject),
 		severity: resolved ? "warning" : "information",
@@ -216,8 +227,7 @@ function undrawnFinding(reading: RelationshipReading, to: ReadPart, pieces: Piec
 		message:
 			`The code of ${from} reaches ${nameOf(reading, to.node.id)}. No relationship joins ` +
 			`${pieces.length === 1 ? "these modules" : "each caller to that module"}.${unsure} ` +
-			"Add the relationship between these modules or their containing modules. " +
-			"If this dependency is unintended, change the code.",
+			`${next} If this dependency is unintended, change the code.`,
 		evidence: withPartners(reading, pieces),
 	};
 }
@@ -270,18 +280,6 @@ function accepts(reading: RelationshipReading, kind: string, evidence: EvidenceK
 	const kinds = reading.relationshipKinds;
 	const accepted = Object.hasOwn(kinds, kind) ? kinds[kind]?.evidence : undefined;
 	return accepted === undefined || accepted.includes(evidence);
-}
-
-/**
- * A part and every part inside it.
- * @param reading The board.
- * @param id The part.
- * @returns The ids.
- */
-function sideOf(reading: RelationshipReading, id: string): Set<string> {
-	return new Set(
-		[...reading.lineages].flatMap(([inside, chain]) => (chain.has(id) ? [inside] : [])),
-	);
 }
 
 /** Why a relationship is not judged: an end the pass skipped, or ends that share their code. */

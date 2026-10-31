@@ -1,0 +1,28 @@
+{
+  "order": 960360,
+  "name": "Contract reference",
+  "kind": "function",
+  "responsibility": "Renders the generated reference of every command contract from the command table",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/contract-artifacts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#glQyCXTG",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "outgoing": [
+    {
+      "order": 52000,
+      "kind": "call",
+      "label": "the registry, for the generated audit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/contract-artifacts/render.ts",
+        "symbol": "cliContractRegistry"
+      },
+      "id": "vKEsyHFk/XppR9owz#kggkjerM",
+      "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
+    }
+  ]
+}

@@ -176,6 +176,34 @@ describe("CONTAINER_LINE_TO_OWN_PART", () => {
 	});
 });
 
+describe("RELATIONSHIP_ON_CONTAINER", () => {
+	const ended = (relationships: Structure["relationships"]) =>
+		structureDiagnostics(model({ relationships })).filter(
+			({ code }) => code === "RELATIONSHIP_ON_CONTAINER",
+		);
+
+	test("is an error on each end on a module with parts, on the file of its source, and names the module", () => {
+		const reports = ended([relationship(other, box), relationship(box, other)]);
+		expect(reports).toMatchObject([
+			{
+				severity: "error",
+				file: `${box}.module.json`,
+				subject: { kind: "edge", id: `${box}>${other}`, name: "Box -> Other" },
+			},
+			{
+				severity: "error",
+				file: `${other}.module.json`,
+				subject: { kind: "edge", id: `${other}>${box}`, name: "Other -> Box" },
+			},
+		]);
+		expect(reports[0]?.message).toContain("Box");
+	});
+
+	test("leaves a relationship between parts, and one between a module and a part it holds", () => {
+		expect(ended([relationship(first, other), relationship(box, first)])).toEqual([]);
+	});
+});
+
 test("a current flow with no summary is an error that names the flow and its file", () => {
 	const described = flow(first, second);
 	const silent = { ...described.flows[0]! };

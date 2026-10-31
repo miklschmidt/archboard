@@ -249,7 +249,7 @@ if (!reading.success || reading.manifest.current === null) process.exit(1);
 console.log(JSON.stringify({
   target: { model: reading.manifest.id, state: reading.manifest.current.id },
   writer: "fixture-agent", reason: "changing structure",
-  subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]
+  subjects: ["Shop#Gateway", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"]
 }));
 ' "$structure_fixture_dir/reading.json" > "$structure_fixture_dir/claim.json"
 archboard model claim -C "$structure_fixture_dir" --input "$structure_fixture_dir/claim.json" > "$structure_fixture_dir/claimed.json"
@@ -278,24 +278,24 @@ console.log(JSON.stringify({ claim: claimed.claim.id, writer: "fixture-agent" })
 archboard model release -C "$structure_fixture_dir" --input "$structure_fixture_dir/release.json"
 ```
 
-The changed tracked files are `gateway.module.json` and `worker.module.json` inside the fixture vault.
+The changed tracked files are `gateway.module.json`, `internal/handler.module.json`, and `worker.module.json` inside the fixture vault.
 The Gateway keeps its ID, filename, and former names, including the newly retained name `Gateway`.
 Dispatch keeps its ID, metadata, and evidence anchor.
-Its new source is Worker and its new target is Gateway.
+Its new source is Worker and its new target is Handler, the part of Gateway that owns the call.
 The retry returns the same checkpoint and complete affected subject set.
-The child module file and manifest remain byte-identical.
+The manifest remains byte-identical.
 Use the canonical model reference for module additions, removals, reparenting, and relationship field clearing.
 
 If the browser already shows Gateway, its details update to API after the operation.
-The incoming connection now names Worker, while the outgoing Dispatch connection is absent.
+The incoming connection now names Worker and reaches Handler, while the outgoing Dispatch connection is absent.
 A reparented module keeps its selection and identifies its parent in the details.
 Removing the selected module shows an unavailable selection instead of opening another module.
 A retained reading still shows the original Gateway and Dispatch connection.
 
 Open Gateway to read its immediate Handler module.
-Worker stays nearby because Gateway calls it.
+Worker stays nearby because Handler calls it.
 The breadcrumb returns to the repository roots without changing either module file.
-Select Gateway → Worker through the Connections list.
+Select Handler → Worker through the Connections list.
 Its details identify the Dispatch request relationship and its original endpoints.
 The address records the model, scope, and saved reading for each pane.
 Reload preserves that reading.

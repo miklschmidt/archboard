@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "outgoing": [
     {
+      "order": 10000,
+      "kind": "call",
+      "label": "choose and step",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStagePresentation.tsx",
+        "symbol": "goTo"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#8HTCy24H",
+      "to": "vKEsyHFk/UOXNWLhR#LayJIvbq"
+    },
+    {
       "order": 52000,
       "kind": "call",
       "label": "over the picture and the sidebar",
@@ -23,6 +36,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
       "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
+    },
+    {
+      "order": 980110,
+      "kind": "render",
+      "label": "the picture",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx",
+        "symbol": "SemanticDiagram"
+      },
+      "to": "vKEsyHFk#0bsThTMv",
+      "id": "vKEsyHFk#PAD9JqDy"
     }
   ]
 }

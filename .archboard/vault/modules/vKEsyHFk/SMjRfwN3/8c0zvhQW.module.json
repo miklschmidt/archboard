@@ -88,10 +88,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/renderer/src/runtime/services/rasterizer/session.ts",
-        "symbol": "HeadlessChromiumError"
+        "symbol": "RasterSession"
       },
       "id": "vKEsyHFk/SMjRfwN3#ZflKJBv6",
-      "to": "vKEsyHFk/SMjRfwN3#IzgAi2R1"
+      "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
     }
   ]
 }

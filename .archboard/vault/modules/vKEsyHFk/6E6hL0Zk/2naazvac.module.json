@@ -64,7 +64,7 @@
         "symbol": "mountArchitectureModelRoutes"
       },
       "id": "vKEsyHFk/6E6hL0Zk#C9PQBOwg",
-      "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C"
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     },
     {
       "order": 4000,
@@ -145,19 +145,6 @@
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
     },
     {
-      "order": 72000,
-      "kind": "dependency",
-      "label": "mounts every route on the one app",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "app"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#zcMW5JaE",
-      "to": "vKEsyHFk/6E6hL0Zk#WEawqdWG"
-    },
-    {
       "order": 96000,
       "kind": "call",
       "description": "The icon route answers the path data of one icon that a picture drawn in the browser names.",
@@ -168,7 +155,7 @@
         "symbol": "diagramIconPaths"
       },
       "id": "vKEsyHFk/6E6hL0Zk#uaSxFsAP",
-      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      "to": "vKEsyHFk#4cb3xu6B"
     },
     {
       "order": 97000,
@@ -182,19 +169,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#4P3PNJ5d",
       "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
-    },
-    {
-      "order": 119000,
-      "kind": "call",
-      "label": "requires a vault on the code opener's route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/wiring/application/application.ts",
-        "symbol": "requireVault"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#EYz7uJ3g",
-      "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
     },
     {
       "order": 124000,

@@ -1,0 +1,54 @@
+{
+  "order": 960330,
+  "name": "Agent dock",
+  "kind": "ui",
+  "responsibility": "The dock: the agent's state, Talk, the composer and the tab's workhorses",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#UoblaIEv",
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 61000,
+      "kind": "call",
+      "label": "the dock's actions: send, Talk, pick a workhorse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4FfFQ9ag",
+      "to": "vKEsyHFk#x1I9VaDn"
+    },
+    {
+      "order": 980220,
+      "kind": "render",
+      "label": "the subtitles toggle",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "SubtitlesToggle"
+      },
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+      "id": "vKEsyHFk#tJGMgOeT"
+    },
+    {
+      "order": 980230,
+      "kind": "render",
+      "label": "the voice control",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "VoiceControl"
+      },
+      "to": "vKEsyHFk#ZTh8T7Ym",
+      "id": "vKEsyHFk#pzWBfyor"
+    }
+  ]
+}

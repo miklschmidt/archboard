@@ -85,7 +85,7 @@ test("model inspect states one module's interface", () => {
 		state: { name: "Synchronous checkout", lifecycle: "current" },
 		module: { name: "Inventory service", parent: null, groups: ["fulfilment"] },
 		holdsParts: true,
-		measures: { entryPoints: 1, hiddenParts: 3, callers: 4, outgoing: 1, passThrough: 0 },
+		measures: { entryPoints: 1, hiddenParts: 3, callers: 3, outgoing: 1, passThrough: 0 },
 		vault: { path: vault },
 	});
 	expect(names(answer.entryPoints)).toEqual(["Stock API"]);
@@ -95,24 +95,14 @@ test("model inspect states one module's interface", () => {
 		"Release route",
 	]);
 	expect(names(answer.hiddenParts)).toEqual(["Reservation ledger", "Stock DB", "Warehouse sync"]);
-	expect(names(answer.callers)).toEqual([
-		"Storefront",
-		"Checkout API",
-		"Place order",
-		"Timeout guard",
-	]);
-	// A relationship that ends on the module itself makes a caller and no entry point.
+	expect(names(answer.callers)).toEqual(["Storefront", "Place order", "Timeout guard"]);
 	const [stockApi] = answer.entryPoints;
 	expect(answer.callers.map((one: { reaches: string[] }) => one.reaches)).toEqual([
 		[stockApi.id],
 		[stockApi.id],
-		[],
-		[],
+		[stockApi.id],
 	]);
-	expect(answer.onContainer.map((one: { fromName: string }) => one.fromName)).toEqual([
-		"Place order",
-		"Timeout guard",
-	]);
+	expect(answer.onContainer).toEqual([]);
 	expect(answer.outgoing.map((one: { toName: string }) => one.toName)).toEqual([
 		"Warehouse system",
 	]);
@@ -161,11 +151,18 @@ test("model inspect --group reads a group's boundary in the state it selects", (
 			one.direction,
 		]),
 	).toEqual([
+		["Storefront", "Availability route", "incoming"],
 		["Place order", "Email provider", "incoming"],
-		["Place order", "Inventory service", "incoming"],
-		["Timeout guard", "Inventory service", "incoming"],
+		["Place order", "Reserve route", "incoming"],
+		["Timeout guard", "Release route", "incoming"],
+		["Warehouse sync", "Warehouse system", "outgoing"],
 	]);
-	expect(names(answer.neighbors)).toEqual(["Place order", "Timeout guard"]);
+	expect(names(answer.neighbors)).toEqual([
+		"Storefront",
+		"Place order",
+		"Timeout guard",
+		"Warehouse system",
+	]);
 	const proposed = run("model", "inspect", "--group", "fulfilment", "--state", "Queued fulfilment");
 	expect(proposed.status, proposed.stderr).toBe(0);
 	const { members, internal } = JSON.parse(proposed.stdout);
@@ -187,20 +184,21 @@ test("model inspect refuses without one subject, and an unknown one with its rea
 test("model compare with no base states interface changes first, against the default base", () => {
 	const { comparison, raw, stderr } = compared("--state", "Queued fulfilment");
 	expect(comparison.reason).toBe("current");
-	const [checkout, inventory, ...others] = comparison.interfaceChanges.changed;
+	const [checkout, stock, inventory, ...others] = comparison.interfaceChanges.changed;
 	expect(others).toEqual([]);
 	expect(checkout?.container.name).toBe("Checkout API");
 	expect(names(checkout?.entryPointsAdded ?? [])).toEqual(["Payment webhook"]);
 	expect(names(checkout?.callersGained ?? [])).toEqual(["Payment provider"]);
-	expect(names(inventory?.callersGained ?? [])).toEqual(["Fulfilment worker"]);
+	expect(stock?.container.name).toBe("Stock API");
+	expect(names(inventory?.callersGained ?? [])).toEqual(["Checkout API", "Fulfilment worker"]);
 	expect(names(inventory?.callersLost ?? [])).toEqual(["Place order", "Timeout guard"]);
-	expect(names(comparison.interfaceChanges.unchanged)).toEqual(["Stock API"]);
+	expect(names(comparison.interfaceChanges.unchanged)).toEqual([]);
 	const sections = Object.keys(raw.comparison);
 	expect(sections.indexOf("interfaceChanges")).toBeLessThan(sections.indexOf("subjects"));
 	// The words say what moved, then the counts of each state beside each other.
 	expect(stderr.indexOf("Payment webhook")).toBeGreaterThanOrEqual(0);
 	expect(stderr.indexOf("Payment webhook")).toBeLessThan(stderr.indexOf("3, 0, 2, 8, 0"));
-	expect(stderr.indexOf("3, 0, 2, 8, 0")).toBeLessThan(stderr.indexOf("2, 1, 1, 10, 0"));
+	expect(stderr.indexOf("3, 0, 2, 8, 0")).toBeLessThan(stderr.indexOf("2, 1, 1, 8, 0"));
 	expect(stderr).not.toMatch(/\b(?:deep|shallow|smell)/iu);
 });
 

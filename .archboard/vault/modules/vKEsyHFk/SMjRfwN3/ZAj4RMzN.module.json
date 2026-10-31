@@ -14,32 +14,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#ZAj4RMzN",
   "parent": "vKEsyHFk/SMjRfwN3#gTwVYQo9",
-  "outgoing": [
-    {
-      "order": 42000,
-      "kind": "data",
-      "label": "keep the recorded talk and voice",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
-        "symbol": "writeTalk"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#SGwsCHPo",
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
-    },
-    {
-      "order": 70047,
-      "kind": "call",
-      "label": "record and replay exact walkthroughs",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
-        "symbol": "WalkthroughRecordingError"
-      },
-      "id": "vKEsyHFk#YAA7XugC",
-      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
-    }
-  ]
+  "outgoing": []
 }

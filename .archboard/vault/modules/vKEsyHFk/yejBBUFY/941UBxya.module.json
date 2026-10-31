@@ -29,19 +29,6 @@
   ],
   "outgoing": [
     {
-      "order": 20000,
-      "kind": "event",
-      "label": "agent commands and snapshots",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
-        "symbol": "send"
-      },
-      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
       "order": 10000,
       "kind": "event",
       "label": "lease, commands, snapshots",
@@ -56,7 +43,20 @@
         "symbol": "connect"
       },
       "id": "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
-      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+      "to": "vKEsyHFk#sZUpSKaS"
+    },
+    {
+      "order": 20000,
+      "kind": "event",
+      "label": "agent commands and snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+        "symbol": "send"
+      },
+      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     }
   ]
 }

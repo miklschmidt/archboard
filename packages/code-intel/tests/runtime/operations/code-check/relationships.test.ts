@@ -176,8 +176,9 @@ beforeAll(async () => {
 					part("pG", "Guard", { path: "src/notify/guard.ts" }),
 				],
 				edges: [
-					// Drawn to the store, which holds the parts the server's code reaches.
-					edge("e1", ["pS", "pT"], "call"),
+					// Drawn to one part of the store, and the server's code reaches Write too.
+					// This relationship stands for that call, so it finds only information.
+					edge("e1", ["pS", "pR"], "call"),
 					edge("e2", ["pW", "pR"], "call"),
 					// Drawn from the sender, while the listener's code calls the sender.
 					edge("e3", ["pN", "pI"], "event"),
@@ -256,10 +257,10 @@ test("every finding of the relationship judgement, and nothing about a relations
 			"RELATIONSHIP_UNDRAWN pZ information",
 			"RELATIONSHIP_UNDRAWN pN warning",
 			"RELATIONSHIP_UNDRAWN pV warning",
+			"RELATIONSHIP_UNDRAWN pW information",
 			"RELATIONSHIP_BACKWARDS e3 information",
 			"RELATIONSHIP_UNSUPPORTED e4 information",
 			"RELATIONSHIP_UNSUPPORTED e7 information",
-			"RELATIONSHIP_ON_CONTAINER e1 information",
 			"ANCHOR_MISMATCH e9 warning",
 		].toSorted(),
 	);

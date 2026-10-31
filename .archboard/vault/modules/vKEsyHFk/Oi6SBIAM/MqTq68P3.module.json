@@ -50,7 +50,7 @@
         "symbol": "publishPaneContext"
       },
       "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
-      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      "to": "vKEsyHFk#OY4JPr8G"
     },
     {
       "order": 40000,
@@ -92,19 +92,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
     },
     {
-      "order": 71000,
-      "kind": "call",
-      "label": "only the page reaches the activation route",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "createBrowserOriginGuard"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
-      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
       "order": 70029,
       "kind": "call",
       "label": "wrap addressed pane requests",
@@ -116,6 +103,19 @@
       },
       "id": "vKEsyHFk#kEIA3Iaa",
       "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+    },
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "only the page reaches the activation route",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
+        "symbol": "createBrowserOriginGuard"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
+      "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
     }
   ]
 }

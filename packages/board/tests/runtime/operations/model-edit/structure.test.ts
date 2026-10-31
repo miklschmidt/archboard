@@ -140,8 +140,13 @@ test("a relationship source transfer preserves identity and metadata across file
 	const before = readArchitectureModel(vault);
 	if (!before.success) throw new Error(JSON.stringify(before));
 	const edge = before.relationships.find((value) => value.id === "Shop#Dispatch")!;
-	const untouched = readFileSync(join(vault, "internal/handler.module.json"));
-	const input = await batch(vault, ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]);
+	const untouched = readFileSync(join(vault, "gateway.module.json"));
+	const input = await batch(vault, [
+		"Shop#Gateway",
+		"Shop#Handler",
+		"Shop#Worker",
+		"Shop#Dispatch",
+	]);
 	const changes = [
 		{
 			type: "edit-relationship" as const,
@@ -153,16 +158,16 @@ test("a relationship source transfer preserves identity and metadata across file
 	const result = await editArchitectureModule(vault, { ...input, changes });
 	expect(result).toMatchObject({
 		success: true,
-		subjects: expect.arrayContaining(["Shop#Dispatch", "Shop#Gateway", "Shop#Worker"]),
+		subjects: expect.arrayContaining(["Shop#Dispatch", "Shop#Handler", "Shop#Worker"]),
 	});
 	expect(readArchitectureModel(vault)).toMatchObject({
 		success: true,
 		relationships: [{ ...edge, from: "Shop#Worker", to: "Shop#Gateway" }],
 		modules: expect.arrayContaining([
-			expect.objectContaining({ id: "Shop#Gateway", outgoing: [] }),
+			expect.objectContaining({ id: "Shop#Handler", outgoing: [] }),
 		]),
 	});
-	expect(readFileSync(join(vault, "internal/handler.module.json"))).toEqual(untouched);
+	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(untouched);
 	expect(await editArchitectureModule(vault, { ...input, changes })).toEqual(result);
 	if (!result.success) throw new Error(JSON.stringify(result));
 	const { readArchitectureCheckpoint } = await import("@archboard/board/store-read");
@@ -234,15 +239,15 @@ test("relationship additions, field edits and removals preserve order and reserv
 
 test("module deletion repairs incident references, retires identities and leaves unrelated bytes exact", async () => {
 	const { vault } = fixture();
-	const input = await batch(vault, ["Shop", "Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]);
-	const untouched = readFileSync(join(vault, "internal/handler.module.json"));
+	const input = await batch(vault, ["Shop", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"]);
+	const untouched = readFileSync(join(vault, "gateway.module.json"));
 	const result = await editArchitectureModule(vault, {
 		...input,
 		changes: [{ type: "remove-module", subject: "Shop#Worker" }],
 	});
 	expect(result).toMatchObject({
 		success: true,
-		subjects: expect.arrayContaining(["Shop#Worker", "Shop#Gateway", "Shop#Dispatch"]),
+		subjects: expect.arrayContaining(["Shop#Worker", "Shop#Handler", "Shop#Dispatch"]),
 	});
 	const current = readArchitectureModel(vault);
 	expect(current).toMatchObject({
@@ -255,7 +260,7 @@ test("module deletion repairs incident references, retires identities and leaves
 		success: false,
 		code: "MODULE_NOT_FOUND",
 	});
-	expect(readFileSync(join(vault, "internal/handler.module.json"))).toEqual(untouched);
+	expect(readFileSync(join(vault, "gateway.module.json"))).toEqual(untouched);
 	expect(
 		await editArchitectureModule(vault, {
 			...input,

@@ -33,9 +33,9 @@
   ],
   "outgoing": [
     {
-      "order": 6000,
+      "order": 1000,
       "kind": "http",
-      "label": "JSON",
+      "label": "semantic commands, on its own checkout's port",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -46,7 +46,7 @@
         "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
         "symbol": "fetch"
       },
-      "id": "vKEsyHFk/XppR9owz#pB6BrbXY",
+      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
@@ -87,6 +87,19 @@
       },
       "id": "vKEsyHFk#PlQAGfVL",
       "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    },
+    {
+      "order": 70056,
+      "kind": "call",
+      "label": "report local request failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "isRecord"
+      },
+      "id": "vKEsyHFk#V2ti26xJ",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     },
     {
       "order": 76000,

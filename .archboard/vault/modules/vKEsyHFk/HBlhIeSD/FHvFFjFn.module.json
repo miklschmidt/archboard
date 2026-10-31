@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 6000,
+      "kind": "data",
+      "label": "resolve in the vault's checkout or the chosen one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
       "order": 45000,
       "kind": "call",
       "description": "Holds the list and the choice of a checkout to the browser origin, as the opener settings are",
@@ -160,32 +173,7 @@
         "symbol": "parseBoardKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
-      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
-    },
-    {
-      "order": 101000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-        "symbol": "parseBoardKey"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#qqzbmw2N",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
-    },
-    {
-      "order": 6000,
-      "kind": "data",
-      "label": "resolve in the vault's checkout or the chosen one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      "to": "vKEsyHFk#9VahN2IU"
     }
   ]
 }

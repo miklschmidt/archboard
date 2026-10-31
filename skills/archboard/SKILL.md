@@ -71,14 +71,17 @@ A numbered layer or a tidy box is not a job. Use a configured group for a gather
 Connect each root to another root, or move it into the module that uses it.
 A call inside a container starts at the part that makes it.
 A reading that opens a module draws no line between it and a part that it holds, because the nesting already shows it.
-Prefer to end each relationship on a part that makes or answers the call, at the deepest level that the model states.
-A relationship that ends on a module with parts makes a caller and no entry point there, and its line stays on the frame.
-That end stays acceptable when no part stands for the call, such as a call from the module's own file.
-If two parts make the same kind of call, state two relationships.
+End each relationship on the part that owns it, at the deepest level that the model states.
+A module with parts cannot point at anything. Its entry points can, and they need a card.
+`archboard check` fails on a relationship that ends on a module with parts, with `RELATIONSHIP_ON_CONTAINER`.
+The only exception joins a module to a part that it holds, and `CONTAINER_LINE_TO_OWN_PART` warns on that shape.
+To repair an end, read the code that its anchor names and move the end to the part that owns that code.
+Keep the relationship's identity, and do not copy the relationship to other parts.
+If no part owns the code, add a part for what the module does at that seam, and name it for that responsibility.
 Add a part only for a seam that a caller would name and that an architect wants to see as a card.
 Do not add a part for a file only to give a line an end. Each new part makes the code check ask for every call of its file, and those lines make an import map.
+If two parts do different jobs across a seam, state two relationships. A relationship between the two sides where they meet stands for the other calls across it, and `RELATIONSHIP_UNDRAWN` names those as information.
 `archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART`.
-It reports an end on a module with parts as information with `RELATIONSHIP_ON_CONTAINER`.
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 

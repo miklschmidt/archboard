@@ -71,32 +71,6 @@
       "to": "vKEsyHFk/9ncuT5DP#SsiEBdik"
     },
     {
-      "order": 62000,
-      "kind": "dependency",
-      "label": "its own queue",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
-        "symbol": "CodexWorkhorseQueue"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#Z9keuZ46",
-      "to": "vKEsyHFk/9ncuT5DP#2ffhMTdn"
-    },
-    {
-      "order": 63000,
-      "kind": "dependency",
-      "label": "the workhorse operations port",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
-        "symbol": "CodexWorkhorseOperations"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#uoktRrXw",
-      "to": "vKEsyHFk/9ncuT5DP#iLWBCObu"
-    },
-    {
       "order": 64000,
       "kind": "dependency",
       "label": "its own context delivery",
@@ -108,19 +82,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#bso90XCw",
       "to": "vKEsyHFk/9ncuT5DP#RkhHgrhb"
-    },
-    {
-      "order": 65000,
-      "kind": "dependency",
-      "label": "the workhorse starter port",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
-        "symbol": "CodexWorkhorseStart"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#QczS1Qpk",
-      "to": "vKEsyHFk/9ncuT5DP#SsiEBdik"
     }
   ]
 }
