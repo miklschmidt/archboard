@@ -63,9 +63,12 @@ If the selected flow is unavailable, choose another flow or restore its definiti
 A hidden selected step remains in the inspector with an action to open its exact flow.
 These actions preserve selection and change no architecture files.
 
-Open the Current menu in the model header to select a saved reading.
-The menu lists the state, retention time, agent intent, and abbreviated identity.
-The selected reading shows its complete checkpoint identity and source evidence.
+Open History to select a saved reading.
+A run of saved readings of one state folds into one row with a count and the latest time.
+Expand the row to list each saved reading with its retention time and agent intent.
+The selected reading shows when it was saved and its source evidence.
+Its tooltips hold the complete checkpoint identity and source commit.
+Run `model checkpoints` to copy an identity.
 Select Current to return to the working files.
 Each selection reads its own inputs again.
 
@@ -731,11 +734,13 @@ An explicit comparison against an empty planning baseline returns `comparison.ag
 Its subject changes still identify the planning additions.
 This absence names no implemented state and does not suppress the requested comparison.
 
-The browser state picker lists current architecture, active proposals, and saved readings.
+History lists active proposals, current architecture, and earlier and shelved readings.
+Each row leads with its summary, then its name.
 Select a proposal to read its modules and flows without changing current architecture.
 The header states whether the selected reading is implemented, draft, historical, or shelved.
-The Compare control selects the default comparison, After, another active state, or an exact saved reading.
-After shows the state alone, and the reading says that it has no comparison.
+The control beside the picture says what the picture is compared with, and it is the way out.
+It offers `No comparison`, `Current`, the proposal's base, and the other active proposals.
+To compare with an exact saved reading, select `Compare` on its row in History.
 The address preserves both selections through reload and browser history.
 
 The diagram marks added, removed, and changed subjects.
@@ -982,9 +987,8 @@ Use an exact checkpoint when retained logical identities are ambiguous.
 Exact checkpoints preserve their original reading after later adoption or shelving.
 Non-current readings keep the existing comparison defaults.
 
-The browser reading selector lists current, draft, historical, and shelved states.
-The comparison selector includes the same logical states and exact checkpoints.
-Current follows the explicit designation; a named historical state keeps its identity.
+History lists current, draft, historical, and shelved states.
+Current follows the explicit designation, and a named historical state keeps its identity.
 Open Decision and history to inspect dates, predecessor, prior implementation, baseline, and document evidence.
 Use its state or baseline controls to open the referenced reading.
 If retained history is unavailable, restore it through [Publish and fetch history](#publish-and-fetch-history).
@@ -1106,7 +1110,7 @@ Import accepts empty inputs or byte-identical inputs whose archive needs restora
 It refuses replacement of different authored content.
 Malformed paths, changed fingerprints, corrupt objects, and missing dependencies refuse before imported content becomes visible.
 A planning-only model keeps no current designation, and its installation checkpoint records `state:null`.
-The browser labels that checkpoint as a planning model in both reading and comparison choices.
+History labels that checkpoint as a planning model.
 
 Import uses the normal installation journal, signing policy, atomic writer, and recovery operation.
 If interruption leaves an unfinished installation, run `model recover` in the same destination.

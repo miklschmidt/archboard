@@ -1,8 +1,9 @@
 {
   "id": "yM7DOqT4",
-  "name": "TASK-446 after TASK-482.07",
+  "name": "Coordinator tool call stops each whole work tree",
   "formerNames": [
-    "TASK-446 (with flows)"
+    "TASK-446 (with flows)",
+    "TASK-446 after TASK-482.07"
   ],
   "summary": "Observe actual work and stop the whole workhorse tree",
   "migration": {

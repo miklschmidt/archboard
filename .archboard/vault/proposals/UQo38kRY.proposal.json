@@ -1,8 +1,9 @@
 {
   "id": "UQo38kRY",
-  "name": "TASK-447 after TASK-482.07",
+  "name": "Voice coordinator and Workhorse start state their roles",
   "formerNames": [
-    "TASK-447 with flows"
+    "TASK-447 with flows",
+    "TASK-447 after TASK-482.07"
   ],
   "summary": "Architecture roles and saved briefs for external implementation",
   "migration": {
