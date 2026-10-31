@@ -8,8 +8,61 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/door.rs"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "schemaVersion": 1,
   "id": "vKEsyHFk#jn71SBXe",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 997000,
+      "kind": "call",
+      "label": "the door's shadow and seat",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/door.rs",
+        "symbol": "slab_seat"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
+      "id": "vKEsyHFk#4tSdqitW"
+    },
+    {
+      "order": 998000,
+      "kind": "call",
+      "label": "the door's near and far words",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/door.rs",
+        "symbol": "words_in"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
+      "id": "vKEsyHFk#2O7PSXBM"
+    },
+    {
+      "order": 999000,
+      "kind": "call",
+      "label": "a door's standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/door.rs",
+        "symbol": "standing_pin"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "id": "vKEsyHFk#V38aoFC1"
+    },
+    {
+      "order": 1000000,
+      "kind": "call",
+      "label": "the door's shaped words",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/door.rs",
+        "symbol": "tab_runs"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "id": "vKEsyHFk#HXLXTybX"
+    }
+  ]
 }

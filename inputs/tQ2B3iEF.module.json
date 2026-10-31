@@ -8,8 +8,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/architecture-model/ModelMeasures.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#tQ2B3iEF",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 1004000,
+      "kind": "call",
+      "label": "the code history of every part",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelMeasures.tsx",
+        "symbol": "modelHistoryQuery"
+      },
+      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+      "id": "vKEsyHFk#w8kCmXJj"
+    }
+  ]
 }

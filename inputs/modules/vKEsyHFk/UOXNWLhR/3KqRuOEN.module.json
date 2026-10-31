@@ -236,6 +236,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#QPqsk43l",
       "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
+    },
+    {
+      "order": 1005000,
+      "kind": "call",
+      "label": "the selected module's interface",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/ContainerInterface.tsx",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo",
+      "id": "vKEsyHFk#YUNbvrVu"
     }
   ]
 }

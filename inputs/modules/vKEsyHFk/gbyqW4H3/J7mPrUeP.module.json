@@ -77,6 +77,32 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#Mi41O26J",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 992000,
+      "kind": "call",
+      "label": "a frame and its edge tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "symbol": "paint_measured_frame"
+      },
+      "to": "vKEsyHFk#n2J80LO7",
+      "id": "vKEsyHFk#7xW4xT94"
+    },
+    {
+      "order": 993000,
+      "kind": "call",
+      "label": "a module outside the open one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/architecture.rs",
+        "symbol": "paint_door"
+      },
+      "to": "vKEsyHFk#jn71SBXe",
+      "id": "vKEsyHFk#0Cf3WQEw"
     }
   ]
 }

@@ -28,5 +28,19 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1006000,
+      "kind": "call",
+      "label": "which parts callers reach",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/rules/model-projection.ts",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo",
+      "id": "vKEsyHFk#s1kzuMxy"
+    }
+  ]
 }

@@ -129,6 +129,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 1008000,
+      "kind": "call",
+      "label": "keep a vault's news running; send a new page the snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
+      "id": "vKEsyHFk#ImhHUqRg"
     }
   ]
 }

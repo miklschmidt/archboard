@@ -72,6 +72,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
       "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+    },
+    {
+      "order": 1007000,
+      "kind": "call",
+      "label": "open the epoch store for this generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexEpochStore"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#Uz2qReYK",
+      "id": "vKEsyHFk#Ao3t2Mgx"
     }
   ]
 }

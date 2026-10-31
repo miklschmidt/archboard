@@ -188,6 +188,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#LmUmfrVG",
       "to": "vKEsyHFk/XppR9owz#MrE3v2T6"
+    },
+    {
+      "order": 1001000,
+      "kind": "call",
+      "label": "validated input",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/execution/execution.ts",
+        "symbol": "handler"
+      },
+      "to": "vKEsyHFk#rTNYNRVL",
+      "id": "vKEsyHFk#t0tSmqVd"
     }
   ]
 }
