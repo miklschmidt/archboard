@@ -10,7 +10,6 @@ import {
 	corridorPoints,
 	routeLabels,
 	routePoints,
-	routeCrosses,
 } from "#tests/runtime/support/drawn-routes.ts";
 
 /**
@@ -117,14 +116,14 @@ function nearLanes(drawing: RenderedDiagram): string[] {
 }
 
 /**
- * Upright runs within half a lane of a frame's or group region's side wall,
+ * Upright runs within half a lane of a frame's side wall,
  * where a line reads as part of the container's border.
  * @param drawing The rendered board.
  * @returns Each such run's relationship id and the wall's x.
  */
 function wallHugs(drawing: RenderedDiagram): string[] {
 	const boxes =
-		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+		/<g data-semantic-kind="region"[^>]*data-depiction="container"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
 	// Routes are read on the page, so the walls are moved onto it with them.
 	const shift = bodyShift(drawing.svg);
 	const walls = [...drawing.svg.matchAll(boxes)].flatMap(([, x, y, width, height]) =>
@@ -149,13 +148,13 @@ function wallHugs(drawing: RenderedDiagram): string[] {
 
 /**
  * The label boxes that stand across a container's edge: over part of a frame
- * or group region without standing wholly inside it, below its top edge.
+ * without standing wholly inside it, below its top edge.
  * @param drawing The rendered board.
  * @returns Each such label's relationship id and the container's corner.
  */
 function labelsAcrossWalls(drawing: RenderedDiagram): string[] {
 	const boxes =
-		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
+		/<g data-semantic-kind="region"[^>]*data-depiction="container"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
 	// Labels are read on the page, so the containers are moved onto it with them.
 	const shift = bodyShift(drawing.svg);
 	const containers = [...drawing.svg.matchAll(boxes)].map(([, x, y, width, height]) => ({
@@ -202,40 +201,4 @@ function slants(drawing: RenderedDiagram): string[] {
 	);
 }
 
-/**
- * Routes through the painted background of a group's caption.
- * @param drawing The rendered architecture.
- * @returns Each relationship and the group header that it crosses.
- */
-function routesThroughGroupHeaders(drawing: RenderedDiagram): string[] {
-	const shift = bodyShift(drawing.svg);
-	const routes = routePoints(drawing.svg);
-	return drawing.svg.split(/(?=<g data-semantic-kind=)/u).flatMap((chunk) => {
-		if (!chunk.startsWith('<g data-semantic-kind="group-region"')) return [];
-		const group = /data-group="([^"]+)"/u.exec(chunk)?.[1];
-		// Both zoom layers paint a caption tab. The far tab can be wider.
-		const boxes = [
-			...chunk.matchAll(
-				/<g class="ab-(?:near|far)">\s*<path d="M(-?[\d.]+),(-?[\d.]+) V[\d.]+ A[\d., ]+ [01] [01] [01] (-?[\d.]+),(-?[\d.]+) H(-?[\d.]+)/gu,
-			),
-		].map((tab) => ({
-			x: Math.min(Number(tab[1]), Number(tab[5])) + shift.x,
-			y: Number(tab[4]) + shift.y,
-			width: Math.abs(Number(tab[1]) - Number(tab[5])),
-			height: Number(tab[2]) - Number(tab[4]),
-		}));
-		return [...routes]
-			.filter(([, points]) => boxes.some((box) => routeCrosses(points, box)))
-			.map(([id]) => `${id} through ${group} header`);
-	});
-}
-
-export {
-	TRACK_LANE,
-	labelsAcrossWalls,
-	nearLanes,
-	routesThroughGroupHeaders,
-	runsUnderLabels,
-	slants,
-	wallHugs,
-};
+export { TRACK_LANE, labelsAcrossWalls, nearLanes, runsUnderLabels, slants, wallHugs };

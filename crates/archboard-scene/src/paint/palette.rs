@@ -9,7 +9,7 @@ use crate::scene::{Colour, Token};
 pub(super) struct Palette {
     /// The page behind everything.
     pub background: Colour,
-    /// A card's top face, before its group tints it.
+    /// A card's top face.
     pub slab_face: Colour,
     /// A card's front edge, the thickness that shows along its foot.
     pub slab_edge: Colour,
@@ -27,6 +27,10 @@ pub(super) struct Palette {
     pub tray_sink: Colour,
     /// The lit lip along the bottom of a container.
     pub tray_lip: Colour,
+    /// The raised tab that stands on a container's edge.
+    pub tray_tab: Colour,
+    /// The thin line round a container and its tab.
+    pub tray_line: Colour,
     /// A port's inside by its rim.
     pub port_wall: Colour,
     /// A port's inside at its deepest.
@@ -73,6 +77,8 @@ impl Palette {
             tray_floor: Token::TrayFloor.into(),
             tray_sink: Token::TraySink.into(),
             tray_lip: Token::TrayLip.into(),
+            tray_tab: Token::TrayTab.into(),
+            tray_line: Token::Border.into(),
             port_wall: Token::PortWall.into(),
             port_deep: Token::PortDeep.into(),
             port_lip: Token::PortLip.into(),

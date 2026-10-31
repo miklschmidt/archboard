@@ -47,7 +47,7 @@ type SemanticWaiting = NonNullable<DrawnBoard["waiting"]>;
 type AppliedAppearance = DrawnBoard["appearances"][number];
 
 /** What the picture's key lists: one sample of each kind it draws. */
-type PictureKey = NonNullable<DrawnBoard["key"]>;
+type PictureLegend = NonNullable<DrawnBoard["legend"]>;
 
 /** One view the board offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
@@ -262,7 +262,7 @@ export {
 	comparisonKey,
 	fetchVaultCheck,
 	type AppliedAppearance,
-	type PictureKey,
+	type PictureLegend,
 	type SemanticAtlas,
 	type SemanticBoardEntry,
 	type SemanticBoardListing,

@@ -3,10 +3,11 @@ id: TASK-559.16
 title: >-
   Show a group as a named tag on its card and remove group frames and tinted
   faces
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-31T00:13:00Z'
-updated_date: '2026-10-31T01:58:00Z'
+updated_date: '2026-10-31T06:08:00Z'
 labels:
   - renderer
   - frontend
@@ -27,16 +28,32 @@ The owner compared ten ways to show a group colour in /tmp/integrate/header-mock
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A card in a group shows the group name in a bright tag, in both themes, and its face stays neutral
-- [ ] #2 No reading draws a group frame or region, and cards of one group still stand together
-- [ ] #3 A long group name and a module in several groups stay readable and never cover the name of the card
-- [ ] #4 A far card still shows its group
+- [x] #1 A card in a group shows the group name in a bright tag, in both themes, and its face stays neutral
+- [x] #2 No reading draws a group frame or region, and cards of one group still stand together
+- [x] #3 A long group name and a module in several groups stay readable and never cover the name of the card
+- [x] #4 A far card still shows its group
 - [ ] #5 Gates 1 to 4 are measured again and the owner accepts the result by eye
-- [ ] #6 Rule 7 and every group region control are gone, and the legend tags from TASK-559.19 use the tag finish of the card
+- [x] #6 Rule 7 and every group region control are gone, and the legend tags from TASK-559.19 use the tag finish of the card
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+1. Carry a card's groups as tags on its appearance and draw them in the door finish, near and far.
+2. Keep card faces neutral, and remove group regions, their drawing and the showGroups plumbing.
+3. Gather the cards of one group in the board's order and pull them together on the dense grid.
+4. Measure the name row on the corpus and decide how a tag shares it.
+5. Update the docs and the tests, and measure the gates.
+<!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
 The tag takes the finish of a door button: gradient, rim, top highlight and dark ink. Mockup: /tmp/integrate/header-mockups/maple-final.png.
+
+A tag never widens a card. The corpus gave identical geometry with a card that grows and with a name that wraps sooner (area 142.3 M each at that step), so a long name wraps sooner. Two tags that leave a name less than half of its room take a row of their own above the name.
+Sequence participants and flowchart boxes show no tag: a column head and a step box have no room for one, and containers wear none.
+Tag ink on the owner's recipe reaches APCA Lc 37 to 83 over the two gradient stops. The weakest is indigo on its lower stop. That is under the 60 of content text, and the test holds the floor of 30.
+Region placement stays dormant in crates/archboard-layout/src/blocks and track: no reading reaches it. Removing it is about 425 references, so it stays out of this change.
+Final measures: 103 of 115 readings land at 0.6 or more (105 before), total area 148.9 M (135.9 M before), slowest drawing 467 ms.
 <!-- SECTION:NOTES:END -->

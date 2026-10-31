@@ -5,7 +5,7 @@
 use archboard_scene::js;
 use archboard_scene::names::word;
 use archboard_scene::request::{NodeAppearance, PaletteColor};
-use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, SubjectKind, Transform};
+use archboard_scene::scene::{Group, LineFacts, Role, Slot, Subject, Transform};
 
 use crate::definitions::Names;
 use crate::xml::Attributes;
@@ -49,12 +49,7 @@ fn placed(transform: Transform, unit: &str) -> String {
 /// The subject a group draws, as its first attributes.
 fn subject(subject: &Subject, out: &mut Attributes) {
     out.set("data-semantic-kind", word(&subject.kind));
-    let id = if subject.kind == SubjectKind::GroupRegion {
-        "data-group"
-    } else {
-        "data-semantic-id"
-    };
-    out.set(id, subject.id.as_str()).maybe(
+    out.set("data-semantic-id", subject.id.as_str()).maybe(
         "data-semantic-standing",
         subject.standing.map(|one| word(&one)),
     );
@@ -75,8 +70,6 @@ fn appearance(appearance: &NodeAppearance, out: &mut Attributes) {
             "card"
         },
     )
-    .set("data-body-color", colour_word(appearance.body_color))
-    .maybe("data-group", appearance.group.as_deref())
     .set("data-type-color", colour_word(appearance.type_color))
     .set("data-type-name", appearance.type_name.as_str())
     .set("data-type-kind", appearance.type_kind.as_str());
@@ -212,10 +205,6 @@ fn role(group: &Group, names: &Names, out: &mut Attributes) {
         }
         Role::Fragment => {
             out.maybe("opacity", group.opacity);
-        }
-        // A region states its members, none too.
-        Role::Region => {
-            out.set(MEMBERS_ATTRIBUTE, group.members.join(" "));
         }
         Role::RowMark | Role::Marks => members(group, out),
         Role::Shadow(part) => {

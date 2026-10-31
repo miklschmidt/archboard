@@ -84,8 +84,6 @@ pub struct FlowchartRequest {
     pub parts: Vec<Node>,
     /// The vault policy's node kinds, which a message box is drawn as.
     pub node_kinds: BTreeMap<String, KindLook>,
-    /// Each group's colour, by group id, for a group that has one.
-    pub groups: BTreeMap<String, PaletteColor>,
     /// The comparison the picture is read against, and the page around it.
     pub page: PageRequest,
     /// What the document says about itself and what it needs from its host.
@@ -178,6 +176,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                     name: &node.name,
                     responsibility: node.responsibility.as_deref(),
                     path: None,
+                    tags: &[],
                     drills: false,
                     door: false,
                 };
@@ -221,7 +220,6 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
             nodes,
             labels,
             lines,
-            groups: None,
             held_kinds: BTreeMap::new(),
         },
         words,
@@ -274,8 +272,7 @@ fn node_appearances(
             let kind = look(&node.kind);
             let appearance = NodeAppearance {
                 container: parents.contains(node.id.as_str()),
-                body_color: None,
-                group: None,
+                tags: Vec::new(),
                 type_color: kind.and_then(|kind| kind.color),
                 icon: kind
                     .and_then(|kind| kind.icon.clone())
@@ -338,7 +335,6 @@ pub async fn picture<S: Solver>(
             appearances,
             lines,
             steps: Vec::new(),
-            groups: request.groups,
             flowchart: Some(FlowchartParts {
                 shapes,
                 subjects: graph.subjects,

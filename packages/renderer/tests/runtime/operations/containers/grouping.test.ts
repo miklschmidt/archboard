@@ -99,7 +99,32 @@ const nodes = [
 	{ id: "api", name: "API", kind: "api", parent: "plain" },
 ];
 
-describe("a card's body takes its group's colour and its chip its type's", () => {
+test("the cards of a group stand together on the board", async () => {
+	const nodes = ["a", "b", "c", "d", "e", "f"].map((id, at) => ({
+		id,
+		name: `Card ${id}`,
+		kind: "plain",
+		groups: [at % 2 === 0 ? "first" : "second"],
+	}));
+	const drawn = await renderArchitecture({
+		content: orderedFixture({ nodes }),
+		policy: SemanticPolicySchema.parse({
+			...policy,
+			groups: {
+				first: { name: "First", color: "green" },
+				second: { name: "Second", color: "orange" },
+			},
+		}),
+	});
+	const order = nodes.toSorted((one, other) => {
+		const [a, b] = [drawn.atlas.nodes[one.id]!, drawn.atlas.nodes[other.id]!];
+		return a.y - b.y || a.x - b.x;
+	});
+	const changes = order.filter((node, at) => at > 0 && node.groups[0] !== order[at - 1]!.groups[0]);
+	expect(changes).toHaveLength(1);
+});
+
+describe("a group shows as a tag, and a card's face stays neutral", () => {
 	const grouped = SemanticPolicySchema.parse({
 		...policy,
 		groups: { core: { name: "Core", color: "green" }, shell: { name: "Shell", color: "orange" } },
@@ -107,72 +132,48 @@ describe("a card's body takes its group's colour and its chip its type's", () =>
 	const members = [
 		{ id: "cloud", name: "Azure", kind: "azure", groups: ["shell"] },
 		{ id: "gate", name: "Gateway", kind: "api", parent: "cloud", groups: ["core"] },
-		{ id: "work", name: "Worker", kind: "plain", parent: "cloud", groups: ["core"] },
+		{ id: "work", name: "Worker", kind: "plain", parent: "cloud", groups: ["core", "shell"] },
 		{ id: "side", name: "Sidecar", kind: "api", parent: "cloud" },
 		{ id: "lone", name: "Lone", kind: "kubernetes", groups: ["core"] },
 	];
 	for (const theme of ["light", "dark"] as const) {
-		test(`group members, a card no group places, a container and a lone member on ${theme}`, async () => {
+		test(`members, a card no group places, a container and a lone member on ${theme}`, async () => {
 			const drawn = paintedIn(
 				(await renderArchitecture({ content: orderedFixture({ nodes: members }), policy: grouped }))
 					.svg,
 				theme,
 			);
-			const green = hueOf(themeColor(theme, "--semantic-green"));
-			for (const id of ["gate", "work"]) {
-				const markup = groupOf(drawn, "node", id)!.markup;
-				// The slab's front edge is a tone of its group's colour.
-				expect(sameHue(hueOf(blockOf(markup).edge), green), id).toBeTrue();
-				expect(markup).toContain('data-body-color="green"');
+			for (const id of ["gate", "work", "lone", "side"]) {
+				const { edge, face } = blockOf(groupOf(drawn, "node", id)!.markup);
+				expect(chromaOf(face), id).toBeLessThan(0.012);
+				expect(chromaOf(edge), id).toBeLessThan(0.012);
 			}
-			// A container takes no colour from the group that places it, and passes
-			// none to what it holds: the region of the group says the group
-			// (TASK-423, TASK-474).
-			expect(groupOf(drawn, "node", "side")!.markup).toContain('data-body-color="neutral"');
+			// A tag stands in the near view and in the far view of every member.
+			const finishes = (id: string, color: string) =>
+				groupOf(drawn, "node", id)!.markup.split(`url(#ab-door-${color})`).length - 1;
+			expect(finishes("gate", "green")).toBe(2);
+			expect(finishes("lone", "green")).toBe(2);
+			expect(finishes("work", "green")).toBe(2);
+			expect(finishes("work", "orange")).toBe(2);
+			expect(groupOf(drawn, "node", "side")!.markup).not.toContain("url(#ab-door-");
+			// A container holds its parts: it takes no colour and no tag of its groups.
 			const frame = groupOf(drawn, "region", "cloud")!.markup;
-			expect(frame).toContain('data-body-color="neutral"');
-			// Its well and its tab are neutral: no colour of its kind or its group.
+			expect(frame).not.toContain("url(#ab-door-");
 			const fills = frameFills(frame);
 			expect(fills.length).toBeGreaterThan(0);
 			for (const well of fills) expect(chromaOf(well), well).toBeLessThan(0.012);
-			// A group's only member at its level still takes the group's colour (ADR 0038).
-			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-body-color="green"');
 			// The chip keeps its type's colour.
 			expect(groupOf(drawn, "node", "gate")!.markup).toContain('data-type-color="violet"');
 			expect(groupOf(drawn, "node", "lone")!.markup).toContain('data-type-color="green"');
 			expect(groupOf(drawn, "region", "cloud")!.markup).toContain('data-type-color="blue"');
-			// A container no group places has a neutral tab, whatever its kind's colour.
-			const plain = paintedIn(
-				(await renderArchitecture({ content: orderedFixture({ nodes }), policy })).svg,
-				theme,
-			);
-			const unplaced = groupOf(plain, "region", "cloud")!.markup;
-			expect(unplaced).toContain('data-body-color="neutral"');
-			for (const well of frameFills(unplaced)) expect(chromaOf(well), well).toBeLessThan(0.012);
 			const unknown = await renderArchitecture({
 				content: orderedFixture({ nodes: [{ id: "u", name: "Old kind", kind: "retired" }] }),
 				policy: grouped,
 			});
-			expect(unknown.svg).toContain('data-body-color="neutral"');
 			expect(unknown.svg).toContain('data-type-color="neutral"');
 			expect(unknown.svg).toContain('data-type-icon="RiQuestionLine"');
 		});
 	}
-
-	test("the current policy restyles unchanged meaning: a group's colour, not the board, decides", async () => {
-		const content = orderedFixture({ nodes: members });
-		const green = await renderArchitecture({ content, theme: "light", policy: grouped });
-		const yellow = await renderArchitecture({
-			content,
-			theme: "light",
-			policy: SemanticPolicySchema.parse({
-				...policy,
-				groups: { core: { name: "Core", color: "yellow" } },
-			}),
-		});
-		expect(groupOf(green.svg, "node", "gate")!.markup).toContain('data-body-color="green"');
-		expect(groupOf(yellow.svg, "node", "gate")!.markup).toContain('data-body-color="yellow"');
-	});
 
 	test("comparison borders the face while preserving the block's face, edge and type chip", async () => {
 		const rendered = await renderArchitecture({

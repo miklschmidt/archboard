@@ -191,7 +191,8 @@ function boxOf(groups: readonly DrawnGroup[], group: DrawnGroup): DiagramBox {
 	const body = header
 		? groups.find((one) => one.kind === group.kind && one.id === group.id && one !== group)
 		: group;
-	const tab = [...body!.markup.matchAll(SEATS)][1];
+	// A frame seats its well, then its near tab, then its far tab, the widest.
+	const tab = [...body!.markup.matchAll(SEATS)].at(-1);
 	const face = header ? (tab ?? SLAB.exec(body!.markup)) : BOX.exec(body!.markup);
 	const [x, y, width, height] = face!.slice(1).map(Number);
 	return { x: x!, y: y!, width: width!, height: height! };
@@ -237,9 +238,12 @@ for (const [grammar, layout] of DRAWINGS) {
 				expect(far, where).toBeDefined();
 				// One centre in both views, so the swap between them does not move
 				// the mark, and as far in from the top edge as from the right edge.
-				expect(far!.x, where).toBeCloseTo(near!.x, 2);
+				// A frame's mark ends its tab, which hugs the words of each view.
 				expect(far!.y, where).toBeCloseTo(near!.y, 2);
-				expect(box.x + box.width - near!.x, where).toBeCloseTo(near!.y - box.y, 2);
+				if (group.id !== "frame") {
+					expect(far!.x, where).toBeCloseTo(near!.x, 2);
+					expect(box.x + box.width - near!.x, where).toBeCloseTo(near!.y - box.y, 2);
+				}
 				const badge = badgeOf(group);
 				expect(badge !== undefined, where).toBe(unsettled.length > 0);
 				for (const ring of [near!, far!]) {

@@ -75,8 +75,10 @@ pub enum GradientId {
     },
     /// The light that falls off down a face.
     Sheen,
-    /// The softer light down a face a group may tint.
+    /// The softer light down a card's face.
     SoftSheen,
+    /// The inner shadow down a frame's well from its top edge.
+    WellShade,
     /// A port's well.
     PortWell,
     /// The fade down a port's slot.

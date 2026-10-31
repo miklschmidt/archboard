@@ -25,8 +25,8 @@ use crate::scene::{
 pub(super) struct SlabLook {
     /// Its top face.
     pub face: Paint,
-    /// Whether its face is one a group may tint.
-    pub tintable: bool,
+    /// Whether the light on its face is the soft one of a card.
+    pub soft: bool,
     /// The colour its highlight is mixed from: its face's own colour, unless its face is a gradient.
     pub lit: Colour,
     /// Its front edge.
@@ -58,10 +58,8 @@ const SOFT_SHEEN: f64 = 0.2;
 /// Which sort of block casts a shadow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Lift {
-    /// A card or a header slab, which casts the full shadow.
+    /// A card, which casts the full shadow.
     Card,
-    /// A container's tray, which casts none.
-    Tray,
     /// A type chip, which casts a short shadow.
     Chip,
 }
@@ -71,7 +69,6 @@ impl Lift {
     fn reach(self) -> f64 {
         match self {
             Lift::Card => SHADOW_REACH,
-            Lift::Tray => 0.0,
             Lift::Chip => 2.0,
         }
     }
@@ -181,11 +178,7 @@ pub(super) fn slab_shadow(
     if standing == Some(Standing::Removed) {
         return ghost(rect, radius, palette);
     }
-    if lift == Lift::Tray {
-        Items::new()
-    } else {
-        smooth_shadow(rect, radius, lift.reach())
-    }
+    smooth_shadow(rect, radius, lift.reach())
 }
 
 /// A shadow in a group of its own, laid under every block and every line.
@@ -219,7 +212,7 @@ pub(super) fn shadow_under(
 
 /// The light that falls off down a face.
 fn sheen_of(look: &SlabLook) -> GradientId {
-    if look.tintable {
+    if look.soft {
         GradientId::SoftSheen
     } else {
         GradientId::Sheen
@@ -385,7 +378,7 @@ impl SlabLook {
     pub(super) fn plain(face: Colour, edge: Colour, thickness: f64, radius: f64) -> Self {
         SlabLook {
             face: Paint::from(&face),
-            tintable: false,
+            soft: false,
             lit: face,
             edge,
             thickness,

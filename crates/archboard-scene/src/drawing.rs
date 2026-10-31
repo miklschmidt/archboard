@@ -42,6 +42,10 @@ pub enum TextRole {
     Note,
     /// A relationship's or a message's words, set in the ink of the label's plate.
     Label,
+    /// The folders of a card's code path, or a count of paths: dimmed.
+    Folder,
+    /// The file a card's code path ends in: bright.
+    File,
 }
 
 /// One measured line, positioned relative to its card or label box.
@@ -129,28 +133,6 @@ pub struct PlacedLabel {
     pub measured: MeasuredLabel,
 }
 
-/// A group's region: the cards one group places inside one container, gathered and captioned.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
-pub struct DrawingRegion {
-    /// The id of the group.
-    pub group: String,
-    /// The container the region sits in; absent on the board itself.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub parent: Option<String>,
-    /// The cards and containers the board places in this group inside that
-    /// container, which a viewer lights the region for.
-    pub members: Vec<String>,
-    /// The region's box.
-    #[serde(rename = "box")]
-    #[ts(rename = "box")]
-    pub bounds: Rect,
-    /// Where its caption sits, and its words.
-    pub caption: PlacedLabel,
-    /// How deeply the region nests: 0 at the top level. Regions are painted shallowest first.
-    pub depth: f64,
-}
-
 /// A final route and its optional measured label in the same coordinates.
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 pub struct DrawingEdge<E> {
@@ -190,10 +172,6 @@ pub struct ArchitectureDrawing<N, E> {
     pub containers: Vec<DrawingNode<N>>,
     /// The routes, one for each relationship drawn.
     pub edges: Vec<DrawingEdge<E>>,
-    /// Group regions, when the engine gathers groups (TASK-347).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub regions: Option<Vec<DrawingRegion>>,
 }
 
 /// A raised arc where one route crosses others, on the route that carries it.

@@ -1,15 +1,13 @@
 //! The drawing a solve's geometry describes: every card and container at its
-//! box, every relationship along its route with its label, and every group
-//! region with its caption and what it gathers.
+//! box, and every relationship along its route with its label.
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
 use archboard_scene::drawing::{
-    ArchitectureDrawing, DrawingEdge, DrawingNode, DrawingRegion, EdgeFacts, NodeFacts,
-    PlacedLabel, ReadingDirection,
+    ArchitectureDrawing, DrawingEdge, DrawingNode, EdgeFacts, NodeFacts, PlacedLabel,
+    ReadingDirection,
 };
 use archboard_scene::geometry::{Curve, Point, Rect, curve_through};
-use indexmap::IndexMap;
 
 use super::choosing::Placed;
 use super::content::Content;
@@ -46,51 +44,6 @@ fn self_loop(bounds: Rect) -> Curve {
         ],
         false,
     )
-}
-
-/// What a group's region in one container holds, for a viewer to light it
-/// with: the cards and containers the group gathers there, and every card
-/// inside one of those that is in the group too.
-fn region_members(
-    content: &Content,
-    gathered: Option<&IndexMap<String, String>>,
-    group: &str,
-    parent: Option<&str>,
-) -> Vec<String> {
-    let parents: BTreeMap<&str, Option<&str>> = content
-        .nodes
-        .iter()
-        .map(|node| (node.id.as_str(), node.parent.as_deref()))
-        .collect();
-    let held: HashSet<&str> = content
-        .nodes
-        .iter()
-        .filter(|node| {
-            node.parent.as_deref() == parent
-                && gathered
-                    .and_then(|map| map.get(&node.id))
-                    .is_some_and(|at| at == group)
-        })
-        .map(|node| node.id.as_str())
-        .collect();
-    let inside = |id: &str| {
-        let mut at = Some(id);
-        while let Some(here) = at {
-            if held.contains(here) {
-                return true;
-            }
-            at = parents.get(here).copied().flatten();
-        }
-        false
-    };
-    content
-        .nodes
-        .iter()
-        .filter(|node| {
-            held.contains(node.id.as_str()) || (node.is_member_of(group) && inside(&node.id))
-        })
-        .map(|node| node.id.clone())
-        .collect()
 }
 
 /// Every relationship along its route, in the board's order.
@@ -137,35 +90,6 @@ fn edges_of(
     .collect()
 }
 
-/// Every group region the solve placed whose group has a caption.
-fn regions_of(content: &Content, measured: &Measured, placed: &Placed) -> Vec<DrawingRegion> {
-    let groups = measured.groups.as_ref();
-    placed
-        .regions
-        .iter()
-        .filter_map(|region| {
-            let words = groups?.captions.get(&region.group)?;
-            let members = region_members(
-                content,
-                groups.map(|groups| &groups.placing),
-                &region.group,
-                region.parent.as_deref(),
-            );
-            Some(DrawingRegion {
-                group: region.group.clone(),
-                parent: region.parent.clone(),
-                members,
-                bounds: region.bounds,
-                caption: PlacedLabel {
-                    bounds: region.caption,
-                    measured: words.clone(),
-                },
-                depth: region.depth,
-            })
-        })
-        .collect()
-}
-
 /// The drawing a solve's geometry describes.
 pub(crate) fn drawing_of(
     content: &Content,
@@ -207,7 +131,6 @@ pub(crate) fn drawing_of(
         .map(|node| (node.measured.node.id.as_str(), node.bounds))
         .collect();
     let edges = edges_of(content, measured, placed, &boxes);
-    let regions = regions_of(content, measured, placed);
     ArchitectureDrawing {
         direction: ReadingDirection::Down,
         width: placed.width,
@@ -215,6 +138,5 @@ pub(crate) fn drawing_of(
         cards,
         containers,
         edges,
-        regions: (!regions.is_empty()).then_some(regions),
     }
 }

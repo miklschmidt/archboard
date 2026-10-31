@@ -42,13 +42,11 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
-	const shownGroups = search[`showGroups${paneId}`];
 	const filters = useMemo(
 		() => ({
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
-			showGroups: shownGroups ? shownGroups.split(",") : [],
 		}),
-		[hiddenKinds, shownGroups],
+		[hiddenKinds],
 	);
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
@@ -93,7 +91,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 							grammar,
 							flow: flow ?? undefined,
 							hideKinds: filters.hideKinds,
-							showGroups: filters.showGroups,
 							bookmark: undefined,
 						}),
 				...patch,
@@ -111,7 +108,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
-				showGroups: undefined,
 				subject: undefined,
 			});
 		},
@@ -135,7 +131,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
-				showGroups: undefined,
 				subject: undefined,
 				against: undefined,
 			});
@@ -165,7 +160,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: undefined,
 					focus: undefined,
 					hideKinds: undefined,
-					showGroups: undefined,
 				},
 				false,
 				repository,
@@ -190,7 +184,6 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					flow: reading.flow,
 					focus: reading.focus,
 					hideKinds: reading.hideKinds,
-					showGroups: reading.showGroups,
 				},
 				!push,
 				repository ?? undefined,
@@ -232,7 +225,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[explore, focused],
 	);
 	const toggleFilter = useCallback(
-		(field: "hideKinds" | "showGroups", id: string): void => {
+		(field: "hideKinds", id: string): void => {
 			userChanged?.("view");
 			const current = filters[field];
 			const next = current.includes(id)
@@ -309,7 +302,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		[navigate, userChanged],
 	);
 	const showWholeScope = useCallback((): void => {
-		explore({ focus: undefined, hideKinds: undefined, showGroups: undefined });
+		explore({ focus: undefined, hideKinds: undefined });
 	}, [explore]);
 	const openReference = useCallback(
 		(repository: string, reading: Model): void => {
@@ -378,7 +371,6 @@ function referenceAddress(reading: Model): ModelAddress {
 		against: undefined,
 		focus: referenceFocus(reading, location.subject),
 		hideKinds: undefined,
-		showGroups: undefined,
 	};
 }
 

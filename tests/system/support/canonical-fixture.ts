@@ -72,7 +72,6 @@ function canonicalCapture(
 		reading: {
 			focus: subjects,
 			relationshipKinds: Object.keys(model.policy.relationshipKinds),
-			groups: true,
 			grammar: "architecture" as const,
 		},
 		selection: { state: model.selectedState!.id },

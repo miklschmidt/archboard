@@ -55,7 +55,6 @@ test("local explanations share captured text, cancellation, and retry through th
 			scope: "Shop/MKhTEYqf#lwmpnaVU",
 			focus: [],
 			relationshipKinds: ["call"],
-			groups: true,
 			grammar: "architecture" as const,
 		},
 	};
@@ -323,7 +322,7 @@ test("a signed-out local agent retains an unavailable capture without starting a
 				model: model.manifest.id,
 				expectedRevision: model.revision.digest,
 				subjects: [],
-				reading: { focus: [], relationshipKinds: [], groups: true, grammar: "architecture" },
+				reading: { focus: [], relationshipKinds: [], grammar: "architecture" },
 			},
 		}),
 	});
@@ -401,7 +400,7 @@ test("comparison and narrative deliveries retain exact readings after current an
 			expectedRevision: reading.revision.digest,
 			expectedComparisonRevision: reading.comparison?.revision.digest,
 			expectedSourceRevision: reading.playback?.sourceRevision.digest,
-			reading: { focus: [], relationshipKinds: [], groups: true, grammar: "architecture" as const },
+			reading: { focus: [], relationshipKinds: [], grammar: "architecture" as const },
 		};
 		const expected = await readArchitectureModel(fixture.vault, undefined, undefined, {
 			...selection,

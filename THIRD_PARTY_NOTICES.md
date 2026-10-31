@@ -24,6 +24,6 @@ license text (`LICENSE`), the notice (`NOTICE`) and the MIT texts
 
 ## Fonts
 
-Onest, DM Mono and Big Shoulders Display are licensed under the SIL Open
+Onest, Maple Mono NL and Big Shoulders Display are licensed under the SIL Open
 Font License 1.1. The license texts sit beside the font files in
 [`packages/renderer/assets/fonts/`](packages/renderer/assets/fonts/README.md).

@@ -34,7 +34,7 @@ function drawing(version: number, board = "pipeline"): Record<string, unknown> {
 			`</svg>`,
 		drawn: { nodes: [], edges: [], flows: [], steps: [] },
 		appearances: [],
-		key: null,
+		legend: null,
 		atlas: {
 			nodes: { n1: { x: 0, y: 0, width: 80, height: 40 } },
 			edges: { e1: { x: 80, y: 20, width: 40, height: 2 } },

@@ -221,42 +221,6 @@ test("every message's arrowhead touches the bar or lifeline it arrives at", asyn
 	}
 });
 
-test("a flow's header slab spans the whole of a frame its words widened", async () => {
-	// A self-message's words on the last column reach past the columns, and the
-	// frame grows to hold them; the header slab the flow's title is printed on
-	// grows with it, as far in from either side of the frame.
-	const long = "a label long enough to reach past every column of this flow";
-	const rendered = await renderSemanticView({
-		grammar: "sequence",
-		policy: DEFAULT_SEMANTIC_POLICY,
-		theme: "light",
-		content: orderedFixture({
-			nodes: [
-				{ id: "a", name: "A", kind: "service" },
-				{ id: "b", name: "B", kind: "service" },
-			],
-			flows: [
-				{
-					id: "f",
-					name: "Words at the edge",
-					participants: ["a", "b"],
-					steps: [
-						{ id: "s1", from: "a", to: "b", label: "short", kind: "sync" },
-						{ id: "s2", from: "b", to: "b", label: long, kind: "self" },
-					],
-				},
-			],
-		}),
-	});
-	const flow = subjectGroups(rendered.svg).find((group) => group.kind === "flow")!;
-	const frame = numbersOf(flow, "rect", (tag) => !tag.includes("ab-halo"));
-	// The slab's body, at a card's corner radius.
-	const slab = numbersOf(flow, "rect", (tag) => tag.includes('rx="8"'));
-	const left = slab("x") - frame("x");
-	expect(left).toBeGreaterThan(0);
-	expect(frame("x") + frame("width") - slab("x") - slab("width")).toBeCloseTo(left, 6);
-});
-
 test("a message's words stand between the lifelines either side of them", async () => {
 	// A label wider than the gap it names ran across the next lifeline, and one
 	// centred over an arrow that passes a column stood on that column's lifeline.

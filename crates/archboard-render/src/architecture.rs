@@ -11,15 +11,12 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::rc::Rc;
 
 use archboard_flows::board::{Step, every_step};
-use archboard_layout::{
-    Engine, LineLook, Measured, MeasuredGroups, Node, Standings, draw, shown_drawing,
-};
+use archboard_layout::{Engine, LineLook, Measured, Node, Standings, draw, shown_drawing};
 use archboard_scene::drawing::Painted;
-use archboard_scene::measure::{CardWords, measure_caption, measure_label, measure_node};
+use archboard_scene::measure::{CardWords, measure_label, measure_node};
 use archboard_scene::request::{ArchitecturePicture, PaintRequest, Picture, Standing};
-use indexmap::IndexMap;
 
-use crate::appearance::{gathering_groups, line_appearance, line_look, node_appearances};
+use crate::appearance::{line_appearance, line_look, node_appearances, tags_of};
 use crate::entries::entry_points_of;
 use crate::memo::Layouts;
 use crate::request::{Policy, Reading, RenderRequest};
@@ -27,7 +24,7 @@ use crate::steps::with_step_lines;
 use crate::{Host, Outline, document_request, icons_of, page_request};
 
 /// Every word of a reading measured before the layout places anything: each
-/// part's box, each label, how each line is drawn, and each region's caption.
+/// part's box, each label, and how each line is drawn.
 fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured {
     let containers: HashSet<&str> = laid
         .nodes
@@ -38,10 +35,12 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
         .nodes
         .iter()
         .map(|node| {
+            let tags = tags_of(node, policy);
             let words = CardWords {
                 name: &node.name,
                 responsibility: node.responsibility.as_deref(),
                 path: node.code_path.as_deref(),
+                tags: &tags,
                 drills: node.drills,
                 door: node.door.is_some(),
             };
@@ -70,25 +69,10 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
             )
         })
         .collect();
-    let placing = gathering_groups(&laid.nodes, policy);
-    let groups = (!placing.is_empty()).then(|| {
-        let mut captions = IndexMap::new();
-        for group in placing.values() {
-            if !captions.contains_key(group) {
-                let name = policy
-                    .groups
-                    .get(group)
-                    .map_or(group.as_str(), |look| look.name.as_str());
-                captions.insert(group.clone(), measure_caption(name));
-            }
-        }
-        MeasuredGroups { placing, captions }
-    });
     Measured {
         nodes,
         labels,
         lines,
-        groups,
         held_kinds: BTreeMap::new(),
     }
 }
@@ -302,7 +286,6 @@ fn paint_request<H: Host>(
         appearances,
         lines,
         steps,
-        groups: policy.group_colours(),
         flowchart: None,
     };
     Ok(PaintRequest {

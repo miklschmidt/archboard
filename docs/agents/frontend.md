@@ -153,7 +153,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Later pointer selection stays temporary and does not rewrite that destination.
   For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
   Either selection clears the prior explicit comparison.
-  They use `focusX`, `hideKindsX`, and `showGroupsX` for focused subjects, hidden kinds, and shown group regions.
+  They use `focusX` and `hideKindsX` for focused subjects and hidden kinds.
   `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.
   Missing grammar means architecture. Missing flow in a behavioral mode requires a choice.
   Behavioral modes preserve the architecture fields so that returning restores the prior reading.
@@ -297,12 +297,9 @@ use.
 lifelines of a sequence. It is separate from `--muted-foreground`.
 `--diagram-glow` is the light that a traffic pulse mixes into its line. The
 `--slab-*` colors paint the faces, front edges and shadows of the picture's
-cards and the shade of a container's header slab, and the `--tray-*` colors a
-container's neutral well. A header's face is `--background`, or the floor of
-the tray around it. A group region has no token of
-its own: it is drawn in tones of its group's `--semantic-<name>` (ADR 0044).
-`--tag-<name>` is the dark value of `--semantic-<name>` in both themes, because a
-group's tag is the same bright piece on either ground. Change the two together.
+cards, and the `--tray-*` colors a container's neutral well. `--tray-tab` is the lighter piece a container's tab raises on the well's edge.
+`--bright-<name>` is the dark value of `--semantic-<name>` in both themes, because a
+door and a group's tag are the same bright piece on either ground. Change the two together.
 `apps/web/src/ui/theme/app.css` imports the file and holds every value that is not a
 color.
 
@@ -381,7 +378,7 @@ Find reads the complete selected model, including modules outside the visible sc
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.
 Choosing a module opens its containing scope, selects its canonical identity, and moves focus to the picture.
 
-Group choices use membership from the complete selected model, independently of scope and group-region filters.
+Group choices use membership from the complete selected model, independently of scope.
 The canonical selected set determines which group choices are active.
 Selecting a group chooses all its members, including hidden descendants.
 Focus reveals those members through the existing reading controls.

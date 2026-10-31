@@ -47,18 +47,18 @@ function applied(
 
 /**
  * A render answer whose picture draws subjects with these appearances, and
- * whose key lists these samples.
+ * whose legend lists these samples.
  * @param appearances What the picture draws, in drawing order.
- * @param key The kinds and relationship kinds its key lists.
- * @param key.kinds The part kinds.
- * @param key.relationships The relationship kinds.
+ * @param legend The kinds and relationship kinds its key lists.
+ * @param legend.kinds The part kinds.
+ * @param legend.relationships The relationship kinds.
  * @returns A render answer at the same board version.
  */
 function keyed(
 	appearances: AppliedAppearance[],
-	key: { kinds: AppliedAppearance[]; relationships: AppliedAppearance[] },
+	legend: { kinds: AppliedAppearance[]; relationships: AppliedAppearance[] },
 ): Record<string, unknown> {
-	return { ...drawing(1), appearances, key };
+	return { ...drawing(1), appearances, legend };
 }
 
 /**
@@ -164,7 +164,7 @@ test("traffic changes are explained without animation numbers", async () => {
 });
 
 /**
- * A picture whose key lists three part kinds that share one name and two
+ * A picture whose legend lists three part kinds that share one name and two
  * relationship kinds that share another, one line with a filled head and one
  * with an open head.
  * @returns A render answer at the same board version.

@@ -12,6 +12,11 @@ TASK-402. The reading fixes of the same request are TASK-403.
 [ADR 0042](0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md)
 records two of them in its amendment of 2026-10-06.
 
+Superseded in part (2026-10-31, TASK-559.16): a group shows on its cards as a
+bright tag. No frame is drawn round a group, and a card's face stays neutral. A
+container's header is a tab raised on the well's top edge, in place of a slab
+inside its walls.
+
 ## Context
 
 Until this change the picture was flat. A card was one filled rectangle with a

@@ -156,7 +156,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 		expectedSourceRevision: model.playback.sourceRevision.digest,
 		selection: model.playback.source,
 		subjects: [],
-		reading: { focus: [], relationshipKinds: [], groups: [], grammar: "architecture" },
+		reading: { focus: [], relationshipKinds: [], grammar: "architecture" },
 	};
 	const report = (presentation: Report["presentation"], capture = architecture) =>
 		request(SEMANTIC_PANE_CONTEXT_ROUTE, {

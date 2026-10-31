@@ -20,7 +20,6 @@ import {
 	runsUnderLabels,
 	slants,
 	wallHugs,
-	routesThroughGroupHeaders,
 } from "#tests/runtime/support/drawn-checks.ts";
 
 /**
@@ -43,7 +42,6 @@ export function expectDrawingIntact(
 	).toEqual([]);
 	expect(endsOffCards(drawing, content), "line ends away from their intended card").toEqual([]);
 	expect(routesThroughParentHeaders(drawing), "routes through parent header cards").toEqual([]);
-	expect(routesThroughGroupHeaders(drawing), "routes through group headers").toEqual([]);
 	expect(
 		hiddenParentFrames(drawing, content),
 		"parents with no visible frame or line boundary",

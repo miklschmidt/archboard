@@ -6,7 +6,7 @@
 use std::collections::{BTreeMap, HashSet};
 
 use crate::request::{Arrowhead, Dash, NodeAppearance, PaletteColor, Standing};
-use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role, SubjectKind};
+use crate::scene::{EntryKind, Group, Icon, Item, LineFacts, Role};
 
 /// How the picture drew a subject: as a part of some appearance, or as a
 /// relationship's line.
@@ -113,12 +113,9 @@ impl Walk {
 
     /// A group and what it holds, the subject it draws met if it says how it was drawn.
     fn group(&mut self, group: &Group) {
-        // A group's region is named by its group's id, not a subject id, so
-        // the page's key never reads it.
         let subject = group
             .subject
             .as_ref()
-            .filter(|subject| subject.kind != SubjectKind::GroupRegion)
             .zip(drawn_by(group))
             .map(|(subject, drawn)| {
                 self.met
@@ -243,7 +240,7 @@ pub(super) fn mark_counts(
 /// draws with an appearance, in the order it draws them, and one sample of
 /// each distinct part kind and relationship kind among them.
 #[derive(Clone, Debug)]
-pub struct PictureKey {
+pub struct PictureLegend {
     /// Each subject and what it was drawn as, where it was first met, as it was last met.
     pub subjects: Vec<(String, Applied)>,
     /// One sample of each distinct part kind drawn, and the last subject drawn so.
@@ -253,7 +250,7 @@ pub struct PictureKey {
 }
 
 /// What a picture's key lists, read back from the items of its body.
-pub fn picture_key(body: &[Item]) -> PictureKey {
+pub fn picture_legend(body: &[Item]) -> PictureLegend {
     let subjects = picture_appearances(body);
     let of = |part: bool| {
         distinct_samples(
@@ -266,7 +263,7 @@ pub fn picture_key(body: &[Item]) -> PictureKey {
     };
     let kinds = of(true);
     let relationships = of(false);
-    PictureKey {
+    PictureLegend {
         subjects,
         kinds,
         relationships,
@@ -279,11 +276,11 @@ pub(super) fn entries_of(
     body: &[Item],
     marks: &[(Standing, &'static str, usize)],
 ) -> Vec<Vec<Entry>> {
-    let PictureKey {
+    let PictureLegend {
         kinds,
         relationships,
         ..
-    } = picture_key(body);
+    } = picture_legend(body);
     let kinds = kinds.into_iter().map(|(_, applied)| applied);
     let relationships: Vec<Applied> = relationships
         .into_iter()

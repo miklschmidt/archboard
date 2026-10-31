@@ -197,7 +197,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 		body: {
 			pane: paneB.clientId,
 			agent: true,
-			reading: { scope: id("Worker"), focus: [], hideKinds: [], showGroups: [] },
+			reading: { scope: id("Worker"), focus: [], hideKinds: [] },
 		},
 	});
 	const shown = await pollUntil(

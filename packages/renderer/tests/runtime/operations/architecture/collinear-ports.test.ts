@@ -26,7 +26,7 @@ function drawing(offset: number, vertical = false, origin = 120): RenderedDiagra
 		width: 240,
 		height: 240,
 		appearances: [],
-		key: null,
+		legend: null,
 		placed: ["card", "left", "right", "one", "two"],
 		atlas: {
 			nodes: { card: box(100), left: box(0), right: box(200) },

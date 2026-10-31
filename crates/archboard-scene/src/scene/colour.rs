@@ -15,7 +15,7 @@ use crate::scene::definition::GradientId;
 pub enum Token {
     /// The page behind everything.
     Background,
-    /// A card's top face, before its group tints it.
+    /// A card's top face.
     SlabFace,
     /// A card's front edge, the thickness that shows along its foot.
     SlabEdge,
@@ -33,6 +33,10 @@ pub enum Token {
     TraySink,
     /// The lit lip along the bottom of a container.
     TrayLip,
+    /// The raised tab that stands on a container's edge.
+    TrayTab,
+    /// The thin line along the edge of a control, a card or a container.
+    Border,
     /// A port's inside by its rim.
     PortWall,
     /// A port's inside at its deepest.

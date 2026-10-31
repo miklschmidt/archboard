@@ -223,7 +223,7 @@ async function drawFromDocument(
 		atlas: { nodes: {}, edges: {}, regions: {} },
 		drawn: { nodes: [], edges: [], flows: [], steps: [] },
 		appearances: [],
-		key: null,
+		legend: null,
 	};
 }
 

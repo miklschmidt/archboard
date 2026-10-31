@@ -1,184 +1,91 @@
-//! A frame and its edge tab, one silhouette: the tab stands on the frame's edge
-//! at the top left, and the side of the tab is the side of the frame. The tab
-//! holds one line, the frame's kind, name and code path, on a face of its own
-//! that is lighter than the floor. The frame's responsibility stays out of the
-//! picture and goes with the tab's group as the title of the picture's file.
+//! A frame and its edge tab: the tab stands on the edge of the frame's well at
+//! the top left (`tray`), and it holds one line, the frame's kind, name and code
+//! path. The frame's responsibility stays out of the picture and goes with the
+//! tab's group as the title of the picture's file.
 
-use crate::drawing::Node;
-use crate::geometry::{Point, Rect};
+use crate::drawing::{Node, TextRun};
+use crate::geometry::Rect;
 use crate::js;
-use crate::measure::{TAB_FAR, tab_runs};
+use crate::measure::{tab_far, tab_runs};
 use crate::paint::Ctx;
 use crate::paint::appearance::{tray_look, type_chip};
-use crate::paint::build::{Items, concat, grouped, lines, point, shape};
+use crate::paint::build::{Items, concat, grouped, lines};
 use crate::paint::design::{
-    BAND_RADIUS, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT, TAB_PADDING, TAB_SHOULDER,
-    TRAY_CREASE, TRAY_LIP, TRAY_WALL,
+    BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
+    TAB_PADDING, TAB_SHOULDER,
 };
 use crate::paint::drill_mark::corner_drill_mark;
 use crate::paint::far_card::words_in;
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
-use crate::paint::flowchart_shapes::ring;
 use crate::paint::palette::Palette;
-use crate::paint::polygon::Polygon;
-use crate::paint::slab::{glint_of, plate, slab_seat, solid, solid_ghost, standing_border};
+use crate::paint::slab::slab_seat;
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
-use crate::paint::tray::{FLOOR_RADIUS, TrayLook, floor_of, wall_shadow};
+use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{NodeAppearance, Standing};
-use crate::scene::{Group, PathStep, Pointer, Purpose, Role, Shape, SubjectKind};
+use crate::scene::{Group, Role, SubjectKind};
 
 /// How much larger a drill mark stands in a tab seen from far away.
 const FAR_MARK: f64 = 1.2;
 
-/// What a frame draws: its box, and the box of its tab.
-struct Shapes {
-    frame: Rect,
-    tab: Rect,
+/// A frame near and far. Its tab hugs its words in each view, and the words differ.
+struct Views {
+    near: Well,
+    far: Well,
+    far_runs: Vec<TextRun>,
 }
 
-impl Shapes {
-    /// A placed frame. A tab keeps a shoulder of the frame beside it.
-    fn of(placed: &Node) -> Shapes {
+impl Views {
+    /// A placed frame at its picture's far scale. A tab keeps a shoulder of the frame beside it.
+    fn of(placed: &Node, appearance: &NodeAppearance, far_scale: f64) -> Views {
         let frame = placed.bounds;
-        let wide = js::js_min(placed.measured.width, frame.width) - TAB_SHOULDER;
-        let tab = Rect {
-            width: js::js_max(wide, 0.0),
-            height: placed.measured.header_height,
-            ..frame
+        let node = &placed.measured.node;
+        let room = js::js_min(placed.measured.width, frame.width) - TAB_SHOULDER;
+        let mark = if appearance.drill.is_some() {
+            DRILL_MARK_ROOM
+        } else {
+            0.0
         };
-        Shapes { frame, tab }
-    }
-
-    /// The silhouette of a box taken out of the frame: it steps down at the tab's end.
-    fn outline(&self, rect: Rect) -> Polygon {
-        let end = self.frame.x + self.tab.width;
-        let shoulder = rect.y + self.tab.height;
-        let (right, bottom) = (rect.x + rect.width, rect.y + rect.height);
-        let corner = |x: f64, y: f64| Point { x, y };
-        vec![
-            corner(rect.x, rect.y),
-            corner(end, rect.y),
-            corner(end, shoulder),
-            corner(right, shoulder),
-            corner(right, bottom),
-            corner(rect.x, bottom),
-        ]
-    }
-
-    /// The frame's body: what stands below the tab.
-    fn body(&self) -> Rect {
-        Rect {
-            y: self.frame.y + self.tab.height,
-            height: self.frame.height - self.tab.height,
-            ..self.frame
+        let hugging = |runs: &[TextRun]| {
+            let words = runs.last().map_or(0.0, |run| run.x + run.width);
+            js::js_max(js::js_min(words + TAB_PADDING + mark, room), 0.0)
+        };
+        let line = tab_far(&node.name, far_scale, room - mark);
+        let far_runs = tab_runs(line, &node.name, node.code_path.as_deref());
+        let well = |width: f64| Well {
+            frame,
+            tab: Rect {
+                width,
+                height: placed.measured.header_height,
+                ..frame
+            },
+        };
+        Views {
+            near: well(hugging(&placed.measured.runs)),
+            far: well(hugging(&far_runs)),
+            far_runs,
         }
     }
 }
 
-/// A tab's face, rounded at the top and square where it meets the frame's floor.
-fn tab_face(rect: Rect, foot: f64) -> Shape {
-    let (left, top) = (rect.x, rect.y);
-    let right = rect.x + rect.width;
-    let bend = BAND_RADIUS;
-    Shape::path(
-        Purpose::Solid,
-        vec![
-            PathStep::Move {
-                to: point(left, foot),
-            },
-            PathStep::Line {
-                to: point(left, top + bend),
-            },
-            PathStep::Quad {
-                control: point(left, top),
-                to: point(left + bend, top),
-            },
-            PathStep::Line {
-                to: point(right - bend, top),
-            },
-            PathStep::Quad {
-                control: point(right, top),
-                to: point(right, top + bend),
-            },
-            PathStep::Line {
-                to: point(right, foot),
-            },
-            PathStep::Close,
-        ],
-    )
-    .pointer(Pointer::None)
-}
-
-/// The walls and floor of a frame, and the tab's face over the wall it stands on.
-fn tray(shapes: &Shapes, look: &TrayLook, palette: &Palette) -> Items {
-    let rect = shapes.frame;
-    let plate_of = |rect: Rect| solid(&shapes.outline(rect), BAND_RADIUS);
-    let lip = Rect {
-        height: rect.height - TRAY_CREASE,
-        ..rect
-    };
-    let walls = Rect {
-        height: lip.height - TRAY_LIP,
-        ..rect
-    };
-    let sides = Rect {
-        y: walls.y + TRAY_WALL,
-        height: walls.height - TRAY_WALL,
-        ..walls
-    };
-    let floor = floor_of(shapes.body());
-    let lit = Rect {
-        y: rect.y + 1.0,
-        ..shapes.tab
-    };
-    let tab_end = rect.x + shapes.tab.width;
-    let beside = Rect {
-        x: tab_end,
-        width: floor.x + floor.width - tab_end,
-        ..floor
-    };
-    lines(vec![
-        shape(plate_of(rect).filled(&palette.slab_shadow)),
-        shape(plate_of(lip).filled(&palette.tray_lip)),
-        shape(plate_of(walls).filled(&look.top_wall)),
-        shape(plate_of(sides).filled(&look.side_wall)),
-        shape(plate(floor, FLOOR_RADIUS).filled(&look.floor)),
-        wall_shadow(beside, palette),
-        shape(tab_face(shapes.tab, floor.y).filled(glint_of(&palette.pill, palette))),
-        shape(tab_face(lit, floor.y).filled(&palette.pill)),
-    ])
-}
-
 /// A containing frame below its children and all connections.
 pub(super) fn paint_measured_frame(
+    ctx: &Ctx<'_>,
     placed: &Node,
     palette: &Palette,
     standing: Option<Standing>,
     appearance: &NodeAppearance,
 ) -> Items {
-    let shapes = Shapes::of(placed);
-    let rect = shapes.frame;
-    let outline = shapes.outline(rect);
-    let drawn = if standing == Some(Standing::Removed) {
-        solid_ghost(&outline, BAND_RADIUS, palette)
-    } else {
-        lines(vec![
-            tray(
-                &shapes,
-                &tray_look(shapes.tab, palette, placed.depth),
-                palette,
-            ),
-            standing_border(shapes.tab, BAND_RADIUS, standing, palette),
-        ])
-    };
+    let views = Views::of(placed, appearance, ctx.far_scale);
+    let look = tray_look(palette, placed.depth);
+    let view = |well: &Well| tab_view(well, &look, palette, standing);
     let frame = Group::new(
         Role::Frame(Some(Box::new(appearance.clone()))),
         lines(vec![
-            slab_seat(shapes.body(), BAND_RADIUS),
-            slab_seat(shapes.tab, BAND_RADIUS),
-            ring(&outline, BAND_RADIUS, standing, palette),
-            drawn,
-            standing_pin(rect, standing, palette),
+            slab_seat(views.near.body(), BAND_RADIUS),
+            well_body(&views.near, &look, palette, standing),
+            near_layer(view(&views.near)),
+            far_layer(view(&views.far)),
+            standing_pin(placed.bounds, standing, palette),
         ]),
     )
     .drawing(subject(
@@ -189,27 +96,26 @@ pub(super) fn paint_measured_frame(
     grouped(frame)
 }
 
-/// What a tab or a door draws near and far, and the chip both views share.
-pub(super) fn line_views(
+/// What a tab draws near and far, and the chip both views share.
+fn line_views(
     ctx: &Ctx<'_>,
     placed: &Node,
-    tab: Rect,
+    views: &Views,
     palette: &Palette,
     standing: Option<Standing>,
     appearance: &NodeAppearance,
 ) -> Items {
     let ink = standing_palette(palette, standing);
-    let node = &placed.measured.node;
-    let mark = |scale: f64| match appearance.drill {
+    let (near_tab, far_tab) = (views.near.tab, views.far.tab);
+    let mark = |tab: Rect, scale: f64| match appearance.drill {
         None => Items::new(),
         Some(direction) => corner_drill_mark(tab, direction, &ink.glyph, scale),
     };
-    let near = words_in(&placed.measured.runs, tab, &ink);
-    let far_runs = tab_runs(TAB_FAR, &node.name, node.code_path.as_deref());
-    let far = words_in(&far_runs, tab, &ink);
+    let near = words_in(&placed.measured.runs, near_tab, &ink);
+    let far = words_in(&views.far_runs, far_tab, &ink);
     let chip = |size: f64| Place {
-        x: tab.x + TAB_PADDING,
-        y: tab.y + (TAB_HEIGHT - size) / 2.0,
+        x: near_tab.x + TAB_PADDING,
+        y: near_tab.y + (TAB_HEIGHT - size) / 2.0,
         size,
     };
     lines(vec![
@@ -220,11 +126,11 @@ pub(super) fn line_views(
         ),
         near_layer(concat(vec![
             moving_words(near.items, near.anchor, far.anchor),
-            mark(1.0),
+            mark(near_tab, 1.0),
         ])),
         far_layer(concat(vec![
             moving_words(far.items, far.anchor, near.anchor),
-            mark(FAR_MARK),
+            mark(far_tab, FAR_MARK),
         ])),
     ])
 }
@@ -239,13 +145,14 @@ pub(super) fn paint_measured_header(
     unsettled: bool,
     appearance: &NodeAppearance,
 ) -> Items {
-    let tab = Shapes::of(placed).tab;
+    let views = Views::of(placed, appearance, ctx.far_scale);
     let node = &placed.measured.node;
     let header = Group::new(
         Role::Header(Box::new(appearance.clone())),
         lines(vec![
-            line_views(ctx, placed, tab, palette, standing, appearance),
-            warning_badge(tab, unsettled, palette),
+            line_views(ctx, placed, &views, palette, standing, appearance),
+            near_layer(warning_badge(views.near.tab, unsettled, palette)),
+            far_layer(warning_badge(views.far.tab, unsettled, palette)),
         ]),
     )
     .drawing(subject(SubjectKind::Region, &node.id, standing))
@@ -255,10 +162,13 @@ pub(super) fn paint_measured_header(
 
 #[cfg(test)]
 mod tests {
-    use super::{Shapes, paint_measured_frame};
+    use std::collections::BTreeMap;
+
+    use super::{Views, paint_measured_frame};
     use crate::drawing::Node;
-    use crate::geometry::Rect;
-    use crate::paint::design::TAB_SHOULDER;
+    use crate::measure::{TAB_NEAR, tab_runs};
+    use crate::paint::Ctx;
+    use crate::paint::design::{TAB_PADDING, TAB_SHOULDER};
     use crate::paint::palette::Palette;
     use crate::request::{NodeAppearance, Standing};
     use crate::scene::{Item, Paint, Purpose, Shape};
@@ -295,31 +205,51 @@ mod tests {
     }
 
     #[test]
-    fn a_tab_keeps_its_silhouette_with_the_side_of_the_frame() {
-        let (placed, _) = frame();
-        let drawn = Shapes::of(&placed);
-        let outline = drawn.outline(drawn.frame);
-        assert_eq!(drawn.tab.x, placed.bounds.x);
-        assert_eq!(outline[0].x, outline[5].x);
-        assert_eq!(outline[1].x, placed.bounds.x + 240.0 - TAB_SHOULDER);
-        assert_eq!(outline[3].y, placed.bounds.y + 36.0);
-        assert_eq!(
-            drawn.body(),
-            Rect {
-                x: 20.0,
-                y: 76.0,
-                width: 600.0,
-                height: 264.0
-            }
-        );
+    fn a_tab_hugs_its_words_in_each_view_and_shares_the_side_of_the_frame() {
+        let (mut placed, appearance) = frame();
+        placed.measured.runs = tab_runs(TAB_NEAR, "Container", None);
+        let views = Views::of(&placed, &appearance, 1.0);
+        for (well, runs) in [
+            (views.near, &placed.measured.runs),
+            (views.far, &views.far_runs),
+        ] {
+            let outline = well.outline();
+            assert_eq!(well.tab.x, placed.bounds.x);
+            assert_eq!(outline[0].x, outline[5].x);
+            assert_eq!(outline[3].y, placed.bounds.y + 36.0);
+            let words = runs.last().expect("a name");
+            assert_eq!(well.tab.width, words.x + words.width + TAB_PADDING);
+        }
+    }
+
+    #[test]
+    fn a_far_tab_grows_with_its_picture_and_stays_in_its_frame() {
+        let (mut placed, appearance) = frame();
+        let size =
+            |placed: &Node, scale: f64| Views::of(placed, &appearance, scale).far_runs[0].font_size;
+        assert!(size(&placed, 1.9) > size(&placed, 1.0));
+        placed.bounds.width = 200.0;
+        let far = Views::of(&placed, &appearance, 3.0);
+        assert!(far.far.tab.width <= 200.0 - TAB_SHOULDER);
     }
 
     #[test]
     fn a_removed_frame_is_a_ghost_of_its_whole_silhouette_with_its_border() {
         let (placed, appearance) = frame();
         let palette = Palette::of_page();
-        let plain = paint_measured_frame(&placed, &palette, None, &appearance);
-        let removed = paint_measured_frame(&placed, &palette, Some(Standing::Removed), &appearance);
+        let icons = BTreeMap::new();
+        let ctx = Ctx {
+            icons: &icons,
+            far_scale: 1.0,
+        };
+        let plain = paint_measured_frame(&ctx, &placed, &palette, None, &appearance);
+        let removed = paint_measured_frame(
+            &ctx,
+            &placed,
+            &palette,
+            Some(Standing::Removed),
+            &appearance,
+        );
         let removed_shapes = shapes(&removed);
         assert!(
             removed_shapes

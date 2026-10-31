@@ -28,8 +28,6 @@ pub enum SubjectKind {
     Region,
     Flow,
     Step,
-    /// A group's region, named by the group's id.
-    GroupRegion,
 }
 
 /// The subject a group draws: which sort it is, its id, and how it stands.
@@ -37,7 +35,7 @@ pub enum SubjectKind {
 pub struct Subject {
     /// Which sort of subject it is.
     pub kind: SubjectKind,
-    /// The subject's id: the group's id for a group region.
+    /// The subject's id.
     pub id: String,
     /// How the subject stands against the variant it came from, when the picture is a comparison.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,8 +135,6 @@ pub enum Role {
     Fragment,
     /// A flowchart's shape.
     Shape,
-    /// A group's region, its frame and caption.
-    Region,
     /// The shadow a block casts, laid under every line and block.
     Shadow(Option<ShadowOf>),
     /// A part's type chip, which its near and far views share: it stands at

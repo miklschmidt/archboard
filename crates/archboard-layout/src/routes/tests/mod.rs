@@ -75,7 +75,6 @@ fn drawn(routes: &[Vec<Point>], looks: &[(usize, &str, Emphasis)]) -> Drawing {
         cards: Vec::new(),
         containers: Vec::new(),
         edges,
-        regions: None,
     }
 }
 

@@ -148,7 +148,7 @@ function picture(
 			regions: {},
 		},
 		appearances: [],
-		key: null,
+		legend: null,
 		drawn: {
 			nodes: cards.map((card) => ({ id: card.id, name: card.id })),
 			edges: lines.map((line) => ({ id: line.id, name: line.id })),

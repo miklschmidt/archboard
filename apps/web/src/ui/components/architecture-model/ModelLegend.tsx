@@ -18,7 +18,7 @@ import {
 } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
 import type {
 	AppliedAppearance,
-	PictureKey,
+	PictureLegend,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { paletteTag } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 
@@ -39,7 +39,7 @@ interface ModelLegendProps {
 	readonly model: Model;
 	readonly projection: Projection;
 	/** What the picture draws, or null while it draws nothing that a legend explains. */
-	readonly picture: PictureKey | null;
+	readonly picture: PictureLegend | null;
 	readonly filters: Pick<ModelFilters, "hideKinds">;
 	readonly onToggle: (field: "hideKinds", id: string) => void;
 }
@@ -222,7 +222,7 @@ function policyLook(model: Model, id: string): AppliedAppearance {
  * @param picture What the picture draws.
  * @returns The rows, hidden kinds last.
  */
-function lineKinds(props: ModelLegendProps, picture: PictureKey): readonly LineKind[] {
+function lineKinds(props: ModelLegendProps, picture: PictureLegend): readonly LineKind[] {
 	const { model, projection, filters } = props;
 	const hide = new Set(filters.hideKinds);
 	const joined = projection.allConnections.flatMap(({ joins }) => joins.map((edge) => edge.kind));

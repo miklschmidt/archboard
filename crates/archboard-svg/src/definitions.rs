@@ -94,6 +94,7 @@ pub(crate) fn gradient_id(id: GradientId) -> String {
         GradientId::Shadow { row, column } => format!("ab-shadow-{row}{column}"),
         GradientId::Sheen => "ab-slab-sheen".to_owned(),
         GradientId::SoftSheen => "ab-slab-sheen-soft".to_owned(),
+        GradientId::WellShade => "ab-well-shade".to_owned(),
         GradientId::PortWell => "ab-port-well".to_owned(),
         GradientId::PortFade => "ab-port-fade".to_owned(),
         GradientId::FlowGold => "ab-flow-gold".to_owned(),

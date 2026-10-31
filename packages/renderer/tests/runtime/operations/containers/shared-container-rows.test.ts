@@ -97,11 +97,11 @@ function expectIntact(drawing: RenderedDiagram, content: VariantContent) {
 
 	const shift = bodyShift(drawing.svg);
 	for (const [id, frame] of Object.entries(drawing.atlas.regions)) {
-		// Read the complete title band from its visible separator, rather than
-		// importing the engine's private header dimensions or checking text alone.
-		const rule = /<line[^>]*\sy1="([\d.-]+)"/.exec(groupOf(drawing.svg, "region", id)!.markup);
-		expect(rule, `${id} has a visible header boundary`).not.toBeNull();
-		const header = { ...frame, height: Number(rule![1]) + shift.y - frame.y };
+		// Read the complete title band from the well's top edge, the seat under the
+		// tab, rather than importing the engine's private header dimensions.
+		const edge = /<rect x="[\d.-]+" y="([\d.-]+)"/.exec(groupOf(drawing.svg, "region", id)!.markup);
+		expect(edge, `${id} has a visible header boundary`).not.toBeNull();
+		const header = { ...frame, height: Number(edge![1]) + shift.y - frame.y };
 		expect(header.height).toBeGreaterThan(0);
 		for (const [edgeId, points] of routes) {
 			expect(routeCrosses(points, header), `${edgeId} clears ${id}'s header`).toBe(false);

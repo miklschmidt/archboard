@@ -191,7 +191,7 @@ function followedReading(
 	model: ArchitectureModelRead,
 ) {
 	if (captured == null) return { model: key.slice(6), grammar: "architecture" as const };
-	const { relationshipKinds, groups } = captured.reading;
+	const { relationshipKinds } = captured.reading;
 	return {
 		...captured.selection,
 		model: key.slice(6),
@@ -202,11 +202,6 @@ function followedReading(
 		hideKinds: model.success
 			? Object.keys(model.policy.relationshipKinds).filter(
 					(kind) => !relationshipKinds.includes(kind),
-				)
-			: undefined,
-		showGroups: model.success
-			? Object.keys(model.policy.groups).filter(
-					(group) => groups === true || (groups !== false && groups.includes(group)),
 				)
 			: undefined,
 	};

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:15:00Z'
+updated_date: '2026-10-31T06:08:00Z'
 labels:
   - frontend
 dependencies:
@@ -28,7 +28,7 @@ The owner thought the legend was deleted, because the Key button at the lower le
 - [x] #1 The legend is visible without a click at the foot of a permanent right column on every Diagram reading at 1920 by 1080, and it lists the kinds, line types and groups of that reading
 - [x] #2 With nothing selected the column shows the open module's name and description, and with a selection it shows the subject above the legend
 - [x] #3 The way to hide kinds stays one control away, and it is visible
-- [ ] #4 The picture fits inside the room the column leaves, and a selection never refits it
+- [x] #4 The picture fits inside the room the column leaves, and a selection never refits it
 - [x] #5 The whole legend stays on screen on every corpus reading, and a long subject scrolls above it
 - [x] #6 A group shows as a tag in both themes, in the look of the card tag, and the legend has no group switch
 - [x] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
@@ -72,4 +72,6 @@ Merged from feat/reader-legend at 6d5287ba8. The full gate passed on the merge i
 The owner saw the column and asked for polish: Filter read as plain text, line types swapped places when hidden, because the list sorted hidden kinds last, and group tags did nothing. Decision: a tag click uses the existing selection, so it adds no new state.
 
 The owner objects to the word key wherever it means this legend. PictureKey in the client and in the core stays for now, because the core is owned by the door work. Rename it to a legend word after that merge, in the code and in crates/.
+
+Criterion 4 closes on feat/reader-cards. A module's picture lands whole at the scale that fits the room, with a ceiling of 1, and every one of the 115 readings fits: the lowest landing is 0.352. Before, 10 readings stopped at the 0.6 floor. A selection still never refits. A sequence or a flowchart keeps its landing at 0.6 on the head of its frame, because a tall flowchart whole lands at about 0.19 and cannot be read. Transitions are unchanged.
 <!-- SECTION:NOTES:END -->

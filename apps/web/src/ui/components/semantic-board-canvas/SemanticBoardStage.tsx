@@ -371,7 +371,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		reducedMotion,
 		onPick,
 	});
-	const { appearances, key } = useStageAppearances(drawn, departure.leaving);
+	const { appearances, legend } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	// The stage fits the subject, not the code warning that asks: a subject the
 	// view on screen does not draw is fitted only once the whole board's picture
@@ -410,7 +410,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			cut={dive.cut}
 			leaving={departure.leaving}
 			sidebar={sidebar}
-			pictureKey={key}
+			pictureLegend={legend}
 			look={look}
 			onShow={onShow}
 			attachPicture={attachPicture}

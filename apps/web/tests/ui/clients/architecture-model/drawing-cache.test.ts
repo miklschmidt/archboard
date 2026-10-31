@@ -22,7 +22,7 @@ const DRAWING = {
 	},
 	placed: ["Service"],
 	appearances: [],
-	key: null,
+	legend: null,
 	readingDirection: "down",
 } satisfies Awaited<ReturnType<Parameters<typeof cachedModelDrawing>[2]>>;
 

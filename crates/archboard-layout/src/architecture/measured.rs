@@ -1,5 +1,5 @@
 //! A board's words measured, keyed by the identities the board gave them:
-//! what the layout sizes each card, label and caption to.
+//! what the layout sizes each card and label to.
 
 use std::collections::BTreeMap;
 
@@ -19,17 +19,4 @@ pub struct Measured {
     pub lines: BTreeMap<String, LineLook>,
     /// The variant's own relationship kinds before removed comparison context changes an overview's majority kind.
     pub held_kinds: BTreeMap<String, String>,
-    /// The group each part is placed with, and each placing group's caption.
-    pub groups: Option<MeasuredGroups>,
-}
-
-/// Which group places each part, and the caption each placing group is drawn with.
-#[derive(Clone, Debug, Default)]
-pub struct MeasuredGroups {
-    /// A part's placing group, by part id, as regions gather it; a part with
-    /// none is absent, as is one inside a container its group places, which
-    /// stands in that group's region already.
-    pub placing: IndexMap<String, String>,
-    /// Each placing group's name, measured as its region caption, by group id.
-    pub captions: IndexMap<String, MeasuredLabel>,
 }

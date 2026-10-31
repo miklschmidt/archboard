@@ -8,7 +8,7 @@ pub use super::icons::{FALLBACK_ICON, FLOW_ICON, OWN_ICONS};
 pub use super::sequence_messages::arrow_standoff;
 pub use super::shadow::SHADOW_REACH;
 
-/// A card's name, and a container's or a flow's on its header slab.
+/// A card's name, and a container's or a flow's on its tab.
 pub const CARD_TITLE_FONT: DiagramFont = DiagramFont {
     family: FontFamily::Sans,
     weight: 500,
@@ -31,7 +31,7 @@ pub const PILL_FONT: DiagramFont = DiagramFont {
 
 /// The corner radius of a container's tray and of a flow's frame.
 pub(crate) const BAND_RADIUS: f64 = 10.0;
-/// The size of a measured part's name: a card's, and a container's or a flow's on its header slab.
+/// The size of a measured part's name: a card's, and a container's or a flow's on its tab.
 pub(crate) const PART_TITLE_SIZE: f64 = 14.0;
 /// A parent name is slightly stronger within a normal card-sized header.
 pub(crate) const PARENT_TITLE_SIZE: f64 = 15.0;
@@ -39,14 +39,18 @@ pub(crate) const PARENT_TITLE_SIZE: f64 = 15.0;
 pub(crate) const PARENT_ICON_SIZE: f64 = 20.0;
 /// The room one line of such a name takes.
 pub const PART_TITLE_LINE: f64 = 20.0;
-/// The size of a measured part's responsibility, set on the same card or header slab.
+/// The size of a measured part's responsibility, set on the same card or tab.
 pub(crate) const PART_NOTE_SIZE: f64 = 11.0;
 /// The room one line of such a responsibility takes.
 pub const PART_NOTE_LINE: f64 = 17.0;
 /// The size of a measured part's code path. A reader at the far view's edge reads it at 9 px.
-pub(crate) const PART_PATH_SIZE: f64 = 11.0;
+pub(crate) const PART_PATH_SIZE: f64 = 10.5;
 /// The room a code path's line takes.
 pub const PART_PATH_LINE: f64 = 16.0;
+/// The room between a card's words and the code path at its foot.
+pub(crate) const PART_PATH_GAP: f64 = 6.0;
+/// How tall a capital stands, per unit of a part's name.
+pub(crate) const NAME_CAP: f64 = 0.707;
 /// The height of a line of a sequence note, as a multiple of its text size.
 pub const TEXT_LINE_HEIGHT: f64 = 1.35;
 /// How strong a line is on each ground.
@@ -55,20 +59,14 @@ pub(crate) const LINE_STRENGTH_LIGHT: f64 = 1.0;
 pub(crate) const LINE_STRENGTH_DARK: f64 = 0.8;
 /// How round a card's corner is to the layout, which keeps a line's port clear of it.
 pub const CARD_RADIUS: f64 = 6.0;
-/// The corner radius of a slab: a card's face and a header slab.
+/// The corner radius of a slab: a card's face.
 pub(crate) const SLAB_RADIUS: f64 = 8.0;
 /// How tall a card's front edge shows.
 pub(crate) const CARD_THICKNESS: f64 = 4.0;
-/// How thick a container's tray shows its walls, the top wall and the two side walls alike.
-pub(crate) const TRAY_WALL: f64 = 6.0;
-/// How far the lit lip of a tray shows below its walls.
+/// How far the lit lip of a tray shows below its floor.
 pub(crate) const TRAY_LIP: f64 = 2.0;
-/// The thin shadow line under a tray's lip, at its foot.
-pub(crate) const TRAY_CREASE: f64 = 1.0;
-/// The floor a tray shows round its header slab, above it and at its sides.
-pub(crate) const WELL_GAP: f64 = 2.0;
-/// How far a header slab stands in from the outer edge of its tray, on the top and on either side.
-pub const HEADER_SLAB_INSET: f64 = TRAY_WALL + WELL_GAP;
+/// How far a container's words stand in from the outer edge of its box.
+const HEADER_SLAB_INSET: f64 = 8.0;
 /// How tall a type chip's front edge shows.
 pub(crate) const CHIP_THICKNESS: f64 = 1.5;
 /// How tall a label plate's front edge shows.
@@ -118,7 +116,7 @@ pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
 /// How tall a frame's edge tab stands: the room its far name and path take on one line.
 pub const TAB_HEIGHT: f64 = 36.0;
 /// The room inside a frame's edge tab, on either side of its words.
-pub(crate) const TAB_PADDING: f64 = 12.0;
+pub const TAB_PADDING: f64 = 12.0;
 /// A tab's chip when the picture is seen near, and from far away.
 pub(crate) const TAB_CHIP: f64 = 22.0;
 pub(crate) const TAB_FAR_CHIP: f64 = 26.0;
@@ -131,20 +129,38 @@ pub(crate) const TAB_MOST: f64 = 620.0;
 /// A tab's name and path from far away: 12 px and 9 px at the lowest scale a reading lands at.
 pub(crate) const TAB_FAR_NAME: f64 = 20.0;
 pub(crate) const TAB_FAR_PATH: f64 = 15.0;
-/// The radius of a tab's top right corner and of its foot, where it meets the frame.
-pub(crate) const TAB_CORNER: f64 = 8.0;
+/// The largest name a tab holds from far away, and how far its baseline drops per unit of it.
+pub(crate) const TAB_FAR_MOST: f64 = 28.0;
+pub(crate) const TAB_FAR_DROP: f64 = 0.35;
 /// The room a frame keeps to the right of its tab: the tab's foot, then the frame's corner.
-pub const TAB_SHOULDER: f64 = TAB_CORNER + BAND_RADIUS;
+pub const TAB_SHOULDER: f64 = 2.0 * BAND_RADIUS;
 
-/// The space below a group region's caption tab and at its sides and bottom.
-pub const REGION_INSET: f64 = 14.0;
+/// The words on a group's tag, near: what its size, its room and its height scale from.
+pub(crate) const TAG_FONT: DiagramFont = PILL_FONT;
+pub(crate) const TAG_SIZE: f64 = 10.0;
+/// The room inside a tag, on either side of its words.
+pub(crate) const TAG_PADDING: f64 = 7.0;
+pub(crate) const TAG_HEIGHT: f64 = 17.0;
+pub(crate) const TAG_RADIUS: f64 = 5.0;
+/// The room between two tags in a row.
+pub(crate) const TAG_GAP: f64 = 4.0;
+/// How far a tag stands from a card's top and right edges.
+pub(crate) const TAG_INSET: f64 = 12.0;
+/// The room a tag keeps from the end of a name beside it.
+pub(crate) const TAG_BESIDE: f64 = 8.0;
+
+/// The room a picture lands in on the one screen the shell supports: the pane
+/// beside the right panel at 1920 by 1080, less the camera's margin.
+pub const LANDING_ROOM: (f64, f64) = (1191.0, 955.0);
+/// The scale below which a picture draws its far view: a name of 14 units reads 12 px there.
+pub(crate) const FAR_START: f64 = 12.0 / 14.0;
 /// The room between an architecture card's edge and its chip and words.
 pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.
 pub(crate) const ARCHITECTURE_ICON_GAP: f64 = 12.0;
 /// The room between a part's name and its responsibility under it.
 pub const ARCHITECTURE_NOTE_GAP: f64 = 2.0;
-/// How far a container's words stand in from the sides of its box: on its header slab, as a card's stand on its own.
+/// How far a container's words stand in from the sides of its box.
 pub const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
 /// The room inside a relationship's label plate, on the left and the right of its words.
 pub(crate) const ARCHITECTURE_LABEL_PADDING_X: f64 = 10.0;

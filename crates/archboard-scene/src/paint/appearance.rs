@@ -1,12 +1,12 @@
-//! How a part looks by its appearance: a card's face and edge in its group's
-//! colour, a label's plate, a container's tray, and the type chip.
+//! How a part looks by its appearance: a card's neutral face and edge, a label's
+//! plate, a container's tray, and the type chip.
 
 use std::collections::BTreeMap;
 
 use crate::geometry::Rect;
 use crate::js;
 use crate::paint::build::{Items, concat, shape};
-use crate::paint::colour::{Inked, Share, Tone, ToneStep, inked_over, mixed, tinted, toned};
+use crate::paint::colour::{Inked, Share, ToneStep, inked_over, mixed, tinted};
 use crate::paint::design::{
     CARD_THICKNESS, CHIP_THICKNESS, ICON_CHIP_RADIUS, ICON_CHIP_SIZE, PILL_RADIUS, PILL_THICKNESS,
     SLAB_RADIUS,
@@ -23,54 +23,6 @@ pub(super) fn semantic_ink(color: Option<PaletteColor>) -> Option<Colour> {
     color.map(Colour::palette)
 }
 
-const DARK_FACE: ToneStep = ToneStep::new(0.31, 0.4);
-const CARD_EDGE: Tone = Tone {
-    light: ToneStep::new(0.78, 0.8),
-    dark: ToneStep::new(0.212, 0.45),
-};
-
-/// A grouped card's face on the light ground, by colour: its lightness and its chroma.
-#[expect(
-    clippy::match_same_arms,
-    reason = "a table of one row per colour: two colours that share a value do so by chance"
-)]
-fn light_face(color: PaletteColor) -> (f64, f64) {
-    match color {
-        PaletteColor::Red => (0.89, 0.053),
-        PaletteColor::Orange => (0.89, 0.057),
-        PaletteColor::Amber => (0.89, 0.069),
-        PaletteColor::Yellow => (0.92, 0.055),
-        PaletteColor::Lime | PaletteColor::Green | PaletteColor::Emerald | PaletteColor::Teal => {
-            (0.92, 0.07)
-        }
-        PaletteColor::Cyan => (0.89, 0.07),
-        PaletteColor::Sky => (0.89, 0.055),
-        PaletteColor::Blue => (0.89, 0.049),
-        PaletteColor::Indigo => (0.89, 0.05),
-        PaletteColor::Violet => (0.89, 0.054),
-        PaletteColor::Purple => (0.89, 0.062),
-        PaletteColor::Fuchsia => (0.89, 0.07),
-        PaletteColor::Pink => (0.89, 0.06),
-        PaletteColor::Rose => (0.89, 0.053),
-    }
-}
-
-/// A grouped card's face: a tone of its group's colour.
-fn face_in(color: PaletteColor) -> Colour {
-    let (lightness, chroma) = light_face(color);
-    toned(
-        &Colour::palette(color),
-        Tone {
-            light: ToneStep {
-                lightness,
-                chroma: 1.0,
-                cap: chroma,
-            },
-            dark: DARK_FACE,
-        },
-    )
-}
-
 const TRAY_SINK: Share = Share {
     light: 0.4,
     dark: 0.4,
@@ -78,14 +30,6 @@ const TRAY_SINK: Share = Share {
 const TRAY_SINK_MAX: Share = Share {
     light: 0.8,
     dark: 0.8,
-};
-const TOP_WALL: Share = Share {
-    light: 0.8,
-    dark: 0.45,
-};
-const SIDE_WALL: Share = Share {
-    light: 0.4,
-    dark: 0.28,
 };
 const LABEL_EDGE: f64 = 0.6;
 const CHIP_FACE: Inked = Inked {
@@ -97,15 +41,14 @@ const CHIP_EDGE: Inked = Inked {
     dark: 0.2,
 };
 
-/// A card's slab: its face tinted and its front edge toned by its group.
-pub(super) fn card_look(body_color: Option<PaletteColor>, palette: &Palette) -> SlabLook {
+/// A card's slab: a neutral face, whatever its groups.
+pub(super) fn card_look(palette: &Palette) -> SlabLook {
     SlabLook {
-        tintable: true,
+        soft: true,
         sheen: true,
         ..SlabLook::plain(
-            body_color.map_or_else(|| palette.slab_face.clone(), face_in),
-            semantic_ink(body_color)
-                .map_or_else(|| palette.slab_edge.clone(), |ink| toned(&ink, CARD_EDGE)),
+            palette.slab_face.clone(),
+            palette.slab_edge.clone(),
             CARD_THICKNESS,
             SLAB_RADIUS,
         )
@@ -131,25 +74,12 @@ fn floor_at(depth: f64, palette: &Palette) -> Colour {
     tinted(&palette.tray_floor, Some(&palette.tray_sink), sink)
 }
 
-/// A container's tray: a neutral well with a header slab made of what holds it.
-pub(super) fn tray_look(header: Rect, palette: &Palette, depth: f64) -> TrayLook {
-    let floor = floor_at(depth, palette);
-    let ground = if depth == 0.0 {
-        palette.background.clone()
-    } else {
-        floor_at(depth - 1.0, palette)
-    };
+/// A frame's well at a depth, and the raised tab that stands on its edge.
+pub(super) fn tray_look(palette: &Palette, depth: f64) -> TrayLook {
     TrayLook {
-        top_wall: tinted(&floor, Some(&palette.slab_deep), TOP_WALL),
-        side_wall: tinted(&floor, Some(&palette.slab_deep), SIDE_WALL),
-        floor,
-        header,
-        header_look: SlabLook::plain(
-            ground.clone(),
-            tinted(&ground, Some(&palette.slab_deep), TOP_WALL),
-            CARD_THICKNESS,
-            SLAB_RADIUS,
-        ),
+        floor: floor_at(depth, palette),
+        tab: palette.tray_tab.clone(),
+        line: palette.tray_line.clone(),
     }
 }
 
@@ -194,7 +124,7 @@ pub(super) fn chip_tile(rect: Rect, ink: &Colour, palette: &Palette) -> Items {
     let face = inked_over(&palette.slab_face, ink, CHIP_FACE);
     let look = SlabLook {
         face: Paint::from(&face),
-        tintable: false,
+        soft: false,
         lit: face,
         edge: inked_over(&palette.slab_edge, ink, CHIP_EDGE),
         thickness: CHIP_THICKNESS,

@@ -12,7 +12,7 @@ use crate::{
     blocks::assembly::{Placed, PlacedCard, Title},
     constants::CONTAINER_INSET,
     geometry::{Point, Rect},
-    graph::{Edge, Node, PLACING_GROUP, semantic_order},
+    graph::{Edge, Node, semantic_order},
 };
 
 use grid::{Grid, Item, Join};
@@ -73,9 +73,7 @@ fn holder(graph: &Node) -> Option<&Node> {
         .next()
         .or_else(|| (lines >= CROWDED_ROOT).then_some(graph))?;
     let flat = !frame.kids().iter().any(Node::has_children);
-    let grouped = |node: &Node| node.option(PLACING_GROUP).is_some();
-    let plain = !graph.kids().iter().chain(frame.kids()).any(grouped);
-    (frames.next().is_none() && flat && plain).then_some(frame)
+    (frames.next().is_none() && flat).then_some(frame)
 }
 
 /// How many lines lead to each part, the longest way, so that a part stands after what reaches it.

@@ -3,8 +3,11 @@
 
 pub(crate) use archboard_scene::geometry::BEND_RADIUS;
 pub(crate) use archboard_scene::paint::design::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, REGION_INSET, TAB_SHOULDER,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, TAB_SHOULDER,
 };
+
+/// How far a region stands in from what it holds.
+pub(crate) const REGION_INSET: f64 = 14.0;
 
 /// Equal space below a container title and at its sides and bottom.
 pub(crate) const CONTAINER_INSET: f64 = 20.0;

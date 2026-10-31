@@ -4,8 +4,6 @@
 //! kind. The arrow at its right end says where the door lies in the tree from the
 //! open module. This is the one place a door's look lives.
 
-use std::collections::BTreeSet;
-
 use crate::drawing::{DoorWay, Node, TextRun};
 use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::{DOOR_FAR, tab_runs};
@@ -18,6 +16,7 @@ use crate::paint::design::{
 };
 use crate::paint::far_card::{Part, words_in};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
+use crate::paint::finish::{Finish, finish_of};
 use crate::paint::icons::glyph_group;
 use crate::paint::palette::Palette;
 use crate::paint::slab::{
@@ -27,8 +26,8 @@ use crate::paint::standing::{standing_palette, standing_pin, subject, warning_ba
 use crate::paint::styles::Styles;
 use crate::request::{NodeAppearance, PaletteColor, Standing};
 use crate::scene::{
-    Cap, Colour, Definition, Gradient, GradientForm, GradientId, Group, Paint, PathStep, Pointer,
-    Purpose, Role, Shape, Stop, Stroke, Token, Transform,
+    Cap, Colour, GradientId, Group, Paint, PathStep, Pointer, Purpose, Role, Shape, Stroke,
+    Transform,
 };
 
 /// How heavy a door's rim is.
@@ -44,85 +43,16 @@ const ARROW_WIDTH: f64 = 1.7;
 /// How much larger a door's arrow stands from far away.
 const FAR_ARROW: f64 = 1.25;
 
-/// The ink of a door: the deep tone of its hue.
-const INK_LIGHTNESS: f64 = 0.2;
-const INK_CHROMA: f64 = 0.03;
-
-/// The steps from a door's bright colour, in OKLCH lightness and chroma.
-const TOP: (f64, f64) = (0.02, 0.02);
-const BOTTOM: (f64, f64) = (-0.06, 0.03);
-const EDGE: (f64, f64) = (-0.26, -0.02);
-
-/// The colours of a door's finish.
-struct Finish {
-    top: Colour,
-    bottom: Colour,
-    rim: Colour,
-    ink: Colour,
-}
-
 /// A door's colour: its group's if it has one, or else its kind's.
 fn colour_of(appearance: &NodeAppearance) -> Option<PaletteColor> {
-    appearance.body_color.or(appearance.type_color)
+    (appearance.tags.first().map(|tag| tag.color)).or(appearance.type_color)
 }
 
-/// One step from a bright colour, in OKLCH, so that a hue never turns to brown.
-fn step(bright: &Colour, (lightness, chroma): (f64, f64)) -> Colour {
-    Colour::Shifted {
-        ink: Box::new(bright.clone()),
-        lightness,
-        chroma,
-    }
-}
-
-/// The finish of a door of one colour. With no colour it is the primary action's own.
-fn finish_of(color: Option<PaletteColor>) -> Finish {
-    let Some(color) = color else {
-        return Finish {
-            top: Token::PrimaryTop.into(),
-            bottom: Token::PrimaryBottom.into(),
-            rim: Token::PrimaryEdge.into(),
-            ink: Token::PrimaryForeground.into(),
-        };
-    };
-    let bright = Colour::Bright { color };
-    Finish {
-        top: step(&bright, TOP),
-        bottom: step(&bright, BOTTOM),
-        rim: step(&bright, EDGE),
-        ink: Colour::Tone {
-            ink: Box::new(bright),
-            lightness: INK_LIGHTNESS,
-            cap: INK_CHROMA,
-            chroma: 1.0,
-        },
-    }
-}
-
-/// The gradient of a door's face in one colour.
-fn gradient(color: Option<PaletteColor>) -> Definition {
-    let finish = finish_of(color);
-    let stop = |offset: f64, colour: Colour| Stop {
-        offset: Some(offset),
-        colour,
-        opacity: None,
-    };
-    Definition::Gradient(Gradient {
-        id: GradientId::Door { color },
-        form: GradientForm::Linear {
-            line: Some((Point { x: 0.0, y: 0.0 }, Point { x: 0.0, y: 1.0 })),
-            user_space: false,
-        },
-        stops: vec![stop(0.0, finish.top), stop(1.0, finish.bottom)],
-    })
-}
-
-/// The gradients a picture's doors reach for, each colour once.
-pub(super) fn door_definitions<'a>(
+/// The colours a picture's doors take, for the finish they reach for.
+pub(super) fn door_colours<'a>(
     doors: impl Iterator<Item = &'a NodeAppearance>,
-) -> Vec<Definition> {
-    let colours: BTreeSet<Option<PaletteColor>> = doors.map(colour_of).collect();
-    colours.into_iter().map(gradient).collect()
+) -> impl Iterator<Item = Option<PaletteColor>> {
+    doors.map(colour_of)
 }
 
 /// What a door looks like: a face in its colour's gradient, with a rim, a fine

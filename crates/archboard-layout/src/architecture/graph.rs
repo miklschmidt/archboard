@@ -13,12 +13,9 @@ use indexmap::IndexMap;
 use super::content::{Content, Edge, Node};
 use super::measured::Measured;
 use crate::ecma;
+use crate::graph::GROUPS;
 use crate::json::J;
 
-/// The layout option naming the group a node is placed with (TASK-347).
-const PLACING_GROUP: &str = "archboard.group";
-/// The root option carrying each placing group's caption size, as `[id, width, height]` rows.
-const GROUP_CAPTIONS: &str = "archboard.group.captions";
 /// The option marking a child a relationship from outside its container reaches (ADR 0044).
 const ENTRY_POINT: &str = "archboard.entry";
 /// The option carrying each width a container's header can take, as `[width, height]` rows.
@@ -126,15 +123,10 @@ fn header_options(measured: &MeasuredNode<NodeFacts>) -> Vec<(String, J)> {
 }
 
 /// One card or container, measured, before containment is assembled.
-fn node_of(
-    node: &Node,
-    measured: &MeasuredNode<NodeFacts>,
-    group: Option<&String>,
-    first: Option<bool>,
-) -> J {
-    let mut options = vec![("archboard.order".to_owned(), J::Str(text(node.order)))];
-    if let Some(group) = group {
-        options.push((PLACING_GROUP.to_owned(), J::str(group)));
+fn node_of(node: &Node, measured: &MeasuredNode<NodeFacts>, order: f64, first: Option<bool>) -> J {
+    let mut options = vec![("archboard.order".to_owned(), J::Str(text(order)))];
+    if !node.groups.is_empty() {
+        options.push((GROUPS.to_owned(), J::str(&node.groups.join(" "))));
     }
     if let Some(first) = first {
         options.push((
@@ -278,8 +270,36 @@ fn nest(id: &str, nodes: &mut IndexMap<String, J>, kids: &IndexMap<String, Vec<S
     node
 }
 
-/// The graph of a board: its nodes in their containers, its relationships
-/// with their labels and options, and each placing group's caption size.
+/// Where each node stands among its peers: in the board's order, with a group's
+/// members right after its first member, so that a group stands together.
+fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
+    let ordered = ecma::sorted_by(&content.nodes.iter().collect::<Vec<_>>(), |one, other| {
+        one.order - other.order
+    });
+    let mut first: BTreeMap<&str, usize> = BTreeMap::new();
+    for (at, node) in ordered.iter().enumerate() {
+        for group in &node.groups {
+            first.entry(group).or_insert(at);
+        }
+    }
+    let lead = |at: usize, node: &Node| {
+        let led = node
+            .groups
+            .first()
+            .and_then(|group| first.get(group.as_str()));
+        led.copied().unwrap_or(at)
+    };
+    let mut keyed: Vec<(usize, usize, &str)> = (ordered.iter().enumerate())
+        .map(|(at, node)| (lead(at, node), at, node.id.as_str()))
+        .collect();
+    keyed.sort_unstable();
+    (keyed.into_iter().enumerate())
+        .map(|(place, (_, _, id))| (id, place as f64))
+        .collect()
+}
+
+/// The graph of a board: its nodes in their containers, and its relationships
+/// with their labels and options.
 ///
 /// `inline` selects the retained Track input; Blocks also keeps the variant’s own overview kinds.
 pub(crate) fn compound_graph(
@@ -289,7 +309,7 @@ pub(crate) fn compound_graph(
     entries: &BTreeMap<String, bool>,
     inline: bool,
 ) -> Graph {
-    let placing = measured.groups.as_ref().map(|groups| &groups.placing);
+    let places = gathered_order(content);
     let by_id: BTreeMap<&str, &Node> = content
         .nodes
         .iter()
@@ -300,10 +320,10 @@ pub(crate) fn compound_graph(
         .iter()
         .filter_map(|(id, value)| {
             let node = by_id.get(id.as_str())?;
-            let group = placing.and_then(|placing| placing.get(id));
+            let order = places.get(id.as_str()).copied().unwrap_or(node.order);
             Some((
                 id.clone(),
-                node_of(node, value, group, entries.get(id).copied()),
+                node_of(node, value, order, entries.get(id).copied()),
             ))
         })
         .collect();
@@ -326,24 +346,7 @@ pub(crate) fn compound_graph(
     body.push_str(",\"edges\":");
     J::Arr(edges).write(&mut body);
     Graph {
-        options: caption_options(measured),
+        options: Vec::new(),
         body,
     }
-}
-
-/// The root options carrying each placing group's caption size, when any group places.
-fn caption_options(measured: &Measured) -> Vec<(String, String)> {
-    let Some(groups) = measured
-        .groups
-        .as_ref()
-        .filter(|groups| !groups.captions.is_empty())
-    else {
-        return Vec::new();
-    };
-    let rows = groups
-        .captions
-        .iter()
-        .map(|(id, label)| J::Arr(vec![J::str(id), J::Num(label.width), J::Num(label.height)]))
-        .collect();
-    vec![(GROUP_CAPTIONS.to_owned(), J::Arr(rows).text())]
 }

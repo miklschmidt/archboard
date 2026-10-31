@@ -32,27 +32,45 @@ separate static Medium file is the diagrams' weight 500, byte-pinned to the same
 1.000 design. The shell's stylesheet does not register it.
 
 The renderer core builds `Onest-wght-v1.000.ttf`, `Onest-Medium-v1.000.ttf` and
-the two DM Mono files into itself, shapes every word of a diagram with them, and
+the two Maple Mono NL files into itself, shapes every word of a diagram with them, and
 writes the outline of each glyph a picture uses into that picture (ADR 0059). A
 browser loads no diagram font.
 
-## DM Mono 1.000
+## Maple Mono NL 7.9
 
-- `DMMono-Regular-v1.000.ttf` and `DMMono-Medium-v1.000.ttf` come from the
-  upstream `googlefonts/dm-mono` repository at commit
-  [`57fadab`](https://github.com/googlefonts/dm-mono/tree/57fadabfb200a77de2812540026c249dc3013077/exports).
-  Their SHA-256 values are respectively
-  `55b4c98f123daebb3ed27947ba47b2af00554fc6284d639a540bcef5e6258ad2`
+- `MapleMonoNL-Regular-Subset-v7.9.ttf` and `MapleMonoNL-Medium-Subset-v7.9.ttf`
+  are subsets of the two files of the same weights in the release archive
+  [`MapleMonoNL-TTF.zip`](https://github.com/subframe7536/maple-font/releases/tag/v7.9),
+  SHA-256 `2f7f702a121cd910751849dde76f431d81a5be1618507f5724606d3147028b88`. NL is the build with no ligatures. The inputs have the
+  SHA-256 values
+  `30fe0df56b3aee42c012e6bbbabd60cc531e4ded91a6453eb8823dab0882976f`
   and
-  `fd327daf461db87b44a87def475d251bf03b997f7c07d9680592d75dbbfaad0b`.
-- `OFL-DMMono-1.1.txt` is the upstream license text, normalized to LF line
-  endings with trailing whitespace removed, from the
-  [OFL file](https://github.com/google/fonts/blob/ade3d1533e06b2b1462ffcde8e08b129627ca360/ofl/dmmono/OFL.txt)
-  pinned at Google Fonts commit `ade3d1533e06b2b1462ffcde8e08b129627ca360`.
-  SHA-256:
-  `f5898de81851415b71431c1a8ea527c88a4e79caeb23936483428d2e911af40c`.
+  `3b186c8cc71a271c50f02054d3e888822bb18d6821666bf5875d6471edb536d7`.
+  The subsets are 40,044 bytes
+  (`b8802446aaeddf1d08f014ba9772467c3c586e9c62bc8b67ee97978f224024c6`) and
+  40,168 bytes
+  (`bfb67f52230ddd1d58e8e31d304ccc5ec300a4dfdbdd660a113a60dd6ecd2a10`).
+- `OFL-MapleMono-1.1.txt` is the `LICENSE.txt` of the archive, normalized to LF
+  line endings with trailing whitespace removed. SHA-256:
+  `eb2d28d2e565a0757e3d64e34ebb452e75a0cad87c0ab3faf4e08ba7596de902`.
 
-Only weights 400 and 500 are loaded. DM Mono is reserved for technical tokens
+A full file is 242 KB, and the core carries each file it uses, so the repository
+keeps subsets of the characters that the product sets in mono. They hold the
+Latin, the punctuation and the signs that the earlier mono face held. A character
+outside them comes from the Noto fallback faces. From the repository root, extract
+the two inputs into `maple-sources` and run `subset-mono.sh` with fonttools 4.63.0
+from the pinned Nix input:
+
+```sh
+mkdir -p out
+nix shell --inputs-from . nixpkgs#python3Packages.fonttools -c \
+  packages/renderer/assets/fonts/subset-mono.sh maple-sources out
+```
+
+The command keeps only the `ccmp` and `locl` layout features, so no context swaps
+a glyph, keeps the names and writes the same bytes on every run.
+
+Only weights 400 and 500 are loaded. Maple Mono NL is reserved for technical tokens
 such as levels, revisions, paths, hashes, and timestamps; human headings and
 labels remain Onest.
 
@@ -77,7 +95,7 @@ sentence still uses Onest.
 
 ## Noto fallback faces
 
-Onest and DM Mono have no glyph for some characters. The renderer core draws
+Onest and Maple Mono NL have no glyph for some characters. The renderer core draws
 such a character from the first fallback face that has one (ADR 0059). The order
 is fixed: Noto Sans at the run's weight for Greek, then Noto Sans Symbols 2,
 then Noto Sans Math (`crates/archboard-text/src/faces.rs`). The shell does not

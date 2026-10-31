@@ -152,6 +152,9 @@ const RELATIVE_OKLCH =
 /** A relative OKLCH colour that keeps its origin's chroma and hue, its lightness held between two bounds. */
 const HELD_OKLCH = /^from\s+([\s\S]+)\s+clamp\(([\d.]+),\s*l,\s*([\d.]+)\)\s+c\s+h$/u;
 
+/** A step of a colour's lightness and chroma, as a door's and a tag's finish takes it. */
+const SHIFTED_OKLCH = /^from\s+([\s\S]+)\s+calc\(l \+ (-?[\d.]+)\)\s+calc\(c \+ (-?[\d.]+)\)\s+h$/u;
+
 /**
  * One colour expression, resolved for one theme.
  * @param expression A colour the renderer painted with.
@@ -190,6 +193,13 @@ function resolve(expression: string, theme: DiagramTheme): Rgba {
 		const colour = resolve(origin!, theme);
 		const { l, c, h } = oklchOf(colour);
 		return fromOklch({ l: Math.min(Number(most), Math.max(Number(least), l)), c, h }, colour.a);
+	}
+	const shifted = name === "oklch" ? SHIFTED_OKLCH.exec(inner!) : null;
+	if (shifted !== null) {
+		const [, origin, lightness, chroma] = shifted;
+		const colour = resolve(origin!, theme);
+		const { l, c, h } = oklchOf(colour);
+		return fromOklch({ l: l + Number(lightness), c: c + Number(chroma), h }, colour.a);
 	}
 	throw new Error(`Not a colour the renderer paints with: ${text}`);
 }

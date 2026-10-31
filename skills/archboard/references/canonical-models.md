@@ -1133,7 +1133,7 @@ Use the explicit inventory, preview, and migration route from [legacy migration]
 
 `model render --out picture.svg` draws the structural reading by default.
 Select a module with `--module`, an exact scope with `--scope`, or repeated identities with `--focus`.
-Use `--hide-kind` to hide relationship kinds and `--show-group` to show group regions, which are off by default.
+Use `--hide-kind` to hide relationship kinds.
 Every relationship of a reading has a drawn line.
 Use `--state` or `--checkpoint` for explicit architecture selection.
 Use `--flow` with `--grammar sequence` or `--grammar flowchart` for a complete behavioral exchange.
@@ -1161,7 +1161,7 @@ Remembered findings use that same revision and remain empty until a code pass co
 
 `browser show [model] --pane <pane>` opens a canonical model in an existing pane.
 The optional model argument must match the addressed vault's model identity or exact name.
-Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--show-group`, `--grammar`, and `--flow` for its reading.
+Use `--module`, `--scope`, `--focus`, `--hide-kind`, `--grammar`, and `--flow` for its reading.
 Use `--state`, `--checkpoint`, `--preview`, `--bookmark`, or `--legacy-address` for explicit selection.
 Use `--walkthrough <id> --beat <index>` to request an authored narrative at its zero-based beat.
 Pass `--input <file>` for the complete reading JSON.

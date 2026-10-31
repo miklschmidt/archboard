@@ -257,7 +257,9 @@ test(
 			expect(
 				snapshot.fontResources.every((url) => new URL(url).origin === new URL(server.base).origin),
 			).toBe(true);
-			expect(snapshot.fontResources.join(" ")).toMatch(/Onest-wght.*DMMono-(?:Regular|Medium)/);
+			expect(snapshot.fontResources.join(" ")).toMatch(
+				/Onest-wght.*MapleMonoNL-(?:Regular|Medium)/,
+			);
 			expect(snapshot.humanLabels).toHaveLength(2);
 			expect(
 				snapshot.humanLabels.every(
@@ -288,7 +290,7 @@ test(
 			]) {
 				expect(type.family).toContain("archboard onest");
 			}
-			expect(snapshot.technicalType.family).toContain("archboard dm mono");
+			expect(snapshot.technicalType.family).toContain("archboard maple mono");
 			expect(
 				snapshot.actionTargets.every(
 					({ width, height }) => width >= MIN_TARGET && height >= MIN_TARGET,

@@ -10,6 +10,10 @@ group clause of
 [ADR 0024](0024-vault-configuration-owns-vocabulary-and-presentation.md).
 Tracked as TASK-347. The user decided it on 2026-09-25.
 
+Superseded in part (2026-10-31, TASK-559.16): a group's color stands on a bright
+tag on each of its cards. No frame is drawn round a group, and a card's face stays
+neutral. The cards of a group still stand together.
+
 [ADR 0044](0044-cards-containers-and-groups-are-drawn-as-slabs.md) supersedes
 how this decision draws its colors. A region is now a thin faded frame in its
 group's color, with thick corner brackets and a caption tab in the full color,

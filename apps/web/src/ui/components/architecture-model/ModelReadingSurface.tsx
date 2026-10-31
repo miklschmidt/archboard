@@ -147,7 +147,7 @@ function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 		<ModelLegend
 			model={shown.model}
 			projection={shown.projection}
-			picture={scene?.picture.key ?? null}
+			picture={scene?.picture.legend ?? null}
 			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
 			onToggle={location.toggleFilter}
 		/>

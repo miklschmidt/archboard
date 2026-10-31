@@ -657,7 +657,7 @@ The resulting application contract is:
 - **Onest 1.000** for human interface text: 400 for body copy, 500 for labels
   and metadata, 600 for headings, and 700 for emphasis. Human headings and
   labels stay normal or title case with normal tracking.
-- **DM Mono 1.000** only for technical tokens: 400 for values and timestamps,
+- **Maple Mono NL 7.9** only for technical tokens: 400 for values and timestamps,
   and 500 for compact technical emphasis such as the level badge. Repository
   names, paths, branches, commits, element IDs, and activity times are
   technical. State phrases, counts, navigator labels, inspector labels, and
@@ -673,9 +673,9 @@ is the source of the runtime Onest file, a variable TTF. This file carries the
 audited 1.000 outlines and supplies exact 400/500/600/700
 instances. The official [Onest 1.000 static
 release](https://github.com/simpals/onest/releases/tag/1.000) omits SemiBold,
-so the variable file is required for the 600 role. DM Mono Regular and Medium
-come from upstream commit
-[`57fadab`](https://github.com/googlefonts/dm-mono/tree/57fadabfb200a77de2812540026c249dc3013077/exports).
+so the variable file is required for the 600 role. Maple Mono NL Regular and
+Medium are subsets of the
+[7.9 release](https://github.com/subframe7536/maple-font/releases/tag/v7.9).
 Both families use the SIL Open Font License 1.1. Exact binary, license, source,
 and SHA-256 provenance is recorded beside the assets in
 `packages/renderer/assets/fonts/README.md`.

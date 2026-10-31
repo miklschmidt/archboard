@@ -196,7 +196,6 @@ test("retained comparisons identify the live base revision independently of the 
 		reading: {
 			focus: [],
 			relationshipKinds: ["call"],
-			groups: true,
 			grammar: "sequence" as const,
 			flow: "Shop#Checkout",
 		},
