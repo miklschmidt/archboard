@@ -44,7 +44,7 @@
         "symbol": "flowPicture"
       },
       "id": "vKEsyHFk/HBlhIeSD#5eMr0hkn",
-      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
+      "to": "vKEsyHFk/gbyqW4H3#0XCanbzp"
     },
     {
       "order": 121000,
@@ -57,7 +57,7 @@
         "symbol": "flowReading"
       },
       "id": "vKEsyHFk/HBlhIeSD#WpbKgDdF",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 122000,
@@ -71,6 +71,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#7fKX6THX",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 184000,
+      "kind": "call",
+      "label": "ArchitectureFlowRenderRequestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+        "symbol": "flowPicture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#txWnt33L",
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
     }
   ]
 }
