@@ -46,6 +46,7 @@ mod standing;
 mod styles;
 mod tag;
 mod text_runs;
+mod toggle;
 mod traffic;
 mod tray;
 

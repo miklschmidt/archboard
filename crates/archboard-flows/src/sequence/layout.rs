@@ -233,6 +233,7 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
             responsibility: None,
             code_path: None,
             door: None,
+            toggle: None,
             parent: None,
             groups: Vec::new(),
             drills: false,

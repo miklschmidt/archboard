@@ -9,12 +9,14 @@ import type {
 import type { MovingPicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 
 type Projection = ReturnType<typeof projectModel>;
-type ReadingFilters = { [Field in keyof ModelFilters]-?: NonNullable<ModelFilters[Field]> };
+type ReadingFilters = { readonly hideKinds: NonNullable<ModelFilters["hideKinds"]> };
 
 /** The fields of an address that decide what a reading draws and what an agent is told about it. */
 interface SceneReading {
 	readonly scope: string | null;
 	readonly focus: string[] | null;
+	/** The modules opened beside the scope, which draw into the same picture. */
+	readonly expand: string[];
 	readonly filters: ReadingFilters;
 	readonly grammar: string;
 	readonly flow: string | null;
@@ -117,8 +119,17 @@ function sceneView(reading: SceneReading): { readonly id: string } | null {
  */
 function sceneFit(request: Pick<SceneRequest, "reading" | "layout">): string {
 	const { reading, layout } = request;
-	const { state, checkpoint, against, filters, focus } = reading;
-	return JSON.stringify([sceneBoard(reading), focus, state, checkpoint, against, filters, layout]);
+	const { state, checkpoint, against, filters, focus, expand } = reading;
+	return JSON.stringify([
+		sceneBoard(reading),
+		focus,
+		expand,
+		state,
+		checkpoint,
+		against,
+		filters,
+		layout,
+	]);
 }
 
 /**

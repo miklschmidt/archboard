@@ -31,6 +31,7 @@ interface ModelReadingCanvasProps
 			| "cut"
 			| "reducedMotion"
 			| "onOpen"
+			| "onToggle"
 			| "onAttention"
 			| "onWholeScope"
 			| "onOpenState"
@@ -82,6 +83,7 @@ function ModelReadingCanvas(props: ModelReadingCanvasProps): JSX.Element {
 								onSelect={selection.select}
 								onSelectMany={selection.selectMany}
 								onOpen={props.onOpen}
+								onToggle={props.onToggle}
 								onAttention={props.onAttention}
 								onWholeScope={props.onWholeScope}
 								onOpenState={props.onOpenState}

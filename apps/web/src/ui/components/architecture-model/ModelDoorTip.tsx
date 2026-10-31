@@ -7,6 +7,7 @@ import type {
 	SubjectTip,
 	TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { isRemoved, moduleSource } from "#ui/rules/architecture-model/selected-subject.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
@@ -60,8 +61,21 @@ function doorSays(props: ModelDoorTipProps): SubjectTip {
 		appearance,
 		lead: said?.lead,
 		body: said?.body,
-		hint: isRemoved(projection, id) ? undefined : "Click to open",
+		hint: doorHint(projection, id),
 	};
+}
+
+/**
+ * What a press on a door does.
+ * @param projection The reading.
+ * @param id The door.
+ * @returns The hint, or nothing for a door that leads nowhere.
+ */
+function doorHint(projection: Projection, id: string): string | undefined {
+	if (isRemoved(projection, id)) return undefined;
+	return toggleOf(projection, id) === "expand"
+		? "Click to open, plus to expand here"
+		: "Click to open";
 }
 
 /**

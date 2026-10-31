@@ -18,6 +18,8 @@ interface ModelAddress {
 	readonly flow?: string | undefined;
 	readonly focus?: readonly string[] | undefined;
 	readonly hideKinds?: readonly string[] | undefined;
+	/** The modules opened beside the scope in the same picture. */
+	readonly expand?: readonly string[] | undefined;
 	/** Set when the reader asked for every line, with any value. */
 }
 
@@ -218,7 +220,9 @@ function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | u
 				"flow",
 			] as const
 		).every((field) => one[field] === other[field]) &&
-		(["focus", "hideKinds"] as const).every((field) => sameSubjects(one[field], other[field]))
+		(["focus", "hideKinds", "expand"] as const).every((field) =>
+			sameSubjects(one[field], other[field]),
+		)
 	);
 }
 

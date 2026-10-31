@@ -137,24 +137,31 @@ fn dense_refusals(lines: usize) -> usize {
 }
 
 /// The room a dense placement of some lines adds to its gaps, tightest first:
-/// each refusal costs a whole route, so a crowded reading starts wider.
-fn dense_rooms(lines: usize) -> &'static [f64] {
-    match lines {
-        0..=15 => &[0.0, 48.0],
-        16..=AMPLE_LINES => &[72.0, 120.0],
-        41..=64 => &[96.0],
-        _ => &[288.0],
+/// each refusal costs a whole route, so a crowded reading starts wider. Lines
+/// between frames all cross the band between them, so several frames need more.
+fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
+    match (lines, frames) {
+        (0..=15, 0..=1) => &[0.0, 48.0],
+        (16..=AMPLE_LINES, 0..=1) => &[72.0, 120.0],
+        (0..=AMPLE_LINES, _) => &[72.0, 120.0, 288.0],
+        (41..=64, 0..=1) => &[96.0],
+        (41..=64, _) => &[96.0, 288.0, 480.0],
+        (_, 0..=1) => &[288.0],
+        _ => &[480.0, 640.0],
     }
 }
 
 /// The best dense drawing of a reading, if one passes every guard. A wider room
-/// runs only while no drawing lands whole.
+/// runs only while no drawing lands whole, and past some lines only while none is drawn.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
     let mut best = None;
     let lines = relationships(graph);
-    for &room in dense_rooms(lines) {
+    for &room in dense_rooms(lines, dense::frames(graph)) {
         dense_room(graph, room, lines, &mut best);
-        if best.as_ref().is_some_and(|one| !one.0.0) {
+        if best
+            .as_ref()
+            .is_some_and(|one| !one.0.0 || lines > AMPLE_LINES)
+        {
             break;
         }
     }

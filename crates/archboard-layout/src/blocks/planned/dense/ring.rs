@@ -1,5 +1,6 @@
-//! The cards outside a frame, stood round its walls. Each takes the wall that
-//! is nearest what it joins, at the place along that wall that faces it.
+//! The cards outside a reading's frames, stood round the walls of the whole they
+//! make. Each takes the wall that is nearest what it joins, at the place along
+//! that wall that faces it.
 
 use rustc_hash::FxHashMap;
 
@@ -70,8 +71,8 @@ impl Door<'_> {
 /// What a ring reads.
 pub(super) struct Ring<'a> {
     pub graph: &'a Node,
-    pub frame: &'a str,
-    pub tab: Point,
+    /// Each frame, with the middle of its tab.
+    pub frames: Vec<(&'a str, Point)>,
     pub set: &'a Set,
     pub ids: Vec<&'a str>,
     pub extra: f64,
@@ -99,13 +100,7 @@ impl Ring<'_> {
             .copied()
             .zip(self.set.parts.iter().map(centre))
             .collect();
-        inside.insert(
-            self.frame,
-            Point {
-                x: self.tab.x / 2.0,
-                y: self.tab.y / 2.0,
-            },
-        );
+        inside.extend(self.frames.iter().copied());
         inside
     }
 

@@ -26,11 +26,14 @@ what the marks of the picture mean.
 - Caption, one line: the responsibility of the open module, then any statement of hidden lines. A flow reading
   shows its collection's name, then its summary, with no label before them. A retained flow with no summary shows
   the collection alone.
-- Picture: the open module with its parts and doors. It fits the room that the right panel leaves.
+- Picture: the open module with its parts and doors, and each expanded module as another frame with its parts. It fits
+  the room that the right panel leaves.
 - Right panel: a permanent column of about 360 px on every Diagram reading (TASK-559.19). The owner chose it because
   a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
   description, and with a selection it shows the subject. The panel is always there, so a selection never refits the
-  picture.
+  picture. An expanded module does not take the panel: the panel stays with the module that the reading opened, and an
+  `Expanded` section lists each expanded module, selects its frame and holds its collapse (TASK-559.26). A selected
+  frame explains itself like any module, and the counts of its interface line select on this picture.
 - Context: the right panel is where the flows and walkthroughs of what a reader looks at stand (TASK-559.22), under
   the description or the subject's own details. With nothing selected they are those that touch the open module, and
   with a selection those that touch the selected subjects. At the roots with nothing selected the panel lists neither,
@@ -79,7 +82,10 @@ Other long lists and evidence never go into the right panel, because a small rig
 These rules live in the projection, so the CLI, exports and the reader draw the same picture.
 
 1. One module is open. Its children are parts, and the modules that it touches are doors. A flow and a
-   deliberate focus keep their own extent, because they cross branches.
+   deliberate focus keep their own extent, because they cross branches. A reading can also expand a door: that
+   module stands open as another frame in the same picture, and the same rules hold for every open module. Its door
+   goes, a line to it ends on the part that owns it, and what it reaches stands as a door. The scope stays the one
+   module that the reading opened. A focus or an imported view ignores what is expanded until it lifts.
 2. One line joins a pair of drawn parts. A pair with relationships in both directions draws one line with an
    arrow at each end. A door's ends follow rule 5 per direction, so a pair folds only when both directions end on
    the same two drawn parts. Distinct comparison states stay separate lines. The owner decided this on 2026-10-30,
@@ -109,7 +115,9 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    Otherwise the line ends on the frame, so a line on the frame means several parts. One click opens a door, and a
    tip on it lists its real endpoints, grouped by child, up to eight of them. About lists them all. With Ctrl, a click
    selects the door. A comparison can draw a door of a module that its state removed, which has nowhere to open, so
-   a click selects it.
+   a click selects it. A door that holds parts ends with a plus, which expands it, and the tab of an expanded module
+   ends with a minus, which collapses it and brings the door back. A door with no parts and a removed door have no
+   plus, and a closed part has none either: a door is the way in, so that a picture grows only along a line.
    From three lines of one kind to one door, each way, the lines share a trunk, and each line wears its words on its
    own branch, beside the part that owns it.
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
@@ -159,7 +167,9 @@ entered or selected subject. If geometry has no real correspondence, change plai
   order of `CONTEXT.md`. A filesystem path never reparents a module.
 - The tree follows the focused pane. Another pane keeps its own path in its header.
 - Tree, Find and a door navigate. A card selects. A code link opens source. Each has a keyboard route that needs no
-  double click or hover. A selected door opens with Enter, and its panel lists its lines. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `F` and `0` cover every move.
+  double click or hover. A selected door opens with Enter, and its panel lists its lines. `[` and `]` walk a selected
+  card through the picture: the parts, each expanded frame with its parts, then the doors. `E` expands the selected door
+  or collapses the selected frame. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `E`, `F` and `0` cover every move.
 - Up and Back are different actions. Moving to another module clears stale subject and flow intent.
 - A click lights the card and the tree row, and the right panel names the subject, at once. The picture does not
   move, so a double click lands on the card.

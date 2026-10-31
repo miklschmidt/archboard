@@ -25,6 +25,7 @@ function useModelExplanation(
 		ReturnType<typeof useModelLocation>,
 		| "scope"
 		| "focus"
+		| "expand"
 		| "filters"
 		| "grammar"
 		| "flow"
@@ -37,7 +38,8 @@ function useModelExplanation(
 	reporting?: Parameters<typeof useModelReadingReport>[1],
 ) {
 	const host = useContext(ModelExplanationContext);
-	const { scope, focus, filters, grammar, flow, subject, state, checkpoint, against } = location;
+	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against } =
+		location;
 	const source = useMemo(
 		() =>
 			captureSource(model, {
@@ -62,6 +64,7 @@ function useModelExplanation(
 			reading: {
 				scope: scope ?? undefined,
 				focus: focus ?? [],
+				expand,
 				relationshipKinds: Object.keys(model.policy.relationshipKinds).filter(
 					(kind) => !filters.hideKinds.includes(kind),
 				),
@@ -76,6 +79,7 @@ function useModelExplanation(
 		selected,
 		scope,
 		focus,
+		expand,
 		filters,
 		grammar,
 		flow,

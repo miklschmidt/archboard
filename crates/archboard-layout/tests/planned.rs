@@ -105,6 +105,54 @@ fn a_frames_parts_fill_a_shared_grid_from_its_first_cell_the_same_way_every_time
 }
 
 #[test]
+fn two_frames_stand_apart_with_their_own_parts_and_a_line_between_their_parts() {
+    let frame = |id: &str, parts: Vec<Value>| {
+        json!({"id":id,"width":200,"height":36,
+            "layoutOptions":{"archboard.header.size":"36"},"children":parts})
+    };
+    let parts = |frame: &str| -> Vec<Value> {
+        (0..3)
+            .map(|i| json!({"id":format!("{frame}{i}"),"width":180,"height":60}))
+            .collect()
+    };
+    let line =
+        |from: &str, to: &str| json!({"id":format!("{from}{to}"),"sources":[from],"targets":[to]});
+    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":[frame("a",parts("a")),frame("b",parts("b")),{"id":"door","width":160,"height":34}],
+        "edges":[line("a0","b1"),line("a1","a2"),line("b0","door")]});
+    let placed = drawing(&graph);
+    assert_eq!(placed, drawing(&graph));
+    let drawn = [&placed["cards"], &placed["frames"]];
+    let boxed = |id: &str| {
+        let all = drawn
+            .iter()
+            .flat_map(|list| list.as_array().expect("a drawn list"));
+        let card = all
+            .into_iter()
+            .find(|one| one["id"] == id)
+            .expect("a drawn box");
+        let side = |axis: &str| card["box"][axis].as_f64().expect("a drawn box");
+        (
+            side("x"),
+            side("y"),
+            side("x") + side("width"),
+            side("y") + side("height"),
+        )
+    };
+    let (left, top, right, bottom) = boxed("a");
+    let (other_left, other_top, other_right, other_bottom) = boxed("b");
+    assert!(
+        right <= other_left || other_right <= left || bottom <= other_top || other_bottom <= top
+    );
+    for (holder, part) in [("a", "a1"), ("b", "b2")] {
+        let (outer_left, outer_top, outer_right, outer_bottom) = boxed(holder);
+        let (inner_left, inner_top, inner_right, inner_bottom) = boxed(part);
+        assert!(outer_left <= inner_left && inner_right <= outer_right);
+        assert!(outer_top <= inner_top && inner_bottom <= outer_bottom);
+    }
+}
+
+#[test]
 fn nested_comparison_repairs_channels_through_enclosing_blocks() {
     // Reduced from a whole-board comparison. Its restored calls exceed the
     // small-placement search limit and need room outside their nearest blocks.

@@ -29,6 +29,7 @@ function originalReadingAddress(model: Model): ModelAddress | null {
 		scope: null,
 		subject: undefined,
 		focus: undefined,
+		expand: undefined,
 		grammar: undefined,
 		flow: undefined,
 		bookmark: undefined,

@@ -112,6 +112,8 @@ pub(crate) const DOOR_FAR_ICON: f64 = 22.0;
 pub(crate) const DOOR_ARROW_INSET: f64 = 18.0;
 /// The room a door keeps past its name for its arrow.
 pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
+/// The room a control takes at the right end of a door or a frame's tab.
+pub(crate) const TOGGLE_ROOM: f64 = 32.0;
 
 /// How tall a frame's edge tab stands: the room its far name and path take on one line.
 pub const TAB_HEIGHT: f64 = 36.0;

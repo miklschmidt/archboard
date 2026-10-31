@@ -154,6 +154,7 @@ Each behavior keeps its existing public boundary and one state owner.
   For canonical readings, selecting a state clears the checkpoint, and selecting a checkpoint clears the state.
   Either selection clears the prior explicit comparison.
   They use `focusX` and `hideKindsX` for focused subjects and hidden kinds.
+  `expandX` lists the modules opened beside the scope, sorted, so that one picture has one address. Another scope clears it.
   `grammarX` selects the diagram mode, and `flowX` identifies one explicit authored flow.
   Missing grammar means architecture. Missing flow in a behavioral mode requires a choice.
   Behavioral modes preserve the architecture fields so that returning restores the prior reading.
@@ -343,6 +344,8 @@ A tag selects what the picture draws of its group through the ordinary selection
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
+A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneBoard`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
+Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
 The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.
 The drawing projection translates aggregate lines into canonical relationship identities without owning another selection.

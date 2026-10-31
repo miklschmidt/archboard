@@ -245,6 +245,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 		scope: _scope,
 		focus: _focus,
 		hideKinds: _kinds,
+		expand: _expand,
 		grammar: _grammar,
 		beat: _beat,
 		model: _asked,

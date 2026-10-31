@@ -272,6 +272,10 @@ right in one crisp concave curve. The well's top edge runs on under the tab, so
 a line parts the tab from the floor. The tab hugs its words with 12 units on
 either side, and one outline runs round the tab and the well. The first row of
 cards stands as far under the edge as from the sides and the bottom of the well.
+In a live reader, a door that holds parts ends with a plus behind a thin rule, and
+the tab of an expanded module ends with a minus in the same place. The piece keeps its
+look, and only the control takes a plate under the pointer. An export and a presented
+step draw neither control.
 No group tints a container, and it wears no tag: its kind shows on its icon chip
 alone.
 A group shows on each of its cards as a tag at the top right, the same bright
@@ -406,6 +410,12 @@ picture also lights it. Its actions stand at the foot of the column, under the l
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
+With a module expanded into the picture, the panel stays with the module that the reading
+opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
+A row selects that frame, and a minus at the end of the row collapses it. A line under the
+rows says how many modules of the address cannot open here. With a door or an expanded
+module selected, an outlined action at the foot expands or collapses it.
+
 Under what it says, the panel lists the flows and the walkthroughs that touch the
 selection, or else the open module. At the roots with nothing selected it lists neither.
 Each list has a count, four rows and a line that says how many more. A flow's row ends
@@ -416,7 +426,8 @@ For a module with parts, open or selected, an `Interface` section under its head
 one quiet line: entries, hidden, callers, `to module` when callers reach the module itself,
 and pass-through. Each count selects what it counts on the module's picture, and a count
 of none is disabled. `Open in About`, a 24px outlined control in the heading, opens the
-Interface section of About. No count takes a warning color, nothing combines the counts,
+Interface section of About. Each count of a module open in the picture selects on this
+picture. No count takes a warning color, nothing combines the counts,
 and the picture gains no permanent mark. With one module selected, the head of
 `Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward`
 and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle

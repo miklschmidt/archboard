@@ -198,6 +198,7 @@ function followedReading(
 		grammar: captured.reading.grammar,
 		scope: captured.reading.scope,
 		focus: captured.reading.focus,
+		expand: captured.reading.expand,
 		flow: captured.reading.flow,
 		hideKinds: model.success
 			? Object.keys(model.policy.relationshipKinds).filter(

@@ -233,25 +233,28 @@ function Rows<Item>(props: {
  * @param props.name What it names.
  * @param props.detail What it says of that.
  * @param props.stacked Whether the detail stands under the name.
+ * @param props.action What else can be done with what it names, at its end.
  * @returns The row.
  */
 function Row({
 	name,
 	detail,
 	stacked = false,
+	action,
 	...button
 }: ComponentProps<"button"> & {
 	readonly name: ReactNode;
 	readonly detail?: ReactNode;
 	readonly stacked?: boolean;
+	readonly action?: ReactNode;
 }): JSX.Element {
 	return (
-		<li>
+		<li className="flex items-center">
 			<button
 				type="button"
 				{...button}
 				className={cn(
-					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 w-full gap-x-2 px-2 py-1 text-left",
+					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left",
 					stacked ? "flex-col" : "items-baseline",
 				)}
 			>
@@ -272,6 +275,7 @@ function Row({
 					{detail}
 				</span>
 			</button>
+			{action}
 		</li>
 	);
 }

@@ -1,17 +1,20 @@
 // The keys of a reading. They work wherever the reader is, also while presenting, when
 // no tree is on screen: Backspace goes up, `[` and `]` walk the siblings, Enter opens
-// what is selected or else selects the first card, `F` focuses what is selected and
-// `0` fits the whole picture. `N` and `P` walk the changes of a proposal, also while a
-// walkthrough has the middle.
+// what is selected or else selects the first card, `E` expands the selected door or
+// collapses the selected frame, `F` focuses what is selected and `0` fits the whole
+// picture. `N` and `P` walk the changes of a proposal, also while a walkthrough has the
+// middle.
 
 /** A move of the reader. */
-type ReaderMove = "up" | "previous" | "next" | "open" | "focus" | "fit";
+type ReaderMove = "up" | "previous" | "next" | "open" | "toggle" | "focus" | "fit";
 
 const MOVES: Readonly<Record<string, ReaderMove>> = {
 	Backspace: "up",
 	"[": "previous",
 	"]": "next",
 	Enter: "open",
+	e: "toggle",
+	E: "toggle",
 	f: "focus",
 	F: "focus",
 	"0": "fit",

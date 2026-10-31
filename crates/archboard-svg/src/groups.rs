@@ -32,6 +32,8 @@ pub(crate) const TRAFFIC_ATTRIBUTE: &str = "data-traffic";
 pub(crate) const MEMBERS_ATTRIBUTE: &str = "data-members";
 /// The attribute on a group that draws one part of a subject drawn in two.
 const PART_ATTRIBUTE: &str = "data-semantic-part";
+/// The attribute on a control, which says what pressing it does.
+const TOGGLE_ATTRIBUTE: &str = "data-toggle";
 
 /// A move and a scale, as a transform or a custom property spells it.
 fn placed(transform: Transform, unit: &str) -> String {
@@ -143,6 +145,10 @@ fn view(group: &Group, out: &mut Attributes) -> bool {
         Role::DoorArrow => {
             out.set("class", "ab-door-arrow");
             transform(group, out);
+        }
+        Role::Toggle(toggle) => {
+            out.set("class", "ab-toggle")
+                .set(TOGGLE_ATTRIBUTE, word(toggle));
         }
         Role::Icon(asked) => {
             transform(group, out);

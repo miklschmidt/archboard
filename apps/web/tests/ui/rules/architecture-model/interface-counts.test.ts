@@ -31,9 +31,10 @@ function call(from: string, to: string): VariantContent["edges"][number] {
  * The counts of a module, by key.
  * @param id The module.
  * @param edges The relationships of the model.
+ * @param open The modules that the reading draws open.
  * @returns Each count with what it selects.
  */
-function countsOf(id: string, edges: VariantContent["edges"]) {
+function countsOf(id: string, edges: VariantContent["edges"], open?: ReadonlySet<string | null>) {
 	const nodes = [
 		module("hub"),
 		module("used", "hub"),
@@ -44,7 +45,7 @@ function countsOf(id: string, edges: VariantContent["edges"]) {
 	];
 	const inspection = inspectContainer({ nodes, edges, flows: [], walkthroughs: [] }, module(id));
 	if (!inspection.holdsParts) throw new Error(`${id} holds no parts.`);
-	return new Map(interfaceCounts(inspection, nodes).map((count) => [count.key, count]));
+	return new Map(interfaceCounts(inspection, nodes, open).map((count) => [count.key, count]));
 }
 
 test("a caller inside another module is selected as the door that the picture draws", () => {
@@ -52,6 +53,18 @@ test("a caller inside another module is selected as the door that the picture dr
 	expect(counts.get("callers")).toMatchObject({ count: 1, subjects: ["far"] });
 	expect(counts.get("entryPoints")).toMatchObject({ count: 1, subjects: ["used"] });
 	expect(counts.get("hiddenParts")).toMatchObject({ count: 1, subjects: ["alone"] });
+});
+
+test("a caller in a module open beside this one is selected as its own card", () => {
+	const edges = [call("deep", "used")];
+	const open = new Set(["hub", "far"]);
+	expect(countsOf("hub", edges, open).get("callers")?.subjects).toEqual(["near"]);
+	expect(countsOf("far", [call("used", "deep")], open).get("callers")?.subjects).toEqual(["used"]);
+});
+
+test("a module that the reading does not open keeps the cards of its own picture", () => {
+	const counts = countsOf("hub", [call("deep", "used")], new Set(["far"]));
+	expect(counts.get("callers")?.subjects).toEqual(["far"]);
 });
 
 test("the callers that reach a module itself are counted once each, and only when there are any", () => {

@@ -27,6 +27,7 @@ const ArchitectureRenderRequestSchema = z.strictObject({
 	state: z.string().min(1).optional(),
 	scope: QualifiedSubjectIdSchema.optional(),
 	focus: z.array(QualifiedSubjectIdSchema).optional(),
+	expand: z.array(QualifiedSubjectIdSchema).optional(),
 	hideKinds: z.array(z.string()).optional(),
 	checkpoint: z.string().min(1).optional(),
 	theme: StandaloneThemeSchema.optional(),

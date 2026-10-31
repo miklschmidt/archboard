@@ -33,6 +33,7 @@ const ExplanationRequestSchema = z.strictObject({
 	reading: z.strictObject({
 		scope: QualifiedSubjectIdSchema.optional(),
 		focus: z.array(QualifiedSubjectIdSchema),
+		expand: z.array(QualifiedSubjectIdSchema).optional(),
 		relationshipKinds: z.array(z.string().min(1)),
 		grammar: DiagramGrammarSchema,
 		flow: QualifiedSubjectIdSchema.optional(),

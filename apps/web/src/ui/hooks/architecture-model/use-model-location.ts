@@ -42,6 +42,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const flow = nullableParameter(search[`flow${paneId}`]);
 	const focused = search[`focus${paneId}`];
 	const hiddenKinds = search[`hideKinds${paneId}`];
+	const expanded = search[`expand${paneId}`];
 	const filters = useMemo(
 		() => ({
 			hideKinds: hiddenKinds ? hiddenKinds.split(",") : [],
@@ -51,6 +52,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	const focus = useMemo(
 		() => (focused === undefined ? null : [...new Set(focused.split(","))]),
 		[focused],
+	);
+	const expand = useMemo(
+		() => (expanded === undefined ? [] : [...new Set(expanded.split(","))]),
+		[expanded],
 	);
 	const navigate = useCallback(
 		(patch: Partial<ModelAddress>, replace = false, repository?: string): Promise<void> => {
@@ -88,6 +93,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					: {
 							scope,
 							focus: focus ?? undefined,
+							expand,
 							grammar,
 							flow: flow ?? undefined,
 							hideKinds: filters.hideKinds,
@@ -96,7 +102,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				...patch,
 			});
 		},
-		[navigate, bookmarkReading, scope, focus, grammar, flow, filters, userChanged],
+		[navigate, bookmarkReading, scope, focus, expand, grammar, flow, filters, userChanged],
 	);
 	const selectBookmark = useCallback(
 		(next: string | null): void => {
@@ -105,6 +111,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				bookmark: next ?? undefined,
 				scope: null,
 				focus: undefined,
+				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
@@ -128,6 +135,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				bookmark: undefined,
 				scope: null,
 				focus: undefined,
+				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
 				hideKinds: undefined,
@@ -159,6 +167,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					grammar: undefined,
 					flow: undefined,
 					focus: undefined,
+					expand: undefined,
 					hideKinds: undefined,
 				},
 				false,
@@ -183,6 +192,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 					grammar: requestedGrammar(reading),
 					flow: reading.flow,
 					focus: reading.focus,
+					expand: reading.expand,
 					hideKinds: reading.hideKinds,
 				},
 				!push,
@@ -197,12 +207,13 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				id,
 				scope: next,
 				focus: undefined,
+				expand: next === scope ? expand : undefined,
 				grammar: undefined,
 				flow: undefined,
 				subject: undefined,
 			});
 		},
-		[explore],
+		[explore, scope, expand],
 	);
 	const selectCheckpoint = useCallback(
 		(next: string | null): void => {
@@ -223,6 +234,12 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 			explore({ focus: next });
 		},
 		[explore, focused],
+	);
+	const setExpand = useCallback(
+		(ids: readonly string[]): void => {
+			explore({ expand: [...new Set(ids)].toSorted() });
+		},
+		[explore],
 	);
 	const toggleFilter = useCallback(
 		(field: "hideKinds", id: string): void => {
@@ -298,6 +315,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 				against: AFTER,
 				scope: module,
 				focus: undefined,
+				expand: undefined,
 				grammar: undefined,
 				flow: undefined,
 				subject: undefined,
@@ -341,6 +359,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		scope,
 		checkpoint,
 		focus,
+		expand,
+		setExpand,
 		filters,
 		toggleFilter,
 		showAllKinds,
@@ -375,6 +395,7 @@ function referenceAddress(reading: Model): ModelAddress {
 		grammar: reading.selectedFlow === undefined ? undefined : "sequence",
 		against: undefined,
 		focus: referenceFocus(reading, location.subject),
+		expand: undefined,
 		hideKinds: undefined,
 	};
 }

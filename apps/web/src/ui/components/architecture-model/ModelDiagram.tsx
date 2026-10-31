@@ -69,6 +69,8 @@ interface ModelDiagramProps {
 	onSelect: (id: string | null, toggle?: boolean) => void;
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void;
 	onOpen: (id: string | null) => void;
+	/** Expand a door or collapse a frame, in a reading that offers it. */
+	onToggle?: ((id: string) => void) | undefined;
 	/** The reader's attention rests on a subject, which they may open next. */
 	onAttention?: ((id: string) => void) | undefined;
 	/** Lift the focus and filters of a reading they left empty. */
@@ -145,7 +147,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		reducedMotion,
 		onPick: onSelect,
 	});
-	const { pick, openDown } = useDoorPick(scene, open, onPick);
+	const { pick, openDown } = useDoorPick(scene, open, onPick, props.onToggle);
 	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,

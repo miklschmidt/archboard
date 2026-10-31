@@ -43,6 +43,7 @@ fn measured(laid: &Reading, policy: &Policy, steps: &HashSet<&str>) -> Measured 
                 tags: &tags,
                 drills: node.drills,
                 door: node.door.is_some(),
+                toggle: node.toggle,
             };
             let container = containers.contains(node.id.as_str());
             (

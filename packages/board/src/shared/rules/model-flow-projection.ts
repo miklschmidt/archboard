@@ -20,6 +20,8 @@ function projectFlow(
 		focused: null,
 		missingFocus: [],
 		missing: false,
+		expanded: [],
+		unopened: 0,
 		children: nodes,
 		context: [],
 		inspection: undefined,

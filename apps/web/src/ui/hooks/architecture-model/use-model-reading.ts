@@ -28,11 +28,20 @@ function useModelReading(
 	const { reference } = comparison;
 	const bookmark = importedReadings(model)?.bookmark?.reading;
 	const location = useModelLocation(paneId, bookmark);
-	const { scope, focus, filters, grammar, flow, subject, state, checkpoint, against } = location;
+	const { scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against } =
+		location;
 	const visibility = bookmark?.visibility;
 	const structure = useMemo(
-		() => projectModel(model, scope, focus, filters, reference, visibility),
-		[model, scope, focus, filters, reference, visibility],
+		() =>
+			projectModel(
+				model,
+				scope,
+				focus,
+				{ ...filters, expand, controls: true },
+				reference,
+				visibility,
+			),
+		[model, scope, focus, expand, filters, reference, visibility],
 	);
 	const projection = useMemo(() => {
 		const selectedFlow = structure.depicted.flows.find((entry) => entry.id === flow);
@@ -52,8 +61,8 @@ function useModelReading(
 		},
 	});
 	const reading = useMemo(
-		() => ({ scope, focus, filters, grammar, flow, subject, state, checkpoint, against }),
-		[scope, focus, filters, grammar, flow, subject, state, checkpoint, against],
+		() => ({ scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against }),
+		[scope, focus, expand, filters, grammar, flow, subject, state, checkpoint, against],
 	);
 	const request = useMemo(
 		() => ({

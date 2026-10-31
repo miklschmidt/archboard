@@ -120,14 +120,22 @@ interface ScopePageProps extends ModelAboutProps {
  */
 function useScopePlaces(props: ScopePageProps) {
 	const { tree } = props;
-	const { flow, focused, children, context, depicted } = props.projection;
+	const { flow, focused, children, context, depicted, expanded, opened } = props.projection;
 	return useMemo(() => {
 		const all = new Map(depicted.nodes.map((node) => [node.id, node]));
 		return {
-			parts: modulePlaces(children, tree, all, flow === null && focused === null),
+			// The picture can open other modules beside this one, and the page stays with this one.
+			parts: modulePlaces(
+				expanded.length === 0
+					? children
+					: children.filter(({ parent }) => (parent ?? null) === opened),
+				tree,
+				all,
+				flow === null && focused === null,
+			),
 			nearby: modulePlaces(context, tree, all, false),
 		};
-	}, [children, context, tree, depicted.nodes, flow, focused]);
+	}, [children, context, tree, depicted.nodes, flow, focused, expanded, opened]);
 }
 
 /**

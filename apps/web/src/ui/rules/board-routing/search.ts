@@ -150,7 +150,7 @@ const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
 	REPO_PARAM,
-	/^(model|scope|checkpoint|focus|hideKinds|showGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
+	/^(model|scope|checkpoint|focus|hideKinds|expand|showGroups|grammar|flow|state|preview|bookmark|legacyAddress|against|subject)([A-Za-z0-9]+)$/,
 ];
 
 /**
@@ -220,6 +220,7 @@ function modelFromSearch(search: WorkspaceSearch, paneId: string): ModelAddress 
 		flow: search[`flow${paneId}`],
 		focus: searchList(search[`focus${paneId}`]),
 		hideKinds: searchList(search[`hideKinds${paneId}`]),
+		expand: searchList(search[`expand${paneId}`]),
 	};
 }
 
@@ -304,7 +305,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 			}),
 		),
 		...Object.fromEntries(
-			(["focus", "hideKinds"] as const).flatMap((field) => {
+			(["focus", "hideKinds", "expand"] as const).flatMap((field) => {
 				const value = model[field];
 				// An empty list narrows nothing, and `focus=` would read back as one empty identity.
 				return value === undefined || value.length === 0
