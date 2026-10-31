@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-31T03:54:00Z'
+updated_date: '2026-10-31T03:57:00Z'
 labels:
   - frontend
   - review
@@ -69,4 +69,6 @@ Owner decision, 2026-10-30: delete the Layer 0 to Layer 7 containers from this r
 Council settled on 2026-10-30. The design record is docs/design/reader-redesign.md and the papers are under docs/design/reader-council/. The implementation papers are the scrutiny pass so far.
 
 Product intent from the owner: the whole idea of the redesign was easy identification of codebase smells, viewed through the lens of Ousterhout's A Philosophy of Software Design. Judge every reader slice against that.
+
+The owner left the choices to the integrator on 2026-10-31: pick the best options of the audit's ranked list, leave the rest as optional follow-ups for the owner's return. Decisions under that trust: rule 6 stays deleted, so every relationship has a line. Pull request 19 stays unpushed and unmerged until the owner approves.
 <!-- SECTION:NOTES:END -->
