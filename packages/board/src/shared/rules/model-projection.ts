@@ -22,7 +22,12 @@ type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
-type DrawnNode = Node & { readonly codePath?: string; readonly door?: DoorWay };
+type DrawnNode = Node & {
+	readonly codePath?: string;
+	readonly door?: DoorWay;
+	/** A door's groups, which colour it whether or not the reading shows group regions. */
+	readonly doorGroups?: readonly string[];
+};
 /** Where a door lies in the tree from the open module. */
 type DoorWay = "up" | "across" | "down";
 /** What a reading hands the renderer. */
@@ -489,7 +494,7 @@ function drawingContent(
  */
 function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return { ...named, door };
+	return card.groups === undefined ? { ...named, door } : { ...named, door, doorGroups: card.groups };
 }
 
 /**

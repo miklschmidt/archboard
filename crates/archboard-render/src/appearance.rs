@@ -81,9 +81,11 @@ pub(crate) fn node_appearances(
         .map(|node| {
             let container = parents.contains(node.id.as_str());
             let group = placing.get(&node.id).cloned();
+            let door_group = (policy.groups.keys()).find(|id| node.door_groups.contains(id));
             let body_color = group
                 .as_ref()
                 .filter(|_| !container)
+                .or(door_group)
                 .and_then(|group| policy.groups.get(group))
                 .map(|look| look.color);
             let kind = policy.node_kinds.get(&node.kind);

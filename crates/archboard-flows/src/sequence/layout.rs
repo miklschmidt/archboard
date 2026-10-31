@@ -236,6 +236,7 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
             parent: None,
             groups: Vec::new(),
             drills: false,
+            door_groups: Vec::new(),
         },
         |node| (*node).clone(),
     )

@@ -40,6 +40,9 @@ pub struct Node {
     /// Which way it lies from the open frame, when it stands outside it as a door.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door: Option<DoorWay>,
+    /// A door's groups, which colour it whether or not the reading shows group regions.
+    #[serde(default, rename = "doorGroups", skip_serializing_if = "Vec::is_empty")]
+    pub door_groups: Vec<String>,
 }
 
 /// Whether a field is there, whatever it holds.
