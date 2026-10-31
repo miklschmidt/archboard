@@ -4,6 +4,7 @@ title: Show the flows and walkthroughs in context in the right column
 status: To Do
 assignee: []
 created_date: '2026-10-31T03:17:00Z'
+updated_date: '2026-10-31T03:52:00Z'
 labels:
   - frontend
 dependencies: []
@@ -28,4 +29,5 @@ The owner found the left Flows and Walkthroughs tabs confusing, because they fil
 - [ ] #4 At the root with nothing selected the column lists neither, because everything touches the root and the left tabs already hold it all
 - [ ] #5 A row opens its flow or walkthrough, a long list shows a few rows and how many more, and the legend stays fully on screen
 - [ ] #6 The owner accepts it by eye
+- [ ] #7 With a module open or selected, the column states its interface measures in one short line, the counts of entry points, hidden parts, callers and pass-through entry points, with no combined score, and the line opens that section of About
 <!-- AC:END -->

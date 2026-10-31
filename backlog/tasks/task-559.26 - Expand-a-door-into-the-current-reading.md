@@ -4,6 +4,7 @@ title: Expand a door into the current reading
 status: To Do
 assignee: []
 created_date: '2026-10-31T03:49:00Z'
+updated_date: '2026-10-31T03:52:00Z'
 labels:
   - frontend
   - board
@@ -33,3 +34,9 @@ The owner wants two actions on a door: navigate, which opens that module, and ex
 - [ ] #5 The picture keeps its transitions, lands whole, and stays under 500 ms on the readings the owner names
 - [ ] #6 The owner accepts it by eye
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The owner confirmed the reading: an open frame with its parts.
+<!-- SECTION:NOTES:END -->
