@@ -291,6 +291,11 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		(paneId: string, repository: string): Promise<void> =>
 			router.navigate({
 				to: "/",
+				/**
+				 * The address with this pane in the repository.
+				 * @param previous The search parameters now.
+				 * @returns The next ones.
+				 */
 				search: (previous) => searchOfRepository(previous, paneId, repository),
 			}),
 		[router],

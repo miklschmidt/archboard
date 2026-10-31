@@ -36,10 +36,7 @@ import {
 	socketVaults,
 } from "@archboard/workbench/panes";
 import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
-import {
-	placeOfVault,
-	repositoryOfVault,
-} from "@archboard/workspace/repository-listing";
+import { placeOfVault, repositoryOfVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:

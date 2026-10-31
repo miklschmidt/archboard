@@ -208,6 +208,23 @@ function moveUnread(vault: string, pane: PaneRegistration, res: Response): void 
 	res.json({ success: true, repository, checkout, paneId: pane.paneId, ...paneResponse(pane) });
 }
 /**
+ * Answer a read that failed: a reader's open still moves the pane, and anything else is refused.
+ * @param model The refusal of the read.
+ * @param body The parsed navigation request.
+ * @param vault The addressed vault.
+ * @param res The navigation receipt or refusal.
+ */
+function answerUnread(
+	model: Parameters<typeof opensUnread>[0],
+	body: z.infer<typeof RequestSchema>,
+	vault: string,
+	res: Response,
+): void {
+	const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
+	if (pane === undefined) respond(res, model);
+	else if (pane !== null) moveUnread(vault, pane, res);
+}
+/**
  * Resolve a canonical reading before pointing the existing pane at it.
  * @param req The explicit vault and reading.
  * @param res The navigation receipt or refusal.
@@ -237,9 +254,7 @@ async function showPaneRoute(req: Request, res: Response): Promise<void> {
 	} = body.reading;
 	const model = await readArchitectureModel(vault, module, flow, selectors);
 	if (!model.success) {
-		const pane = opensUnread(model, body) ? showablePane(vault, body.pane, res) : undefined;
-		if (pane === undefined) respond(res, model);
-		else if (pane !== null) moveUnread(vault, pane, res);
+		answerUnread(model, body, vault, res);
 		return;
 	}
 	const refused = selectionRefusal(model, body.reading, body.agent === true);

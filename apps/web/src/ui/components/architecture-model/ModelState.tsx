@@ -1,4 +1,4 @@
-import { useContext, type JSX, type ReactNode } from "react";
+import { useCallback, useContext, type JSX, type ReactNode } from "react";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { ModelDraftContext } from "#ui/state/architecture-model/draft.ts";
 
@@ -57,9 +57,11 @@ function ModelStateLine(props: { readonly children: ReactNode }): JSX.Element {
  * @returns The action.
  */
 function ModelStateAsk(props: { readonly label: string; readonly draft: string }): JSX.Element {
+	const { draft } = props;
 	const fill = useContext(ModelDraftContext);
+	const ask = useCallback((): void => fill?.(draft), [fill, draft]);
 	return (
-		<Button size="sm" data-slot="model-state-ask" onClick={() => fill?.(props.draft)}>
+		<Button size="sm" data-slot="model-state-ask" onClick={ask}>
 			{props.label}
 		</Button>
 	);

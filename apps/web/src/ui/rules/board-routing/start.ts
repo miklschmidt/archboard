@@ -20,7 +20,11 @@ type Start =
 	/** The repositories or a summary have not answered, and what is awaited, when it is known. */
 	| { readonly kind: "wait"; readonly destination: string | null }
 	/** The last reading opens: the page takes its address, and then the address decides. */
-	| { readonly kind: "restore"; readonly address: WorkspaceAddress }
+	| {
+			readonly kind: "restore";
+			readonly address: WorkspaceAddress;
+			readonly destination: string | null;
+	  }
 	/** Nothing decides. `missing` names what the address asked for and no repository holds. */
 	| { readonly kind: "choose"; readonly missing: string | null };
 
@@ -48,8 +52,17 @@ type Holder = RepositoryModel | "wait" | null;
 function holderOf(pane: AddressedPane, repositories: readonly RepositoryModel[]): Holder {
 	if (pane.repository !== null) return named(pane.repository, repositories);
 	if (repositories.length === 1) return repositories[0] ?? null;
-	const model = pane.model?.id;
-	const holder = repositories.find((each) => model !== undefined && each.model?.id === model);
+	return pane.model === undefined ? null : modelHolder(pane.model.id, repositories);
+}
+
+/**
+ * The repository that holds a model.
+ * @param model The model.
+ * @param repositories The repositories.
+ * @returns It, nothing, or that a summary is still awaited.
+ */
+function modelHolder(model: string, repositories: readonly RepositoryModel[]): Holder {
+	const holder = repositories.find((each) => each.model?.id === model);
 	if (holder !== undefined) return holder;
 	return repositories.some((each) => each.loading) ? "wait" : null;
 }
@@ -90,7 +103,10 @@ function askedFor(address: WorkspaceAddress): string | null {
  * @param repositories The repositories.
  * @returns The start.
  */
-function addressedStart(address: WorkspaceAddress, repositories: readonly RepositoryModel[]): Start {
+function addressedStart(
+	address: WorkspaceAddress,
+	repositories: readonly RepositoryModel[],
+): Start {
 	const holders = address.panes.map((pane) => [pane, holderOf(pane, repositories)] as const);
 	if (holders.some(([, holder]) => holder === "wait"))
 		return { kind: "wait", destination: askedFor(address) };
@@ -137,6 +153,19 @@ function unaddressedStart(repositories: readonly RepositoryModel[]): Start {
 }
 
 /**
+ * Start from the last reading, unless it no longer opens.
+ * @param last The last reading.
+ * @param repositories The repositories.
+ * @returns The start.
+ */
+function lastStart(last: WorkspaceAddress, repositories: readonly RepositoryModel[]): Start {
+	const opens = lastReadingOpens(last, repositories);
+	const destination = askedFor(last);
+	if (opens === "wait") return { kind: "wait", destination };
+	return opens ? { kind: "restore", address: last, destination } : unaddressedStart(repositories);
+}
+
+/**
  * Decide the start.
  * @param inputs The address, the last reading and the repositories.
  * @returns The start.
@@ -145,9 +174,7 @@ function startOf(inputs: StartInputs): Start {
 	const { address, last, repositories, loading } = inputs;
 	if (loading) return { kind: "wait", destination: askedFor(address) };
 	if (address.panes.length > 0) return addressedStart(address, repositories);
-	const opens = last === null ? false : lastReadingOpens(last, repositories);
-	if (opens === "wait") return { kind: "wait", destination: last && askedFor(last) };
-	return opens && last !== null ? { kind: "restore", address: last } : unaddressedStart(repositories);
+	return last === null ? unaddressedStart(repositories) : lastStart(last, repositories);
 }
 
 export { startOf, type OpenStart, type Start };

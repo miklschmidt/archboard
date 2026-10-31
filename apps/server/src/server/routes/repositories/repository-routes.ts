@@ -38,11 +38,7 @@ import {
 } from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
 import { arrivedOnBoard } from "#server/routes/panes/pane-routes.ts";
-import {
-	listRepositories,
-	placeOfVault,
-	vaultIn,
-} from "@archboard/workspace/repository-listing";
+import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { z } from "zod";
 import { CheckoutChoiceSchema } from "@archboard/workspace/repositories";

@@ -192,15 +192,19 @@ async function openModel(
 	} catch (error) {
 		permission.move.failed();
 		move.failed();
-		deps.notices.raise(
-			failureNotice(
-				"architecture-command",
-				"Open architecture",
-				error instanceof Error ? error.message : String(error),
-			),
-		);
+		deps.notices.raise(openFailure(error));
 		return false;
 	}
+}
+
+/**
+ * The notice of a repository open that failed.
+ * @param error Why.
+ * @returns The notice.
+ */
+function openFailure(error: unknown): ShellNotice {
+	const message = error instanceof Error ? error.message : String(error);
+	return failureNotice("architecture-command", "Open architecture", message);
 }
 
 /**

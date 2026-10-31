@@ -57,10 +57,7 @@ function useStart(catalog: Pick<ModelCatalog, "repositories" | "loading">): Star
 	return opened ?? start;
 }
 
-/**
- * Remember the reading on screen, so that a plain address comes back to it.
- * @returns Nothing.
- */
+/** Remember the reading on screen, so that a plain address comes back to it. */
 function useLastReading(): void {
 	const reading = useRouterState({
 		/**

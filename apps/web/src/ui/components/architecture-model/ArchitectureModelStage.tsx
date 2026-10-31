@@ -5,11 +5,11 @@ import {
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
 import {
-	ModelAbsent,
-	ModelMigrationRequired,
-} from "#ui/components/architecture-model/ModelMigrationRequired.tsx";
+	isUnread,
+	ModelUnanswered,
+	SlowRead,
+} from "#ui/components/architecture-model/ModelUnanswered.tsx";
 import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
-import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
 import { ModelBookmarkReading } from "#ui/components/architecture-model/ModelBookmarkReading.tsx";
@@ -50,7 +50,6 @@ import { useModelLocation } from "#ui/hooks/architecture-model/use-model-locatio
 import { useModelVault } from "#ui/hooks/architecture-model/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
-import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
 import { retryFailedDrawings } from "#ui/clients/architecture-model/drawing.ts";
 import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
 import { readingIsStale } from "#ui/rules/architecture-model/reading-freshness.ts";
@@ -178,7 +177,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
-	const unread = unreadRefusal(query.error);
+	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
@@ -195,7 +194,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 		<>
 			<ModelHeader
 				name={headerName(data, props.repository)}
-				refresh={unread === null ? offeredRefresh(query, feed, refresh) : undefined}
+				refresh={unread ? undefined : offeredRefresh(query, feed, refresh)}
 				refreshing={query.isFetching}
 			/>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
@@ -384,17 +383,6 @@ function headerName(
 }
 
 /**
- * Which refusal says that a repository has no model to read, as a state and not a fault.
- * @param error The selected request failure.
- * @returns Its code, or null.
- */
-function unreadRefusal(error: Error | null): "LEGACY_AUTHORITY" | "MODEL_NOT_FOUND" | null {
-	if (!(error instanceof ArchitectureReadError)) return null;
-	const { code } = error.failure;
-	return code === "LEGACY_AUTHORITY" || code === "MODEL_NOT_FOUND" ? code : null;
-}
-
-/**
  * The visible read state includes domain refusals and transport failures.
  * @param query The shared query snapshot.
  * @param stale Whether the cached current reading lacks fresh confirmation.
@@ -472,8 +460,8 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			chrome={props.header}
 		>
 			<SlowRead pending={query.isPending} destination={props.destination} />
-			{model === undefined && <ModelUnanswered query={query} problem={problem} />}
-			{problem !== null && unreadRefusal(query.error) === null && (
+			{model === undefined && <ModelUnanswered error={query.error} problem={problem} />}
+			{problem !== null && !isUnread(query.error) && (
 				<ModelFailedRecords
 					vault={props.vault}
 					paneId={props.paneId}
@@ -499,22 +487,6 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			)}
 		</ModelWalkthroughReader>
 	);
-}
-
-/**
- * What a read that left no model says: the state of the repository, or the failure.
- * @param props The read and the failure.
- * @returns The state, or nothing while no answer has come.
- */
-function ModelUnanswered(
-	props: Pick<ModelResponseProps, "query"> & { problem: ModelErrorProps | null },
-): JSX.Element | null {
-	const { problem } = props;
-	if (problem === null) return null;
-	const unread = unreadRefusal(props.query.error);
-	if (unread === "LEGACY_AUTHORITY") return <ModelMigrationRequired />;
-	if (unread === "MODEL_NOT_FOUND") return <ModelAbsent />;
-	return <ModelError {...problem} />;
 }
 
 /**
@@ -566,23 +538,6 @@ function ReadFailure(props: {
 			<ModelFailureActions onRetry={props.onRetry} />
 		</ModelError>
 	);
-}
-
-/**
- * Say so when a first read lasts, and name what it reads.
- * @param props The read.
- * @param props.pending Whether it has no answer yet.
- * @param props.destination The repository or model it reads.
- * @returns The message, once the wait is long enough to name.
- */
-function SlowRead(props: {
-	pending: boolean;
-	destination: string | null | undefined;
-}): JSX.Element | null {
-	const destination = props.destination ?? "architecture";
-	const slow = useSlowWait(props.pending ? destination : null);
-	if (!slow) return null;
-	return <ModelState.Waiting>Reading {shownRepository(destination).name}…</ModelState.Waiting>;
 }
 
 /**

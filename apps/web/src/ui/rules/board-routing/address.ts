@@ -69,6 +69,37 @@ interface AddressRead {
 }
 
 /**
+ * The move a pane that names a model needs.
+ * @param displayed What is on screen.
+ * @param pane The wanted pane.
+ * @param model The model it names.
+ * @returns The move, when the pane is in another repository.
+ */
+function modelOpen(
+	displayed: WorkspaceAddress,
+	pane: AddressedPane,
+	model: NonNullable<AddressedPane["model"]>,
+): AddressOpen[] {
+	const { paneId, repository } = pane;
+	return repository !== null && repository !== repositoryIn(displayed, paneId)
+		? [{ paneId, boardKey: null, model, repository }]
+		: [];
+}
+
+/**
+ * The move a pane that names a board, or only a repository, needs.
+ * @param displayed What is on screen.
+ * @param pane The wanted pane.
+ * @returns The move, when the pane has to be pointed there.
+ */
+function placeOpen(displayed: WorkspaceAddress, pane: AddressedPane): AddressOpen[] {
+	const { paneId, boardKey, repository } = pane;
+	return (boardKey ?? repository) !== null && elsewhere(displayed, pane)
+		? [{ paneId, boardKey, repository }]
+		: [];
+}
+
+/**
  * What has to happen for the displayed workspace to become the wanted one.
  * Ordered as it is applied: panes first, then boards, then focus.
  */
@@ -289,16 +320,9 @@ function planFor(
 		.filter((pane) => !hasAddressedPane(asked, pane.paneId))
 		.map((pane) => pane.paneId);
 	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
-	const opens = wantedOpen.flatMap((pane): AddressOpen[] => {
-		if (pane.model !== undefined) {
-			return pane.repository !== null && pane.repository !== repositoryIn(displayed, pane.paneId)
-				? [{ paneId: pane.paneId, boardKey: null, model: pane.model, repository: pane.repository }]
-				: [];
-		}
-		return (pane.boardKey ?? pane.repository) !== null && elsewhere(displayed, pane)
-			? [{ paneId: pane.paneId, boardKey: pane.boardKey, repository: pane.repository }]
-			: [];
-	});
+	const opens = wantedOpen.flatMap((pane) =>
+		pane.model === undefined ? placeOpen(displayed, pane) : modelOpen(displayed, pane, pane.model),
+	);
 	// A pane the address is about to point at another board is not read here as
 	// well: the view it should end up on is a view of the board it is going to,
 	// and the reading is settled once that board is there.

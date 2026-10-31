@@ -92,13 +92,21 @@ function shownCheckouts(entry: RepositoryEntry, inputs: ChoiceInputs): CheckoutC
 }
 
 /**
+ * Whether a repository opens on a reading.
+ * @param shell The repository.
+ * @returns True when it holds a model, or has not answered yet.
+ */
+function readable(shell: ShellRepository): boolean {
+	return shell.model !== undefined || shell.loading;
+}
+
+/**
  * The repositories in the order the chooser lists them: those that open on a reading come first,
  * so Enter on the first row never leads to one that needs migration.
  * @param repositories The repositories, by name.
  * @returns The repositories.
  */
 function readableFirst(repositories: readonly ShellRepository[]): readonly ShellRepository[] {
-	const readable = (shell: ShellRepository): boolean => shell.model !== undefined || shell.loading;
 	return [...repositories.filter(readable), ...repositories.filter((each) => !readable(each))];
 }
 

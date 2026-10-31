@@ -28,6 +28,14 @@ interface StartActionDeps {
 function noPane(): void {}
 
 /**
+ * No board opens before a pane exists.
+ * @returns That none did.
+ */
+function noBoard(): Promise<boolean> {
+	return Promise.resolve(false);
+}
+
+/**
  * The shell's actions before any pane exists.
  * @param deps The router, the repositories, the notices and the settings.
  * @returns The actions.
@@ -63,12 +71,26 @@ function createStartActions(deps: StartActionDeps): ShellActions {
 	};
 	return {
 		openModel: open,
-		openBeside: (model, repository): void => void open(model, repository),
-		chooseCheckout: (repository, root): void => void choose(repository, root),
+		/**
+		 * With no pane beside it, a repository opens in the first pane.
+		 * @param model Its model, when it holds one.
+		 * @param repository The repository.
+		 */
+		openBeside: (model, repository): void => {
+			void open(model, repository);
+		},
+		/**
+		 * Choose a checkout, and open its repository.
+		 * @param repository The repository.
+		 * @param root The checkout.
+		 */
+		chooseCheckout: (repository, root): void => {
+			void choose(repository, root);
+		},
 		refreshBoards: deps.catalog.reload,
 		setTheme: deps.setTheme,
 		openSettings: deps.openSettings,
-		selectBoard: async () => false,
+		selectBoard: noBoard,
 		selectPane: noPane,
 		addPane: noPane,
 		closePane: noPane,

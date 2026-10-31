@@ -30,8 +30,8 @@ interface StartShellProps {
 	readonly catalog: ModelCatalog;
 }
 
-/** The command that makes a checkout known and gives it a vault. */
-const SET_UP = "archboard install-skill";
+/** The command that makes a checkout known to this machine. */
+const SET_UP = "archboard repo add .";
 
 /** Nothing is on the panes before they exist. */
 const NO_ACTIVITY = {};
@@ -101,15 +101,16 @@ function StartStage(props: StartShellProps): JSX.Element {
  * @param props.start What the page waits for.
  * @returns The ground, with a message once the wait lasts.
  */
-function StartWait(props: { readonly start: Extract<Start, { kind: "wait" | "restore" }> }): JSX.Element {
-	const { start } = props;
-	const destination = start.kind === "wait" ? start.destination : start.address.panes[0]?.repository;
+function StartWait(props: {
+	readonly start: Extract<Start, { kind: "wait" | "restore" }>;
+}): JSX.Element {
+	const { destination } = props.start;
 	const slow = useSlowWait(destination ?? "repositories");
 	return (
 		<div data-slot="start-wait" className="bg-background flex flex-1 flex-col items-center">
 			{slow && (
 				<ModelState.Waiting>
-					{destination === null || destination === undefined
+					{destination === null
 						? "Reading the repositories of this machine…"
 						: `Opening ${shownRepository(destination).name}…`}
 				</ModelState.Waiting>

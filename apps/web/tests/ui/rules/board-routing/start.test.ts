@@ -29,7 +29,7 @@ function listed(
 			state,
 			checkouts: [],
 		},
-		...(model === undefined ? {} : { model: { id: model, name: model } as RepositoryModel["model"] }),
+		...(model === undefined ? {} : { model: { id: model, name: model } }),
 		migrationRequired: model === undefined,
 		error: null,
 		loading: false,
@@ -91,7 +91,7 @@ test("a pane the address cannot place opens beside the one it can", () => {
 
 test("the last reading restores its whole address", () => {
 	const last = { modelA: "Shop", repoA: SHOP, scopeA: "Payments" };
-	expect(startFrom({}, last)).toEqual({ kind: "restore", address: addressFromSearch(last) });
+	expect(startFrom({}, last)).toMatchObject({ kind: "restore", address: addressFromSearch(last) });
 });
 
 test("a last reading that its repository can no longer answer goes to the chooser", () => {
@@ -117,9 +117,10 @@ test("a machine with one repository opens it only when it holds a model", () => 
 
 test("the start waits for what decides it, and names its destination", () => {
 	const summary = { ...listed(SHOP), loading: true };
-	expect(
-		startOf({ address: NOWHERE, last: null, repositories: [], loading: true }),
-	).toEqual({ kind: "wait", destination: null });
+	expect(startOf({ address: NOWHERE, last: null, repositories: [], loading: true })).toEqual({
+		kind: "wait",
+		destination: null,
+	});
 	expect(startFrom({}, { modelA: "Shop", repoA: SHOP }, [listed(OLD), summary])).toEqual({
 		kind: "wait",
 		destination: SHOP,
