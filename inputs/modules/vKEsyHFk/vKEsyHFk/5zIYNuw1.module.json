@@ -18,19 +18,6 @@
   ],
   "outgoing": [
     {
-      "order": 34000,
-      "kind": "dependency",
-      "label": "headless Chromium",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/recording-tools.ts",
-        "symbol": "launchHeadlessChromium"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#zSvgwAHH",
-      "to": "vKEsyHFk/vKEsyHFk#OHywsFXm"
-    },
-    {
       "order": 56000,
       "kind": "dependency",
       "label": "keep board and rendering schemas in a talk",

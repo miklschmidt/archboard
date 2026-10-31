@@ -39,7 +39,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/6E6hL0Zk#oYfZ2qnC",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "to": "vKEsyHFk#OrdUVAyv"
     },
     {
       "order": 70000,
@@ -79,6 +79,58 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#5JU3fREk",
       "to": "vKEsyHFk/6E6hL0Zk#cZ1UH0xU"
+    },
+    {
+      "order": 53000,
+      "kind": "dependency",
+      "label": "resolve a module code binding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/model-target.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#q1ENQYcO",
+      "to": "vKEsyHFk#OrdUVAyv"
+    },
+    {
+      "order": 52000,
+      "kind": "dependency",
+      "label": "interpret and validate opener selections",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/projections/github-link.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#rzta8x5j",
+      "to": "vKEsyHFk#f05BVod6"
+    },
+    {
+      "order": 30000,
+      "kind": "dependency",
+      "label": "the line of a bound symbol",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/routes/code-opener.ts",
+        "symbol": "symbolLine"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#3WdQR8x7",
+      "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
+    },
+    {
+      "order": 48000,
+      "kind": "dependency",
+      "label": "locate and persist opener configuration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-opener/src/server/store/configuration.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#LLVzjl11",
+      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
     }
   ]
 }
