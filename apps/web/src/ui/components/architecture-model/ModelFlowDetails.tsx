@@ -83,7 +83,7 @@ function FlowStepDetails(
 				</span>
 			</button>
 			{selection.ids.has(step.id) && (
-				<div className="px-3 pb-2">
+				<div className="px-3 pb-2 empty:hidden">
 					<ModelSubjectStanding model={props.model} subject={step.id} />
 				</div>
 			)}

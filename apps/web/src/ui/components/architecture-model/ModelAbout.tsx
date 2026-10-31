@@ -137,7 +137,13 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 					"Steps",
 					RiListOrdered2,
 					flow.steps.length,
-					<ModelFlowDetails model={model} flow={flow} reference={reference} selection={selection} />,
+					<ModelFlowDetails
+						model={model}
+						flow={flow}
+						reference={reference}
+						selection={selection}
+						bare
+					/>,
 				),
 		aboutSection(
 			"walkthroughs",
@@ -214,7 +220,7 @@ function useScopeSections(props: ScopePageProps): readonly AboutPageSection[] {
 			"states",
 			"States",
 			RiGitBranchLine,
-			undefined,
+			props.timeline.entries.length || undefined,
 			<ScopeStates {...props} />,
 		),
 	]);

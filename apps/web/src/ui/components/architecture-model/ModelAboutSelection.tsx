@@ -377,7 +377,7 @@ function otherPage(
 			),
 		};
 	return {
-		name: `${selection.ids.size} selected`,
+		name: "Selection",
 		label: "Selected subjects",
 		body: (
 			<SelectedSubjects

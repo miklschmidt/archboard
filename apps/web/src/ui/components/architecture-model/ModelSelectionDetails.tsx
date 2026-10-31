@@ -61,9 +61,13 @@ function SelectedSubjects(props: {
 					{props.selected.size - subjects.length} selected subjects are unavailable in this reading.
 				</output>
 			)}
-			<ul data-slot={props.slot} className="text-body space-y-3">
+			<ul data-slot={props.slot} className="border-border border-t">
 				{subjects.map((subject) => (
-					<li key={subject.id} data-subject-id={subject.id}>
+					<li
+						key={subject.id}
+						data-subject-id={subject.id}
+						className="border-border text-control border-b py-2.5"
+					>
 						{subjectName(subject)}
 						<ModelSubjectStanding model={props.model} subject={subject.id} />
 					</li>
