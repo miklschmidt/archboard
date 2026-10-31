@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/workbench-example/src/server"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#xssnUgIk",
   "schemaVersion": 1,
   "id": "vKEsyHFk#9OGosSHG",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#xssnUgIk",
+  "outgoing": [
+    {
+      "order": 100580,
+      "kind": "call",
+      "label": "resolveCodexExecutable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "to": "vKEsyHFk#SYRYCqOj",
+      "id": "vKEsyHFk#ZVjVZkoj"
+    },
+    {
+      "order": 100590,
+      "kind": "call",
+      "label": "createVoiceAgent",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+        "symbol": "createVoiceAgent"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
+      "id": "vKEsyHFk#P6ftVSGb"
+    }
+  ]
 }
