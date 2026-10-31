@@ -133,7 +133,7 @@ function DestinationTab(props: { readonly entry: DestinationEntry }): JSX.Elemen
 			value={value}
 			data-destination={value}
 			className={cn(
-				"group-data-[variant=underline]/tabs-list:px-1",
+				"group-data-[variant=underline]/tabs-list:h-7 group-data-[variant=underline]/tabs-list:px-1",
 				value === "changes" && "group-data-[variant=underline]/tabs-list:h-band",
 			)}
 		>

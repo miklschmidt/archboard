@@ -64,6 +64,8 @@ function ChangesList(props: ChangesListProps): JSX.Element {
 		[list],
 	);
 	const open = useCallback((row: ChangeTreeRow): void => onShow(row.change), [onShow]);
+	if (list.changes.length === 0)
+		return <p className="text-body text-muted-foreground px-4 py-3">Nothing differs from the base.</p>;
 	return (
 		<div ref={box} data-slot="model-changes" className="min-h-0 flex-1">
 			<Tree label="Changes" rows={rows} home={place} onOpen={open}>

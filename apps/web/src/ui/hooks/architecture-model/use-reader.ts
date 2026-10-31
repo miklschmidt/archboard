@@ -71,8 +71,9 @@ function useReaderPage(opened: string | null, selecting: boolean) {
 		},
 		[onAbout, selecting],
 	);
+	const onDiagram = useCallback((): void => setAbout(NO_ABOUT), []);
 	const page: Page = open ? "about" : "diagram";
-	return { page, onPage, aboutSubject: subject, onAbout };
+	return { page, onPage, onDiagram, aboutSubject: subject, onAbout };
 }
 
 /**
@@ -190,6 +191,7 @@ function useReader(inputs: ReaderInputs) {
 		location,
 		opened,
 		onList: places.onList,
+		onDiagram: places.onDiagram,
 	});
 	const choices = useReaderChoices({
 		location,

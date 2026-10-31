@@ -24,6 +24,8 @@ interface ChangeWalkInputs {
 	readonly opened: string | null;
 	/** Bring the list into the column. */
 	readonly onList: () => void;
+	/** Bring the picture back, for a reader on About. */
+	readonly onDiagram: () => void;
 }
 
 /** Where a reader stands in the list. */
@@ -49,34 +51,31 @@ interface Walked {
  * @param state The reading the list belongs to.
  * @returns The place.
  */
-function heldPlace(
-	walked: Walked,
-	list: ChangeList | null,
-	state: string | undefined,
-): WalkPlace | null {
+function heldPlace(walked: Walked, list: ChangeList, state: string | undefined): WalkPlace | null {
 	const { place } = walked;
-	if (place === null || walked.list === null || list === null || walked.state !== state)
-		return null;
+	if (place === null || walked.list === null || walked.state !== state) return null;
 	const id = placeIn(walked.list, list, place.id);
 	if (id === null) return null;
 	return id === place.id ? place : { id, landed: false };
 }
 
 /**
- * The list of a reading, and where a reader stands in it.
+ * The list of a reading, and where a reader stands in it. While its base is read again, the last
+ * list of the reading stays, because a healthy refresh shows nothing.
  * @param model The reading.
  * @param reference The base of its comparison.
  * @returns The list, and the place that a walk leaves.
  */
 function useChangePlace(model: Model, reference: Model | undefined) {
 	const state = model.selectedState?.id;
-	const list = useMemo(
+	const read = useMemo(
 		() => (reference === undefined ? null : changeList(model, reference)),
 		[model, reference],
 	);
-	const [walked, setWalked] = useState<Walked>({ list, state, place: null });
-	if (walked.list !== list)
-		setWalked({ list, state, place: heldPlace(walked, list, state) });
+	const [walked, setWalked] = useState<Walked>({ list: read, state, place: null });
+	if (read !== null && walked.list !== read)
+		setWalked({ list: read, state, place: heldPlace(walked, read, state) });
+	const list = read ?? (walked.state === state ? walked.list : null);
 	const leave = useCallback((id: string): void => {
 		setWalked((now) => ({ ...now, place: { id, landed: true } }));
 	}, []);
@@ -187,7 +186,7 @@ function reviewsChanges(model: Model): boolean {
  * @returns The list, the place in it, and the moves.
  */
 function useChangeWalk(inputs: ChangeWalkInputs) {
-	const { model, reference, onList } = inputs;
+	const { model, reference, onList, onDiagram } = inputs;
 	const { comparison } = model;
 	const reviewing = reviewsChanges(model);
 	const { list, place, leave } = useChangePlace(model, reviewing ? reference : undefined);
@@ -197,9 +196,10 @@ function useChangeWalk(inputs: ChangeWalkInputs) {
 	const show = useCallback(
 		(change: Change): void => {
 			leave(change.id);
+			onDiagram();
 			go(change.target);
 		},
-		[leave, go],
+		[leave, onDiagram, go],
 	);
 	const previous = changeAfter(list, now, -1);
 	const next = changeAfter(list, now, 1);

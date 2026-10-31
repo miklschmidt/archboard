@@ -133,7 +133,10 @@ function fieldWords(change: Subject["fields"][number], reading: ChangeReading): 
 function ownWords(subject: ChangedSubject, reading: ChangeReading): string {
 	if (subject.kind === "added") return "Added";
 	if (subject.kind === "removed") return "Removed";
-	const words = subject.fields.map((field) => fieldWords(field, reading)).join(", ");
+	const moveFirst = subject.fields.toSorted(
+		(one, other) => Number(other.field === "parent") - Number(one.field === "parent"),
+	);
+	const words = moveFirst.map((field) => fieldWords(field, reading)).join(", ");
 	return words.charAt(0).toUpperCase() + words.slice(1);
 }
 

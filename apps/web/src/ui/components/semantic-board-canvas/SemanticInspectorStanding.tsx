@@ -325,12 +325,12 @@ function valueText(value: unknown): string {
  */
 function standingSentence(standing: ChangeKind, against: string): string | undefined {
 	if (standing === "added") {
-		return `On this variant and not on ${against}.`;
+		return "Added.";
 	}
 	if (standing === "removed") {
-		return `Not on this variant. It is shown from ${against} to say what differs.`;
+		return `Removed. The picture keeps it from ${against} to show what differs.`;
 	}
-	return standing === "changed" ? `Different on ${against}.` : undefined;
+	return standing === "changed" ? "Changed." : undefined;
 }
 
 export { Standing, ReconciliationIssues, type StandingProps };
