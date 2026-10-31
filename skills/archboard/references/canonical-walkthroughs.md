@@ -85,6 +85,8 @@ The recording artifact keeps one exact model and the narrative for offline repla
 That artifact is separate from authored walkthrough and proposal inputs.
 The existing replay command needs its talk directory and voice file.
 It reads no mutable model and starts no live voice session.
+An original saved talk stays exact retained history.
+Replay draws what the talk kept, and it recreates no live writer.
 
 Voice narration reads the narrative source separately from its target.
 The pane reports `playback.source`, `expectedSourceRevision`, and `expectedRevision` before voice starts.
