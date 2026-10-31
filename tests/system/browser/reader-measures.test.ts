@@ -108,6 +108,13 @@ test("a selection reads the history, and the list shows every module and selects
 
 	await browser.eval(`document.querySelector('[data-slot="model-measure-sort"]').focus()`);
 	await browser.run(["press", "Enter"]);
+	// A key pressed before the list holds the focus does not reach it.
+	await pollUntil(
+		() => browser.eval<boolean>(`document.activeElement?.closest('[role="listbox"]') != null`),
+		Boolean,
+		"the sort choices",
+		WAIT,
+	);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Enter"]);
