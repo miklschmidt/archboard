@@ -13,6 +13,7 @@ import { ModelReadingCanvas } from "#ui/components/architecture-model/ModelReadi
 import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelectionBar.tsx";
 import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { usePanelWait } from "#ui/hooks/architecture-model/use-panel-wait.ts";
@@ -337,15 +338,23 @@ function ReadingAbout(props: {
 }): JSX.Element {
 	const { surface, code } = props;
 	const { reader } = surface;
-	const { accepted, selection, location, structure, model, onPage } = reader;
+	const { accepted, selection, location, onPage, aboutSubject, choices } = reader;
 	const { shown, scene } = accepted;
-	const { select } = selection;
-	const onWarning = useCallback(
+	const { select, ids } = selection;
+	const { findModule } = choices;
+	const { nodes } = shown.projection.content;
+	const onShow = useCallback(
 		(id: string | null): void => {
+			// A module inside a part opens that part, because this picture does not draw it.
+			const held = shown.model.modules.some((one) => one.id === id);
+			if (id !== null && held && !nodes.some((one) => one.id === id)) {
+				findModule(id, false);
+				return;
+			}
 			select(id);
 			if (id !== null) onPage("diagram");
 		},
-		[select, onPage],
+		[select, onPage, findModule, shown.model.modules, nodes],
 	);
 	const appearances = useMemo(
 		() => new Map(scene?.picture.appearances.map((one) => [one.id, one])),
@@ -362,15 +371,20 @@ function ReadingAbout(props: {
 		[code.reading, selection.ids, shown.projection.opened],
 	);
 	const opened = shown.projection.opened;
+	const about = `${aboutSubject}:${opened}:${aboutSubject === "scope" ? "" : [...ids].join()}`;
+	const place = useAboutPlace(about);
 	return (
 		<ModelAbout
-			subject={reader.aboutSubject}
+			key={about}
+			subject={aboutSubject}
 			onSubject={reader.onAbout}
 			overview={surface.overview?.(shown.model) ?? null}
 			code={code.reading}
-			onWarning={onWarning}
+			onShow={onShow}
 			appearances={appearances}
-			scopeName={nameIn(structure.trail, opened) ?? model.manifest.name}
+			walkthroughs={reader.walkthroughs}
+			tree={reader.tree}
+			place={place}
 			reducedMotion={surface.reducedMotion}
 			evidence={evidence}
 			vault={reader.vault}
@@ -387,19 +401,6 @@ function ReadingAbout(props: {
 			<SelectionControls {...props.actions} />
 		</ModelAbout>
 	);
-}
-
-/**
- * What a list of modules calls one of them.
- * @param modules The list.
- * @param id The module.
- * @returns Its name, while the list holds it.
- */
-function nameIn(
-	modules: readonly { readonly id: string; readonly name: string }[],
-	id: string | null,
-): string | undefined {
-	return modules.find((entry) => entry.id === id)?.name;
 }
 
 /**

@@ -17,7 +17,7 @@ function CheckpointEvidence(props: CheckpointEvidenceProps): JSX.Element | null 
 		<div
 			data-slot="model-checkpoint"
 			data-checkpoint-id={checkpoint.id}
-			className="border-border bg-muted/30 text-control border-b px-6 py-3"
+			className="text-control"
 		>
 			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
 				<span className="font-semibold">Retained architecture</span>

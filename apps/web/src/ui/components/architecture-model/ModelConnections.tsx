@@ -9,62 +9,6 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 
 type Connection = ReturnType<typeof projectModel>["connections"][number];
-interface ModelConnectionsProps {
-	model: Model;
-	reference: Model | undefined;
-	connections: readonly Connection[];
-	selected: ReadonlySet<string>;
-	onSelect: ModelSelection["select"];
-}
-
-/**
- * Keyboard users inspect the same projected lines as pointer users.
- * @param props The visible connections and selection action.
- * @returns Ordered connection choices.
- */
-function ModelConnections(props: ModelConnectionsProps): JSX.Element {
-	return (
-		<ul data-slot="model-connections" className="border-border -mx-3 border-t">
-			{props.connections.map((connection) => (
-				<ConnectionChoice key={connection.line.id} {...props} connection={connection} />
-			))}
-		</ul>
-	);
-}
-
-/**
- * Keep the projected endpoints and kind visible before inspection.
- * @param props The line and its selection action.
- * @returns A keyboard-accessible line choice.
- */
-function ConnectionChoice(props: ModelConnectionsProps & { connection: Connection }): JSX.Element {
-	const { model, onSelect } = props;
-	const { line, joins } = props.connection;
-	const pick = useModelPick(line.id, onSelect);
-	return (
-		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent border-b">
-			<button
-				type="button"
-				data-connection-id={line.id}
-				data-from={line.from}
-				data-to={line.to}
-				data-kind={line.kind}
-				aria-pressed={joins.every((edge) => props.selected.has(edge.id))}
-				{...pick}
-				className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-baseline gap-x-6 px-3 py-2.5 text-left"
-			>
-				<span className="text-control min-w-0">
-					{moduleName(model, line.from, props.reference)}
-				</span>
-				<span className="text-control flex min-w-0 items-baseline gap-2">
-					<LineArrow line={line} className="text-muted-foreground size-4 shrink-0 self-center" />
-					{moduleName(model, line.to, props.reference)}
-				</span>
-				<span className="text-body text-muted-foreground min-w-0">{kindNames(model, joins)}</span>
-			</button>
-		</li>
-	);
-}
 
 /** What a panel row of a relationship reads. */
 interface RelationshipRowProps {
@@ -317,4 +261,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ModelConnections, ConnectionDetails, ConnectionSummary, kindNames, lineEnds, moduleName };
+export { ConnectionDetails, ConnectionSummary, kindNames, lineEnds, moduleName };

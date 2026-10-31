@@ -19,12 +19,14 @@ const ROOT_READING: Reading = {
  * @param model The captured architecture.
  * @param playback The resolved narrative.
  * @param driven A requested position, null for the recording overview, or absent for manual playback.
+ * @param first The step manual playback opens at.
  * @returns The complete authored reading and shared presentation controls.
  */
 function useWalkthroughBeat(
 	model: Model,
 	playback: Playback,
 	driven: DrivenPlace | null | undefined,
+	first = 0,
 ) {
 	const caption = useMemo(() => captionOf(playback), [playback]);
 	const offered = useMemo(() => ({ walkthroughs: [caption], nameOf: subjectName }), [caption]);
@@ -32,10 +34,10 @@ function useWalkthroughBeat(
 		() => ({
 			request: `open:${playback.walkthrough.id}`,
 			walkthrough: playback.walkthrough.id,
-			beat: 0,
+			beat: first,
 			answers: false,
 		}),
-		[playback.walkthrough.id],
+		[playback.walkthrough.id, first],
 	);
 	const matching =
 		driven?.walkthrough === playback.walkthrough.id && driven.beat < caption.beats.length

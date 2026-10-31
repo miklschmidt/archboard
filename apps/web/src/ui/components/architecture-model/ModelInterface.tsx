@@ -19,7 +19,7 @@ function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
 	const look = useMemo(() => kindLookOf(props.model.policy, new Map()), [props.model.policy]);
 	if (inspection === undefined || !inspection.holdsParts) return null;
 	return (
-		<section data-slot="model-interface" className="mt-8 space-y-6" aria-label="Module interface">
+		<section data-slot="model-interface" className="space-y-6" aria-label="Module interface">
 			<ContainerInterface
 				content={complete}
 				node={inspection.container}

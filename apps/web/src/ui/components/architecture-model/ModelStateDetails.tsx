@@ -10,7 +10,8 @@ import { useModelLocation } from "#ui/hooks/architecture-model/use-model-locatio
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 /**
- * The selected state, not its retained manifest, decides whether a reading is implemented.
+ * What the selected state says of itself, inside its entry on the timeline. The selected state,
+ * not its retained manifest, decides whether a reading is implemented.
  * @param props The coherent materialized reading.
  * @param props.model Its state metadata and semantic comparison.
  * @param props.paneId The pane that owns deliberate ancestor navigation.
@@ -36,7 +37,6 @@ function ModelStateDetails({
 				data-standing="unavailable"
 				className="space-y-2"
 			>
-				<p className="text-control font-semibold">No implemented state</p>
 				<ModelStateHistory
 					state={state}
 					comparison={model.comparison}
@@ -53,10 +53,7 @@ function ModelStateDetails({
 			data-standing={proposalStanding(state)}
 			className="space-y-2"
 		>
-			<p className="text-control font-semibold">
-				{lifecycleName(state.lifecycle)} · {state.name}
-			</p>
-			{state.summary && <p className="text-body max-w-[68ch]">{state.summary}</p>}
+			{state.summary && <p className="text-control max-w-[72ch] font-normal">{state.summary}</p>}
 			<ModelStateHistory
 				state={state}
 				comparison={model.comparison}
@@ -158,17 +155,6 @@ function ComparisonSummary({
 			{changed.length === 1 ? "subject" : "subjects"}
 		</p>
 	);
-}
-
-/**
- * Lifecycle labels describe the returned state without inferring implementation from history.
- * @param lifecycle The runtime's explicit lifecycle.
- * @returns Its visible label.
- */
-function lifecycleName(lifecycle: NonNullable<Model["selectedState"]>["lifecycle"]): string {
-	return { current: "Implemented", draft: "Draft", historical: "Historical", shelved: "Shelved" }[
-		lifecycle
-	];
 }
 
 const NO_ISSUES = [] as const;
