@@ -29,7 +29,7 @@ Every relationship kind counts, and flow steps do not.
 - `callers`: the modules where those relationships start, once each. An interface change costs each of them.
 - `outgoing`: relationships that leave the module. A long list asks what the module depends on to do its job.
 - `passThrough`: entry points with no parts that send one relationship, of the kind that they receive. Ask what each hides. If you remove it and connect its callers to the part it calls, does only a line go?
-- `onContainer`: relationships that end on the module itself. Each makes a caller and no entry point, because the model names no part. Ask the source whether the caller depends on the whole module or on one part.
+- `onContainer`: relationships that end on the module itself. Each makes a caller and no entry point, because the model names no part. `archboard check` fails on such an end, so read the source and move it to the part that owns the code.
 
 Say a state's facts in the model's terms:
 
@@ -38,6 +38,7 @@ Say a state's facts in the model's terms:
 - Report each of the five `measures` on its own, with the parts behind it.
 
 `model inspect --group <id>` lists the `members`, the `internal` relationships, the `boundary` relationships with their direction, and the `neighbors`.
+A relationship that reaches a part of a member reaches that member. One between two parts of a member crosses nothing.
 Boundary relationships ask how much the group depends on the rest of the model, and what depends on it.
 
 ## Comparison
