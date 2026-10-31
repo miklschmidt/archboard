@@ -102,6 +102,31 @@ afterAll(async () => {
 });
 
 describe.serial("the repositories of the navigator", () => {
+	test("a reader's open moves a pane into a repository with no model, and an agent's is refused", async () => {
+		await using resources = new AsyncDisposableStack();
+		const vault = vaultOf(main);
+		mkdirSync(vault, { recursive: true });
+		seedCanonicalFixture(fixture.vault, "notes", []);
+		const pane = await openPaneSession(server.base, createRequester(server), {
+			clientId: "pane-unread",
+			board: "notes",
+		});
+		resources.defer(() => pane.close());
+		const inMain = createRequester({ ...server, vault });
+		const body = { reading: {}, pane: pane.clientId };
+		const agent = await inMain("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { ...body, agent: true },
+		});
+		expect(agent.status).toBe(404);
+		const mark = pane.mark();
+		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
+		expect(reader.status).toBe(200);
+		const moved = await pane.waitFor("pane_board", mark);
+		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
+	});
+
 	test("choosing a checkout moves the panes that showed the old one, and a show moves a named pane", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
