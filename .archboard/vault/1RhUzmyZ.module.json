@@ -7,8 +7,49 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-archive.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
   "schemaVersion": 1,
   "id": "vKEsyHFk#1RhUzmyZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
+  "outgoing": [
+    {
+      "order": 210000,
+      "kind": "call",
+      "label": "captureBoundSources",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "captureBoundSources"
+      },
+      "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
+      "to": "vKEsyHFk/0T9enjhi#D5PpXrVK"
+    },
+    {
+      "order": 171000,
+      "kind": "dependency",
+      "label": "archive context and shared failure contract",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive-location.ts",
+        "symbol": "archiveContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "order": 221000,
+      "kind": "call",
+      "label": "read inputs and build trees",
+      "description": "Uses checkpointBlobs for retained reads and tree for exact batched writes.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "checkpointBlobs"
+      },
+      "id": "vKEsyHFk/0T9enjhi#108U3Rhl",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    }
+  ]
 }
