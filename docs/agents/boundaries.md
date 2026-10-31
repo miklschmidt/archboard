@@ -350,13 +350,11 @@ package-local `#` rewrite, and a new part reaches callers through its family's c
 The ninth is `server-requests` (`@archboard/server-requests`). It is the browser's one way of speaking
 JSON to the Archboard server, and the browser side of the rule that every call names its vault
 (ADR 0049). It has one file, `ui/clients/server-requests.ts`, and its `.` export is the one api
-file, `ui/api/server-requests.ts`, with 6 names. `requestJson(url, { method, payload, signal })`
+file, `ui/api/server-requests.ts`, with 4 names. `requestJson(url, { method, payload, signal })`
 is one JSON request that throws the server's own reason when it refuses: GET unless it names a
 method, with a JSON body when it carries a payload. `strictReply` takes the same request and
 parses the reply against a success and a failure schema (`ReplySchema`). `inVault` names the vault
-on a URL, and `learnServedVault` and `servedVault` are the vault a page opens in. The request
-options, the reply guards `isRecord` and `trustReply` stay private. It
-holds the one module-level value, the served vault, which the page learns once before it draws.
+on a URL. The request options, the reply guards `isRecord` and `trustReply` stay private.
 
 The tenth is `code-intel` (`@archboard/code-intel`). It compares canonical architectural claims with source evidence.
 It owns checkout code facts and the code inspection algorithms. It also holds the history lens

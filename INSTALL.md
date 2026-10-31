@@ -201,9 +201,11 @@ an OpenAI API key. The sign-in is kept apart from your own `~/.codex`, in
 The server needs no vault to start, and one server serves every vault. The
 navigator in the browser lists each repository that this machine knows and that
 has a vault. A command that runs in a checkout makes its repository known. So
-does `archboard repo add`. A page opens in the first repository, by name,
-that is ready. If this machine knows no repository with a vault, the page says
-so and tells you how to make one known. Each repository row has a menu of its checkouts, for
+does `archboard repo add`, and so does `archboard install-skill`. A page opens
+what its address names, or else the last reading of this browser. A machine with
+one repository that holds a model opens it. Any other page shows a repository
+chooser. If this machine knows no repository with a vault, the page says so and
+tells you how to make one known. Each repository row has a menu of its checkouts, for
 example a worktree. The checkout that you choose there is the one that the
 whole machine reads, in every tab and for `archboard repo use`.
 

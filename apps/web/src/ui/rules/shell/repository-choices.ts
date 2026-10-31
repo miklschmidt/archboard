@@ -75,7 +75,8 @@ function repositoryMatch(name: string, query: string): TextRange | null {
  */
 function shownCheckouts(entry: RepositoryEntry, inputs: ChoiceInputs): CheckoutChoice[] {
 	const opened = inputs.opened.has(entry.name);
-	return entry.checkouts.flatMap((checkout) => {
+	const chosenFirst = entry.checkouts.toSorted((a, b) => Number(b.chosen) - Number(a.chosen));
+	return chosenFirst.flatMap((checkout) => {
 		const match = inputs.query === "" ? null : matchIn(checkout.root, inputs.query);
 		if (!opened && match === null) return [];
 		return {

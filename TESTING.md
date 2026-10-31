@@ -61,13 +61,13 @@ The synthetic origin identifies local example references. These commands never f
 
 The commands below name the session with `-C "$session"`. Without it, a command
 in this checkout uses the architecture of this repository. The first command that
-names the session registers it in your own registry, and a browser page then
-opens in its vault.
+names the session registers it in your own registry, and the repository chooser
+of a browser page then lists it.
 
 Every call to the server names its vault (ADR 0049). The CLI finds its vault
 from `-C <dir>`, else from the working directory, and names it on every
-call. The browser names the one that
-`/api/served-vault` reports. When you call the API by hand, add
+call. The browser names the vault of the repository that its start decided
+(ADR 0069). When you call the API by hand, add
 `?vault=<directory>`. A call that names no vault gets `VAULT_REQUIRED` with
 status 400. The server starts without a vault. A server keeps the source
 that it read at start:

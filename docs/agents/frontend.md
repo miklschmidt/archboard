@@ -102,7 +102,9 @@ Each behavior keeps its existing public boundary and one state owner.
 - The `board-routing` behavior owns search parameters on the one route at `/`.
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   Each `repoX` names a registered repository identity, never a filesystem path.
-  Without `repoX`, the pane uses its admitted vault.
+  `repoX` alone names a pane in a repository with no model or a legacy model.
+  At the start, a pane without `repoX` reads the only repository, or the one that holds its model (ADR 0069).
+  After the start, a pane without `repoX` uses its admitted vault.
   Old `paneX` addresses resolve only through captured migration aliases.
   They never open a live legacy board reader.
 
