@@ -18,19 +18,6 @@
   ],
   "outgoing": [
     {
-      "order": 33000,
-      "kind": "dependency",
-      "label": "the Codex executable",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
-    },
-    {
       "order": 45000,
       "kind": "dependency",
       "label": "observe and stop the server process",

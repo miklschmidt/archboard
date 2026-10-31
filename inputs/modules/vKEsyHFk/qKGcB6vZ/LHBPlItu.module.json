@@ -41,6 +41,33 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#xzGv4R2g",
       "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 29000,
+      "kind": "event",
+      "label": "notifications and tool calls, routed by thread",
+      "description": "The server composes the tab-session owner and passes routing or lookup callbacks through the public runtime or Browser gateway interfaces. Private server code registers and invokes those callbacks; the runtime modules never import codex-workbench-sessions.ts.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/sessions.ts",
+        "symbol": "onNotification"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#xPCxyO70",
+      "to": "vKEsyHFk/9ncuT5DP#iay14AUl"
+    },
+    {
+      "order": 19000,
+      "kind": "event",
+      "label": "a tool call from a thread",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-dispatch.ts",
+        "symbol": "ownsPendingReverseRequest"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#aoHKAkWD",
+      "to": "vKEsyHFk#iPnxvJWp"
     }
   ]
 }
