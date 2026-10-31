@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T04:16:00Z'
-updated_date: '2026-10-31T05:16:00Z'
+updated_date: '2026-10-31T05:27:00Z'
 labels:
   - frontend
 dependencies:
@@ -70,4 +70,6 @@ AC 1: tests/system/browser/reader-measures.test.ts, history-on-selection.test.ts
 AC 2 and 3: the same browser owner, module-measures.test.ts, model-measures.test.tsx.
 AC 4: module-measures.test.ts, model-measures.test.tsx, and the rows of /tmp/integrate/slice29/02-commits.png.
 Screenshots at 1920 by 1080, dark, viewed: 01-reading, 02-commits, 03-row-selected, 04-unjoined, 05-keyboard-deep, 06-failed, 07-unbound, 08-proposal-tabs, 09-proposal-measures. Light, viewed: 11-light.
+
+Merged to integrate/pr19, gate 21 of 21 in 143 s, server 17842 restarted. First read about 10 s, repeat under 0.2 s. Open: criterion 5, owner by eye.
 <!-- SECTION:NOTES:END -->
