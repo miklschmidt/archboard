@@ -10,6 +10,7 @@
 use serde::Serialize;
 use ts_rs::TS;
 
+use crate::drawing::Toggle;
 use crate::request::{DrillDirection, LegendLayout, LineAppearance, NodeAppearance, Standing};
 use crate::scene::Item;
 use crate::scene::definition::MaskId;
@@ -157,6 +158,8 @@ pub enum Role {
     DrillMark(DrillDirection),
     /// The arrow of a door.
     DoorArrow,
+    /// The control of a door or a frame's tab, which a live reader presses.
+    Toggle(Toggle),
     /// A standing's pin on a corner.
     Pin,
     /// The warning on a subject nobody has decided yet.

@@ -30,7 +30,7 @@ import {
 	type Drag,
 } from "#ui/clients/semantic-board-canvas/subjects/pointer-gesture.ts";
 import { openableAt } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
-import { subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import { controlAt, subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** What the gestures act on. */
 interface DiagramGestureInputs {
@@ -43,8 +43,14 @@ interface DiagramGestureInputs {
 	 * @param id The semantic id, or null.
 	 * @param toggle Whether the pick extends the selection.
 	 * @param repeated Whether this click follows another, as the second of a double click does.
+	 * @param control Whether the click landed on the control that the subject wears.
 	 */
-	readonly onSelect: (id: string | null, toggle?: boolean, repeated?: boolean) => void;
+	readonly onSelect: (
+		id: string | null,
+		toggle?: boolean,
+		repeated?: boolean,
+		control?: boolean,
+	) => void;
 	/** Select visible subjects in a viewport rectangle; absent retains legacy panning. */
 	readonly onSelectArea?: ((area: DiagramBox, toggle: boolean) => void) | undefined;
 	/**
@@ -93,7 +99,9 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// and it is the one event whose target cannot be trusted to say what. The
 	// box is null when no press is waiting to be spent, which is how a
 	// synthesised click is told from a real one.
-	const pressed = useRef<{ readonly subject: string | null } | null>(null);
+	const pressed = useRef<{ readonly subject: string | null; readonly control: boolean } | null>(
+		null,
+	);
 	const pinch = useTouchPinch(camera);
 
 	const onPointerDown = useCallback(
@@ -123,6 +131,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				x: event.clientX,
 				y: event.clientY,
 				pressed: subject,
+				control: controlAt(event.target),
 				action: dragAction(event.button, subject, onSelectArea !== undefined, space.current),
 				toggle: event.ctrlKey || event.metaKey,
 				captured: false,
@@ -223,7 +232,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				return;
 			}
 			finishSelection(started, event);
-			pressed.current = { subject: started.pressed };
+			pressed.current = { subject: started.pressed, control: started.control };
 			drag.current = null;
 			setGesture("idle");
 			if (started.captured) {
@@ -270,6 +279,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				landed === null ? subjectAt(event.target, atlas) : landed.subject,
 				event.ctrlKey || event.metaKey,
 				event.detail > 1,
+				landed === null ? controlAt(event.target) : landed.control,
 			);
 		},
 		[onSelect, atlas],
@@ -279,7 +289,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: ReactMouseEvent<HTMLElement>): void => {
-			openDown(openableAt(event.target, event.clientY));
+			if (!controlAt(event.target)) openDown(openableAt(event.target, event.clientY));
 		},
 		[openDown],
 	);
@@ -343,6 +353,8 @@ function useSpacePan(enabled: boolean) {
 interface CanvasDrag extends Drag {
 	readonly action: "pan" | "select";
 	readonly toggle: boolean;
+	/** Whether the press landed on the control that a subject wears. */
+	readonly control: boolean;
 }
 
 /**

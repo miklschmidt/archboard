@@ -12,6 +12,7 @@ import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInter
 import { ModelLegend } from "#ui/components/architecture-model/ModelLegend.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { ModelPanelContext } from "#ui/components/architecture-model/ModelPanelContext.tsx";
+import { ModelPanelExpanded } from "#ui/components/architecture-model/ModelPanelExpanded.tsx";
 import {
 	ModelPanelActions,
 	ModelPanelScope,
@@ -232,6 +233,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		selection: held,
 		scope,
 		onOpen: reader.onOpen,
+		onToggle: reader.onToggle,
 		onReveal: props.onReveal,
 		onRevealFlow: location.openFlow,
 		code: code.reading,
@@ -249,7 +251,13 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 						<ModelInterfaceLine
 							{...line}
 							inspection={projection.inspection}
-							nodes={projection.complete.nodes}
+							projection={projection}
+						/>
+						<ModelPanelExpanded
+							model={model}
+							projection={projection}
+							selection={held}
+							onToggle={reader.onToggle}
 						/>
 						{context}
 					</ModelPanelScope>
@@ -308,6 +316,7 @@ function ReadingPicture(props: {
 			warnings={props.warnings}
 			reducedMotion={surface.reducedMotion}
 			onOpen={reader.onOpen}
+			onToggle={reader.onToggle}
 			onAttention={moves.ahead}
 			overlay={overlay}
 		>

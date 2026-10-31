@@ -12,6 +12,8 @@ interface ReaderChoiceInputs {
 	readonly model: Model;
 	/** The module the reading opens. */
 	readonly opened: string | null;
+	/** Every module the reading draws open. */
+	readonly frames: ReadonlySet<string | null>;
 	readonly area: RefObject<HTMLElement | null>;
 	readonly selectMany: (ids: readonly string[]) => void;
 	readonly onOpen: (next: string | null) => void;
@@ -24,7 +26,7 @@ interface ReaderChoiceInputs {
  * @returns A choice of a module, a flow, or something found, and the way to show each of them.
  */
 function useReaderChoices(inputs: ReaderChoiceInputs) {
-	const { location, model, opened, area, selectMany, onOpen, onDestination } = inputs;
+	const { location, model, opened, frames, area, selectMany, onOpen, onDestination } = inputs;
 	const { open, openFlow, selectBookmark, selectLegacyAddress } = location;
 	const { openBeside } = usePaneChrome();
 	const playback = useContext(ModelWalkthroughContext);
@@ -53,12 +55,13 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 	const showHere = useCallback(
 		(ids: readonly string[], scope: string | null): void => {
 			leave?.();
-			open(modelId, scope);
+			// A module the picture already draws open stays where it stands, beside the others.
+			open(modelId, frames.has(scope) ? opened : scope);
 			selectMany(ids);
 			// The keys of the picture go on from what was found.
 			area.current?.querySelector<HTMLElement>('[data-slot="model-diagram"]')?.focus();
 		},
-		[leave, open, modelId, selectMany, area],
+		[leave, open, modelId, opened, frames, selectMany, area],
 	);
 	const findModule = useCallback(
 		(id: string, beside: boolean): void => {

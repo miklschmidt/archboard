@@ -111,6 +111,15 @@ function subjectAt(target: EventTarget | null, atlas: SemanticAtlas): string | n
 }
 
 /**
+ * Whether a press landed on the control that a door or a frame's tab wears.
+ * @param target Where the pointer went down, as the event reported it.
+ * @returns True on the control.
+ */
+function controlAt(target: EventTarget | null): boolean {
+	return target instanceof Element && target.closest("[data-toggle]") !== null;
+}
+
+/**
  * Draw the marks on the picture.
  *
  * One class, toggled on the group rather than re-rendered into the markup: the
@@ -382,6 +391,7 @@ export {
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
+	controlAt,
 	isSubject,
 	keepingMarks,
 	markReach,

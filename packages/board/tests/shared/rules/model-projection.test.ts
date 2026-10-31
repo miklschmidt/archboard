@@ -30,6 +30,8 @@ function modelOf(modules: Module[], relationships: Relationship[]): Model {
 }
 
 const binding = (path: string) => ({ repo: "github.com/acme/shop", path });
+const toggleOf = (reading: ReturnType<typeof projectModel>, id: string) =>
+	reading.content.nodes.find((node) => node.id === id)?.toggle;
 
 /**
  * The lines a reading draws, as their two ends.
@@ -371,6 +373,93 @@ describe("a chain of modules with one part each", () => {
 
 	test("leaves a focus where it is", () => {
 		expect(projectModel(model, "top", ["first"]).opened).toBe("top");
+	});
+});
+
+describe("an expanded module", () => {
+	const model = modelOf(
+		[
+			{ id: "open" },
+			{ id: "a", parent: "open" },
+			{ id: "b", parent: "open" },
+			{ id: "beside" },
+			{ id: "c", parent: "beside" },
+			{ id: "d", parent: "beside" },
+			{ id: "far" },
+			{ id: "e", parent: "far" },
+			{ id: "lone" },
+			{ id: "chain" },
+			{ id: "wide", parent: "chain" },
+			{ id: "f", parent: "wide" },
+			{ id: "g", parent: "wide" },
+		],
+		[
+			{ id: "across", from: "a", to: "c" },
+			{ id: "whole", from: "b", to: "beside" },
+			{ id: "onward", from: "d", to: "e" },
+			{ id: "out", from: "b", to: "lone" },
+			{ id: "folded", from: "b", to: "f" },
+		],
+	);
+	const expanded = (...expand: string[]) =>
+		projectModel(model, "open", null, { expand, controls: true });
+
+	test("draws its parts in the same picture, and a line to it ends on the part that owns it", () => {
+		const reading = expanded("beside");
+		expect(
+			reading.content.nodes.filter((node) => node.parent === "beside").map(({ id }) => id),
+		).toEqual(["c", "d"]);
+		expect(reading.context.map(({ id }) => id).toSorted()).toEqual(["chain", "far", "lone"]);
+		expect(lines(reading)).toEqual(expect.arrayContaining(["a>c", "b>beside", "d>far"]));
+	});
+
+	test("repeats, in the same picture whichever order the address names", () => {
+		expect(expanded("beside", "far").content).toEqual(expanded("far", "beside").content);
+		expect(lines(expanded("beside", "far"))).toContain("d>e");
+	});
+
+	test("folds a chain to the module that holds a choice, as a scope does", () => {
+		const reading = expanded("chain");
+		expect(reading.expanded).toEqual([{ asked: "chain", frame: "wide" }]);
+		expect(lines(reading)).toContain("b>f");
+	});
+
+	test("counts what cannot open, and draws the reading without it", () => {
+		const reading = expanded("lone", "unknown", "open", "beside");
+		expect(reading.expanded).toEqual([{ asked: "beside", frame: "beside" }]);
+		expect(reading.unopened).toBe(3);
+		expect(reading.content).toEqual(expanded("beside").content);
+		expect(expanded().content).toEqual(
+			projectModel(model, "open", null, { controls: true }).content,
+		);
+	});
+
+	test("waits for a focus to lift", () => {
+		const focused = projectModel(model, "open", ["a"], { expand: ["beside"] });
+		expect(focused.expanded).toEqual([]);
+		expect(focused.content).toEqual(projectModel(model, "open", ["a"]).content);
+	});
+
+	test("wears a control only for a reader who asks, on a door that holds parts and a frame that can close", () => {
+		const reading = expanded("beside");
+		expect(toggleOf(reading, "far")).toBe("expand");
+		expect(toggleOf(reading, "chain")).toBe("expand");
+		expect(toggleOf(reading, "lone")).toBeUndefined();
+		expect(toggleOf(reading, "beside")).toBe("collapse");
+		expect(toggleOf(reading, "open")).toBeUndefined();
+		const exported = projectModel(model, "open", null, { expand: ["beside"] });
+		expect(exported.content.nodes.some((node) => node.toggle !== undefined)).toBe(false);
+	});
+
+	test("offers no door that a comparison removed", () => {
+		const after = modelOf([{ id: "open" }, { id: "a", parent: "open" }], []);
+		const base = modelOf(
+			[{ id: "open" }, { id: "a", parent: "open" }, { id: "gone" }, { id: "p", parent: "gone" }],
+			[{ id: "lost", from: "a", to: "gone" }],
+		);
+		const reading = projectModel(after, "open", null, { controls: true }, base);
+		expect(reading.context.map(({ id }) => id)).toEqual(["gone"]);
+		expect(toggleOf(reading, "gone")).toBeUndefined();
 	});
 });
 

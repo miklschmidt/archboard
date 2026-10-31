@@ -4,6 +4,7 @@ import type { ModelFlow } from "@archboard/board/content";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
+import { cardBeside } from "#ui/rules/architecture-model/expansion.ts";
 import {
 	endWithin,
 	siblingOf,
@@ -26,21 +27,26 @@ interface ReaderMoveInputs {
 	readonly camera: BoardCamera;
 	readonly reducedMotion: boolean;
 	readonly onOpen: (next: string | null) => void;
+	/** Expand a door or collapse a frame, and say whether the subject has a control. */
+	readonly onToggle: (id: string) => boolean;
 }
 
 /**
  * Every move of the reader that a key can make, so that no move needs a tree or a pointer.
- * `[` and `]` walk a selected card through its siblings, or else the open module, and Enter
- * opens the selected card, or else selects the first card of the open module.
+ * `[` and `]` walk a selected card through the picture, or else the open module, Enter opens the
+ * selected card, or else selects the first card of the open module, and `E` works the control
+ * of the selected card.
  * @param inputs The reading and how it moves.
  * @returns Make a move, and say whether there was one to make.
  */
 function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean {
-	const { location, tree, opened, flows, selection, scene, camera, reducedMotion, onOpen } = inputs;
+	const { location, tree, opened, flows, selection, scene, camera, reducedMotion } = inputs;
+	const { onOpen, onToggle } = inputs;
 	const { grammar, flow, focus, setFocus, selectFlow, selectGrammar } = location;
 	const { ids, select } = selection;
 	const structural = grammar === "architecture";
 	const picture = scene?.picture;
+	const projection = scene?.projection;
 	const [only, other] = ids;
 	const card = only !== undefined && other === undefined && tree.owner.has(only) ? only : null;
 	const up = useCallback((): boolean => {
@@ -67,11 +73,14 @@ function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean
 	);
 	const walkCards = useCallback(
 		(step: number): boolean => {
-			const next = card === null ? endWithin(tree, null, step) : siblingOf(tree, card, step);
-			if (next !== null) select(next.id);
+			const next =
+				card === null || projection === undefined
+					? (endWithin(tree, null, step)?.id ?? null)
+					: cardBeside(tree, projection, card, step);
+			if (next !== null) select(next);
 			return next !== null;
 		},
-		[tree, card, select],
+		[tree, projection, card, select],
 	);
 	const walk = useCallback(
 		(step: number): boolean => {
@@ -90,6 +99,10 @@ function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean
 		if (first !== null) select(first.id);
 		return first !== null;
 	}, [structural, card, tree, opened, onOpen, select]);
+	const toggle = useCallback(
+		(): boolean => structural && card !== null && onToggle(card),
+		[structural, card, onToggle],
+	);
 	const focused = useCallback((): boolean => {
 		if (!structural) return false;
 		if (focus !== null) setFocus(null);
@@ -106,9 +119,9 @@ function useReaderMoves(inputs: ReaderMoveInputs): (move: ReaderMove) => boolean
 	const previous = useCallback((): boolean => walk(-1), [walk]);
 	const next = useCallback((): boolean => walk(1), [walk]);
 	return useMemo(() => {
-		const moves = { up, previous, next, open, focus: focused, fit };
+		const moves = { up, previous, next, open, toggle, focus: focused, fit };
 		return (move) => moves[move]();
-	}, [up, previous, next, open, focused, fit]);
+	}, [up, previous, next, open, toggle, focused, fit]);
 }
 
 export { useReaderMoves };

@@ -237,6 +237,20 @@ pub struct NodeFacts {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub door: Option<DoorWay>,
+    /// The control it wears for a live reader, when a reading says.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub toggle: Option<Toggle>,
+}
+
+/// The control a door or a frame wears for a live reader.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum Toggle {
+    /// It brings its module into the picture.
+    Expand,
+    /// It takes its module back out of the picture.
+    Collapse,
 }
 
 /// Where a door lies in the tree from the open module.

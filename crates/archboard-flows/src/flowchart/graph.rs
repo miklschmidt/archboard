@@ -83,6 +83,7 @@ impl<'a> Building<'a> {
             responsibility,
             code_path: None,
             door: None,
+            toggle: None,
             groups: Vec::new(),
             drills: false,
         });
@@ -216,6 +217,7 @@ impl<'a> Building<'a> {
             responsibility: flow.summary.clone(),
             code_path: None,
             door: None,
+            toggle: None,
             groups: Vec::new(),
             drills: false,
         });

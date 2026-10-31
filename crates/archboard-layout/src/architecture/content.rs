@@ -2,7 +2,7 @@
 //! board's own JSON (`@archboard/board/content`): what a layout places, and
 //! what the painter is told about each of them.
 
-use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Traffic};
+use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// One part of a board: a card, or a container of other parts.
@@ -40,6 +40,9 @@ pub struct Node {
     /// Which way it lies from the open frame, when it stands outside it as a door.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub door: Option<DoorWay>,
+    /// The control it wears for a live reader, as a reading words it; never stored on a board.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub toggle: Option<Toggle>,
 }
 
 /// Whether a field is there, whatever it holds.
@@ -57,6 +60,7 @@ impl Node {
             responsibility: self.responsibility.clone(),
             code_path: self.code_path.clone(),
             door: self.door,
+            toggle: self.toggle,
         }
     }
 }

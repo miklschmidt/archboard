@@ -102,6 +102,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                         responsibility: column.card.node.responsibility.clone(),
                         code_path: None,
                         door: None,
+                        toggle: None,
                     },
                     bounds: column.card.bounds,
                     title_size: column.card.title_size,

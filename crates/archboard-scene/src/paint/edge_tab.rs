@@ -12,7 +12,7 @@ use crate::paint::appearance::{tray_look, type_chip};
 use crate::paint::build::{Items, concat, grouped, lines};
 use crate::paint::design::{
     BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
-    TAB_PADDING, TAB_SHOULDER,
+    TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 use crate::paint::drill_mark::corner_drill_mark;
 use crate::paint::far_card::words_in;
@@ -20,6 +20,7 @@ use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_
 use crate::paint::palette::Palette;
 use crate::paint::slab::slab_seat;
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
+use crate::paint::toggle::toggle_end;
 use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{Group, Role, SubjectKind};
@@ -40,11 +41,12 @@ impl Views {
         let frame = placed.bounds;
         let node = &placed.measured.node;
         let room = js::js_min(placed.measured.width, frame.width) - TAB_SHOULDER;
-        let mark = if appearance.drill.is_some() {
+        let drill = if appearance.drill.is_some() {
             DRILL_MARK_ROOM
         } else {
             0.0
         };
+        let mark = drill + node.toggle.map_or(0.0, |_| TOGGLE_ROOM);
         let hugging = |runs: &[TextRun]| {
             let words = runs.last().map_or(0.0, |run| run.x + run.width);
             js::js_max(js::js_min(words + TAB_PADDING + mark, room), 0.0)
@@ -111,6 +113,15 @@ fn line_views(
         None => Items::new(),
         Some(direction) => corner_drill_mark(tab, direction, &ink.glyph, scale),
     };
+    let control = |tab: Rect, scale: f64| {
+        placed
+            .measured
+            .node
+            .toggle
+            .map_or_else(Items::new, |toggle| {
+                toggle_end(tab, toggle, &ink.foreground, scale)
+            })
+    };
     let near = words_in(&placed.measured.runs, near_tab, &ink);
     let far = words_in(&views.far_runs, far_tab, &ink);
     let chip = |size: f64| Place {
@@ -127,10 +138,12 @@ fn line_views(
         near_layer(concat(vec![
             moving_words(near.items, near.anchor, far.anchor),
             mark(near_tab, 1.0),
+            control(near_tab, 1.0),
         ])),
         far_layer(concat(vec![
             moving_words(far.items, far.anchor, near.anchor),
             mark(far_tab, FAR_MARK),
+            control(far_tab, FAR_MARK),
         ])),
     ])
 }

@@ -123,6 +123,14 @@ fn seat(shape: Shape) -> Shape {
     shape.unfilled().pointer(Pointer::All)
 }
 
+/// A plate that stays unseen until the reader's stylesheet lights it under the pointer.
+pub(super) fn ghost_light(shape: Shape, ink: &Colour) -> Shape {
+    Shape {
+        fill_opacity: Some(0.0),
+        ..shape.filled(ink)
+    }
+}
+
 /// A shape painted as a ghost's see-through face.
 pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
     Shape {

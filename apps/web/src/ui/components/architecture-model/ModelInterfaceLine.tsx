@@ -4,14 +4,16 @@ import {
 	interfaceCounts,
 	type InterfaceCount,
 } from "#ui/rules/architecture-model/interface-counts.ts";
+import { openModules } from "#ui/rules/architecture-model/expansion.ts";
+import type { Projection } from "#ui/rules/architecture-model/scene.ts";
 import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
 
 /** What the column says of a module's interface. */
 interface ModelInterfaceLineProps {
 	/** The module's interface facts. */
 	readonly inspection: ModuleInterface | undefined;
-	/** Every module of the selected state. */
-	readonly nodes: Parameters<typeof interfaceCounts>[1];
+	/** The reading it is shown in. */
+	readonly projection: Pick<Projection, "complete" | "opened" | "expanded">;
 	/** Show subjects selected on the picture of a module. */
 	readonly onShow: (ids: readonly string[], module: string) => void;
 	/** Open the interface section of About. */
@@ -26,7 +28,7 @@ interface ModelInterfaceLineProps {
  * @returns The line, or nothing for a module with no parts: it has no interface.
  */
 function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null {
-	const { inspection, nodes, onShow, onAbout } = props;
+	const { inspection, projection, onShow, onAbout } = props;
 	const about = useMemo(
 		() => (
 			<button
@@ -45,9 +47,11 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 	return (
 		<ModelPanel.Section title="Interface" slot="model-panel-interface" action={about}>
 			<li className="ml-1.5 flex flex-wrap gap-x-0.5">
-				{interfaceCounts(inspection, nodes).map((count) => (
-					<Count key={count.key} count={count} module={module} onShow={onShow} />
-				))}
+				{interfaceCounts(inspection, projection.complete.nodes, openModules(projection)).map(
+					(count) => (
+						<Count key={count.key} count={count} module={module} onShow={onShow} />
+					),
+				)}
 			</li>
 		</ModelPanel.Section>
 	);

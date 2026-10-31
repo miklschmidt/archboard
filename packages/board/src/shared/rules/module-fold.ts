@@ -129,4 +129,16 @@ function containment(
 	return childrenOf;
 }
 
-export { containment, foldChain, moduleForest };
+/**
+ * A chain of modules with one part each folds, as a code host folds single-child folders
+ * (rule 10), so a dead stop costs no click.
+ * @param complete The complete depicted content.
+ * @param scope The requested module, or null for repository roots.
+ * @returns The module that the reading opens.
+ */
+function foldedScope(complete: VariantContent, scope: string | null): string | null {
+	if (scope === null) return null;
+	return foldChain(containment(complete), scope).at(-1) ?? scope;
+}
+
+export { containment, foldChain, foldedScope, moduleForest };

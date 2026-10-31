@@ -3,7 +3,7 @@
 
 use archboard_text::Paragraph;
 
-use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun};
+use crate::drawing::{DiagramFont, MeasuredNode, TextRole, TextRun, Toggle};
 use crate::js::{self, js_max, js_min};
 use crate::measure::far::far_name_width;
 use crate::measure::{keep_tail, paragraph, width};
@@ -14,7 +14,7 @@ use crate::paint::design::{
     PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_GAP, PART_PATH_LINE, PART_PATH_SIZE, PART_TITLE_LINE,
     PART_TITLE_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_FAR_DROP, TAB_FAR_MOST, TAB_FAR_NAME,
     TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP, TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
-    TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_INSET, TAG_PADDING, TAG_SIZE,
+    TAG_BESIDE, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_INSET, TAG_PADDING, TAG_SIZE, TOGGLE_ROOM,
 };
 use crate::request::GroupTag;
 
@@ -66,12 +66,23 @@ pub struct CardWords<'a> {
     pub drills: bool,
     /// Whether it stands outside the open frame as a door.
     pub door: bool,
+    /// The control it wears for a live reader.
+    pub toggle: Option<Toggle>,
 }
 
 impl CardWords<'_> {
     /// The room the drill mark keeps beside the name.
     fn marked(&self) -> f64 {
         if self.drills { DRILL_MARK_ROOM } else { 0.0 }
+    }
+
+    /// The room a control keeps at the end of a door or a tab.
+    fn toggled(&self) -> f64 {
+        if self.toggle.is_some() {
+            TOGGLE_ROOM
+        } else {
+            0.0
+        }
     }
 }
 
@@ -219,7 +230,7 @@ fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
     let end = far.last().map_or(0.0, |run| run.x + run.width);
     MeasuredNode {
         node,
-        width: end + DOOR_ARROW_ROOM,
+        width: end + DOOR_ARROW_ROOM + words.toggled(),
         height: DOOR_HEIGHT,
         header_height: 0.0,
         runs: tab_runs(DOOR_NEAR, words.name, None),
@@ -235,7 +246,8 @@ fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
     let near = tab_runs(TAB_NEAR, words.name, words.path);
     let far = tab_runs(TAB_FAR, words.name, words.path);
     let end_of = |runs: &[TextRun]| runs.last().map_or(0.0, |run| run.x + run.width);
-    let width = js_max(end_of(&near), end_of(&far)) + TAB_PADDING + words.marked() + beside;
+    let room = words.marked() + words.toggled();
+    let width = js_max(end_of(&near), end_of(&far)) + TAB_PADDING + room + beside;
     MeasuredNode {
         node,
         width,
@@ -425,6 +437,7 @@ mod tests {
             tags,
             drills: false,
             door: false,
+            toggle: None,
         };
         measure_node((), &words, false)
     }
@@ -512,6 +525,7 @@ mod tests {
             tags: &[],
             drills: false,
             door: false,
+            toggle: None,
         };
         let far = far_name_width(words.name);
         assert_eq!(measure_node((), &words, false).width, far.max(CARD_LEAST));
@@ -526,6 +540,7 @@ mod tests {
             tags: &[],
             drills: false,
             door: false,
+            toggle: None,
         };
         let tab = measure_node((), &words, true);
         assert_eq!(tab.height, TAB_HEIGHT);

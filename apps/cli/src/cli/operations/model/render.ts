@@ -32,13 +32,14 @@ const modelRenderContract = defineCommand({
 		})),
 		...(
 			[
-				["focus", "Focus these identities"],
-				["hideKinds", "Hide these relationship kinds"],
+				["focus", "--focus", "Focus these identities"],
+				["hideKinds", "--hide-kind", "Hide these relationship kinds"],
+				["expand", "--expand", "Open these modules beside the scope"],
 			] as const
-		).map(([key, description]) => ({
+		).map(([key, spelling, description]) => ({
 			kind: "option" as const,
 			key,
-			spellings: [key === "hideKinds" ? "--hide-kind" : "--focus"] as const,
+			spellings: [spelling] as const,
 			value: "required" as const,
 			occurrences: "append" as const,
 			placeholder: "id",

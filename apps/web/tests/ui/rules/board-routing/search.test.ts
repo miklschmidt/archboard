@@ -137,6 +137,7 @@ test("an empty focus or filter is left out, so it never reads back as one empty 
 					checkpoint: null,
 					focus: [],
 					hideKinds: [],
+					expand: [],
 				},
 			},
 		],

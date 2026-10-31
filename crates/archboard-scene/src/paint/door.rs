@@ -4,7 +4,7 @@
 //! kind. The arrow at its right end says where the door lies in the tree from the
 //! open module. This is the one place a door's look lives.
 
-use crate::drawing::{DoorWay, Node, TextRun};
+use crate::drawing::{DoorWay, Node, TextRun, Toggle};
 use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::{DOOR_FAR, tab_runs};
 use crate::paint::Ctx;
@@ -12,7 +12,7 @@ use crate::paint::build::{Items, concat, grouped, lines, shape};
 use crate::paint::cards::halo;
 use crate::paint::design::{
     DOOR_ARROW_INSET, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING, DOOR_RADIUS,
-    ICON_CHIP_SIZE,
+    ICON_CHIP_SIZE, TOGGLE_ROOM,
 };
 use crate::paint::far_card::{Part, words_in};
 use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_chip};
@@ -24,6 +24,7 @@ use crate::paint::slab::{
 };
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
 use crate::paint::styles::Styles;
+use crate::paint::toggle::toggle_end;
 use crate::request::{NodeAppearance, PaletteColor, Standing};
 use crate::scene::{
     Cap, Colour, GradientId, Group, Paint, PathStep, Pointer, Purpose, Role, Shape, Stroke,
@@ -111,7 +112,7 @@ fn arrow_steps(way: DoorWay) -> Vec<PathStep> {
     ]
 }
 
-/// A door's arrow at the right end of its box.
+/// A door's arrow at the right end of what it keeps for its name.
 fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
     grouped(
         Group::new(
@@ -131,12 +132,13 @@ fn arrow(rect: Rect, way: DoorWay, ink: &Colour, scale: f64) -> Items {
     )
 }
 
-/// What a door draws near and far: its icon both views share, its name and its arrow.
+/// What a door draws near and far: its icon both views share, its name, its arrow
+/// and, for a live reader, its control.
 fn views(
     ctx: &Ctx<'_>,
     runs: (&[TextRun], &[TextRun]),
     rect: Rect,
-    (way, ink): (DoorWay, &Colour),
+    (way, toggle, ink): (DoorWay, Option<Toggle>, &Colour),
     appearance: &NodeAppearance,
     palette: &Palette,
 ) -> Items {
@@ -153,6 +155,12 @@ fn views(
         size,
     };
     let middle = ICON_CHIP_SIZE / 2.0;
+    let named = Rect {
+        width: rect.width - toggle.map_or(0.0, |_| TOGGLE_ROOM),
+        ..rect
+    };
+    let control =
+        |scale: f64| toggle.map_or_else(Items::new, |toggle| toggle_end(rect, toggle, ink, scale));
     lines(vec![
         shared_chip(
             glyph_group(
@@ -168,11 +176,13 @@ fn views(
         ),
         near_layer(concat(vec![
             moving_words(near.items, near.anchor, far.anchor),
-            arrow(rect, way, ink, 1.0),
+            arrow(named, way, ink, 1.0),
+            control(1.0),
         ])),
         far_layer(concat(vec![
             moving_words(far.items, far.anchor, near.anchor),
-            arrow(rect, way, ink, FAR_ARROW),
+            arrow(named, way, ink, FAR_ARROW),
+            control(FAR_ARROW),
         ])),
     ])
 }
@@ -229,7 +239,7 @@ pub(super) fn paint_door(
                     ctx,
                     (&placed.measured.runs, &far),
                     rect,
-                    (way, &ink),
+                    (way, part.node.toggle, &ink),
                     appearance,
                     palette,
                 ),

@@ -317,7 +317,7 @@ A reading draws it open as a frame or closed as a card, and it keeps its kind, i
 _Avoid_: container kind, group, platform tag
 
 **Frame**:
-The outline that a picture draws around the parts of an open module: a well with an edge tab on its top edge.
+The outline that a picture draws around the parts of an open module or an expanded module: a well with an edge tab on its top edge.
 _Avoid_: box, region, lane, group
 
 **Well**:
@@ -338,7 +338,7 @@ What a frame holds reaches the frame here, and what stands outside reaches it on
 
 **Door**:
 A module outside the open one that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
-One click opens it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it (ADR 0070).
+One click opens it, its plus, when it holds parts, expands it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it (ADR 0070).
 _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
@@ -394,7 +394,7 @@ A chain of modules with one part each, which the module tree shows as one row an
 ### Reading
 
 **Reading**:
-A content-free selection of what to draw: its model, state or checkpoint, scope, focus, filters, grammar and optional flow.
+A content-free selection of what to draw: its model, state or checkpoint, scope, expanded modules, focus, filters, grammar and optional flow.
 It owns no architecture, so agents and users compose readings on demand and nobody authors one first.
 _Avoid_: view, board
 
@@ -406,7 +406,12 @@ _Avoid_: level, zoom, board, view
 **Open module**:
 The module that a reading has open, whose parts it shows with their own internals closed.
 Opening a module changes the scope and nothing else, and it works again on any part that has children.
-_Avoid_: drill-down, zoom in, expand, descend, board
+_Avoid_: drill-down, zoom in, descend, board
+
+**Expanded module**:
+A module that a reading opens beside its open module, in the same picture, as another frame with its parts.
+Expanding a door keeps the scope, and a line to that module then ends on the part that owns it.
+_Avoid_: second scope, drill-down, merged view
 
 **Root reading**:
 The reading with no open module, which nobody authors.

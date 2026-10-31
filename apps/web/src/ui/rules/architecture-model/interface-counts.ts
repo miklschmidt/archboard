@@ -19,15 +19,21 @@ interface InterfaceCount {
 
 /**
  * The cards that stand for parts outside a module on its picture: each part's own card, or the
- * door that holds it. The picture draws a door one step below the path to the module.
+ * door that holds it. The picture draws a door one step below the path to each open module.
  * @param parents What holds each module.
- * @param module The module.
- * @param parts The parts outside it.
+ * @param open The modules open on the picture.
+ * @param parts The parts outside them.
  * @returns Each card once.
  */
-function doorsOf(parents: Parents, module: string, parts: readonly string[]): readonly string[] {
+function doorsOf(
+	parents: Parents,
+	open: readonly string[],
+	parts: readonly string[],
+): readonly string[] {
 	const trail = new Set<string>();
-	for (let at: string | undefined = module; at !== undefined; at = parents.get(at)) trail.add(at);
+	for (const module of open) {
+		for (let at: string | undefined = module; at !== undefined; at = parents.get(at)) trail.add(at);
+	}
 	return [
 		...new Set(
 			parts.map((part) => {
@@ -48,14 +54,21 @@ function doorsOf(parents: Parents, module: string, parts: readonly string[]): re
  * point. Its count says so, and only for a module that has such a caller.
  * @param inspection The module's interface.
  * @param nodes Every module of the selected state.
+ * @param open The modules that the reading draws open. A count of one of them stays on this
+ * picture, so its cards are the cards drawn here. Any other module opens its own picture.
  * @returns The counts, in the order a reader asks.
  */
-function interfaceCounts(inspection: Interface, nodes: Wiring["nodes"]): readonly InterfaceCount[] {
+function interfaceCounts(
+	inspection: Interface,
+	nodes: Wiring["nodes"],
+	open: ReadonlySet<string | null> = new Set(),
+): readonly InterfaceCount[] {
 	const { container, entryPoints, hiddenParts, callers, onContainer, passThrough } = inspection;
 	const measures = interfaceMeasures(inspection);
 	const parents = new Map(nodes.map(({ id, parent }) => [id, parent]));
 	const whole = [...new Set(onContainer.map((edge) => edge.from))];
 	const callerIds = callers.map(({ node }) => node.id);
+	const picture = open.has(container.id) ? [...open].flatMap((id) => id ?? []) : [container.id];
 	const counts: readonly InterfaceCount[] = [
 		{
 			key: "entryPoints",
@@ -73,13 +86,13 @@ function interfaceCounts(inspection: Interface, nodes: Wiring["nodes"]): readonl
 			key: "callers",
 			count: measures.callers,
 			label: measures.callers === 1 ? "caller" : "callers",
-			subjects: doorsOf(parents, container.id, callerIds),
+			subjects: doorsOf(parents, picture, callerIds),
 		},
 		{
 			key: "wholeModule",
 			count: whole.length,
 			label: "to module",
-			subjects: doorsOf(parents, container.id, whole),
+			subjects: doorsOf(parents, picture, whole),
 		},
 		{
 			key: "passThrough",

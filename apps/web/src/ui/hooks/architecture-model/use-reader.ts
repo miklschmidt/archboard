@@ -12,6 +12,7 @@ import { useReaderChoices } from "#ui/hooks/architecture-model/use-reader-choice
 import { useReaderMoves } from "#ui/hooks/architecture-model/use-reader-moves.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
+import { openModules, toggled } from "#ui/rules/architecture-model/expansion.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
 import {
 	ModelPaneContext,
@@ -120,7 +121,7 @@ function useReader(inputs: ReaderInputs) {
 		inputs.failed,
 	);
 	const { location, comparison, structure, request } = reading;
-	const { open, grammar } = location;
+	const { open, setExpand, grammar } = location;
 	const { depicted, opened } = structure;
 	const pane = useContext(ModelPaneContext);
 	if (pane === null) throw new Error("A model reading requires its pane presentation.");
@@ -158,6 +159,16 @@ function useReader(inputs: ReaderInputs) {
 		},
 		[leave, move],
 	);
+	const onToggle = useCallback(
+		(id: string): boolean => {
+			const next = toggled(request.projection, id);
+			if (next === null) return false;
+			leave?.();
+			setExpand(next);
+			return true;
+		},
+		[request.projection, leave, setExpand],
+	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const branches = useModuleBranches(tree, opened);
 	const places = useReaderPlaces(
@@ -175,10 +186,12 @@ function useReader(inputs: ReaderInputs) {
 		onList: places.onList,
 		onDiagram: places.onDiagram,
 	});
+	const frames = useMemo(() => openModules(shown.projection), [shown.projection]);
 	const choices = useReaderChoices({
 		location,
 		model,
 		opened,
+		frames,
 		area,
 		selectMany,
 		onOpen,
@@ -194,6 +207,7 @@ function useReader(inputs: ReaderInputs) {
 		camera,
 		reducedMotion,
 		onOpen,
+		onToggle,
 	});
 	return {
 		...reading,
@@ -212,6 +226,7 @@ function useReader(inputs: ReaderInputs) {
 		presenting: playback?.active === true,
 		walkthrough: playback?.current ?? null,
 		onOpen,
+		onToggle,
 		onMove,
 	};
 }

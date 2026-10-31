@@ -14,6 +14,7 @@ import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import {
 	OpenModule,
 	SelectedSubjects,
+	ToggleModule,
 	type ModelSelectionDetailsProps,
 } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
@@ -22,6 +23,7 @@ import { TraceToggle } from "#ui/components/semantic-board-canvas/TraceToggle.ts
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
+import { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import {
 	isRemoved,
@@ -42,6 +44,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly onReveal: () => void;
 	/** What stands under the subject's own details: what touches it. */
 	readonly context: ReactNode;
+	/** Expand a door or collapse a frame. */
+	readonly onToggle: (id: string) => boolean;
 	/** What the interface line of a module does. */
 	readonly line: Pick<ComponentProps<typeof ModelInterfaceLine>, "onShow" | "onAbout">;
 }
@@ -184,11 +188,7 @@ function ModuleSubject(
 	return (
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
-			<ModelInterfaceLine
-				{...props.line}
-				inspection={inspection}
-				nodes={projection.complete.nodes}
-			/>
+			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} brief />
 			<ModelSubjectStanding model={model} subject={module.id} reference={projection.reference} />
 			<ModuleLines {...props} model={source} id={module.id} />
@@ -306,7 +306,8 @@ function LineRow(
 }
 
 /**
- * The two actions that take the reader from a module: into it, and to its code.
+ * The actions that take the reader from a module: into it, out of or into this picture, and to its
+ * code.
  * @param props The module and its reading.
  * @returns The actions that apply.
  */
@@ -319,6 +320,11 @@ function ModuleActions(
 			{!isRemoved(projection, module.id) && module.id !== props.scope && (
 				<OpenModule id={module.id} onOpen={props.onOpen} />
 			)}
+			<ToggleModule
+				id={module.id}
+				toggle={toggleOf(projection, module.id)}
+				onToggle={props.onToggle}
+			/>
 			<ModuleOpenCode
 				paneId={props.paneId}
 				vault={props.vault}

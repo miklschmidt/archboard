@@ -150,7 +150,7 @@ function renderProjection(model: Model, input: Reading, reference?: Model) {
 		model,
 		input.scope ?? model.selectedModule ?? null,
 		input.focus ?? null,
-		{ hideKinds: input.hideKinds },
+		{ hideKinds: input.hideKinds, expand: input.expand },
 		reference,
 	);
 	const flow = model.collections
@@ -201,7 +201,7 @@ function mountArchitectureFlowRoutes(app: Express): void {
 		const query = ArchitectureRenderRequestSchema.extend({ vault: z.string() }).safeParse({
 			...req.query,
 			...Object.fromEntries(
-				["focus", "hideKinds"]
+				["focus", "hideKinds", "expand"]
 					.filter((key) => typeof req.query[key] === "string")
 					.map((key) => [key, [req.query[key]]]),
 			),

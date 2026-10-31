@@ -1,3 +1,4 @@
+import type { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { modelSubjects, subjectName } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useCallback, type ComponentProps, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
@@ -100,4 +101,29 @@ function OpenModule(props: { id: string; onOpen: (scope: string | null) => void 
 	);
 }
 
-export { OpenModule, SelectedSubjects, scopeModel, type ModelSelectionDetailsProps };
+/**
+ * The panel's way to the control that a door or a frame wears on the picture.
+ * @param props The module and its control.
+ * @param props.id The module.
+ * @param props.toggle What the control does, or nothing for a module with no control.
+ * @param props.onToggle Expand a door or collapse a frame.
+ * @returns The action, or nothing.
+ */
+function ToggleModule(props: {
+	readonly id: string;
+	readonly toggle: ReturnType<typeof toggleOf>;
+	readonly onToggle: (id: string) => boolean;
+}): JSX.Element | null {
+	const { id, toggle, onToggle } = props;
+	const act = useCallback((): void => {
+		onToggle(id);
+	}, [id, onToggle]);
+	if (toggle === undefined) return null;
+	return (
+		<Button data-slot="module-toggle" data-toggle={toggle} variant="outline" onClick={act}>
+			{toggle === "expand" ? "Expand here" : "Collapse"}
+		</Button>
+	);
+}
+
+export { OpenModule, SelectedSubjects, ToggleModule, scopeModel, type ModelSelectionDetailsProps };

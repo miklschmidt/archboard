@@ -38,6 +38,7 @@ function moveAt(
 test.each<[string, ReaderMove]>([
 	["Backspace", "up"],
 	["[", "previous"],
+	["e", "toggle"],
 	["]", "next"],
 	["Enter", "open"],
 	["f", "focus"],

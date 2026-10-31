@@ -50,9 +50,10 @@ function useModelMoves(inputs: MoveInputs) {
 	const draw = useCallback(
 		async (to: Destination): Promise<ScenePicture | null> => {
 			const scope = to.board === ROOTS ? null : to.board;
-			const projection = projectModel(model, scope, null, reading.filters, reference);
+			const filters = { ...reading.filters, controls: true };
+			const projection = projectModel(model, scope, null, filters, reference);
 			if (projection.content.nodes.length === 0) return null;
-			const destination = { ...reading, scope, focus: null, grammar: "architecture" };
+			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
 				...(await client.fetchQuery(modelDrawingQuery(model, projection, "architecture", layout))),
 				board: sceneBoard(destination),

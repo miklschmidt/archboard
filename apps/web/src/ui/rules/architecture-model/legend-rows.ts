@@ -9,6 +9,7 @@ import type {
 	AppliedAppearance,
 	PictureLegend,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { openModules } from "#ui/rules/architecture-model/expansion.ts";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
 type Projection = ReturnType<typeof projectModel>;
@@ -72,14 +73,15 @@ function policyOrder(policy: Readonly<Record<string, unknown>>) {
  */
 function modulesOf(projection: Projection): readonly Module[] {
 	const ends = new Set(projection.allConnections.flatMap(({ line }) => [line.from, line.to]));
+	const open = openModules(projection);
 	const parts = new Map(
 		[
 			...projection.children,
 			...projection.context,
-			...projection.depicted.nodes.filter(
-				(node) => ends.has(node.id) && node.id !== projection.opened,
-			),
-		].map((module) => [module.id, module]),
+			...projection.depicted.nodes.filter((node) => ends.has(node.id)),
+		]
+			.filter((module) => !open.has(module.id))
+			.map((module) => [module.id, module]),
 	);
 	return [...parts.values()];
 }

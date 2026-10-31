@@ -1,4 +1,5 @@
 import type { projectModel } from "@archboard/board/content";
+import { openModules } from "#ui/rules/architecture-model/expansion.ts";
 import { reachOf, type Reach, type Way } from "#ui/rules/semantic-board-canvas/board/reach.ts";
 
 type Projection = ReturnType<typeof projectModel>;
@@ -55,17 +56,18 @@ function walkedEdges(depicted: Projection["depicted"], cards: ReadonlySet<string
  * @param part The part.
  * @param way Onward along what it sends to, or back along what sends to it.
  * @returns How far each card and line is, and how many cards that is besides the part and the
- * frame of the open module.
+ * frames of the open modules.
  */
 function pictureReach(projection: Projection, part: string, way: Way): Reach {
-	const { depicted, content, connections, opened } = projection;
+	const { depicted, content, connections } = projection;
 	const cards = new Set(content.nodes.map(({ id }) => id));
 	const edges = walkedEdges(depicted, cards);
 	const { hops } = reachOf({ nodes: content.nodes, edges }, part, way);
 	const drawn = new Map(
 		[...cards].flatMap((id) => (hops.has(id) ? [[id, hops.get(id) ?? 0]] : [])),
 	);
-	const parts = [...drawn.keys()].filter((id) => id !== part && id !== opened).length;
+	const open = openModules(projection);
+	const parts = [...drawn.keys()].filter((id) => id !== part && !open.has(id)).length;
 	for (const { line, joins } of connections) {
 		const reached = joins.flatMap(({ id }) => hops.get(id) ?? []);
 		if (reached.length > 0) drawn.set(line.id, Math.min(...reached));

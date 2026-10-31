@@ -6,13 +6,27 @@ import type { ChangeKind } from "#shared/rules/compare/variants.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
-import { containment, foldChain } from "#shared/rules/module-fold.ts";
+import {
+	expansions,
+	toggles,
+	withToggle,
+	type Toggle,
+	type Toggles,
+} from "#shared/rules/model-expansion.ts";
+import { containment, foldedScope } from "#shared/rules/module-fold.ts";
 import { drawnEnds, drawnLines, joinedLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type ModelFlow = Model["collections"][number]["flows"][number];
-type ModelFilters = Pick<z.infer<typeof ArchitectureRenderRequestSchema>, "hideKinds">;
+/** What a reader chose of a reading, besides its scope and its focus. */
+type ModelFilters = Pick<
+	z.infer<typeof ArchitectureRenderRequestSchema>,
+	"hideKinds" | "expand"
+> & {
+	/** Whether a live reader draws its picture, so that its doors and frames wear their controls. */
+	readonly controls?: boolean;
+};
 type Visibility = Model["walkthroughs"][number]["beats"][number]["reading"]["visibility"];
 type Standing = Readonly<Record<string, ChangeKind>>;
 type Node = VariantContent["nodes"][number];
@@ -22,6 +36,7 @@ type Edge = VariantContent["edges"][number];
 type DrawnNode = Node & {
 	readonly codePath?: string;
 	readonly door?: DoorWay;
+	readonly toggle?: Toggle;
 };
 /** Where a door lies in the tree from the open module. */
 type DoorWay = "up" | "across" | "down";
@@ -33,6 +48,11 @@ type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 
 /** What decides which lines a reading draws. */
 type LineChoices = Pick<ModelFilters, "hideKinds">;
+/** What a scope draws besides its own frame, and whether its controls are drawn. */
+type ScopeChoices = LineChoices & {
+	readonly frames: readonly string[];
+	readonly controls: boolean;
+};
 
 /**
  * Adapt canonical meaning to the existing renderer content contract.
@@ -58,32 +78,34 @@ function modelContent(model: Model): VariantContent {
 }
 
 /**
- * Draw one recursive scope: the open module, its parts, and doors to the modules it touches.
+ * Draw one recursive scope: the open module and each module it expands, their parts, and doors to
+ * the modules they touch. A reading of one frame is the case with nothing expanded.
  * @param complete The complete depicted content.
  * @param scope The module to open, or null for repository roots.
  * @param standing The comparison status of each depicted relationship.
- * @param choices Hidden relationship kinds, and whether every line stays drawn.
+ * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
  * @returns The projected content and every relationship behind each line.
  */
 function projectScope(
 	complete: VariantContent,
 	scope: string | null,
 	standing: Standing,
-	choices: LineChoices,
+	choices: ScopeChoices,
 ) {
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
 	const trail = scope === null ? [] : ancestors(byId, scope).toReversed();
-	const boundary = new Set(trail);
+	const frames = choices.frames.filter((id) => byId.has(id));
+	const open = new Set([...(scope === null ? [] : [scope]), ...frames]);
+	const boundary = new Set([...open].flatMap((id) => ancestors(byId, id)));
 	const inside = new Set(
 		complete.nodes
-			.filter((node) => scope === null || ancestors(byId, node.id).includes(scope))
+			.filter((node) => scope === null || ancestors(byId, node.id).some((at) => open.has(at)))
 			.map((node) => node.id),
 	);
 	const drawnAs = new Map(
 		complete.nodes.map((node) => [node.id, visibleEndpoint(byId, node.id, boundary)]),
 	);
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
-	const open = new Set(scope === null ? [] : [scope]);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
 	/**
 	 * Every line runs between the drawn ends of its relationship.
@@ -93,13 +115,15 @@ function projectScope(
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const joined = joinedLines(complete, shown, endsOf, open, standing);
 	const connections = drawnLines(complete, joined, open);
-	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
+	const children = complete.nodes.filter(
+		({ parent }) => (parent ?? null) === scope || (parent !== undefined && open.has(parent)),
+	);
 	const visible = new Set([
 		...children.map((node) => node.id),
 		...connections.flatMap(({ line }) => [line.from, line.to]),
+		...[...open].filter((id) => byId.has(id)),
 	]);
 	const scoped = byId.get(scope ?? "");
-	if (scoped !== undefined) visible.add(scoped.id);
 	const context = complete.nodes.filter((node) => visible.has(node.id) && !inside.has(node.id));
 	return {
 		focused: null as ReadonlySet<string> | null,
@@ -118,6 +142,7 @@ function projectScope(
 		content: drawingContent(complete, visible, connections, {
 			parents: open,
 			doors: context,
+			toggles: choices.controls ? toggles(complete, open, frames, standing) : undefined,
 		}),
 	};
 }
@@ -142,26 +167,31 @@ function projectModel(
 ) {
 	const context = comparisonContent(model, reference);
 	const standing = context.standing ?? {};
-	const opened = openedScope(context.depicted, scope, focus, visibility);
+	const { opened, expanded, unopened, controls } = openedBy(
+		context.depicted,
+		scope,
+		focus === null && visibility === undefined,
+		filters,
+	);
+	const frames = expanded.map(({ frame }) => frame);
+	const choices = { hideKinds: filters.hideKinds, frames, controls };
 	/**
 	 * Both sides of a comparison read the same opened scope.
 	 * @param content The side to project.
-	 * @param choices What decides its lines.
 	 * @returns That side's reading.
 	 */
-	const read = (content: VariantContent, choices: LineChoices) =>
+	const read = (content: VariantContent) =>
 		projectContent(content, opened, focus, standing, choices, visibility);
-	const projection = read(context.depicted, filters);
+	const projection = read(context.depicted);
 	return {
 		...projection,
 		...context,
 		opened,
+		expanded,
+		unopened,
 		unsettled: unsettledSubjects(model, projection.connections),
 		reference,
-		held: heldContent(reference, () => read(context.complete, filters), {
-			depicted: projection.content,
-			filters,
-		}),
+		held: heldContent(reference, () => read(context.complete), projection.content),
 		inspection: interfaceOf(
 			context.complete,
 			context.complete.nodes.find((node) => node.id === opened),
@@ -172,38 +202,39 @@ function projectModel(
 }
 
 /**
- * Only a plain scope folds: a focus and an exact view keep the scope that they name.
+ * What a reading opens. Only a plain scope folds, expands and wears controls: a focus and an exact
+ * view keep the extent that they name.
  * @param complete The complete depicted content.
  * @param scope The requested module, or null for repository roots.
- * @param focus Explicit focused identities, or no focus.
- * @param visibility Exact imported view membership, when present.
- * @returns The module that the reading opens.
+ * @param plain Whether the reading has neither a focus nor an exact view.
+ * @param filters What the reader chose.
+ * @returns The module it opens, what it expands, and whether its controls are drawn.
  */
-function openedScope(
+function openedBy(
 	complete: VariantContent,
 	scope: string | null,
-	focus: readonly string[] | null,
-	visibility: Visibility,
-): string | null {
-	return focus === null && visibility === undefined ? foldedScope(complete, scope) : scope;
+	plain: boolean,
+	filters: ModelFilters,
+) {
+	const opened = plain ? foldedScope(complete, scope) : scope;
+	const controls = plain && filters.controls === true;
+	return { opened, controls, ...expansions(complete, opened, plain, filters.expand) };
 }
 
 /**
  * The picture of the selected state alone, with the lines of the depicted picture.
  * @param reference The comparison base, when one is drawn.
  * @param read Projects the selected state with every line.
- * @param shown What the depicted picture shows.
- * @param shown.depicted The depicted picture.
- * @param shown.filters The reader's filters.
+ * @param depicted What the depicted picture shows.
  * @returns The selected state's picture, or nothing without a comparison.
  */
 function heldContent(
 	reference: Model | undefined,
 	read: () => { content: DrawnContent },
-	shown: { depicted: DrawnContent; filters: ModelFilters },
+	depicted: DrawnContent,
 ): DrawnContent | undefined {
 	if (reference === undefined) return undefined;
-	return withLinesOf(read().content, shown.depicted);
+	return withLinesOf(read().content, depicted);
 }
 
 /**
@@ -247,7 +278,7 @@ function comparisonContent(model: Model, reference: Model | undefined) {
  * @param scope The recursive scope.
  * @param focus Explicit focused identities, or no focus.
  * @param standing Exact subject comparison states.
- * @param choices Hidden relationship kinds, and whether every line stays drawn.
+ * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
  * @param visibility Exact imported view membership, when present.
  * @returns The requested structural reading.
  */
@@ -256,7 +287,7 @@ function projectContent(
 	scope: string | null,
 	focus: readonly string[] | null,
 	standing: Standing,
-	choices: LineChoices,
+	choices: ScopeChoices,
 	visibility?: Visibility,
 ) {
 	if (visibility !== undefined)
@@ -271,7 +302,7 @@ function projectContent(
  * @param complete The complete architecture used for inspection.
  * @param scope The underlying recursive location.
  * @param standing The existing comparison classification.
- * @param choices Hidden relationship kinds, and whether every line stays drawn.
+ * @param choices Hidden relationship kinds, what the scope expands, and whether controls are drawn.
  * @param visibility Explicit modules and relationships in the original view.
  * @returns The same projection contract with only the requested picture narrowed.
  */
@@ -279,7 +310,7 @@ function projectVisible(
 	complete: VariantContent,
 	scope: string | null,
 	standing: Standing,
-	choices: LineChoices,
+	choices: ScopeChoices,
 	visibility: NonNullable<Visibility>,
 ): ReturnType<typeof projectScope> {
 	const visible = new Set(visibility.modules);
@@ -416,18 +447,6 @@ function focusEndpoint(
 }
 
 /**
- * A chain of modules with one part each folds, as a code host folds single-child folders
- * (rule 10), so a dead stop costs no click.
- * @param complete The complete depicted content.
- * @param scope The requested module, or null for repository roots.
- * @returns The module that the reading opens.
- */
-function foldedScope(complete: VariantContent, scope: string | null): string | null {
-	if (scope === null) return null;
-	return foldChain(containment(complete), scope).at(-1) ?? scope;
-}
-
-/**
  * Keep only drawing fields and containment that this reading explicitly opens.
  * A door is a card with a name only (rule 5).
  * @param complete The full model content.
@@ -436,13 +455,14 @@ function foldedScope(complete: VariantContent, scope: string | null): string | n
  * @param framing What the picture nests, and which of its cards are doors.
  * @param framing.parents Containers whose visible children remain nested.
  * @param framing.doors Cards that stand for what the reading touches.
+ * @param framing.toggles What a door and a frame offer a live reader, if one draws the picture.
  * @returns Renderer content without private evidence or file metadata.
  */
 function drawingContent(
 	complete: VariantContent,
 	visible: ReadonlySet<string>,
 	connections: readonly OverviewLine[],
-	framing: { parents: ReadonlySet<string>; doors: readonly Node[] },
+	framing: { parents: ReadonlySet<string>; doors: readonly Node[]; toggles?: Toggles | undefined },
 ): DrawnContent {
 	const doors = new Set(framing.doors.map((node) => node.id));
 	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
@@ -453,9 +473,12 @@ function drawingContent(
 			.filter((node) => visible.has(node.id))
 			.map((node) => {
 				const { description: _description, binding: _binding, ...drawn } = node;
-				const card = doors.has(node.id)
-					? nameOnly(drawn, doorWay(byId, node.id, open))
-					: withCodePath(drawn, node, childrenOf);
+				const card = withToggle(
+					doors.has(node.id)
+						? nameOnly(drawn, doorWay(byId, node.id, open))
+						: withCodePath(drawn, node, childrenOf),
+					framing.toggles,
+				);
 				if (node.parent !== undefined && framing.parents.has(node.parent)) return card;
 				const { parent: _parent, ...unframed } = card;
 				return unframed;
