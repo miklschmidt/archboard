@@ -147,11 +147,7 @@ function toggled(state: Frame, docked: boolean, floating: boolean, pinned: boole
  * @param steppedAside Whether a presented walkthrough has the sidebar stepped aside.
  * @returns The sidebar state and its controls.
  */
-function useSidebar(
-	selection: SidebarSelection,
-	resting: boolean,
-	steppedAside: boolean,
-): Sidebar {
+function useSidebar(selection: SidebarSelection, resting: boolean, steppedAside: boolean): Sidebar {
 	const [state, setState] = useState<Frame>({
 		tab: selection === null ? "board" : "selection",
 		before: "board",

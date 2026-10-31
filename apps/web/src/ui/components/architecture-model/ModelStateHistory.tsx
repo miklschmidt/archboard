@@ -29,9 +29,9 @@ function ModelStateHistory(props: HistoryProps): JSX.Element {
 		<>
 			{reason && (
 				<p
-						data-slot="model-state-reason"
-						className="text-control text-muted-foreground max-w-[72ch] font-normal whitespace-pre-wrap"
-					>
+					data-slot="model-state-reason"
+					className="text-control text-muted-foreground max-w-[72ch] font-normal whitespace-pre-wrap"
+				>
 					{reason}
 				</p>
 			)}

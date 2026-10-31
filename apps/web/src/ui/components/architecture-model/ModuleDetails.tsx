@@ -115,9 +115,7 @@ function Fact(props: FactProps): JSX.Element | null {
  * @param props.edge The relationship.
  * @returns The account, or nothing for a relationship with neither.
  */
-function RelationshipEvidence(props: {
-	edge: Connection["joins"][number];
-}): JSX.Element | null {
+function RelationshipEvidence(props: { edge: Connection["joins"][number] }): JSX.Element | null {
 	const { edge } = props;
 	if (!edge.description && !edge.anchor) return null;
 	return (

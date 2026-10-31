@@ -224,13 +224,7 @@ function useModuleSections(props: ModulePageProps) {
 					<ModelInterface model={source} projection={projection} onSelect={selection.select} />,
 				)
 			: null,
-		aboutSection(
-			"code",
-			"Code and evidence",
-			RiFileCodeLine,
-			undefined,
-			<ModuleCode {...props} />,
-		),
+		aboutSection("code", "Code and evidence", RiFileCodeLine, undefined, <ModuleCode {...props} />),
 		module.binding === undefined
 			? null
 			: aboutSection(

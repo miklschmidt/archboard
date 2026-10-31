@@ -147,7 +147,11 @@ function StateRow(props: {
 				)}
 				style={rowStyle}
 			>
-				<span aria-hidden="true" className="absolute flex size-4 items-center justify-center" style={markStyle}>
+				<span
+					aria-hidden="true"
+					className="absolute flex size-4 items-center justify-center"
+					style={markStyle}
+				>
 					<VariantMark lifecycle={state.lifecycle} />
 				</span>
 				<span className="flex min-w-0 flex-1 flex-col gap-0.5">

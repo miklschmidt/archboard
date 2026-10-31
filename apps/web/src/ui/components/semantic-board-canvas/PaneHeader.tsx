@@ -20,10 +20,7 @@
 // server has pointed at no board keeps the same row: it says so, and keeps the
 // shell's letter, controls and notice.
 
-import {
-	RiArrowRightSLine,
-	RiMoreLine,
-} from "@remixicon/react";
+import { RiArrowRightSLine, RiMoreLine } from "@remixicon/react";
 import { type JSX, type ReactNode } from "react";
 
 import { cn, DropdownMenu, RepositoryName } from "@archboard/ui-kit/components";

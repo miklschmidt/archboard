@@ -310,7 +310,10 @@ function SubjectChip(props: {
 				className="border-border bg-background hover:bg-muted aria-pressed:bg-primary-subtle aria-pressed:border-primary-mark rounded-control flex h-6 max-w-full min-w-0 items-center gap-1 border px-1.5"
 			>
 				{kind === undefined ? (
-					<RiArrowRightLine aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
+					<RiArrowRightLine
+						aria-hidden="true"
+						className="text-muted-foreground size-3.5 shrink-0"
+					/>
 				) : (
 					<KindIcon look={look} kind={kind} className="size-3.5" style={ink} />
 				)}

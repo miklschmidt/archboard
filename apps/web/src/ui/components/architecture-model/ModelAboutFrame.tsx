@@ -77,9 +77,7 @@ function aboutSection(
  * @returns Those it has, in the order a reader asks.
  */
 function shownSections(sections: readonly (AboutPageSection | null)[]): AboutPageSection[] {
-	return sections.filter(
-		(entry): entry is AboutPageSection => entry !== null && entry.count !== 0,
-	);
+	return sections.filter((entry): entry is AboutPageSection => entry !== null && entry.count !== 0);
 }
 
 /**
@@ -220,7 +218,10 @@ function AboutFacts(props: {
 			)}
 			{props.kindName !== undefined && <span className="text-foreground">{props.kindName}</span>}
 			{path !== undefined && (
-				<code data-slot="model-about-path" className="text-technical text-muted-foreground font-mono">
+				<code
+					data-slot="model-about-path"
+					className="text-technical text-muted-foreground font-mono"
+				>
 					{path}
 				</code>
 			)}

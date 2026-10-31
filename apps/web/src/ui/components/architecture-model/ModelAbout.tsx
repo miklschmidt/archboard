@@ -278,8 +278,7 @@ function ModelOwnership(): JSX.Element {
 function scopeHead(props: ScopePageProps) {
 	const { model, scope, tree } = props;
 	const { flow } = props.projection;
-	if (flow !== null)
-		return { name: flow.name, kindName: "Flow", lead: flow.summary ?? undefined };
+	if (flow !== null) return { name: flow.name, kindName: "Flow", lead: flow.summary ?? undefined };
 	const module = scopeModel(props).modules.find((entry) => entry.id === scope);
 	if (module === undefined)
 		return { name: model.manifest.name, lead: model.selectedState?.summary ?? undefined };
