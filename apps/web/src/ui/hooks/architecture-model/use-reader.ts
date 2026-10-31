@@ -4,6 +4,7 @@ import type { VariantContent } from "@archboard/board/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import type { Page } from "#ui/components/architecture-model/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
+import { useChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
 import { useModelMoves } from "#ui/hooks/architecture-model/use-model-moves.ts";
 import { useModelReading } from "#ui/hooks/architecture-model/use-model-reading.ts";
 import { useProjectedSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
@@ -11,6 +12,7 @@ import { useModuleBranches } from "#ui/hooks/architecture-model/use-module-branc
 import { useReaderChoices } from "#ui/hooks/architecture-model/use-reader-choices.ts";
 import { useReaderMoves } from "#ui/hooks/architecture-model/use-reader-moves.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { relevantFlows } from "#ui/rules/architecture-model/flow-reading.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
 import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
@@ -70,24 +72,37 @@ function useReaderPage(opened: string | null, selecting: boolean) {
 		},
 		[onAbout, selecting],
 	);
+	const onDiagram = useCallback((): void => setAbout(NO_ABOUT), []);
 	const page: Page = open ? "about" : "diagram";
-	return { page, onPage, aboutSubject: subject, onAbout };
+	return { page, onPage, onDiagram, aboutSubject: subject, onAbout };
 }
 
 /**
- * Where the left column stands and how the open module is read.
+ * Where the left column stands and how the open module is read. A proposal that opens with the
+ * reader starts on its changes, and its changes leave the column with it.
  * @param structural Whether the reading draws the structure.
  * @param opened The open module.
  * @param selecting Whether anything is selected.
+ * @param proposal Whether a proposal is read against a base.
  * @returns The destination and the page, and how to change them.
  */
-function useReaderPlaces(structural: boolean, opened: string | null, selecting: boolean) {
-	const [destination, setDestination] = useState<Destination>(structural ? "modules" : "flows");
+function useReaderPlaces(
+	structural: boolean,
+	opened: string | null,
+	selecting: boolean,
+	proposal: boolean,
+) {
+	const [chosen, setDestination] = useState<Destination>(() => {
+		if (proposal) return "changes";
+		return structural ? "modules" : "flows";
+	});
 	const openHistory = useCallback((): void => setDestination("history"), []);
+	const onList = useCallback((): void => setDestination("changes"), []);
 	return {
-		destination,
+		destination: chosen === "changes" && !proposal ? "modules" : chosen,
 		onDestination: setDestination,
 		openHistory,
+		onList,
 		...useReaderPage(opened, selecting),
 	};
 }
@@ -164,8 +179,22 @@ function useReader(inputs: ReaderInputs) {
 	);
 	const tree = useMemo(() => moduleTree(depicted), [depicted]);
 	const branches = useModuleBranches(tree, opened);
-	const places = useReaderPlaces(grammar === "architecture", opened, selection.ids.size > 0);
+	const places = useReaderPlaces(
+		grammar === "architecture",
+		opened,
+		selection.ids.size > 0,
+		reviewsChanges(model),
+	);
 	const near = useRelevance(model, depicted, opened);
+	const walk = useChangeWalk({
+		model,
+		reference: comparison.reference,
+		location,
+		opened,
+		selected: selection.ids,
+		onList: places.onList,
+		onDiagram: places.onDiagram,
+	});
 	const choices = useReaderChoices({
 		location,
 		model,
@@ -199,6 +228,7 @@ function useReader(inputs: ReaderInputs) {
 		tree,
 		branches,
 		...near,
+		walk,
 		choices,
 		presenting: playback?.active === true,
 		walkthrough: playback?.current ?? null,

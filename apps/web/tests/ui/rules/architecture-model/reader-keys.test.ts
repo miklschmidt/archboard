@@ -4,7 +4,12 @@
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
-import { readerMove, type ReaderMove } from "#ui/rules/architecture-model/reader-keys.ts";
+import {
+	changeStep,
+	readerMove,
+	type ChangeStep,
+	type ReaderMove,
+} from "#ui/rules/architecture-model/reader-keys.ts";
 
 beforeAll(() => GlobalRegistrator.register());
 afterAll(async () => {
@@ -61,4 +66,28 @@ test("a key held with a modifier is somebody else's shortcut", () => {
 	expect(moveAt("0", undefined, { ctrlKey: true })).toBeNull();
 	expect(moveAt("[", undefined, { metaKey: true })).toBeNull();
 	expect(moveAt("f", undefined, { altKey: true })).toBeNull();
+});
+
+test.each<[string, ChangeStep]>([
+	["n", 1],
+	["N", 1],
+	["p", -1],
+	["P", -1],
+])("%s walks a proposal's changes", (key, step) => {
+	document.body.innerHTML = "<section></section>";
+	expect(changeStep(new KeyboardEvent("keydown", { key }))).toBe(step);
+});
+
+test.each([["<input />"], ["<textarea></textarea>"], ['<div role="menu"></div>']])(
+	"a walk key belongs to %s, not to the reading",
+	(markup) => {
+		document.body.innerHTML = markup;
+		const event = new KeyboardEvent("keydown", { key: "n", bubbles: true });
+		document.body.firstElementChild?.dispatchEvent(event);
+		expect(changeStep(event)).toBeNull();
+	},
+);
+
+test("a walk key held with a modifier is somebody else's shortcut", () => {
+	expect(changeStep(new KeyboardEvent("keydown", { key: "n", ctrlKey: true }))).toBeNull();
 });

@@ -28,7 +28,7 @@ function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
 			{bare !== true && <h3 className="text-title font-semibold">{props.flow.name}</h3>}
-			<ModelSubjectStanding model={props.model} subject={props.flow.id} />
+			<FlowStanding {...props} />
 			{brief !== true && bare !== true && props.flow.summary && (
 				<p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>
 			)}
@@ -41,6 +41,17 @@ function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
 			</ol>
 		</section>
 	);
+}
+
+/**
+ * How the flow stands, in a place with room for it or when the flow itself is selected.
+ * @param props The flow and its selection.
+ * @returns The standing, or nothing while a brief place explains a step.
+ */
+function FlowStanding(props: ModelFlowDetailsProps): JSX.Element | null {
+	const { flow, model, reference, selection, brief } = props;
+	if (brief === true && !selection.ids.has(flow.id)) return null;
+	return <ModelSubjectStanding model={model} subject={flow.id} reference={reference} />;
 }
 
 /** A step's number, what it says, its two ends and its kind. */
@@ -84,7 +95,7 @@ function FlowStepDetails(
 			</button>
 			{selection.ids.has(step.id) && (
 				<div className="px-3 pb-2 empty:hidden">
-					<ModelSubjectStanding model={props.model} subject={step.id} />
+					<ModelSubjectStanding model={props.model} subject={step.id} reference={props.reference} />
 				</div>
 			)}
 		</li>

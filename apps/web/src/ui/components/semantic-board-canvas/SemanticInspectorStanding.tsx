@@ -115,7 +115,7 @@ function sentenceOf(against: StandingProps): string | undefined {
 	if (against.standing === "changed" && against.moved.length > 0) {
 		return undefined;
 	}
-	return standingSentence(against.standing, against.against);
+	return standingSentence(against.standing);
 }
 
 /**
@@ -320,17 +320,12 @@ function valueText(value: unknown): string {
  * variant does, and a line on every card saying so would bury the handful that
  * did move.
  * @param standing How the subject stands.
- * @param against What the variant it is read against is called.
  * @returns The sentence, or undefined when there is nothing to say.
  */
-function standingSentence(standing: ChangeKind, against: string): string | undefined {
-	if (standing === "added") {
-		return `On this variant and not on ${against}.`;
-	}
-	if (standing === "removed") {
-		return `Not on this variant. It is shown from ${against} to say what differs.`;
-	}
-	return standing === "changed" ? `Different on ${against}.` : undefined;
+function standingSentence(standing: ChangeKind): string | undefined {
+	if (standing === "added") return "Added.";
+	if (standing === "removed") return "Removed.";
+	return standing === "changed" ? "Changed." : undefined;
 }
 
 export { Standing, ReconciliationIssues, type StandingProps };

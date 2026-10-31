@@ -233,7 +233,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
 		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
-		const rowLabel = nav?.querySelector('[data-slot="model-tree"] [data-row-id]');
+		const rowLabel = nav?.querySelector('[data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||

@@ -69,7 +69,11 @@ function SelectedSubjects(props: {
 						className="border-border text-control border-b py-2.5"
 					>
 						{subjectName(subject)}
-						<ModelSubjectStanding model={props.model} subject={subject.id} />
+						<ModelSubjectStanding
+							model={props.model}
+							subject={subject.id}
+							reference={props.reference}
+						/>
 					</li>
 				))}
 			</ul>

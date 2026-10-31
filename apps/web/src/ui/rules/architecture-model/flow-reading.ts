@@ -62,7 +62,17 @@ function modelSubjects(model: Model) {
 		...model.relationships,
 		...collectionSubjects(model),
 		...flowSubjects(model.collections.flatMap((collection) => collection.flows)),
+		...walkthroughSubjects(model),
 	];
+}
+
+/**
+ * The walkthroughs of a model with their beats, which no picture draws.
+ * @param model The coherent canonical reading.
+ * @returns The subjects.
+ */
+function walkthroughSubjects(model: Model) {
+	return [...model.walkthroughs, ...model.walkthroughs.flatMap(({ beats }) => beats)];
 }
 
 /**
@@ -116,6 +126,7 @@ function withCollectionFlows(model: Model, selected: ReadonlySet<string>): Set<s
  */
 function subjectName(subject: ReturnType<typeof modelSubjects>[number]): string {
 	if ("name" in subject) return subject.name;
+	if ("title" in subject) return subject.title;
 	if ("question" in subject) return subject.question;
 	if ("condition" in subject) return subject.condition;
 	return subject.label ?? subject.id;
@@ -127,6 +138,7 @@ export {
 	flowCollections,
 	flowSubjects,
 	modelSubjects,
+	walkthroughSubjects,
 	subjectName,
 	collectionSubjects,
 	withCollectionFlows,

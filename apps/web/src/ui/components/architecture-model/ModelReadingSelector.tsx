@@ -35,6 +35,8 @@ interface StateRow {
 	readonly checkpoint: string | null;
 	/** What the list says of that reading, which an exact address can outrun. */
 	readonly saved: Checkpoint | undefined;
+	/** Whether another record has its name, so that only its identity tells them apart. */
+	readonly shared?: boolean | undefined;
 }
 
 /** The row of the architecture that is current. */
@@ -114,11 +116,12 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 		},
 		[onSelect, onState],
 	);
+	const shared = useMemo(() => sharedNames([...proposals, ...states]), [proposals, states]);
 	const rows = useMemo(
-		() => stateRows({ states, groups, unfolded, checkpoint }),
-		[states, groups, unfolded, checkpoint],
+		() => stateRows({ states, groups, unfolded, checkpoint, shared }),
+		[states, groups, unfolded, checkpoint, shared],
 	);
-	const proposalRows = useMemo(() => proposals.map(proposalRow), [proposals]);
+	const proposalRows = useMemo(() => proposalRowsOf(proposals, shared), [proposals, shared]);
 	const lit = checkpoint ?? state ?? CURRENT;
 	return (
 		<div data-slot="model-history" className="flex flex-col">
@@ -139,18 +142,26 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 }
 
 /**
- * One proposal's row.
- * @param proposal The proposal.
- * @param proposal.id Its identity.
- * @param proposal.state What the catalogue says of it.
- * @returns The row.
+ * The names that more than one record has.
+ * @param records The proposals and the states.
+ * @returns The names.
  */
-function proposalRow(proposal: {
-	readonly id: string;
-	readonly state: StateRow["state"];
-}): StateRow {
-	const { id, state } = proposal;
-	return {
+function sharedNames(records: readonly { readonly state: StateRow["state"] }[]) {
+	const names = records.map(({ state }) => state?.name);
+	return new Set(names.filter((name, at) => name !== undefined && names.indexOf(name) !== at));
+}
+
+/**
+ * The rows of the proposals.
+ * @param proposals The proposals.
+ * @param shared The names that more than one record has.
+ * @returns A row for each.
+ */
+function proposalRowsOf(
+	proposals: readonly { readonly id: string; readonly state: StateRow["state"] }[],
+	shared: ReadonlySet<string | undefined>,
+): StateRow[] {
+	return proposals.map(({ id, state }) => ({
 		id,
 		parent: null,
 		branch: false,
@@ -159,7 +170,8 @@ function proposalRow(proposal: {
 		stateId: id,
 		checkpoint: null,
 		saved: undefined,
-	};
+		shared: shared.has(state?.name),
+	}));
 }
 
 /**
@@ -199,6 +211,8 @@ interface StateRowInputs {
 	readonly groups: ReadonlyMap<string, readonly Checkpoint[]>;
 	readonly unfolded: ReadonlySet<string>;
 	readonly checkpoint: string | null;
+	/** The names that more than one record has. */
+	readonly shared: ReadonlySet<string | undefined>;
 }
 
 /**
@@ -207,7 +221,7 @@ interface StateRowInputs {
  * @returns The rows, in order.
  */
 function stateRows(inputs: StateRowInputs): StateRow[] {
-	const { states, groups, unfolded, checkpoint } = inputs;
+	const { states, groups, unfolded, checkpoint, shared } = inputs;
 	/**
 	 * One state and its checkpoints.
 	 * @param id The row's identity.
@@ -223,7 +237,8 @@ function stateRows(inputs: StateRowInputs): StateRow[] {
 		held: readonly Checkpoint[],
 	): StateRow[] => {
 		const open = unfolded.has(id) || held.some((entry) => entry.id === checkpoint);
-		const head = { id, parent: null, branch: held.length > 0, open, state, stateId };
+		const twin = shared.has(state?.name);
+		const head = { id, parent: null, branch: held.length > 0, open, state, stateId, shared: twin };
 		return [
 			{ ...head, checkpoint: null, saved: undefined },
 			...(open
@@ -310,30 +325,41 @@ function RecordRow(props: {
 			onOpen={open}
 			onToggle={fold}
 		>
-			<Tree.Name text={recordName(row)} />
+			<Tree.Name text={recordName(row)} title={row.state?.summary} />
 			<RecordFacts row={row} />
 		</Tree.Row>
 	);
 }
 
 /**
- * What a row says beside its name: a proposal only says when something stands in its way.
+ * What a row says beside its name: what tells it from a record with the same name, then where
+ * it stands. A proposal says that only when something stands in its way.
  * @param props The row.
  * @param props.row The row.
  * @returns The facts, or nothing.
  */
 function RecordFacts(props: { readonly row: StateRow }): JSX.Element | null {
-	const { id, state } = props.row;
-	const words = id === CURRENT ? null : recordFact(state);
+	const { id } = props.row;
+	const words = id === CURRENT ? null : recordFact(props.row);
 	return words === null ? null : <Tree.Facts>{words}</Tree.Facts>;
 }
 
 /**
  * The fact a record shows.
+ * @param row The row.
+ * @returns The words, or null for a proposal with its own name that nothing stands in the way of.
+ */
+function recordFact(row: StateRow): string | null {
+	const facts = [row.shared === true ? row.id : null, stateFact(row.state)];
+	return facts.filter((fact) => fact !== null).join(" · ") || null;
+}
+
+/**
+ * Where a record stands.
  * @param state What the catalogue says of it.
  * @returns The words, or null for a proposal that nothing stands in the way of.
  */
-function recordFact(state: StateRow["state"]): string | null {
+function stateFact(state: StateRow["state"]): string | null {
 	if (state?.lifecycle === "draft") return standingLabel(state);
 	return (state?.lifecycle ?? "Unavailable") + standingSuffix(state);
 }

@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { Button } from "@archboard/ui-kit/components";
 import type { Model } from "@archboard/board/content";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
+import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { standingSuffix } from "#ui/rules/architecture-model/standing.ts";
 import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
 
@@ -89,7 +90,9 @@ function readingLabel(props: {
 	if (state === null) return model.manifest.current === null ? "Planning" : "Current";
 	const selected = model.selectedState;
 	if (selected === null) return state;
-	return `${selected.name} · ${selected.lifecycle}${standingSuffix(selected)}`;
+	const { id, name, lifecycle } = selected;
+	const shared = stateCatalogue(model).filter((one) => one.name === name).length > 1;
+	return `${name}${shared ? ` · ${id}` : ""} · ${lifecycle}${standingSuffix(selected)}`;
 }
 
 /**
@@ -118,7 +121,7 @@ function ModelStateChip(props: {
 			aria-label={`Reading ${label}. Open History.`}
 			title={label}
 			onClick={open}
-			className="max-w-56 shrink-0 font-medium"
+			className="max-w-80 shrink-0 font-medium"
 		>
 			<span className="truncate">{label}</span>
 		</Button>

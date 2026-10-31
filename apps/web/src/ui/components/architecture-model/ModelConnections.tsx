@@ -139,7 +139,7 @@ function OneRelationship(
 	return (
 		<>
 			{edge.label && <p className="text-body">{edge.label}</p>}
-			<ModelSubjectStanding model={model} subject={edge.id} />
+			<ModelSubjectStanding model={model} subject={edge.id} reference={reference} />
 			<ModelPanel.Section title="Ends" slot="model-connection-ends">
 				<RelationshipEnd
 					id={edge.from}
@@ -219,7 +219,7 @@ function ConnectionDetails(props: {
 						<code className="text-technical text-muted-foreground font-mono break-all">
 							{edge.id}
 						</code>
-						<ModelSubjectStanding model={model} subject={edge.id} />
+						<ModelSubjectStanding model={model} subject={edge.id} reference={reference} />
 					</li>
 				))}
 			</ol>

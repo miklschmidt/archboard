@@ -23,6 +23,65 @@ import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
 
+/** A flow for the proposal to change, because most changes in a proposal are steps. */
+const REQUESTS = {
+	schemaVersion: 1,
+	id: "Behavior",
+	name: "Requests",
+	flows: [
+		{
+			id: "Shop#Request",
+			name: "Handle request",
+			summary: "The gateway hands a request to the handler.",
+			participants: ["Shop#Gateway", "Shop#Handler"],
+			steps: [
+				{
+					id: "Shop#Invoke",
+					from: "Shop#Gateway",
+					to: "Shop#Handler",
+					kind: "sync",
+					label: "Handle",
+				},
+				{
+					id: "Shop#Answer",
+					from: "Shop#Handler",
+					to: "Shop#Gateway",
+					kind: "return",
+					label: "Done",
+				},
+			],
+		},
+	],
+};
+
+/**
+ * Where a proposal's walk stands.
+ * @param browser The page.
+ * @returns The row it stands on, what the tab says and the grammar on show.
+ */
+function walkPlace(browser: AgentBrowserSession) {
+	return browser.eval<{ lit: string | null; tab: string; grammar: string | null }>(`({
+		lit: document.querySelector('[data-slot="model-changes"] [data-change-id][aria-selected="true"]')?.getAttribute('data-change-id') ?? null,
+		tab: document.querySelector('[data-destination="changes"]')?.textContent ?? '',
+		grammar: document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-grammar') ?? null,
+	})`);
+}
+
+/**
+ * Wait for the walk to stand on a change.
+ * @param browser The page.
+ * @param id The change.
+ * @param position The position that the tab shows.
+ */
+async function standsOn(browser: AgentBrowserSession, id: string, position: string): Promise<void> {
+	await pollUntil(
+		() => walkPlace(browser),
+		(now) => now.lit === id && now.tab.includes(position),
+		`the walk at ${position} on ${id}`,
+		WAIT,
+	);
+}
+
 async function selectComparison(browser: AgentBrowserSession, id: string): Promise<void> {
 	await browser.run(["click", '[data-destination="history"]']);
 	await browser.run(["click", '[data-slot="model-comparison-selector"]']);
@@ -45,6 +104,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
 		recursive: true,
 	});
+	writeFileSync(join(vault, "requests.flows.json"), JSON.stringify(REQUESTS));
 	initializeSource(root);
 	const server = await startOwnedServer({
 		serverPath,
@@ -67,6 +127,8 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			reason: "Comparing queued architecture",
 			subjects: [
 				"Shop",
+				"Shop#Request",
+				"Shop#Answer",
 				...initial.body.modules.map((module) => module.id),
 				...initial.body.relationships.map((edge) => edge.id),
 			],
@@ -87,6 +149,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			changes: [
 				{ type: "remove-module", subject: "Shop#Worker" },
 				{ type: "edit-module", subject: "Shop#Gateway", set: { name: "Queued gateway" } },
+				{ type: "remove-step", subject: "Shop#Answer" },
 				{ type: "add-module", module: { name: "Queue", kind: "service", order: 30 } },
 				{
 					type: "add-relationship",
@@ -105,9 +168,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 	const selected = await request<ArchitectureModelRead>(
 		`/api/architecture/model?state=${created.body.target.state}`,
 	);
-	const current = await request<ArchitectureModelRead>("/api/architecture/model");
-	if (!selected.body.success || !current.body.success)
-		throw new Error("The authored states are unavailable");
+	if (!selected.body.success) throw new Error("The authored draft is unavailable");
 	const queue = selected.body.modules.find((module) => module.name === "Queue");
 	if (queue === undefined) throw new Error("The draft did not add its queue");
 	const browser = resources.use(await createAgentBrowser());
@@ -130,7 +191,61 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			`document.querySelector('[data-slot="model-diagram"] [data-semantic-id="${queue.id}"][data-semantic-standing="added"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Gateway"][data-semantic-standing="changed"]') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Dispatch"][data-semantic-standing="removed"]') !== null`,
 		),
 	).toBe(true);
-	await pick(browser, "Shop#Worker");
+	const rows = await browser.eval<string[]>(
+		`[...document.querySelectorAll('[data-slot="model-changes"] [data-change-id]')].map(row => row.getAttribute('data-change-id'))`,
+	);
+	expect(rows).toEqual(expect.arrayContaining(["Shop#Worker", queue.id]));
+	expect(rows.at(-1)).toBe("Shop#Answer");
+	for (const [index, id] of rows.entries()) {
+		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
+		await standsOn(browser, id, `${index + 1} of ${rows.length}`);
+	}
+	expect((await walkPlace(browser)).grammar).toBe("sequence");
+	await browser.run(["press", "p"]);
+	await standsOn(browser, rows.at(-2) ?? "", `${rows.length - 1} of ${rows.length}`);
+	await browser.run(["press", "n"]);
+	await standsOn(browser, "Shop#Answer", `${rows.length} of ${rows.length}`);
+	const draft = { model: target.model, state: created.body.target.state };
+	const secondClaim = await request<ArchitectureClaimResult>("/api/architecture/claims", {
+		method: "POST",
+		body: {
+			vault,
+			target: draft,
+			writer: "fixture-agent",
+			reason: "Changing a draft under its reader",
+			subjects: ["Shop", draft.state],
+		},
+	});
+	if (!secondClaim.body.success) throw new Error(JSON.stringify(secondClaim.body));
+	const grown = await request<ArchitectureModuleEditResult>("/api/architecture/module", {
+		method: "POST",
+		body: {
+			vault,
+			target: draft,
+			expectedRevision: selected.body.revision,
+			operationId: "grow-draft",
+			writer: "fixture-agent",
+			doing: "Adding to the draft",
+			claim: secondClaim.body.claim.id,
+			proposal: { type: "edit" },
+			changes: [{ type: "add-module", module: { name: "Cache", kind: "service", order: 40 } }],
+		},
+	});
+	await request("/api/architecture/claims/release", {
+		method: "POST",
+		body: { vault, claim: secondClaim.body.claim.id, writer: "fixture-agent" },
+	});
+	if (!grown.body.success) throw new Error(JSON.stringify(grown.body));
+	const current = await request<ArchitectureModelRead>("/api/architecture/model");
+	if (!current.body.success) throw new Error(JSON.stringify(current.body));
+	await standsOn(browser, "Shop#Answer", `${rows.length + 1} of ${rows.length + 1}`);
+	await browser.run(["click", `[data-change-id="Shop#Worker"]`]);
+	await pollUntil(
+		() => walkPlace(browser),
+		(now) => now.lit === "Shop#Worker" && now.grammar === "architecture",
+		"the removed module, back in the architecture",
+		WAIT,
+	);
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(

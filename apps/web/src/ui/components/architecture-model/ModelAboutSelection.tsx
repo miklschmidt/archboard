@@ -294,7 +294,11 @@ function ModulePage(props: ModelAboutSelectionProps & { readonly module: Module 
 				reducedMotion={props.reducedMotion}
 			>
 				{props.evidence}
-				<ModelSubjectStanding model={model} subject={module.id} />
+				<ModelSubjectStanding
+					model={model}
+					subject={module.id}
+					reference={props.projection.reference}
+				/>
 				<HiddenNote {...props} />
 			</ModelAboutFrame>
 		</div>

@@ -7,6 +7,11 @@ import type { Model } from "@archboard/board/content";
 import { proposalStanding } from "#ui/rules/architecture-model/standing.ts";
 import { ModelReconciliation } from "#ui/components/architecture-model/ModelReconciliation.tsx";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
+import {
+	changedCount,
+	namedField,
+	reviewsChanges,
+} from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 /**
@@ -94,7 +99,7 @@ function ModelComparisonLine({
 					After, with no comparison
 				</p>
 			) : (
-				<ComparisonSummary comparison={comparison} />
+				<ComparisonSummary comparison={comparison} counted={!reviewsChanges(model)} />
 			)}
 			{hasCurrent && !readsCurrent(model) && (
 				<Button
@@ -136,14 +141,17 @@ function baseName(comparison: NonNullable<Model["comparison"]>): string {
  * Comparison metadata describes the complete states before visual filtering.
  * @param props The shared runtime comparison.
  * @param props.comparison Its base and subject changes.
- * @returns The explicit base and number of changed subjects.
+ * @param props.counted Whether to count them: the Changes tab counts those of a proposal.
+ * @returns The explicit base, and the number of changed subjects.
  */
 function ComparisonSummary({
 	comparison,
+	counted,
 }: {
 	comparison: NonNullable<Model["comparison"]>;
+	counted: boolean;
 }): JSX.Element {
-	const changed = comparison.subjects.filter((subject) => subject.kind !== "unchanged");
+	const changed = changedCount(comparison);
 	return (
 		<p
 			data-slot="model-comparison"
@@ -151,8 +159,8 @@ function ComparisonSummary({
 			data-reason={comparison.reason}
 			className="text-body text-muted-foreground"
 		>
-			Compared with {baseName(comparison)} · {changed.length} changed{" "}
-			{changed.length === 1 ? "subject" : "subjects"}
+			Compared with {baseName(comparison)}
+			{counted && ` · ${changed} changed ${changed === 1 ? "subject" : "subjects"}`}
 		</p>
 	);
 }
@@ -189,29 +197,56 @@ function ModelComparisonNotice({
 }
 
 /**
+ * How a subject stands against the base of a comparison, with each module named.
+ * @param model The reading and its comparison.
+ * @param subject The subject.
+ * @param reference The base, which names a module that only it holds.
+ * @returns How it stands, or null for a subject the comparison does not report.
+ */
+function standingAgainst(model: Model, subject: string | null, reference: Model | undefined) {
+	const { comparison } = model;
+	const change = comparison?.subjects.find((entry) => entry.id === subject);
+	if (comparison === undefined || change === undefined) return null;
+	const names = moduleNames(model, reference);
+	return {
+		standing: change.kind,
+		against: comparison.against?.name ?? "empty planning baseline",
+		moved: change.fields.map((field) => namedField(field, names)),
+	};
+}
+
+/**
+ * The name of each module on either side of a comparison.
+ * @param model The reading.
+ * @param reference The base.
+ * @returns The names by module.
+ */
+function moduleNames(model: Model, reference: Model | undefined): ReadonlyMap<string, string> {
+	const sides = [...(reference?.modules ?? []), ...model.modules];
+	return new Map(sides.map(({ id, name }) => [id, name]));
+}
+
+/**
  * Reuse the existing before/after inspector for authoritative canonical subject changes.
  * @param props The selected model and inspected subject identity.
  * @param props.model The complete runtime comparison.
  * @param props.subject The inspected canonical identity, or no subject.
+ * @param props.reference The base, which names a module that only it holds.
  * @returns Semantic change details without deriving changes from the drawing.
  */
 function ModelSubjectStanding({
 	model,
 	subject,
+	reference,
 }: {
 	model: Model;
 	subject: string | null;
+	reference?: Model | undefined;
 }): JSX.Element {
-	const against = useMemo(() => {
-		const comparison = model.comparison;
-		const change = comparison?.subjects.find((entry) => entry.id === subject);
-		if (comparison === undefined || change === undefined) return null;
-		return {
-			standing: change.kind,
-			against: comparison.against?.name ?? "empty planning baseline",
-			moved: change.fields.map(({ field, before, after }) => ({ field, before, after })),
-		};
-	}, [model.comparison, subject]);
+	const against = useMemo(
+		() => standingAgainst(model, subject, reference),
+		[model, subject, reference],
+	);
 	const open =
 		model.selectedState?.standing?.issues.filter((issue) => issue.subject === subject) ?? NO_ISSUES;
 	return <Standing against={against} open={open} code={null} />;

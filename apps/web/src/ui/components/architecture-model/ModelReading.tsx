@@ -2,6 +2,7 @@ import { Activity, useCallback, useMemo, useRef, useState, type JSX, type ReactN
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/board/content";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
+import { ModelChanges } from "#ui/components/architecture-model/ModelChanges.tsx";
 import { ModelColumn, type Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import { ModelFind } from "#ui/components/architecture-model/ModelFind.tsx";
 import { ModelFlows } from "#ui/components/architecture-model/ModelFlows.tsx";
@@ -14,8 +15,11 @@ import { ModelReadingSurface } from "#ui/components/architecture-model/ModelRead
 import { ModelRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
 import { ModelTree } from "#ui/components/architecture-model/ModelTree.tsx";
 import { ModelWalkthroughs } from "#ui/components/architecture-model/ModelWalkthroughs.tsx";
+import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts";
+import { useChangeKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
+import { changeStepOf } from "#ui/rules/architecture-model/reader-keys.ts";
 
 /** Inputs for a reading. */
 interface ModelReadingProps {
@@ -40,6 +44,7 @@ interface ModelReadingProps {
 /** What every reading offers, and what a reading with a record adds. */
 const READING: readonly Destination[] = ["modules", "flows", "walkthroughs"];
 const RECORDED: readonly Destination[] = [...READING, "history"];
+const REVIEWED: readonly Destination[] = [...RECORDED, "changes"];
 
 /**
  * Whether a reading keeps a record: a migration candidate has none of its own.
@@ -84,6 +89,27 @@ function endingOf(reader: Reader): string | undefined {
 }
 
 /**
+ * What a reading offers in the left column.
+ * @param model The reading.
+ * @param walk Its changes.
+ * @returns The destinations.
+ */
+function offeredBy(model: Content, walk: ChangeWalk): readonly Destination[] {
+	if (walk.reviewing) return REVIEWED;
+	return keepsRecord(model) ? RECORDED : READING;
+}
+
+/**
+ * What the Changes tab says: how many there are, then where the reader stands among them.
+ * @param walk The walk.
+ * @returns The words, or nothing while no proposal is read.
+ */
+function walkFact(walk: ChangeWalk): string | undefined {
+	if (!walk.reviewing) return undefined;
+	return walk.position === undefined ? String(walk.count) : `${walk.position + 1} of ${walk.count}`;
+}
+
+/**
  * The left column of a reading: Find and the destinations.
  * @param props The reader.
  * @param props.reader The reader.
@@ -91,16 +117,29 @@ function endingOf(reader: Reader): string | undefined {
  */
 function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, branches, flows, walkthroughs, choices } = reader;
+	const { model, location, structure, tree, branches, flows, walkthroughs, choices, walk } = reader;
 	const { opened, depicted } = structure;
 	const find = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState("");
-	const typeAhead = useCallback((text: string): void => {
-		setQuery((current) => current + text);
-		find.current?.focus();
-	}, []);
+	const { reviewing, step } = walk;
+	const typeAhead = useCallback(
+		(text: string): void => {
+			const change = reviewing ? changeStepOf(text) : null;
+			if (change !== null) {
+				step(change);
+				return;
+			}
+			setQuery((current) => current + text);
+			find.current?.focus();
+		},
+		[reviewing, step],
+	);
 	const records = keepsRecord(model);
 	const { reference } = reader.comparison;
+	const walker = useMemo(
+		() => (reviewing ? <ModelChanges.Walker walk={walk} /> : undefined),
+		[reviewing, walk],
+	);
 	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
 		<>
@@ -118,7 +157,9 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				onDestination={reader.onDestination}
 				flows={flows.length}
 				walkthroughs={walkthroughs.length}
-				offered={records ? RECORDED : READING}
+				changes={walkFact(walk)}
+				walker={walker}
+				offered={offeredBy(model, walk)}
 			>
 				<ModelColumn.List value="modules">
 					<ModelTree
@@ -145,6 +186,11 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				<ModelColumn.List value="walkthroughs">
 					<ModelWalkthroughs all={model.walkthroughs} near={walkthroughs} />
 				</ModelColumn.List>
+				{walk.list !== null && (
+					<ModelColumn.List value="changes">
+						<ModelChanges.List list={walk.list} place={walk.place} onShow={walk.show} />
+					</ModelColumn.List>
+				)}
 				{records && (
 					<ModelColumn.List value="history">
 						<ModelRecords
@@ -209,6 +255,7 @@ function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
  */
 function ModelReading(props: ModelReadingProps): JSX.Element {
 	const reader = useReader(props);
+	useChangeKeys(reader.walk.step);
 	return (
 		<>
 			<ReadingColumn reader={reader} />

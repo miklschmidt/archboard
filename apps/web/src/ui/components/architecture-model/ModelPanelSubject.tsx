@@ -141,7 +141,7 @@ function ModuleSubject(
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} brief />
-			<ModelSubjectStanding model={model} subject={module.id} />
+			<ModelSubjectStanding model={model} subject={module.id} reference={projection.reference} />
 			<ModelDoorEndpoints
 				door={module.id}
 				model={source}
