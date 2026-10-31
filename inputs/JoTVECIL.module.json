@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/runtime/processes/language-servers/server.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "schemaVersion": 1,
   "id": "vKEsyHFk#JoTVECIL",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "outgoing": [
+    {
+      "order": 101490,
+      "kind": "call",
+      "label": "createElapsedClock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/processes/language-servers/server.ts",
+        "symbol": "createElapsedClock"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#7oXI0Dot"
+    }
+  ]
 }

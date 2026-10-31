@@ -38,7 +38,7 @@
         "symbol": "sendToVaultClients"
       },
       "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
-      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+      "to": "vKEsyHFk#sTfc9oXS"
     },
     {
       "order": 79000,
@@ -52,7 +52,46 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
-      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+      "to": "vKEsyHFk#92f9M6zF"
+    },
+    {
+      "order": 36000,
+      "kind": "dependency",
+      "label": "pane registrations and messages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "resolvePane"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
+      "to": "vKEsyHFk#0QrlEkVX"
+    },
+    {
+      "order": 102580,
+      "kind": "call",
+      "label": "createBrowserLeaseLedger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "createBrowserLeaseLedger"
+      },
+      "to": "vKEsyHFk#jYL62RKv",
+      "id": "vKEsyHFk#HQtNG9yg"
+    },
+    {
+      "order": 102590,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#9NO2czSu"
     }
   ]
 }

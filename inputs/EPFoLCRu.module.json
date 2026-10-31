@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/protocol"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "schemaVersion": 1,
   "id": "vKEsyHFk#EPFoLCRu",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 101950,
+      "kind": "call",
+      "label": "isRecord",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/protocol/server-client-refusal.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#ZbRqJjMQ"
+    }
+  ]
 }

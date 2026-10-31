@@ -39,7 +39,24 @@
         "symbol": "send"
       },
       "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
+      "to": "vKEsyHFk#e36HfOzg"
+    },
+    {
+      "order": 10000,
+      "kind": "event",
+      "label": "lease, commands, snapshots",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway.ts",
+        "symbol": "connect"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#Lo6Q7GDB",
+      "to": "vKEsyHFk#gTO8fRs6"
     }
   ]
 }

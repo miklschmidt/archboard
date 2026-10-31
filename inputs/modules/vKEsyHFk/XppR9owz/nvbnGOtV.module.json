@@ -58,6 +58,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#eSv7lgu3",
       "to": "vKEsyHFk/XppR9owz#eMSAZPvG"
+    },
+    {
+      "order": 101930,
+      "kind": "call",
+      "label": "codedError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/restart.ts",
+        "symbol": "codedError"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#I1EK99NZ"
     }
   ]
 }

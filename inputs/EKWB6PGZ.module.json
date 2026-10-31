@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "schemaVersion": 1,
   "id": "vKEsyHFk#EKWB6PGZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 49000,
+      "kind": "dependency",
+      "label": "locate the server pidfile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
+      "to": "vKEsyHFk#zZ0I2U5o"
+    },
+    {
+      "order": 101970,
+      "kind": "call",
+      "label": "ownerRecord",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "ownerRecord"
+      },
+      "to": "vKEsyHFk#r4NA47YB",
+      "id": "vKEsyHFk#PaJ1yFpW"
+    },
+    {
+      "order": 101980,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#At1K5eBQ"
+    }
+  ]
 }

@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-intel/src/shared"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
   "schemaVersion": 1,
   "id": "vKEsyHFk#wXDQ5ETr",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#6HYaX0mK",
+  "outgoing": [
+    {
+      "order": 101500,
+      "kind": "call",
+      "label": "VaultDiagnosticSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/shared/protocol/code-check.ts",
+        "symbol": "VaultDiagnosticSchema"
+      },
+      "to": "vKEsyHFk#OAnOdFft",
+      "id": "vKEsyHFk#DhgKcW3x"
+    },
+    {
+      "order": 101510,
+      "kind": "call",
+      "label": "shape",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/shared/protocol/code-check.ts",
+        "symbol": "VaultDiagnosticSchema.shape"
+      },
+      "to": "vKEsyHFk#FqLZ2AuG",
+      "id": "vKEsyHFk#huQF6BE2"
+    },
+    {
+      "order": 101520,
+      "kind": "call",
+      "label": "SubjectStandingSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/shared/protocol/footprint.ts",
+        "symbol": "SubjectStandingSchema"
+      },
+      "to": "vKEsyHFk#mk8nMShK",
+      "id": "vKEsyHFk#J9SKJ4Sl"
+    }
+  ]
 }

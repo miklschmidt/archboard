@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/store"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#1glMtQCD",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "outgoing": [
+    {
+      "order": 70058,
+      "kind": "call",
+      "label": "read registry fields",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/registry-file.ts",
+        "symbol": "stringAt"
+      },
+      "id": "vKEsyHFk#LfkZEor0",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    }
+  ]
 }

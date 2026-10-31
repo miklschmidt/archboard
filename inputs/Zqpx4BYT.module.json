@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/mod.rs"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Zqpx4BYT",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 49000,
+      "kind": "call",
+      "label": "frame the page for export",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "framed_for_export"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#V4rI4i48",
+      "to": "vKEsyHFk/gbyqW4H3#iXrVyvHz"
+    }
+  ]
 }

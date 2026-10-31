@@ -52,8 +52,47 @@
         "path": "packages/workbench/src/ui/rules/subtitles/measured-lines.ts",
         "symbol": "prepareWithSegments"
       },
-      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
-      "id": "vKEsyHFk#dAbW4tjz"
+      "id": "vKEsyHFk#dAbW4tjz",
+      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb"
+    },
+    {
+      "order": 102740,
+      "kind": "call",
+      "label": "Tooltip",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/subtitles/SubtitlesToggle.tsx",
+        "symbol": "Tooltip"
+      },
+      "to": "vKEsyHFk#F0yAXqqz",
+      "id": "vKEsyHFk#2rKllk7K"
+    },
+    {
+      "order": 102750,
+      "kind": "call",
+      "label": "Trigger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/subtitles/SubtitlesToggle.tsx",
+        "symbol": "Tooltip.Trigger"
+      },
+      "to": "vKEsyHFk#9MSCOT9c",
+      "id": "vKEsyHFk#PmEwLYzy"
+    },
+    {
+      "order": 102760,
+      "kind": "call",
+      "label": "cn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/subtitles/VoiceSubtitles.tsx",
+        "symbol": "cn"
+      },
+      "to": "vKEsyHFk#vBno2R4h",
+      "id": "vKEsyHFk#Izkoqyuu"
     }
   ]
 }
