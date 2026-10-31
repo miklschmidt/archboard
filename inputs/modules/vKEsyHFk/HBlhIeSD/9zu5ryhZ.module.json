@@ -47,7 +47,7 @@
         "symbol": "editArchitectureModule"
       },
       "id": "vKEsyHFk/HBlhIeSD#DDgCzWpy",
-      "to": "vKEsyHFk#TQ3Jayhj"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 110000,
@@ -74,32 +74,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#GtwK4egT",
       "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
-    },
-    {
-      "order": 158000,
-      "kind": "call",
-      "label": "claimArchitectureSubjects",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
-        "symbol": "claimArchitectureSubjects"
-      },
-      "id": "vKEsyHFk/0T9enjhi#gCSSYsMT",
-      "to": "vKEsyHFk/0T9enjhi#ov7pPg21"
-    },
-    {
-      "order": 127000,
-      "kind": "call",
-      "label": "edit and recover canonical modules",
-      "emphasis": "hero",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
-        "symbol": "editArchitectureModule"
-      },
-      "id": "vKEsyHFk/0T9enjhi#SuACli3y",
-      "to": "vKEsyHFk#TQ3Jayhj"
     }
   ]
 }

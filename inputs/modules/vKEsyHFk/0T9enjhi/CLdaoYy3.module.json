@@ -37,17 +37,17 @@
   ],
   "outgoing": [
     {
-      "order": 70200,
-      "kind": "data",
-      "label": "install each file of an operation",
+      "order": 134000,
+      "kind": "call",
+      "label": "record durable progress",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/model-install.ts",
-        "symbol": "installFile"
+        "symbol": "writeState"
       },
-      "id": "vKEsyHFk#3sW3Kpz8",
-      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+      "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
     },
     {
       "order": 135000,
@@ -60,7 +60,7 @@
         "symbol": "prepareCheckpointAppend"
       },
       "id": "vKEsyHFk/0T9enjhi#lihhHpxZ",
-      "to": "vKEsyHFk#TrPaMiFF"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 136000,
@@ -112,6 +112,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#MGi2prjj",
       "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "order": 70200,
+      "kind": "data",
+      "label": "install each file of an operation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-install.ts",
+        "symbol": "installFile"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl",
+      "id": "vKEsyHFk#3sW3Kpz8"
     }
   ]
 }

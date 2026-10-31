@@ -44,32 +44,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 112000,
-      "kind": "http",
-      "label": "HTTP edits, claims and recovery",
-      "description": "The CLI model edit contract calls editArchitectureModuleOnServer, which posts the explicit path mounted here.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-edit-routes.ts",
-        "symbol": "mountArchitectureEditRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#idpOv420",
-      "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ"
-    },
-    {
-      "order": 100000,
-      "kind": "http",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
-        "symbol": "mountArchitectureModelRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     }
   ]
 }
