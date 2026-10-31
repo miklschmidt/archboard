@@ -7,8 +7,97 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/read/model-read.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
   "schemaVersion": 1,
   "id": "vKEsyHFk#92f9M6zF",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "outgoing": [
+    {
+      "order": 70100,
+      "kind": "data",
+      "label": "read one coherent revision",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readCurrentModel"
+      },
+      "id": "vKEsyHFk#25PfRoN2",
+      "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
+    },
+    {
+      "order": 224000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readRequestedArchitecture"
+      },
+      "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",
+      "to": "vKEsyHFk/0T9enjhi#FlAxCoeb"
+    },
+    {
+      "order": 94000,
+      "kind": "dependency",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "ArchitectureManifestSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#41Ear2yX",
+      "to": "vKEsyHFk#lnAGztQm"
+    },
+    {
+      "order": 137000,
+      "kind": "call",
+      "label": "refuse mixed current installation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "modelBoundaryFailure"
+      },
+      "id": "vKEsyHFk/0T9enjhi#qyBfoMqw",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 189000,
+      "kind": "call",
+      "label": "select state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#IFI468Vn",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "SemanticBoardConfigurationSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "order": 101130,
+      "kind": "call",
+      "label": "errorMessage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "errorMessage"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#tdus4ecR"
+    }
+  ]
 }

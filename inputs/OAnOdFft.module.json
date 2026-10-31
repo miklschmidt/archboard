@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/schemas"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#OAnOdFft",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [
+    {
+      "order": 26000,
+      "kind": "dependency",
+      "label": "binding and anchor schemas",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/content.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#I2n1uZLa",
+      "to": "vKEsyHFk#FtQbFdCL"
+    }
+  ]
 }

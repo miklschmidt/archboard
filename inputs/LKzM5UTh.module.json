@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#LKzM5UTh",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [
+    {
+      "order": 70051,
+      "kind": "call",
+      "label": "inspect the signed Git archive",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-portable.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk#EXqmey6d",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    },
+    {
+      "order": 70052,
+      "kind": "call",
+      "label": "resolve bound repository vaults",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "isVaultLayout"
+      },
+      "id": "vKEsyHFk#CZjzqbF1",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 101190,
+      "kind": "call",
+      "label": "isRecord",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/lock/acquisition.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#O1LJnP55"
+    }
+  ]
 }

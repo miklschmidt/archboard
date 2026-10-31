@@ -57,7 +57,7 @@
         "symbol": "readCheckpointModel"
       },
       "id": "vKEsyHFk/0T9enjhi#vpsNmFef",
-      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
+      "to": "vKEsyHFk#fbXmgVn2"
     },
     {
       "order": 211000,
@@ -70,7 +70,20 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#Yw4B2gp3",
-      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
+      "to": "vKEsyHFk#92f9M6zF"
+    },
+    {
+      "order": 101140,
+      "kind": "call",
+      "label": "resolveRegisteredCheckout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "symbol": "resolveRegisteredCheckout"
+      },
+      "to": "vKEsyHFk#bfNV87nt",
+      "id": "vKEsyHFk#ogZgnmpP"
     }
   ]
 }

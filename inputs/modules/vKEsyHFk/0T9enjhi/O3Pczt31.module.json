@@ -43,7 +43,20 @@
         "symbol": "QualifiedSubjectIdSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#VRAAecug",
-      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+      "to": "vKEsyHFk#RasDH9DI"
+    },
+    {
+      "order": 101330,
+      "kind": "call",
+      "label": "optional",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/migration.ts",
+        "symbol": "QualifiedSubjectIdSchema.optional"
+      },
+      "to": "vKEsyHFk#lnAGztQm",
+      "id": "vKEsyHFk#ntqObdQq"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-news.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
   "schemaVersion": 1,
   "id": "vKEsyHFk#klNJGGEX",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+  "outgoing": [
+    {
+      "order": 101270,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-news.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#WsqgAZjN"
+    }
+  ]
 }
