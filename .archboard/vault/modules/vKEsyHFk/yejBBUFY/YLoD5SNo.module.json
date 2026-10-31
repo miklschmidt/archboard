@@ -34,10 +34,10 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/architecture-model/ModelExplanationHost.tsx",
-        "symbol": "ModelExplanationResult"
+        "symbol": "ModelExplanationHost"
       },
       "id": "vKEsyHFk/yejBBUFY#ZV5gxAfu",
-      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      "to": "vKEsyHFk#p0EDMxTr"
     },
     {
       "order": 83000,
@@ -45,7 +45,7 @@
       "label": "read and control the temporary answer",
       "emphasis": "normal",
       "id": "vKEsyHFk/yejBBUFY#RaEm0Enu",
-      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+      "to": "vKEsyHFk#guvtYApo"
     },
     {
       "order": 85000,

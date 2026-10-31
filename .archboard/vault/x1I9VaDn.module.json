@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/application/agent-actions.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "schemaVersion": 1,
   "id": "vKEsyHFk#x1I9VaDn",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 21000,
+      "kind": "call",
+      "label": "controllers over the focused pane's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+        "symbol": "state"
+      },
+      "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ]
 }

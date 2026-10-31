@@ -27,6 +27,19 @@
   ],
   "outgoing": [
     {
+      "order": 2000,
+      "kind": "call",
+      "label": "a session per pane, opened in a vault; show a board in one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
+      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
+    },
+    {
       "order": 56000,
       "kind": "call",
       "label": "one session per pane, opened in the page's opening vault",
@@ -50,7 +63,7 @@
         "symbol": "ApplicationPane"
       },
       "id": "vKEsyHFk/yejBBUFY#iM6sDA82",
-      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
+      "to": "vKEsyHFk#p0EDMxTr"
     },
     {
       "order": 84000,
@@ -76,7 +89,7 @@
         "symbol": "explanationKey"
       },
       "id": "vKEsyHFk/yejBBUFY#ponUuQbD",
-      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
+      "to": "vKEsyHFk#guvtYApo"
     },
     {
       "order": 87000,
@@ -116,19 +129,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#g00kNnNx",
       "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
-    },
-    {
-      "order": 2000,
-      "kind": "call",
-      "label": "a session per pane, opened in a vault; show a board in one",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "usePaneSession"
-      },
-      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
-      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
     }
   ]
 }

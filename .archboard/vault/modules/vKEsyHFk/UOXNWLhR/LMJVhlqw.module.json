@@ -48,7 +48,7 @@
         "symbol": "startBrowserRenderer"
       },
       "id": "vKEsyHFk/HBlhIeSD#156cyBe3",
-      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
     },
     {
       "order": 125000,
@@ -61,7 +61,20 @@
         "symbol": "renderer"
       },
       "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
-      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
+      "to": "vKEsyHFk/UOXNWLhR#F90402mH"
+    },
+    {
+      "order": 21000,
+      "kind": "dependency",
+      "label": "whether this page is a replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "replayAskedOf"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#0ri6Svab",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }
