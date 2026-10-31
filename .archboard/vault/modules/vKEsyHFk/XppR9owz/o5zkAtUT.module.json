@@ -32,19 +32,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 64000,
-      "kind": "dependency",
-      "label": "the --url default",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/protocol/contract/shared-options.ts",
-        "symbol": "DEFAULT_ARCHBOARD_URL"
-      },
-      "id": "vKEsyHFk/XppR9owz#NAzwezpK",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
-    }
-  ]
+  "outgoing": []
 }

@@ -38,7 +38,7 @@
         "symbol": "handleBrowserMessage"
       },
       "id": "vKEsyHFk/Oi6SBIAM#UxINwpn6",
-      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      "to": "vKEsyHFk#OY4JPr8G"
     },
     {
       "order": 15000,
@@ -128,7 +128,7 @@
         "symbol": "parseBoardKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
-      "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+      "to": "vKEsyHFk#9VahN2IU"
     },
     {
       "order": 1008000,
@@ -140,8 +140,21 @@
         "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
         "symbol": "acceptWebSocketConnection"
       },
-      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE",
-      "id": "vKEsyHFk#ImhHUqRg"
+      "id": "vKEsyHFk#ImhHUqRg",
+      "to": "vKEsyHFk/Oi6SBIAM#UNYvWHmE"
+    },
+    {
+      "order": 143000,
+      "kind": "call",
+      "label": "vault-scoped current event stream",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/architecture/architecture-feed.ts",
+        "symbol": "watchArchitectureModel"
+      },
+      "id": "vKEsyHFk/0T9enjhi#tDk3zmci",
+      "to": "vKEsyHFk/0T9enjhi#hLWF9OC5"
     }
   ]
 }

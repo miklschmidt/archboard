@@ -35,36 +35,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 1000,
-      "kind": "http",
-      "label": "semantic commands, on its own checkout's port",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "fetch"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
-      "to": "vKEsyHFk/vKEsyHFk#cPOdAA3f"
-    },
-    {
-      "order": 19000,
-      "kind": "dependency",
-      "label": "imports packages through their exports",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/bin.ts",
-        "symbol": "handOff"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
-      "to": "vKEsyHFk/vKEsyHFk#fssx6Gaq"
-    }
-  ]
+  "outgoing": []
 }
