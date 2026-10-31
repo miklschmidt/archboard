@@ -29,8 +29,6 @@ use crate::scene::{Group, PathStep, Pointer, Purpose, Role, Shape, SubjectKind};
 
 /// How much larger a drill mark stands in a tab seen from far away.
 const FAR_MARK: f64 = 1.2;
-/// How far down a tab its drill mark stands, for its ring to be level with the words.
-const MARK_DROP: f64 = 2.0;
 
 /// What a frame draws: its box, and the box of its tab.
 struct Shapes {
@@ -202,13 +200,9 @@ pub(super) fn line_views(
 ) -> Items {
     let ink = standing_palette(palette, standing);
     let node = &placed.measured.node;
-    let drop = Rect {
-        y: tab.y + MARK_DROP,
-        ..tab
-    };
     let mark = |scale: f64| match appearance.drill {
         None => Items::new(),
-        Some(direction) => corner_drill_mark(drop, direction, &ink.glyph, scale),
+        Some(direction) => corner_drill_mark(tab, direction, &ink.glyph, scale),
     };
     let near = words_in(&placed.measured.runs, tab, &ink);
     let far_runs = tab_runs(TAB_FAR, &node.name, node.code_path.as_deref());

@@ -120,7 +120,7 @@ pub const TAB_HEIGHT: f64 = 36.0;
 /// The room inside a frame's edge tab, on either side of its words.
 pub(crate) const TAB_PADDING: f64 = 12.0;
 /// A tab's chip when the picture is seen near, and from far away.
-pub(crate) const TAB_CHIP: f64 = 24.0;
+pub(crate) const TAB_CHIP: f64 = 22.0;
 pub(crate) const TAB_FAR_CHIP: f64 = 26.0;
 /// The room between a tab's chip and its name.
 pub(crate) const TAB_ICON_GAP: f64 = 8.0;

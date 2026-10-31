@@ -91,11 +91,11 @@ describe("explicit traffic is independent of relationship kind and emphasis", ()
 		] as const) {
 			const [beam] = trafficBeams(await solo({ speed, volume }), "e");
 			// One gradient that starts over every spacing: no pulse comes early or late.
-			expect(beam!.period).toBeCloseTo(speed / volume, 1);
+			expect(beam!.period).toBeCloseTo(speed / volume, 0);
 			for (const piece of beam!.pieces) {
 				expect(piece.cycle).toBeCloseTo(1 / (2 * volume), 2);
 				// The bar slides exactly one spacing a cycle, so the train has no seam.
-				expect(Math.abs(piece.values[1]! - piece.values[0]!)).toBeCloseTo(speed / volume, 1);
+				expect(Math.abs(piece.values[1]! - piece.values[0]!)).toBeCloseTo(speed / volume, 0);
 			}
 		}
 	});

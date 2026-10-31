@@ -55,17 +55,11 @@ for (const layout of LayoutEngineSchema.options) {
 			});
 			const frame = drawing.atlas.nodes["plan"]!;
 			const header = headerCards(drawing).get("plan")!;
-			const card = drawing.atlas.nodes["plain"]!;
-			expect(header.width).toBe(card.width);
 			expect(header.width).toBeLessThan(frame.width);
 			const texts = drawnTexts(drawing.svg);
-			const notes = texts.filter(({ subject, size }) => subject.id === "plan" && size === 11);
-			expect(notes.map((line) => line.text).join(" ")).toBe(RESPONSIBILITY);
-			for (const line of notes) {
-				expect(line.x).toBeGreaterThan(header.x);
-				expect(line.x + line.width).toBeLessThanOrEqual(header.x + header.width);
-				expect(line.y).toBeLessThan(header.y + header.height);
-			}
+			// The tab holds one line, and the file keeps what the frame is for as its title.
+			expect(texts.filter(({ subject, size }) => subject.id === "plan" && size === 11)).toEqual([]);
+			expect(drawing.svg).toContain(`<title>${RESPONSIBILITY}</title>`);
 			const name = (id: string) =>
 				texts.find((run) => run.subject.id === id && run.text === "Durable access")!;
 			expect(name("plan").size).toBeGreaterThan(name("plain").size);

@@ -177,7 +177,7 @@ describe("what one capture is", () => {
 	});
 
 	test("the whole page is captured however far past a display it reaches", async () => {
-		const drawn = await draw(tallChain(40));
+		const drawn = await draw(tallChain(80));
 		expect(drawn.height).toBeGreaterThan(1080);
 		const capture = await owned().rasterize({ ...drawn, scale: 1 });
 		expect(readPngDimensions(capture.png)).toEqual({ width: drawn.width, height: drawn.height });
