@@ -44,7 +44,7 @@
         "symbol": "threadRead"
       },
       "id": "vKEsyHFk/SJ2JMVyz#xOvqFYUE",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 25000,
@@ -58,19 +58,6 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#qdsTcqWf",
       "to": "vKEsyHFk/SJ2JMVyz#sWw1Z9kM"
-    },
-    {
-      "order": 52000,
-      "kind": "rpc",
-      "label": "thread/read and thread/list to classify a link",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/thread-link/classifier.ts",
-        "symbol": "threadRead"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#yhm3JUJQ",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 55000,
