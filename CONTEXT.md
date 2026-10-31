@@ -329,7 +329,7 @@ The top edge of a well: one line and one inner shadow across its whole width, wh
 
 **Edge tab**:
 The one raised line on the edge of a well that names an open module, with its icon and code path.
-Its left side is the side of the frame.
+Its left side is the side of the frame (ADR 0070).
 _Avoid_: header, card (a frame holds none for its own module)
 
 **Foot of a tab**:
@@ -338,7 +338,7 @@ What a frame holds reaches the frame here, and what stands outside reaches it on
 
 **Door**:
 A module outside the open one that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
-One click opens it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it.
+One click opens it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it (ADR 0070).
 _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
@@ -481,7 +481,7 @@ _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
 **Landing whole**:
 How a module's picture first shows: whole in the room of its pane, at no more than a scale of 1.
-A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller.
+A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller (ADR 0070).
 _Avoid_: floor, zoom to fit
 
 **Far view**:
