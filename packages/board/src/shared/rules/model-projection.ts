@@ -90,6 +90,11 @@ function projectScope(
 	const relevant = complete.edges.filter((edge) => inside.has(edge.from) || inside.has(edge.to));
 	const open = new Set(scope === null ? [] : [scope]);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
+	/**
+	 * Every line runs between the drawn ends of its relationship.
+	 * @param edge The relationship.
+	 * @returns Both drawn ends.
+	 */
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const connections = joinedLines(complete, shown, endsOf, open, standing);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
@@ -503,8 +508,8 @@ function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
  * @returns Whether it lies higher, level or deeper.
  */
 function doorWay(byId: ReadonlyMap<string, Node>, door: string, open: string | undefined): DoorWay {
-	const depth = (id: string) => ancestors(byId, id).length;
-	const levels = open === undefined ? 0 : depth(door) - depth(open);
+	const levels =
+		open === undefined ? 0 : ancestors(byId, door).length - ancestors(byId, open).length;
 	if (levels === 0) return "across";
 	return levels < 0 ? "up" : "down";
 }

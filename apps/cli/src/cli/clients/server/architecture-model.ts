@@ -275,7 +275,7 @@ function renderArchitectureFlowOnServer(
 	const query = new URLSearchParams(vault === undefined ? undefined : { vault });
 	for (const [key, value] of Object.entries(input)) {
 		if (value === undefined) continue;
-		for (const entry of Array.isArray(value) ? value : [value]) query.append(key, String(entry));
+		for (const entry of Array.isArray(value) ? value : [value]) query.append(key, entry);
 	}
 	return architectureResult(ArchitectureRenderResultSchema, `/api/architecture/render?${query}`);
 }
