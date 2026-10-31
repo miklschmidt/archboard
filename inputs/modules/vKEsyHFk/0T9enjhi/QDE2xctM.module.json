@@ -45,6 +45,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#pG0y6qDe",
       "to": "vKEsyHFk/0T9enjhi#Mv3r4IsX"
+    },
+    {
+      "order": 130010,
+      "kind": "call",
+      "label": "selectReferenceSubject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/reference-pins.ts",
+        "symbol": "selectReferenceSubject"
+      },
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+      "id": "vKEsyHFk#aDVoQBiD"
     }
   ]
 }
