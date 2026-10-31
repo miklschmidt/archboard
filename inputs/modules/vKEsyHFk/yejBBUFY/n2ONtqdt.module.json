@@ -79,17 +79,12 @@
       "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
     },
     {
-      "order": 70016,
+      "order": 81000,
       "kind": "call",
-      "label": "show shared reading controls",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx",
-        "symbol": "WarningCount"
-      },
-      "id": "vKEsyHFk#5Fd9qq2B",
-      "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN"
+      "label": "change the canonical reading address",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
     }
   ]
 }

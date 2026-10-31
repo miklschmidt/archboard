@@ -3,7 +3,6 @@
   "name": "renderer",
   "kind": "package",
   "responsibility": "Draws a board as a picture, in the browser or under Bun",
-  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer"
@@ -52,6 +51,20 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
       "to": "vKEsyHFk/vKEsyHFk#DmbKboxU"
+    },
+    {
+      "order": 44000,
+      "kind": "dependency",
+      "label": "own the Chromium process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
-  ]
+  ],
+  "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours."
 }

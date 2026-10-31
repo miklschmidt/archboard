@@ -52,7 +52,7 @@
         "symbol": "interrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#rCIdAV06",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 70014,
@@ -90,7 +90,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk#tBB7m1RP"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

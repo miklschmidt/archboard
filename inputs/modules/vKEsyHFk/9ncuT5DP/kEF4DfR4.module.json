@@ -29,7 +29,7 @@
         "symbol": "turnInterrupt"
       },
       "id": "vKEsyHFk/SJ2JMVyz#k5kBhD3O",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 31000,
@@ -69,6 +69,19 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#incCs60x",
       "to": "vKEsyHFk/9ncuT5DP#SsiEBdik"
+    },
+    {
+      "order": 61000,
+      "kind": "rpc",
+      "label": "turn/interrupt the turn each stopped workhorse runs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/sessions/workhorses.ts",
+        "symbol": "turnInterrupt"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#j1PGjoTR",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 62000,
