@@ -59,6 +59,32 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
       "to": "vKEsyHFk/vKEsyHFk#zs8yTQLI"
+    },
+    {
+      "order": 43000,
+      "kind": "dependency",
+      "label": "own the Codex process group",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
+        "symbol": "createCodexProcessGroupOperations"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#f9xJZD6m",
+      "to": "vKEsyHFk#LmqdsvuN"
+    },
+    {
+      "order": 101570,
+      "kind": "call",
+      "label": "codexRestartDelayMs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/processes/process-child.ts",
+        "symbol": "codexRestartDelayMs"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
+      "id": "vKEsyHFk#8aslmzLi"
     }
   ]
 }

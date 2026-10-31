@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/hooks"
   },
-  "parent": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
   "schemaVersion": 1,
   "id": "vKEsyHFk#5K2hAD55",
-  "outgoing": []
+  "parent": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+  "outgoing": [
+    {
+      "order": 102830,
+      "kind": "call",
+      "label": "projectTimelineTurns",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/hooks/runtime/use-agent-runtime.ts",
+        "symbol": "projectTimelineTurns"
+      },
+      "to": "vKEsyHFk#DF6y1aoD",
+      "id": "vKEsyHFk#OnjiUpIM"
+    },
+    {
+      "order": 102840,
+      "kind": "call",
+      "label": "frameClock",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/hooks/subtitles/use-subtitle-fade.ts",
+        "symbol": "frameClock"
+      },
+      "to": "vKEsyHFk/yejBBUFY#rouptSyK",
+      "id": "vKEsyHFk#mC0LcaRV"
+    }
+  ]
 }

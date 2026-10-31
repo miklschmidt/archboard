@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Q0kdaFsI",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 102210,
+      "kind": "call",
+      "label": "dynamicApprovalHashForCanonicalJson",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/effects/effect-values.ts",
+        "symbol": "dynamicApprovalHashForCanonicalJson"
+      },
+      "to": "vKEsyHFk#862bHERd",
+      "id": "vKEsyHFk#cBJhdjmN"
+    },
+    {
+      "order": 102220,
+      "kind": "call",
+      "label": "isCodexThreadStatusType",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/dynamic-tools/vocabulary.ts",
+        "symbol": "isCodexThreadStatusType"
+      },
+      "to": "vKEsyHFk#vzaTHSY6",
+      "id": "vKEsyHFk#mYnsa8GU"
+    },
+    {
+      "order": 102280,
+      "kind": "call",
+      "label": "RecordingNarrationSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/host/archboard-voice.ts",
+        "symbol": "RecordingNarrationSchema"
+      },
+      "to": "vKEsyHFk#LBJHXq9N",
+      "id": "vKEsyHFk#1Hv0zKSz"
+    }
+  ]
 }

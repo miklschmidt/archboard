@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/services/entry.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "schemaVersion": 1,
   "id": "vKEsyHFk#uWKMwBj3",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 101960,
+      "kind": "call",
+      "label": "errnoCode",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/services/entry.ts",
+        "symbol": "errnoCode"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#lRRlws6b"
+    }
+  ]
 }

@@ -10,5 +10,45 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#MCVEWRGl",
   "parent": "vKEsyHFk#F0aENCVG",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 100660,
+      "kind": "call",
+      "label": "readSemanticBoardConfiguration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/timing.ts",
+        "symbol": "readSemanticBoardConfiguration"
+      },
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe",
+      "id": "vKEsyHFk#NTvLLpg6"
+    },
+    {
+      "order": 100670,
+      "kind": "call",
+      "label": "parseSemanticBoard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/timing.ts",
+        "symbol": "parseSemanticBoard"
+      },
+      "to": "vKEsyHFk#ARWidvE7",
+      "id": "vKEsyHFk#sG2tSAJ0"
+    },
+    {
+      "order": 100680,
+      "kind": "call",
+      "label": "renderArchitecture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/timing.ts",
+        "symbol": "renderArchitecture"
+      },
+      "to": "vKEsyHFk#4KaVhppt",
+      "id": "vKEsyHFk#NvqlAmnX"
+    }
+  ]
 }

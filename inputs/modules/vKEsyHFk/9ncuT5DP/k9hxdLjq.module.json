@@ -32,7 +32,7 @@
         "symbol": "createProductionHooks"
       },
       "id": "vKEsyHFk#DGC0nyAH",
-      "to": "vKEsyHFk/9ncuT5DP#wkvnbMs8"
+      "to": "vKEsyHFk/wAHh0HTa#xtHoCCnF"
     },
     {
       "order": 80000,
@@ -72,6 +72,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#ZzCMx2ZI",
       "to": "vKEsyHFk/9ncuT5DP#8yOrpoeg"
+    },
+    {
+      "order": 101800,
+      "kind": "call",
+      "label": "captureWorkbenchInstructions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/workbench.ts",
+        "symbol": "captureWorkbenchInstructions"
+      },
+      "to": "vKEsyHFk#voS2ymgi",
+      "id": "vKEsyHFk#UiKLn78N"
     }
   ]
 }

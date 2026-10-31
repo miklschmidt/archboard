@@ -45,7 +45,7 @@
         "symbol": "createCodexWorkbenchGateway"
       },
       "id": "vKEsyHFk/9ncuT5DP#nw9nYSMn",
-      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
+      "to": "vKEsyHFk#7qU0mXVq"
     },
     {
       "order": 37000,
@@ -71,7 +71,33 @@
         "symbol": "createCodexTransport"
       },
       "id": "vKEsyHFk/9ncuT5DP#7Hqt9ysu",
-      "to": "vKEsyHFk/wAHh0HTa#ql0DevMk"
+      "to": "vKEsyHFk#iFpY1dCh"
+    },
+    {
+      "order": 62000,
+      "kind": "dependency",
+      "label": "own Codex threads and negotiate realtime voice",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "createCodexProcess"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#8AmcrRb6",
+      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw"
+    },
+    {
+      "order": 101760,
+      "kind": "call",
+      "label": "createIdentityLedger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "createIdentityLedger"
+      },
+      "to": "vKEsyHFk#vzaTHSY6",
+      "id": "vKEsyHFk#UHCPVSY0"
     }
   ]
 }

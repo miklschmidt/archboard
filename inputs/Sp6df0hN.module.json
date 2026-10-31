@@ -7,8 +7,36 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts"
   },
-  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Sp6df0hN",
-  "outgoing": []
+  "parent": "vKEsyHFk/9ncuT5DP#u2LFaG7R",
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "call",
+      "label": "the link of this tab session and the shown checkout",
+      "description": "readWorkhorseBinding derives the workhorse key, then calls options.threadLink.read(key). The key helper does not read the link.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "symbol": "readWorkhorseBinding"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#3C7aLx0q",
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0"
+    },
+    {
+      "order": 94000,
+      "kind": "call",
+      "label": "start admitted voice session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "symbol": "onBrowserDisconnect"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#IubzjsMw",
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    }
+  ]
 }

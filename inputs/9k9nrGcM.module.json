@@ -7,8 +7,74 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/operations/runs/replay.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#9k9nrGcM",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "data",
+      "label": "a fixture's talk, read back to replay",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "readTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#RwZDQDsa",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 35000,
+      "kind": "dependency",
+      "label": "keep a run's talks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "keepTalk"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#U1k5hdA7",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 101990,
+      "kind": "call",
+      "label": "addressedVariant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "addressedVariant"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#2A56spI3"
+    },
+    {
+      "order": 102000,
+      "kind": "call",
+      "label": "framesOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "framesOf"
+      },
+      "to": "vKEsyHFk#LBJHXq9N",
+      "id": "vKEsyHFk#JIeAbOB8"
+    },
+    {
+      "order": 102010,
+      "kind": "call",
+      "label": "recordingContainerOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/replay.ts",
+        "symbol": "recordingContainerOf"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#L1cYIenF",
+      "id": "vKEsyHFk#a2E7h5tQ"
+    }
+  ]
 }

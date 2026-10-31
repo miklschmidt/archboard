@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Q8VBl3B6",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "outgoing": [
+    {
+      "order": 101350,
+      "kind": "call",
+      "label": "repoRootOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "repoRootOf"
+      },
+      "to": "vKEsyHFk#3s6sehzk",
+      "id": "vKEsyHFk#kpYBoB7B"
+    }
+  ]
 }

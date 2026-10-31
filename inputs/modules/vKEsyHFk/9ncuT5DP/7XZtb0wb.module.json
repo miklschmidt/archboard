@@ -61,24 +61,7 @@
         "symbol": "turnStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#8xJt3Mud",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
-    },
-    {
-      "order": 22000,
-      "kind": "rpc",
-      "label": "turn/start when idle, turn/steer",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
-        "symbol": "turnStart"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#rOBpux5i",
-      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
     },
     {
       "order": 27000,
@@ -91,7 +74,7 @@
         "symbol": "createTextUserInput"
       },
       "id": "vKEsyHFk/SJ2JMVyz#iwsP4kmN",
-      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
+      "to": "vKEsyHFk#CmZSqnNN"
     },
     {
       "order": 35000,
@@ -144,6 +127,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#0ULeTEej",
       "to": "vKEsyHFk/9ncuT5DP#8CuNvBuG"
+    },
+    {
+      "order": 101610,
+      "kind": "call",
+      "label": "createWorkbenchAdditionalContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/operations/workhorse-operations/direct-delegate.ts",
+        "symbol": "createWorkbenchAdditionalContext"
+      },
+      "to": "vKEsyHFk#HJDEcrXi",
+      "id": "vKEsyHFk#xgZDV5OC"
     }
   ]
 }

@@ -65,7 +65,7 @@
         "symbol": "liveWorkhorseCheckouts"
       },
       "id": "vKEsyHFk/Oi6SBIAM#aBvYXyej",
-      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
+      "to": "vKEsyHFk#riI8UZMG"
     },
     {
       "order": 72000,
@@ -79,6 +79,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#5odPEFwu",
       "to": "vKEsyHFk/6E6hL0Zk#bqxbYzRT"
+    },
+    {
+      "order": 102600,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#UAlBo6ll"
     }
   ]
 }

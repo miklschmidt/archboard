@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/schemas"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#FIRKrY5U",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 102110,
+      "kind": "call",
+      "label": "SemanticPolicySchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/fixture.ts",
+        "symbol": "SemanticPolicySchema"
+      },
+      "to": "vKEsyHFk#kPbBQRAH",
+      "id": "vKEsyHFk#beX2ZgLJ"
+    },
+    {
+      "order": 102120,
+      "kind": "call",
+      "label": "partial",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/fixture.ts",
+        "symbol": "SemanticPolicySchema.partial"
+      },
+      "to": "vKEsyHFk#KFUk3iKu",
+      "id": "vKEsyHFk#lRWA6vfY"
+    }
+  ]
 }

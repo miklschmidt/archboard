@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills/src/runtime/operations/runs/laying.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#H5cQcEa6",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#PxnjFfV3",
+  "outgoing": [
+    {
+      "order": 55000,
+      "kind": "dependency",
+      "label": "validate canonical evaluation inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/laying.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "to": "vKEsyHFk#ZsEk7Dg8"
+    }
+  ]
 }

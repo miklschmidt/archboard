@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts"
   },
-  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#qlkTZdOc",
-  "outgoing": []
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "thread/start its body",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/qKGcB6vZ#uWKB5oF9",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    },
+    {
+      "order": 7000,
+      "kind": "rpc",
+      "label": "thread/start and settings for the coordinator",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts",
+        "symbol": "threadStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#XAd3chIR",
+      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+    }
+  ]
 }

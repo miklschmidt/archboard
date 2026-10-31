@@ -12,19 +12,6 @@
   "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "outgoing": [
     {
-      "order": 45000,
-      "kind": "event",
-      "description": "one socket per page",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "acceptWebSocketConnection"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
-      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
-    },
-    {
       "order": 14000,
       "kind": "event",
       "label": "one socket per page, naming its vault",
@@ -49,6 +36,33 @@
       },
       "id": "vKEsyHFk/yejBBUFY#w9Qrw2Xe",
       "to": "vKEsyHFk/yejBBUFY#aG0rP4SX"
+    },
+    {
+      "order": 45000,
+      "kind": "event",
+      "description": "one socket per page",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "acceptWebSocketConnection"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#ENymHNDK",
+      "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
+    },
+    {
+      "order": 33000,
+      "kind": "event",
+      "label": "each socket names its tab, and its close forgets it",
+      "description": "The browser reaches the handled WebSocket route. websocket-connection.ts calls noteTabSession inside the Archboard server; no browser imports the private tab-sessions file.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/tab-sessions.ts",
+        "symbol": "noteTabSession"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#egDoJ9fH",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     }
   ]
 }

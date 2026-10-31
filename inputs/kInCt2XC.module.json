@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts"
   },
-  "parent": "vKEsyHFk/XppR9owz#iIJ5MRhi",
   "schemaVersion": 1,
   "id": "vKEsyHFk#kInCt2XC",
-  "outgoing": []
+  "parent": "vKEsyHFk/XppR9owz#iIJ5MRhi",
+  "outgoing": [
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "send each operation as JSON",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#k8S5STpk",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 101920,
+      "kind": "call",
+      "label": "isRecord",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "isRecord"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#kuZRvTu2"
+    }
+  ]
 }

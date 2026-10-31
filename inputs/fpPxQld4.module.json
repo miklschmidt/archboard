@@ -7,8 +7,61 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/shared"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#fpPxQld4",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "outgoing": [
+    {
+      "order": 102630,
+      "kind": "call",
+      "label": "ArchitectureModelReadSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/shared/schemas/architecture-explanation.ts",
+        "symbol": "ArchitectureModelReadSchema"
+      },
+      "to": "vKEsyHFk#tHTVTbMS",
+      "id": "vKEsyHFk#oP2qpuC4"
+    },
+    {
+      "order": 102640,
+      "kind": "call",
+      "label": "options",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/shared/schemas/architecture-explanation.ts",
+        "symbol": "ArchitectureModelReadSchema.options"
+      },
+      "to": "vKEsyHFk#KFUk3iKu",
+      "id": "vKEsyHFk#Pdra6RUD"
+    },
+    {
+      "order": 102650,
+      "kind": "call",
+      "label": "boundedText",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/shared/schemas/voice-presentation.ts",
+        "symbol": "boundedText"
+      },
+      "to": "vKEsyHFk#862bHERd",
+      "id": "vKEsyHFk#ByTuz3LR"
+    },
+    {
+      "order": 102660,
+      "kind": "call",
+      "label": "RecordingNarrationSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/shared/schemas/voice-presentation.ts",
+        "symbol": "RecordingNarrationSchema"
+      },
+      "to": "vKEsyHFk#LBJHXq9N",
+      "id": "vKEsyHFk#MOMjjWQm"
+    }
+  ]
 }

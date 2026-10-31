@@ -7,8 +7,100 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/services"
   },
-  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#CcW5NyRf",
-  "outgoing": []
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "outgoing": [
+    {
+      "order": 101720,
+      "kind": "call",
+      "label": "createVoiceToolset",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/bindings.ts",
+        "symbol": "createVoiceToolset"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6",
+      "id": "vKEsyHFk#fmfIdmFf"
+    },
+    {
+      "order": 101730,
+      "kind": "call",
+      "label": "createIdentityLedger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createIdentityLedger"
+      },
+      "to": "vKEsyHFk#vzaTHSY6",
+      "id": "vKEsyHFk#ix7AAmg5"
+    },
+    {
+      "order": 101740,
+      "kind": "call",
+      "label": "createCodexTransport",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexTransport"
+      },
+      "to": "vKEsyHFk#iFpY1dCh",
+      "id": "vKEsyHFk#NVDWZ3Ll"
+    },
+    {
+      "order": 101750,
+      "kind": "call",
+      "label": "createCodexSession",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/factories.ts",
+        "symbol": "createCodexSession"
+      },
+      "to": "vKEsyHFk#HGsIg1Cl",
+      "id": "vKEsyHFk#WZj16NEC"
+    },
+    {
+      "order": 101770,
+      "kind": "call",
+      "label": "cloneAndFreeze",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/host/default.ts",
+        "symbol": "cloneAndFreeze"
+      },
+      "to": "vKEsyHFk#FIXGbdeH",
+      "id": "vKEsyHFk#fQVh3kvq"
+    },
+    {
+      "order": 101780,
+      "kind": "call",
+      "label": "captureExecutionContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/host/default.ts",
+        "symbol": "captureExecutionContext"
+      },
+      "to": "vKEsyHFk#h6JYbUk2",
+      "id": "vKEsyHFk#cxjU3h7R"
+    },
+    {
+      "order": 101790,
+      "kind": "call",
+      "label": "CodexProcessError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/owner/owner-state.ts",
+        "symbol": "CodexProcessError"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#9diqPrFw",
+      "id": "vKEsyHFk#N1J8pEUL"
+    }
+  ]
 }

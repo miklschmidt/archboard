@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/rules"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
   "schemaVersion": 1,
   "id": "vKEsyHFk#woGD7QGm",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 54000,
+      "kind": "dependency",
+      "label": "the board addresses of panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/rules/panes.ts",
+        "symbol": "paneBoardAddress"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#o56610zg",
+      "to": "vKEsyHFk#rasAaxs6"
+    }
+  ]
 }
