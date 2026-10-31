@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",
       "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
+    },
+    {
+      "order": 130000,
+      "kind": "dependency",
+      "label": "the binding schema of a module",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "to": "vKEsyHFk#NVlMWCWO",
+      "id": "vKEsyHFk#PatiT3PG"
     }
   ]
 }
