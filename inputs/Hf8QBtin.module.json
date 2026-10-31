@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/schemas/model.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Hf8QBtin",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+  "outgoing": [
+    {
+      "order": 186000,
+      "kind": "call",
+      "label": "FlowCollectionSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model.ts",
+        "symbol": "ArchitectureModelSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#DbjpaJZI",
+      "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
+    }
+  ]
 }
