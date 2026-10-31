@@ -60,6 +60,15 @@ pub(super) fn halo(
     )
 }
 
+/// Where a participant's chip stands, from the top of its card.
+pub(super) fn sequence_chip_top(has_note: bool, height: f64) -> f64 {
+    if has_note {
+        CARD_PADDING_X
+    } else {
+        (height - ICON_CHIP_SIZE) / 2.0
+    }
+}
+
 /// One participant's card in a sequence.
 pub(super) fn paint_card(
     ctx: &Ctx<'_>,
@@ -102,11 +111,7 @@ pub(super) fn paint_card(
             })
             .collect(),
     );
-    let chip_y = if has_note {
-        rect.y + CARD_PADDING_X
-    } else {
-        rect.y + (rect.height - ICON_CHIP_SIZE) / 2.0
-    };
+    let chip_y = rect.y + sequence_chip_top(has_note, rect.height);
     let part = Part {
         kind: SubjectKind::Node,
         node: &placed.node,

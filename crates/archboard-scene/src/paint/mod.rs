@@ -4,7 +4,6 @@
 use std::collections::{BTreeMap, HashSet};
 
 use crate::drawing::{Node, Painted, ReadingDirection, TextRole};
-use crate::geometry::Rect;
 use crate::measure::{FarCard, far_scale_for};
 use crate::request::{ArchitecturePicture, PaintRequest, Picture, SequencePicture, Standing};
 use crate::scene::{Atlas, Boxes, Definition, Head, HeadInk, Item, MarkerId, Scene};
@@ -150,16 +149,11 @@ fn far_scale(picture: &ArchitecturePicture, page: &Painted) -> f64 {
                     .count(),
                 width: card.bounds.width,
                 height: card.bounds.height,
+                chip_top: measured_cards::name_top(card),
             }
         })
         .collect();
-    let box_of = Rect {
-        x: 0.0,
-        y: 0.0,
-        width: page.drawing.width,
-        height: page.drawing.height,
-    };
-    far_scale_for(&far, box_of)
+    far_scale_for(&far)
 }
 
 /// The one type scale of a sequence's far cards.
@@ -176,15 +170,13 @@ fn sequence_far_scale(picture: &SequencePicture) -> f64 {
             lines: 1,
             width: column.card.bounds.width,
             height: column.card.bounds.height,
+            chip_top: cards::sequence_chip_top(
+                !column.card.notes.is_empty(),
+                column.card.bounds.height,
+            ),
         })
         .collect();
-    let page = Rect {
-        x: 0.0,
-        y: 0.0,
-        width: laid.width,
-        height: laid.height,
-    };
-    far_scale_for(&cards, page)
+    far_scale_for(&cards)
 }
 
 /// The one type scale of a picture's far cards.

@@ -97,45 +97,35 @@ fn tags_of<'a>(part: &Part<'a>) -> &'a [GroupTag] {
 }
 
 /// What a part's far view reads of it.
-fn far_card_of<'a>(part: &'a Part<'_>, names: &'a [&'a str], near_lines: usize) -> FarCard<'a> {
+fn far_card_of<'a>(part: &'a Part<'_>, names: &'a [&'a str], near: &NearCard) -> FarCard<'a> {
     FarCard {
         name: &part.node.name,
         path: gist_of(part.node.code_path.as_deref()),
         gist: gist_of(part.node.responsibility.as_deref()),
         tags: names,
         drills: part.appearance.drill.is_some(),
-        lines: near_lines,
+        lines: near.lines,
         width: part.rect.width,
         height: part.rect.height,
+        chip_top: near.chip_y - part.rect.y,
     }
 }
 
-/// What a card draws far: its words, where its chip stands, and its tags. A box
-/// too small for its far words keeps its near ones.
+/// What a card draws far: its words and its tags. A box too small for its far
+/// words keeps its near ones.
 fn far_view_of(
     far: Option<FarWords>,
     rect: Rect,
     near: &NearCard,
     ink: &FarInk<'_>,
-) -> (Words, Place, Items) {
+) -> (Words, Items) {
     let Some(far) = far else {
-        let chip = Place {
-            x: near.chip_x,
-            y: near.chip_y,
-            size: ICON_CHIP_SIZE,
-        };
-        return (near.words.clone(), chip, Items::new());
-    };
-    let (x, y, size) = far.chip;
-    let chip = Place {
-        x: rect.x + x,
-        y: rect.y + y,
-        size,
+        return (near.words.clone(), Items::new());
     };
     let tags = far.tags.map_or_else(Items::new, |(x, y)| {
         tag_marks(ink.tags, point(rect.x + x, rect.y + y), ink.scale)
     });
-    (words_in(&far.runs, rect, ink.words), chip, tags)
+    (words_in(&far.runs, rect, ink.words), tags)
 }
 
 /// What a far view is drawn with.
@@ -145,7 +135,7 @@ struct FarInk<'a> {
     words: &'a Palette,
 }
 
-/// A part's near and far views, and the kind chip they share.
+/// A part's near and far views, and the kind chip they share, which stands still.
 pub(super) fn paint_card_views(
     ctx: &Ctx<'_>,
     part: &Part<'_>,
@@ -165,9 +155,9 @@ pub(super) fn paint_card_views(
         scale: ctx.far_scale,
         words: &words,
     };
-    let far = far_words(&far_card_of(part, &names, near.lines), ctx.far_scale);
-    let (far_block, far_chip, far_tags) = far_view_of(far, rect, &near, &ink);
-    let near_chip = Place {
+    let far = far_words(&far_card_of(part, &names, &near), ctx.far_scale);
+    let (far_block, far_tags) = far_view_of(far, rect, &near, &ink);
+    let chip = Place {
         x: near.chip_x,
         y: near.chip_y,
         size: ICON_CHIP_SIZE,
@@ -184,7 +174,7 @@ pub(super) fn paint_card_views(
         ICON_SIZE,
     );
     lines(vec![
-        shared_chip(icon, near_chip, far_chip),
+        shared_chip(icon, chip, chip),
         near_layer(concat(vec![
             moving_words(near.words.items, near.words.anchor, far_block.anchor),
             tag_row(tags, near_tags, 1.0),

@@ -132,8 +132,8 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 7. A group shows on its cards as a bright tag at the top right, and the cards of a group stand together. No
    frame is drawn round a group. Groups close the legend as the same tags with no switch.
 8. A card sets its name, then its responsibility, then its code path at its foot, with the folders dimmed and the
-   file bright. A far card has the build of a near card: its name at the top and its path at the foot, at the one far
-   type scale of its picture. Between them stands one line less of its responsibility than its box holds. A group shows
+   file bright. A far card has the padding, the chip and the build of a near card: its name beside the chip and its path at
+   the foot, at one fixed far type scale on every picture. The chip does not move between the views. Between them stands one line less of its responsibility than its box holds. A group shows
    as a flat spot of its color at the top right, so a tag never takes the path's room. A long path keeps its tail. An unbound container shows its
    shared folder with a count, for example `apps/web/src/ui · 14 paths`, so it reads as a span and not as ownership.
    A path that does not resolve wears the warning mark. An external module shows no path. A card is 260 wide, or

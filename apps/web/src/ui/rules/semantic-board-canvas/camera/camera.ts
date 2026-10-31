@@ -93,9 +93,8 @@ const FOCUS_MAX_SCALE = 1.5;
 const CONTEXT_SHARE = 0.9;
 
 /**
- * The largest scale a reading lands at. A module's picture lands whole, and sets
- * its far cards so that they read at the scale it lands at. Deliberate zoom keeps
- * its full range.
+ * The largest scale a reading lands at. A module's picture lands whole.
+ * Deliberate zoom keeps its full range.
  */
 const LANDING_CEILING = 1;
 
@@ -105,8 +104,7 @@ const FLOW_FLOOR = 0.6;
 /**
  * Below this magnification the picture is seen from far away: a card's name,
  * drawn at 14 units, falls under 12 px on screen. The picture then draws each
- * card's name larger, with a larger tile for its kind and its code path or the
- * start of its responsibility set to read.
+ * card's words a little larger and says less of its responsibility.
  */
 const FAR_SCALE = 12 / 14;
 

@@ -306,10 +306,10 @@ its group, or of its kind when it has no group, in both themes. Its arrow
 points up, sideways or down by where its module lies in the tree.
 The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
 folders dimmed and its file bright, as far from the foot as the name stands from
-the top. Below a scale of 0.857 a picture draws its far view: one type scale for
-every card of the picture, the build of a near card with one line less of its
-responsibility than its box holds, a flat spot in a group's color for its tag,
-and the doors and the tab still readable.
+the top. Below a scale of 0.857 a picture draws its far view: one fixed type scale
+of 18 units for a name, on every picture, with the padding, the chip and the build
+of a near card, one line less of its responsibility than its box holds, a flat spot
+in a group's color for its tag, and the doors and the tab still readable.
 Each
 shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
 come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A comparison marks a part by its outline: a

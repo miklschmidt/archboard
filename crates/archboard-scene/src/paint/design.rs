@@ -169,8 +169,6 @@ pub const LANDING_ROOM: (f64, f64) = (
     SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH - RIGHT_PANEL_WIDTH - 2.0 * FIT_MARGIN,
     955.0,
 );
-/// The scale below which a picture draws its far view: a name of 14 units reads 12 px there.
-pub(crate) const FAR_START: f64 = 12.0 / 14.0;
 /// The room between an architecture card's edge and its chip and words.
 pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.

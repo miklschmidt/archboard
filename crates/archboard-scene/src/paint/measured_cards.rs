@@ -12,7 +12,7 @@ use crate::paint::standing::standing_palette;
 use crate::scene::ClipId;
 
 /// Where a measured name starts, from the top of its box: the chip stands level with it.
-fn name_top(placed: &Node) -> f64 {
+pub(super) fn name_top(placed: &Node) -> f64 {
     let runs = &placed.measured.runs;
     runs.first()
         .map_or(ARCHITECTURE_CARD_PADDING, |name| name.y - name.font_size)

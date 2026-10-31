@@ -190,8 +190,14 @@ describe("a part's near and far views", () => {
 				expect(chip!.drawn[key]).toBeCloseTo(chip!.near[key], 2);
 			}
 			expect(chip!.near.scale).toBeLessThanOrEqual(1);
-			// From far it grows.
-			expect(chip!.far.scale).toBeGreaterThan(chip!.near.scale);
+			// A card's chip stands still. A header's grows from far.
+			if (part === "card") {
+				for (const key of ["x", "y", "scale"] as const) {
+					expect(chip!.far[key]).toBeCloseTo(chip!.near[key], 2);
+				}
+			} else {
+				expect(chip!.far.scale).toBeGreaterThan(chip!.near.scale);
+			}
 
 			// Each view's words go to where the other view's words start, at the other's size.
 			expect(views.words).toHaveLength(2);

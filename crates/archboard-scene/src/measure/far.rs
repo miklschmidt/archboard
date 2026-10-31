@@ -1,39 +1,36 @@
-//! What a card says from far away, and the one type scale a picture sets every
-//! far card at. A card keeps its box and the build of its near view: the name at
-//! the top, the path at the foot. The scale is the largest at which every card of
-//! the picture holds its name and its path, and the room between them takes one
-//! line less of its responsibility than it could hold, so a card never reads full.
+//! What a card says from far away, at the one type scale of every far card. A
+//! card keeps its box, its padding, its chip and the build of its near view: the
+//! name beside the chip, the path at the foot. The scale is fixed, so words stay
+//! in proportion to their card wherever a picture lands, and the room between
+//! them takes one line less of its responsibility than it could hold, so a card
+//! never reads full.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
-use crate::geometry::Rect;
 use crate::js::{self, js_max, js_min};
 use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
 use crate::paint::design::{
-    ARCHITECTURE_CARD_PADDING, CARD_NOTE_FONT, CARD_THICKNESS, DRILL_MARK_ROOM, FAR_START, FAR_TAG,
-    ICON_CHIP_SIZE, LANDING_ROOM, PART_NOTE_SIZE, PART_PATH_SIZE, PART_TITLE_SIZE, TAG_BESIDE,
-    TAG_GAP,
+    ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, CARD_NOTE_FONT, CARD_THICKNESS,
+    DRILL_MARK_ROOM, FAR_TAG, ICON_CHIP_SIZE, PART_NOTE_SIZE, PART_PATH_SIZE, PART_TITLE_SIZE,
+    TAG_BESIDE, TAG_GAP,
 };
 
-/// The scale of a far card a picture that lands near is set at, for a reader who
-/// zooms out: a name of 16 units, 12 px at a scale of 0.75.
-const FAR_LEAST: f64 = 16.0 / PART_TITLE_SIZE;
+/// The scale of every far card: a name of 18 units, 12 px at a scale of 2/3.
+const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// Below this scale a card's far words are no larger than its near ones.
 const FAR_FLOOR: f64 = 1.0;
 /// How finely a picture's scale is sought: half a unit of a name.
 const FAR_STEP: f64 = 0.5 / PART_TITLE_SIZE;
-/// The room a far card keeps at its sides, above and below its words.
-const PAD_X: f64 = ARCHITECTURE_CARD_PADDING;
-const PAD_Y: f64 = 10.0;
+/// The room a far card keeps round its words: its near padding.
+const PAD: f64 = ARCHITECTURE_CARD_PADDING;
+/// Where a far card's words start across its box: where its near words start.
+const WORDS_X: f64 = PAD + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
 /// The steps from one line to the next, per unit of the size of their words.
 const NAME_LINE: f64 = 1.15;
 const GIST_LINE: f64 = 1.3;
 const FOOT_LINE: f64 = 1.2;
 /// The room between the name, the responsibility and the foot of a far card.
 const ROW_GAP: f64 = 4.0;
-/// A far chip's side, and the room beside it, per unit of its name's size.
-const CHIP: f64 = 1.6;
-const CHIP_GAP: f64 = 0.45;
 /// How far below the middle of a line its baseline stands, per unit of its size.
 const MIDDLE: f64 = 0.35;
 /// The most lines a far name takes, unless the near card sets it on more.
@@ -58,6 +55,8 @@ pub struct FarCard<'a> {
     pub width: f64,
     /// How tall its box stands.
     pub height: f64,
+    /// Where its chip stands, from the top of its box.
+    pub chip_top: f64,
 }
 
 /// A card's far words at one scale, placed from the top left of its box.
@@ -65,8 +64,6 @@ pub struct FarCard<'a> {
 pub struct FarWords {
     /// The words, the first line of the name first.
     pub runs: Vec<TextRun>,
-    /// Where the chip stands and its side.
-    pub chip: (f64, f64, f64),
     /// Where the row of group marks ends on the right and its middle, at this scale.
     pub tags: Option<(f64, f64)>,
 }
@@ -215,8 +212,6 @@ struct Sizes {
     name: f64,
     note: f64,
     path: f64,
-    chip: f64,
-    x: f64,
     /// The room its words have across, its name's room beside its group marks,
     /// and the room its box has down.
     room: f64,
@@ -227,11 +222,9 @@ struct Sizes {
 impl Sizes {
     fn of(card: &FarCard<'_>, scale: f64) -> Sizes {
         let name = PART_TITLE_SIZE * scale;
-        let height = card.height - CARD_THICKNESS - PAD_Y * 2.0;
-        let chip = js_min(name * CHIP, js_min(height, ICON_CHIP_SIZE * scale));
-        let x = PAD_X + chip + name * CHIP_GAP;
+        let height = card.height - CARD_THICKNESS - card.chip_top - PAD;
         let marked = if card.drills { DRILL_MARK_ROOM } else { 0.0 };
-        let room = card.width - x - PAD_X - marked;
+        let room = card.width - WORDS_X - PAD - marked;
         let beside = if card.tags.is_empty() {
             0.0
         } else {
@@ -241,8 +234,6 @@ impl Sizes {
             name,
             note: PART_NOTE_SIZE * scale,
             path: PART_PATH_SIZE * scale,
-            chip,
-            x,
             room,
             name_room: room - beside,
             height,
@@ -268,15 +259,7 @@ struct Stack {
     /// How far the name stands below the top of the chip it is set beside.
     lead: f64,
     named: f64,
-    told: f64,
     foot: f64,
-}
-
-impl Stack {
-    /// How tall it stands.
-    fn height(&self) -> f64 {
-        self.lead + self.named + self.told + foot_room(self.foot) + self.foot
-    }
 }
 
 /// The room above a foot row, when there is one.
@@ -312,24 +295,18 @@ fn stacked(card: &FarCard<'_>, sizes: Sizes) -> Option<Stack> {
     let names = name_lines(card.name, sizes.name, sizes.name_room, most)?;
     let foot = foot_of(card, sizes);
     let line = sizes.name * NAME_LINE;
-    let lead = js_max(0.0, (sizes.chip - line) / 2.0);
+    let lead = js_max(0.0, (ICON_CHIP_SIZE - line) / 2.0);
     let named = names.len() as f64 * line;
     let spare = sizes.height - lead - named - foot - foot_room(foot);
     if spare < 0.0 {
         return None;
     }
     let gists = gist_in(card, sizes, spare);
-    let told = if gists.is_empty() {
-        0.0
-    } else {
-        ROW_GAP + gists.len() as f64 * sizes.note * GIST_LINE
-    };
     Some(Stack {
         names,
         gists,
         lead,
         named,
-        told,
         foot,
     })
 }
@@ -361,22 +338,16 @@ fn block_runs(lines: &[String], style: Style, x: f64, top: f64) -> Vec<TextRun> 
 fn foot_path(card: &FarCard<'_>, sizes: Sizes, middle: f64) -> Vec<TextRun> {
     card.path.map_or_else(Vec::new, |path| {
         let baseline = middle + sizes.path * MIDDLE;
-        path_runs(path, sizes.room, sizes.x, baseline, sizes.path)
+        path_runs(path, sizes.room, WORDS_X, baseline, sizes.path)
     })
 }
 
 /// A card's far words at one scale, or none where they do not fit its box. As on
-/// a near card the name stands at the top and the path at the foot. A card with
-/// no path centers its words, so it keeps no empty band.
+/// a near card the name stands beside the chip and the path at the foot.
 pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
     let sizes = Sizes::of(card, scale);
     let stack = stacked(card, sizes)?;
-    let block = stack.height();
-    let top = match card.path {
-        Some(_) => PAD_Y,
-        None => PAD_Y + (sizes.height - block) / 2.0,
-    };
-    let name_top = top + stack.lead;
+    let name_top = card.chip_top + stack.lead;
     let names = Style {
         font: TITLE.font,
         size: sizes.name,
@@ -389,31 +360,30 @@ pub fn far_words(card: &FarCard<'_>, scale: f64) -> Option<FarWords> {
         line: sizes.note * GIST_LINE,
         role: TextRole::Note,
     };
-    let mut runs = block_runs(&stack.names, names, sizes.x, name_top);
+    let mut runs = block_runs(&stack.names, names, WORDS_X, name_top);
     runs.extend(block_runs(
         &stack.gists,
         notes,
-        sizes.x,
+        WORDS_X,
         name_top + stack.named + ROW_GAP,
     ));
-    let foot_top = PAD_Y + sizes.height - stack.foot;
+    let foot_top = card.chip_top + sizes.height - stack.foot;
     runs.extend(foot_path(card, sizes, foot_top + stack.foot / 2.0));
     Some(FarWords {
         runs,
-        chip: (PAD_X, top, sizes.chip),
         tags: (!card.tags.is_empty()).then_some((
-            sizes.x + sizes.room,
+            WORDS_X + sizes.room,
             name_top + sizes.name * NAME_LINE / 2.0,
         )),
     })
 }
 
-/// The largest scale of a card's words, no larger than some scale.
-fn largest(card: &FarCard<'_>, most: f64) -> f64 {
-    if far_words(card, most).is_some() {
-        return most;
+/// The largest scale of a card's words, no larger than the far scale.
+fn largest(card: &FarCard<'_>) -> f64 {
+    if far_words(card, FAR_SCALE).is_some() {
+        return FAR_SCALE;
     }
-    let (mut low, mut high) = (FAR_FLOOR, most);
+    let (mut low, mut high) = (FAR_FLOOR, FAR_SCALE);
     while high - low > FAR_STEP {
         let middle = f64::midpoint(low, high);
         if far_words(card, middle).is_some() {
@@ -425,22 +395,16 @@ fn largest(card: &FarCard<'_>, most: f64) -> f64 {
     low
 }
 
-/// The scale a picture sets every far card at: as large as a name of 12 px needs
-/// where the picture lands, and as every card of the picture holds.
-pub fn far_scale_for(cards: &[FarCard<'_>], page: Rect) -> f64 {
-    let (room_x, room_y) = LANDING_ROOM;
-    let landing = js_min(1.0, js_min(room_x / page.width, room_y / page.height));
-    let wanted = js_max(FAR_LEAST, FAR_START / landing);
-    cards
-        .iter()
-        .map(|card| largest(card, wanted))
-        .fold(wanted, js_min)
+/// The scale a picture sets every far card at: the far scale, or less where a
+/// box of the picture does not hold its words.
+pub fn far_scale_for(cards: &[FarCard<'_>]) -> f64 {
+    cards.iter().map(largest).fold(FAR_SCALE, js_min)
 }
 
-/// The width a card needs to set its name whole from far away at the scale of a
-/// picture that lands near, on the fewest lines' widest line, beside its chip.
+/// The width a card needs to set its name whole from far away, on the fewest
+/// lines' widest line, beside its chip.
 pub(crate) fn far_name_width(name: &str) -> f64 {
-    let size = PART_TITLE_SIZE * FAR_LEAST;
+    let size = PART_TITLE_SIZE * FAR_SCALE;
     let parts = pieces(name);
     let line = |part: &[Piece<'_>]| {
         let (text, _) = part
@@ -456,7 +420,7 @@ pub(crate) fn far_name_width(name: &str) -> f64 {
             js_max(line(first), line(second))
         })
         .fold(f64::INFINITY, js_min);
-    PAD_X + size * CHIP + size * CHIP_GAP + widest + PAD_X
+    WORDS_X + widest + PAD
 }
 
 #[cfg(test)]
@@ -473,6 +437,7 @@ mod tests {
             lines: 1,
             width: 300.0,
             height,
+            chip_top: PAD,
         }
     }
 
@@ -481,7 +446,7 @@ mod tests {
 
     #[test]
     fn a_far_card_ends_a_cut_responsibility_at_a_whole_word() {
-        let words = far_words(&card("Run checks", Some(GIST), 110.0), FAR_LEAST).expect("it fits");
+        let words = far_words(&card("Run checks", Some(GIST), 130.0), FAR_SCALE).expect("it fits");
         let last = (words.runs.iter())
             .rfind(|run| run.role == TextRole::Note)
             .expect("some of the gist");
@@ -494,7 +459,7 @@ mod tests {
     fn a_taller_box_holds_more_of_a_responsibility_and_nothing_overflows() {
         let lines = |height: f64| {
             let card = card("Run checks", Some(GIST), height);
-            let words = far_words(&card, FAR_LEAST).expect("it fits");
+            let words = far_words(&card, FAR_SCALE).expect("it fits");
             let foot = height - CARD_THICKNESS;
             assert!(words.runs.iter().all(|run| run.y < foot && run.y > 0.0));
             assert!(words.runs.iter().all(|run| run.x + run.width <= 300.0));
@@ -504,7 +469,7 @@ mod tests {
                 .filter(|run| run.role == TextRole::Note)
                 .count()
         };
-        assert!(lines(140.0) > lines(96.0));
+        assert!(lines(160.0) > lines(110.0));
     }
 
     #[test]
@@ -517,20 +482,14 @@ mod tests {
                 96.0,
             ),
         ];
-        let page = Rect {
-            x: 0.0,
-            y: 0.0,
-            width: 3800.0,
-            height: 2200.0,
-        };
-        let scale = far_scale_for(&cards, page);
+        let scale = far_scale_for(&cards);
         assert!(scale > FAR_FLOOR);
         assert!(cards.iter().all(|card| far_words(card, scale).is_some()));
     }
 
     #[test]
     fn a_group_on_a_far_card_leaves_its_path_alone() {
-        let plain = card("Run checks", Some(GIST), 110.0);
+        let plain = card("Run checks", Some(GIST), 130.0);
         let tagged = FarCard {
             tags: &["Core", "Shell"],
             ..plain
@@ -541,7 +500,7 @@ mod tests {
                 .map(|run| run.text)
                 .collect::<String>()
         };
-        let far = |card: &FarCard<'_>| far_words(card, FAR_LEAST).expect("it fits");
+        let far = |card: &FarCard<'_>| far_words(card, FAR_SCALE).expect("it fits");
         assert_eq!(path(far(&tagged)), path(far(&plain)));
         assert!(far(&tagged).tags.is_some());
     }
