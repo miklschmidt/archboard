@@ -35,17 +35,17 @@
   ],
   "outgoing": [
     {
-      "order": 122290,
+      "order": 70046,
       "kind": "call",
-      "label": "JsonValueSchema",
-      "emphasis": "normal",
+      "label": "apply shared thread profiles",
+      "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/approval-projection.ts",
-        "symbol": "JsonValueSchema"
+        "path": "packages/codex-realtime-voice/src/runtime/services/thread-context/delivery.ts",
+        "symbol": "captureExecutionContext"
       },
-      "to": "vKEsyHFk#862bHERd",
-      "id": "vKEsyHFk#MHNSuQOV"
+      "id": "vKEsyHFk#C12Ez7nd",
+      "to": "vKEsyHFk/qKGcB6vZ#CkB9Bygm"
     }
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "order": 96000,
+  "name": "Flow placement",
+  "kind": "module",
+  "responsibility": "Places a step in the flat order of a flow",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/flow-placement.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#OODdTfsS",
+  "outgoing": []
+}

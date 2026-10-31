@@ -10,58 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#7xQLokcW",
   "parent": "vKEsyHFk#F0aENCVG",
-  "outgoing": [
-    {
-      "order": 102870,
-      "kind": "call",
-      "label": "readArchitectureModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/engine-gallery.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "to": "vKEsyHFk#ZsEk7Dg8",
-      "id": "vKEsyHFk#yMiK3oVO"
-    },
-    {
-      "order": 102880,
-      "kind": "call",
-      "label": "projectModel",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/engine-gallery.ts",
-        "symbol": "projectModel"
-      },
-      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
-      "id": "vKEsyHFk#SWAU49wF"
-    },
-    {
-      "order": 102890,
-      "kind": "call",
-      "label": "projectFlow",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/engine-gallery.ts",
-        "symbol": "projectFlow"
-      },
-      "to": "vKEsyHFk#ARWidvE7",
-      "id": "vKEsyHFk#oz4yPrqP"
-    },
-    {
-      "order": 102900,
-      "kind": "call",
-      "label": "renderArchitecture",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "scripts/engine-gallery.ts",
-        "symbol": "renderArchitecture"
-      },
-      "to": "vKEsyHFk#4KaVhppt",
-      "id": "vKEsyHFk#lsmFrwrJ"
-    }
-  ]
+  "outgoing": []
 }

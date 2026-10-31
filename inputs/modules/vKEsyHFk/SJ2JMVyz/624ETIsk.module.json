@@ -33,7 +33,7 @@
         "symbol": "WORKHORSE_DOMAIN_INSTRUCTIONS"
       },
       "id": "vKEsyHFk/SJ2JMVyz#D4d4rLZt",
-      "to": "vKEsyHFk#GLw3Zezm"
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     },
     {
       "order": 40000,
@@ -72,20 +72,7 @@
         "symbol": "createTextUserInput"
       },
       "id": "vKEsyHFk/qKGcB6vZ#6wH1TupJ",
-      "to": "vKEsyHFk#CmZSqnNN"
-    },
-    {
-      "order": 102230,
-      "kind": "call",
-      "label": "composeWorkbenchRoleInstructions",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/instructions/authored.ts",
-        "symbol": "composeWorkbenchRoleInstructions"
-      },
-      "to": "vKEsyHFk#voS2ymgi",
-      "id": "vKEsyHFk#p87MBAGc"
+      "to": "vKEsyHFk/qKGcB6vZ#YVc05dVh"
     }
   ]
 }

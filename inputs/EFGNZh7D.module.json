@@ -1,0 +1,14 @@
+{
+  "order": 15004,
+  "name": "Layout worker",
+  "kind": "function",
+  "responsibility": "Serves layout solves in a Web Worker",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/ui/workers/layout-worker.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#hDWpDois",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#EFGNZh7D",
+  "outgoing": []
+}

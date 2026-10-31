@@ -52,60 +52,8 @@
         "path": "packages/workbench/src/ui/rules/subtitles/measured-lines.ts",
         "symbol": "prepareWithSegments"
       },
-      "id": "vKEsyHFk#dAbW4tjz",
-      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb"
-    },
-    {
-      "order": 102740,
-      "kind": "call",
-      "label": "Tooltip",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/subtitles/SubtitlesToggle.tsx",
-        "symbol": "Tooltip"
-      },
-      "id": "vKEsyHFk#gj3xB4Yq",
-      "to": "vKEsyHFk#92sBMXbd"
-    },
-    {
-      "order": 102750,
-      "kind": "call",
-      "label": "Trigger",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/subtitles/SubtitlesToggle.tsx",
-        "symbol": "Tooltip.Trigger"
-      },
-      "id": "vKEsyHFk#izrq9bH8",
-      "to": "vKEsyHFk#Z0nguLSh"
-    },
-    {
-      "order": 102760,
-      "kind": "call",
-      "label": "cn",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/subtitles/VoiceSubtitles.tsx",
-        "symbol": "cn"
-      },
-      "id": "vKEsyHFk#fXRJndxa",
-      "to": "vKEsyHFk#g3KlZxCE"
-    },
-    {
-      "order": 120280,
-      "kind": "call",
-      "label": "useSubtitlesWanted",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/subtitles/SubtitlesToggle.tsx",
-        "symbol": "useSubtitlesWanted"
-      },
-      "to": "vKEsyHFk#5K2hAD55",
-      "id": "vKEsyHFk#NfmpZKTK"
+      "to": "vKEsyHFk/OjRLKb74#RvOyWmEb",
+      "id": "vKEsyHFk#dAbW4tjz"
     }
   ]
 }

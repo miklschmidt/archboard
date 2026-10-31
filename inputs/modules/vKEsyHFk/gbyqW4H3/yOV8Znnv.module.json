@@ -28,32 +28,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#iyXO5GUb",
       "to": "vKEsyHFk/gbyqW4H3#wpI1LbzG"
-    },
-    {
-      "order": 29000,
-      "kind": "dependency",
-      "label": "the board document",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
-        "symbol": "addressedVariant"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
-      "to": "vKEsyHFk#kPbBQRAH"
-    },
-    {
-      "order": 101910,
-      "kind": "call",
-      "label": "drawingOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
-        "symbol": "drawingOf"
-      },
-      "to": "vKEsyHFk#ARWidvE7",
-      "id": "vKEsyHFk#xayfUGZY"
     }
   ]
 }

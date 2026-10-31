@@ -33,45 +33,6 @@
       },
       "id": "vKEsyHFk/qKGcB6vZ#gNPRCnlg",
       "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
-    },
-    {
-      "order": 120920,
-      "kind": "call",
-      "label": "composeWorkbenchRoleInstructions",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
-        "symbol": "composeWorkbenchRoleInstructions"
-      },
-      "to": "vKEsyHFk#voS2ymgi",
-      "id": "vKEsyHFk#iezTgBN4"
-    },
-    {
-      "order": 121040,
-      "kind": "call",
-      "label": "cloneAndFreeze",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
-        "symbol": "cloneAndFreeze"
-      },
-      "to": "vKEsyHFk#FIXGbdeH",
-      "id": "vKEsyHFk#lF88Vk02"
-    },
-    {
-      "order": 122010,
-      "kind": "call",
-      "label": "captureVoiceAgentIdentity",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/runtime/rules/host/instructions.ts",
-        "symbol": "captureVoiceAgentIdentity"
-      },
-      "to": "vKEsyHFk#19vKZAmc",
-      "id": "vKEsyHFk#DcsV5Ls0"
     }
   ]
 }

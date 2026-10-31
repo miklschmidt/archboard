@@ -1,0 +1,14 @@
+{
+  "order": 39000,
+  "name": "Registry files",
+  "kind": "module",
+  "responsibility": "Read and write the checkout registry and language server files",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workspace/src/runtime/store"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#1glMtQCD",
+  "outgoing": []
+}

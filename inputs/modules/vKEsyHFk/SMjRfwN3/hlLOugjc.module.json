@@ -31,20 +31,7 @@
         "symbol": "PAGE"
       },
       "id": "vKEsyHFk/SMjRfwN3#IOU51tal",
-      "to": "vKEsyHFk#3Xzw7rLk"
-    },
-    {
-      "order": 121060,
-      "kind": "call",
-      "label": "RecordingStateSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
-        "symbol": "RecordingStateSchema"
-      },
-      "to": "vKEsyHFk#LBJHXq9N",
-      "id": "vKEsyHFk#ESzfHCjk"
+      "to": "vKEsyHFk/yejBBUFY#fscW90Xt"
     }
   ]
 }

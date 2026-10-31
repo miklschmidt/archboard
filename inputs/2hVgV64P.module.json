@@ -1,0 +1,14 @@
+{
+  "order": 53000,
+  "name": "Instruction rules",
+  "kind": "module",
+  "responsibility": "Author the host's instructions and the context of a selection",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/rules/instructions"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#2hVgV64P",
+  "outgoing": []
+}

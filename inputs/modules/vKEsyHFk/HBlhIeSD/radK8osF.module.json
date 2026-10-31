@@ -44,7 +44,7 @@
         "symbol": "decodeSemanticBoardDocument"
       },
       "id": "vKEsyHFk/HBlhIeSD#FqPWGmDd",
-      "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 51000,
@@ -60,56 +60,17 @@
       "to": "vKEsyHFk/0T9enjhi#R3ldC44x"
     },
     {
-      "order": 101450,
+      "order": 100000,
       "kind": "call",
-      "label": "filesOfBinding",
+      "label": "decodes historical board bytes without writes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/attribution.ts",
-        "symbol": "filesOfBinding"
+        "path": "packages/code-intel/src/runtime/operations/history-lens/last-change.ts",
+        "symbol": "decodeSemanticBoardDocument"
       },
-      "id": "vKEsyHFk#Zk3SLecK",
-      "to": "vKEsyHFk#PfrQyv5D"
-    },
-    {
-      "order": 101460,
-      "kind": "call",
-      "label": "currentVariant",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/behind.ts",
-        "symbol": "currentVariant"
-      },
-      "id": "vKEsyHFk#Xaf0RETU",
-      "to": "vKEsyHFk#kPbBQRAH"
-    },
-    {
-      "order": 101470,
-      "kind": "call",
-      "label": "snapshotCheckoutAccess",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/behind.ts",
-        "symbol": "snapshotCheckoutAccess"
-      },
-      "id": "vKEsyHFk#6DnmiN0p",
-      "to": "vKEsyHFk#Q8VBl3B6"
-    },
-    {
-      "order": 101480,
-      "kind": "call",
-      "label": "messagesOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/coupling.ts",
-        "symbol": "messagesOf"
-      },
-      "id": "vKEsyHFk#1e692U28",
-      "to": "vKEsyHFk#ARWidvE7"
+      "id": "vKEsyHFk/6E6hL0Zk#AMHnFhbq",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 113000,
@@ -124,32 +85,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#kXzRYl25",
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 121390,
-      "kind": "call",
-      "label": "sourceHistory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/attribution.ts",
-        "symbol": "sourceHistory"
-      },
-      "to": "vKEsyHFk#X8hZrPsi",
-      "id": "vKEsyHFk#zO5Tpdyd"
-    },
-    {
-      "order": 121560,
-      "kind": "call",
-      "label": "ArchitectureLocalityRequestSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/history-lens/canonical.ts",
-        "symbol": "ArchitectureLocalityRequestSchema"
-      },
-      "to": "vKEsyHFk#C4dHNikA",
-      "id": "vKEsyHFk#8mpmboke"
     }
   ]
 }

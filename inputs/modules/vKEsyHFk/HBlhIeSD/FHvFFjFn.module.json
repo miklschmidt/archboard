@@ -160,20 +160,19 @@
         "symbol": "parseBoardKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#wNDcc9zW",
-      "to": "vKEsyHFk#rasAaxs6"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
-      "order": 6000,
-      "kind": "data",
-      "label": "resolve in the vault's checkout or the chosen one",
+      "order": 101000,
+      "kind": "call",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "chosenCheckouts"
+        "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
+        "symbol": "parseBoardKey"
       },
-      "id": "vKEsyHFk/vKEsyHFk#oK9fPKdv",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      "id": "vKEsyHFk/HBlhIeSD#qqzbmw2N",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     }
   ]
 }

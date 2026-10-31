@@ -31,32 +31,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 122820,
-      "kind": "call",
-      "label": "QualifiedSubjectIdSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/shared/schemas/model-flows.ts",
-        "symbol": "QualifiedSubjectIdSchema"
-      },
-      "to": "vKEsyHFk#glt0Q20M",
-      "id": "vKEsyHFk#zbv7TtjP"
-    },
-    {
-      "order": 123420,
-      "kind": "call",
-      "label": "FlowMessageSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/shared/schemas/model-flows.ts",
-        "symbol": "FlowMessageSchema"
-      },
-      "to": "vKEsyHFk#kPbBQRAH",
-      "id": "vKEsyHFk#BrLfJCIk"
-    }
-  ]
+  "outgoing": []
 }

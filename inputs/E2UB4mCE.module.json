@@ -1,0 +1,14 @@
+{
+  "order": 45000,
+  "name": "Tab session rule",
+  "kind": "module",
+  "responsibility": "Parses a tab session identity",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/server/rules/tab-session/tab-session.ts"
+  },
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#E2UB4mCE",
+  "outgoing": []
+}

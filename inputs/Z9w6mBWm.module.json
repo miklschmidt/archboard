@@ -1,0 +1,14 @@
+{
+  "order": 34000,
+  "name": "Command definition",
+  "kind": "module",
+  "responsibility": "Defines a command, its options and its usage errors",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/protocol/contract/contract.ts"
+  },
+  "parent": "vKEsyHFk/XppR9owz#o5zkAtUT",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#Z9w6mBWm",
+  "outgoing": []
+}

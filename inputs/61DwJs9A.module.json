@@ -1,0 +1,14 @@
+{
+  "order": 27002,
+  "name": "Coordinator parameters",
+  "kind": "module",
+  "responsibility": "Builds the coordinator's thread parameters from composed instructions",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/model.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#61DwJs9A",
+  "outgoing": []
+}

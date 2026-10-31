@@ -41,20 +41,7 @@
         "symbol": "showConversation"
       },
       "id": "vKEsyHFk/yejBBUFY#zd3E41io",
-      "to": "vKEsyHFk#23NOgiao"
-    },
-    {
-      "order": 100060,
-      "kind": "call",
-      "label": "paneOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/application/shown-conversation.ts",
-        "symbol": "paneOf"
-      },
-      "to": "vKEsyHFk#PkIYJqBP",
-      "id": "vKEsyHFk#1nm2IE9U"
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
     }
   ]
 }

@@ -1,0 +1,14 @@
+{
+  "order": 67000,
+  "name": "Application state",
+  "kind": "module",
+  "responsibility": "Holds the owners of the focused pane: its controllers and its voice",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/state/application"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#N8qU9kdQ",
+  "outgoing": []
+}

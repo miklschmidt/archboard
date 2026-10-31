@@ -11,32 +11,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
   "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "outgoing": [
-    {
-      "order": 121160,
-      "kind": "call",
-      "label": "repoIdentityAt",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/services/vault-finder.ts",
-        "symbol": "repoIdentityAt"
-      },
-      "to": "vKEsyHFk#3s6sehzk",
-      "id": "vKEsyHFk#vk04rh96"
-    },
-    {
-      "order": 121220,
-      "kind": "call",
-      "label": "isDirectory",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/services/vault-finder.ts",
-        "symbol": "isDirectory"
-      },
-      "to": "vKEsyHFk#8oUMqUkJ",
-      "id": "vKEsyHFk#Xd4TJllK"
-    }
-  ]
+  "outgoing": []
 }

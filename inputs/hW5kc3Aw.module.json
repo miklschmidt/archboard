@@ -1,0 +1,14 @@
+{
+  "order": 66000,
+  "name": "Stage presentation",
+  "kind": "ui",
+  "responsibility": "The walkthrough controls over the stage",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStagePresentation.tsx"
+  },
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#hW5kc3Aw",
+  "outgoing": []
+}

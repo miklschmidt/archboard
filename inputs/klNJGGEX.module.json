@@ -1,0 +1,14 @@
+{
+  "order": 74000,
+  "name": "Local news",
+  "kind": "function",
+  "responsibility": "Announces a durable completion to the readers on this machine",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/store/model-news.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#klNJGGEX",
+  "outgoing": []
+}

@@ -1,0 +1,14 @@
+{
+  "order": 64000,
+  "name": "Semantic diagram",
+  "kind": "ui",
+  "responsibility": "The picture on stage with its camera, pointer, marks and transitions",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx"
+  },
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#clZbLqpX",
+  "outgoing": []
+}

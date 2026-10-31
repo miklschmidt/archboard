@@ -27,19 +27,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#hHG2mx8m",
       "to": "vKEsyHFk/UOXNWLhR#tmwUm8BL"
-    },
-    {
-      "order": 100090,
-      "kind": "call",
-      "label": "sameBoardName",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/picture-cache.ts",
-        "symbol": "sameBoardName"
-      },
-      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
-      "id": "vKEsyHFk#9ppMeJ5J"
     }
   ]
 }

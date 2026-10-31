@@ -37,58 +37,6 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#pdkMb2Mv",
       "to": "vKEsyHFk/IbGtfJE2#wOZsx1lS"
-    },
-    {
-      "order": 102130,
-      "kind": "call",
-      "label": "VariantLifecycleSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
-        "symbol": "VariantLifecycleSchema"
-      },
-      "id": "vKEsyHFk#3GPL8HpX",
-      "to": "vKEsyHFk#kPbBQRAH"
-    },
-    {
-      "order": 102140,
-      "kind": "call",
-      "label": "optional",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
-        "symbol": "VariantLifecycleSchema.optional"
-      },
-      "id": "vKEsyHFk#MZB2iHN6",
-      "to": "vKEsyHFk#KFUk3iKu"
-    },
-    {
-      "order": 102150,
-      "kind": "call",
-      "label": "DiagramThemeSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
-        "symbol": "DiagramThemeSchema"
-      },
-      "id": "vKEsyHFk#9lr3QLLj",
-      "to": "vKEsyHFk#EllF3GsG"
-    },
-    {
-      "order": 120860,
-      "kind": "call",
-      "label": "HomePathSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/schemas/suite.ts",
-        "symbol": "HomePathSchema"
-      },
-      "to": "vKEsyHFk#FIRKrY5U",
-      "id": "vKEsyHFk#fsQQAb2B"
     }
   ]
 }

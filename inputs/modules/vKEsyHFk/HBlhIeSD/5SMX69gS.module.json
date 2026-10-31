@@ -34,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 27000,
-      "kind": "dependency",
-      "label": "read the inspected canonical state",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
-      "to": "vKEsyHFk#ZsEk7Dg8"
-    },
-    {
       "order": 43000,
       "kind": "call",
       "label": "read selected canonical states",
@@ -57,7 +44,20 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
-      "to": "vKEsyHFk#ZsEk7Dg8"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "read selected canonical states",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#rCuDH1LU",
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 69000,
@@ -86,45 +86,6 @@
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
     },
     {
-      "order": 70053,
-      "kind": "call",
-      "label": "report source inspection failures",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
-        "symbol": "errorMessage"
-      },
-      "id": "vKEsyHFk#o6iMuevP",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 70054,
-      "kind": "call",
-      "label": "measure source inspection work",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
-        "symbol": "createElapsedClock"
-      },
-      "id": "vKEsyHFk#zAB848k7",
-      "to": "vKEsyHFk/vKEsyHFk#sZ4chHDX"
-    },
-    {
-      "order": 70055,
-      "kind": "call",
-      "label": "resolve configured source tooling",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
-        "symbol": "configureCommand"
-      },
-      "id": "vKEsyHFk#73DTR15V",
-      "to": "vKEsyHFk#8oUMqUkJ"
-    },
-    {
       "order": 71000,
       "kind": "call",
       "label": "where a use no import resolves is defined",
@@ -151,110 +112,6 @@
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
     },
     {
-      "order": 101370,
-      "kind": "call",
-      "label": "HistoricalRevisionSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "HistoricalRevisionSchema"
-      },
-      "id": "vKEsyHFk#iFNfXb5e",
-      "to": "vKEsyHFk#kPbBQRAH"
-    },
-    {
-      "order": 101380,
-      "kind": "call",
-      "label": "safeParse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "HistoricalRevisionSchema.safeParse"
-      },
-      "id": "vKEsyHFk#R1IvtwMQ",
-      "to": "vKEsyHFk#KFUk3iKu"
-    },
-    {
-      "order": 101390,
-      "kind": "call",
-      "label": "messagesOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "messagesOf"
-      },
-      "id": "vKEsyHFk#tYcpMZBR",
-      "to": "vKEsyHFk#ARWidvE7"
-    },
-    {
-      "order": 101400,
-      "kind": "call",
-      "label": "snapshotCheckoutAccess",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "snapshotCheckoutAccess"
-      },
-      "id": "vKEsyHFk#yrVcA7x1",
-      "to": "vKEsyHFk#Q8VBl3B6"
-    },
-    {
-      "order": 101410,
-      "kind": "call",
-      "label": "readSemanticBoardConfiguration",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "readSemanticBoardConfiguration"
-      },
-      "id": "vKEsyHFk#wC6JhGAO",
-      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
-    },
-    {
-      "order": 101420,
-      "kind": "call",
-      "label": "bindingPathOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
-        "symbol": "bindingPathOf"
-      },
-      "id": "vKEsyHFk#OfOEG9wg",
-      "to": "vKEsyHFk#PfrQyv5D"
-    },
-    {
-      "order": 101430,
-      "kind": "call",
-      "label": "nodeSubject",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/claims/claims.ts",
-        "symbol": "nodeSubject"
-      },
-      "id": "vKEsyHFk#JkyHGG8B",
-      "to": "vKEsyHFk#dzVd4CZQ"
-    },
-    {
-      "order": 101440,
-      "kind": "call",
-      "label": "isPathWithin",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/plans.ts",
-        "symbol": "isPathWithin"
-      },
-      "id": "vKEsyHFk#tMZ8PgUB",
-      "to": "vKEsyHFk#tWzeneeg"
-    },
-    {
       "order": 122000,
       "kind": "call",
       "label": "each draft at its own ref; how far each board is behind",
@@ -266,32 +123,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 121380,
-      "kind": "call",
-      "label": "commitOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
-        "symbol": "commitOf"
-      },
-      "to": "vKEsyHFk#X8hZrPsi",
-      "id": "vKEsyHFk#i2eSFmS5"
-    },
-    {
-      "order": 121550,
-      "kind": "call",
-      "label": "CodeCheckAnswerSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
-        "symbol": "CodeCheckAnswerSchema"
-      },
-      "to": "vKEsyHFk#C4dHNikA",
-      "id": "vKEsyHFk#jEemJBpR"
     }
   ]
 }

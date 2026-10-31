@@ -1,0 +1,14 @@
+{
+  "order": 97000,
+  "name": "Flow state",
+  "kind": "module",
+  "responsibility": "Reads the flow state that an edit starts from",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/model-edit/flow-state.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#XqJRSGKy",
+  "outgoing": []
+}

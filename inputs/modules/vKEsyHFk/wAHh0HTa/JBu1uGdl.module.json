@@ -33,7 +33,7 @@
         "symbol": "mutate"
       },
       "id": "vKEsyHFk/wAHh0HTa#jhNZqAiD",
-      "to": "vKEsyHFk#HGsIg1Cl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 20000,
@@ -60,19 +60,6 @@
       },
       "id": "vKEsyHFk/wAHh0HTa#40GtFaKL",
       "to": "vKEsyHFk/wAHh0HTa#99KMASDs"
-    },
-    {
-      "order": 120370,
-      "kind": "call",
-      "label": "LOGIN_POLICIES.find",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session-operations.ts",
-        "symbol": "LOGIN_POLICIES.find"
-      },
-      "to": "vKEsyHFk#5qjkisTj",
-      "id": "vKEsyHFk#gXN2hMSX"
     }
   ]
 }

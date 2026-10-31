@@ -1,0 +1,14 @@
+{
+  "order": 10001,
+  "name": "Frame transport",
+  "kind": "module",
+  "responsibility": "Sends requests and answers over the child's framed stream and matches each reply",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/clients/transport.ts"
+  },
+  "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#rIA2tehz",
+  "outgoing": []
+}

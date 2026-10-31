@@ -1,0 +1,14 @@
+{
+  "order": 77000,
+  "name": "Archive initialization",
+  "kind": "function",
+  "responsibility": "Starts private history for a vault outside a source repository",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/history/initialize.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#tCCafkBs",
+  "outgoing": []
+}

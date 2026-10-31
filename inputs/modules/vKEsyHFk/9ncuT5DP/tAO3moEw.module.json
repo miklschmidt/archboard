@@ -18,32 +18,6 @@
   ],
   "outgoing": [
     {
-      "order": 63000,
-      "kind": "dependency",
-      "label": "a voice agent and client with its own policy",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
-        "symbol": "createVoiceAgent"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#lwujMzjf",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
-      "order": 70048,
-      "kind": "call",
-      "label": "resolve the configured Codex process",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
-        "symbol": "resolveCodexExecutable"
-      },
-      "id": "vKEsyHFk#YwuotQri",
-      "to": "vKEsyHFk#KKNGRo3e"
-    },
-    {
       "order": 89000,
       "kind": "call",
       "label": "createVoiceAgent, served through bunHandlers",
@@ -68,32 +42,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#qbAR52W1",
       "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
-    },
-    {
-      "order": 121600,
-      "kind": "call",
-      "label": "runExample",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server.ts",
-        "symbol": "runExample"
-      },
-      "to": "vKEsyHFk#kNmvgdbn",
-      "id": "vKEsyHFk#GEqEU76v"
-    },
-    {
-      "order": 121630,
-      "kind": "call",
-      "label": "mountWorkbench",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/main.tsx",
-        "symbol": "mountWorkbench"
-      },
-      "to": "vKEsyHFk#0inBuGq8",
-      "id": "vKEsyHFk#XmOchAhE"
     }
   ]
 }

@@ -45,45 +45,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#vD1f2SWx",
       "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
-    },
-    {
-      "order": 101200,
-      "kind": "call",
-      "label": "stateDir",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-location.ts",
-        "symbol": "stateDir"
-      },
-      "to": "vKEsyHFk#Qy3AvfxK",
-      "id": "vKEsyHFk#mXDP09cw"
-    },
-    {
-      "order": 101210,
-      "kind": "call",
-      "label": "errorMessage",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-location.ts",
-        "symbol": "errorMessage"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#KW5xxW91"
-    },
-    {
-      "order": 101220,
-      "kind": "call",
-      "label": "repoRootOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-location.ts",
-        "symbol": "repoRootOf"
-      },
-      "to": "vKEsyHFk#3s6sehzk",
-      "id": "vKEsyHFk#bdr3DWUS"
     }
   ]
 }

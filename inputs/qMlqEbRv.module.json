@@ -1,0 +1,14 @@
+{
+  "order": 14000,
+  "name": "Workbench hooks",
+  "kind": "module",
+  "responsibility": "Connect the browser to the agent runtime and the subtitles",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/hooks"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#tzyaOHwF",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#qMlqEbRv",
+  "outgoing": []
+}

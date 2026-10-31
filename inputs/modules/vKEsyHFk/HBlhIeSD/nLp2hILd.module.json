@@ -44,32 +44,6 @@
       },
       "id": "vKEsyHFk/nAmiQ3Vc#CsZo87Fp",
       "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
-    },
-    {
-      "order": 121170,
-      "kind": "call",
-      "label": "worktreesOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/store/repo-registry.ts",
-        "symbol": "worktreesOf"
-      },
-      "to": "vKEsyHFk#3s6sehzk",
-      "id": "vKEsyHFk#m33ZnHh5"
-    },
-    {
-      "order": 121230,
-      "kind": "call",
-      "label": "readRegistry",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/runtime/store/repo-registry.ts",
-        "symbol": "readRegistry"
-      },
-      "to": "vKEsyHFk#8oUMqUkJ",
-      "id": "vKEsyHFk#upQjAz2E"
     }
   ]
 }

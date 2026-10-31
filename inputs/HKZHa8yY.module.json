@@ -1,0 +1,14 @@
+{
+  "order": 36000,
+  "name": "Authored text",
+  "kind": "module",
+  "responsibility": "Marks instruction text as authored",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/rules/host/authored.ts"
+  },
+  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HKZHa8yY",
+  "outgoing": []
+}

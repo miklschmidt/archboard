@@ -7,5 +7,19 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#F0aENCVG",
   "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "render measured layout fixtures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+        "symbol": "renderArchitecture"
+      },
+      "id": "vKEsyHFk#xTpg1eOM",
+      "to": "vKEsyHFk/gbyqW4H3#0XCanbzp"
+    }
+  ]
 }

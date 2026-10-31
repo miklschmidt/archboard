@@ -1,0 +1,14 @@
+{
+  "order": 68000,
+  "name": "Agent actions",
+  "kind": "module",
+  "responsibility": "What the dock does: send, Talk and narrate over the focused pane's transport",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application/agent-actions.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#P0ebbKUC",
+  "outgoing": []
+}

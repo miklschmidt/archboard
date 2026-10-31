@@ -1,0 +1,14 @@
+{
+  "order": 28002,
+  "name": "Coordinator start",
+  "kind": "module",
+  "responsibility": "Starts the coordinator's thread with its settings",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator/start.ts"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#NZJ8POfN",
+  "outgoing": []
+}

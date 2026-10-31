@@ -39,19 +39,6 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#oCH6TGpi",
       "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
-    },
-    {
-      "order": 120230,
-      "kind": "call",
-      "label": "Node",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-flows/src/sequence/layout.rs",
-        "symbol": "Node"
-      },
-      "to": "vKEsyHFk#mryYhQkP",
-      "id": "vKEsyHFk#Z5JUbasX"
     }
   ]
 }

@@ -41,19 +41,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#cwSIvbl4",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
-    },
-    {
-      "order": 122380,
-      "kind": "call",
-      "label": "browserAudioElements",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/media/media-owner.ts",
-        "symbol": "browserAudioElements"
-      },
-      "to": "vKEsyHFk#DF6y1aoD",
-      "id": "vKEsyHFk#jTChr4s5"
     }
   ]
 }

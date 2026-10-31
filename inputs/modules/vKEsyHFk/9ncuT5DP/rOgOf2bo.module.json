@@ -30,19 +30,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#PfZvhB8I",
       "to": "vKEsyHFk/9ncuT5DP#kEF4DfR4"
-    },
-    {
-      "order": 101810,
-      "kind": "call",
-      "label": "toolRoleOf",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/sessions/checkouts.ts",
-        "symbol": "toolRoleOf"
-      },
-      "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6",
-      "id": "vKEsyHFk#Ypsx4tw7"
     }
   ]
 }

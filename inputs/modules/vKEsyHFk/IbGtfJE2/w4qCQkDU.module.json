@@ -145,45 +145,6 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#ZgOzpUec",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
-    },
-    {
-      "order": 120670,
-      "kind": "call",
-      "label": "videoRequests",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
-        "symbol": "videoRequests"
-      },
-      "to": "vKEsyHFk#9k9nrGcM",
-      "id": "vKEsyHFk#WFtRSapm"
-    },
-    {
-      "order": 120730,
-      "kind": "call",
-      "label": "runProcess",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
-        "symbol": "runProcess"
-      },
-      "to": "vKEsyHFk#smw47wvV",
-      "id": "vKEsyHFk#1Yrhnkaq"
-    },
-    {
-      "order": 120850,
-      "kind": "call",
-      "label": "writeRunManifest",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/skills/src/runtime/operations/runs/author.ts",
-        "symbol": "writeRunManifest"
-      },
-      "to": "vKEsyHFk#FIRKrY5U",
-      "id": "vKEsyHFk#5XCzq2om"
     }
   ]
 }

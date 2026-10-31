@@ -1,0 +1,14 @@
+{
+  "order": 29000,
+  "name": "Binding resolver",
+  "kind": "module",
+  "responsibility": "Resolves a binding to a local path inside its checkout",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-binding/src/runtime/operations/binding-resolver.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#HbGqiAcL",
+  "outgoing": []
+}

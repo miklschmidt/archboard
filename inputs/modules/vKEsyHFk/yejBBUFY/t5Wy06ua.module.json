@@ -28,32 +28,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 38000,
-      "kind": "dependency",
-      "label": "dock and voice parts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/orb/VoiceOrb.tsx",
-        "symbol": "cn"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#yRl53uvR",
-      "to": "vKEsyHFk#g3KlZxCE"
-    },
-    {
-      "order": 120260,
-      "kind": "call",
-      "label": "OrbStageContext",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/ui/components/orb/OrbStage.tsx",
-        "symbol": "OrbStageContext"
-      },
-      "to": "vKEsyHFk#5K2hAD55",
-      "id": "vKEsyHFk#Qvtx3911"
-    }
-  ]
+  "outgoing": []
 }

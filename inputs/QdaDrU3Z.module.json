@@ -1,0 +1,14 @@
+{
+  "order": 80000,
+  "name": "History result",
+  "kind": "function",
+  "responsibility": "Turns an archive failure into a structured refusal",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/runtime/operations/history/result.ts"
+  },
+  "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#QdaDrU3Z",
+  "outgoing": []
+}

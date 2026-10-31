@@ -50,7 +50,7 @@
         "symbol": "publishPaneContext"
       },
       "id": "vKEsyHFk/Oi6SBIAM#dHRkaEZq",
-      "to": "vKEsyHFk#TcjyZjpQ"
+      "to": "vKEsyHFk/6E6hL0Zk#9G6CmNgt"
     },
     {
       "order": 40000,
@@ -103,19 +103,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#NuehJHbK",
       "to": "vKEsyHFk/Oi6SBIAM#RjaKX25k"
-    },
-    {
-      "order": 70029,
-      "kind": "call",
-      "label": "wrap addressed pane requests",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/panes/pane-routes.ts",
-        "symbol": "asyncEndpoint"
-      },
-      "id": "vKEsyHFk#kEIA3Iaa",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
     }
   ]
 }

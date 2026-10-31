@@ -1,0 +1,14 @@
+{
+  "order": 55000,
+  "name": "Agent panel",
+  "kind": "ui",
+  "responsibility": "The conversation panel with its composer, approvals and sign-in",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/ui/components/panel"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#qDgVB28s",
+  "outgoing": []
+}

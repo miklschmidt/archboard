@@ -1,0 +1,14 @@
+{
+  "order": 72000,
+  "name": "Reader panels",
+  "kind": "ui",
+  "responsibility": "The panels, lists and frames of the model reader that no other part stands for",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/architecture-model"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#KlkhOfpx",
+  "outgoing": []
+}

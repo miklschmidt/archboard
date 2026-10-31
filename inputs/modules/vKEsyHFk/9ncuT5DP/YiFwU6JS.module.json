@@ -42,46 +42,7 @@
         "symbol": "openBrowserSocket"
       },
       "id": "vKEsyHFk/9ncuT5DP#WdRZGA7w",
-      "to": "vKEsyHFk#Sp6df0hN"
-    },
-    {
-      "order": 70035,
-      "kind": "call",
-      "label": "compose the host role profile",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/agent/voice-agent.ts",
-        "symbol": "createWorkbenchThreadProfile"
-      },
-      "id": "vKEsyHFk#zAQcPUKN",
-      "to": "vKEsyHFk/qKGcB6vZ#En8mB6jo"
-    },
-    {
-      "order": 70036,
-      "kind": "call",
-      "label": "admit addressed browser sessions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
-        "symbol": "parseTabSessionId"
-      },
-      "id": "vKEsyHFk#cWzsQnxC",
-      "to": "vKEsyHFk#zk55kV0S"
-    },
-    {
-      "order": 101710,
-      "kind": "call",
-      "label": "createServerCodexBrowserSocketSend",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/server/services/agent/admission.ts",
-        "symbol": "createServerCodexBrowserSocketSend"
-      },
-      "to": "vKEsyHFk#CcW5NyRf",
-      "id": "vKEsyHFk#b0VHJZDM"
+      "to": "vKEsyHFk/9ncuT5DP#u2LFaG7R"
     }
   ]
 }

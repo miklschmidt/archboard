@@ -1,0 +1,14 @@
+{
+  "order": 69000,
+  "name": "Code findings list",
+  "kind": "ui",
+  "responsibility": "Lists a reading's code findings",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/architecture-model/ModelCodeFindings.tsx"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#f985m1oj",
+  "outgoing": []
+}

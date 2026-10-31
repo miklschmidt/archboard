@@ -47,45 +47,6 @@
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
     },
     {
-      "order": 101090,
-      "kind": "call",
-      "label": "walkthroughDependencies",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "walkthroughDependencies"
-      },
-      "id": "vKEsyHFk#fc74Robx",
-      "to": "vKEsyHFk#JDhuXgzY"
-    },
-    {
-      "order": 101100,
-      "kind": "call",
-      "label": "retainedStates",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/lifecycle.ts",
-        "symbol": "retainedStates"
-      },
-      "id": "vKEsyHFk#LNrmTNIn",
-      "to": "vKEsyHFk#aZW7suqF"
-    },
-    {
-      "order": 101110,
-      "kind": "call",
-      "label": "historyResult",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/read.ts",
-        "symbol": "historyResult"
-      },
-      "id": "vKEsyHFk#9wtgsnqZ",
-      "to": "vKEsyHFk#ZqX9evcg"
-    },
-    {
       "order": 193000,
       "kind": "call",
       "label": "canonical decoder",
@@ -96,7 +57,7 @@
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#HuWEB6r9",
-      "to": "vKEsyHFk#ZsEk7Dg8"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 194000,
@@ -109,7 +70,7 @@
         "symbol": "proposalBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#26VVxTms",
-      "to": "vKEsyHFk#EDZU08gj"
+      "to": "vKEsyHFk/0T9enjhi#Bd4GPG6d"
     },
     {
       "order": 195000,
@@ -148,7 +109,7 @@
         "symbol": "retainBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#pOm4j7QN",
-      "to": "vKEsyHFk#xeNvpcb6"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 198000,
@@ -161,7 +122,7 @@
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
-      "to": "vKEsyHFk#tHTVTbMS"
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
     },
     {
       "order": 199000,
@@ -214,71 +175,6 @@
       },
       "id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
       "to": "vKEsyHFk/0T9enjhi#Jx4O72DO"
-    },
-    {
-      "order": 121700,
-      "kind": "call",
-      "label": "assignFields",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "assignFields"
-      },
-      "to": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
-      "id": "vKEsyHFk#Ak2qI87s"
-    },
-    {
-      "order": 122710,
-      "kind": "call",
-      "label": "StateMetadataSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "StateMetadataSchema"
-      },
-      "to": "vKEsyHFk#ziBggdd0",
-      "id": "vKEsyHFk#Lhov8Hvs"
-    },
-    {
-      "order": 123150,
-      "kind": "call",
-      "label": "modelRevision",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "modelRevision"
-      },
-      "to": "vKEsyHFk#rasAaxs6",
-      "id": "vKEsyHFk#WpHUgY9V"
-    },
-    {
-      "order": 123320,
-      "kind": "call",
-      "label": "ProposalSchema",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "ProposalSchema"
-      },
-      "to": "vKEsyHFk#kPbBQRAH",
-      "id": "vKEsyHFk#Shd16cNm"
-    },
-    {
-      "order": 123560,
-      "kind": "call",
-      "label": "mintId",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
-        "symbol": "mintId"
-      },
-      "to": "vKEsyHFk#ARWidvE7",
-      "id": "vKEsyHFk#USHXwMQV"
     }
   ]
 }
