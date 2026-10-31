@@ -186,19 +186,6 @@
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
     },
     {
-      "order": 86000,
-      "kind": "call",
-      "description": "The code of \"Render stage states\" reaches node \"Semantic viewer\".",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/AboutPage.tsx",
-        "symbol": "variantTimeline"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#wQBlFEQ3",
-      "to": "vKEsyHFk/UOXNWLhR#tSB580xH"
-    },
-    {
       "order": 102000,
       "kind": "call",
       "label": "the vault of inspection, search, history and the header",
@@ -236,19 +223,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#ouBCto6M",
       "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    },
-    {
-      "order": 114000,
-      "kind": "call",
-      "label": "keep the picture in place",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "stayPicture"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#mTr3mpxi",
-      "to": "vKEsyHFk/UOXNWLhR#oF5Ib5A4"
     },
     {
       "order": 130000,

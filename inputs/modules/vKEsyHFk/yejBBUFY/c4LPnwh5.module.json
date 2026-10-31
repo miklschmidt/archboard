@@ -38,19 +38,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#6JBVcBmw",
       "to": "vKEsyHFk/yejBBUFY#OPt4rjAR"
-    },
-    {
-      "order": 93000,
-      "kind": "render",
-      "label": "opens current architecture",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/shell/RepositoryLine.tsx",
-        "symbol": "RepositoryModelLink"
-      },
-      "id": "vKEsyHFk/yejBBUFY#tWVYo1RT",
-      "to": "vKEsyHFk/yejBBUFY#n2ONtqdt"
     }
   ]
 }
