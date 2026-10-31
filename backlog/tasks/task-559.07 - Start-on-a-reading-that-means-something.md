@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:44:00Z'
-updated_date: '2026-10-30T23:59:00Z'
+updated_date: '2026-10-31T01:12:00Z'
 labels:
   - frontend
 dependencies:
@@ -41,3 +41,9 @@ The product opens on the migration notice of an unrelated repository, and a seco
 6. Judge each state at 1920 by 1080 in both themes in the real pane, and fix what the critique finds.
 7. Update the design record, CONTEXT.md, the ADR and the tests.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Branch feat/reader-start. Start rule: the address, then this browser's last reading, then one listed repository with a model, then the chooser (ADR 0069, docs/design/reader-redesign.md). /api/served-vault and the served field are gone. install-skill registers the repository it sets up. A picture no longer waits forever for a picture store that never answers (PICTURE_MS.storeWait). help.test.ts ran a real command in the checkout and wrote to the owner's registry on a fresh worktree's first gate, so it now has a registry of its own; this probably explains the /tmp/integrate/wt19 entry in TASK-559. Not yet aligned: the tracked model module LMJVhlqw still says the page resolves its served vault.
+<!-- SECTION:NOTES:END -->
