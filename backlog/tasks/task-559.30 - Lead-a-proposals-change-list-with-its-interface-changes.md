@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T04:17:00Z'
-updated_date: '2026-10-31T09:00:00Z'
+updated_date: '2026-10-31T09:04:00Z'
 labels:
   - frontend
 dependencies:
@@ -51,6 +51,8 @@ Decision: interface rows are no steps of the walk, so N, P and the count of the 
 Limit: the section has no cap. 93RlBGLx against Current has 2910 changes and an interface section 11807 px high. The list is far longer, so the rows only add to a scroll that exists. N and P still reach every change.
 Seen, not caused here: a selected removed module shows 'The canonical model cannot be read coherently.' beside Open code (screenshot 5). The cause was not investigated.
 Evidence: screenshots in /tmp/integrate/slice30/. check:all exit 0 on 3643c47ba, 21 of 21 tasks, 47 of 47 browser owners, log /tmp/integrate/slice30-gate.log.
+
+Merged to integrate/pr19, gate 21 of 21 in 143 s, server 17842 restarted. Open: selecting a removed module shows 'The canonical model cannot be read coherently.' beside Open code.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
