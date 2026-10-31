@@ -1,0 +1,15 @@
+{
+  "order": 960320,
+  "name": "Page painter",
+  "kind": "function",
+  "responsibility": "Paints a settled drawing into one scene and frames the page for export",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/mod.rs",
+    "symbol": "paint"
+  },
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#8oId5pfI",
+  "outgoing": []
+}

@@ -1,0 +1,14 @@
+{
+  "order": 960360,
+  "name": "Contract reference",
+  "kind": "function",
+  "responsibility": "Renders the generated reference of every command contract from the command table",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/contract-artifacts"
+  },
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#glQyCXTG",
+  "outgoing": []
+}

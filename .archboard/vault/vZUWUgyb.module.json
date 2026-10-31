@@ -1,0 +1,14 @@
+{
+  "order": 960120,
+  "name": "Board document schema",
+  "kind": "module",
+  "responsibility": "The schema of a board document with its variants, and the variant that an address names",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/board/src/shared/schemas/board-document.ts"
+  },
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#vZUWUgyb",
+  "outgoing": []
+}

@@ -1,0 +1,14 @@
+{
+  "order": 960190,
+  "name": "Coordinator thread",
+  "kind": "module",
+  "responsibility": "Starts, reuses and replaces the fast thread of a tab session and hears what it does",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/coordinator"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#ZSqgPAWH",
+  "outgoing": []
+}

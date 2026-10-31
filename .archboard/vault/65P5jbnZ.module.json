@@ -1,0 +1,14 @@
+{
+  "order": 960160,
+  "name": "Reading preparation",
+  "kind": "function",
+  "responsibility": "Prepares a projected reading for the local renderer and the picture cache",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/architecture-model/drawing.ts"
+  },
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#65P5jbnZ",
+  "outgoing": []
+}
