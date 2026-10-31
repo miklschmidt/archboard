@@ -27,6 +27,9 @@ const MOST_COLUMNS: usize = 6;
 /// Contraction takes back what no line uses.
 const FOOT_ROOM: f64 = 72.0;
 
+/// From this many lines a reading with no frame takes the grid. A smaller one keeps its ranks,
+/// which read from top to bottom.
+const CROWDED_ROOT: usize = 18;
 /// The tallest placement that contraction can still bring into the pane.
 const TALLEST: f64 = 1950.0;
 
@@ -62,10 +65,11 @@ struct Reading<'a> {
 }
 
 /// What a reading sets on a grid: the one frame it opens, holding cards alone,
-/// or the reading itself when it opens no frame.
+/// or the reading itself when it opens no frame and has too many lines to rank.
 fn holder(graph: &Node) -> Option<&Node> {
     let mut frames = graph.kids().iter().filter(|node| node.has_children());
-    let frame = frames.next().unwrap_or(graph);
+    let lines = graph.edges.as_ref().map_or(0, Vec::len);
+    let frame = frames.next().or((lines >= CROWDED_ROOT).then_some(graph))?;
     let flat = !frame.kids().iter().any(Node::has_children);
     let grouped = |node: &Node| node.option(PLACING_GROUP).is_some();
     let plain = !graph.kids().iter().chain(frame.kids()).any(grouped);

@@ -2,6 +2,7 @@
 
 use crate::{
     blocks::assembly::Placed,
+    constants::CONTAINER_INSET,
     geometry::{Point, Rect},
 };
 
@@ -81,6 +82,15 @@ impl Space {
     fn point(&mut self, point: Point) {
         self.x.protect(point.x, 0.0);
         self.y.protect(point.y, 0.0);
+    }
+
+    /// A frame keeps its whole inset: a line can run in it, but no contraction takes it.
+    fn inset(&mut self, frame: Rect) {
+        self.x.protect(frame.x, CONTAINER_INSET);
+        self.x
+            .protect(frame.x + frame.width - CONTAINER_INSET, CONTAINER_INSET);
+        self.y
+            .protect(frame.y + frame.height - CONTAINER_INSET, CONTAINER_INSET);
     }
 
     fn boundary(&mut self, rect: Rect) {
@@ -182,6 +192,9 @@ pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
     }
     for scope in shape.scopes.values() {
         space.boundary(scope.bounds);
+    }
+    for frame in &shape.drawing.frames {
+        space.inset(frame.bx);
     }
     let contraction = Contraction {
         x: space.x.gaps(),

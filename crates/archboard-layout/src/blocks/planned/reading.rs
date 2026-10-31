@@ -92,7 +92,7 @@ fn room_taken(drawing: &crate::blocks::assembly::Placed) -> f64 {
 /// What a dense placement promises before it is routed: the straight way of
 /// its lines times the room it takes, so a long thin page pays for its shape.
 pub(super) fn promise(drawing: &crate::blocks::assembly::Placed, reach: f64) -> f64 {
-    reach * room_taken(drawing)
+    (1.0 + reach) * room_taken(drawing)
 }
 
 fn long_detours(lines: &[PlacedLine]) -> usize {
@@ -111,7 +111,7 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
         drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         long_detours(&drawing.edges),
         approaches,
-        f64::from_bits(cost) * room_taken(drawing),
+        (1.0 + f64::from_bits(cost)) * room_taken(drawing),
     )
 }
 

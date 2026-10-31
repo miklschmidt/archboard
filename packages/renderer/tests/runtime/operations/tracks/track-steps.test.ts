@@ -263,13 +263,13 @@ function frameWalls(svg: string): Walls[] {
 	const shift = bodyShift(svg);
 	return [
 		...svg.matchAll(
-			/data-depiction="container"[^>]*>(?:(?!<\/g>)[\s\S])*?<rect class="ab-halo" x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu,
+			/data-depiction="container"[^>]*><rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="10" pointer-events="all"/g,
 		),
 	].map(([, x, y, width, height]) => ({
-		left: Number(x) + 3 + shift.x,
-		right: Number(x) + Number(width) - 3 + shift.x,
-		top: Number(y) + 3 + shift.y,
-		bottom: Number(y) + Number(height) - 3 + shift.y,
+		left: Number(x) + shift.x,
+		right: Number(x) + Number(width) + shift.x,
+		top: Number(y) + shift.y,
+		bottom: Number(y) + Number(height) + shift.y,
 	}));
 }
 
