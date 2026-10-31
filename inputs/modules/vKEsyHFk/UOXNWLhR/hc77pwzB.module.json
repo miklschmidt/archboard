@@ -59,7 +59,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
         "symbol": "semanticRenderQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",

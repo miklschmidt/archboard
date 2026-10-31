@@ -13,6 +13,19 @@
   "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
   "outgoing": [
     {
+      "order": 27000,
+      "kind": "call",
+      "label": "a card's far words and their size",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/far_card.rs",
+        "symbol": "far_words"
+      },
+      "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
       "order": 60800,
       "kind": "call",
       "label": "color words for the standing",
@@ -24,19 +37,6 @@
       },
       "id": "vKEsyHFk#qnIHdYgf",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
-    },
-    {
-      "order": 27000,
-      "kind": "call",
-      "label": "the size far names are set at",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "crates/archboard-scene/src/paint/mod.rs",
-        "symbol": "far_size_for"
-      },
-      "id": "vKEsyHFk/OjRLKb74#lQFfcKXc",
-      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
     }
   ]
 }

@@ -27,12 +27,12 @@
     {
       "order": 45000,
       "kind": "call",
-      "label": "shared card and header content",
+      "label": "a card's near and far words",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-scene/src/paint/measured_cards.rs",
-        "symbol": "paint_card_views"
+        "symbol": "words_in"
       },
       "id": "vKEsyHFk/gbyqW4H3#WBfvIs2I",
       "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
@@ -62,6 +62,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#djrx53Aq",
       "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    },
+    {
+      "order": 990000,
+      "kind": "call",
+      "label": "where a card's tags stand",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/measured_cards.rs",
+        "symbol": "tag_top"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+      "id": "vKEsyHFk#QT3hte5K"
     }
   ]
 }

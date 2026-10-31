@@ -15,15 +15,28 @@
     {
       "order": 42000,
       "kind": "call",
-      "label": "the header slab and its shadow",
+      "label": "the selection seat and ghost of a frame",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-scene/src/paint/tray.rs",
-        "symbol": "slab"
+        "symbol": "slab_seat"
       },
       "id": "vKEsyHFk/gbyqW4H3#GlD7SMi0",
       "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "order": 990000,
+      "kind": "call",
+      "label": "the ink and dash of a frame's standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/tray.rs",
+        "symbol": "ink_of"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
+      "id": "vKEsyHFk#KYdxUOD0"
     }
   ]
 }

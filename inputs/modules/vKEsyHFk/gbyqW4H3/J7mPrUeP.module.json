@@ -60,7 +60,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "crates/archboard-scene/src/paint/architecture.rs",
-        "symbol": "paint_measured_frame"
+        "symbol": "paint_measured_card"
       },
       "id": "vKEsyHFk/gbyqW4H3#s3eeTdzY",
       "to": "vKEsyHFk/gbyqW4H3#Man3LVIp"
