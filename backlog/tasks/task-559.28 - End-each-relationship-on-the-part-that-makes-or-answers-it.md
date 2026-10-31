@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T04:16:00Z'
-updated_date: '2026-10-31T06:18:00Z'
+updated_date: '2026-10-31T06:29:00Z'
 labels:
   - model
 dependencies: []
@@ -68,4 +68,6 @@ Core bug, not fixed, because crates are out of scope: on_wall in crates/archboar
 Replay: /tmp/integrate/relationship-ends/small/replay.sh with batches.json, on an unrepaired vault. The commits of this branch are run f1. An operation identity cannot repeat, so a new run needs a new suffix.
 
 Gate: bunx vp run --no-cache check:all exit 0 on 94ccbcfe9: 21 of 21 tasks, 48 of 48 browser owners, 5,391 tests passed, 0 failed. Earlier runs stopped four times. Run 1 stopped on max-lines in relationships.ts, so the finding moved to evidence/frame-ends.ts. Run 2 ended with exit code 144 in the browser lane, and its log shows no failed test. I do not know what ended it. Run 3 stopped on a port race in tests/system/server-state/codex-workbench-production-cleanup.test.ts: closedLoopbackEndpoint picked a port that another parallel test then took. Run 4 stopped on reader-measures.test.ts, which passed 5 of 5 alone through its lane, so it looks load dependent. Neither test touches this change.
+
+Smaller repair merged to integrate/pr19, gate 21 of 21 in 144 s. Lines 1694 to 1765, area 148.5 M to 156.0 M, fit gate 107 to 109 of 115, modules with parts that read no entry points 9 to 0, frame ends 276 to 191 entering and 325 to 210 leaving. feat/relationship-ends b58c99db9 stays as the rejected full option. Open: one own-part relationship IyzXWhR8, six new CONTAINER_PASS_THROUGH warnings, four stale relationships wQBlFEQ3 mTr3mpxi 9vLmTtXn tWVYo1RT, and the on_wall clamp panic.
 <!-- SECTION:NOTES:END -->
