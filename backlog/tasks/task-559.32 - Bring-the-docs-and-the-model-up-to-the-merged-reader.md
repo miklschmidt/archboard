@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T06:36:00Z'
-updated_date: '2026-10-31T07:16:00Z'
+updated_date: '2026-10-31T07:19:00Z'
 labels:
   - docs
   - model
@@ -75,4 +75,6 @@ Drafts: each of the 8 reads identical before and after, by digest of modules, re
 Not changed, for the owner: stopWorkhorses only interrupts the running turn, so the whole-tree stop of ADR 0048 is unimplemented (TASK-446 In Progress), and ADR 0048 stays as it is. PictureKey no longer exists in code, although a TASK-559.19 note says it stays. ADR 0047's implementation brief has no code. Many module texts still say board. Code comments in door-endpoints.ts and shell-geometry.ts are stale and were out of scope.
 
 Gate: bunx vp run --no-cache check:all exit 0 at e1a55ef4f, 21 of 21 tasks, 48 of 48 browser owners.
+
+Merged to integrate/pr19, gate 21 of 21 in 138 s, server 17842 restarted after it was found down. Cause of the stop unknown.
 <!-- SECTION:NOTES:END -->
