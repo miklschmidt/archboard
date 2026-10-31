@@ -72,7 +72,7 @@ function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Eleme
 					<ComparisonLine comparison={model.comparison} line={line} />
 				</Select.Value>
 			</Select.Trigger>
-			<Select.Content align="end" alignItemWithTrigger={false} className="w-120 max-w-[80vw]">
+			<Select.Content align="end" className="w-120 max-w-[80vw]">
 				{choices.map((choice) => (
 					<ComparisonItem key={choice.value} choice={choice} />
 				))}

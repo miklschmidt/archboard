@@ -101,4 +101,4 @@ function Count(props: {
 	);
 }
 
-export { CountWords, ModelInterfaceLine };
+export { ModelInterfaceLine };

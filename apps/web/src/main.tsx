@@ -7,12 +7,15 @@ import { createRoot } from "react-dom/client";
 
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "#ui/components/application/Application.tsx";
+import { applyShellDurations } from "#ui/clients/application/shell-durations.ts";
 import { createBoardRoutingHost } from "#ui/components/board-routing/BoardRoutingHost.tsx";
 
 const root = document.getElementById("root");
 if (!root) {
 	throw new Error("The page has no #root element to mount into.");
 }
+
+applyShellDurations(document.documentElement);
 
 // Pictures are drawn here, with the renderer core and a pool of engine
 // workers, from the boards this tab reads (TASK-247). The renderer is its own

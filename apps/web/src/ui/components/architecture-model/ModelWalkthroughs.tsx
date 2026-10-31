@@ -1,6 +1,7 @@
 import { useCallback, useContext, type JSX } from "react";
 
 import type { Model } from "@archboard/board/content";
+import { Badge } from "@archboard/ui-kit/components";
 import { ModelChoiceList } from "#ui/components/architecture-model/ModelChoiceList.tsx";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 
@@ -11,8 +12,12 @@ type Walkthrough = Model["walkthroughs"][number];
  * @param walkthrough The walkthrough.
  * @returns Its number of steps.
  */
-function stepCount(walkthrough: Walkthrough): number {
-	return walkthrough.beats.length;
+function stepCount(walkthrough: Walkthrough): JSX.Element {
+	return (
+		<Badge variant="count" size="technical" title="Steps">
+			{walkthrough.beats.length}
+		</Badge>
+	);
 }
 
 /**

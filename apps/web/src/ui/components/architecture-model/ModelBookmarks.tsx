@@ -37,7 +37,7 @@ function ModelBookmarks(props: {
 			>
 				<Select.Value>{label}</Select.Value>
 			</Select.Trigger>
-			<Select.Content align="end" alignItemWithTrigger={false} className="w-auto max-w-xl min-w-64">
+			<Select.Content align="end" className="w-auto max-w-xl min-w-64">
 				<Select.Item value="none" data-preview-bookmark="none">
 					Explore modules
 				</Select.Item>

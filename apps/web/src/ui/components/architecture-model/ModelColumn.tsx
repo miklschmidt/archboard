@@ -1,7 +1,7 @@
 import { Fragment, type JSX, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
-import { cn, Tabs } from "@archboard/ui-kit/components";
+import { Badge, Tabs } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 
 /** What the left column lists. */
@@ -33,7 +33,7 @@ interface DestinationEntry {
 }
 
 /** How many tabs the column holds on one row. */
-const TABS_ON_A_ROW = 4;
+const TABS_ON_A_ROW = 5;
 
 /**
  * What a tab says of how many things it holds.
@@ -74,10 +74,9 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 }
 
 /**
- * Put a reader's destinations in the left column while its pane has focus: tabs with the
- * count of the whole model on Flows and Walkthroughs, so a list here never changes under a reader.
- * Five tabs do not fit the column, so the fifth starts a row of its own. A proposal adds Changes
- * there, and the walk stands at the end of that row.
+ * Put a reader's destinations in the left column while its pane has focus: tabs on the top edge of
+ * a well, with the count of the whole model on Flows and Walkthroughs, so a list here never changes
+ * under a reader. A proposal adds Changes on a row of its own, and the walk stands at the end of it.
  * @param props The destination on screen and the lists.
  * @returns The destinations, or nothing while another pane has focus.
  */
@@ -92,10 +91,12 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 					data-slot="model-destinations"
 					value={destination}
 					onValueChange={onDestination}
-					className="min-h-0 flex-1 gap-0"
+					className="min-h-0 flex-1 gap-0 px-2 pb-2"
 				>
 					<DestinationTabs entries={destinationEntries(props)} walker={props.walker} />
-					{props.children}
+					<div data-slot="column-well" className="column-well flex-1">
+						{props.children}
+					</div>
 				</Tabs>,
 				slot,
 			)}
@@ -117,65 +118,44 @@ function DestinationTabs(props: {
 	const { entries, walker } = props;
 	return (
 		<div className="relative shrink-0">
-			<Tabs.List
-				variant="underline"
-				className={cn(
-					"h-band px-2",
-					entries.length > TABS_ON_A_ROW &&
-						"flex-wrap items-stretch group-data-horizontal/tabs:h-auto",
-				)}
-			>
+			<Tabs.List variant="edge">
 				{entries.map((entry, index) => (
 					<Fragment key={entry.value}>
 						{index === TABS_ON_A_ROW && <TabRowBreak />}
-						<DestinationTab entry={entry} lower={index >= TABS_ON_A_ROW} />
+						<DestinationTab entry={entry} />
 					</Fragment>
 				))}
 			</Tabs.List>
 			{walker !== undefined && (
-				<div className="h-band absolute right-2 bottom-0 flex items-center">{walker}</div>
+				<div className="absolute right-0 bottom-1 flex items-center">{walker}</div>
 			)}
 		</div>
 	);
 }
 
 /**
- * The rule that sends the next tab to a row of its own, from edge to edge of the column.
+ * The rule that sends the next tab to a row of its own.
  * @returns The rule.
  */
 function TabRowBreak(): JSX.Element {
-	return <span aria-hidden="true" className="border-border -mx-2 w-[calc(100%+1rem)] border-t" />;
+	return <span aria-hidden="true" className="border-border w-full border-t" />;
 }
 
 /**
  * One tab of the destinations.
  * @param props The tab.
  * @param props.entry The tab.
- * @param props.lower Whether it stands on the second row, which is a band high.
  * @returns The tab.
  */
-function DestinationTab(props: {
-	readonly entry: DestinationEntry;
-	readonly lower: boolean;
-}): JSX.Element {
+function DestinationTab(props: { readonly entry: DestinationEntry }): JSX.Element {
 	const { value, label, count } = props.entry;
 	return (
-		<Tabs.Trigger
-			value={value}
-			data-destination={value}
-			className={cn(
-				"group-data-[variant=underline]/tabs-list:h-7 group-data-[variant=underline]/tabs-list:px-1",
-				props.lower && "group-data-[variant=underline]/tabs-list:h-band",
-			)}
-		>
+		<Tabs.Trigger value={value} data-destination={value}>
 			{label}
 			{count !== "" && (
-				<span
-					data-slot="destination-count"
-					className="text-technical text-muted-foreground font-mono"
-				>
+				<Badge variant="count" size="technical" data-slot="destination-count">
 					{count}
-				</span>
+				</Badge>
 			)}
 		</Tabs.Trigger>
 	);

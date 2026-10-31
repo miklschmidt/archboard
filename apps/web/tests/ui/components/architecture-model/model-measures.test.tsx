@@ -193,6 +193,43 @@ test("a module the read skipped says why, and a module no commit changed shows i
 	);
 });
 
+test("every measure keeps its place on a row, whatever the row can say of it", async () => {
+	answering(async () => Response.json(ANSWER));
+	mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	for (const id of ["api", "route", "worker"])
+		expect(row(id).querySelector('[data-slot="model-measure-cells"]')?.childElementCount).toBe(7);
+});
+
+test("a row says its counts to assistive technology, because a bare number says nothing", async () => {
+	answering(async () => Response.json(ANSWER));
+	mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	const label = row("api").getAttribute("aria-label")!;
+	expect(label).toStartWith("api");
+	expect(label).toContain("4");
+	expect(row("worker").getAttribute("aria-label")).not.toContain("Commits");
+});
+
+test("the list says once why modules were not read", async () => {
+	answering(async () => Response.json(ANSWER));
+	mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	const status = document.querySelector('[data-slot="model-measures-status"]')!;
+	expect(status.textContent).toContain("1 ");
+	expect(row("worker").textContent).not.toContain("Not read");
+});
+
+test("the bar of a row follows the sorted count, and a count of none has none", async () => {
+	answering(async () => Response.json(ANSWER));
+	mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	const bar = '[data-slot="model-measure-bar"]';
+	expect(row("api").querySelector<HTMLElement>(bar)?.style.width).toContain("* 1)");
+	expect(row("route").querySelector(bar)).toBeNull();
+	expect(row("worker").querySelector(bar)).toBeNull();
+});
+
 test("a failed read says so and offers the read again, and the interface stays", async () => {
 	const reads = answering(
 		async () => Response.json({ success: false, error: "Git is gone" }, { status: 500 }),

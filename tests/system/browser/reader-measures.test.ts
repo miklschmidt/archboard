@@ -5,6 +5,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { COLUMN_MS } from "@archboard/timing";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
 import {
@@ -115,6 +116,22 @@ test("a selection reads the history, and the list shows every module and selects
 		"the sort choices",
 		WAIT,
 	);
+	expect(
+		await browser.eval<boolean>(`(() => {
+			const choices = [...document.querySelectorAll('[data-slot="select-content"] [role="option"]')];
+			return choices.length > 0 && choices.every((choice) => choice.querySelector('[data-slot="select-description"]')?.textContent);
+		})()`),
+	).toBe(true);
+	// Base UI holds the transition off for the first frame of an open popover.
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`getComputedStyle(document.querySelector('[data-slot="select-content"]')).transitionDuration`,
+			),
+		(eases) => eases === `${COLUMN_MS.popoverIn / 1000}s, ${COLUMN_MS.popoverIn / 1000}s`,
+		"the popover to ease for its duration",
+		WAIT,
+	);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Enter"]);
@@ -124,6 +141,17 @@ test("a selection reads the history, and the list shows every module and selects
 		"the list by another measure",
 		WAIT,
 	);
+
+	expect(
+		await browser.eval<{ tabRows: number; columns: number }>(`(() => {
+			const rows = [...document.querySelectorAll('[data-measure-row]')];
+			const right = (row) => row.querySelector('[data-measure="callers"]')?.getBoundingClientRect().right;
+			return {
+				tabRows: new Set([...document.querySelectorAll('[data-destination]')].map((tab) => tab.getBoundingClientRect().top)).size,
+				columns: new Set(rows.map(right).filter((edge) => edge !== undefined)).size,
+			};
+		})()`),
+	).toEqual({ tabRows: 1, columns: 1 });
 
 	await browser.eval(`document.querySelector('${ROW("Shop#Handler")}').focus()`);
 	await browser.run(["press", "Enter"]);

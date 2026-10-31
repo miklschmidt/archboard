@@ -450,13 +450,13 @@ Fit is the scale at which the whole drawing shows in the reference pane,
 capped at one: `min(pane.width / page.width, pane.height / page.height)`,
 the arithmetic the viewer's own fit uses. `packages/renderer/src/shared/constants/shell-geometry.ts`
 holds two kinds of number. The shell's are measured: 1920 by 1080, less the
-320 navigator, the one-pixel line between the navigator and the panes, and the
-pane's 40 chrome row, which leaves a stage of 1599 by 1040. Nothing runs under
+448 navigator, the one-pixel line between the navigator and the panes, and the
+pane's 40 chrome row, which leaves a stage of 1471 by 1040. Nothing runs under
 the panes: the agent dock is at the navigator's foot. The renderer's page shape
 is tuned, not measured: `LAYOUT_ASPECT`, a plain 1.4 (ADR 0043). The reference
 pane takes its width from the shell, the stage less the 280 sidebar docked
-beside the picture and the 24 fit margin on either side, which is 1271, and
-its height from that aspect, about 908. The grid of loose cards and the wrap
+beside the picture and the 24 fit margin on either side, which is 1143, and
+its height from that aspect, about 816. The grid of loose cards and the wrap
 of a wide rank read the aspect alone. (Until 2026-10-05, TASK-395, the pane
 was derived whole from the shell before its redesign, a 56 header, a 36 pane
 bar and a 41 agent bar, which made it 1272 by 899: the fits recorded before

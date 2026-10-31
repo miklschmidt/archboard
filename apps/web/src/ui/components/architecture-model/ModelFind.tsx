@@ -14,11 +14,6 @@ import {
 import { usesCommandKey } from "@archboard/ui-kit/components";
 import { useFindShortcut } from "#ui/hooks/shell/use-find-shortcut.ts";
 import { findInModel, type FindHit, type FindKind } from "#ui/rules/architecture-model/search.ts";
-import { FACTS_INSET, markerX, MARKER_WIDTH, NAME_GAP } from "#ui/rules/shell/tree-grid.ts";
-
-/** The field's icon in the marker column, and its text the grid's gap after it. */
-const FIND_STYLE = { paddingLeft: markerX(0), paddingRight: FACTS_INSET, gap: NAME_GAP } as const;
-const ICON_STYLE = { width: MARKER_WIDTH } as const;
 
 /** What a hit is called, for a hit that is not a module. */
 const KIND_WORDS: Readonly<Record<FindKind, string | null>> = {
@@ -90,12 +85,12 @@ function Result(props: ResultProps): JSX.Element {
 				data-find-id={hit.id}
 				onMouseDown={keepFocus}
 				onClick={choose}
-				className="data-active:bg-sidebar-accent hover:bg-sidebar-accent/50 relative flex w-full flex-col px-4 py-1.5 text-left"
+				className="data-active:bg-foreground/8 hover:bg-foreground/8 rounded-control relative flex w-full flex-col px-3 py-1.5 text-left"
 			>
 				{props.active && (
 					<span
 						aria-hidden="true"
-						className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
+						className="bg-primary-mark absolute inset-x-1 bottom-0 h-0.5 rounded-full"
 					/>
 				)}
 				<span className="text-control truncate" title={hit.name}>
@@ -132,7 +127,7 @@ function Results(props: ResultsProps): JSX.Element {
 			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's listbox
 			role="listbox"
 			aria-label="Found in this architecture"
-			className="bg-popover text-popover-foreground border-border shadow-float absolute top-full right-0 left-0 z-40 max-h-[60vh] overflow-y-auto border-b py-1"
+			className="bg-popover text-popover-foreground border-border shadow-float rounded-panel absolute top-full right-0 left-0 z-40 mt-1 max-h-[60vh] overflow-y-auto border p-1"
 		>
 			{results.map((hit, at) => (
 				<Result
@@ -256,12 +251,9 @@ function ModelFind(props: ModelFindProps): JSX.Element {
 	return (
 		<div
 			data-slot="model-find"
-			style={FIND_STYLE}
-			className="border-border h-band relative flex shrink-0 items-center border-b"
+			className="border-input bg-tray-sink shadow-well focus-within:border-ring rounded-control relative m-2 mb-1.5 flex h-8 shrink-0 items-center gap-2 border pr-1 pl-2.5"
 		>
-			<span style={ICON_STYLE} className="flex shrink-0 justify-center">
-				<RiSearchLine aria-hidden="true" className="text-muted-foreground size-3.5" />
-			</span>
+			<RiSearchLine aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
 			<input
 				ref={input}
 				value={query}

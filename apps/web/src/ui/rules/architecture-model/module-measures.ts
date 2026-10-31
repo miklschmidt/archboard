@@ -43,15 +43,50 @@ interface MeasureRow {
 	readonly history?: ModuleHistory | undefined;
 }
 
-/** Every measure, in the order the sort control offers them. */
-const MEASURES: readonly { readonly key: MeasureKey; readonly label: string }[] = [
-	{ key: "commits", label: "Commits" },
-	{ key: "unjoined", label: "Unjoined" },
-	{ key: "entryPoints", label: "Entries" },
-	{ key: "hiddenParts", label: "Hidden" },
-	{ key: "callers", label: "Callers" },
-	{ key: "wholeModule", label: "To module" },
-	{ key: "passThrough", label: "Pass-through" },
+/** One measure: what the column and the sort control call it, and what it counts and shows. */
+interface Measure {
+	readonly key: MeasureKey;
+	readonly label: string;
+	readonly description: string;
+}
+
+/** Every measure, in the order of the columns and of the sort control. */
+const MEASURES: readonly Measure[] = [
+	{
+		key: "commits",
+		label: "Commits",
+		description: "Commits that changed its code. Shows code that keeps changing.",
+	},
+	{
+		key: "unjoined",
+		label: "Unjoined",
+		description: "Modules it changes with but is not joined to. Shows hidden links.",
+	},
+	{
+		key: "entryPoints",
+		label: "Entries",
+		description: "Parts that callers outside reach. Shows how wide the interface is.",
+	},
+	{
+		key: "hiddenParts",
+		label: "Hidden",
+		description: "Parts that nothing outside reaches. Shows what it keeps to itself.",
+	},
+	{
+		key: "callers",
+		label: "Callers",
+		description: "Parts outside that reach in. Shows how far a change can spread.",
+	},
+	{
+		key: "wholeModule",
+		label: "To module",
+		description: "Callers that name the module, not a part. Shows calls no part answers.",
+	},
+	{
+		key: "passThrough",
+		label: "Pass-through",
+		description: "Entries that pass one call on. Shows parts to question.",
+	},
 ];
 
 /** What a model with no code history to read sorts by. */
@@ -198,6 +233,16 @@ function sortedRows(rows: readonly MeasureRow[], key: MeasureKey): readonly Meas
 	});
 }
 
+/**
+ * The most of a measure that any module has, which the bar of a row is drawn against.
+ * @param rows The modules.
+ * @param key The measure.
+ * @returns The largest count, or none for a list with no such count.
+ */
+function mostOf(rows: readonly MeasureRow[], key: MeasureKey): number {
+	return rows.reduce((most, row) => Math.max(most, measureOf(row, key) ?? 0), 0);
+}
+
 export {
 	MEASURES,
 	NO_HISTORY_MEASURE,
@@ -206,10 +251,12 @@ export {
 	interfaceRows,
 	isHistoryMeasure,
 	measureOf,
+	mostOf,
 	sortedRows,
 	withHistory,
 	type HistoryReading,
 	type HistoryState,
+	type Measure,
 	type MeasureKey,
 	type MeasureRow,
 	type ModuleHistory,
