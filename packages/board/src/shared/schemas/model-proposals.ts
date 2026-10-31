@@ -14,8 +14,14 @@ import {
 import { QualifiedSubjectIdSchema, SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import { HistoricalRevisionsSchema } from "#shared/schemas/historical-correction.ts";
 import { ProposalChangeSchema, SubjectKindSchema } from "#shared/schemas/model-changes.ts";
+import {
+	InterfaceChangesSchema,
+	MeasuredContainerSchema,
+} from "#shared/schemas/model-interfaces.ts";
 const StateSelectionSchema = ReadingSelectionSchema.extend({
 	explain: ExplanationRequestSchema.optional(),
+	/** The other states whose interface measures go beside a comparison (ADR 0044). */
+	beside: z.array(z.string().min(1)).optional(),
 });
 const CheckpointIdSchema = z.string().regex(/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/u);
 const ModelIssueSchema = ReconciliationIssueSchema.extend({
@@ -92,6 +98,21 @@ const ComparisonSchema = z.strictObject({
 			against: z.array(CorrectionAuditSchema),
 		})
 		.optional(),
+	// An interface change costs every caller, so a comparison says it first (ADR 0044).
+	interfaceChanges: InterfaceChangesSchema,
+	interfaceMeasures: z.strictObject({
+		/** The selected state, the state it is read against, then each state put beside them. */
+		states: z.array(
+			z.strictObject({
+				/** Null for a checkpoint or a planning reading that selects no state. */
+				state: SelectedStateSchema.pick({ id: true, name: true, lifecycle: true })
+					.strict()
+					.nullable(),
+				checkpoint: CheckpointIdSchema.optional(),
+			}),
+		),
+		containers: z.array(MeasuredContainerSchema),
+	}),
 	subjects: z.array(
 		z.strictObject({
 			id: QualifiedSubjectIdSchema,

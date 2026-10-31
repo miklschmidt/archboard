@@ -227,6 +227,11 @@ A module outside a container where a relationship into the container starts, wha
 A relationship that ends on the container itself makes a caller and no entry point.
 _Avoid_: client, consumer, dependent, user (that is whoever reads the canvas)
 
+**Interface change**:
+What a comparison says moved in a container's interface: an entry point added or removed, a part that moved into or out of the interface, or a caller gained or lost.
+It costs every caller, so a comparison states it first, and it sets no comparison status (ADR 0044).
+_Avoid_: breaking change, API diff
+
 **Pass-through entry point**:
 An entry point with no children that sends exactly one relationship, of the same kind as every relationship it receives.
 The model shows its shape and not what its body does, so it is a question for the user, never a fault.
@@ -241,6 +246,15 @@ _Avoid_: layer, empty container
 The counts of one container in one state: its entry points, hidden parts, callers, outgoing relationships and pass-through entry points.
 They say what the model claims about the container and are never combined into one score.
 _Avoid_: scorecard, depth score, metrics
+
+**Group boundary**:
+The relationships with a member of a group at exactly one end, and the modules at their far ends.
+It follows the members, not the containers around them.
+_Avoid_: group interface, region, group edge
+
+**Design lens**:
+A read that states facts about a design and gives no verdict: an interface, an interface change, locality or a branch footprint.
+_Avoid_: score, audit, lint
 
 **Vault policy**:
 The vault configuration that holds the vault vocabulary and how each word looks: its name, icon, color, dash and arrowhead.

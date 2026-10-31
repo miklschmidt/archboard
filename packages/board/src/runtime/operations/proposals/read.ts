@@ -6,6 +6,7 @@ import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/m
 import {
 	readCurrentModel,
 	decodeModel,
+	failure,
 	selectModule,
 	selectFlow,
 } from "#runtime/operations/read/model-read.ts";
@@ -428,6 +429,45 @@ function comparisonCorrections(selected: ArchitectureModel, against: Architectur
 		: { corrections: { selected: left, against: right } };
 }
 /**
+ * Refuse states to measure beside a reading that compares nothing.
+ * @returns The actionable refusal.
+ */
+function nothingToMeasureBeside() {
+	const code = "COMPARISON_REQUIRED";
+	return failure(code, [
+		{
+			code,
+			file: "model.json",
+			message: "Measures go beside a comparison, and this reading compares nothing.",
+			recovery: "Select a draft with --state, or name its base with --against.",
+		},
+	]);
+}
+/**
+ * Attach a comparison to the selected reading.
+ * @param selected The selected complete state.
+ * @param reason Why this base was chosen.
+ * @param against Its complete comparison base.
+ * @param beside The complete states measured beside these two.
+ * @returns The compared state.
+ */
+function withComparison(
+	selected: ArchitectureModel,
+	reason: NonNullable<ArchitectureModel["comparison"]>["reason"],
+	against: ArchitectureModel,
+	beside: readonly ArchitectureModel[],
+): ArchitectureModel {
+	selected.comparison = {
+		reason,
+		against: against.selectedState,
+		revision: against.revision,
+		...comparisonOf(against, selected, beside),
+		...(against.checkpoint === undefined ? {} : { checkpoint: against.checkpoint.id }),
+		...comparisonCorrections(selected, against),
+	};
+	return selected;
+}
+/**
  * Add serializable semantic comparison to a complete selected reading.
  * @param context The archive owner.
  * @param selected The selected complete state.
@@ -442,18 +482,16 @@ async function compareSelected(
 	selection: Selection,
 ): Promise<ArchitectureModelRead> {
 	const reference = comparisonReference(selected, current, selection);
-	if (reference === undefined) return selected;
+	if (reference === undefined)
+		return selection.beside === undefined ? selected : nothingToMeasureBeside();
 	const against = await requestedState(context, current, reference.selector);
 	if (!against.success) return against;
-	selected.comparison = {
-		reason: reference.reason,
-		against: against.selectedState,
-		revision: against.revision,
-		subjects: comparisonOf(against, selected),
-		...(against.checkpoint === undefined ? {} : { checkpoint: against.checkpoint.id }),
-		...comparisonCorrections(selected, against),
-	};
-	return selected;
+	const beside = await Promise.all(
+		(selection.beside ?? []).map((selector) => requestedState(context, current, selector)),
+	);
+	const refused = beside.find((reading) => !reading.success);
+	const readings = beside.filter((reading) => reading.success);
+	return refused ?? withComparison(selected, reference.reason, against, readings);
 }
 /**
  * Keep an uninitialized private archive separate from readable current inputs.
@@ -508,7 +546,7 @@ async function selectedReading(
 	selection: Selection,
 ): Promise<ArchitectureModelRead> {
 	const current = readCurrentModel(vault);
-	if (selection.state === undefined && selection.against === undefined)
+	if ([selection.state, selection.against, selection.beside].every((value) => value === undefined))
 		return readingCatalogue(vault, current);
 	const context = await archiveContext(vault);
 	const selected = await requestedState(context, current, selection.state);

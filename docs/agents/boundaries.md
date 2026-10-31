@@ -746,8 +746,9 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
 - `src/cli/` owns command contracts, dispatch, discovery, server clients, and file receipts.
   `protocol/contract/` declares invocation, answer, and refusal contracts.
   `rules/` projects those contracts into Commander parsing and help.
+  `rules/model/` puts the shared interface derivations into the answers and words of `model inspect` and `model compare`.
   `clients/server/` calls the public canonical HTTP routes through the gated server client.
-  `operations/model/` owns model commands, including claims, edits, migration, history, and rendering.
+  `operations/model/` owns model commands, including claims, edits, inspection, migration, history, and rendering.
   Pane, repository, server, vault, and skill installation commands retain their existing operation owners.
   `operations/invocation/` resolves the command table, session, and explicit vault.
   `operations/execution/` presents one operation result.

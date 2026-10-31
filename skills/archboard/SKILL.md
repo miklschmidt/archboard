@@ -75,6 +75,18 @@ A reading that opens a module draws no line between it and a part that it holds,
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 
+## Read the design lens
+
+Before you judge a module, plan a refactor, or choose between proposals, read the facts that the model and Git hold.
+
+- `model inspect <module>` states one module's interface. `--group <id>` states one group's boundary.
+- `model compare --state <proposal>` states interface changes first, then the measures of each state. `--beside <state>` adds a competing proposal.
+- `model locality` states which bound modules change often and which change together.
+- `model footprint --base <ref> --state <proposal>` sets a branch's changes against what its proposal names.
+
+Read [the design lens](references/design-lens.md) for what each fact means.
+Each fact is a question that the source answers. Report it as a fact and leave the judgment to the user.
+
 ## Say what each flow does
 
 Every flow has a `summary`: one or two plain sentences that say what the exchange does and why it matters.
@@ -146,6 +158,7 @@ Never claim frontend acceptance, adoption, publication, or migration without the
 [Setup](references/setup.md) covers installation and local source tooling.
 [Schema references](references/schemas.md) point to generated runtime contracts.
 [Canonical models](references/canonical-models.md) describe authoring and history operations.
+[The design lens](references/design-lens.md) says what interface, locality, and footprint facts mean.
 [Canonical walkthroughs](references/canonical-walkthroughs.md) describe captured narratives and recordings.
 [Legacy migration](references/legacy-migration.md) preserves original identities, states, and exact bytes through explicit cutover.
 

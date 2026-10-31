@@ -86,6 +86,8 @@ const COMPARED: Model = {
 		reason: "predecessor",
 		against: null,
 		revision: SHOP.revision,
+		interfaceChanges: { changed: [], unchanged: [] },
+		interfaceMeasures: { states: [], containers: [] },
 		subjects: [],
 	},
 };

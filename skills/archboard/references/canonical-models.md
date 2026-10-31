@@ -631,6 +631,9 @@ archboard model compare --state '<proposal-name>' -C <directory>
 archboard model compare --state '<proposal-name>' --against '<other-state-or-checkpoint>' -C <directory>
 ```
 
+`model compare` states interface changes first, then the measures of each state.
+[The design lens](design-lens.md) says what each fact means.
+
 State selectors resolve a stable identity before a unique current or former name.
 `current` explicitly requests the current designation.
 A planning model has no current designation until explicit adoption.
@@ -963,7 +966,7 @@ If complete replacement is intended, read an explicit comparison against current
 archboard model compare --state '<draft-id>' --against current -C <directory>
 ```
 
-Copy the complete returned `comparison` into `proposal.comparison`.
+Copy the complete returned `comparison` into `proposal.comparison`, from a read with no `--beside`.
 Set `proposal.force` to true.
 Use that reading's complete revision in the common request.
 `COMPARISON_REQUIRED` means that the comparison is absent, incomplete, or stale.

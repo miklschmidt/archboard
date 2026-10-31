@@ -162,7 +162,7 @@ its own. Its own interface answers for them.
 A pass-through entry point has no mark of its own in the picture. Every visual
 channel is taken (ADR 0025), and the picture already shows the shape: an entry
 point with one line onward. It shows in words wherever the interface is listed:
-in the answer of `semantic inspect`, beside the measures of competing proposals
+in the answer of `model inspect`, beside the measures of competing proposals
 and in the pane inspector. It is reported as information, never as a warning.
 
 ### The interface measures
@@ -492,3 +492,16 @@ a default value in a fact or quotes one in a finding.
 A compose file and a plain Kubernetes manifest declare no interface that
 this rule can read. A container bound to one, or to its directory, still
 gets `exposure-unknown`. This is a skip, not a claim that it exposes no names.
+
+## Amendment of 2026-10-31: the canonical commands carry the answer
+
+TASK-559.27 restores what PR 19 removed with the board commands. Everything else
+stands, and the rules above keep the word variant where the canonical model says
+state.
+
+`model inspect` answers for one module or, with `--group`, for one group. The
+canonical read carries `interfaceChanges` and `interfaceMeasures` in its
+`comparison`, so the CLI and the reader state one derivation. `model compare`
+says them first, and `--beside` adds a competing state to the measures. These
+two sections are required parts of a comparison, so a forced adoption must copy
+them from a fresh read with no `--beside`.

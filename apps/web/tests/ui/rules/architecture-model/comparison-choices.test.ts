@@ -76,6 +76,8 @@ const BASED: Comparison = {
 	revision: SHOP.revision,
 	checkpoint: "a".repeat(40),
 	subjects: [],
+	interfaceChanges: { changed: [], unchanged: [] },
+	interfaceMeasures: { states: [], containers: [] },
 };
 
 const SAVED: Model["checkpoint"] = {
@@ -145,6 +147,8 @@ test("a saved base stands as one more choice, by its time and with no identity",
 		revision: SHOP.revision,
 		checkpoint: id,
 		subjects: [{ id: "Shop#Gateway", subjectKind: "module", kind: "changed", fields: [] }],
+		interfaceChanges: { changed: [], unchanged: [] },
+		interfaceMeasures: { states: [], containers: [] },
 	};
 	const model = reading({ selectedState: CURRENT, comparison });
 	const inputs = {

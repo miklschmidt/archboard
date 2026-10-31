@@ -73,7 +73,7 @@ function readArchitectureModelOnServer(
 	const query = new URLSearchParams(
 		Object.entries(values)
 			.filter(([, value]) => value !== undefined)
-			.map(([key, value]) => [key, String(value)]),
+			.flatMap(([key, value]) => [value].flat().map((entry) => [key, String(entry)])),
 	);
 	return architectureResult(ArchitectureModelReadSchema, `/api/architecture/model?${query}`);
 }

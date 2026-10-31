@@ -75,6 +75,8 @@ function proposal(subjects: readonly Subject[]): Model {
 			reason: "predecessor",
 			against: BASE.selectedState ?? null,
 			revision: BASE.revision,
+			interfaceChanges: { changed: [], unchanged: [] },
+			interfaceMeasures: { states: [], containers: [] },
 			subjects: [...subjects],
 		},
 	};
