@@ -62,11 +62,11 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 	else if (session.source !== source) setSession({ source, arrival, request: null });
 	const { request } = session;
 	const select = useCallback(
-		(walkthrough: string): void => {
+		(walkthrough: string, beat = 0): void => {
 			setSession({
 				source,
 				arrival,
-				request: { id: crypto.randomUUID(), walkthrough, checkpoint, state, preview },
+				request: { id: crypto.randomUUID(), walkthrough, checkpoint, state, preview, beat },
 			});
 		},
 		[source, arrival, checkpoint, state, preview],
@@ -76,7 +76,7 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
 		setSession({ source, arrival, request: null });
 		onPresentationEnd?.();
 	}, [source, arrival, onPresentationEnd]);
-	const context = usePlayback(request, select, leave);
+	const context = usePlayback(request, select, leave, props.narration);
 	return (
 		<ModelWalkthroughContext value={context}>
 			{props.chrome}
@@ -101,12 +101,14 @@ function ModelWalkthroughReader(props: ReaderProps): JSX.Element {
  * @param request The presentation that plays, or null.
  * @param select Start a walkthrough.
  * @param leave End the presentation.
+ * @param narration The way to narrate a walkthrough aloud, when the shell can.
  * @returns The context of the playback.
  */
 function usePlayback(
 	request: PlaybackRequest | null,
-	select: (walkthrough: string) => void,
+	select: (walkthrough: string, beat?: number) => void,
 	leave: () => void,
+	narration: ReaderProps["narration"],
 ) {
 	const active = request !== null;
 	const current = request?.walkthrough ?? null;
@@ -119,8 +121,9 @@ function usePlayback(
 			},
 			active,
 			current,
+			narration,
 		}),
-		[select, leave, active, current],
+		[select, leave, active, current, narration],
 	);
 }
 
@@ -173,6 +176,7 @@ function CapturedWalkthrough(
 				reducedMotion={props.reducedMotion}
 				onLeave={props.onLeave}
 				driven={props.driven ?? undefined}
+				beat={props.request.beat}
 				narration={props.narration}
 				overlay={props.overlay}
 			/>

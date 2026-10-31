@@ -7,6 +7,8 @@ interface CollectionDetailsProps {
 	model: Model;
 	collection: Model["collections"][number];
 	onOpenFlow: (id: string) => void;
+	/** Leave out the name and the kind, for a page that states them in its title. */
+	bare?: boolean | undefined;
 }
 
 /**
@@ -18,8 +20,12 @@ function ModelCollectionDetails(props: CollectionDetailsProps): JSX.Element {
 	const id = `${props.model.manifest.id}#${props.collection.id}`;
 	return (
 		<section data-slot="model-collection-details" data-collection-id={id} className="space-y-4">
-			<h3 className="text-title font-semibold">{props.collection.name}</h3>
-			<p className="text-body text-muted-foreground">Flow collection</p>
+			{props.bare !== true && (
+				<>
+					<h3 className="text-title font-semibold">{props.collection.name}</h3>
+					<p className="text-body text-muted-foreground">Flow collection</p>
+				</>
+			)}
 			<ModelSubjectStanding model={props.model} subject={id} />
 			{props.collection.flows.length === 0 && (
 				<p className="text-body">This collection has no flows.</p>

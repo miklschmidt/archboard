@@ -1,3 +1,4 @@
+import { ModelAboutTable } from "#ui/components/architecture-model/ModelAboutTable.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import type { JSX } from "react";
 import { everyStep, stepWords, isMessage, type FlowStep } from "@archboard/board/flow";
@@ -12,6 +13,8 @@ interface ModelFlowDetailsProps {
 	selection: ModelSelection;
 	/** Say only what is selected, for a place with no room for the whole flow. */
 	brief?: boolean | undefined;
+	/** Leave out the name and the summary, for a page that states them in its title. */
+	bare?: boolean | undefined;
 }
 
 /**
@@ -20,50 +23,70 @@ interface ModelFlowDetailsProps {
  * @returns The flow narrative and keyboard-accessible authored steps.
  */
 function ModelFlowDetails(props: ModelFlowDetailsProps): JSX.Element {
-	const { brief } = props;
-	const steps = everyStep(props.flow.steps).filter(
-		(step) => brief !== true || props.selection.ids.has(step.id),
-	);
+	const { brief, bare } = props;
+	const steps = everyStep(props.flow.steps).map((step, index) => ({ step, number: index + 1 }));
 	return (
 		<section data-slot="model-flow-details" className="space-y-6">
-			<h3 className="text-title font-semibold">{props.flow.name}</h3>
+			{bare !== true && <h3 className="text-title font-semibold">{props.flow.name}</h3>}
 			<ModelSubjectStanding model={props.model} subject={props.flow.id} />
-			{brief !== true && props.flow.summary && (
+			{brief !== true && bare !== true && props.flow.summary && (
 				<p className="text-body whitespace-pre-wrap">{props.flow.summary}</p>
 			)}
-			<ol data-slot="model-flow-steps" className="space-y-3">
-				{steps.map((step) => (
-					<FlowStepDetails key={step.id} step={step} {...props} />
-				))}
+			<ol data-slot="model-flow-steps" className="border-border -mx-3 border-t">
+				{steps
+					.filter(({ step }) => brief !== true || props.selection.ids.has(step.id))
+					.map(({ step, number }) => (
+						<FlowStepDetails key={step.id} step={step} number={number} {...props} />
+					))}
 			</ol>
 		</section>
 	);
 }
+
+/** A step's number, what it says, its two ends and its kind. */
+const STEP_GRID =
+	"grid grid-cols-[32px_minmax(0,1fr)] items-baseline gap-x-4 gap-y-1 @min-[860px]/sheet:grid-cols-[32px_minmax(0,1fr)_minmax(0,1fr)_64px]";
 
 /**
  * A step keeps its kind, endpoints, and explanatory text from the selected state.
  * @param props The authored step and its selection action.
  * @returns One selectable step without altering flow order.
  */
-function FlowStepDetails(props: ModelFlowDetailsProps & { step: FlowStep }): JSX.Element {
+function FlowStepDetails(
+	props: ModelFlowDetailsProps & { step: FlowStep; number: number },
+): JSX.Element {
 	const { step, selection } = props;
 	const pick = useModelPick(step.id, selection.select);
 	return (
-		<li>
+		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent relative border-b">
+			{selection.ids.has(step.id) && <ModelAboutTable.Picked />}
 			<button
 				type="button"
 				data-step-id={step.id}
 				aria-pressed={selection.ids.has(step.id)}
 				{...pick}
-				className="hover:bg-muted aria-pressed:bg-muted rounded-control text-body w-full space-y-2 px-3 py-2 text-left"
+				className={`${STEP_GRID} text-control min-h-10 w-full py-2 pr-3 pl-3 text-left`}
 			>
-				<span className="block font-semibold">{stepWords(step)}</span>
-				<span className="text-muted-foreground block">{step.kind}</span>
-				{isMessage(step) && (
+				<span className="text-muted-foreground text-right font-normal tabular-nums">
+					{props.number}
+				</span>
+				<span data-slot="model-flow-step-words" className="min-w-0 [overflow-wrap:anywhere]">
+					{stepWords(step)}
+				</span>
+				{isMessage(step) ? (
 					<MessageDetails step={step} model={props.model} reference={props.reference} />
+				) : (
+					<span className="hidden @min-[860px]/sheet:block" />
 				)}
+				<span className="text-body text-muted-foreground col-start-2 font-normal @min-[860px]/sheet:col-start-auto">
+					{step.kind}
+				</span>
 			</button>
-			{selection.ids.has(step.id) && <ModelSubjectStanding model={props.model} subject={step.id} />}
+			{selection.ids.has(step.id) && (
+				<div className="px-3 pb-2 empty:hidden">
+					<ModelSubjectStanding model={props.model} subject={step.id} />
+				</div>
+			)}
 		</li>
 	);
 }
@@ -85,13 +108,17 @@ function MessageDetails(props: {
 	const from = moduleName(model, step.from, props.reference);
 	const to = moduleName(model, step.to, props.reference);
 	return (
-		<>
-			<span className="block">
+		<span className="col-start-2 flex min-w-0 flex-col gap-1 font-normal @min-[860px]/sheet:col-start-auto">
+			<span>
 				{from} → {to}
 			</span>
-			{step.note && <span className="block whitespace-pre-wrap">{step.note}</span>}
-			{step.repeat && <span className="block">Repeated {step.repeat} times</span>}
-		</>
+			{step.note && (
+				<span className="text-body text-muted-foreground whitespace-pre-wrap">{step.note}</span>
+			)}
+			{step.repeat && (
+				<span className="text-body text-muted-foreground">Repeated {step.repeat} times</span>
+			)}
+		</span>
 	);
 }
 

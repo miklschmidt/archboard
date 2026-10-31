@@ -1,74 +1,36 @@
 import { AuthoredReference as Reference } from "#ui/components/architecture-model/AuthoredReference.tsx";
-import { useCallback, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
-import type { relationshipsOf } from "#ui/rules/architecture-model/selected-subject.ts";
+import type { Connection } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 type Module = Model["modules"][number];
-type Relationships = ReturnType<typeof relationshipsOf>;
 interface ModuleDetailsProps {
 	module: Module;
 	model: Model;
-	children?: ReactNode;
-	standing?: ReactNode;
-	/** What the module and its parts send and receive in this reading. */
-	relationships: Relationships;
-	/** Select what a connection row names. */
-	onSelect: (id: string) => void;
 }
 
 /**
- * Authored meaning from the selected module, without a second model copy.
- * @param props The module and the model that resolves its references.
- * @returns The module's responsibility, evidence, and connections.
+ * What About keeps of a module for a reader who asks for its identity.
+ * @param props The module.
+ * @param props.module The module.
+ * @returns A closed note.
  */
-function ModuleDetails(props: ModuleDetailsProps): JSX.Element {
+function ModuleDefinition(props: { module: Module }): JSX.Element {
 	const { module } = props;
 	return (
-		<article
-			data-slot="module-details"
-			data-module-id={module.id}
-			className="max-w-prose space-y-8"
-		>
-			<ModuleIntroduction {...props} />
-			{props.standing}
-			<ModuleEvidence {...props} />
-			{props.children}
-			<Connections {...props} />
-			<details className="text-body text-muted-foreground">
-				<summary>Definition</summary>
-				<dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
-					<Fact name="Identity">
-						<code>{module.id}</code>
-					</Fact>
-					<Fact name="File">
-						<code>{module.file}</code>
-					</Fact>
-					<Fact name="Order">{module.order}</Fact>
-				</dl>
-			</details>
-		</article>
-	);
-}
-
-/**
- * The module's purpose precedes its supporting evidence.
- * @param props The module and its policy vocabulary.
- * @returns The authored introduction.
- */
-function ModuleIntroduction(props: ModuleDetailsProps): JSX.Element {
-	const { module, model } = props;
-	return (
-		<header className="space-y-3">
-			<h3 className="title-figure [overflow-wrap:anywhere] uppercase">{module.name}</h3>
-			<p className="text-control text-muted-foreground">
-				{model.policy.nodeKinds[module.kind]?.name ?? module.kind}
-			</p>
-			{module.responsibility && (
-				<p className="text-reading whitespace-pre-wrap">{module.responsibility}</p>
-			)}
-			{module.description && <p className="text-body whitespace-pre-wrap">{module.description}</p>}
-		</header>
+		<details className="text-body text-muted-foreground">
+			<summary>Definition</summary>
+			<dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+				<Fact name="Identity">
+					<code>{module.id}</code>
+				</Fact>
+				<Fact name="File">
+					<code>{module.file}</code>
+				</Fact>
+				<Fact name="Order">{module.order}</Fact>
+			</dl>
+		</details>
 	);
 }
 
@@ -148,95 +110,25 @@ function Fact(props: FactProps): JSX.Element | null {
 }
 
 /**
- * Show every relationship in each direction, so that About agrees with the lines of the panel.
- * @param props The selected module and what it sends and receives.
- * @returns Both directions, resolved by stable identity.
+ * What a relationship adds to its row: its longer account, and its evidence on demand.
+ * @param props The authored relationship.
+ * @param props.edge The relationship.
+ * @returns The account, or nothing for a relationship with neither.
  */
-function Connections(props: ModuleDetailsProps): JSX.Element {
-	const { module, model, relationships } = props;
-	const directions = [
-		{ name: "Outgoing connections", edges: relationships.outgoing },
-		{ name: "Incoming connections", edges: relationships.incoming },
-	];
+function RelationshipEvidence(props: { edge: Connection["joins"][number] }): JSX.Element | null {
+	const { edge } = props;
+	if (!edge.description && !edge.anchor) return null;
 	return (
-		<div className="space-y-8">
-			{directions.map(({ name, edges }) => (
-				<section key={name} aria-label={name}>
-					<h4 className="text-title mb-3 font-semibold">{name}</h4>
-					{edges.length === 0 ? (
-						<p className="text-body text-muted-foreground">None recorded.</p>
-					) : (
-						<ul className="divide-border divide-y">
-							{edges.map((edge) => (
-								<ConnectionRow
-									key={edge.id}
-									edge={edge}
-									model={model}
-									module={module.id}
-									onSelect={props.onSelect}
-								/>
-							))}
-						</ul>
-					)}
-				</section>
-			))}
-		</div>
-	);
-}
-
-interface ConnectionRowProps {
-	edge: Relationships["outgoing"][number];
-	model: Model;
-	/** The module that the row is listed under. */
-	module: string;
-	onSelect: (id: string) => void;
-}
-
-/**
- * Describe one connection and keep its evidence available on demand.
- * @param props The authored relationship and its other endpoint.
- * @returns One relationship row.
- */
-function ConnectionRow(props: ConnectionRowProps): JSX.Element {
-	const { edge, model, onSelect } = props;
-	const select = useCallback((): void => onSelect(edge.id), [onSelect, edge.id]);
-	return (
-		<li className="space-y-2 py-3">
-			<button
-				type="button"
-				data-relationship-id={edge.id}
-				onClick={select}
-				className="hover:bg-muted/60 rounded-control -mx-2 block w-[calc(100%+1rem)] px-2 py-1 text-left"
-			>
-				<span className="text-control block font-medium">{rowName(model, edge, props.module)}</span>
-				<span className="text-body block">
-					{edge.label ?? model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
-				</span>
-			</button>
-			{edge.description && (
-				<p className="text-body text-muted-foreground whitespace-pre-wrap">{edge.description}</p>
-			)}
+		<div className="text-body text-muted-foreground space-y-2 pr-1 pb-2 pl-3">
+			{edge.description && <p className="max-w-[72ch] whitespace-pre-wrap">{edge.description}</p>}
 			{edge.anchor && (
-				<details className="text-body text-muted-foreground">
+				<details>
 					<summary>Evidence</summary>
 					<Reference reference={edge.anchor} />
 				</details>
 			)}
-		</li>
+		</div>
 	);
-}
-
-/**
- * What a row calls a relationship: the other end, or both ends when a part of the module holds it.
- * @param model The coherent model.
- * @param edge The relationship.
- * @param module The module that lists it.
- * @returns The row's name.
- */
-function rowName(model: Model, edge: ConnectionRowProps["edge"], module: string): string {
-	if (edge.from === module) return moduleName(model, edge.to);
-	if (edge.to === module) return moduleName(model, edge.from);
-	return `${moduleName(model, edge.from)} → ${moduleName(model, edge.to)}`;
 }
 
 /**
@@ -249,4 +141,4 @@ function moduleName(model: Model, id: string): string {
 	return model.modules.find((module) => module.id === id)?.name ?? id;
 }
 
-export { ModuleDetails };
+export { ModuleDefinition, ModuleEvidence, RelationshipEvidence };

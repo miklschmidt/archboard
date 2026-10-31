@@ -368,7 +368,7 @@ The reader of the focused pane portals Find, the destinations, and its lists int
 The pane header slot takes the crumbs, the code path, the state chip, and `Diagram | About`.
 `useReader` gathers the reading, places, moves, and choices that the column, the header, and the surface read.
 `React.Activity` keeps the reading mounted while a walkthrough plays, so the column stays and the picture keeps its camera.
-A live `architecture_snapshot` has no `states`, so `History` reads its own `architectureRecordQuery`, which loads only when `History` opens.
+A live `architecture_snapshot` has no `states`, so `History` and the timeline of About read `architectureRecordQuery`, which loads only when one of them opens.
 
 Find reads the complete selected model, including modules outside the visible scope.
 It searches names, code paths, responsibilities, descriptions, and code symbols without another server read.

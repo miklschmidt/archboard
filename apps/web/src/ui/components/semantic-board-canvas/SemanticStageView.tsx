@@ -1,7 +1,6 @@
 // What one semantic pane draws, from what its stage knows: the header with the
 // way back and the ways of reading, the standing of the variant on screen,
-// whichever of the four states is true with the About page over it while its
-// tab is open, and the sidebar beside the reading.
+// whichever of the four states is true, and the sidebar beside the reading.
 
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { JSX, ReactNode } from "react";
@@ -11,8 +10,6 @@ import type {
 	SemanticRender,
 	SemanticWaiting,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { AboutPage } from "#ui/components/semantic-board-canvas/AboutPage.tsx";
-import type { BoardTab } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
 import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import type { SemanticBoardStageProps } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { SemanticDiagram } from "#ui/components/semantic-board-canvas/SemanticDiagram.tsx";
@@ -37,7 +34,6 @@ import type { DrillNavigation } from "#ui/hooks/semantic-board-canvas/use-drill-
 import type { PaneReading } from "#ui/hooks/semantic-board-canvas/use-level-reading.ts";
 import type { PresentationPosition } from "#ui/hooks/semantic-board-canvas/use-presentation-position.ts";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
-import type { PagePlace } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import type { GroupChoice, GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
@@ -119,17 +115,9 @@ interface RenderView extends SemanticBoardStageProps {
 	readonly sidebar: Sidebar;
 	/** What the key to the picture on screen lists, or null while nothing typed is drawn. */
 	readonly pictureKey: PictureKey | null;
-	/** How the vault's kinds look, for the About page and the details panel. */
+	/** How the vault's kinds look, for the details panel. */
 	readonly look: KindLook;
-	/** The tab of the pane's header that is open: the picture, or the About page. */
-	readonly tab: BoardTab;
-	/** Open a tab. */
-	readonly onTab: (tab: BoardTab) => void;
-	/** Where the About page was scrolled to on this board, which it comes back to. */
-	readonly place: PagePlace;
-	/** Read one beat of a walkthrough: the diagram comes back, presenting it. */
-	readonly onReadBeat: (walkthrough: string, beat: number) => void;
-	/** Pick a subject out and show it: the diagram comes back, and the camera fits the subject. */
+	/** Pick a subject out and show it: the camera fits the subject. */
 	readonly onShow: (id: string) => void;
 	/** Attach the picture's area, which a panel laid over its edge keeps a pick clear of. */
 	readonly attachPicture: (element: HTMLDivElement | null) => void;
@@ -268,38 +256,11 @@ function SemanticStageView(view: RenderView): JSX.Element {
 					<div ref={attachPicture} className="relative flex min-h-0 min-w-0 flex-1">
 						{stageBody(view)}
 						{presentationOver(view)}
-						{view.tab === "about" && <PaneAboutPage view={view} />}
 					</div>
 					<SemanticStageSidebar view={view} pictureKey={view.pictureKey} />
 				</ReadingArea>
 			</PeekProvider>
 		</>
-	);
-}
-
-/**
- * The About page, over the picture.
- * @param props What the stage knows.
- * @param props.view What the stage knows.
- * @returns The page.
- */
-function PaneAboutPage(props: { readonly view: RenderView }): JSX.Element {
-	const { view } = props;
-	return (
-		<AboutPage
-			board={view.render.data?.board ?? view.drill.board}
-			reading={view.reading}
-			look={view.look}
-			groups={view.groupControls.names}
-			selection={view.selection}
-			onPick={view.onPick}
-			onShow={view.onShow}
-			onVariant={view.level.onVariant}
-			onPresent={view.onReadBeat}
-			narration={view.narration}
-			reducedMotion={view.reducedMotion ?? false}
-			place={view.place}
-		/>
 	);
 }
 

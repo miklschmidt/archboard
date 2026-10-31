@@ -21,7 +21,7 @@ interface ReaderChoiceInputs {
 /**
  * What a choice in the left column does, here or, with Alt, in the other pane.
  * @param inputs The reading and how it moves.
- * @returns A choice of a module, a flow, or something found.
+ * @returns A choice of a module, a flow, or something found, and the way to show a module.
  */
 function useReaderChoices(inputs: ReaderChoiceInputs) {
 	const { location, model, opened, area, select, onOpen, onDestination } = inputs;
@@ -92,7 +92,7 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 		},
 		[findModule, findFlow, findWalkthrough, selectBookmark, selectLegacyAddress],
 	);
-	return { chooseModule, chooseFlow, chooseFind };
+	return { chooseModule, chooseFlow, chooseFind, findModule };
 }
 
 export { useReaderChoices };

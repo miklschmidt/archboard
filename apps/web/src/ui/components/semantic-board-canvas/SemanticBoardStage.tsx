@@ -41,7 +41,6 @@ import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-sem
 import { useSettledFocus } from "#ui/hooks/semantic-board-canvas/use-settled-focus.ts";
 import { useSidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import { useStageAppearances } from "#ui/hooks/semantic-board-canvas/use-stage-appearances.ts";
-import { useStageTab } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import { useSubjectFocus } from "#ui/hooks/semantic-board-canvas/use-subject-focus.ts";
 import { useVariantReading } from "#ui/hooks/semantic-board-canvas/use-variant-reading.ts";
 import {
@@ -99,15 +98,6 @@ interface SemanticBoardStageProps {
 	 * @param view The view's id, or null for the whole variant.
 	 */
 	onViewChange?: ((view: string | null) => void) | undefined;
-	/**
-	 * The person chose a different state of this architecture.
-	 *
-	 * Owned above the stage for the same reason the view is: which variant a
-	 * pane is showing is part of what the pane is showing, and so part of its
-	 * board key — `semantic:pipeline@7c40IV7N`.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	onVariantChange?: ((variant: string | null) => void) | undefined;
 	/**
 	 * What this pane is actually reading, whenever that changes.
 	 *
@@ -254,7 +244,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const level = useLevelReading(drill, {
 		view: props.view,
 		onView: props.onViewChange,
-		onVariant: props.onVariantChange,
 		onUserChanged,
 	});
 	// The explanations belong to the board on screen, so drilling into another
@@ -370,9 +359,8 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
-	const { tab, onTab, place } = useStageTab(drill.board, narrative.open !== null, choose);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, resting, narrative.open !== null, tab === "about");
+	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion, sidebarWidth);
 	const onPickInPicture = useReveal({
 		camera,
@@ -385,25 +373,16 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	});
 	const { appearances, key } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
-	const { goTo } = narrative;
-	const onReadBeat = useCallback(
-		(walkthrough: string, beat: number): void => {
-			choose(walkthrough);
-			goTo(beat);
-		},
-		[choose, goTo],
-	);
-	// The stage fits the subject, not the About page or the code warning that
-	// asks: the page goes as the diagram comes back, and a subject the view on
-	// screen does not draw is fitted only once the whole board's picture arrives.
+	// The stage fits the subject, not the code warning that asks: a subject the
+	// view on screen does not draw is fitted only once the whole board's picture
+	// arrives.
 	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
 	const onShow = useCallback(
 		(id: string): void => {
 			onPick(id);
-			onTab("diagram");
 			fitSubject(id);
 		},
-		[onPick, onTab, fitSubject],
+		[onPick, fitSubject],
 	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
@@ -433,10 +412,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			sidebar={sidebar}
 			pictureKey={key}
 			look={look}
-			tab={tab}
-			onTab={onTab}
-			place={place}
-			onReadBeat={onReadBeat}
 			onShow={onShow}
 			attachPicture={attachPicture}
 			heading={departure.heading}

@@ -272,7 +272,7 @@ test("proposal readings keep draft lifecycle and module flow changes separate fr
 	await pollUntil(
 		() =>
 			browser.eval<string | null>(
-				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"] > span')?.textContent ?? null`,
+				`document.querySelector('[data-slot="model-flow-steps"] [data-step-id="Shop#Send"] [data-slot="model-flow-step-words"]')?.textContent ?? null`,
 			),
 		(label) => label === "Enqueue",
 		"the original flow in the retained draft",

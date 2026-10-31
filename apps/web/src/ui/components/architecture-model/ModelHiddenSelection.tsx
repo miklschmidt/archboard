@@ -29,7 +29,7 @@ function ModelHiddenSelection(props: ModelHiddenSelectionProps): JSX.Element | n
 			>
 				{props.oneLine === true
 					? "This reading does not draw this line."
-					: `${hidden.count} selected subjects are hidden in this reading.`}
+					: `${hidden.count === 1 ? "1 selected subject is" : `${hidden.count} selected subjects are`} hidden in this reading.`}
 			</output>
 			{hidden.structural > 0 && (
 				<Button

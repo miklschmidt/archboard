@@ -123,7 +123,11 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 	return (
 		<div data-slot="model-history" className="flex flex-col">
 			<RecordList label="Proposals" rows={proposalRows} lit={lit} onOpen={open} onToggle={toggle} />
-			<RecordList label="States" rows={rows} lit={lit} onOpen={open} onToggle={toggle} />
+			{/* A checkpoint folds under its state, so the rows wait for the checkpoints: none moves
+			    under a pointer when they arrive. */}
+			{!history.isPending && (
+				<RecordList label="States" rows={rows} lit={lit} onOpen={open} onToggle={toggle} />
+			)}
 			{props.catalogue.isError && (
 				<p role="alert" className="text-body max-w-prose p-3">
 					Architecture states are unavailable. Reopen History to retry.

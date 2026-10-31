@@ -3,6 +3,7 @@ import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelAbout } from "#ui/components/architecture-model/ModelAbout.tsx";
+import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import { ModelCaption } from "#ui/components/architecture-model/ModelCaption.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
@@ -13,6 +14,7 @@ import { ModelReadingCanvas } from "#ui/components/architecture-model/ModelReadi
 import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelectionBar.tsx";
 import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { usePanelWait } from "#ui/hooks/architecture-model/use-panel-wait.ts";
@@ -284,6 +286,8 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 	const panelOpen = settled.size > 0 && page === "diagram" && !keyOpen;
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
 	useReaderKeys(reader.onMove);
+	const about = aboutKey(reader);
+	const place = useAboutPlace(about);
 	return (
 		<PeekProvider selection={soleSelected(selection.ids)}>
 			<div
@@ -313,11 +317,29 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 					/>
 				</ReadingPicture>
 				{page === "about" && (
-					<ReadingAbout surface={props} code={code} actions={actions} onReveal={revealSelection} />
+					<ReadingAbout
+						key={about}
+						surface={props}
+						code={code}
+						actions={actions}
+						place={place}
+						onReveal={revealSelection}
+					/>
 				)}
 			</div>
 		</PeekProvider>
 	);
+}
+
+/**
+ * What About describes, as a key: the page starts again, with its own place, for each.
+ * @param reader The reader.
+ * @returns The key.
+ */
+function aboutKey(reader: Reader): string {
+	const { aboutSubject, accepted, selection } = reader;
+	const chosen = aboutSubject === "scope" ? "" : [...selection.ids].join();
+	return `${aboutSubject}:${accepted.shown.projection.opened}:${chosen}`;
 }
 
 /**
@@ -326,6 +348,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
  * @param props.surface The surface's inputs.
  * @param props.code The code findings of the reading.
  * @param props.actions What can be done with the selection.
+ * @param props.place Where the page was scrolled to, which it comes back to.
  * @param props.onReveal Bring a hidden selection into the reading.
  * @returns The page.
  */
@@ -333,19 +356,28 @@ function ReadingAbout(props: {
 	readonly surface: ModelReadingSurfaceProps;
 	readonly code: ReturnType<typeof useModelCodeFindings>;
 	readonly actions: SelectionActions;
+	readonly place: AboutPlace;
 	readonly onReveal: () => void;
 }): JSX.Element {
 	const { surface, code } = props;
 	const { reader } = surface;
-	const { accepted, selection, location, structure, model, onPage } = reader;
+	const { accepted, selection, location, onPage, aboutSubject, choices } = reader;
 	const { shown, scene } = accepted;
 	const { select } = selection;
-	const onWarning = useCallback(
+	const { findModule } = choices;
+	const { nodes } = shown.projection.content;
+	const onShow = useCallback(
 		(id: string | null): void => {
+			// A module inside a part opens that part, because this picture does not draw it.
+			const held = shown.model.modules.some((one) => one.id === id);
+			if (id !== null && held && !nodes.some((one) => one.id === id)) {
+				findModule(id, false);
+				return;
+			}
 			select(id);
 			if (id !== null) onPage("diagram");
 		},
-		[select, onPage],
+		[select, onPage, findModule, shown.model.modules, nodes],
 	);
 	const appearances = useMemo(
 		() => new Map(scene?.picture.appearances.map((one) => [one.id, one])),
@@ -361,23 +393,24 @@ function ReadingAbout(props: {
 		),
 		[code.reading, selection.ids, shown.projection.opened],
 	);
-	const opened = shown.projection.opened;
 	return (
 		<ModelAbout
-			subject={reader.aboutSubject}
+			subject={aboutSubject}
 			onSubject={reader.onAbout}
 			overview={surface.overview?.(shown.model) ?? null}
 			code={code.reading}
-			onWarning={onWarning}
+			onShow={onShow}
 			appearances={appearances}
-			scopeName={nameIn(structure.trail, opened) ?? model.manifest.name}
+			walkthroughs={reader.walkthroughs}
+			tree={reader.tree}
+			place={props.place}
 			reducedMotion={surface.reducedMotion}
 			evidence={evidence}
 			vault={reader.vault}
 			paneId={surface.paneId}
 			onCodeTargetNotice={surface.onCodeTargetNotice}
 			model={shown.model}
-			scope={opened}
+			scope={shown.projection.opened}
 			projection={shown.projection}
 			selection={selection}
 			onOpen={reader.onOpen}
@@ -387,19 +420,6 @@ function ReadingAbout(props: {
 			<SelectionControls {...props.actions} />
 		</ModelAbout>
 	);
-}
-
-/**
- * What a list of modules calls one of them.
- * @param modules The list.
- * @param id The module.
- * @returns Its name, while the list holds it.
- */
-function nameIn(
-	modules: readonly { readonly id: string; readonly name: string }[],
-	id: string | null,
-): string | undefined {
-	return modules.find((entry) => entry.id === id)?.name;
 }
 
 /**

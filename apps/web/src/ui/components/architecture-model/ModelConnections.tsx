@@ -9,62 +9,6 @@ import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-sele
 import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 
 type Connection = ReturnType<typeof projectModel>["connections"][number];
-interface ModelConnectionsProps {
-	model: Model;
-	reference: Model | undefined;
-	connections: readonly Connection[];
-	selected: ReadonlySet<string>;
-	onSelect: ModelSelection["select"];
-}
-
-/**
- * Keyboard users inspect the same projected lines as pointer users.
- * @param props The visible connections and selection action.
- * @returns Ordered connection choices.
- */
-function ModelConnections(props: ModelConnectionsProps): JSX.Element {
-	return (
-		<ul data-slot="model-connections" className="border-border -mx-3 border-t">
-			{props.connections.map((connection) => (
-				<ConnectionChoice key={connection.line.id} {...props} connection={connection} />
-			))}
-		</ul>
-	);
-}
-
-/**
- * Keep the projected endpoints and kind visible before inspection.
- * @param props The line and its selection action.
- * @returns A keyboard-accessible line choice.
- */
-function ConnectionChoice(props: ModelConnectionsProps & { connection: Connection }): JSX.Element {
-	const { model, onSelect } = props;
-	const { line, joins } = props.connection;
-	const pick = useModelPick(line.id, onSelect);
-	return (
-		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent border-b">
-			<button
-				type="button"
-				data-connection-id={line.id}
-				data-from={line.from}
-				data-to={line.to}
-				data-kind={line.kind}
-				aria-pressed={joins.every((edge) => props.selected.has(edge.id))}
-				{...pick}
-				className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] items-baseline gap-x-6 px-3 py-2.5 text-left"
-			>
-				<span className="text-control min-w-0">
-					{moduleName(model, line.from, props.reference)}
-				</span>
-				<span className="text-control flex min-w-0 items-baseline gap-2">
-					<LineArrow line={line} className="text-muted-foreground size-4 shrink-0 self-center" />
-					{moduleName(model, line.to, props.reference)}
-				</span>
-				<span className="text-body text-muted-foreground min-w-0">{kindNames(model, joins)}</span>
-			</button>
-		</li>
-	);
-}
 
 /** What a panel row of a relationship reads. */
 interface RelationshipRowProps {
@@ -215,47 +159,63 @@ function OneRelationship(
 }
 
 /**
- * A projected line keeps every authored relationship with all that it says.
+ * The two ends of a line as a title, with the mark the line draws between them.
+ * @param props The line and its model.
+ * @param props.line The line.
+ * @param props.model The model that names its modules.
+ * @param props.reference The coherent base for a removed end.
+ * @returns The title's words.
+ */
+function LineTitle(props: {
+	line: Connection["line"];
+	model: Model;
+	reference: Model | undefined;
+}): JSX.Element {
+	const { line, model, reference } = props;
+	return (
+		<span aria-label={lineEnds(line, model, reference)}>
+			{moduleName(model, line.from, reference)}{" "}
+			<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
+			{moduleName(model, line.to, reference)}
+		</span>
+	);
+}
+
+/**
+ * A projected line keeps every authored relationship with all that it says. The page's title says
+ * the ends, the kind and the label of a line of one relationship, so here it adds the rest.
  * @param props The selected line and complete model.
  * @param props.connection The line and every underlying relationship.
  * @param props.model The model that resolves authored endpoints.
  * @param props.reference The coherent base for removed endpoints.
- * @param props.children What the code says of it.
  * @returns The complete relationship details in authored order.
  */
 function ConnectionDetails(props: {
 	connection: Connection;
 	model: Model;
 	reference: Model | undefined;
-	children?: ReactNode;
 }): JSX.Element {
 	const { connection, model, reference } = props;
-	const { line } = connection;
+	const several = connection.joins.length > 1;
 	return (
 		<article data-slot="model-connection-details" className="space-y-8">
-			<header className="space-y-3">
-				<h3
-					aria-label={lineEnds(line, model, reference)}
-					className="title-figure [overflow-wrap:anywhere] uppercase"
-				>
-					{moduleName(model, line.from, reference)}{" "}
-					<LineArrow line={line} className="inline size-[0.7em] align-baseline" />{" "}
-					{moduleName(model, line.to, reference)}
-				</h3>
-				<p data-slot="model-connection-kinds" className="text-control text-muted-foreground">
-					{kindNames(model, connection.joins)}
-				</p>
-			</header>
-			{props.children}
 			<ol className="space-y-6">
 				{connection.joins.map((edge) => (
 					<li key={edge.id} data-relationship-id={edge.id} className="text-body space-y-2">
-						<p className="text-control">{lineEnds(edge, model, props.reference)}</p>
-						<p className="text-muted-foreground">
-							{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
-						</p>
-						{edge.label && <p>{edge.label}</p>}
-						{edge.description && <p className="whitespace-pre-wrap">{edge.description}</p>}
+						{several && (
+							<>
+								<p className="text-control">{lineEnds(edge, model, reference)}</p>
+								<p className="text-muted-foreground">
+									{model.policy.relationshipKinds[edge.kind]?.name ?? edge.kind}
+								</p>
+								{edge.label && <p>{edge.label}</p>}
+							</>
+						)}
+						{edge.description && (
+							<p className="text-control max-w-[72ch] font-normal whitespace-pre-wrap">
+								{edge.description}
+							</p>
+						)}
 						<code className="text-technical text-muted-foreground font-mono break-all">
 							{edge.id}
 						</code>
@@ -317,4 +277,4 @@ function moduleName(model: Model, id: string, reference: Model | undefined): str
 	);
 }
 
-export { ModelConnections, ConnectionDetails, ConnectionSummary, kindNames, lineEnds, moduleName };
+export { ConnectionDetails, ConnectionSummary, LineTitle, kindNames, lineEnds, moduleName };

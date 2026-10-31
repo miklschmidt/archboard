@@ -1,4 +1,4 @@
-import { openDestination, pick } from "./support/canonical-page.ts";
+import { openAbout, openDestination, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -278,6 +278,19 @@ test("walkthrough beats change readings while one revision stays captured until 
 			),
 		(count) => count === "1",
 		"the selection kept while the walkthrough ran",
+		WAIT,
+	);
+	await openAbout(browser);
+	await browser.run([
+		"click",
+		'[data-slot="about-step"]:nth-child(2) [data-slot="about-present-step"]',
+	]);
+	await beat(browser, 1, "architecture");
+	await browser.run(["click", '[data-slot="semantic-presentation-leave"]']);
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="model-about"]') !== null`),
+		Boolean,
+		"About again after a walkthrough presented from it",
 		WAIT,
 	);
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");

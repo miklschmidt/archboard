@@ -10,6 +10,7 @@ import { readModel } from "#ui/clients/architecture-model/queries.ts";
  * @param request.checkpoint The exact source checkpoint, or current inputs.
  * @param request.state The selected proposal, or current architecture.
  * @param request.preview The migration origin, when reading original architecture.
+ * @param request.beat The step it opens at, counted from zero.
  * @returns A captured read that changes only after an explicit new invocation.
  */
 function modelWalkthroughQuery(
@@ -20,6 +21,7 @@ function modelWalkthroughQuery(
 		checkpoint: string | null;
 		state: string | null;
 		preview?: string | null;
+		beat?: number;
 	},
 ) {
 	return queryOptions({

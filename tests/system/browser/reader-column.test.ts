@@ -177,11 +177,17 @@ test("every move of the left column has a keyboard route, also in a presented pa
 
 	// A flow says what it belongs to: its collection and what it does, and no crumb claims it.
 	expect(
-		await browser.eval<{ line: string | null; section: boolean; onTrail: boolean }>(`({
+		await pollUntil(
+			() =>
+				browser.eval<{ line: string | null; section: boolean; onTrail: boolean }>(`({
 			line: document.querySelector('[data-slot="model-flow-line"]')?.textContent ?? null,
 			section: document.querySelector('[data-tree-section="Requests"] [data-flow-id="Shop#Request"]') !== null,
 			onTrail: document.querySelector('[data-slot="model-breadcrumbs"] [data-slot="model-reading-name"]') !== null,
 		})`),
+			(now) => now.line !== null,
+			"the line of the flow",
+			WAIT,
+		),
 	).toEqual({
 		line: "RequestsThe gateway hands a request to the handler.",
 		section: true,
@@ -232,7 +238,7 @@ test("every move of the left column has a keyboard route, also in a presented pa
 		// Enter belongs to a button while the button still has focus.
 		() =>
 			browser.eval<boolean>(
-				`document.fullscreenElement !== null && document.activeElement === document.body`,
+				`document.fullscreenElement !== null && document.activeElement?.closest('button') === null`,
 			),
 		Boolean,
 		"the presented pane",

@@ -1,6 +1,7 @@
 import { createContext } from "react";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
 /** Where a surface of a pane stood when it went out of sight. */
 interface LeftCamera {
@@ -51,12 +52,15 @@ const ModelPaneContext = createContext<{
 
 /** The captured presentation owns its start action and whether it replaces ordinary reading. */
 const ModelWalkthroughContext = createContext<{
-	select: (id: string) => void;
+	/** Present a walkthrough, from its first step or from another one, counted from zero. */
+	select: (id: string, beat?: number) => void;
 	/** End the presentation, which does nothing while none runs. */
 	leave: () => void;
 	active: boolean;
 	/** The walkthrough on screen, or null. */
 	current: string | null;
+	/** Narrating a walkthrough aloud, when the shell can. */
+	narration?: WalkthroughNarration | undefined;
 } | null>(null);
 
 export { ModelPaneContext, ModelWalkthroughContext, cameraHandover, type CameraHandover };

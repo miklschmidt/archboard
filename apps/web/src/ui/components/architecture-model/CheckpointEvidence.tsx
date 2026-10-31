@@ -14,11 +14,7 @@ function CheckpointEvidence(props: CheckpointEvidenceProps): JSX.Element | null 
 	const { checkpoint, sourceEvidence } = props.model;
 	if (checkpoint === undefined) return null;
 	return (
-		<div
-			data-slot="model-checkpoint"
-			data-checkpoint-id={checkpoint.id}
-			className="border-border bg-muted/30 text-control border-b px-6 py-3"
-		>
+		<div data-slot="model-checkpoint" data-checkpoint-id={checkpoint.id} className="text-control">
 			<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
 				<span className="font-semibold">Retained architecture</span>
 				<time className="text-muted-foreground" dateTime={checkpoint.createdAt}>

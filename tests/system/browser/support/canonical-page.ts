@@ -302,12 +302,12 @@ async function openAbout(
 ): Promise<void> {
 	await openPage(browser, "about", pane);
 	const about = `${pane} [data-slot="model-about"]`;
-	const other = `${pane} [data-slot="model-about-other"]`;
+	const choice = `${pane} [data-slot="model-about-subject"] [data-choice="${subject}"]`;
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(`(() => {
 				if (document.querySelector(${JSON.stringify(about)})?.getAttribute('data-subject') === ${JSON.stringify(subject)}) return true;
-				document.querySelector(${JSON.stringify(other)})?.click();
+				document.querySelector(${JSON.stringify(choice)})?.click();
 				return false;
 			})()`),
 		Boolean,
@@ -319,7 +319,7 @@ async function openAbout(
 async function listedParts(browser: AgentBrowserSession): Promise<string[]> {
 	await openAbout(browser);
 	return browser.eval<string[]>(
-		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]')].map(row => row.getAttribute('data-module-id'))`,
+		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id][data-depth="0"]')].map(row => row.getAttribute('data-module-id'))`,
 	);
 }
 

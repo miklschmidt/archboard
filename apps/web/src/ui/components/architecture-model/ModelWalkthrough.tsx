@@ -37,6 +37,8 @@ interface WalkthroughProps {
 	reducedMotion: boolean;
 	onLeave: () => void;
 	driven?: DrivenPlace | null | undefined;
+	/** The step a presentation opens at, counted from zero. */
+	beat?: number | undefined;
 	onReading?: (reading: PaneReading | null) => void;
 	overlay?: SemanticPresentationProps["overlay"];
 	narration?: SemanticPresentationProps["narration"];
@@ -69,6 +71,7 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 		model,
 		playback,
 		props.driven,
+		props.beat,
 	);
 	const index = position.beatIndex;
 	const available = unavailable === null;
