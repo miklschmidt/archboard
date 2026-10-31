@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { readArchitectureModel, readArchitectureCheckpoint } from "@archboard/board/store-read";
 import { editArchitectureModule } from "@archboard/board/store-write";
 import { ArchitectureModuleEditResultSchema } from "@archboard/board/model";
-import { proposal, request } from "#tests/runtime/operations/proposals/fixture.ts";
+import { proposal, request, selected } from "#tests/runtime/operations/proposals/fixture.ts";
 import {
 	fixture,
 	structureIntent,
@@ -177,6 +177,26 @@ test("an advanced predecessor blocks drafts while exact proposal checkpoints kee
 		modules: expect.arrayContaining([expect.objectContaining({ id: "Shop#Gateway" })]),
 	});
 }, 15_000);
+
+test("a retained reading takes the model's present name, and a follower still reads", async () => {
+	const { vault } = fixture();
+	const parent = await proposal(vault, "Parent");
+	const state = parent.target.state!;
+	const follower = await proposal(vault, "Follower", state);
+	const catalogue = readArchitectureModel(vault);
+	if (!catalogue.success) throw new Error(JSON.stringify(catalogue));
+	const held = catalogue.proposals.find((entry) => entry.id === state)!;
+	// A draft pinned to its base stays readable when the manifest changes, as an imported one does.
+	const draft = JSON.parse(readFileSync(join(vault, held.file), "utf8"));
+	const pinned = { ...draft, predecessorCheckpoint: draft.baseline };
+	writeFileSync(join(vault, held.file), JSON.stringify(pinned));
+	const manifest = JSON.parse(readFileSync(join(vault, "model.json"), "utf8"));
+	writeFileSync(join(vault, "model.json"), JSON.stringify({ ...manifest, name: "Renamed" }));
+	const named = { manifest: { id: "Shop", name: "Renamed" } };
+	expect(await selected(vault, state)).toMatchObject(named);
+	expect(await selected(vault, follower.target.state!)).toMatchObject(named);
+	expect(await readArchitectureCheckpoint(vault, parent.checkpoint.id)).toMatchObject(named);
+});
 
 test("compact additions removals clears and containment placements preserve current files and source identity", async () => {
 	const { vault } = fixture();

@@ -483,6 +483,21 @@ async function readingCatalogue(vault: string, current: ArchitectureModelRead) {
 }
 
 /**
+ * Name a reading as its model goes by now. A retained manifest keeps the name the model had when
+ * it was retained, but a reader of a draft or a checkpoint is reading this model. Only what leaves
+ * for a reader takes the name, because `predecessorRevision` hashes the retained manifest.
+ * @param selected The selected reading.
+ * @param current The working reading or refusal.
+ * @returns The reading under the model's present name.
+ */
+function presentlyNamed(
+	selected: ArchitectureModel,
+	current: ArchitectureModelRead,
+): ArchitectureModel {
+	if (!current.success || current.manifest.id !== selected.manifest.id) return selected;
+	return { ...selected, manifest: { ...selected.manifest, name: current.manifest.name } };
+}
+/**
  * Read selected architecture without acquiring the installation lease.
  * @param vault The addressed vault.
  * @param selection The state and comparison intent.
@@ -498,7 +513,7 @@ async function selectedReading(
 	const context = await archiveContext(vault);
 	const selected = await requestedState(context, current, selection.state);
 	if (!selected.success) return selected;
-	return compareSelected(context, selected, current, selection);
+	return compareSelected(context, presentlyNamed(selected, current), current, selection);
 }
 /**
  * Read a selected draft or retained state with explicit comparison metadata.

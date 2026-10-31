@@ -237,7 +237,11 @@ test("CLI and HTTP retain, list and reopen one exact checkpoint after current co
 			{
 				id: retained.checkpoint.id,
 				createdAt: retained.checkpoint.createdAt,
-				state: { id: retained.checkpoint.state!.id, name: retained.checkpoint.state!.name },
+				state: {
+					id: retained.checkpoint.state!.id,
+					name: retained.checkpoint.state!.name,
+					summary: retained.checkpoint.state!.summary,
+				},
 				doing: retained.checkpoint.request.doing,
 			},
 		],
