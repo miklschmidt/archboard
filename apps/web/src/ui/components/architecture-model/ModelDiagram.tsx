@@ -246,7 +246,7 @@ function presentingMark(presenting: boolean): string {
  * @returns The class list.
  */
 function diagramClass(leaving: Departure | null): string {
-	const base = "relative min-h-0 min-w-0 flex-1 overflow-hidden";
+	const base = "relative min-h-0 min-w-0 flex-1 overflow-hidden outline-none";
 	return leaving === null ? base : `${base} pointer-events-none`;
 }
 

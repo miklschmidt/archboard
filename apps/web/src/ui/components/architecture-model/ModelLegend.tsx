@@ -32,7 +32,7 @@ import {
 	type LegendMark,
 	type LegendRow,
 } from "#ui/rules/architecture-model/legend-rows.ts";
-import { paletteInk, paletteTag } from "#ui/rules/semantic-board-canvas/board/palette.ts";
+import { paletteTag } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 
 /** How wide every line's sample is, and the box of every mark, so that the names start on one line. */
 const SAMPLE_WIDTH = 22;
@@ -206,13 +206,9 @@ function PolicySample(props: {
 	const { item, icon } = props;
 	const paths = useQuery({ ...iconQuery(icon ?? ""), enabled: icon !== undefined }).data ?? [];
 	const iconSvg = paths.map((d) => `<path d="${d}"/>`).join("");
-	const ink = paletteInk(item.typeColor);
 	const appearance = useMemo(
-		() => ({
-			...item,
-			iconSvg: `<svg viewBox="0 0 24 24" style="fill:${ink}" aria-hidden="true">${iconSvg}</svg>`,
-		}),
-		[item, ink, iconSvg],
+		() => ({ ...item, iconSvg: `<svg viewBox="0 0 24 24" aria-hidden="true">${iconSvg}</svg>` }),
+		[item, iconSvg],
 	);
 	return <TypeSample appearance={appearance} className={CHIP} />;
 }

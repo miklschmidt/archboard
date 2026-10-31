@@ -18,6 +18,7 @@ import {
 	type SubjectStanding,
 } from "@archboard/renderer/picture";
 import { cn } from "@archboard/ui-kit/components";
+import { uncoloured } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 
@@ -229,13 +230,17 @@ function TypeSample(props: {
 	readonly className?: string;
 }): JSX.Element {
 	const { appearance } = props;
-	const markup = useMemo(() => ({ __html: appearance.iconSvg }), [appearance.iconSvg]);
+	// A door draws its icon in a door's dark ink. A chip draws it in its kind's colour, as a card does.
+	const markup = useMemo(
+		() => ({ __html: uncoloured(appearance.iconSvg) }),
+		[appearance.iconSvg],
+	);
 	const style = useMemo(() => chipPaint(paletteInk(appearance.typeColor)), [appearance.typeColor]);
 	return (
 		<span
 			aria-hidden="true"
 			className={cn(
-				"shadow-raised flex size-6 shrink-0 items-center justify-center rounded-[21%] border-b-[1.5px]",
+				"shadow-raised flex size-6 shrink-0 items-center justify-center rounded-[21%] border-b-[1.5px] [&>svg]:fill-current",
 				props.className,
 			)}
 			style={style}
@@ -270,12 +275,13 @@ function tinted(base: string, ink: string, share: Share): string {
 }
 
 /**
- * How a chip of one kind's colour is painted: its face, the light on it and its front edge.
+ * How a chip of one kind's colour is painted: its icon, its face, the light on it and its front edge.
  * @param ink The kind's colour.
  * @returns The chip's style.
  */
 function chipPaint(ink: string): CSSProperties {
 	return {
+		color: ink,
 		backgroundColor: tinted("var(--slab-face)", ink, CHIP_FACE),
 		backgroundImage: "linear-gradient(var(--slab-sheen), transparent)",
 		borderBottomColor: tinted("var(--slab-edge)", ink, CHIP_EDGE),

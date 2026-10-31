@@ -15,14 +15,12 @@ import {
 
 import { cn, Tooltip } from "@archboard/ui-kit/components";
 
-import { lineInk } from "@archboard/renderer/picture";
 import {
 	RelationshipSample,
 	TypeSample,
 } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
 import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
-import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import {
 	subjectTip,
@@ -85,7 +83,6 @@ function SubjectTipBox(props: {
 				look="card"
 				data-slot="semantic-subject-tip"
 				className="w-max min-w-56 flex-col items-stretch gap-2.5"
-				style={accentOf(tip.appearance)}
 			>
 				<TipLines tip={tip}>{props.children}</TipLines>
 			</Tooltip.Content>
@@ -155,19 +152,6 @@ function tipOver(
 	return variant === null
 		? null
 		: subjectTip(variant, target, appearance, far, { here: reading?.level, levels }, overview);
-}
-
-/**
- * The tip's edge in the ink the picture draws the part's kind with: a card's
- * kind colour, a line's colour at its line strength.
- * @param appearance How the picture draws the part, when it names its type.
- * @returns The edge's style, or none when the picture names no type.
- */
-function accentOf(appearance: AppliedAppearance | undefined): CSSProperties | undefined {
-	if (appearance === undefined) return undefined;
-	const ink =
-		appearance.depiction === "" ? lineInk(appearance.lineColor) : paletteInk(appearance.typeColor);
-	return { borderLeftColor: ink, borderLeftWidth: 3 };
 }
 
 /**
