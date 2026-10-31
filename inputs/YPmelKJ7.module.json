@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#5fWy6ymA",
       "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "order": 130040,
+      "kind": "call",
+      "label": "useVoiceBoxPresence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "symbol": "useVoiceBoxPresence"
+      },
+      "to": "vKEsyHFk/yejBBUFY#sOSPdXJh",
+      "id": "vKEsyHFk#7NNYEH5k"
     }
   ]
 }

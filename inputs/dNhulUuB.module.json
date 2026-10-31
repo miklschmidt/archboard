@@ -8,8 +8,22 @@
     "path": "packages/renderer/src/runtime/operations/render.ts",
     "symbol": "renderArchitecture"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
   "schemaVersion": 1,
   "id": "vKEsyHFk#dNhulUuB",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#0XCanbzp",
+  "outgoing": [
+    {
+      "order": 130030,
+      "kind": "call",
+      "label": "installBunHost",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/operations/render.ts",
+        "symbol": "installBunHost"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#eMXdmcWP",
+      "id": "vKEsyHFk#Bm8Qvjqo"
+    }
+  ]
 }
