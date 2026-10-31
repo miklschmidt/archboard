@@ -27,6 +27,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#SGwsCHPo",
       "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 70047,
+      "kind": "call",
+      "label": "record and replay exact walkthroughs",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/record-walkthrough.ts",
+        "symbol": "WalkthroughRecordingError"
+      },
+      "id": "vKEsyHFk#YAA7XugC",
+      "to": "vKEsyHFk/XppR9owz#XAJYaUnv"
     }
   ]
 }
