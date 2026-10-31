@@ -128,7 +128,7 @@ fn dense_routes(lines: usize) -> usize {
 }
 
 /// How many placements past that budget a room can refuse: a refusal costs about a route.
-const DENSE_REFUSALS: usize = 2;
+const DENSE_REFUSALS: usize = 1;
 
 /// The room a dense placement of some lines adds to its gaps, tightest first:
 /// each refusal costs a whole route, so a crowded reading starts wider.
@@ -142,14 +142,15 @@ fn dense_rooms(lines: usize) -> [f64; 2] {
 }
 
 /// The best dense drawing of a reading, if one passes every guard. A wider room
-/// runs only while no drawing lands whole.
+/// runs only while no drawing lands whole, and a reading past the placement search
+/// keeps the first drawing it finds.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
     let mut best = None;
     let lines = relationships(graph);
     for room in dense_rooms(lines) {
         dense_room(graph, room, dense_routes(lines), &mut best);
-        let landed = |one: &(reading::Order, _)| !one.0.0;
-        if best.as_ref().is_some_and(landed) {
+        let settled = |one: &(reading::Order, _)| !one.0.0 || lines > PLACEMENT_REFINEMENT_LIMIT;
+        if best.as_ref().is_some_and(settled) {
             break;
         }
     }
