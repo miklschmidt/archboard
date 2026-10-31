@@ -69,7 +69,9 @@ Bind it to the code that it owns, or let a relationship or flow name it or join 
 If it has neither, move its parts to its parent and remove it.
 A numbered layer or a tidy box is not a job. Use a configured group for a gathering that only labels its parts.
 Connect each root to another root, or move it into the module that uses it.
-`archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH` and `ROOT_UNCONNECTED`.
+A call inside a container starts at the part that makes it.
+A reading that opens a module draws no line between it and a part that it holds, because the nesting already shows it.
+`archboard check` warns on these shapes with `CONTAINER_PASS_THROUGH`, `ROOT_UNCONNECTED`, and `CONTAINER_LINE_TO_OWN_PART`.
 A shape is a signal, not proof, so read the source before you change the model.
 No write refuses them.
 

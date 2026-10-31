@@ -183,8 +183,8 @@ Warnings sit on the one subject that they concern. The model-wide count moves to
 
 ## Authoring
 
-`archboard check` warns on a pass-through container and on a root with no relationship, and the consumer skill
-teaches the same rule. These are warnings. A count or a folder spread is a signal and never proves that a
+`archboard check` warns on a pass-through container, on a root with no relationship and on a relationship between
+a module and a part that it holds, and the consumer skill teaches the same rule. These are warnings. A count or a folder spread is a signal and never proves that a
 container has no job, so no write is refused.
 
 `CONTAINER_PASS_THROUGH` names a module with parts and no binding, which no relationship or flow names, and whose
@@ -192,7 +192,9 @@ parts no relationship or flow joins. One part is the plain case. The rule reads 
 needs no escape: `Workhorses` has 17 relationships between its parts and never warns. It flags all 8 layers of the
 model before they left, and 8 other containers of 130. A model that binds no code is exempt, because an unbound
 container then says nothing. `ROOT_UNCONNECTED` names a root with no relationship to another root. A relationship
-of a part inside it counts, and a lone root is exempt.
+of a part inside it counts, and a lone root is exempt. `CONTAINER_LINE_TO_OWN_PART` names a relationship between a
+module and a part that it holds, at any depth. The nesting already shows it, so a reading that opens the module draws no
+line for it, and the panel and About still list it.
 
 A flow must say what it does, because only 1 of this repository's 72 flows did, and a reader could not tell that
 `One author run` belongs to the skill evaluation. Every flow has a summary, and this rule is an error, not a
