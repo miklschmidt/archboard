@@ -196,6 +196,10 @@ pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
     for frame in &shape.drawing.frames {
         space.inset(frame.bx);
     }
+    for title in &shape.drawing.titles {
+        let foot = title.band.y + title.band.height;
+        space.y.protect(foot, CONTAINER_INSET);
+    }
     let contraction = Contraction {
         x: space.x.gaps(),
         y: space.y.gaps(),

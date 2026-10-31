@@ -38,7 +38,7 @@ impl Protection {
             }
         };
         for r in shape.endpoints.keys().map(|&id| shape.solid(id)) {
-            insert(r, 8.01, 8.02);
+            insert(r, 12.01, 12.02);
         }
         for region in &shape.drawing.regions {
             insert(region.caption, 8.01, 8.02);

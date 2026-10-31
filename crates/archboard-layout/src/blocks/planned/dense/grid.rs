@@ -6,7 +6,7 @@ use crate::{geometry::Point, graph::Node};
 use super::CELL_GAP;
 
 /// What a line against the reading direction costs.
-const AGAINST: f64 = 160.0;
+const AGAINST: f64 = 600.0;
 /// What a turn costs, as a route's cost weighs it.
 const TURN: f64 = 120.0;
 /// How many times the search passes over every part.
