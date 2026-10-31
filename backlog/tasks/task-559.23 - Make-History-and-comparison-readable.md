@@ -4,7 +4,7 @@ title: Make History and comparison readable
 status: In Progress
 assignee: []
 created_date: '2026-10-31T03:27:00Z'
-updated_date: '2026-10-31T04:20:00Z'
+updated_date: '2026-10-31T04:24:00Z'
 labels:
   - frontend
   - board
@@ -66,4 +66,6 @@ Architecture impact: no module or flow in .archboard/vault describes the compari
 The eight drafts were renamed through model claim, edit and release with writer slice23-agent. A unique former name resolves. A former name that several drafts shared still refuses with STATE_AMBIGUOUS, as before. archboard check exits 1 on two existing warnings, BINDING_PATH_MISSING on Variant timeline and ANCHOR_SYMBOL_MISSING on servedVault, which the drafts did not cause.
 
 Evidence: nix develop --command bunx vp run --no-cache check:all exited 0 in 145 seconds with 21 of 21 tasks, and the browser lane passed 44 of 44 files. Screenshots at 1920 by 1080 are in /tmp/integrate/slice23/: final-control-open-dark.png, final-draft-no-comparison-dark.png, final-history-folded-dark.png, final-history-earlier-dark.png, final-control-open-light.png.
+
+Merged to integrate/pr19 at 7ae9eeefb, gate 21 of 21 in 148 s, server 17842 restarted. Open: criterion 8, owner by eye. Left: a former name shared by several drafts still refuses with STATE_AMBIGUOUS. Current, Earlier and Shelved states keep task-derived names. The Explain context line still shows identities and a revision digest. selectComparison retries because a press right after a live write failed in 2 of about 14 runs, cause not found.
 <!-- SECTION:NOTES:END -->
