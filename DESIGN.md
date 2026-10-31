@@ -388,6 +388,17 @@ the Rule tone.
 
 - **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
 
+`Measures` is the left column's list of every module, the most of one measure first. Five tabs do
+not fit the 320px column, so the fifth tab starts a second row, a band high. On a proposal, `Changes`
+and the walk share that row. A head stays over the list while it scrolls. It holds one `Sort by`
+select and a line that says what the counts cover, or why there are none, with `Refresh` at its end.
+A row keeps the column's grid. The name stands first, and at the end of its line stands the sorted
+count, in mono at Control size in full ink, so the eye runs down one edge. Under them, in Body and
+muted ink across the whole row, stand the other counts. A count of none leaves the row, because the
+interface line of the module holds them all. Only commits keep a count of none, which tells a module
+that no commit changed from one that was not read. A module the read skipped says why. No count
+takes a color, nothing combines the counts, and no row carries a rank.
+
 ### Right panel
 
 The right panel is a permanent column beside the picture on every Diagram reading, on

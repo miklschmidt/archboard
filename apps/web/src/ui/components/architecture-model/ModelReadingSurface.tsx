@@ -22,6 +22,7 @@ import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelect
 import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
+import { useHistoryOnSelection } from "#ui/hooks/architecture-model/use-history-on-selection.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { useReaderKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
@@ -214,6 +215,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const { model, projection } = shown;
 	const scope = projection.opened;
 	const ids = selectionToExplain(selection.ids, accepted.selected);
+	useHistoryOnSelection(reader.vault, model, ids);
 	const held = useMemo(() => ({ ...selection, ids }), [selection, ids]);
 	const selecting = ids.size > 0;
 	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);

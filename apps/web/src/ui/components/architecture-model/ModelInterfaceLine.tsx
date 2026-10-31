@@ -54,6 +54,21 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 }
 
 /**
+ * A count in the mono face with what it counts in words, as every list of measures says it.
+ * @param props The count.
+ * @param props.count How many.
+ * @param props.label What of.
+ * @returns The words.
+ */
+function CountWords(props: { readonly count: number; readonly label: string }): JSX.Element {
+	return (
+		<>
+			<span className="text-technical font-mono">{props.count}</span> {props.label}
+		</>
+	);
+}
+
+/**
  * One count, which shows what it counts. Nothing is there to show for a count of none.
  * @param props The count and what it does.
  * @param props.count The count.
@@ -77,9 +92,9 @@ function Count(props: {
 			onClick={show}
 			className="text-body text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-foreground rounded-control px-0.5 py-0.5 text-left whitespace-nowrap"
 		>
-			<span className="text-technical font-mono">{count.count}</span> {count.label}
+			<CountWords count={count.count} label={count.label} />
 		</button>
 	);
 }
 
-export { ModelInterfaceLine };
+export { CountWords, ModelInterfaceLine };

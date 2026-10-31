@@ -272,7 +272,12 @@ The live, pannable and zoomable surface in a pane that shows one reading at a ti
 _Avoid_: scene (that is what the renderer core answers), board, workspace, session, drawing area
 
 **Left column**:
-The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs` and `History`, and Talk.
+The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk.
+
+**Measures**:
+The destination of the left column that lists every module of a reading with its interface measures, its commits and its unjoined pairs, sorted by one count at a time.
+It shows counts only: no score combines them, and the user judges them (ADR 0044).
+_Avoid_: ranking, scorecard, hotspot list
 
 **Diagram reading**:
 A reading on the page that shows its picture, beside About.

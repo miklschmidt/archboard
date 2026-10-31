@@ -11,6 +11,7 @@ import {
 	ModelHeading,
 	ModelStateChip,
 } from "#ui/components/architecture-model/ModelHeading.tsx";
+import { ModelMeasures } from "#ui/components/architecture-model/ModelMeasures.tsx";
 import { ModelReadingSurface } from "#ui/components/architecture-model/ModelReadingSurface.tsx";
 import { ModelRecords } from "#ui/components/architecture-model/ModelRecords.tsx";
 import { ModelTree } from "#ui/components/architecture-model/ModelTree.tsx";
@@ -19,6 +20,7 @@ import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts
 import { useChangeKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
+import type { MeasureKey } from "#ui/rules/architecture-model/module-measures.ts";
 import { changeStepOf } from "#ui/rules/architecture-model/reader-keys.ts";
 
 /** Inputs for a reading. */
@@ -42,8 +44,14 @@ interface ModelReadingProps {
 }
 
 /** What every reading offers, and what a reading with a record adds. */
-const READING: readonly Destination[] = ["modules", "flows", "walkthroughs"];
-const RECORDED: readonly Destination[] = [...READING, "history"];
+const READING: readonly Destination[] = ["modules", "flows", "walkthroughs", "measures"];
+const RECORDED: readonly Destination[] = [
+	"modules",
+	"flows",
+	"walkthroughs",
+	"history",
+	"measures",
+];
 const REVIEWED: readonly Destination[] = [...RECORDED, "changes"];
 
 /**
@@ -119,8 +127,11 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
 	const { model, location, structure, tree, branches, choices, walk } = reader;
 	const { opened, depicted } = structure;
+	const { shown } = reader.accepted;
 	const find = useRef<HTMLInputElement>(null);
 	const [query, setQuery] = useState("");
+	// The reader's sort stays while the list is away: a closed tab draws nothing.
+	const [measure, setMeasure] = useState<MeasureKey>("commits");
 	const { reviewing, step } = walk;
 	const typeAhead = useCallback(
 		(text: string): void => {
@@ -184,6 +195,17 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				</ModelColumn.List>
 				<ModelColumn.List value="walkthroughs">
 					<ModelWalkthroughs walkthroughs={model.walkthroughs} />
+				</ModelColumn.List>
+				<ModelColumn.List value="measures">
+					<ModelMeasures
+						vault={reader.vault}
+						model={shown.model}
+						projection={shown.projection}
+						selected={soleOf(reader.selection.ids)}
+						measure={measure}
+						onMeasure={setMeasure}
+						onChoose={choices.findModule}
+					/>
 				</ModelColumn.List>
 				{walk.list !== null && (
 					<ModelColumn.List value="changes">

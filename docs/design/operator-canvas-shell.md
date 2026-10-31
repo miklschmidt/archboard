@@ -489,12 +489,12 @@ foot](assets/operator-shell-navigator.png)
   `<name> is not here`. The agent dock returns with the first pane, because a
   conversation needs a pane. The start rule is in
   [the reader redesign](reader-redesign.md#start-and-states).
-- **The destinations** are `Modules`, `Flows`, `Walkthroughs` and `History`.
+- **The destinations** are `Modules`, `Flows`, `Walkthroughs`, `History` and
+  `Measures`. Five tabs do not fit the column, so `Measures` starts a second row.
   `Flows` and `Walkthroughs` show a count for the open scope. A retained original
-  has no `History`. A reading that fails offers `History` alone, so the reader
-  can go on to a reading that opens. A proposal read against its base adds
-  `Changes` on a second row, because five tabs do not fit the column, and opens
-  on it.
+  has no `History`, so its four tabs keep one row. A reading that fails offers
+  `History` alone, so the reader can go on to a reading that opens. A proposal
+  read against its base adds `Changes` to the second row, and opens on it.
 - **`Modules` is a tree of the containment forest.** It opens the path to the
   open scope and the branches that the reader opened. The ancestors of the open
   row stick to the top while the column scrolls. Siblings sort by code path.
@@ -516,6 +516,9 @@ foot](assets/operator-shell-navigator.png)
   `History`. A row whose name another state shares shows its identity in its
   facts, and the state chip adds the identity too, so a reader can tell which
   draft they open.
+- **`Measures` lists every module with its counts, sorted by one of them.** It
+  answers where to look across the model. [The reader
+  redesign](reader-redesign.md#the-rule-of-the-screen) says what a row holds.
 - **One grid.** Every row is four columns placed by its depth alone: the
   disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
   the right. A row is 28 px high. One row is lit, the row of the open scope. A row

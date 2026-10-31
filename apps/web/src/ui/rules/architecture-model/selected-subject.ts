@@ -261,7 +261,10 @@ function moduleSource(model: Model, projection: Projection, id: string): Model {
  * @param id The module.
  * @returns Its interface facts, or nothing for a module the selected state does not hold.
  */
-function moduleInterface(projection: Projection, id: string): ModuleInterface | undefined {
+function moduleInterface(
+	projection: Pick<Projection, "complete">,
+	id: string,
+): ModuleInterface | undefined {
 	const { complete } = projection;
 	const module = complete.nodes.find((one) => one.id === id);
 	return module === undefined ? undefined : inspectContainer(complete, module);

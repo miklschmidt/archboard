@@ -1,8 +1,9 @@
-// When a pane asks for a board's locality (ADR 0045): only when a person presses
-// its read action, and never on a pick, a timer, a return to the tab or a
-// reconnect. A walk of a year of Git is work for the server. The selection tab
-// is drawn again for each pick, so each pick is a new subscription; the
-// canonical code/history browser owner covers visible selection and real Git evidence.
+// When a pane asks for a model's locality (ADR 0045): when the first subscriber
+// of a revision mounts, and never again on a pick, a timer, a return to the tab
+// or a reconnect. A walk of a year of Git is work for the server, and its answer
+// holds every module. The selection tab is drawn again for each pick, so each
+// pick is a new subscription; `reader-measures.test.ts` covers the visible
+// selection and real Git evidence.
 //
 // The query library decides when it loads whether it runs in a browser, and
 // only a browser runs intervals. So this file registers the DOM before it loads
@@ -102,11 +103,18 @@ async function pass(ms: number): Promise<void> {
 	});
 }
 
-test("the locality waits for a request through every pick, timer, focus and reconnect", async () => {
+test("one read answers every later pick, timer, focus and reconnect", async () => {
 	jest.useFakeTimers();
+	asked = 0;
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const observer = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
 	const unsubscribe = observer.subscribe(() => undefined);
+	await pass(0);
+	expect(asked).toBe(1);
+	expect(observer.getCurrentResult().data).toEqual(ANSWER);
+
+	const nextPick = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
+	const nextUnsubscribe = nextPick.subscribe(() => undefined);
 	await pass(60_000);
 	await act(async () => {
 		focusManager.setFocused(false);
@@ -115,15 +123,28 @@ test("the locality waits for a request through every pick, timer, focus and reco
 		onlineManager.setOnline(true);
 	});
 	await pass(0);
-	expect(asked).toBe(0);
-	await act(async () => {
-		await observer.refetch();
-	});
 	expect(asked).toBe(1);
-	expect(observer.getCurrentResult().data).toEqual(ANSWER);
+	expect(nextPick.getCurrentResult().data).toEqual(ANSWER);
+	nextUnsubscribe();
 	unsubscribe();
 	client.clear();
 	focusManager.setFocused(undefined);
+});
+
+test("a pick that moves on leaves the read running for the next one to join", async () => {
+	jest.useFakeTimers();
+	asked = 0;
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const first = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
+	const leave = first.subscribe(() => undefined);
+	leave();
+	const next = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
+	const unsubscribe = next.subscribe(() => undefined);
+	await pass(0);
+	expect(asked).toBe(1);
+	expect(next.getCurrentResult().data).toEqual(ANSWER);
+	unsubscribe();
+	client.clear();
 });
 
 test("a pane that moves to another repository shows none of the last one's history", async () => {
@@ -131,9 +152,7 @@ test("a pane that moves to another repository shows none of the last one's histo
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const observer = new QueryObserver(client, modelHistoryQuery(VAULT, MODEL));
 	const unsubscribe = observer.subscribe(() => undefined);
-	await act(async () => {
-		await observer.refetch();
-	});
+	await pass(0);
 	expect(observer.getCurrentResult().data).toEqual(ANSWER);
 
 	// The same board in another checkout, whose history is its own.

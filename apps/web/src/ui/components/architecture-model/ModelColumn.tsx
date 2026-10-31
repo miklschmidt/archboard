@@ -5,7 +5,7 @@ import { cn, Tabs } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
 
 /** What the left column lists. */
-type Destination = "modules" | "flows" | "walkthroughs" | "history" | "changes";
+type Destination = "modules" | "flows" | "walkthroughs" | "history" | "measures" | "changes";
 
 /** Inputs for the destinations. */
 interface ColumnDestinationsProps {
@@ -31,6 +31,9 @@ interface DestinationEntry {
 	readonly label: string;
 	readonly count: string;
 }
+
+/** How many tabs the column holds on one row. */
+const TABS_ON_A_ROW = 4;
 
 /**
  * What a tab says of how many things it holds.
@@ -64,6 +67,7 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 		{ value: "flows", label: "Flows", count: countOf(flows) },
 		{ value: "walkthroughs", label: "Walkthroughs", count: countOf(walkthroughs) },
 		{ value: "history", label: "History", count: "" },
+		{ value: "measures", label: "Measures", count: "" },
 		{ value: "changes", label: "Changes", count: changes },
 	];
 	return all.filter((entry) => offered.includes(entry.value));
@@ -71,8 +75,9 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 
 /**
  * Put a reader's destinations in the left column while its pane has focus: tabs with the
- * count of the whole model on Flows and Walkthroughs, so a list here never changes under a reader. A proposal adds Changes on a row of its
- * own, because five tabs do not fit the column, and the walk stands at the end of that row.
+ * count of the whole model on Flows and Walkthroughs, so a list here never changes under a reader.
+ * Five tabs do not fit the column, so the fifth starts a row of its own. A proposal adds Changes
+ * there, and the walk stands at the end of that row.
  * @param props The destination on screen and the lists.
  * @returns The destinations, or nothing while another pane has focus.
  */
@@ -116,13 +121,14 @@ function DestinationTabs(props: {
 				variant="underline"
 				className={cn(
 					"h-band px-2",
-					walker !== undefined && "flex-wrap items-stretch group-data-horizontal/tabs:h-auto",
+					entries.length > TABS_ON_A_ROW &&
+						"flex-wrap items-stretch group-data-horizontal/tabs:h-auto",
 				)}
 			>
-				{entries.map((entry) => (
+				{entries.map((entry, index) => (
 					<Fragment key={entry.value}>
-						{entry.value === "changes" && <TabRowBreak />}
-						<DestinationTab entry={entry} />
+						{index === TABS_ON_A_ROW && <TabRowBreak />}
+						<DestinationTab entry={entry} lower={index >= TABS_ON_A_ROW} />
 					</Fragment>
 				))}
 			</Tabs.List>
@@ -145,9 +151,13 @@ function TabRowBreak(): JSX.Element {
  * One tab of the destinations.
  * @param props The tab.
  * @param props.entry The tab.
+ * @param props.lower Whether it stands on the second row, which is a band high.
  * @returns The tab.
  */
-function DestinationTab(props: { readonly entry: DestinationEntry }): JSX.Element {
+function DestinationTab(props: {
+	readonly entry: DestinationEntry;
+	readonly lower: boolean;
+}): JSX.Element {
 	const { value, label, count } = props.entry;
 	return (
 		<Tabs.Trigger
@@ -155,7 +165,7 @@ function DestinationTab(props: { readonly entry: DestinationEntry }): JSX.Elemen
 			data-destination={value}
 			className={cn(
 				"group-data-[variant=underline]/tabs-list:h-7 group-data-[variant=underline]/tabs-list:px-1",
-				value === "changes" && "group-data-[variant=underline]/tabs-list:h-band",
+				props.lower && "group-data-[variant=underline]/tabs-list:h-band",
 			)}
 		>
 			{label}
