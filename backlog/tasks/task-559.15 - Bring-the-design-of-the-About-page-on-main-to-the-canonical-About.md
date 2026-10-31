@@ -1,9 +1,10 @@
 ---
 id: TASK-559.15
 title: Bring the design of the About page on main to the canonical About
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-10-30T23:55:00Z'
+updated_date: '2026-10-31T01:15:00Z'
 labels:
   - frontend
 dependencies:
@@ -23,10 +24,16 @@ The owner is sad that About lost its design flavor from main. On main, About ope
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 About on a scope opens with the display title, a facts line with kind, code path and state standing, and the responsibility in reading size
-- [ ] #2 Walkthroughs of the open scope stand on About as cards with numbered steps and a way to present from a step
-- [ ] #3 Parts and nearby modules read as a table with heads, containment and an action that shows a subject on the diagram
-- [ ] #4 States stand on a timeline with their standing, in the design of the variants section on main
-- [ ] #5 About on a selection uses the same anatomy, and no list returns to the right panel
+- [x] #1 About on a scope opens with the display title, a facts line with kind, code path and state standing, and the responsibility in reading size
+- [x] #2 Walkthroughs of the open scope stand on About as cards with numbered steps and a way to present from a step
+- [x] #3 Parts and nearby modules read as a table with heads, containment and an action that shows a subject on the diagram
+- [x] #4 States stand on a timeline with their standing, in the design of the variants section on main
+- [x] #5 About on a selection uses the same anatomy, and no list returns to the right panel
 - [ ] #6 The owner compares About with main in the real pane and accepts it by eye
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Merged in 476ae6e0f from feat/reader-about-design. The gate passed 21 of 21 tasks, exit 0. Criterion 6 waits for the owner. Open: Variant timeline and Diagram presentation components in the model point at deleted files; onVariantChange may be dead; git-async.test.ts failed once and was not investigated.
+<!-- SECTION:NOTES:END -->
