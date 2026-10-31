@@ -122,11 +122,13 @@ pub(super) fn route_candidates(
 fn dense_routes(lines: usize) -> usize {
     match lines {
         0..=15 => 6,
-        16..=24 => 2,
-        25..=40 => 2,
+        16..=40 => 2,
         _ => 1,
     }
 }
+
+/// How many placements past that budget a room can refuse: a refusal costs about a route.
+const DENSE_REFUSALS: usize = 2;
 
 /// The room a dense placement of some lines adds to its gaps, tightest first:
 /// each refusal costs a whole route, so a crowded reading starts wider.
@@ -163,6 +165,7 @@ fn dense_room(
 ) {
     let routed = dense::drawings(graph, room)
         .into_iter()
+        .take(most + DENSE_REFUSALS)
         .filter_map(|drawing| fixed::route(graph, drawing, &selection::ORDERS[..1]).ok());
     for next in routed.take(most) {
         let order = reading::order(&next);
