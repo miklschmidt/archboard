@@ -35,6 +35,17 @@ directions now draws one line with an arrow at each end, and its words say
 every relationship with its own ends. Rules 2 and 4 of
 [the reader redesign](../design/reader-redesign.md) hold the exact order.
 
+Amended by the owner on 2026-10-31 (TASK-559.24). No reading draws a line
+between the open module and a part that it holds, at any depth and in either
+direction, in a comparison too. A line from a module to itself stays, and so
+does the line of a door that holds the open module. The last paragraphs of the
+decision below said that a view that opens a container still draws such a line.
+That gives way. The owner saw a line leave the corner of the
+Agent CLI tab, cross the frame and end on Clipboard owner, and could not tell
+what it meant. The relationship stays in the panel and in About, a write still
+stores one, and `archboard check` still warns on it with
+`CONTAINER_LINE_TO_OWN_PART`.
+
 Decided with the owner on 2026-10-15. This decision supersedes one clause of
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):
 "Do not add size-driven refusal, automatic partitioning, or a density policy

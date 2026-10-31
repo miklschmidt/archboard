@@ -1,12 +1,13 @@
 // The lines a reading draws.
 //
 // One line joins a pair of drawn parts, with an arrow at each end when its
-// relationships run both ways, and every relationship has a line. A door's line
-// ends on the part that owns it. The lines of several parts to one door share a
-// trunk, and they keep their words in their tips.
+// relationships run both ways. Every relationship has a line, except one between
+// an open module and a part that it holds, which the nesting already shows
+// (ADR 0052). A door's line ends on the part that owns it. The lines of several
+// parts to one door share a trunk, and they keep their words in their tips.
 
 import type { ChangeKind } from "#shared/rules/compare/variants.ts";
-import { overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
+import { containersOf, overviewLines, type OverviewLine } from "#shared/rules/scope.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 
 type Standing = Readonly<Record<string, ChangeKind>>;
@@ -68,4 +69,30 @@ function joinedLines(
 		.toSorted((one, other) => one.line.order - other.line.order);
 }
 
-export { busLines, drawnEnds, joinedLines };
+/**
+ * The lines a picture draws, which leave out each line between an open module and a part that it
+ * holds. A reading keeps those relationships in `allConnections`, so the panel and About still list
+ * them. A door that holds the open module is not open, so it keeps its line.
+ * @param complete The full model content.
+ * @param lines The joined lines of a reading.
+ * @param open The modules that the reading opens.
+ * @returns The lines to draw.
+ */
+function drawnLines(
+	complete: VariantContent,
+	lines: readonly OverviewLine[],
+	open: ReadonlySet<string>,
+): OverviewLine[] {
+	const parentOf = new Map(complete.nodes.map((node) => [node.id, node.parent]));
+	/**
+	 * Whether a module is open and holds a part, at any depth.
+	 * @param module The module.
+	 * @param part The part.
+	 * @returns True when the nesting already shows the line between them.
+	 */
+	const nested = (module: string, part: string) =>
+		open.has(module) && containersOf(parentOf, part).includes(module);
+	return lines.filter(({ line: { from, to } }) => !nested(from, to) && !nested(to, from));
+}
+
+export { busLines, drawnEnds, drawnLines, joinedLines };
