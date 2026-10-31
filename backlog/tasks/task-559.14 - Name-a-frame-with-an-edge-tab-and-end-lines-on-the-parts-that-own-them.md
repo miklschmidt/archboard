@@ -4,7 +4,7 @@ title: Name a frame with an edge tab and end lines on the parts that own them
 status: In Progress
 assignee: []
 created_date: '2026-10-30T23:06:00Z'
-updated_date: '2026-10-31T03:28:00Z'
+updated_date: '2026-10-31T03:32:00Z'
 labels:
   - renderer
   - frontend
@@ -24,7 +24,7 @@ The owner compared header mockups in /tmp/integrate/header-mockups/ and chose th
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [x] #1 A frame shows its name and path in one edge tab, with no card and no cell inside the frame, and the side of the tab is the side of the frame
+- [ ] #1 A frame shows its name and path in one edge tab, with no card and no cell inside the frame, and the side of the tab is the side of the frame
 - [ ] #2 A line ends on the part that owns it, and each such line wears the label of that part
 - [x] #3 A reading where many parts reach one door stays readable, and the design record states the rule and its threshold, with measured line counts before and after
 - [ ] #4 A selected tab opens the module, and its description stays reachable in the reader and in exports
@@ -44,4 +44,6 @@ Owner accepted variant E of the header mockups, with the tab keeping a backgroun
 Owner chose a button look for doors, mockup dark-I.png in /tmp/integrate/header-mockups/. Across this repository, 296 doors lead up, 326 sideways and none down, because a door is a child of the common ancestor. Click behaviour stays open: a button implies that one click opens, but rule 5 and TASK-559.06 give a selected door a list of endpoints.
 
 Merged from feat/blocks-dead-space at 8f7673c15. Gate on the merge 21 of 21 in 136 seconds. Rule 6 is deleted in 5d00cf275 pending the owner's look. Gate 1 113 of 115 at 135.9 M, frame fill median 0.405. Crossings rose from 465 to 1848 and bends from 1298 to 3545. Bus lines of three or more to one door draw no words, a departure from criterion 2. Open: 30 long detours, Workspace packages and workbench fail Gate 1, Commands lands on its head, two frames keep the legacy placement, and reader-redesign.md, blocks-planned-layout.md and ADRs 0044, 0061, 0062 and 0064 are stale.
+
+The owner rejected the drawn tab on sight: no visible frame outline, a stepped left side, a tab wider than its text and a soft shoulder. The tab is redone with the card work on feat/reader-cards, to match dark-E.png as one closed path.
 <!-- SECTION:NOTES:END -->
