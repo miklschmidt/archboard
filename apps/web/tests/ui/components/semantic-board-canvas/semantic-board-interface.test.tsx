@@ -1,5 +1,5 @@
 // What picking a container tells a person about its interface (ADR 0044): the
-// entry points, how many parts are hidden and who calls it, read off the
+// entry points, which parts are hidden and who calls it, read off the
 // variant the pane shows, and an entry point chosen from the list picked out on
 // the picture. Nothing here writes: the interface is derived, never stored.
 
@@ -207,7 +207,7 @@ test("a picked container shows the interface of the variant on screen, and an en
 		{ part: "h", noted: false },
 		{ part: "r", noted: true },
 	]);
-	expect(measure("hidden-parts")).toEqual({ count: 1, rows: [] });
+	expect(measure("hidden-parts")).toEqual({ count: 1, rows: [{ part: "q", noted: false }] });
 	// The admin reaches Orders itself, and so is a caller that reaches no entry point.
 	const callers = measure("callers");
 	expect(callers.count).toBe(2);
@@ -231,7 +231,7 @@ test("a container nothing outside reaches hides every part and says that nothing
 	await inspect("shipping");
 
 	expect(measure("entry-points")).toEqual({ count: 0, rows: [] });
-	expect(measure("hidden-parts")).toEqual({ count: 1, rows: [] });
+	expect(measure("hidden-parts")).toEqual({ count: 1, rows: [{ part: "w", noted: false }] });
 	const callers = document.querySelector("[data-slot='semantic-inspector-callers']");
 	expect(callers?.getAttribute("data-count")).toBe("0");
 	expect(callers?.querySelector("p")).not.toBeNull();

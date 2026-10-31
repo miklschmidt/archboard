@@ -32,6 +32,8 @@ interface AboutPageSection extends AboutSection {
 interface AboutPlace {
 	readonly recall: () => number;
 	readonly keep: (top: number) => void;
+	/** The section a reader asked to open at, or null. */
+	readonly asked: () => string | null;
 }
 
 /** What the head of the page says of its subject. */
@@ -113,6 +115,17 @@ function shownSections(sections: readonly (AboutPageSection | null)[]): AboutPag
 }
 
 /**
+ * Bring a page to where it opens: the section a reader asked for, or else where they left it.
+ * @param page The page that scrolls.
+ * @param place Where it was.
+ */
+function openAt(page: HTMLElement, place: AboutPlace): void {
+	page.scrollTop = place.recall();
+	const section = place.asked();
+	if (section !== null) scrollToSection(page, section, true);
+}
+
+/**
  * The page. It opens where the reader left it, and an outline of one section says nothing.
  * @param props The subject and its sections.
  * @returns The page.
@@ -122,7 +135,7 @@ function ModelAboutFrame(props: ModelAboutFrameProps): JSX.Element {
 	const [page, setPage] = useState<HTMLElement | null>(null);
 	const attach = useCallback(
 		(element: HTMLElement | null): void => {
-			if (element !== null) element.scrollTop = place.recall();
+			if (element !== null) openAt(element, place);
 			setPage(element);
 		},
 		[place],

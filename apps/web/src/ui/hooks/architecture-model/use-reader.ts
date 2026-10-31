@@ -1,6 +1,5 @@
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
-import type { VariantContent } from "@archboard/board/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import type { Page } from "#ui/components/architecture-model/ModelHeading.tsx";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
@@ -13,9 +12,7 @@ import { useReaderChoices } from "#ui/hooks/architecture-model/use-reader-choice
 import { useReaderMoves } from "#ui/hooks/architecture-model/use-reader-moves.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
-import { relevantFlows } from "#ui/rules/architecture-model/flow-reading.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
-import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
 import {
 	ModelPaneContext,
 	ModelWalkthroughContext,
@@ -108,22 +105,6 @@ function useReaderPlaces(
 }
 
 /**
- * What concerns the open module.
- * @param model The reading.
- * @param depicted What it depicts.
- * @param opened The open module.
- * @returns Its flows and its walkthroughs, and the flows that `[` and `]` walk.
- */
-function useRelevance(model: Model, depicted: VariantContent, opened: string | null) {
-	const flows = useMemo(
-		() => relevantFlows(depicted, new Set(opened === null ? [] : [opened])),
-		[depicted, opened],
-	);
-	const walkthroughs = useMemo(() => walkthroughsAbout(model, opened), [model, opened]);
-	return { flows, walkthroughs, walkedFlows: flows.length > 0 ? flows : depicted.flows };
-}
-
-/**
  * What a reader reads and everything that can move it. A move goes to the address, and
  * whatever reads what is on screen reads the accepted scene until that address is drawn.
  * @param inputs What is read, and where.
@@ -148,7 +129,7 @@ function useReader(inputs: ReaderInputs) {
 	const accepted = useAcceptedScene(request, pane.selection.ids);
 	const { scene, shown } = accepted;
 	const selection = useProjectedSelection(shown.projection, pane.selection);
-	const { clear, select } = selection;
+	const { clear, selectMany } = selection;
 	const camera = useBoardCamera(reducedMotion);
 	const area = useRef<HTMLDivElement | null>(null);
 	const { id: modelId } = model.manifest;
@@ -185,7 +166,6 @@ function useReader(inputs: ReaderInputs) {
 		selection.ids.size > 0,
 		reviewsChanges(model),
 	);
-	const near = useRelevance(model, depicted, opened);
 	const walk = useChangeWalk({
 		model,
 		reference: comparison.reference,
@@ -200,7 +180,7 @@ function useReader(inputs: ReaderInputs) {
 		model,
 		opened,
 		area,
-		select,
+		selectMany,
 		onOpen,
 		onDestination: places.onDestination,
 	});
@@ -208,7 +188,7 @@ function useReader(inputs: ReaderInputs) {
 		location,
 		tree,
 		opened,
-		flows: near.walkedFlows,
+		flows: depicted.flows,
 		selection,
 		scene,
 		camera,
@@ -227,7 +207,6 @@ function useReader(inputs: ReaderInputs) {
 		moves,
 		tree,
 		branches,
-		...near,
 		walk,
 		choices,
 		presenting: playback?.active === true,

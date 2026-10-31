@@ -13,7 +13,7 @@ interface ReaderChoiceInputs {
 	/** The module the reading opens. */
 	readonly opened: string | null;
 	readonly area: RefObject<HTMLElement | null>;
-	readonly select: (id: string) => void;
+	readonly selectMany: (ids: readonly string[]) => void;
 	readonly onOpen: (next: string | null) => void;
 	readonly onDestination: (destination: Destination) => void;
 }
@@ -21,10 +21,10 @@ interface ReaderChoiceInputs {
 /**
  * What a choice in the left column does, here or, with Alt, in the other pane.
  * @param inputs The reading and how it moves.
- * @returns A choice of a module, a flow, or something found, and the way to show a module.
+ * @returns A choice of a module, a flow, or something found, and the way to show each of them.
  */
 function useReaderChoices(inputs: ReaderChoiceInputs) {
-	const { location, model, opened, area, select, onOpen, onDestination } = inputs;
+	const { location, model, opened, area, selectMany, onOpen, onDestination } = inputs;
 	const { open, openFlow, selectBookmark, selectLegacyAddress } = location;
 	const { openBeside } = usePaneChrome();
 	const playback = useContext(ModelWalkthroughContext);
@@ -51,20 +51,20 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 		[openBeside, modelId, opened, leave, openFlow],
 	);
 	const showHere = useCallback(
-		(id: string, scope: string | null): void => {
+		(ids: readonly string[], scope: string | null): void => {
 			leave?.();
 			open(modelId, scope);
-			select(id);
+			selectMany(ids);
 			// The keys of the picture go on from what was found.
 			area.current?.querySelector<HTMLElement>('[data-slot="model-diagram"]')?.focus();
 		},
-		[leave, open, modelId, select, area],
+		[leave, open, modelId, selectMany, area],
 	);
 	const findModule = useCallback(
 		(id: string, beside: boolean): void => {
 			const scope = model.modules.find((module) => module.id === id)?.parent;
 			if (beside) openBeside?.(modelId, { scope, module: id });
-			else showHere(id, scope ?? null);
+			else showHere([id], scope ?? null);
 		},
 		[model.modules, openBeside, modelId, showHere],
 	);
@@ -92,7 +92,7 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 		},
 		[findModule, findFlow, findWalkthrough, selectBookmark, selectLegacyAddress],
 	);
-	return { chooseModule, chooseFlow, chooseFind, findModule };
+	return { chooseModule, chooseFlow, chooseFind, findFlow, findModule, findWalkthrough, showHere };
 }
 
 export { useReaderChoices };

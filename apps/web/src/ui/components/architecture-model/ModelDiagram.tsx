@@ -22,11 +22,14 @@ import {
 	type BoardCamera,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { seenFromFar, type FitTarget } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { ModelDoorTip } from "#ui/components/architecture-model/ModelDoorTip.tsx";
 import { ModelEmptyReading } from "#ui/components/architecture-model/ModelEmptyReading.tsx";
 import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { useLeaving } from "#ui/hooks/semantic-board-canvas/use-leaving.ts";
 import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
+import type { Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
@@ -44,8 +47,10 @@ import {
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
+import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
+import { isDoor } from "#ui/rules/architecture-model/selected-subject.ts";
 
 interface ModelDiagramProps {
 	scene: AcceptedScene;
@@ -119,7 +124,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		[drawing.width, drawing.height, drawing.atlas, projection.opened],
 	);
 	useAutoFit(camera, hasPicture(drawing), focus, {
-		picture: sceneFit(scene.reading),
+		picture: sceneFit(scene),
 		presenting,
 		resting,
 		reducedMotion,
@@ -140,14 +145,15 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		reducedMotion,
 		onPick: onSelect,
 	});
+	const { pick, openDown } = useDoorPick(scene, open, onPick);
 	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
-		onSelect: onPick,
+		onSelect: pick,
 		onSelectArea: selectArea,
 		onHover: tip.onHover,
 		dismissTip: tip.dismiss,
-		openDown: open,
+		openDown,
 	});
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
@@ -287,8 +293,14 @@ function useSceneLighting(scene: AcceptedScene, selected: ReadonlySet<string>, l
 			peeked: { ...peeked, row: lineOf(peeked.row, connections) },
 			veil: null,
 			enabled: free && (selected.size === 0 || single !== null),
+			/**
+			 * Walk a trace over the whole model, and say it as what this picture draws.
+			 * @param trace The trace.
+			 * @returns How far each card and line is.
+			 */
+			traced: (trace: Trace) => pictureReach(projection, trace.part, trace.way).hops,
 		}),
-		[content, connections, picture.atlas, single, peeked, free, selected],
+		[projection, content, connections, picture.atlas, single, peeked, free, selected],
 	);
 	return { lighting: useLighting(lightingInput), single };
 }
@@ -349,7 +361,9 @@ function ModelSubjectTip(props: {
 	const far = useCameraWith(props.camera, seenFromFar);
 	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
 	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
-	return <SubjectTipBox target={target} tip={tip} />;
+	if (target === null || !isDoor(scene.projection, target.id))
+		return <SubjectTipBox target={target} tip={tip} />;
+	return <ModelDoorTip target={target} scene={scene} said={tip} appearance={appearance} />;
 }
 
 /**

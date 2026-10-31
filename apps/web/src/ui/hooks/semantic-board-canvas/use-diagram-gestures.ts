@@ -41,8 +41,10 @@ interface DiagramGestureInputs {
 	/**
 	 * The person picked a subject out, or cleared the selection.
 	 * @param id The semantic id, or null.
+	 * @param toggle Whether the pick extends the selection.
+	 * @param repeated Whether this click follows another, as the second of a double click does.
 	 */
-	readonly onSelect: (id: string | null, toggle?: boolean) => void;
+	readonly onSelect: (id: string | null, toggle?: boolean, repeated?: boolean) => void;
 	/** Select visible subjects in a viewport rectangle; absent retains legacy panning. */
 	readonly onSelectArea?: ((area: DiagramBox, toggle: boolean) => void) | undefined;
 	/**
@@ -267,6 +269,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			onSelect(
 				landed === null ? subjectAt(event.target, atlas) : landed.subject,
 				event.ctrlKey || event.metaKey,
+				event.detail > 1,
 			);
 		},
 		[onSelect, atlas],

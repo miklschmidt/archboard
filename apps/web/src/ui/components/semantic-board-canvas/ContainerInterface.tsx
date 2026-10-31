@@ -1,5 +1,5 @@
-// What a picked container offers the parts outside it: its entry points, how
-// many of its parts are hidden, and who calls it (ADR 0044).
+// What a picked container offers the parts outside it: its entry points, which
+// of its parts are hidden, and who calls it (ADR 0044).
 //
 // Nothing here is stored or worked out a second time. The shared model's
 // `inspectContainer` derives the interface from the content of the variant on
@@ -84,7 +84,22 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 				title="Hidden parts"
 				count={measures.hiddenParts}
 				slot="semantic-inspector-hidden-parts"
-			/>
+			>
+				{measures.hiddenParts > 0 && (
+					<SidebarChoices label="Hidden parts" slot="semantic-inspector-hidden-part-list">
+						{inspection.hiddenParts.map((part) => (
+							<PartRow
+								key={part.id}
+								part={part}
+								slot="semantic-inspector-hidden-part"
+								look={look}
+								onPick={onPick}
+								note={undefined}
+							/>
+						))}
+					</SidebarChoices>
+				)}
+			</Measure>
 			<Measure title="Callers" count={measures.callers} slot="semantic-inspector-callers">
 				{measures.callers === 0 ? (
 					<p className="text-muted-foreground text-body">No part on this board calls it.</p>

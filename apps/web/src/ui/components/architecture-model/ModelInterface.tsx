@@ -1,21 +1,24 @@
 import { useMemo, type JSX } from "react";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, VariantContent } from "@archboard/board/content";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
+import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
 interface ModelInterfaceProps {
 	model: Model;
-	projection: ReturnType<typeof projectModel>;
+	/** What the selected state says, whole. */
+	complete: VariantContent;
+	inspection: ModuleInterface | undefined;
 	onSelect: (id: string) => void;
 }
 
 /**
  * The complete model defines interfaces before a reading narrows its content.
- * @param props The scoped module and its complete interface facts.
+ * @param props The module and its complete interface facts.
  * @returns Entry points, hidden parts, callers, and explicit boundary connections.
  */
 function ModelInterface(props: ModelInterfaceProps): JSX.Element | null {
-	const { inspection, complete } = props.projection;
+	const { inspection, complete } = props;
 	const look = useMemo(() => kindLookOf(props.model.policy, new Map()), [props.model.policy]);
 	if (inspection === undefined || !inspection.holdsParts) return null;
 	return (

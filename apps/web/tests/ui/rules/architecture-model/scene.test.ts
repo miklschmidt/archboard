@@ -118,7 +118,12 @@ test("a state, comparison or filter is carried on one board, and a focus starts 
 	expect(sceneBoard({ ...scope, grammar: "sequence", flow: "Shop#Flow" })).not.toBe(
 		sceneBoard({ ...scope, grammar: "flowchart", flow: "Shop#Flow" }),
 	);
-	expect(sceneFit({ ...scope, against: "Current" })).not.toBe(sceneFit(scope));
+	expect(sceneFit({ reading: { ...scope, against: "Current" } })).not.toBe(
+		sceneFit({ reading: scope }),
+	);
+	expect(sceneFit({ reading: scope, layout: "track" })).not.toBe(
+		sceneFit({ reading: scope, layout: "blocks" }),
+	);
 });
 
 test("only the entered subject justifies a flight", () => {

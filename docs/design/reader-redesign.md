@@ -17,8 +17,9 @@ The left column lists where to go. The middle shows it. The right column explain
 what the marks of the picture mean.
 
 - Left column, 320 px: Find, a repository switcher that shows the pane letter, the destinations `Modules`,
-  `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` show a count for the open scope.
-  A proposal read against its base adds `Changes`, with its count and the reader's position.
+  `Flows`, `Walkthroughs` and `History`, and Talk. `Flows` and `Walkthroughs` list the whole model and show its count,
+  so a list here never changes under a reader. A proposal read against its base adds `Changes`, with its count and
+  the reader's position.
 - Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
@@ -30,13 +31,39 @@ what the marks of the picture mean.
   a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
   description, and with a selection it shows the subject. The panel is always there, so a selection never refits the
   picture.
+- Context: the right panel is where the flows and walkthroughs of what a reader looks at stand (TASK-559.22), under
+  the description or the subject's own details. With nothing selected they are those that touch the open module, and
+  with a selection those that touch the selected subjects. At the roots with nothing selected the panel lists neither,
+  because everything touches the roots and the left column holds it all. A row opens its flow or walkthrough and brings
+  the left column to its tab. A list shows four rows, then how many more.
+- Interface measures: the reason for this redesign is to find code smells the way A Philosophy of Software Design
+  does, so this line matters most. For a module with parts, open or selected, an `Interface` section under its head
+  holds one line that counts entries (entry points), hidden parts, callers and pass-through entry points (TASK-559.22,
+  ADR 0044). The counts stay apart, because no score combines them, and a pass-through reads like the others, because
+  it is a question and not a fault. A count selects what it counts on the module's own picture, opening the module if
+  it is not open, so a reader sees the shape: parts as their cards, and callers on the door that holds them. A count of
+  none selects nothing. The selection is the only mark, and the picture gains no permanent one. A relationship that ends
+  on the module itself names no part, so it makes a caller and no entry point. When a module has such callers, the line
+  adds `to module`, their count, as a fact and not a warning. Otherwise a module that callers reach only as a whole
+  would read as having nothing to offer. The heading's `Open in About` opens the Interface section of About, which a
+  selected module with parts now also has, and which names its hidden parts.
+- Trace: with one module selected, the head of `Sends to` holds `Trace onward` and the head of `Receives from` holds
+  `Trace back`, each with how many cards it reaches (TASK-559.22). Each further hop lights more faintly, nothing is
+  written, and a trace goes with the pick. The walk covers the whole model, because a path can leave through one door
+  and return through another. A card stands for all that it holds, and so does the outermost module that holds no
+  card, so onward and back are one walk in reverse. A relationship that names the open module as a whole reaches all
+  its parts onward. Going back, a part's walk does not cross it, as its lit lines do not.
 - Legend: the foot of the right panel, under any action bar, so that a selection never moves it. A group's tag is a
   control, and a bar under the legend put the tag out from under the pointer. It needs no click, and it lists the
-  kinds, line types and groups of the reading. A long subject scrolls above it.
+  kinds, line types and groups of the reading. A long subject and its lists scroll above it.
+- Layout engine: a switch under the legend on a structural reading, because the owner asked for it back (TASK-559.21).
+  This browser remembers the choice for every pane. A switch keeps the selection and fits the new picture. The engine
+  is part of what a stored drawing is kept under, so one engine never answers for the other. No engine lays out a flow,
+  so a flow reading has no switch.
 - About: every long list. It names whether it describes the open scope or the selected subject. It covers the panel
   and has no column of its own.
 
-Long lists and evidence never go into the right panel, because a small right sidebar once overwhelmed the owner.
+Other long lists and evidence never go into the right panel, because a small right sidebar once overwhelmed the owner.
 
 ## What a picture draws
 
@@ -70,8 +97,10 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    each with its real ends.
 
 5. A door is a card with a name only. If exactly one part reaches a door, the line ends on that part.
-   Otherwise the line ends on the frame, so a line on the frame means several parts. Selecting a door lists
-   its real endpoints, grouped by child.
+   Otherwise the line ends on the frame, so a line on the frame means several parts. One click opens a door, and a
+   tip on it lists its real endpoints, grouped by child, up to eight of them. About lists them all. With Ctrl, a click
+   selects the door. A comparison can draw a door of a module that its state removed, which has nowhere to open, so
+   a click selects it.
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
    Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
    caption states the count, and one control shows every line.
@@ -116,13 +145,13 @@ entered or selected subject. If geometry has no real correspondence, change plai
 - Siblings sort by code path. Unbound modules come last, and ties use authored order. This amends the sibling
   order of `CONTEXT.md`. A filesystem path never reparents a module.
 - The tree follows the focused pane. Another pane keeps its own path in its header.
-- Tree and Find navigate. A card selects. A code link opens source. Each has a keyboard route that needs no
-  double click or hover. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `F` and `0` cover every move.
+- Tree, Find and a door navigate. A card selects. A code link opens source. Each has a keyboard route that needs no
+  double click or hover. A selected door opens with Enter, and its panel lists its lines. Presenting removes the tree, so Backspace, `[`, `]`, Enter, `F` and `0` cover every move.
 - Up and Back are different actions. Moving to another module clears stale subject and flow intent.
 - A click lights the card and the tree row, and the right panel names the subject, at once. The picture does not
   move, so a double click lands on the card.
-- A flow is chosen first, and the Sequence or Flowchart representation second. A scope with no flows offers
-  `All flows (72)`. Selecting a flow opens the sequence. The move from structure to sequence is a plain change.
+- A flow is chosen first, and the Sequence or Flowchart representation second. Selecting a flow opens the sequence.
+  The move from structure to sequence is a plain change. `[` and `]` walk the list of the left column.
 - The flow list groups its rows under their collections. A collection name at the end of a row truncated the flow
   names at 320 px. Its heading sticks while the column scrolls, and it is not a row, so it adds no key stop.
 
@@ -230,7 +259,6 @@ signal. It binds a write and current content, and it stops at history:
 | A Read menu, or a history panel                                    | A menu closes on each choice and hides three nouns. A panel adds a surface type. The column rule covers both.                   |
 | A contextual outline in place of the tree                          | A median of 4 rows leaves the column empty and does not read like a repository.                                                 |
 | An authored orientation reading                                    | It adds one more thing to author. A repaired Focus and the tour give the same value.                                            |
-| A layout selector                                                  | It moves a renderer fault onto the reader.                                                                                      |
 | Saved readings, `Copy link`, picture export, "since you were here" | No observed need. The address holds a reading.                                                                                  |
 | A write refusal for empty containers                               | The owner asked for guidance and detection.                                                                                     |
 | A code path as a link on the card                                  | The picture has no such target, and the row is under 9 px high in 43 of 123 readings.                                           |

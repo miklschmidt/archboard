@@ -19,7 +19,7 @@ interface ReaderMoveInputs {
 	readonly tree: ModuleTree;
 	/** The module the reading opens. */
 	readonly opened: string | null;
-	/** The flows a reader walks: those of the open scope, or every flow. */
+	/** The flows a reader walks: the list of the left column. */
 	readonly flows: readonly ModelFlow[];
 	readonly selection: Pick<ModelSelection, "ids" | "select">;
 	readonly scene: AcceptedScene | null;

@@ -1,6 +1,11 @@
 import { expect, test } from "bun:test";
 import { projectModel, type Model } from "@archboard/board/content";
-import { linesOf, relationshipsOf } from "#ui/rules/architecture-model/selected-subject.ts";
+import {
+	isDoor,
+	isOpenDoor,
+	linesOf,
+	relationshipsOf,
+} from "#ui/rules/architecture-model/selected-subject.ts";
 import { SHOP } from "#tests/ui/support/architecture-model/scene.ts";
 
 /**
@@ -54,4 +59,19 @@ test("a module's relationships keep their direction across a two-way line", () =
 	const { outgoing, incoming } = relationshipsOf(TWO_WAY, projectModel(TWO_WAY), "Shop#Worker");
 	expect(outgoing.map((edge) => edge.id)).toEqual(["in"]);
 	expect(incoming.map((edge) => edge.id)).toEqual(["own", "out"]);
+});
+
+test("a door opens at one click while its state holds its module", () => {
+	const line = relationship("line", "Shop#Handler", "Shop#Worker", 0);
+	const open = projectModel({ ...SHOP, relationships: [line] }, "Shop#Gateway");
+	expect(isOpenDoor(open, "Shop#Worker")).toBe(true);
+	expect(isOpenDoor(open, "Shop#Handler")).toBe(false);
+	const base: Model = { ...SHOP, relationships: [line] };
+	const removed: Model = {
+		...SHOP,
+		modules: SHOP.modules.filter(({ id }) => !id.includes("Worker")),
+	};
+	const compared = projectModel(removed, "Shop#Gateway", null, {}, base);
+	expect(isDoor(compared, "Shop#Worker")).toBe(true);
+	expect(isOpenDoor(compared, "Shop#Worker")).toBe(false);
 });

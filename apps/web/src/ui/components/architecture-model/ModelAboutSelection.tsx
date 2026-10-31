@@ -53,6 +53,7 @@ import { modulePlaces } from "#ui/rules/architecture-model/module-places.ts";
 import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
 import {
 	isRemoved,
+	moduleInterface,
 	moduleSource,
 	relationshipsOf,
 	selectedSubject,
@@ -138,14 +139,14 @@ const NOTHING_LIT: ReadonlySet<string> = new Set();
  * @returns The sections, in the order a reader asks.
  */
 function useModuleSections(props: ModulePageProps) {
-	const { module, source, model, projection, selection, tree, look, scope, onShow } = props;
+	const { module, source, model, projection, selection, tree, look, onShow } = props;
 	const { id } = module;
 	const { depicted, reference } = projection;
 	const places = useMemo(() => {
 		const parts = depicted.nodes.filter((node) => node.parent === id);
 		return modulePlaces(parts, tree, new Map(depicted.nodes.map((node) => [node.id, node])), true);
 	}, [depicted.nodes, id, tree]);
-	const walkthroughs = useMemo(() => walkthroughsAbout(source, id), [source, id]);
+	const walkthroughs = useMemo(() => walkthroughsAbout(source, new Set([id])), [source, id]);
 	const { outgoing, incoming } = useMemo(
 		() => relationshipsOf(source, projection, id),
 		[source, projection, id],
@@ -161,6 +162,7 @@ function useModuleSections(props: ModulePageProps) {
 	};
 	const sends = useMemo(() => outgoing.map(relationshipLine), [outgoing]);
 	const receives = useMemo(() => incoming.map(relationshipLine), [incoming]);
+	const inspection = useMemo(() => moduleInterface(projection, id), [projection, id]);
 	return shownSections([
 		aboutSection(
 			"walkthroughs",
@@ -214,16 +216,20 @@ function useModuleSections(props: ModulePageProps) {
 				model={source}
 				projection={projection}
 				onSelect={selection.select}
-				whole
 			/>,
 		),
-		id === scope
+		inspection?.holdsParts === true
 			? aboutSection(
 					"interface",
 					"Interface",
 					RiInputMethodLine,
 					undefined,
-					<ModelInterface model={source} projection={projection} onSelect={selection.select} />,
+					<ModelInterface
+						model={source}
+						complete={projection.complete}
+						inspection={inspection}
+						onSelect={selection.select}
+					/>,
 				)
 			: null,
 		aboutSection("code", "Code and evidence", RiFileCodeLine, undefined, <ModuleCode {...props} />),

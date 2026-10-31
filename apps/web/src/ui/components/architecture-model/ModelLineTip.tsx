@@ -39,17 +39,36 @@ function ModelLineTip(props: ModelLineTipProps): JSX.Element | null {
 					{lineEnds(connection.line, model, projection.reference)}
 				</p>
 				<p className="text-technical text-muted-foreground">{kindNames(model, connection.joins)}</p>
-				<ul className="text-body space-y-1">
-					{connection.joins.map((edge) => (
-						<li key={edge.id}>
-							{edge.label === undefined ? "" : `${edge.label}: `}
-							{lineEnds(edge, model, projection.reference)}
-						</li>
-					))}
-				</ul>
+				<TipRelationships edges={connection.joins} model={model} reference={projection.reference} />
 			</Tooltip.Content>
 		</Tooltip>
 	);
 }
 
-export { ModelLineTip };
+/**
+ * Relationships in a tip, each with what it says and its real ends.
+ * @param props The relationships and what names their ends.
+ * @param props.edges The relationships.
+ * @param props.model The model.
+ * @param props.reference The comparison base, which names removed ends.
+ * @returns The list.
+ */
+function TipRelationships(props: {
+	readonly edges: readonly Projection["connections"][number]["joins"][number][];
+	readonly model: Model;
+	readonly reference: Model | undefined;
+}): JSX.Element {
+	const { model, reference } = props;
+	return (
+		<ul className="text-body space-y-1">
+			{props.edges.map((edge) => (
+				<li key={edge.id}>
+					{edge.label === undefined ? "" : `${edge.label}: `}
+					{lineEnds(edge, model, reference)}
+				</li>
+			))}
+		</ul>
+	);
+}
+
+export { ModelLineTip, TipRelationships };

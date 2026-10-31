@@ -3,7 +3,15 @@
 // picture leaves out about it.
 
 import { useQuery } from "@tanstack/react-query";
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
+import {
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type JSX,
+	type ReactNode,
+} from "react";
 
 import { cn, Tooltip } from "@archboard/ui-kit/components";
 
@@ -56,11 +64,13 @@ function SemanticSubjectTip(props: {
  * @param props The part and what to say.
  * @param props.target The part under the pointer, or null.
  * @param props.tip What the tip says, or null.
+ * @param props.children What a reader of this subject says beside it.
  * @returns The tip, or nothing.
  */
 function SubjectTipBox(props: {
 	readonly target: TipTarget | null;
 	readonly tip: SubjectTip | null;
+	readonly children?: ReactNode;
 }): JSX.Element | null {
 	const { tip } = props;
 	const anchor = useTipAnchor(props.target);
@@ -77,7 +87,7 @@ function SubjectTipBox(props: {
 				className="w-max min-w-56 flex-col items-stretch gap-2.5"
 				style={accentOf(tip.appearance)}
 			>
-				<TipLines tip={tip} />
+				<TipLines tip={tip}>{props.children}</TipLines>
 			</Tooltip.Content>
 		</Tooltip>
 	);
@@ -100,15 +110,17 @@ function useTipAnchor(target: TipTarget | null): TipAnchor | null {
  * the longer account, and what a double-click does.
  * @param props The tip.
  * @param props.tip What it says.
+ * @param props.children What stands before the last line.
  * @returns The lines that have something to say.
  */
-function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
+function TipLines(props: { readonly tip: SubjectTip; readonly children?: ReactNode }): JSX.Element {
 	const { tip } = props;
 	return (
 		<>
 			<TipHeading tip={tip} />
 			{tip.lead !== undefined && <p className="text-body shrink-0">{tip.lead}</p>}
 			{tip.body !== undefined && <TipBody key={tip.body} text={tip.body} />}
+			{props.children}
 			{tip.hint !== undefined && (
 				<p
 					data-slot="semantic-subject-tip-hint"

@@ -806,6 +806,10 @@ Existing canonical navigation, code, and reference owners cover containment and 
 Unit owners hold its rules: `module-tree.test.ts`, `reader-keys.test.ts`, `search.test.ts`, `tree-keys.test.ts`, and `repository-choices.test.ts`.
 `presentation-keys.test.ts` owns the steps of `[` and `]` in a presented walkthrough.
 
+`reader-context.test.ts` owns what the right column adds through a real browser: the lists that follow the open module or the selection, the rows that open a flow or a walkthrough, the interface line, whose counts select on the module's own picture and whose heading opens About at its Interface section, the door that opens at one click and lists its endpoints on hover, and the engine under the legend.
+`reader-trace.test.ts` owns a trace in the reader: each further hop lights more faintly, across the doors, and goes with the pick.
+`relevance.test.ts` owns which flows and walkthroughs touch a subject, and `use-accepted-scene.test.tsx` owns that one engine's drawing never answers for the other.
+
 `canonical-model-groups.test.ts` replaces the legacy board group browser fixture.
 It retains computed selection-ring and read-only assertions.
 It also covers membership across recursive scopes, hidden selection counts, and explicit Focus.

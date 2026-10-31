@@ -78,6 +78,8 @@ interface ConnectionSummaryProps {
 	onSelect: ModelSelection["select"];
 	/** What the code says of it. */
 	children?: ReactNode;
+	/** What stands under the details: what touches the line. */
+	context?: ReactNode;
 }
 
 /**
@@ -98,6 +100,7 @@ function ConnectionSummary(props: ConnectionSummaryProps): JSX.Element {
 			</ModelPanel.Head>
 			{props.children}
 			{one ? <OneRelationship {...props} edge={joins[0]} /> : <JoinedRelationships {...props} />}
+			{props.context}
 		</ModelPanel.Body>
 	);
 }

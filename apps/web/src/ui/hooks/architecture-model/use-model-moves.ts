@@ -4,6 +4,7 @@ import { projectModel, type Model } from "@archboard/board/content";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
+import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
 import {
 	moveTo,
 	parentOf,
@@ -45,6 +46,7 @@ interface MoveInputs {
 function useModelMoves(inputs: MoveInputs) {
 	const { scene, reading, model, reference, open } = inputs;
 	const client = useQueryClient();
+	const layout = useLayoutEngine();
 	const draw = useCallback(
 		async (to: Destination): Promise<ScenePicture | null> => {
 			const scope = to.board === ROOTS ? null : to.board;
@@ -52,12 +54,12 @@ function useModelMoves(inputs: MoveInputs) {
 			if (projection.content.nodes.length === 0) return null;
 			const destination = { ...reading, scope, focus: null, grammar: "architecture" };
 			return {
-				...(await client.fetchQuery(modelDrawingQuery(model, projection, "architecture"))),
+				...(await client.fetchQuery(modelDrawingQuery(model, projection, "architecture", layout))),
 				board: sceneBoard(destination),
 				view: sceneView(destination),
 			};
 		},
-		[client, model, reference, reading],
+		[client, model, reference, reading, layout],
 	);
 	const dive = useDive({
 		camera: inputs.camera,

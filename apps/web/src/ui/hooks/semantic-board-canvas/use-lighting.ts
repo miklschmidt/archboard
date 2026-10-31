@@ -44,6 +44,8 @@ interface LightingInputs {
 	readonly veil: ReadonlySet<string> | null;
 	/** Whether ordinary exploration can light this reading. */
 	readonly enabled: boolean;
+	/** How a picture that is not the whole of `content` walks a trace. */
+	readonly traced?: (trace: Trace) => ReadonlyMap<string, number>;
 }
 
 /** What the picture lights, and what moves it. */
@@ -126,21 +128,33 @@ function modeOf(
 }
 
 /**
+ * What a trace reached, by how many hops.
+ * @param inputs What decides the lighting.
+ * @param wiring What the variant says.
+ * @param trace The trace asked for.
+ * @returns The subjects and their hops.
+ */
+function hopsOf(inputs: LightingInputs, wiring: Wiring, trace: Trace): ReadonlyMap<string, number> {
+	return inputs.traced?.(trace) ?? reachOf(wiring, trace.part, trace.way).hops;
+}
+
+/**
  * What a trace reached beyond the first hop, with how many hops each is.
- * @param wiring What the variant says, or null while that is not known.
+ * @param inputs What decides the lighting.
  * @param trace The trace asked for, or null.
  * @param on Whether the light is about the part the trace was asked of.
  * @returns The subjects and their hops, or null without anything beyond.
  */
 function reachBeyond(
-	wiring: Wiring | null,
+	inputs: LightingInputs,
 	trace: Trace | null,
 	on: boolean,
 ): ReadonlyMap<string, number> | null {
+	const { content: wiring } = inputs;
 	if (wiring === null || trace === null || !on) {
 		return null;
 	}
-	const far = [...reachOf(wiring, trace.part, trace.way).hops].filter(([, hops]) => hops >= 2);
+	const far = [...hopsOf(inputs, wiring, trace)].filter(([, hops]) => hops >= 2);
 	return far.length === 0 ? null : new Map(far);
 }
 
@@ -159,8 +173,8 @@ function useLighting(inputs: LightingInputs): Lighting {
 		[wiring, atlas, poked, several],
 	);
 	const reach = useMemo(
-		() => (lit === null ? null : reachBeyond(wiring, trace, poked === selection)),
-		[lit, wiring, trace, poked, selection],
+		() => (lit === null ? null : reachBeyond(inputs, trace, poked === selection)),
+		[lit, inputs, trace, poked, selection],
 	);
 	const light = useMemo(
 		() => (lit === null || reach === null || wiring === null ? lit : withReach(wiring, lit, reach)),

@@ -77,7 +77,7 @@ function DrawingFailure(
  */
 function SlowDestination(props: DestinationProps & { waiting: boolean }): JSX.Element | null {
 	const { request, waiting } = props;
-	const slow = useSlowWait(waiting ? sceneFit(request.reading) : null);
+	const slow = useSlowWait(waiting ? sceneFit(request) : null);
 	if (!slow) return null;
 	return (
 		<ModelState.Waiting>

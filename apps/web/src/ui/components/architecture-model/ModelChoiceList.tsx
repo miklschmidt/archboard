@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { Tree } from "#ui/components/shell/Tree.tsx";
 import { ROW_GUTTER } from "#ui/rules/shell/tree-grid.ts";
@@ -12,12 +12,7 @@ interface Choice {
 /** Inputs for a list of choices. */
 interface ModelChoiceListProps<Entry extends Choice> {
 	readonly label: string;
-	/** What concerns the open scope. */
-	readonly near: readonly Entry[];
-	/** Everything else, behind one row. */
-	readonly rest: readonly Entry[];
-	/** What the row that holds the rest says, before its count. */
-	readonly restLabel: string;
+	readonly entries: readonly Entry[];
 	/** The entry on screen. */
 	readonly lit: string | null;
 	/** The data attribute that names an entry. */
@@ -31,65 +26,28 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly under?: ReactNode;
 }
 
-/** The id of the row that holds the rest. */
-const REST = "rest";
-
 /** The space a control under a row keeps from the column's edge. */
 const UNDER_STYLE = { paddingLeft: 24 - ROW_GUTTER } as const;
 
 /**
- * A list that stays open while the reader walks it: what concerns the open scope, then one
- * row that holds the rest. A scope with nothing of its own offers that row alone.
+ * A list that stays open while the reader walks it, and holds the same rows wherever they stand.
  * @param props The entries and what choosing one does.
  * @returns The list.
  */
 function ModelChoiceList<Entry extends Choice>(props: ModelChoiceListProps<Entry>): JSX.Element {
-	const { near, rest, lit, onChoose } = props;
-	const [opened, setOpened] = useState(false);
-	const toggle = useCallback((): void => setOpened((current) => !current), []);
-	const shown = opened || rest.some((entry) => entry.id === lit);
+	const { entries, lit, onChoose } = props;
 	const rows = useMemo(
-		() => [
-			...near.map((entry) => ({ id: entry.id, parent: null, branch: false, open: false, entry })),
-			...(rest.length === 0
-				? []
-				: [{ id: REST, parent: null, branch: true, open: shown, entry: null }]),
-			...(shown
-				? rest.map((entry) => ({ id: entry.id, parent: REST, branch: false, open: false, entry }))
-				: []),
-		],
-		[near, rest, shown],
+		() =>
+			entries.map((entry) => ({ id: entry.id, parent: null, branch: false, open: false, entry })),
+		[entries],
 	);
 	const open = useCallback(
-		(row: (typeof rows)[number], beside: boolean): void => {
-			if (row.entry === null) toggle();
-			else onChoose(row.entry, beside);
-		},
-		[onChoose, toggle],
+		(row: (typeof rows)[number], beside: boolean): void => onChoose(row.entry, beside),
+		[onChoose],
 	);
 	return (
-		<Tree label={props.label} rows={rows} home={lit} onOpen={open} onToggle={toggle}>
-			<ChoiceRows {...props} entries={near} depth={0} />
-			{rest.length > 0 && (
-				<Tree.Row
-					id={REST}
-					depth={0}
-					selected={false}
-					expanded={shown}
-					onOpen={toggle}
-					onToggle={toggle}
-				>
-					<Tree.Name
-						text={`${props.restLabel} (${near.length + rest.length})`}
-						className="text-muted-foreground"
-					/>
-				</Tree.Row>
-			)}
-			{shown && rest.length > 0 && (
-				<Tree.Group depth={0}>
-					<ChoiceRows {...props} entries={rest} depth={1} />
-				</Tree.Group>
-			)}
+		<Tree label={props.label} rows={rows} home={lit} onOpen={open}>
+			<ChoiceRows {...props} />
 		</Tree>
 	);
 }
@@ -118,27 +76,22 @@ function sectionRuns<Entry>(
  * @param props The entries and their list.
  * @returns The rows.
  */
-function ChoiceRows<Entry extends Choice>(
-	props: ModelChoiceListProps<Entry> & {
-		readonly entries: readonly Entry[];
-		readonly depth: number;
-	},
-): JSX.Element {
-	const { entries, depth, sectionOf } = props;
+function ChoiceRows<Entry extends Choice>(props: ModelChoiceListProps<Entry>): JSX.Element {
+	const { entries, sectionOf } = props;
 	if (sectionOf === undefined)
 		return (
 			<>
 				{entries.map((entry) => (
-					<ChoiceRow key={entry.id} {...props} entry={entry} depth={depth} />
+					<ChoiceRow key={entry.id} {...props} entry={entry} />
 				))}
 			</>
 		);
 	return (
 		<>
 			{sectionRuns(entries, sectionOf).map((run) => (
-				<Tree.Section key={run.entries[0]!.id} label={run.label} depth={depth}>
+				<Tree.Section key={run.entries[0]!.id} label={run.label} depth={0}>
 					{run.entries.map((entry) => (
-						<ChoiceRow key={entry.id} {...props} entry={entry} depth={depth} />
+						<ChoiceRow key={entry.id} {...props} entry={entry} />
 					))}
 				</Tree.Section>
 			))}
@@ -152,10 +105,7 @@ function ChoiceRows<Entry extends Choice>(
  * @returns The row.
  */
 function ChoiceRow<Entry extends Choice>(
-	props: ModelChoiceListProps<Entry> & {
-		readonly entry: Entry;
-		readonly depth: number;
-	},
+	props: ModelChoiceListProps<Entry> & { readonly entry: Entry },
 ): JSX.Element {
 	const { entry, onChoose } = props;
 	const selected = entry.id === props.lit;
@@ -165,7 +115,7 @@ function ChoiceRow<Entry extends Choice>(
 		<>
 			<Tree.Row
 				id={entry.id}
-				depth={props.depth}
+				depth={0}
 				selected={selected}
 				current={selected}
 				dataset={dataset}
