@@ -38,45 +38,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#ygbcyDVT",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "order": 91000,
-      "kind": "http",
-      "label": "open the code",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/server/routes/code-opener.ts",
-        "symbol": "createCodeOpenerRouter"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#dw2T12P3",
-      "to": "vKEsyHFk/6E6hL0Zk#6a2R1ddu"
-    },
-    {
-      "order": 31000,
-      "kind": "dependency",
-      "label": "opener requests",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/ui/clients/code-target-requests.ts",
-        "symbol": "strictReply"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#FZXXXyDz",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "order": 32000,
-      "kind": "dependency",
-      "label": "settings controls",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-opener/src/ui/components/RepositoryField.tsx",
-        "symbol": "Badge"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#MAtwLWd8",
-      "to": "vKEsyHFk/vKEsyHFk#l5jdGkb1"
     }
   ]
 }

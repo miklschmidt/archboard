@@ -37,6 +37,19 @@
   ],
   "outgoing": [
     {
+      "order": 128000,
+      "kind": "call",
+      "label": "prepare complete candidate",
+      "emphasis": "hero",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/edit.ts",
+        "symbol": "prepareEdit"
+      },
+      "id": "vKEsyHFk/0T9enjhi#miCieAcV",
+      "to": "vKEsyHFk/0T9enjhi#8Uq1mtzw"
+    },
+    {
       "order": 129000,
       "kind": "call",
       "label": "resume durable installation",
@@ -47,7 +60,7 @@
         "symbol": "installJournal"
       },
       "id": "vKEsyHFk/0T9enjhi#1CMGODuG",
-      "to": "vKEsyHFk#R5Ki0heD"
+      "to": "vKEsyHFk/0T9enjhi#CLdaoYy3"
     },
     {
       "order": 138000,

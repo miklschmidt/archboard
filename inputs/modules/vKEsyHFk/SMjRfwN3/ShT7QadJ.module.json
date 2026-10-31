@@ -25,19 +25,6 @@
       "to": "vKEsyHFk/SMjRfwN3#R9St060W"
     },
     {
-      "order": 7000,
-      "kind": "call",
-      "label": "photograph a board, record a talk, draw its frames",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
-        "symbol": "spawnChromium"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#chzSzpL4",
-      "to": "vKEsyHFk/vKEsyHFk#t7W7wJHv"
-    },
-    {
       "order": 48000,
       "kind": "dependency",
       "label": "the guard for its /json/version answer",
@@ -49,19 +36,6 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#YZuYCZhH",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
-    },
-    {
-      "order": 44000,
-      "kind": "dependency",
-      "label": "own the Chromium process group",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/runtime/processes/headless-chromium/process.ts",
-        "symbol": "createCodexProcessGroupOperations"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#NSENtfOa",
-      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     }
   ]
 }

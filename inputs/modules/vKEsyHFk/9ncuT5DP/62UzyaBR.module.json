@@ -32,7 +32,24 @@
         "symbol": "turnStart"
       },
       "id": "vKEsyHFk/SJ2JMVyz#gPWhZQeZ",
-      "to": "vKEsyHFk/wAHh0HTa#JBu1uGdl"
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
+    },
+    {
+      "order": 9000,
+      "kind": "rpc",
+      "label": "a typed message: turn/start or turn/steer",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/actions/text-actions.ts",
+        "symbol": "turnStart"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#Qh7VZ9MQ",
+      "to": "vKEsyHFk/9ncuT5DP#jylkTBp7"
     },
     {
       "order": 37000,

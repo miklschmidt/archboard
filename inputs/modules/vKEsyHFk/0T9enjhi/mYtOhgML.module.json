@@ -71,20 +71,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#1Rd0xfYJ",
-      "to": "vKEsyHFk#dpoZTtr0"
-    },
-    {
-      "order": 39000,
-      "kind": "data",
-      "label": "find vaults through the chosen checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/bound-vaults.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     }
   ]
 }

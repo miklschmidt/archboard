@@ -40,6 +40,19 @@
       "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
     },
     {
+      "order": 2000,
+      "kind": "call",
+      "label": "a session per pane, opened in a vault; show a board in one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
+      "to": "vKEsyHFk/yejBBUFY#xsn0RvSi"
+    },
+    {
       "order": 11000,
       "kind": "render",
       "label": "dock, conversation, voice box, the presentation's voice key",
@@ -79,6 +92,19 @@
       "to": "vKEsyHFk/yejBBUFY#zWQG6LJZ"
     },
     {
+      "order": 21000,
+      "kind": "call",
+      "label": "controllers over the focused pane's",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/application/agent-actions.ts",
+        "symbol": "state"
+      },
+      "id": "vKEsyHFk/yejBBUFY#kZtsu0nq",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
       "order": 22000,
       "kind": "call",
       "label": "send, Talk, narrate",
@@ -102,7 +128,7 @@
         "symbol": "createVoiceSession"
       },
       "id": "vKEsyHFk/yejBBUFY#qKwYD1B2",
-      "to": "vKEsyHFk#HJyBInsA"
+      "to": "vKEsyHFk/yejBBUFY#0SRnYXnC"
     },
     {
       "order": 27000,
@@ -128,7 +154,7 @@
         "symbol": "openWalkthroughRecorder"
       },
       "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
-      "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
+      "to": "vKEsyHFk/yejBBUFY#fscW90Xt"
     },
     {
       "order": 43000,
@@ -189,7 +215,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/SettingsHosts.tsx",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
         "symbol": "OpenerSettings"
       },
       "id": "vKEsyHFk/yejBBUFY#wEaLH20o",

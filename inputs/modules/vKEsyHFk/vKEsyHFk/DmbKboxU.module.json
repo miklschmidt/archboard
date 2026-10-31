@@ -31,6 +31,19 @@
       "to": "vKEsyHFk/vKEsyHFk#w9zvoSFD"
     },
     {
+      "order": 39000,
+      "kind": "data",
+      "label": "find vaults through the chosen checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
       "order": 70050,
       "kind": "call",
       "label": "report structured failures",
@@ -54,7 +67,7 @@
         "symbol": "git"
       },
       "id": "vKEsyHFk#EXqmey6d",
-      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+      "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     },
     {
       "order": 70052,

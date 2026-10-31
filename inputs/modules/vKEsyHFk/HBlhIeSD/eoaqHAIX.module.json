@@ -42,7 +42,7 @@
         "symbol": "publishArchitectureHistory"
       },
       "id": "vKEsyHFk/HBlhIeSD#iq4BoP3P",
-      "to": "vKEsyHFk#H9WIRIjU"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 118000,
@@ -66,8 +66,8 @@
         "path": "apps/server/src/server/routes/architecture/publication-routes.ts",
         "symbol": "asyncEndpoint"
       },
-      "id": "vKEsyHFk#5vteOoed",
-      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8"
+      "to": "vKEsyHFk/HBlhIeSD#c5u3ETJ8",
+      "id": "vKEsyHFk#5vteOoed"
     }
   ]
 }

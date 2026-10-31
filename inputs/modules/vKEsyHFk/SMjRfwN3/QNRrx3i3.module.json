@@ -10,19 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#QNRrx3i3",
   "parent": "vKEsyHFk/SMjRfwN3#peB5Bs5R",
-  "outgoing": [
-    {
-      "order": 39000,
-      "kind": "call",
-      "label": "nix run nixpkgs#ffmpeg-headless, when no ffmpeg is found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/services/ffmpeg.ts",
-        "symbol": "NIX_ARGV"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#jPAvfxQA",
-      "to": "vKEsyHFk/SMjRfwN3#WSI0A2k3"
-    }
-  ]
+  "outgoing": []
 }
