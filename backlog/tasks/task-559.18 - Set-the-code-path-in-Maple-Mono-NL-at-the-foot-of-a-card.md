@@ -4,6 +4,7 @@ title: Set the code path in Maple Mono NL at the foot of a card
 status: To Do
 assignee: []
 created_date: '2026-10-31T00:24:00Z'
+updated_date: '2026-10-31T00:24:00Z'
 labels:
   - renderer
   - frontend
@@ -31,3 +32,9 @@ The owner said that the monospaced path broke the typography of a card and that 
 - [ ] #5 drawn-glyphs and a search of an exported SVG still pass with the new face
 - [ ] #6 DESIGN.md, the licence files and the owner accept the result
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner agreed: subset Maple Mono NL to the characters the product needs. It is 242 KB against 50 KB for DM Mono.
+<!-- SECTION:NOTES:END -->
