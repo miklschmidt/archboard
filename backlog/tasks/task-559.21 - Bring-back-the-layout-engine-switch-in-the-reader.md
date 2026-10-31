@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T03:12:00Z'
-updated_date: '2026-10-31T04:37:00Z'
+updated_date: '2026-10-31T04:42:00Z'
 labels:
   - frontend
 dependencies: []
@@ -43,4 +43,6 @@ On main the right sidebar held a control that switched between Blocks and Tracks
 Owner reviewed what moved out of the old right sidebar and accepted it: the comparison summary as the Changes tab, walkthroughs in the left column, no named views, and groups through the tag click. Only the engine switch comes back, under the legend.
 
 Verification: check:all exit 0, 21 of 21 tasks. reader-context.test.ts owns the switch, the kept selection and the choice across a reload. use-accepted-scene.test.tsx owns that one engine's drawing never answers for the other. Measured on this repository after the door work: Tracks draws the root (2225 by 1589) and Commands (5907 by 1435) with no notice. Commands is very wide on Tracks, so a reader must pan or press 0.
+
+Merged to integrate/pr19 with TASK-559.22. Open: owner review.
 <!-- SECTION:NOTES:END -->
