@@ -347,6 +347,7 @@ mod tests {
             frames: vec![],
             regions: vec![],
             titles: vec![],
+            routed: None,
             edges: model
                 .edges
                 .iter()

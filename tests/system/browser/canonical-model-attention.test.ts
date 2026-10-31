@@ -89,10 +89,50 @@ function litInk(browser: AgentBrowserSession): Promise<LitInk> {
 	);
 }
 
+/** A stretch that several lines share. */
+interface SharedStretch {
+	/** Where it is on the page. */
+	readonly x: number;
+	readonly y: number;
+	/** How many lines run on it. */
+	readonly lines: number;
+}
+
+/**
+ * The middle of a stretch that one line of a trunk draws for the others.
+ * @param browser The page.
+ * @returns Where it is, and how many lines' routes run through it, or none while a line is still being drawn on.
+ */
+function sharedStretch(browser: AgentBrowserSession): Promise<SharedStretch> {
+	return browser.eval<SharedStretch>(
+		`(() => { const root = document.querySelector("${SURFACE} > svg");` +
+			` const cut = root.querySelector("mask path[stroke-linecap='butt']");` +
+			` const middle = cut.getPointAtLength(cut.getTotalLength() / 2);` +
+			` const inked = (line) => [...line.querySelectorAll(":scope > path:not(.ab-halo)")];` +
+			` const lines = [...root.querySelectorAll("g[data-semantic-kind='edge']")]` +
+			`   .filter((line) => inked(line).some((path) => path.isPointInStroke(middle)));` +
+			` const drawing = [...root.querySelectorAll("g[data-semantic-kind='edge'] path[stroke-dashoffset]")]` +
+			`   .some((path) => Number(path.getAttribute("stroke-dashoffset")) > 0.01);` +
+			` const place = middle.matrixTransform(root.getScreenCTM());` +
+			` return { x: Math.round(place.x), y: Math.round(place.y), lines: drawing ? 0 : lines.length }; })()`,
+	);
+}
+
+/**
+ * How many lines the picture lights.
+ * @param browser The page.
+ * @returns The count.
+ */
+function litLines(browser: AgentBrowserSession): Promise<number> {
+	return browser.eval<number>(
+		`document.querySelectorAll("${SURFACE} > svg g[data-semantic-kind='edge'].is-lit").length`,
+	);
+}
+
 /** Blocks draws five unlabeled routes out of one module with a shared lane. */
 const FAN = ["North", "South", "East", "West", "Central"];
 
-test("selection lights canonical connections without hiding labels or cutting shared routes", async () => {
+test("attention lights canonical connections without hiding labels or cutting shared routes, and a shared stretch lights all its lines", async () => {
 	await using resources = new AsyncDisposableStack();
 	const vault = vaultIn(join(browserTestRoots().ownerRoot, "model-attention"));
 	const model = await seedCanonicalModel(vault, "Architecture", {
@@ -194,4 +234,25 @@ test("selection lights canonical connections without hiding labels or cutting sh
 		WAIT,
 	);
 	expect(ink.cut).toBe(0);
+	await browser.run(["focus", '[data-slot="model-diagram"]']);
+	await browser.run(["press", "Escape"]);
+	await pollUntil(
+		() => litLines(browser),
+		(lines) => lines === 0,
+		"clearing the pick",
+		WAIT,
+	);
+	const stretch = await pollUntil(
+		() => sharedStretch(browser),
+		(found) => found.lines > 1,
+		"the trunk's lines to finish drawing",
+		WAIT,
+	);
+	await browser.run(["mouse", "move", String(stretch.x), String(stretch.y)]);
+	await pollUntil(
+		() => litLines(browser),
+		(lines) => lines === stretch.lines,
+		"every line of the shared stretch to light under the pointer",
+		WAIT,
+	);
 }, 90_000);

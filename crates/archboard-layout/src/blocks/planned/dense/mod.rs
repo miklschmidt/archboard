@@ -289,6 +289,7 @@ impl<'a> Reading<'a> {
                 })
                 .into_iter()
                 .collect(),
+            routed: None,
         }
     }
 

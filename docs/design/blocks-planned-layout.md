@@ -92,6 +92,13 @@ A label uses the midpoint of the longest clear private run that holds its comple
 The run can be horizontal or vertical.
 The words stay horizontal.
 A label never covers a shared trunk, crosses a wall, or lies under a foreign line.
+
+The lines of a door's trunk route without their words, and then get them back in `planned/words.rs`.
+Each line takes the nearest spot on its own branch, reading from the part that owns it.
+A branch that cannot hold the words leaves its part by a new stem to the same trunk.
+A gap that a waiting branch crosses then grows, in two steps, and contraction takes back what stays empty.
+A line that still has no room takes a route of its own.
+If no such route exists, the line draws no words, and the panel of the selected line shows them. The measured drawings have six such lines.
 If no qualifying midpoint exists, the label uses the nearest clear private spot along the route from its source.
 Count those final selected placements separately from routing fallbacks.
 Label placement never adds a bend or changes an endpoint.

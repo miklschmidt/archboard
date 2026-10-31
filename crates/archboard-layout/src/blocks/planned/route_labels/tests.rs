@@ -16,6 +16,7 @@ fn drawing(paths: &[(&str, &[(f64, f64)])]) -> Shape {
         frames: vec![],
         regions: vec![],
         titles: vec![],
+        routed: None,
         edges: paths
             .iter()
             .map(|(id, points)| PlacedLine {

@@ -24,6 +24,8 @@ pub(super) struct Shape {
     pub scopes: Rc<BTreeMap<usize, ScopePlacement>>,
     pub labels: BTreeMap<usize, Rect>,
     pub fallbacks: usize,
+    /// The lines of a door's trunk, each with whether its part is its source.
+    pub trunk: Rc<BTreeMap<usize, bool>>,
     pub channel_geometry: Rc<super::channel::GeometryCache>,
     pub label_geometry: Rc<std::cell::OnceCell<super::label_space::Protection>>,
 }
@@ -73,6 +75,7 @@ impl Shape {
             scopes: Rc::clone(&self.scopes),
             labels: BTreeMap::new(),
             fallbacks: self.fallbacks,
+            trunk: Rc::clone(&self.trunk),
             channel_geometry: Rc::clone(&self.channel_geometry),
             label_geometry: Rc::clone(&self.label_geometry),
         }
@@ -88,6 +91,7 @@ impl Shape {
             scopes: Rc::new(BTreeMap::new()),
             labels: BTreeMap::new(),
             fallbacks: 0,
+            trunk: Rc::default(),
             channel_geometry: Rc::default(),
             label_geometry: Rc::default(),
         }

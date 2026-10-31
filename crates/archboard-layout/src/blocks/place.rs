@@ -61,7 +61,16 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     Ok(answer(&graph, placed.width, placed.height, told))
 }
 
+/// A door's lines share a trunk, which their words would hold apart, so they are drawn
+/// without them first, and each then wears them on its own branch.
 fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+    let Some(quiet) = super::planned::without_trunk_words(graph) else {
+        return solved(graph, host);
+    };
+    super::planned::dress(graph, solved(&quiet, host)?).or_else(|_| solved(graph, host))
+}
+
+fn solved(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
     if let Some(drawing) = super::planned::dense_drawing(graph) {
         return Ok(drawing);
     }

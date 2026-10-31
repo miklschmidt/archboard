@@ -68,6 +68,32 @@ impl Gaps {
     }
 }
 
+/// Bands added to an axis: each coordinate past a cut moves on by its room.
+pub(super) struct Room(pub Vec<(f64, f64)>);
+
+impl Move for Room {
+    fn at(&self, value: f64) -> f64 {
+        value
+            + self
+                .0
+                .iter()
+                .filter(|(cut, _)| *cut < value)
+                .map(|(_, room)| room)
+                .sum::<f64>()
+    }
+}
+
+impl Move for Gaps {
+    fn at(&self, value: f64) -> f64 {
+        Gaps::at(self, value)
+    }
+}
+
+/// How one axis moves: bands taken out, or bands put in.
+pub(super) trait Move {
+    fn at(&self, value: f64) -> f64;
+}
+
 struct Space {
     x: Axis,
     y: Axis,
@@ -105,12 +131,13 @@ impl Space {
     }
 }
 
-struct Contraction {
-    x: Gaps,
-    y: Gaps,
+/// How a drawing moves on both axes. Coordinates keep their order, so no route changes its topology.
+pub(super) struct Bands<M> {
+    pub x: M,
+    pub y: M,
 }
 
-impl Contraction {
+impl<M: Move> Bands<M> {
     fn point(&self, point: &mut Point) {
         point.x = self.x.at(point.x);
         point.y = self.y.at(point.y);
@@ -129,7 +156,7 @@ impl Contraction {
         rect.height = bottom - rect.y;
     }
 
-    fn drawing(&self, shape: &Shape) -> Placed {
+    pub(super) fn drawing(&self, shape: &Shape) -> Placed {
         let mut drawing = (*shape.drawing).clone();
         drawing.edges.clone_from(&shape.routes);
         drawing.width = self.x.at(drawing.width);
@@ -163,6 +190,49 @@ impl Contraction {
         }
         drawing
     }
+}
+
+/// Add room to the empty bands between cards and words that a branch crosses, along each
+/// axis. Coordinates keep their order, so no route changes.
+pub(super) fn with_room(shape: &Shape, branches: &[Rect], x: f64, y: f64) -> Placed {
+    let axis = || Axis {
+        clear: 0.0,
+        occupied: Vec::new(),
+    };
+    let mut space = Space {
+        x: axis(),
+        y: axis(),
+    };
+    let cards = shape
+        .endpoints
+        .keys()
+        .map(|&endpoint| shape.solid(endpoint));
+    let words = shape.routes.iter().filter_map(|line| line.label);
+    for rect in cards
+        .chain(shape.drawing.titles.iter().map(|title| title.bx))
+        .chain(words)
+    {
+        space.protect(rect);
+    }
+    let bands = |gaps: Gaps, room: f64, crosses: &dyn Fn(f64, &Rect) -> bool| {
+        Room(
+            gaps.0
+                .iter()
+                .map(|gap| f64::midpoint(gap.start, gap.end))
+                .filter(|&cut| branches.iter().any(|branch| crosses(cut, branch)))
+                .map(|cut| (cut, room))
+                .collect(),
+        )
+    };
+    Bands {
+        x: bands(space.x.gaps(), x, &|cut, branch| {
+            branch.x <= cut && cut <= branch.x + branch.width
+        }),
+        y: bands(space.y.gaps(), y, &|cut, branch| {
+            branch.y <= cut && cut <= branch.y + branch.height
+        }),
+    }
+    .drawing(shape)
 }
 
 /// Remove bands that hold no card, header, caption, label, bend or boundary.
@@ -200,7 +270,7 @@ pub(super) fn drawing(shape: &Shape, clear: f64) -> Option<Placed> {
         let foot = title.band.y + title.band.height;
         space.y.protect(foot, CONTAINER_INSET - 2.0 * clear);
     }
-    let contraction = Contraction {
+    let contraction = Bands {
         x: space.x.gaps(),
         y: space.y.gaps(),
     };

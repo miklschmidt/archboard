@@ -165,12 +165,14 @@ function reachBeyond(
  */
 function useLighting(inputs: LightingInputs): Lighting {
 	const { content: wiring, atlas, selection, several = null, veil } = inputs;
-	const { part, onHover, release } = useRestingPart(atlas);
+	const { part, parts, onHover, release } = useRestingPart(atlas);
 	const trace = traceOf(inputs);
 	const poked = pokedBy(inputs, trace, part);
 	const lit = useMemo(
-		() => litInPicture(wiring, atlas, poked) ?? litBySeveral(wiring, several),
-		[wiring, atlas, poked, several],
+		() =>
+			litInPicture(wiring, atlas, poked === part ? parts : [poked].filter((id) => id !== null)) ??
+			litBySeveral(wiring, several),
+		[wiring, atlas, poked, part, parts, several],
 	);
 	const reach = useMemo(
 		() => (lit === null ? null : reachBeyond(inputs, trace, poked === selection)),

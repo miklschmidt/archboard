@@ -101,6 +101,8 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    tip on it lists its real endpoints, grouped by child, up to eight of them. About lists them all. With Ctrl, a click
    selects the door. A comparison can draw a door of a module that its state removed, which has nowhere to open, so
    a click selects it.
+   From three lines of one kind to one door, each way, the lines share a trunk, and each line wears its words on its
+   own branch, beside the part that owns it.
 6. Above 18 lines, a line leaves the picture if other drawn lines still join its ends, each way that it runs.
    Remove the weakest first, so that the result is deterministic. No connected part loses its last line. The
    caption states the count, and one control shows every line.
