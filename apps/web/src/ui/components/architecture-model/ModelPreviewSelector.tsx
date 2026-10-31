@@ -37,7 +37,7 @@ function ModelPreviewSelector({ preview, state, pending, onState }: SelectorProp
 			>
 				<Select.Value>{readingLabel(preview, state)}</Select.Value>
 			</Select.Trigger>
-			<Select.Content align="end" alignItemWithTrigger={false} className="w-auto max-w-xl min-w-80">
+			<Select.Content align="end" className="w-auto max-w-xl min-w-80">
 				<Select.Item value="current" data-preview-state="current">
 					{defaultPreviewLabel(preview)}
 				</Select.Item>

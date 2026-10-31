@@ -19,7 +19,7 @@ import {
 } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { cn, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
+import { Badge, cn, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
 import { MarkerLamp } from "#ui/components/shell/ActivityLamp.tsx";
 import { PaneChips } from "#ui/components/shell/PaneChips.tsx";
 import { PaneLetter } from "#ui/components/shell/PaneControls.tsx";
@@ -51,6 +51,24 @@ function repositoryFacts(shell: ShellRepository): string | null {
 	if (shell.migrationRequired === true) return "migration required";
 	if (shell.model === undefined) return shell.loading ? "…" : "no model";
 	return shell.repository.checkouts.length > 1 ? String(shell.repository.checkouts.length) : null;
+}
+
+/**
+ * What a repository's row shows at its end: the number of its checkouts on a count, and any other
+ * fact in words.
+ * @param props The repository.
+ * @param props.shell The repository.
+ * @returns The fact, or nothing.
+ */
+function RepositoryFact(props: { readonly shell: ShellRepository }): JSX.Element | null {
+	const fact = repositoryFacts(props.shell);
+	if (fact === null) return null;
+	if (!/^\d+$/.test(fact)) return <>{fact}</>;
+	return (
+		<Badge variant="count" size="technical" title="Checkouts on this machine">
+			{fact}
+		</Badge>
+	);
 }
 
 /**
@@ -135,7 +153,7 @@ function RepositorySwitcher(props: RepositorySwitcherProps): JSX.Element {
 			aria-expanded={open}
 			title={name ?? undefined}
 			onClick={toggle}
-			className="hover:bg-sidebar-accent/50 border-border text-control flex h-9 w-full shrink-0 items-center gap-2 border-b px-4 text-left font-medium"
+			className="border-input bg-card shadow-raised hover:bg-secondary aria-expanded:bg-secondary aria-expanded:shadow-pressed active:shadow-pressed focus-visible:ring-ring rounded-control text-control mx-2 mb-2 flex h-8 shrink-0 items-center gap-2 border px-2.5 text-left font-medium outline-none focus-visible:ring-2"
 		>
 			{letter !== null && <PaneLetter letter={letter} active />}
 			<SwitcherName name={name} />
@@ -232,7 +250,10 @@ function RepositoryChooser(props: RepositoryChooserProps): JSX.Element {
 		input.current?.focus();
 	}, []);
 	return (
-		<div data-slot="repository-chooser" className={cn("min-h-0 flex-1 flex-col", props.className)}>
+		<div
+			data-slot="repository-chooser"
+			className={cn("min-h-0 flex-1 flex-col gap-2 px-2 pb-2", props.className)}
+		>
 			<input
 				ref={input}
 				type="search"
@@ -244,29 +265,31 @@ function RepositoryChooser(props: RepositoryChooserProps): JSX.Element {
 				aria-controls={listId}
 				spellCheck={false}
 				autoComplete="off"
-				className="text-control placeholder:text-muted-foreground border-border h-9 w-full shrink-0 border-b bg-transparent px-4 outline-none [&::-webkit-search-cancel-button]:hidden"
+				className="text-control placeholder:text-muted-foreground border-input bg-tray-sink shadow-well focus-visible:border-ring rounded-control h-8 w-full shrink-0 border px-2.5 outline-none [&::-webkit-search-cancel-button]:hidden"
 			/>
-			<div ref={list} id={listId} className="min-h-0 flex-1 overflow-y-auto">
-				{query !== "" && rows.length === 0 && (
-					<p className="text-body text-muted-foreground px-4 py-3">Nothing matches “{query}”.</p>
-				)}
-				<Tree
-					label="Repositories"
-					rows={rows}
-					home={rows.find((row) => row.kind === "repository" && row.selected)?.id ?? null}
-					onOpen={choose}
-					onToggle={toggle}
-					onTypeAhead={typeAhead}
-					onLeave={onLeave}
-				>
-					{rows.map((row) =>
-						row.kind === "repository" ? (
-							<RepositoryLine key={row.id} row={row} onOpen={choose} onToggle={toggle} />
-						) : (
-							<CheckoutLine key={row.id} row={row} onOpen={choose} />
-						),
+			<div className="column-well flex-1">
+				<div ref={list} id={listId} className="min-h-0 flex-1 overflow-y-auto">
+					{query !== "" && rows.length === 0 && (
+						<p className="text-body text-muted-foreground px-4 py-3">Nothing matches “{query}”.</p>
 					)}
-				</Tree>
+					<Tree
+						label="Repositories"
+						rows={rows}
+						home={rows.find((row) => row.kind === "repository" && row.selected)?.id ?? null}
+						onOpen={choose}
+						onToggle={toggle}
+						onTypeAhead={typeAhead}
+						onLeave={onLeave}
+					>
+						{rows.map((row) =>
+							row.kind === "repository" ? (
+								<RepositoryLine key={row.id} row={row} onOpen={choose} onToggle={toggle} />
+							) : (
+								<CheckoutLine key={row.id} row={row} onOpen={choose} />
+							),
+						)}
+					</Tree>
+				</div>
 			</div>
 		</div>
 	);
@@ -346,7 +369,7 @@ function RepositoryLine(props: {
 						<RiErrorWarningLine aria-hidden="true" className="text-destructive size-3.5" />
 					</span>
 				)}
-				{repositoryFacts(shell)}
+				<RepositoryFact shell={shell} />
 			</Tree.Facts>
 		</Tree.Row>
 	);

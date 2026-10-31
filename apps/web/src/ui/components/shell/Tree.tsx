@@ -177,6 +177,8 @@ interface TreeRowProps {
 	readonly disabled?: boolean | undefined;
 	/** Data attributes that name what the row stands for. */
 	readonly dataset?: Readonly<Record<string, string>> | undefined;
+	/** A row of a table: it has no depth, so it keeps no room for a disclosure. */
+	readonly flat?: boolean | undefined;
 	readonly onOpen: (beside: boolean) => void;
 	readonly onToggle?: (() => void) | undefined;
 	readonly children: ReactNode;
@@ -186,10 +188,11 @@ interface TreeRowProps {
  * Where a row sits, and where it sticks while it is open.
  * @param depth The row's depth.
  * @param expanded Whether it holds drawn rows.
+ * @param flat Whether it keeps no room for a disclosure.
  * @returns The style.
  */
-function rowPlace(depth: number, expanded: boolean | undefined): CSSProperties {
-	const left = disclosureX(depth) - ROW_GUTTER;
+function rowPlace(depth: number, expanded: boolean | undefined, flat: boolean): CSSProperties {
+	const left = flat ? 2 : disclosureX(depth) - ROW_GUTTER;
 	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
 	return expanded === true ? { ...place, top: depth * ROW_HEIGHT } : place;
 }
@@ -201,10 +204,10 @@ function rowPlace(depth: number, expanded: boolean | undefined): CSSProperties {
  */
 function rowClass(props: TreeRowProps): string {
 	return cn(
-		"group/row bg-sidebar focus-visible:ring-ring rounded-control relative flex min-h-7 w-full min-w-0 cursor-default items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
+		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 cursor-default items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
-		props.selected ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/50",
+		props.selected ? "bg-tray-tab shadow-raised" : "hover:bg-tray-tab/50",
 		props.disabled === true && "text-muted-foreground",
 	);
 }
@@ -276,16 +279,16 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			onFocus={focus}
 			onClick={click}
 			onKeyDown={frame.onKeyDown}
-			style={rowPlace(props.depth, props.expanded)}
+			style={rowPlace(props.depth, props.expanded, props.flat === true)}
 			className={rowClass(props)}
 		>
 			{current === true && (
 				<span
 					aria-hidden="true"
-					className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
+					className="bg-primary-mark absolute inset-x-1 bottom-0 h-0.5 rounded-full"
 				/>
 			)}
-			<Disclosure expanded={props.expanded} onToggle={props.onToggle} />
+			{props.flat !== true && <Disclosure expanded={props.expanded} onToggle={props.onToggle} />}
 			{props.children}
 		</div>
 	);
@@ -337,7 +340,7 @@ function TreeSection(props: {
 			<div
 				aria-hidden="true"
 				style={place}
-				className="bg-sidebar text-control text-muted-foreground sticky z-10 truncate py-1"
+				className="bg-tray-sink text-control text-muted-foreground sticky z-10 truncate py-1"
 			>
 				{props.label}
 			</div>

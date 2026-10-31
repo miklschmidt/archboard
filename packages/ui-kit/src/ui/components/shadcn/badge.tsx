@@ -16,6 +16,9 @@ const badgeVariants = cva(
 			},
 			variant: {
 				default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
+				// Archboard: how many of something, as the low slab the picture draws for its
+				// small parts. Its front edge stands under its box.
+				count: "mb-0.5 min-w-5 bg-slab-face tabular-nums text-foreground shadow-slab",
 				secondary: "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
 				destructive:
 					"bg-destructive/10 text-destructive focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:focus-visible:ring-destructive/40 [a]:hover:bg-destructive/20",

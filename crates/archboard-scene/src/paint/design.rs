@@ -151,9 +151,22 @@ pub(crate) const TAG_INSET: f64 = 12.0;
 /// The room a tag keeps from the end of a name beside it.
 pub(crate) const TAG_BESIDE: f64 = 8.0;
 
+/// The width of the one viewport the shell supports.
+pub const SHELL_WIDTH: f64 = 1920.0;
+/// The left column of the shell (`NAVIGATOR_WIDTH` of shell-geometry.ts).
+pub const NAVIGATOR_WIDTH: f64 = 448.0;
+/// The line between the left column and the panes.
+pub const HANDLE_WIDTH: f64 = 1.0;
+/// The right panel beside the picture of a reading.
+const RIGHT_PANEL_WIDTH: f64 = 360.0;
+/// The breathing room a fit leaves on either side of a picture.
+pub const FIT_MARGIN: f64 = 24.0;
 /// The room a picture lands in on the one screen the shell supports: the pane
 /// beside the right panel at 1920 by 1080, less the camera's margin.
-pub const LANDING_ROOM: (f64, f64) = (1191.0, 955.0);
+pub const LANDING_ROOM: (f64, f64) = (
+    SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH - RIGHT_PANEL_WIDTH - 2.0 * FIT_MARGIN,
+    955.0,
+);
 /// The scale below which a picture draws its far view: a name of 14 units reads 12 px there.
 pub(crate) const FAR_START: f64 = 12.0 / 14.0;
 /// The room between an architecture card's edge and its chip and words.

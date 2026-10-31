@@ -26,6 +26,9 @@ const tabsListVariants = cva(
 				// underline on the active tab.
 				underline:
 					"w-full justify-start gap-0 rounded-none border-b border-border bg-transparent p-0 group-data-horizontal/tabs:h-7",
+				// Archboard: tabs that stand on the top edge of a well. The stylesheet holds the raised
+				// piece, because it is the piece the picture draws.
+				edge: "w-full flex-wrap items-end justify-start gap-0 rounded-none bg-transparent p-0 group-data-horizontal/tabs:h-auto",
 			},
 		},
 		defaultVariants: {

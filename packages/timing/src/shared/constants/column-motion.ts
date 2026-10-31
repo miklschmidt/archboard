@@ -31,6 +31,20 @@ const COLUMN_MS = durations({
 	 * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
 	 */
 	boardResizeSettle: 64,
+	/**
+	 * How long a select's or a menu's popover takes to arrive: it fades in and grows a
+	 * little from the control that opened it, so a reader sees where it came from.
+	 *
+	 * Pulls against the click that asked for it. Past about 200 ms a reader waits on a
+	 * list that they could already read, and under about 120 ms the popover reads as a
+	 * flicker and not as something that opened.
+	 */
+	popoverIn: 160,
+	/**
+	 * How long a popover takes to leave. Shorter than it took to arrive, because the
+	 * choice is made and the reader looks at what it changed.
+	 */
+	popoverOut: 110,
 });
 
 /** The durations of the pane sidebar's coming and going, in milliseconds. */

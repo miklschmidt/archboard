@@ -5,6 +5,7 @@
 import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { COLUMN_MS } from "@archboard/timing";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
 import {
@@ -115,6 +116,19 @@ test("a selection reads the history, and the list shows every module and selects
 		"the sort choices",
 		WAIT,
 	);
+	expect(
+		await browser.eval<{ described: boolean; eases: string }>(`(() => {
+			const popover = document.querySelector('[data-slot="select-content"]');
+			const choices = [...popover.querySelectorAll('[role="option"]')];
+			return {
+				described: choices.length > 0 && choices.every((choice) => choice.querySelector('[data-slot="select-description"]')?.textContent),
+				eases: getComputedStyle(popover).transitionDuration,
+			};
+		})()`),
+	).toEqual({
+		described: true,
+		eases: `${COLUMN_MS.popoverIn / 1000}s, ${COLUMN_MS.popoverIn / 1000}s`,
+	});
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Enter"]);
@@ -124,6 +138,17 @@ test("a selection reads the history, and the list shows every module and selects
 		"the list by another measure",
 		WAIT,
 	);
+
+	expect(
+		await browser.eval<{ tabRows: number; columns: number }>(`(() => {
+			const rows = [...document.querySelectorAll('[data-measure-row]')];
+			const right = (row) => row.querySelector('[data-measure="callers"]')?.getBoundingClientRect().right;
+			return {
+				tabRows: new Set([...document.querySelectorAll('[data-destination]')].map((tab) => tab.getBoundingClientRect().top)).size,
+				columns: new Set(rows.map(right).filter((edge) => edge !== undefined)).size,
+			};
+		})()`),
+	).toEqual({ tabRows: 1, columns: 1 });
 
 	await browser.eval(`document.querySelector('${ROW("Shop#Handler")}').focus()`);
 	await browser.run(["press", "Enter"]);

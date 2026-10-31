@@ -1,7 +1,7 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { Tree } from "#ui/components/shell/Tree.tsx";
-import { NAME_GAP, ROW_GUTTER } from "#ui/rules/shell/tree-grid.ts";
+import { ROW_GUTTER } from "#ui/rules/shell/tree-grid.ts";
 
 /** One thing a list offers. */
 interface Choice {
@@ -22,8 +22,10 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly onChoose: (entry: Entry, beside: boolean) => void;
 	/** What a row says at its end. */
 	readonly facts?: ((entry: Entry) => ReactNode) | undefined;
-	/** What a row says under its name, across the whole row. */
-	readonly detail?: ((entry: Entry) => ReactNode) | undefined;
+	/** What a row says to assistive technology, where its words alone do not say it. */
+	readonly rowLabel?: ((entry: Entry) => string) | undefined;
+	/** Rows of a table: they have no depth, so they keep no room for a disclosure. */
+	readonly flat?: boolean | undefined;
 	/** The section that a row stands in. Neighbours in one section share its name. */
 	readonly sectionOf?: ((entry: Entry) => string) | undefined;
 	/** What stands under the lit row. */
@@ -32,8 +34,6 @@ interface ModelChoiceListProps<Entry extends Choice> {
 
 /** The space a control under a row keeps from the column's edge. */
 const UNDER_STYLE = { paddingLeft: 24 - ROW_GUTTER } as const;
-/** The space a name with words under it keeps from the marker column. */
-const WORDS_STYLE = { marginLeft: NAME_GAP } as const;
 
 /**
  * A list that stays open while the reader walks it, and holds the same rows wherever they stand.
@@ -125,18 +125,11 @@ function ChoiceRow<Entry extends Choice>(
 				selected={selected}
 				current={selected}
 				dataset={dataset}
+				label={props.rowLabel?.(entry)}
+				flat={props.flat}
 				onOpen={open}
 			>
-				{props.detail === undefined ? (
-					<ChoiceLine {...props} />
-				) : (
-					<span className="flex min-w-0 flex-1 flex-col">
-						<span className="flex min-w-0 items-center">
-							<ChoiceLine {...props} />
-						</span>
-						<span style={WORDS_STYLE}>{props.detail(entry)}</span>
-					</span>
-				)}
+				<ChoiceLine {...props} />
 			</Tree.Row>
 			{selected && props.under !== undefined && (
 				<div style={UNDER_STYLE} className="py-1">

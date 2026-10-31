@@ -41,11 +41,7 @@ function OriginalFiles({ inputs }: { inputs: Inputs }): JSX.Element {
 					>
 						<Select.Value placeholder="Choose an original file" />
 					</Select.Trigger>
-					<Select.Content
-						align="start"
-						alignItemWithTrigger={false}
-						className="w-auto max-w-xl min-w-80"
-					>
+					<Select.Content align="start" className="w-auto max-w-xl min-w-80">
 						{inputs.map((input) => (
 							<Select.Item key={input.file} value={input.file} data-original-file={input.file}>
 								{input.file}
