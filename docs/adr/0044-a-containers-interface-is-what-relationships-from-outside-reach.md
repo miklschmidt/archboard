@@ -542,3 +542,10 @@ lines to 13 parts and 90 lines, and most of those lines were file imports named
 after symbols. A part that binds a file makes the code check ask for every call
 of that file, so the rule drew an import map, in which an architect cannot see a
 smell.
+
+The accepted repair moved 202 ends to existing parts, added 15 parts and 5
+relationships, and removed 28 relationships that repeated a kept statement. It
+took the lines drawn from 1,694 to 1,765, the total area from 148.5 M to 156.0 M,
+and the readings that pass the fit gate from 107 to 109 of 115. No module with
+parts reads as no entry points although callers reach it. Of the 1,074
+relationships, 339 keep a frame end.
