@@ -102,6 +102,31 @@ afterAll(async () => {
 });
 
 describe.serial("the repositories of the navigator", () => {
+	test("a reader's open moves a pane into a repository with no model, and an agent's is refused", async () => {
+		await using resources = new AsyncDisposableStack();
+		const vault = vaultOf(main);
+		mkdirSync(vault, { recursive: true });
+		seedCanonicalFixture(fixture.vault, "notes", []);
+		const pane = await openPaneSession(server.base, createRequester(server), {
+			clientId: "pane-unread",
+			board: "notes",
+		});
+		resources.defer(() => pane.close());
+		const inMain = createRequester({ ...server, vault });
+		const body = { reading: {}, pane: pane.clientId };
+		const agent = await inMain("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { ...body, agent: true },
+		});
+		expect(agent.status).toBe(404);
+		const mark = pane.mark();
+		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
+		expect(reader.status).toBe(200);
+		const moved = await pane.waitFor("pane_board", mark);
+		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
+	});
+
 	test("choosing a checkout moves the panes that showed the old one, and a show moves a named pane", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
@@ -265,8 +290,8 @@ describe.serial("the repositories of the navigator", () => {
 		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
 	});
 
-	test("a vault that a link leads out of the layout is not listed, and no page opens in it", async () => {
-		// Every call naming it is refused (TASK-472.09). It sorts first, so a page would open there.
+	test("a vault that a link leads out of the layout is not listed", async () => {
+		// Every call naming it is refused (TASK-472.09), so no page may open there.
 		const holder = join(fixture.root, "aaa-linked-out");
 		const elsewhere = join(fixture.root, "boards-kept-elsewhere");
 		mkdirSync(join(holder, ".archboard"), { recursive: true });
@@ -274,10 +299,6 @@ describe.serial("the repositories of the navigator", () => {
 		symlinkSync(elsewhere, join(holder, ".archboard", "vault"));
 		cli("repo", "add", holder);
 		expect((await listed()).map((each) => each.name)).not.toContain("aaa-linked-out");
-		const opening = (await (await fetch(`${server.base}/api/served-vault`)).json()) as {
-			vault: string | null;
-		};
-		expect(opening.vault).not.toBe(realpathSync.native(elsewhere));
 	});
 
 	test("choosing a checkout preserves the captured canonical reading and its filters", async () => {

@@ -75,7 +75,8 @@ function repositoryMatch(name: string, query: string): TextRange | null {
  */
 function shownCheckouts(entry: RepositoryEntry, inputs: ChoiceInputs): CheckoutChoice[] {
 	const opened = inputs.opened.has(entry.name);
-	return entry.checkouts.flatMap((checkout) => {
+	const chosenFirst = entry.checkouts.toSorted((a, b) => Number(b.chosen) - Number(a.chosen));
+	return chosenFirst.flatMap((checkout) => {
 		const match = inputs.query === "" ? null : matchIn(checkout.root, inputs.query);
 		if (!opened && match === null) return [];
 		return {
@@ -92,12 +93,31 @@ function shownCheckouts(entry: RepositoryEntry, inputs: ChoiceInputs): CheckoutC
 }
 
 /**
+ * Whether a repository opens on a reading.
+ * @param shell The repository.
+ * @returns True when it holds a model, or has not answered yet.
+ */
+function readable(shell: ShellRepository): boolean {
+	return shell.model !== undefined || shell.loading;
+}
+
+/**
+ * The repositories in the order the chooser lists them: those that open on a reading come first,
+ * so Enter on the first row never leads to one that needs migration.
+ * @param repositories The repositories, by name.
+ * @returns The repositories.
+ */
+function readableFirst(repositories: readonly ShellRepository[]): readonly ShellRepository[] {
+	return [...repositories.filter(readable), ...repositories.filter((each) => !readable(each))];
+}
+
+/**
  * The rows of the chooser.
  * @param inputs The repositories, the filter, the panes and what the person opened.
  * @returns The rows, in order.
  */
 function repositoryRows(inputs: ChoiceInputs): RepositoryRow[] {
-	return inputs.repositories.flatMap((shell) => {
+	return readableFirst(inputs.repositories).flatMap((shell) => {
 		const name = shell.repository.name;
 		const checkouts = shownCheckouts(shell.repository, inputs);
 		const match = inputs.query === "" ? null : repositoryMatch(name, inputs.query);

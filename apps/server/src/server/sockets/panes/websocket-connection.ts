@@ -36,11 +36,7 @@ import {
 	socketVaults,
 } from "@archboard/workbench/panes";
 import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
-import {
-	openingVault,
-	placeOfVault,
-	repositoryOfVault,
-} from "@archboard/workspace/repository-listing";
+import { placeOfVault, repositoryOfVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:
@@ -429,10 +425,10 @@ const upgradeVaults = new WeakMap<IncomingMessage, string>();
  * A socket names the vault its pane was in, and that vault can be gone, as a
  * removed worktree is, when the pane comes back. An upgrade is where the server
  * places a pane, and the server is the one that moves a pane between vaults
- * (ADR 0050), so such a pane is put in a vault the server can read: that of
- * its repository's chosen checkout while the registry still knows the
- * checkout, else the vault a page opens in. Its first message says where it
- * is. Only with neither is the upgrade refused, as one that names no vault is.
+ * (ADR 0050), so such a pane is put in the vault of its repository's chosen
+ * checkout while the registry still knows the checkout. Its first message says
+ * where it is. Otherwise the upgrade is refused, as one that names no vault is:
+ * no other repository takes the pane in, and a reload offers the chooser.
  * @param req The upgrade request.
  * @returns The canonical vault, or the refusal.
  */
@@ -451,8 +447,8 @@ function vaultOfUpgrade(req: IncomingMessage): NamedVault {
  * @returns The vault it is put in, or null when there is none to put it in.
  */
 function placeInstead(raw: string): NamedVault | null {
-	const candidates = [placeOfVault(path.resolve(raw)).home, openingVault()];
-	return candidates.map((each) => namedVault(each)).find((each) => each.ok) ?? null;
+	const home = namedVault(placeOfVault(path.resolve(raw)).home);
+	return home.ok ? home : null;
 }
 
 /**

@@ -265,9 +265,12 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 	expect(
 		await browser.eval<string | null>(`new URLSearchParams(location.search).get('modelA')`),
 	).toBe(orders.manifest.id);
-	expect(
-		await browser.eval<string>(`new URLSearchParams(location.search).get('pane') ?? 'A'`),
-	).toBe("A");
+	await pollUntil(
+		() => browser.eval<string>(`new URLSearchParams(location.search).get('pane') ?? 'A'`),
+		(pane) => pane === "A",
+		"the reader to stay in the pane they were reading",
+		WAIT,
+	);
 	await findRepository(browser, "orders");
 	await browser.run(["press", "ArrowDown"]);
 	await browser.run(["press", "Alt+Enter"]);

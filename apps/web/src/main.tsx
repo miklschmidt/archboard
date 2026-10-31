@@ -8,7 +8,6 @@ import { createRoot } from "react-dom/client";
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "#ui/components/application/Application.tsx";
 import { createBoardRoutingHost } from "#ui/components/board-routing/BoardRoutingHost.tsx";
-import { learnServedVault } from "@archboard/server-requests";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -31,20 +30,10 @@ if (replayAskedOf(window.location.search)) {
 		module.startWalkthroughReplay(root, renderer),
 	);
 } else {
-	// Every call names its vault (ADR 0049), so the page learns the one the server
-	// serves before any pane makes a call.
-	void (async () => {
-		try {
-			await learnServedVault();
-		} catch (error) {
-			root.textContent = error instanceof Error ? error.message : String(error);
-			return;
-		}
-		const Root = createBoardRoutingHost(Application);
-		createRoot(root).render(
-			<StrictMode>
-				<Root />
-			</StrictMode>,
-		);
-	})();
+	const Root = createBoardRoutingHost(Application);
+	createRoot(root).render(
+		<StrictMode>
+			<Root />
+		</StrictMode>,
+	);
 }

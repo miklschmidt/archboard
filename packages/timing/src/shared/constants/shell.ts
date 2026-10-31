@@ -43,6 +43,12 @@ const BOARD_CACHE_MS = durations({
 	gc: 5 * 60_000,
 	/** Notice vault/configuration edits promptly without scanning the whole vault on every frame. */
 	vaultCheck: 5_000,
+	/**
+	 * How often a page that waits for a repository reads the repositories again. It has no pane
+	 * yet, so no socket says that a command in a terminal registered one, and the person watching
+	 * it expects the row soon after the command ends. Only that page asks, and the read is small.
+	 */
+	startListing: 2_000,
 });
 
 export { SHELL_CLOCK_MS, BOARD_CACHE_MS };

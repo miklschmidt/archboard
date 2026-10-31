@@ -21,7 +21,7 @@ import {
 	registerServerBase,
 	serverTestEnvironment,
 } from "./support/agent-browser.ts";
-import { serverPath } from "./support/navigator-support.ts";
+import { servedRepository, serverPath } from "./support/navigator-support.ts";
 import { installedNavigation, migrationNavigation } from "./support/migrated-navigation.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
@@ -212,7 +212,8 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 	registerServerBase(server.base);
 	const request = createJsonRequester(server);
 	const browser = resources.use(await createAgentBrowser());
-	await browser.run(["open", server.base]);
+	const repository = encodeURIComponent(await servedRepository(server.base));
+	await browser.run(["open", `${server.base}/?repoA=${repository}`]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
 		() =>

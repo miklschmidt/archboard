@@ -123,7 +123,6 @@ test("a repository whose model cannot be read offers to read them again, and the
 	const { show } = mountNavigator({ repositories: [failed], panes: [] });
 	const alert = document.querySelector('[data-slot="navigator"] [role="alert"]');
 	expect(alert?.querySelector("button")).not.toBeNull();
-	expect(document.querySelector('[data-slot="navigator-empty"]')).toBeNull();
 	// Read again and empty, it says so and offers nothing to retry.
 	show({ repositories: [repositoryOf(ready(BILLING, BILLING_VAULT), undefined)], panes: [] });
 	expect(document.querySelector('[data-slot="navigator"] [role="alert"]')).toBeNull();

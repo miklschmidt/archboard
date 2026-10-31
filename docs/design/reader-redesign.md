@@ -132,10 +132,32 @@ and new parents, and removed subjects stay reachable. The walk keeps its place b
 
 ## Start and states
 
-Open an explicit address, or the last reading, or a repository chooser. Never open an unrelated repository,
-and never open one that needs migration by default. A second pane opens the destination that the reader chose.
+The browser decides the start once, before any pane exists, because a pane socket names its vault in its first
+message (ADR 0049, ADR 0069). The first of these rules that applies decides:
 
-A planning model names its unimplemented state. A failed draw keeps the last picture, names the failure and
+1. An address opens what it names: a repository, a model that a repository holds, or the only listed repository.
+2. The last reading of this browser opens, if each of its panes can read the same model in a ready repository.
+3. One listed repository with a model opens, because there is nothing to choose.
+4. The repository chooser opens, with its field in focus and readable repositories first.
+
+A list position never opens a repository. A repository with no model or a legacy model opens only if somebody asks
+for it. The last reading lives in local storage, so it belongs to one browser and one server. A second pane opens
+the repository of the pane beside it, or the destination that the reader chose.
+
+Each repository state has one line and one way on:
+
+| State                          | The pane or page says     | The way on                                                                   |
+| ------------------------------ | ------------------------- | ---------------------------------------------------------------------------- |
+| No repository                  | `No repository yet`       | The command `archboard install-skill`, and a row appears in about 2 s        |
+| Repository not on this machine | `<name> is not here`      | The chooser and `archboard repo add`                                         |
+| No choice                      | `No repository open`      | The chooser                                                                  |
+| No model                       | `No model yet`            | `Ask the agent to write it` fills the composer                               |
+| Planning model                 | `Nothing implemented yet` | `Open <proposal>`, or `Ask the agent to propose a design` fills the composer |
+| Legacy model                   | `Migration required`      | `Ask the agent for a migration preview` fills the composer                   |
+
+The reader sends what an action puts in the composer. No state writes to the model by itself.
+
+A failed draw keeps the last picture, names the failure and
 offers Retry and Back. A healthy refresh shows nothing. A lost server overlays the picture and does not move
 it. A removed module says that it was removed, and offers its retained reading. A filtered empty result offers
 `Show whole scope`. A loading message appears only after a delay, and names the destination.

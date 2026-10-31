@@ -4,6 +4,11 @@ import {
 	ModelFailureActions,
 	type ModelErrorProps,
 } from "#ui/components/architecture-model/ModelFrame.tsx";
+import {
+	isUnread,
+	ModelUnanswered,
+	SlowRead,
+} from "#ui/components/architecture-model/ModelUnanswered.tsx";
 import { ModelPane } from "#ui/components/architecture-model/ModelPane.tsx";
 import { ModelPreviewReader } from "#ui/components/architecture-model/ModelPreviewReader.tsx";
 import { ModelOriginalDestination } from "#ui/components/architecture-model/ModelOriginalDestination.tsx";
@@ -24,6 +29,7 @@ import {
 	type UseQueryResult,
 } from "@tanstack/react-query";
 import type { ArchitectureModelRead } from "@archboard/board/model";
+import { shownRepository } from "@archboard/ui-kit/components";
 import {
 	ArchitectureReadError,
 	architectureModelQuery,
@@ -44,7 +50,6 @@ import { useModelLocation } from "#ui/hooks/architecture-model/use-model-locatio
 import { useModelVault } from "#ui/hooks/architecture-model/use-model-vault.ts";
 
 import { useArchitectureFeed } from "#ui/hooks/architecture-model/use-architecture-feed.ts";
-import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
 import { retryFailedDrawings } from "#ui/clients/architecture-model/drawing.ts";
 import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
 import { readingIsStale } from "#ui/rules/architecture-model/reading-freshness.ts";
@@ -63,6 +68,8 @@ interface ModelStageProps
 	reducedMotion: boolean;
 	/** Which time the pane has been pointed at a reading from outside. */
 	arrival?: number | undefined;
+	/** The repository of this reading, when the listing names it. */
+	repository?: string | null | undefined;
 }
 
 /**
@@ -72,14 +79,16 @@ interface ModelStageProps
  */
 function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 	const reading = useModelVault(props.vault, props.paneId);
-	if (reading.vault !== null) return <LocatedModelStage {...props} vault={reading.vault} />;
+	const { repository } = reading;
+	if (reading.vault !== null)
+		return <LocatedModelStage {...props} vault={reading.vault} repository={repository} />;
 	return (
 		<section
 			data-slot="architecture-model-stage"
 			className="bg-background flex min-h-0 flex-1 flex-col"
 		>
 			<ModelHeader
-				name="Architecture"
+				name={headerName(undefined, repository)}
 				refresh={reading.refresh}
 				refreshing={reading.query.isFetching}
 			>
@@ -168,6 +177,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const client = useQueryClient();
 	const { vault } = props;
 	const current = checkpoint === null;
+	const unread = isUnread(query.error);
 	const stale = readingIsStale(query, current, feed);
 	const refresh = useCallback((): void => {
 		void client.invalidateQueries({ queryKey: architectureModelKeys.vault(vault) });
@@ -183,8 +193,8 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 	const header = (
 		<>
 			<ModelHeader
-				name={modelName(data)}
-				refresh={offeredRefresh(query, feed, refresh)}
+				name={headerName(data, props.repository)}
+				refresh={unread ? undefined : offeredRefresh(query, feed, refresh)}
 				refreshing={query.isFetching}
 			/>
 			<ModelControls vault={vault} checkpoint={checkpoint} model={data} />
@@ -207,6 +217,7 @@ function CanonicalModelReader(props: ModelStageProps): JSX.Element {
 				vault={props.vault}
 				reducedMotion={props.reducedMotion}
 				query={query}
+				destination={props.repository ?? requestedModel}
 				states={stateCatalogue(catalogue.data)}
 				hasCurrent={hasCurrentState(catalogue.data)}
 				current={current}
@@ -358,6 +369,20 @@ function modelName(model: ArchitectureModelRead | undefined): string {
 }
 
 /**
+ * What the header names: before a model answers, or where none will, its repository.
+ * @param model The current query result.
+ * @param repository The repository of the reading, when the listing names it.
+ * @returns The name.
+ */
+function headerName(
+	model: ArchitectureModelRead | undefined,
+	repository: string | null | undefined,
+): string {
+	if (model?.success === true || !repository) return modelName(model);
+	return shownRepository(repository).name;
+}
+
+/**
  * The visible read state includes domain refusals and transport failures.
  * @param query The shared query snapshot.
  * @param stale Whether the cached current reading lacks fresh confirmation.
@@ -382,6 +407,8 @@ interface ModelResponseProps extends Pick<
 	| "onPresentationEnd"
 > {
 	query: ModelQuery;
+	/** What the reader waits for, in words. */
+	destination: string | null | undefined;
 	states: ReturnType<typeof stateCatalogue>;
 	hasCurrent: boolean;
 	current: boolean;
@@ -432,9 +459,9 @@ function ModelResponse(props: ModelResponseProps): JSX.Element {
 			overlay={props.overlay}
 			chrome={props.header}
 		>
-			<SlowRead pending={query.isPending} />
-			{model === undefined && problem !== null && <ModelError {...problem} />}
-			{problem !== null && (
+			<SlowRead pending={query.isPending} destination={props.destination} />
+			{model === undefined && <ModelUnanswered error={query.error} problem={problem} />}
+			{problem !== null && !isUnread(query.error) && (
 				<ModelFailedRecords
 					vault={props.vault}
 					paneId={props.paneId}
@@ -511,18 +538,6 @@ function ReadFailure(props: {
 			<ModelFailureActions onRetry={props.onRetry} />
 		</ModelError>
 	);
-}
-
-/**
- * Say so when a first read lasts.
- * @param props The read.
- * @param props.pending Whether it has no answer yet.
- * @returns The message, once the wait is long enough to name.
- */
-function SlowRead(props: { pending: boolean }): JSX.Element | null {
-	const slow = useSlowWait(props.pending ? "architecture" : null);
-	if (!slow) return null;
-	return <output className="text-body text-muted-foreground p-10">Reading architecture…</output>;
 }
 
 /**

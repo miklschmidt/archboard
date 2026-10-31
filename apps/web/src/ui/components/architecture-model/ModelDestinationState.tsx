@@ -2,6 +2,7 @@ import { useCallback, type JSX } from "react";
 import { useQuery, type UseQueryResult } from "@tanstack/react-query";
 import { Button } from "@archboard/ui-kit/components";
 import { ModelError, ModelFailureActions } from "#ui/components/architecture-model/ModelFrame.tsx";
+import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 import {
 	retainedModuleQuery,
 	type RetainedModule,
@@ -79,12 +80,9 @@ function SlowDestination(props: DestinationProps & { waiting: boolean }): JSX.El
 	const slow = useSlowWait(waiting ? sceneFit(request.reading) : null);
 	if (!slow) return null;
 	return (
-		<output
-			data-slot="model-waiting"
-			className="text-body bg-background border-border rounded-control mt-3 self-center border px-3 py-1"
-		>
+		<ModelState.Waiting>
 			{request.settled ? "Drawing" : "Reading"} {destinationName(request)}…
-		</output>
+		</ModelState.Waiting>
 	);
 }
 

@@ -94,7 +94,7 @@ function showModel(
 	vault: string,
 	pane: string,
 	reading: z.input<typeof ArchitecturePaneReadingSchema>,
-): Promise<Pick<PaneModelRequest, "repository">> {
+): Promise<Pick<PaneModelRequest, "repository"> & { readonly model?: string }> {
 	return requestJson(inVault("/api/panes/show", vault), {
 		method: "POST",
 		payload: { pane, reading },

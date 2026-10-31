@@ -86,7 +86,7 @@ function readingLabel(props: {
 }): string {
 	const { model, state, checkpoint } = props;
 	if (checkpoint !== null) return `Saved · ${checkpoint.slice(0, 8)}`;
-	if (state === null) return model.manifest.current === null ? "Choose state" : "Current";
+	if (state === null) return model.manifest.current === null ? "Planning" : "Current";
 	const selected = model.selectedState;
 	if (selected === null) return state;
 	return `${selected.name} · ${selected.lifecycle}${standingSuffix(selected)}`;

@@ -24,7 +24,13 @@ function useModelVault(fallback: string, paneId: string) {
 	const refresh = useCallback((): void => {
 		void refetch();
 	}, [refetch]);
-	return { ...resolveVault(fallback, repository, query.data?.repositories), query, refresh };
+	const listing = query.data?.repositories;
+	return {
+		...resolveVault(fallback, repository, listing),
+		repository: repository ?? listing?.find((entry) => entry.vault === fallback)?.name ?? null,
+		query,
+		refresh,
+	};
 }
 
 /**

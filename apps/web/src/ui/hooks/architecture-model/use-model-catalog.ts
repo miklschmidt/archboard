@@ -27,7 +27,6 @@ interface RepositoryModel {
 /** Repository discovery reads no model: the feed reports each vault's summary. */
 interface ModelCatalog {
 	readonly repositories: readonly RepositoryModel[];
-	readonly served: string | null;
 	readonly error: string | null;
 	readonly loading: boolean;
 	readonly refresh: () => void;
@@ -143,12 +142,11 @@ function useModelCatalog(): ModelCatalog {
 	return useMemo(
 		() => ({
 			repositories,
-			served: listed.data?.served ?? null,
 			error: listed.error?.message ?? null,
 			loading: listed.isPending,
 			...commands,
 		}),
-		[repositories, listed.data, listed.error, listed.isPending, commands],
+		[repositories, listed.error, listed.isPending, commands],
 	);
 }
 

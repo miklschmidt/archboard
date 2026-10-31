@@ -478,7 +478,14 @@ foot](assets/operator-shell-navigator.png)
   of that repository, and the field finds a repository or a checkout by name or
   path, so the list stays usable with hundreds of checkouts. Enter opens the
   first row, and Alt opens it beside. Escape clears the field and then closes the
-  list. A pane that reads no repository keeps the list open.
+  list. Repositories that open on a reading come first, and the chosen checkout
+  comes first under its repository.
+- **A page with no reading has no pane.** Before a start opens, the column holds the
+  wordmark, the switcher, the field and the list, and the list stays open. The
+  middle holds one state: `No repository open`, `No repository yet`, or
+  `<name> is not here`. The agent dock returns with the first pane, because a
+  conversation needs a pane. The start rule is in
+  [the reader redesign](reader-redesign.md#start-and-states).
 - **The destinations** are `Modules`, `Flows`, `Walkthroughs` and `History`.
   `Flows` and `Walkthroughs` show a count for the open scope. A retained original
   has no `History`. A reading that fails offers `History` alone, so the reader

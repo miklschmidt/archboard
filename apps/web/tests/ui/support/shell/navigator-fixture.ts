@@ -120,6 +120,7 @@ function viewOf(workspace: Workspace): ShellView {
 		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), model, agentActivity)],
 		boardsError: null,
 		boardsLoading: false,
+		choosing: false,
 		selectedBoardKey: null,
 		panes: [pane("A", null)],
 		activePaneId: "A",
@@ -145,7 +146,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		 * @returns That the pane accepted the reading.
 		 */
 		openModel: (model, repository) => {
-			asked.selected.push(model);
+			asked.selected.push(model ?? repository);
 			asked.opened.push(`${repository}|${model}`);
 			return Promise.resolve(true);
 		},
@@ -167,7 +168,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		 * @param repository The repository the board is in.
 		 */
 		openBeside: (key, repository) => {
-			asked.beside.push(key);
+			asked.beside.push(key ?? repository);
 			asked.opened.push(`${repository}|${key}`);
 		},
 		/**

@@ -3,7 +3,7 @@
 // is shown in it once the server has accepted it, since a pane the server has
 // not registered cannot be pointed at anything.
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
@@ -11,7 +11,7 @@ import type { PaneOpening, ShellActions } from "#ui/rules/shell/contracts.ts";
 
 /** A model waiting for the pane being added for it. */
 interface PendingBeside {
-	readonly key: string;
+	readonly key: string | null;
 	/** The repository the board is in. */
 	readonly repository: string;
 	/** What the pane opens of the model. */
@@ -53,13 +53,13 @@ function abandoned(panes: Panes, pending: PendingBeside): boolean {
  * @param livePanes The panes as they are when the person acts, which the action reads
  * so that it keeps one identity through every pane's news.
  * @param actions The shell's board and pane actions.
- * @returns The action.
+ * @returns The action, and the repository that a pane being added opens in, so it mounts there.
  */
 function useBesideOpening(
 	panes: Panes,
 	livePanes: Panes,
 	actions: Pick<ShellActions, "openModel" | "addPane" | "selectPane">,
-): ShellActions["openBeside"] {
+): { readonly openBeside: ShellActions["openBeside"]; readonly destination: () => string | null } {
 	const pending = useRef<PendingBeside | null>(null);
 	useEffect(() => {
 		const wanted = pending.current;
@@ -75,8 +75,9 @@ function useBesideOpening(
 		// Beside means the person stays where they were reading, as with two panes.
 		actions.selectPane(wanted.from);
 	}, [panes, actions]);
-	return useCallback(
-		(key: string, repository: string, reading?: PaneOpening): void => {
+	const destination = useCallback((): string | null => pending.current?.repository ?? null, []);
+	const openBeside = useCallback(
+		(key: string | null, repository: string, reading?: PaneOpening): void => {
 			const { list } = livePanes;
 			const other = list.panes.find((pane) => pane.paneId !== list.activePaneId);
 			if (other !== undefined) {
@@ -88,6 +89,7 @@ function useBesideOpening(
 		},
 		[livePanes, actions],
 	);
+	return useMemo(() => ({ openBeside, destination }), [openBeside, destination]);
 }
 
 export { useBesideOpening };

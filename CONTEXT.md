@@ -62,6 +62,11 @@ Sequence and flowchart require an explicit authored flow.
 A reading also identifies its architectural state or retained checkpoint.
 It owns no duplicate architecture definitions.
 
+The start is the one decision about what a page opens, made before any pane exists.
+The address decides first, then the last reading, then one listed repository with a model, then the repository chooser.
+The last reading is the address of the most recent reading in one browser, for one server.
+A list position never opens a repository.
+
 The shared projection converts a coherent canonical reading into the existing semantic renderer's content.
 The browser and backend use the same projection rules.
 The browser keeps its camera, selection, reading controls, and walkthrough position locally.

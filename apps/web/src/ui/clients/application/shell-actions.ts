@@ -55,6 +55,12 @@ interface ShellActionDeps {
 	readonly userMoves?: (paneId: string) => UserMove;
 	/** Say the person activated a pane's checkout (ADR 0050). */
 	readonly activate: ConversationActivation;
+	/**
+	 * Write that a pane reads a repository with no model to read, which no arrival announces.
+	 * @param paneId The pane.
+	 * @param repository The repository.
+	 */
+	readonly readRepository: (paneId: string, repository: string) => Promise<void>;
 }
 
 /** The board actions. */
@@ -146,7 +152,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 /**
  * A human repository open moves the pane before activating its conversation.
  * @param deps The existing pane, registry, notice and activation owners.
- * @param model The destination model identity.
+ * @param model The destination model identity, or null for a repository with none to read.
  * @param repository The destination repository identity.
  * @param paneId The pane the reader chose.
  * @param reading What the pane opens, when it opens more than the model's roots.
@@ -154,7 +160,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
  */
 async function openModel(
 	deps: ShellActionDeps,
-	model: string,
+	model: string | null,
 	repository: string,
 	paneId: string,
 	reading?: PaneOpening,
@@ -167,30 +173,38 @@ async function openModel(
 	}
 	const permission = await deps.addressing.claim({
 		kind: "board",
-		destination: { model, repository },
+		...(model === null ? {} : { destination: { model, repository } }),
 		paneId,
 		from: status.boardKey,
 		repository: status.repository,
 	});
 	const move = userMoves(deps.panes.handles, paneId);
 	try {
-		await showModel(vault, status.clientId, { ...reading, model });
+		const shown = await showModel(vault, status.clientId, {
+			...reading,
+			...(model === null ? {} : { model }),
+		});
 		permission.move.done(null, repository);
+		if (shown.model === undefined) await deps.readRepository(paneId, repository);
 		await deps.activate(paneId, { vault });
 		deps.notices.dismiss("architecture-command");
 		return true;
 	} catch (error) {
 		permission.move.failed();
 		move.failed();
-		deps.notices.raise(
-			failureNotice(
-				"architecture-command",
-				"Open architecture",
-				error instanceof Error ? error.message : String(error),
-			),
-		);
+		deps.notices.raise(openFailure(error));
 		return false;
 	}
+}
+
+/**
+ * The notice of a repository open that failed.
+ * @param error Why.
+ * @returns The notice.
+ */
+function openFailure(error: unknown): ShellNotice {
+	const message = error instanceof Error ? error.message : String(error);
+	return failureNotice("architecture-command", "Open architecture", message);
 }
 
 /**

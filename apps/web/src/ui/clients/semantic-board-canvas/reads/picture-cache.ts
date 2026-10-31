@@ -16,10 +16,12 @@
 // A key carries its stamp, so forgetting stale pictures reads keys and never a
 // picture.
 //
-// The browser's storage can be missing, full or refuse outright (a private
-// window, cleared site data), so every read and write here survives that and
-// simply draws again.
+// The browser's storage can be missing, full, refuse outright (a private
+// window, cleared site data) or never answer, so every read and write here
+// survives that and simply draws again.
 
+import { PICTURE_MS } from "@archboard/timing";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";
 import { ArchitectureRenderResultSchema } from "@archboard/board/model";
@@ -99,6 +101,34 @@ async function forgetOldDrawings(storage: PictureStorage, kept: string): Promise
 }
 
 /**
+ * Give the store as long as a picture can wait for it.
+ * @param work What the store was asked.
+ * @returns Its answer, or nothing once the wait is over.
+ */
+function withinStoreWait<T>(work: Promise<T>): Promise<T | undefined> {
+	return new Promise((resolve, reject) => {
+		const clock = frameClock();
+		const timer = clock.after(PICTURE_MS.storeWait, () => resolve(undefined));
+		void work.then(resolve, reject).finally(() => clock.cancelAfter(timer));
+	});
+}
+
+/**
+ * Keep a drawing, and bound what the store keeps.
+ * @param storage The picture store.
+ * @param key The drawing's key.
+ * @param drawing The drawing.
+ */
+async function keepDrawing(
+	storage: PictureStorage,
+	key: string,
+	drawing: ModelDrawing,
+): Promise<void> {
+	await storage.set(key, drawing);
+	await forgetOldDrawings(storage, key);
+}
+
+/**
  * Reuse a local scene only when its complete render input and renderer build match.
  * @param storage The existing picture store, when available.
  * @param key The renderer build and exact prepared scene identity.
@@ -112,15 +142,14 @@ async function cachedModelDrawing(
 ): Promise<ModelDrawing> {
 	if (storage === undefined) return draw();
 	try {
-		const cached = ModelDrawingSchema.safeParse(await storage.get(key));
+		const cached = ModelDrawingSchema.safeParse(await withinStoreWait(storage.get(key)));
 		if (cached.success) return cached.data;
 	} catch {
 		// Refused storage leaves local rendering available.
 	}
 	const drawing = await draw();
 	try {
-		await storage.set(key, drawing);
-		await forgetOldDrawings(storage, key);
+		await withinStoreWait(keepDrawing(storage, key, drawing));
 	} catch {
 		// A full or closed store does not prevent the scene from appearing.
 	}

@@ -208,6 +208,7 @@ function ReadingPicture(props: {
 			failure={accepted.failure}
 			onRetry={accepted.retry}
 			onWholeScope={reader.onWholeScope}
+			onOpenState={location.selectState}
 			notices={
 				<>
 					{surface.children}
@@ -226,7 +227,7 @@ function ReadingPicture(props: {
 			onAttention={moves.ahead}
 			overlay={overlay}
 		>
-			{location.grammar === "architecture" && (
+			{location.grammar === "architecture" && model.modules.length > 0 && (
 				<ModelKey
 					model={model}
 					projection={accepted.shown.projection}

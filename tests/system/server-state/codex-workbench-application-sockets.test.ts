@@ -7,7 +7,7 @@ import { WebSocket } from "ws";
 
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
-import { createRequester, waitFor } from "./support/http.ts";
+import { createRequester, onlyVault, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -39,12 +39,9 @@ interface ApplicationSocket {
 
 async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
 	const endpoint = new URL(base);
-	const served = (await (await fetch(new URL("/api/served-vault", base))).json()) as {
-		vault: string;
-	};
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
-	endpoint.searchParams.set("vault", served.vault);
+	endpoint.searchParams.set("vault", await onlyVault(base));
 	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<string, (value: WorkbenchResult) => void>();

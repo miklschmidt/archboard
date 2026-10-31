@@ -11,8 +11,11 @@
 // the live registry and the Commander model built from it, so adding, renaming
 // or redescribing a command changes nothing here.
 
-import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import type { Command } from "commander";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { cliContractRegistry, runCli } from "#cli/operations/invocation/run.ts";
 import { commanderTree } from "#cli/rules/routing/help.ts";
 import { type CommandRoute } from "#cli/protocol/routing/route.ts";
@@ -31,11 +34,19 @@ let exitCode: typeof process.exitCode;
 const handlers = registry.map((entry) => spyOn(entry.contract, "handler"));
 // Help shows emphasis where the environment asks for colour, as CI's FORCE_COLOR does;
 // these owners read the plain text.
-const colour = { NO_COLOR: process.env["NO_COLOR"], FORCE_COLOR: process.env["FORCE_COLOR"] };
+const ambient = {
+	NO_COLOR: process.env["NO_COLOR"],
+	FORCE_COLOR: process.env["FORCE_COLOR"],
+	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
+};
+// A command that runs here registers this checkout, so it gets a registry of its own and the
+// person's stays as it is.
+const repos = mkdtempSync(join(tmpdir(), "archboard-help-repos-"));
 
 beforeEach(() => {
 	process.env["NO_COLOR"] = "1";
 	delete process.env["FORCE_COLOR"];
+	process.env["ARCHBOARD_REPOS"] = join(repos, "repos.json");
 	exitCode = process.exitCode;
 	process.exitCode = 0;
 	stdout = spyOn(process.stdout, "write").mockImplementation(() => true);
@@ -43,7 +54,7 @@ beforeEach(() => {
 	for (const handler of handlers) handler.mockClear();
 });
 afterEach(() => {
-	for (const [key, value] of Object.entries(colour)) {
+	for (const [key, value] of Object.entries(ambient)) {
 		if (value === undefined) delete process.env[key];
 		else process.env[key] = value;
 	}
@@ -51,6 +62,7 @@ afterEach(() => {
 	stderr.mockRestore();
 	process.exitCode = exitCode ?? 0;
 });
+afterAll(() => rmSync(repos, { recursive: true, force: true }));
 
 /**
  * Everything one invocation printed to stdout.

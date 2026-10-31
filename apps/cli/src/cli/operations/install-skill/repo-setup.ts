@@ -16,6 +16,7 @@ import { repoRootOf } from "@archboard/workspace/checkouts";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import { expandHome } from "#cli/operations/install-skill/skill-destination.ts";
+import { findVaultOf } from "#cli/operations/invocation/addressed-vault.ts";
 
 /** The agent documents an earlier version wrote its block into. */
 const AGENT_DOCUMENTS = ["CLAUDE.md", "AGENTS.md"] as const;
@@ -136,9 +137,9 @@ async function initializeNewVault(repo: string, vault: string): Promise<void> {
 		);
 }
 /**
- * Set a repository up: make its vault when it has none, and remove the block an earlier version
- * wrote into its agent documents. A repository's vault is where `archboard` finds it from the
- * repository, so nothing about it is written down.
+ * Set a repository up: make its vault when it has none, register what holds it so that a browser
+ * lists it, and remove the block an earlier version wrote into its agent documents. A repository's
+ * vault is where `archboard` finds it from the repository, so nothing about it is written down.
  * @param options - Which repository, and the context.
  * @returns What was done.
  */
@@ -149,6 +150,7 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	const vaultCreated = !fs.existsSync(vault);
 	fs.mkdirSync(vault, { recursive: true });
 	if (fs.readdirSync(vault).length === 0) await initializeNewVault(repo, vault);
+	await findVaultOf(repo, "--repo");
 	const removedBlocks = removeOldBlocks(repo);
 	const vaultIgnored = gitIgnores(repo, vault);
 

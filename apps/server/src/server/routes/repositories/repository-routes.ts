@@ -38,12 +38,7 @@ import {
 } from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
 import { arrivedOnBoard } from "#server/routes/panes/pane-routes.ts";
-import {
-	listRepositories,
-	openingVault,
-	placeOfVault,
-	vaultIn,
-} from "@archboard/workspace/repository-listing";
+import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { z } from "zod";
 import { CheckoutChoiceSchema } from "@archboard/workspace/repositories";
@@ -54,7 +49,7 @@ import { CheckoutChoiceSchema } from "@archboard/workspace/repositories";
  * @param res Its response.
  */
 function repositoriesRoute(_req: Request, res: Response): void {
-	res.json({ success: true, repositories: listRepositories(), served: openingVault() });
+	res.json({ success: true, repositories: listRepositories() });
 }
 
 /**

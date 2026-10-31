@@ -72,6 +72,21 @@ export function createRequester(server: RequestServer) {
 	return Object.assign(request, { vault: server.vault });
 }
 
+/**
+ * The vault of the one repository a test server lists, as a pane names it.
+ * @param base The server's base URL.
+ * @returns The vault.
+ * @throws {Error} When the server lists no repository with a vault.
+ */
+export async function onlyVault(base: string | URL): Promise<string> {
+	const headers = { Origin: new URL(base).origin, "Sec-Fetch-Site": "same-origin" };
+	const response = await fetch(new URL("/api/repositories", base), { headers });
+	const body = (await response.json()) as { repositories: { vault: string | null }[] };
+	const vault = body.repositories[0]?.vault;
+	if (typeof vault !== "string") throw new Error(`${String(base)} lists no vault.`);
+	return vault;
+}
+
 export async function waitFor<T>(
 	probe: () => T | Promise<T>,
 	description: string,

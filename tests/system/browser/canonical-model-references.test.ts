@@ -417,10 +417,7 @@ test("foreign references preserve explicit addresses and recover pinned architec
 	unavailable.searchParams.set("repoA", "github.com/acme/missing");
 	await browser.run(["open", unavailable.href]);
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(
-				`document.querySelector('[data-slot="model-error"][data-code="REFERENCE_UNAVAILABLE"]') !== null`,
-			),
+		() => browser.eval<boolean>(`document.querySelector('[data-slot="start-missing"]') !== null`),
 		Boolean,
 		"the explicitly unavailable repository",
 		WAIT,

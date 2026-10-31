@@ -112,7 +112,7 @@ Where things are written down:
   A pane socket names its vault in its URL.
   Missing vaults return `VAULT_REQUIRED` (400), and unreadable vaults return `VAULT_UNREADABLE` (404).
   The server starts without a vault and serves only the `<dir>/.archboard/vault` layout.
-  A page learns its initial vault from `/api/served-vault`.
+  A page has no default vault: the address, its last reading, or a chooser decides its start (ADR 0069).
   Model changes name their vault and reach that vault's subscribers.
 - The CLI discovers its vault from `-C <dir>`, otherwise from its working directory.
   Inside Git, only `<root>/.archboard/vault` counts.

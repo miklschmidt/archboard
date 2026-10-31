@@ -225,7 +225,7 @@ function paneSays(browser: AgentBrowserSession, letter: string, word: string): P
 	);
 }
 
-test("choosing a checkout refreshes its canonical pane and preserves the other repository", async () => {
+test("a plain address waits for a choice and returns to it, and choosing a checkout refreshes its canonical pane and preserves the other repository", async () => {
 	await using resources = new AsyncDisposableStack();
 	const fixture = createRepositoryFixture();
 	resources.defer(() => fixture.dispose());
@@ -266,11 +266,29 @@ test("choosing a checkout refreshes its canonical pane and preserves the other r
 	writeFileSync(modulePath, JSON.stringify(module));
 
 	const browser = resources.use(await createAgentBrowser());
+	await browser.run(["open", server.base]);
+	await browser.run(["set", "viewport", "1920", "1080"]);
+	// Two repositories and no reading before: nothing decides, so nothing opens.
+	await pollUntil(
+		() => browser.eval(`document.querySelector('[data-slot="start-choose"]') !== null`),
+		Boolean,
+		"the chooser on a plain address",
+	);
+	expect(await addressSearch(browser)).toBe("");
+	const choseOrders = (search: string): boolean => {
+		const fields = new URLSearchParams(search);
+		return fields.get("repoA") === ORDERS && fields.get("modelA") === payments.manifest.id;
+	};
+	await browser.run(["click", `[data-row-id=${JSON.stringify(`repository:${ORDERS}`)}]`]);
+	await pollUntil(() => addressSearch(browser), choseOrders, "the choice to write the address");
+	await browser.run(["open", server.base]);
+	await pollUntil(() => addressSearch(browser), choseOrders, "the plain address to restore it");
+	await pollUntil(() => paneSays(browser, "A", "Main checkout"), Boolean, "the restored picture");
+
 	await browser.run([
 		"open",
 		`${server.base}/?modelA=${ledger.manifest.id}&modelB=${payments.manifest.id}&repoB=${ORDERS}&pane=A`,
 	]);
-	await browser.run(["set", "viewport", "1920", "1080"]);
 	// Each pane reads its own repository, and the address names both.
 	await pollUntil(
 		() => addressSearch(browser),

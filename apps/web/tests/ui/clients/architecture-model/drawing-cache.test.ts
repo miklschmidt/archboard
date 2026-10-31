@@ -1,10 +1,15 @@
-import { expect, test } from "bun:test";
+import { PICTURE_MS } from "@archboard/timing";
+import { createSteppedClock, driveFramesFrom } from "@archboard/ui-kit/frame-clock";
+import { afterAll, expect, test } from "bun:test";
 import {
 	cachedModelDrawing,
 	forgetStalePictures,
 	modelDrawingKey,
 	type PictureStorage,
 } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
+
+const clock = createSteppedClock(0);
+afterAll(driveFramesFrom(clock));
 
 const DRAWING = {
 	svg: '<svg width="100" height="100"><rect data-semantic-id="Service" width="80" height="40" /></svg>',
@@ -157,4 +162,29 @@ test("canonical scenes survive reload only under their exact key and refused sto
 	};
 	expect(await cachedModelDrawing(refused, "first-scene", draw)).toBe(drawing);
 	expect(layouts).toBe(4);
+});
+
+/**
+ * A store that was asked and never answers.
+ * @returns An answer that never comes.
+ */
+function silent(): Promise<never> {
+	return new Promise(() => undefined);
+}
+
+/**
+ * Let what waits on the store reach its next wait, then end that wait.
+ * @param to Where the clock goes.
+ */
+async function outwaitTheStore(to: number): Promise<void> {
+	await new Promise((resolve) => setImmediate(resolve));
+	clock.advanceTo(to);
+}
+
+test("a store that never answers does not hold a picture back", async () => {
+	const storage: PictureStorage = { get: silent, set: silent, del: silent, keys: silent };
+	const drawn = cachedModelDrawing(storage, "first-scene", async () => DRAWING);
+	await outwaitTheStore(PICTURE_MS.storeWait);
+	await outwaitTheStore(2 * PICTURE_MS.storeWait);
+	expect(await drawn).toBe(DRAWING);
 });
