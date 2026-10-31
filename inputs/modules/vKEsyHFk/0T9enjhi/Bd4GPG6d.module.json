@@ -69,7 +69,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#4FIz4BRr",
-      "to": "vKEsyHFk#OrdUVAyv"
+      "to": "vKEsyHFk/0T9enjhi#cNaEpWjJ"
     },
     {
       "order": 102000,
@@ -81,7 +81,7 @@
         "symbol": "archiveCommit"
       },
       "id": "vKEsyHFk/0T9enjhi#RavprwX4",
-      "to": "vKEsyHFk#u1NvYvH2"
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 103000,
@@ -93,7 +93,39 @@
         "symbol": "ArchitectureModelRead"
       },
       "id": "vKEsyHFk/0T9enjhi#fupHXbVx",
-      "to": "vKEsyHFk#IOYsinSj"
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+    },
+    {
+      "order": 161000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "publicationContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#KCxoznsN",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
+    },
+    {
+      "order": 164000,
+      "kind": "data",
+      "label": "Explicit complete fetch and non-forced publication",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/0T9enjhi#IIpdyxCj",
+      "to": "vKEsyHFk/0T9enjhi#ffFYC0XR"
+    },
+    {
+      "order": 167000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk/0T9enjhi#LfosB6s2",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
     },
     {
       "order": 173000,

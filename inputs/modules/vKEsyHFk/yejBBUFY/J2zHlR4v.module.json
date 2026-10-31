@@ -25,14 +25,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 81000,
-      "kind": "call",
-      "label": "change the canonical reading address",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
-    }
-  ]
+  "outgoing": []
 }

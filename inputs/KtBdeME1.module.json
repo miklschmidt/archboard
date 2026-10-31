@@ -10,14 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#KtBdeME1",
   "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF",
-  "outgoing": [
-    {
-      "order": 78000,
-      "kind": "call",
-      "label": "resolve source and references",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/yejBBUFY#F6bCh9SD",
-      "to": "vKEsyHFk/yejBBUFY#AIp6YN1P"
-    }
-  ]
+  "outgoing": []
 }
