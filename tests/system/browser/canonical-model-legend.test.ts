@@ -79,7 +79,11 @@ function seedReading(vault: string): void {
 		JSON.stringify({
 			...handler,
 			groups: ["public"],
-			outgoing: [...handler.outgoing, line("Route", "Router", "call"), line("Copy", "Router", "data")],
+			outgoing: [
+				...handler.outgoing,
+				line("Route", "Router", "call"),
+				line("Copy", "Router", "data"),
+			],
 		}),
 	);
 }

@@ -128,7 +128,9 @@ function inspectGroup(content: VariantContent, group: string): GroupInspection {
 	const members = content.nodes.filter((node) => isMemberOf(node, group));
 	const inside = new Set(members.map((node) => node.id));
 	const parents = new Map(
-		content.nodes.flatMap(({ id, parent }) => (parent === undefined ? [] : [[id, parent] as const])),
+		content.nodes.flatMap(({ id, parent }) =>
+			parent === undefined ? [] : [[id, parent] as const],
+		),
 	);
 	const ends = (edge: SemanticEdge) =>
 		[memberAt(edge.from, inside, parents), memberAt(edge.to, inside, parents)] as const;

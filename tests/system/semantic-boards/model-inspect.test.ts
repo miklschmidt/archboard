@@ -95,11 +95,7 @@ test("model inspect states one module's interface", () => {
 		"Release route",
 	]);
 	expect(names(answer.hiddenParts)).toEqual(["Reservation ledger", "Stock DB", "Warehouse sync"]);
-	expect(names(answer.callers)).toEqual([
-		"Storefront",
-		"Place order",
-		"Timeout guard",
-	]);
+	expect(names(answer.callers)).toEqual(["Storefront", "Place order", "Timeout guard"]);
 	const [stockApi] = answer.entryPoints;
 	expect(answer.callers.map((one: { reaches: string[] }) => one.reaches)).toEqual([
 		[stockApi.id],

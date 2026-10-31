@@ -141,7 +141,12 @@ test("a relationship source transfer preserves identity and metadata across file
 	if (!before.success) throw new Error(JSON.stringify(before));
 	const edge = before.relationships.find((value) => value.id === "Shop#Dispatch")!;
 	const untouched = readFileSync(join(vault, "gateway.module.json"));
-	const input = await batch(vault, ["Shop#Gateway", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"]);
+	const input = await batch(vault, [
+		"Shop#Gateway",
+		"Shop#Handler",
+		"Shop#Worker",
+		"Shop#Dispatch",
+	]);
 	const changes = [
 		{
 			type: "edit-relationship" as const,
