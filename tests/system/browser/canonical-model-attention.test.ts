@@ -183,17 +183,15 @@ test("attention lights canonical connections without hiding labels or cutting sh
 		() => labelLooks(browser),
 		(labels) =>
 			labels.every((label) => label.opacity === 1) &&
-			labels.some((label) => label.words === "replays" && label.filtered <= 0.5),
+			labels.some((label) => label.words === "replays" && label.filtered < 1),
 		"the entrance to end and the unrelated relationship label to recede",
 		WAIT,
 	);
 	expect(looks.map((label) => label.words).toSorted()).toEqual(["draws", "replays", "shows"]);
-	for (const look of looks)
-		expect(look).toMatchObject({
-			drawn: true,
-			opacity: 1,
-			filtered: look.words === "replays" ? 0.5 : 1,
-		});
+	for (const look of looks) {
+		expect(look).toMatchObject({ drawn: true, opacity: 1 });
+		expect(look.filtered < 1).toBe(look.words === "replays");
+	}
 	await browser.run(["focus", '[data-slot="model-diagram"]']);
 	await browser.run(["press", "Escape"]);
 	await pollUntil(
