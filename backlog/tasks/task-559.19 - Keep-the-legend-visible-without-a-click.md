@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:06:00Z'
+updated_date: '2026-10-31T03:11:00Z'
 labels:
   - frontend
 dependencies:
@@ -34,6 +34,9 @@ The owner thought the legend was deleted, because the Key button at the lower le
 - [x] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
 - [x] #8 The bottom left button is gone, and so is any code that only served the overlay
 - [ ] #9 The owner accepts it by eye
+- [ ] #10 Filter is a real control in the look of the panel's other controls, with an icon, a pressed state and the count of hidden kinds
+- [ ] #11 Every row of the legend keeps its position when a kind is hidden, shown or filtered, and nothing shifts sideways
+- [ ] #12 A group tag is a button: a click selects that group's parts in the reading with the existing selection, a second click clears it, and the tag shows that it is on
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -65,4 +68,6 @@ Criterion 7 stays open until the rewrite of CONTEXT.md lands, because that file 
 Two facts stale after this change, in files out of scope here: the comment on REFERENCE_WIDTH in packages/renderer/src/shared/constants/shell-geometry.ts says the panel lies over the picture, and its value 1271 (mirrored in crates/archboard-layout/src/constants.rs) is above the real room of 1191, which is 1239 less margins. The gates in docs/design/reader-redesign.md were measured at the old pane.
 
 Merged from feat/reader-legend at 6d5287ba8. The full gate passed on the merge in 153 seconds, 21 of 21. Criterion 4 stays open: a selection never refits the picture, but the landing rule stops at scale 0.6, so 27 of 112 readings are cut and the reader pans. On the old pane it was 20 of those 27. The root shows the summary of its state, because a model has no description. Two panes leave each picture 439 px wide.
+
+The owner saw the column and asked for polish: Filter read as plain text, line types swapped places when hidden, because the list sorted hidden kinds last, and group tags did nothing. Decision: a tag click uses the existing selection, so it adds no new state.
 <!-- SECTION:NOTES:END -->
