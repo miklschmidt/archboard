@@ -1,6 +1,6 @@
 {
   "order": 960340,
-  "name": "Legend key",
+  "name": "Legend list",
   "kind": "ui",
   "responsibility": "Lists the marks of the rendered picture with what each one means",
   "binding": {
@@ -24,5 +24,8 @@
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
     }
+  ],
+  "formerNames": [
+    "Legend key"
   ]
 }
