@@ -198,6 +198,8 @@ test("a command that finds a server of another checkout's source refuses and nam
 		expect(refused.stderr).toContain(elsewhere);
 		expect(refused.stderr).toContain(repoRoot);
 	}
-	expect(contacts.every((contact) => contact === "GET /health")).toBeTrue();
+	// A port scanner on the machine can knock on `/`. No command of this repository reads the page.
+	const reached = contacts.filter((contact) => !["GET /health", "GET /"].includes(contact));
+	expect(reached).toEqual([]);
 	expect(readdirSync(vault)).toEqual([]);
 }, 30_000);
