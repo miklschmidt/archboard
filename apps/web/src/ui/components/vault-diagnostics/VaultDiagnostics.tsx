@@ -12,6 +12,9 @@ import type { z } from "zod";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
+/** What the pane states itself, with its way on: the bell does not call it a fault as well. */
+const STATED_BY_THE_PANE = new Set(["MODEL_NOT_FOUND", "LEGACY_AUTHORITY"]);
+
 interface VaultDiagnosticsProps {
 	/** The focused pane's vault: the bell speaks for the repository in front of the person. */
 	vault: string;
@@ -35,7 +38,8 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 		void refetch();
 	}, [refetch]);
 	const repair = useVaultRepair(props.vault, transport, ask, recheck);
-	const count = check.data?.diagnostics.length ?? 0;
+	const issues = check.data?.diagnostics.filter((each) => !STATED_BY_THE_PANE.has(each.code));
+	const count = issues?.length ?? 0;
 	const handleRepair = useCallback(() => {
 		repair();
 		setOpen(false);
