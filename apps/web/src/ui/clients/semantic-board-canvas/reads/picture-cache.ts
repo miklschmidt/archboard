@@ -21,6 +21,7 @@
 // survives that and simply draws again.
 
 import { PICTURE_MS } from "@archboard/timing";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
 import { z } from "zod";
 import { ArchitectureRenderResultSchema } from "@archboard/board/model";
@@ -104,14 +105,12 @@ async function forgetOldDrawings(storage: PictureStorage, kept: string): Promise
  * @param work What the store was asked.
  * @returns Its answer, or nothing once the wait is over.
  */
-async function withinStoreWait<T>(work: Promise<T>): Promise<T | undefined> {
-	const late = Promise.withResolvers<undefined>();
-	const timer = setTimeout(late.resolve, PICTURE_MS.storeWait, undefined);
-	try {
-		return await Promise.race([work, late.promise]);
-	} finally {
-		clearTimeout(timer);
-	}
+function withinStoreWait<T>(work: Promise<T>): Promise<T | undefined> {
+	return new Promise((resolve, reject) => {
+		const clock = frameClock();
+		const timer = clock.after(PICTURE_MS.storeWait, () => resolve(undefined));
+		void work.then(resolve, reject).finally(() => clock.cancelAfter(timer));
+	});
 }
 
 /**
