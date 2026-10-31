@@ -2,8 +2,8 @@
   "order": 7000,
   "name": "Service routes",
   "kind": "route",
-  "responsibility": "Serves the page, the health answer (the archboard-server service, its pid, the checkout whose source it runs and whether that is the source on disk) and the vault a page opens in",
-  "description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts. The vault a page opens in is the one call that names no vault.",
+  "responsibility": "Serves the page, the health answer (the archboard-server service, its pid, the checkout whose source it runs and whether that is the source on disk) and the sync status",
+  "description": "The CLI signals a process for stop only when it both identifies as archboard-server and reports its own pid. A CLI refuses a server whose health names another checkout's source than its own, and names both checkouts.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/server/src/server/routes/service/service-routes.ts"

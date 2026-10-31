@@ -22,8 +22,8 @@
         "path": "crates/archboard-scene/src/paint/door.rs",
         "symbol": "slab_seat"
       },
-      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP",
-      "id": "vKEsyHFk#4tSdqitW"
+      "id": "vKEsyHFk#4tSdqitW",
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
     },
     {
       "order": 998000,
@@ -35,8 +35,8 @@
         "path": "crates/archboard-scene/src/paint/door.rs",
         "symbol": "words_in"
       },
-      "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6",
-      "id": "vKEsyHFk#2O7PSXBM"
+      "id": "vKEsyHFk#2O7PSXBM",
+      "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
     },
     {
       "order": 999000,
@@ -48,8 +48,8 @@
         "path": "crates/archboard-scene/src/paint/door.rs",
         "symbol": "standing_pin"
       },
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
-      "id": "vKEsyHFk#V38aoFC1"
+      "id": "vKEsyHFk#V38aoFC1",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
     },
     {
       "order": 1000000,
@@ -61,8 +61,21 @@
         "path": "crates/archboard-scene/src/paint/door.rs",
         "symbol": "tab_runs"
       },
-      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
-      "id": "vKEsyHFk#HXLXTybX"
+      "id": "vKEsyHFk#HXLXTybX",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "order": 996000,
+      "kind": "call",
+      "label": "the theme's colours of a door",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/door.rs",
+        "symbol": "Palette"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+      "id": "vKEsyHFk#QqSMvn6U"
     }
   ]
 }

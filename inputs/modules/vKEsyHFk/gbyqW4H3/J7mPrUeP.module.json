@@ -3,7 +3,7 @@
   "name": "Architecture painter",
   "kind": "function",
   "responsibility": "Paints a settled drawing as scene marks and standing",
-  "description": "Paints neutral container wells, unfilled group frames, member-tagged shadows, lines and port interiors, traffic, card bodies, labels and header content in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
+  "description": "Paints neutral frame wells, member-tagged shadows, lines and port interiors, traffic, card bodies, doors, labels and edge tabs in that order. Ports clip a card in its own box coordinates and traffic runs to the lid. Every card shadow lies below every line and card.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/architecture.rs",
@@ -88,8 +88,8 @@
         "path": "crates/archboard-scene/src/paint/architecture.rs",
         "symbol": "paint_measured_frame"
       },
-      "to": "vKEsyHFk#n2J80LO7",
-      "id": "vKEsyHFk#7xW4xT94"
+      "id": "vKEsyHFk#7xW4xT94",
+      "to": "vKEsyHFk#n2J80LO7"
     },
     {
       "order": 993000,
@@ -101,8 +101,8 @@
         "path": "crates/archboard-scene/src/paint/architecture.rs",
         "symbol": "paint_door"
       },
-      "to": "vKEsyHFk#jn71SBXe",
-      "id": "vKEsyHFk#0Cf3WQEw"
+      "id": "vKEsyHFk#0Cf3WQEw",
+      "to": "vKEsyHFk#jn71SBXe"
     }
   ]
 }

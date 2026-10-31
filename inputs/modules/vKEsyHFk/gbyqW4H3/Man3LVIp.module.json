@@ -2,7 +2,7 @@
   "order": 23000,
   "name": "Measured card painter",
   "kind": "function",
-  "responsibility": "Paints measured architecture cards, frames and headers through shared surface and content helpers",
+  "responsibility": "Paints a measured architecture card through the shared card and word helpers",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/measured_cards.rs"

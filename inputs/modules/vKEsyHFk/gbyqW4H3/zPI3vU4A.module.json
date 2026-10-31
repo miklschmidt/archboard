@@ -2,8 +2,8 @@
   "order": 20000,
   "name": "Tray surfaces",
   "kind": "function",
-  "responsibility": "Draws a neutral recessed well with a header slab made of what the well is cut into",
-  "description": "A container and a sequence frame use the same top-lit tray. Its floor is neutral and a nested tray is deeper. The header is a slab two units from the top and side walls, eight units from the outer edges. Its face is the ground the well is cut into: the page, or the floor of the tray around it. No group tints it; kind color stays on its icon.",
+  "responsibility": "Draws a frame's neutral recessed well and the raised tab on its edge, inside one closed outline",
+  "description": "A container and a sequence frame use the same top-lit tray. Its floor is neutral and a nested tray is deeper. The well has one top edge and one inner shadow across its whole width, under the tab too. One closed path goes round the tab and the well, and the tab's left side is the well's. A tray casts no shadow.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-scene/src/paint/tray.rs"
@@ -35,8 +35,8 @@
         "path": "crates/archboard-scene/src/paint/tray.rs",
         "symbol": "ink_of"
       },
-      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE",
-      "id": "vKEsyHFk#KYdxUOD0"
+      "id": "vKEsyHFk#KYdxUOD0",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
     }
   ]
 }
