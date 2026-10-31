@@ -27,13 +27,13 @@ const WAIT = { timeoutMs: 8_000 } as const;
 async function roots(browser: AgentBrowserSession): Promise<string[]> {
 	await openAbout(browser);
 	return browser.eval<string[]>(
-		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id]:not([data-standing="removed"])')].map(row => row.getAttribute('data-module-id'))`,
+		`[...document.querySelectorAll('[data-slot="module-list"] [data-module-id][data-depth="0"]:not([data-standing="removed"])')].map(row => row.getAttribute('data-module-id'))`,
 	);
 }
 
 async function selectedName(browser: AgentBrowserSession): Promise<string | null> {
 	return browser.eval<string | null>(
-		`document.querySelector('[data-slot="module-details"] h3')?.textContent ?? null`,
+		`document.querySelector('[data-slot="module-details"] h2')?.textContent ?? null`,
 	);
 }
 
@@ -156,12 +156,12 @@ test("structural writes refresh current modules while exact history and selected
 	);
 	expect(
 		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [aria-label="Incoming connections"]').textContent`,
+			`document.querySelector('[data-slot="module-details"] [data-about-section="receives"]').textContent`,
 		),
 	).toContain("Dispatch request");
 	expect(
 		await browser.eval<string>(
-			`document.querySelector('[data-slot="module-details"] [aria-label="Outgoing connections"]').textContent`,
+			`document.querySelector('[data-slot="module-details"] [data-about-section="sends"]')?.textContent ?? ""`,
 		),
 	).not.toContain("Dispatch request");
 	const after = await request<ArchitectureModelRead>("/api/architecture/model");

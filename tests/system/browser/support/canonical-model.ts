@@ -75,7 +75,7 @@ async function selectModule(
 				const details = document.querySelector('[data-slot="module-details"][data-module-id="${id}"]');
 				if (details === null) {
 					document.querySelector('[data-slot="module-list"] [data-module-id="${id}"]')?.click();
-					document.querySelector('[data-slot="model-about-other"]')?.click();
+					document.querySelector('[data-slot="model-about-subject"] [data-choice="selection"]')?.click();
 				}
 				return document.querySelector('[data-slot="module-details"][data-module-id="${id}"] ${part}')?.textContent ?? "";
 			})()`),
