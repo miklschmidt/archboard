@@ -8,8 +8,22 @@
     "path": "packages/board/src/runtime/store/model-install.ts",
     "symbol": "installJournal"
   },
-  "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
   "schemaVersion": 1,
   "id": "vKEsyHFk#lemBg7XG",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#CLdaoYy3",
+  "outgoing": [
+    {
+      "order": 134000,
+      "kind": "call",
+      "label": "record durable progress",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-install.ts",
+        "symbol": "writeState"
+      },
+      "id": "vKEsyHFk/0T9enjhi#4BbNhYeL",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    }
+  ]
 }
