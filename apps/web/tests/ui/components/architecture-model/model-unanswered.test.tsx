@@ -11,6 +11,8 @@ const { ArchitectureReadError } = await import("#ui/clients/architecture-model/q
 const { ModelUnanswered } = await import("#ui/components/architecture-model/ModelUnanswered.tsx");
 const { ModelDraftContext } = await import("#ui/state/architecture-model/draft.ts");
 
+type Refusal = ConstructorParameters<typeof ArchitectureReadError>[0];
+
 const drafts: string[] = [];
 const fill = drafts.push.bind(drafts);
 
@@ -19,8 +21,8 @@ const fill = drafts.push.bind(drafts);
  * @param code The refusal.
  * @returns The element in the page.
  */
-async function refused(code: string): Promise<HTMLElement> {
-	const error = new ArchitectureReadError({ success: false, code, error: code } as never);
+async function refused(code: Refusal["code"]): Promise<HTMLElement> {
+	const error = new ArchitectureReadError({ success: false, code, error: code, diagnostics: [] });
 	const host = document.body.appendChild(document.createElement("div"));
 	const problem = { code, message: code };
 	const unanswered = createElement(ModelUnanswered, { error, problem });
@@ -39,13 +41,16 @@ afterAll(() => GlobalRegistrator.unregister());
 test.each([
 	["LEGACY_AUTHORITY", "model-migration-required"],
 	["MODEL_NOT_FOUND", "model-absent"],
-])("%s is a state of the repository, and its action fills the composer", async (code, slot) => {
-	const host = await refused(code);
-	expect(host.querySelector(`[data-slot="${slot}"]`)).not.toBeNull();
-	expect(host.querySelector('[data-slot="model-error"]')).toBeNull();
-	await act(async () => host.querySelector("button")?.click());
-	expect(drafts).toHaveLength(1);
-});
+] as const)(
+	"%s is a state of the repository, and its action fills the composer",
+	async (code, slot) => {
+		const host = await refused(code);
+		expect(host.querySelector(`[data-slot="${slot}"]`)).not.toBeNull();
+		expect(host.querySelector('[data-slot="model-error"]')).toBeNull();
+		await act(async () => host.querySelector("button")?.click());
+		expect(drafts).toHaveLength(1);
+	},
+);
 
 test("any other refusal stays a failure", async () => {
 	const host = await refused("MODEL_INVALID");
