@@ -154,6 +154,7 @@ test("retained comparisons identify the live base revision independently of the 
 	const intent = await structureIntent(vault, [
 		"Shop",
 		"Shop#Gateway",
+		"Shop#Handler",
 		"Shop#Dispatch",
 		"Shop#Worker",
 	]);

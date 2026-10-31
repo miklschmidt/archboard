@@ -32,7 +32,7 @@ test.each(["remove-and-add", "flow-repair"])(
 		const { root, vault } = kind === "flow-repair" ? behaviorFixture() : fixture();
 		const base = await structureIntent(vault, [
 			"Shop",
-			"Shop#Gateway",
+			"Shop#Handler",
 			"Shop#Worker",
 			"Shop#Dispatch",
 			...(kind === "flow-repair" ? allBehaviorSubjects : []),
@@ -78,7 +78,7 @@ test.each(["remove-and-add", "flow-repair"])(
 			success: false,
 			code: "RECOVERY_REQUIRED",
 			recovery: {
-				subjects: expect.arrayContaining(["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"]),
+				subjects: expect.arrayContaining(["Shop#Handler", "Shop#Worker", "Shop#Dispatch"]),
 			},
 		});
 		if (blocked.success || blocked.recovery === undefined) throw new Error(JSON.stringify(blocked));

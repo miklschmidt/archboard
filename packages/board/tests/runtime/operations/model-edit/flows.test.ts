@@ -250,7 +250,7 @@ test("a module removal repairs nested messages and claims every affected flow in
 	const { vault } = await behaviorFixture();
 	const input = await structureIntent(vault, [
 		"Shop",
-		"Shop#Gateway",
+		"Shop#Handler",
 		"Shop#Worker",
 		"Shop#Dispatch",
 	]);
@@ -277,7 +277,11 @@ test("a module removal repairs nested messages and claims every affected flow in
 	expect(readArchitectureModel(vault)).toEqual(before);
 	const { releaseArchitectureClaim } = await import("@archboard/board/store-write");
 	await releaseArchitectureClaim(vault, { claim: input.claim, writer: input.writer });
-	const complete = await structureIntent(vault, [...allBehaviorSubjects, "Shop#Dispatch"]);
+	const complete = await structureIntent(vault, [
+		...allBehaviorSubjects,
+		"Shop#Handler",
+		"Shop#Dispatch",
+	]);
 	const request = {
 		...complete,
 		changes: [{ type: "remove-module" as const, subject: "Shop#Worker" }],

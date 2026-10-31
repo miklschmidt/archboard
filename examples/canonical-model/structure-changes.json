@@ -9,7 +9,7 @@
 			"type": "edit-relationship",
 			"subject": "Shop#Dispatch",
 			"source": "Shop#Worker",
-			"set": { "to": "Shop#Gateway" }
+			"set": { "to": "Shop#Handler" }
 		}
 	]
 }

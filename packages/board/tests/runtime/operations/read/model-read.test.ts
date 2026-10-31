@@ -70,8 +70,8 @@ test("one model read returns ordered roots, authored details and source-owned re
 	});
 	expect(result.relationships).toEqual([
 		{
-			...gateway.outgoing[0]!,
-			from: "Shop#Gateway",
+			...result.modules[2]!.outgoing[0]!,
+			from: "Shop#Handler",
 		},
 	]);
 	expect(result.relationships[0]).toMatchObject({
@@ -263,7 +263,7 @@ test("origin namespaces distinguish reused local ids and dependencies can cycle"
 		id: "Old/Family#Gateway",
 		outgoing: [{ id: "Old/Family#Return", to: "Shop#Gateway", kind: "call", order: 1 }],
 	});
-	edit(vault, "gateway.module.json", {
+	edit(vault, "internal/handler.module.json", {
 		outgoing: [{ id: "Shop#Dispatch", to: "Old/Family#Gateway", kind: "call", order: 1 }],
 	});
 	expect(readArchitectureModel(vault)).toMatchObject({
@@ -325,6 +325,7 @@ test("relationships have one identity and derive their source from their contain
 test("module identity wins over names and authored positions determine outgoing order", () => {
 	const vault = fixture();
 	edit(vault, "worker.module.json", { name: "Shop#Gateway" });
+	edit(vault, "internal/handler.module.json", { outgoing: [] });
 	edit(vault, "gateway.module.json", {
 		outgoing: [
 			{ id: "Shop#Later", to: "Shop#Worker", kind: "call", order: 20 },

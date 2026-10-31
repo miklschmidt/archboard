@@ -7,28 +7,29 @@
   },
   "beats": [
     {
-      "id": "Shop/5IZTN4RT#Txz8vnxs",
       "title": "Checkout reserves the items before it charges the card",
-      "narrative": "When a shopper presses Pay, Checkout API sends the order's items to Reserve route and waits for the answer. It charges the card only once the items are set aside.",
+      "narrative": "When a shopper presses Pay, Place order sends the order's items to Reserve route and waits for the answer. It charges the card only once the items are set aside.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46"
+            "Shop/MKhTEYqf#YeYYgWtm"
           ],
           "flows": []
         },
         "selection": [
-          "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
           "Shop/5IZTN4RT#4sZ8ZI9y",
-          "Shop/5IZTN4RT#CfNtly46"
+          "Shop/MKhTEYqf#YeYYgWtm"
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y"
         ],
@@ -37,23 +38,24 @@
           "groups": []
         },
         "grammar": "architecture"
-      }
+      },
+      "id": "Shop/5IZTN4RT#Txz8vnxs"
     },
     {
-      "id": "Shop/5IZTN4RT#TkH8r4DD",
       "title": "Only the ledger sets items aside",
       "narrative": "Reservation ledger locks each item's row in Stock DB, checks that the count minus what is already reserved covers the order, and writes the reservation in the same transaction.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y",
             "Shop/5IZTN4RT#SN2ShpE5",
             "Shop/5IZTN4RT#mmSzZdKG"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46",
+            "Shop/MKhTEYqf#YeYYgWtm",
             "Shop/5IZTN4RT#jzm9axQW",
             "Shop/5IZTN4RT#9KbJFIBQ"
           ],
@@ -66,6 +68,7 @@
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y",
           "Shop/5IZTN4RT#SN2ShpE5",
@@ -76,23 +79,24 @@
           "groups": []
         },
         "grammar": "architecture"
-      }
+      },
+      "id": "Shop/5IZTN4RT#TkH8r4DD"
     },
     {
-      "id": "Shop/5IZTN4RT#QjYT9Uux",
       "title": "The last item goes to the first order",
       "narrative": "Two shoppers can press Pay for the last item at the same moment. The row lock makes the second order wait for the first; it then finds nothing left, gets 409 sold out, and that shopper is told the item has sold out.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y",
             "Shop/5IZTN4RT#SN2ShpE5",
             "Shop/5IZTN4RT#mmSzZdKG"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46",
+            "Shop/MKhTEYqf#YeYYgWtm",
             "Shop/5IZTN4RT#jzm9axQW",
             "Shop/5IZTN4RT#9KbJFIBQ"
           ],
@@ -106,6 +110,7 @@
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y",
           "Shop/5IZTN4RT#SN2ShpE5",
@@ -117,16 +122,18 @@
         },
         "grammar": "sequence",
         "flow": "Shop/5IZTN4RT#lvZlcOxt"
-      }
+      },
+      "id": "Shop/5IZTN4RT#QjYT9Uux"
     },
     {
-      "id": "Shop/5IZTN4RT#LI6h77Im",
       "title": "A cancelled order puts its items back",
-      "narrative": "When checkout cancels an order, Checkout API calls Release route and the ledger deletes that order's reservations. Nothing else gives reserved items back, so an order checkout forgets to cancel keeps its items.",
+      "narrative": "When checkout cancels an order, Timeout guard calls Release route and the ledger deletes that order's reservations. Nothing else gives reserved items back, so an order checkout forgets to cancel keeps its items.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#VONp3yKV",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y",
             "Shop/5IZTN4RT#svGQgXIM",
@@ -134,8 +141,8 @@
             "Shop/5IZTN4RT#mmSzZdKG"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46",
-            "Shop/5IZTN4RT#lcChHpcr",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#C2JNdx5s",
             "Shop/5IZTN4RT#jzm9axQW",
             "Shop/5IZTN4RT#y1iIj3Xn",
             "Shop/5IZTN4RT#9KbJFIBQ"
@@ -144,11 +151,13 @@
         },
         "selection": [
           "Shop/5IZTN4RT#svGQgXIM",
-          "Shop/5IZTN4RT#lcChHpcr",
+          "Shop/MKhTEYqf#C2JNdx5s",
           "Shop/5IZTN4RT#y1iIj3Xn"
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#VONp3yKV",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y",
           "Shop/5IZTN4RT#svGQgXIM",
@@ -160,16 +169,18 @@
           "groups": []
         },
         "grammar": "architecture"
-      }
+      },
+      "id": "Shop/5IZTN4RT#LI6h77Im"
     },
     {
-      "id": "Shop/5IZTN4RT#x9ZDkHGE",
       "title": "The counts come from the warehouse",
       "narrative": "Every 5 minutes Warehouse sync reads what the warehouse has on its shelves and sets each count in Stock DB. Reservations are subtracted from that count, never written into it.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#VONp3yKV",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y",
             "Shop/5IZTN4RT#svGQgXIM",
@@ -179,8 +190,8 @@
             "Shop/5IZTN4RT#Klj9foM9"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46",
-            "Shop/5IZTN4RT#lcChHpcr",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#C2JNdx5s",
             "Shop/5IZTN4RT#jzm9axQW",
             "Shop/5IZTN4RT#y1iIj3Xn",
             "Shop/5IZTN4RT#9KbJFIBQ",
@@ -196,6 +207,8 @@
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#VONp3yKV",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y",
           "Shop/5IZTN4RT#svGQgXIM",
@@ -209,16 +222,18 @@
           "groups": []
         },
         "grammar": "architecture"
-      }
+      },
+      "id": "Shop/5IZTN4RT#x9ZDkHGE"
     },
     {
-      "id": "Shop/5IZTN4RT#nrnPgZHP",
       "title": "Reserved means nobody else can buy it",
       "narrative": "When checkout reserves an order's items, Inventory service sets them aside so nobody else can buy them, and puts them back when the order is cancelled. The counts it starts from are never more than 5 minutes old.",
       "reading": {
         "visibility": {
           "modules": [
             "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#VONp3yKV",
             "Shop/5IZTN4RT#1tJdSOqs",
             "Shop/5IZTN4RT#4sZ8ZI9y",
             "Shop/5IZTN4RT#svGQgXIM",
@@ -228,8 +243,8 @@
             "Shop/5IZTN4RT#Klj9foM9"
           ],
           "relationships": [
-            "Shop/5IZTN4RT#CfNtly46",
-            "Shop/5IZTN4RT#lcChHpcr",
+            "Shop/MKhTEYqf#YeYYgWtm",
+            "Shop/MKhTEYqf#C2JNdx5s",
             "Shop/5IZTN4RT#jzm9axQW",
             "Shop/5IZTN4RT#y1iIj3Xn",
             "Shop/5IZTN4RT#9KbJFIBQ",
@@ -245,6 +260,8 @@
         ],
         "focus": [
           "Shop/MKhTEYqf#lwmpnaVU",
+          "Shop/MKhTEYqf#kZjjfq1m",
+          "Shop/MKhTEYqf#VONp3yKV",
           "Shop/5IZTN4RT#1tJdSOqs",
           "Shop/5IZTN4RT#4sZ8ZI9y",
           "Shop/5IZTN4RT#svGQgXIM",
@@ -258,7 +275,8 @@
           "groups": []
         },
         "grammar": "architecture"
-      }
+      },
+      "id": "Shop/5IZTN4RT#nrnPgZHP"
     }
   ]
 }

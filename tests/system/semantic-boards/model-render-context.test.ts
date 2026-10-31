@@ -188,7 +188,10 @@ function group(svg: string, id: string): string {
 test("canonical aggregates say what they join while retaining authored relationships and exact visibility", async () => {
 	const reading = await readArchitectureModel(vault, undefined, undefined, { compare: false });
 	if (!reading.success) throw new Error(JSON.stringify(reading));
-	const authored = reading.relationships.filter((edge) => edge.from === "Shop#Gateway");
+	const authored = reading.relationships.filter(({ id }) =>
+		["Shop#Dispatch", "Shop#Second"].includes(id),
+	);
+	const dispatch = authored.find(({ id }) => id === "Shop#Dispatch")!;
 	const reverse = reading.relationships.find((edge) => edge.id === "Shop#Enter")!;
 	const root = projectModel(reading);
 	const aggregate = root.connections.find(({ joins }) =>
@@ -201,9 +204,9 @@ test("canonical aggregates say what they join while retaining authored relations
 	expect(projectModel(reading, "Shop#Worker").connections).toEqual(root.connections);
 	expect(projectModel(reading, null, ["Shop#Gateway"]).connections).toEqual(root.connections);
 	const focused = projectModel(reading, null, ["Shop#Dispatch"]);
-	expect(focused.connections).toEqual([{ line: authored[0]!, joins: [authored[0]!] }]);
+	expect(focused.connections).toEqual([{ line: dispatch, joins: [dispatch] }]);
 	const exact = projectModel(reading, null, null, {}, undefined, {
-		modules: ["Shop#Gateway", "Shop#Worker"],
+		modules: ["Shop#Gateway", "Shop#Handler", "Shop#Worker"],
 		relationships: ["Shop#Dispatch", "Shop#Second"],
 		flows: [],
 	});
@@ -251,7 +254,7 @@ test("canonical exports retain default comparison and unresolved subject marks t
 	expect(drawn.state).toBe(state);
 	expect(drawn.revision).toEqual(selected.revision);
 	expect(group(drawn.svg, "Shop#Gateway")).toContain('d="M0,-5.2');
-	expect(group(drawn.svg, "Shop#Dispatch")).toContain('d="M0,-5.2');
+	expect(group(drawn.svg, "Shop#Second")).toContain('d="M0,-5.2');
 	expect(group(drawn.svg, "Shop#Gateway")).toContain('data-semantic-standing="changed"');
 	expect(group(drawn.svg, "Shop#Obsolete")).toContain('data-semantic-standing="removed"');
 	for (const grammar of ["sequence", "flowchart"] as const) {

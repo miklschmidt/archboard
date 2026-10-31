@@ -37,7 +37,7 @@ test("a private interrupted transfer preserves affected subjects and publication
 	git(initialized.archive, "config", "user.email", "private@example.test");
 	git(initialized.archive, "config", "commit.gpgsign", "false");
 	const input = {
-		...(await structureIntent(vault, ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"])),
+		...(await structureIntent(vault, ["Shop#Gateway", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"])),
 		changes: [
 			{ type: "edit-module" as const, subject: "Shop#Gateway", set: { name: "API" } },
 			{
@@ -69,7 +69,7 @@ test("a private interrupted transfer preserves affected subjects and publication
 		code: "RECOVERY_REQUIRED",
 		recovery: {
 			operationId: input.operationId,
-			subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Worker"],
+			subjects: ["Shop#Gateway", "Shop#Dispatch", "Shop#Handler", "Shop#Worker"],
 		},
 	});
 	if (interrupted.success || interrupted.recovery === undefined)

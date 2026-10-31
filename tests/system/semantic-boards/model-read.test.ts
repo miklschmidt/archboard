@@ -395,7 +395,7 @@ test("CLI and HTTP share claimed edit outcomes and an event connection starts wi
 			target,
 			writer: "surface-agent",
 			reason: "explaining routing",
-			subjects: ["Shop#Gateway", "Shop#Worker", "Shop#Dispatch"],
+			subjects: ["Shop#Gateway", "Shop#Handler", "Shop#Worker", "Shop#Dispatch"],
 		}),
 	});
 	expect(claimResponse.status).toBe(200);

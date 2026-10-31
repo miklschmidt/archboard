@@ -10,17 +10,5 @@
 	"groups": ["public"],
 	"binding": { "repo": "github.com/acme/shop", "path": "src/gateway.ts" },
 	"documents": [{ "repo": "github.com/acme/shop", "path": "docs/gateway.md", "commit": "abc123" }],
-	"outgoing": [
-		{
-			"id": "Shop#Dispatch",
-			"to": "Shop#Worker",
-			"kind": "call",
-			"order": 10,
-			"label": "Dispatch request",
-			"description": "Sends the accepted request",
-			"emphasis": "hero",
-			"traffic": { "speed": 90, "volume": 2 },
-			"anchor": { "repo": "github.com/acme/shop", "path": "src/gateway.ts", "symbol": "dispatch" }
-		}
-	]
+	"outgoing": []
 }
