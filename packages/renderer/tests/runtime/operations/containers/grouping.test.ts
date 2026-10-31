@@ -4,13 +4,7 @@ import { SemanticPolicySchema } from "@archboard/board/policy";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
-import {
-	chromaOf,
-	colourIn,
-	hueOf,
-	lightnessOf,
-	paintedIn,
-} from "#tests/runtime/support/drawn-colours.ts";
+import { chromaOf, hueOf, paintedIn } from "#tests/runtime/support/drawn-colours.ts";
 
 /**
  * A card's or a container's block as painted: the front edge is its body, the

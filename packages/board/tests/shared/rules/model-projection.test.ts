@@ -229,11 +229,7 @@ describe("doors", () => {
 
 	test("lines to one door of one kind share a trunk from three, and draw no words", () => {
 		const many = modelOf(
-			[
-				{ id: "open" },
-				...["a", "b", "c"].map((id) => ({ id, parent: "open" })),
-				{ id: "door" },
-			],
+			[{ id: "open" }, ...["a", "b", "c"].map((id) => ({ id, parent: "open" })), { id: "door" }],
 			["a", "b", "c"].map((from) => ({ id: from, from, to: "door", label: "reads" })),
 		);
 		expect(projectModel(many, "open").content.edges.map((edge) => edge.label)).toEqual([

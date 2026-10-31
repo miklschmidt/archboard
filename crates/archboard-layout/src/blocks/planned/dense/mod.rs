@@ -69,7 +69,9 @@ struct Reading<'a> {
 fn holder(graph: &Node) -> Option<&Node> {
     let mut frames = graph.kids().iter().filter(|node| node.has_children());
     let lines = graph.edges.as_ref().map_or(0, Vec::len);
-    let frame = frames.next().or((lines >= CROWDED_ROOT).then_some(graph))?;
+    let frame = frames
+        .next()
+        .or_else(|| (lines >= CROWDED_ROOT).then_some(graph))?;
     let flat = !frame.kids().iter().any(Node::has_children);
     let grouped = |node: &Node| node.option(PLACING_GROUP).is_some();
     let plain = !graph.kids().iter().chain(frame.kids()).any(grouped);

@@ -1,6 +1,6 @@
 //! Public solve contracts for graph classes that use planned channels.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use archboard_layout::lay_out_board;
 use serde_json::{Value, json};
@@ -73,39 +73,35 @@ fn frame_of(parts: usize) -> Value {
         "edges":edges})
 }
 
+/// The left edges of a drawing's parts, row by row from the top.
+fn rows_of(placed: &Value) -> Vec<Vec<String>> {
+    let mut rows: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for card in placed["cards"].as_array().expect("the drawn cards") {
+        if card["id"].as_str().expect("a card's id").starts_with('p') {
+            let at =
+                |axis: &str| format!("{:08.0}", card["box"][axis].as_f64().expect("a card's box"));
+            rows.entry(at("y")).or_default().push(at("x"));
+        }
+    }
+    let mut rows: Vec<Vec<String>> = rows.into_values().collect();
+    for row in &mut rows {
+        row.sort();
+    }
+    rows
+}
+
 #[test]
 fn a_frames_parts_fill_a_shared_grid_from_its_first_cell_the_same_way_every_time() {
     let graph = frame_of(7);
     let placed = drawing(&graph);
     assert_eq!(placed, drawing(&graph));
-    let parts: Vec<(i64, i64)> = placed["cards"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|card| card["id"].as_str().unwrap().starts_with('p'))
-        .map(|card| {
-            let at = |axis: &str| card["box"][axis].as_f64().unwrap().round() as i64;
-            (at("x"), at("y"))
-        })
-        .collect();
-    let lefts: BTreeSet<i64> = parts.iter().map(|part| part.0).collect();
-    let tops: BTreeSet<i64> = parts.iter().map(|part| part.1).collect();
-    assert_eq!(parts.len(), 7);
-    assert!(lefts.len() > 1 && lefts.len() < 7 && tops.len() > 1);
-    for (row, top) in tops.iter().enumerate() {
-        let row_lefts: BTreeSet<i64> = parts
-            .iter()
-            .filter(|part| part.1 == *top)
-            .map(|part| part.0)
-            .collect();
-        let full = if row + 1 < tops.len() {
-            lefts.len()
-        } else {
-            row_lefts.len()
-        };
-        assert_eq!(row_lefts.len(), full);
-        assert!(row_lefts.iter().eq(lefts.iter().take(full)));
-    }
+    let rows = rows_of(&placed);
+    let columns = &rows[0];
+    assert_eq!(rows.iter().map(Vec::len).sum::<usize>(), 7);
+    assert!(rows.len() > 1 && columns.len() > 1);
+    let (last, full) = rows.split_last().unwrap();
+    assert!(full.iter().all(|row| row == columns));
+    assert_eq!(last.as_slice(), &columns[..last.len()]);
 }
 
 #[test]
