@@ -60,8 +60,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "VoiceLines"
       },
-      "to": "vKEsyHFk#tFxmhl53",
-      "id": "vKEsyHFk#yl3hVa2W"
+      "id": "vKEsyHFk#yl3hVa2W",
+      "to": "vKEsyHFk#tFxmhl53"
     },
     {
       "order": 121860,
@@ -73,8 +73,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "IconAction"
       },
-      "to": "vKEsyHFk#UdjZB2G9",
-      "id": "vKEsyHFk#cURXtopp"
+      "id": "vKEsyHFk#cURXtopp",
+      "to": "vKEsyHFk#UdjZB2G9"
     },
     {
       "order": 122260,
@@ -86,8 +86,21 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "Conversation"
       },
-      "to": "vKEsyHFk#VrlbYhEm",
-      "id": "vKEsyHFk#ErNC0gwt"
+      "id": "vKEsyHFk#ErNC0gwt",
+      "to": "vKEsyHFk#VrlbYhEm"
+    },
+    {
+      "order": 124870,
+      "kind": "call",
+      "label": "AgentRuntimeProvider",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "AgentRuntimeProvider"
+      },
+      "to": "vKEsyHFk#oN1eYDmM",
+      "id": "vKEsyHFk#PgdTsoGp"
     }
   ]
 }

@@ -47,8 +47,8 @@
         "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
         "symbol": "visibleApprovalViews"
       },
-      "to": "vKEsyHFk#jYL62RKv",
-      "id": "vKEsyHFk#EoGScBzO"
+      "id": "vKEsyHFk#EoGScBzO",
+      "to": "vKEsyHFk#jYL62RKv"
     },
     {
       "order": 121810,
@@ -60,8 +60,21 @@
         "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
         "symbol": "isUnattended"
       },
-      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3",
-      "id": "vKEsyHFk#tLcuk2IN"
+      "id": "vKEsyHFk#tLcuk2IN",
+      "to": "vKEsyHFk/9ncuT5DP#yt8fa9w3"
+    },
+    {
+      "order": 124910,
+      "kind": "call",
+      "label": "projectServerVoiceContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/owner-projection.ts",
+        "symbol": "projectServerVoiceContext"
+      },
+      "to": "vKEsyHFk#iRwT4soG",
+      "id": "vKEsyHFk#Zzy6gbNH"
     }
   ]
 }

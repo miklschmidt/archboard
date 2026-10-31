@@ -70,6 +70,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#8yI2otaH",
       "to": "vKEsyHFk#QdaDrU3Z"
+    },
+    {
+      "order": 124880,
+      "kind": "call",
+      "label": "readingDiagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/playback.ts",
+        "symbol": "readingDiagnostics"
+      },
+      "to": "vKEsyHFk#mYxQTwlP",
+      "id": "vKEsyHFk#twpPdPjB"
     }
   ]
 }

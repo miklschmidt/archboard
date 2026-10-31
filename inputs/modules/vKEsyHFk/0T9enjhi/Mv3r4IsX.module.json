@@ -47,6 +47,19 @@
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
     },
     {
+      "order": 101140,
+      "kind": "call",
+      "label": "resolveRegisteredCheckout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "symbol": "resolveRegisteredCheckout"
+      },
+      "id": "vKEsyHFk#ogZgnmpP",
+      "to": "vKEsyHFk#bfNV87nt"
+    },
+    {
       "order": 206000,
       "kind": "call",
       "label": "readCheckpointModel",
@@ -73,17 +86,17 @@
       "to": "vKEsyHFk#92f9M6zF"
     },
     {
-      "order": 101140,
+      "order": 124900,
       "kind": "call",
-      "label": "resolveRegisteredCheckout",
+      "label": "selectReferenceSubject",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/read/model-references.ts",
-        "symbol": "resolveRegisteredCheckout"
+        "symbol": "selectReferenceSubject"
       },
-      "to": "vKEsyHFk#bfNV87nt",
-      "id": "vKEsyHFk#ogZgnmpP"
+      "to": "vKEsyHFk#HCueketd",
+      "id": "vKEsyHFk#N8qxvKKV"
     }
   ]
 }

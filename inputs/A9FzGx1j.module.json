@@ -48,8 +48,21 @@
         "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
         "symbol": "workhorseLinkKey"
       },
-      "to": "vKEsyHFk#E2UB4mCE",
-      "id": "vKEsyHFk#MFyTaY5p"
+      "id": "vKEsyHFk#MFyTaY5p",
+      "to": "vKEsyHFk#E2UB4mCE"
+    },
+    {
+      "order": 124930,
+      "kind": "call",
+      "label": "projectCodexBrowserState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/gateway/gateway-connections.ts",
+        "symbol": "projectCodexBrowserState"
+      },
+      "to": "vKEsyHFk#iRwT4soG",
+      "id": "vKEsyHFk#1XCFqosP"
     }
   ]
 }

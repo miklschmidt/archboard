@@ -21,8 +21,21 @@
         "path": "packages/board/src/runtime/operations/model-edit/flow-placement.ts",
         "symbol": "nestedSteps"
       },
-      "to": "vKEsyHFk#nRX8oZ5h",
-      "id": "vKEsyHFk#CxvySMsc"
+      "id": "vKEsyHFk#CxvySMsc",
+      "to": "vKEsyHFk#nRX8oZ5h"
+    },
+    {
+      "order": 124990,
+      "kind": "call",
+      "label": "conflict",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/flow-placement.ts",
+        "symbol": "conflict"
+      },
+      "to": "vKEsyHFk#XqJRSGKy",
+      "id": "vKEsyHFk#lTpmSD7L"
     }
   ]
 }
