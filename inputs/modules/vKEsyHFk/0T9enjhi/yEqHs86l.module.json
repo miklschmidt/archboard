@@ -67,7 +67,19 @@
         "symbol": "ArchitecturePublicationDestinationSchema"
       },
       "id": "vKEsyHFk/0T9enjhi#6v2wIOX0",
-      "to": "vKEsyHFk#SMAa3tam"
+      "to": "vKEsyHFk/0T9enjhi#ZLJy8ivl"
+    },
+    {
+      "order": 166000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-publication.ts",
+        "symbol": "archiveContext"
+      },
+      "id": "vKEsyHFk/0T9enjhi#GdViIM9f",
+      "to": "vKEsyHFk/0T9enjhi#ZRq51Ecz"
     },
     {
       "order": 180000,

@@ -30,32 +30,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#zbMLgKmk",
       "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
-      "order": 70034,
-      "kind": "call",
-      "label": "create browser media ownership",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
-        "symbol": "createBrowserWorkbenchMediaOwner"
-      },
-      "id": "vKEsyHFk#tCxB82K4",
-      "to": "vKEsyHFk/yejBBUFY#HaOwgfOs"
-    },
-    {
-      "order": 70037,
-      "kind": "call",
-      "label": "create the browser transport",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/voice-client/voice-client.ts",
-        "symbol": "createBrowserWorkbenchTransport"
-      },
-      "id": "vKEsyHFk#RPZfWIL0",
-      "to": "vKEsyHFk/yejBBUFY#941UBxya"
     }
   ]
 }

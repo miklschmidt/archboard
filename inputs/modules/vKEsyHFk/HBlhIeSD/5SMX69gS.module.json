@@ -44,7 +44,7 @@
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/HBlhIeSD#3hokVf0H",
-      "to": "vKEsyHFk#I236NvLe"
+      "to": "vKEsyHFk/6E6hL0Zk#wYcdVszt"
     },
     {
       "order": 66000,
@@ -123,32 +123,6 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
       "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 70053,
-      "kind": "call",
-      "label": "report source inspection failures",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
-        "symbol": "errorMessage"
-      },
-      "id": "vKEsyHFk#o6iMuevP",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
-    },
-    {
-      "order": 70055,
-      "kind": "call",
-      "label": "resolve configured source tooling",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
-        "symbol": "configureCommand"
-      },
-      "id": "vKEsyHFk#73DTR15V",
-      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
     }
   ]
 }

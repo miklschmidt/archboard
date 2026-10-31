@@ -1,0 +1,15 @@
+{
+  "order": 901000,
+  "name": "Session composition",
+  "kind": "function",
+  "responsibility": "Starts one initialized session: wires its gate, its identities and its answers over the transport",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/services/session.ts",
+    "symbol": "createCodexSession"
+  },
+  "parent": "vKEsyHFk/9ncuT5DP#jylkTBp7",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#qPp1VnVR",
+  "outgoing": []
+}

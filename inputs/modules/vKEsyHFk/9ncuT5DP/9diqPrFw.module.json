@@ -33,32 +33,6 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#9GaG5ItC",
       "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
-    },
-    {
-      "order": 5000,
-      "kind": "rpc",
-      "label": "private stdio session",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/process-spawn.ts",
-        "symbol": "CODEX_APP_SERVER_ARGUMENTS"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#2OeapIzk",
-      "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
-    },
-    {
-      "order": 11000,
-      "kind": "data",
-      "label": "prepare, write its config",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/processes/owner-dependencies.ts",
-        "symbol": "prepareCodexStorage"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#pxP5bkpx",
-      "to": "vKEsyHFk/vKEsyHFk#zs8yTQLI"
     }
   ]
 }

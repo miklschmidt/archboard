@@ -38,58 +38,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",
       "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
-    },
-    {
-      "order": 53000,
-      "kind": "render",
-      "label": "gives the stage the recorded talk as its vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "PaneVaultContext"
-      },
-      "id": "vKEsyHFk/yejBBUFY#tLxlPuMO",
-      "to": "vKEsyHFk/yejBBUFY#p5UCow7F"
-    },
-    {
-      "order": 33000,
-      "kind": "render",
-      "label": "mount on the talk's board, its step driven",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "SemanticBoardStage"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#Ntxc6nJp",
-      "to": "vKEsyHFk/UOXNWLhR#aYC7if1N"
-    },
-    {
-      "order": 47000,
-      "kind": "render",
-      "label": "the one orb, in the voice box's socket",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "OrbHost"
-      },
-      "id": "vKEsyHFk/yejBBUFY#gIVISpC9",
-      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
-    },
-    {
-      "order": 36000,
-      "kind": "render",
-      "label": "the voice box, with the talk's lines as they were said",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "VoiceBox"
-      },
-      "id": "vKEsyHFk/yejBBUFY#FYKw5y8U",
-      "to": "vKEsyHFk#sZWoZEO7"
     }
   ]
 }
