@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-10-31T00:13:00Z'
+updated_date: '2026-10-31T00:24:00Z'
 labels:
   - renderer
   - frontend
@@ -33,3 +34,9 @@ The owner compared ten ways to show a group colour in /tmp/integrate/header-mock
 - [ ] #5 A far card still shows its group
 - [ ] #6 Gates 1 to 4 are measured again and the owner accepts the result by eye
 <!-- AC:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+The tag takes the finish of a door button: gradient, rim, top highlight and dark ink. Mockup: /tmp/integrate/header-mockups/maple-final.png.
+<!-- SECTION:NOTES:END -->
