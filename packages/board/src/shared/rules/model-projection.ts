@@ -7,7 +7,7 @@ import type { VariantContent } from "#shared/schemas/content.ts";
 import type { DrawnEdge, OverviewLine } from "#shared/rules/scope.ts";
 import { codePathOf } from "#shared/rules/code-path.ts";
 import { containment, foldChain } from "#shared/rules/module-fold.ts";
-import { busLines, drawnEnds, joinedLines } from "#shared/rules/model-lines.ts";
+import { busLines, drawnEnds, drawnLines, joinedLines } from "#shared/rules/model-lines.ts";
 import { inspectContainer } from "#shared/rules/inspect/container-interface.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
@@ -96,7 +96,8 @@ function projectScope(
 	 * @returns Both drawn ends.
 	 */
 	const endsOf = (edge: Edge) => drawnEnds(edge, drawnAs);
-	const connections = joinedLines(complete, shown, endsOf, open, standing);
+	const joined = joinedLines(complete, shown, endsOf, open, standing);
+	const connections = drawnLines(complete, joined, open);
 	const children = complete.nodes.filter((node) => (node.parent ?? null) === scope);
 	const visible = new Set([
 		...children.map((node) => node.id),
@@ -291,7 +292,11 @@ function projectVisible(
 	const allConnections = complete.edges
 		.filter((edge) => relationships.has(edge.id) && visible.has(edge.from) && visible.has(edge.to))
 		.map((edge) => ({ line: edge, joins: [edge] as const }));
-	const connections = allConnections.filter(({ line }) => !choices.hideKinds?.includes(line.kind));
+	const connections = drawnLines(
+		complete,
+		allConnections.filter(({ line }) => !choices.hideKinds?.includes(line.kind)),
+		visible,
+	);
 	return {
 		...projectScope(complete, scope, standing, choices),
 		children: complete.nodes.filter((node) => visible.has(node.id)),
@@ -377,7 +382,8 @@ function projectFocused(
 	 */
 	const ends = (edge: Edge) => drawnEnds(edge, drawnAs);
 	const shown = relevant.filter((edge) => !choices.hideKinds?.includes(edge.kind));
-	const connections = joinedLines(complete, shown, ends, openSelf, standing);
+	const joined = joinedLines(complete, shown, ends, openSelf, standing);
+	const connections = drawnLines(complete, joined, open);
 	const children = complete.nodes.filter((node) => anchors.has(node.id));
 	const visible = new Set([...anchors, ...connections.flatMap(({ line }) => [line.from, line.to])]);
 	const known = new Set([...complete.nodes, ...complete.edges].map((subject) => subject.id));

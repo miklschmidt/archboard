@@ -1,13 +1,15 @@
-// What the semantics check says about one state of a canonical model. Two rules
-// read its shape: a container that gathers nothing, and a root that nothing
-// connects. A shape is a signal and never proves that a module has no job, so
-// these are warnings and no write reads them. Neither rule reads a name, a
-// count or a folder. The third rule is an error: a current flow with no summary
-// breaks what every write of a flow now keeps, and a reader can still read it.
+// What the semantics check says about one state of a canonical model. Three rules
+// read its shape: a container that gathers nothing, a root that nothing connects,
+// and a relationship between a module and a part that it holds. A shape is a
+// signal and never proves that a module has no job, so these are warnings and no
+// write reads them. No rule reads a name, a count or a folder. The fourth rule is
+// an error: a current flow with no summary breaks what every write of a flow now
+// keeps, and a reader can still read it.
 
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
+import { containersOf } from "#shared/rules/scope.ts";
 import type { VaultDiagnostic } from "#shared/schemas/semantic-policy.ts";
-import { nodeSubject } from "#runtime/operations/check/subject.ts";
+import { edgeSubjects, nodeSubject } from "#runtime/operations/check/subject.ts";
 
 type ModelStructure = Pick<ArchitectureModel, "modules" | "relationships" | "collections">;
 
@@ -113,6 +115,37 @@ function unconnectedRoots(
 }
 
 /**
+ * Warn about a relationship between a module and a part that it holds, at any depth. The nesting
+ * already shows that, so a reading that opens the module draws no line for it. A call inside a
+ * container starts at the part that makes it (ADR 0052).
+ * @param model The modules and relationships of one state.
+ * @param parents Each contained module's parent.
+ * @returns One warning for each such relationship, on the file of the module that owns it.
+ */
+function linesToOwnParts(
+	model: ModelStructure,
+	parents: ReadonlyMap<string, string>,
+): VaultDiagnostic[] {
+	const owned = model.relationships.filter(
+		({ from, to }) =>
+			containersOf(parents, to).includes(from) || containersOf(parents, from).includes(to),
+	);
+	const subject = edgeSubjects({ nodes: model.modules });
+	return model.modules.flatMap((module) =>
+		owned
+			.filter(({ from }) => from === module.id)
+			.map((relationship) => ({
+				severity: "warning" as const,
+				code: "CONTAINER_LINE_TO_OWN_PART",
+				file: module.file,
+				subject: subject(relationship),
+				message:
+					"It joins a module and a part inside it, which the nesting already shows, so a reading that opens the module draws no line for it. Read the source, then start or end it at the part that makes or answers the call: an edit-relationship change with source or set.to. If the source shows no such call, remove it.",
+			})),
+	);
+}
+
+/**
  * Name each flow that says nothing about what it does. The flows in a file written before the
  * rule stay readable, so the author can repair them one write at a time.
  * @param model The flows of one state.
@@ -146,6 +179,7 @@ function structureDiagnostics(model: ModelStructure): VaultDiagnostic[] {
 	return [
 		...passThroughContainers(model, parents),
 		...unconnectedRoots(model, parents),
+		...linesToOwnParts(model, parents),
 		...unexplainedFlows(model),
 	];
 }

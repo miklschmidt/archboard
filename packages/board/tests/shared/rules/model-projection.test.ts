@@ -74,6 +74,44 @@ describe("lines", () => {
 	});
 });
 
+describe("a relationship between a module and a part that it holds", () => {
+	const modules = [
+		{ id: "root" },
+		{ id: "open", parent: "root" },
+		{ id: "near", parent: "open" },
+		{ id: "beside", parent: "open" },
+		{ id: "far", parent: "near" },
+	];
+	const relationships = [
+		{ id: "down", from: "open", to: "near" },
+		{ id: "up", from: "far", to: "open" },
+		{ id: "own", from: "open", to: "open" },
+		{ id: "from-door", from: "root", to: "near" },
+	];
+	const model = modelOf(modules, relationships);
+
+	test("draws no line from the open module, near or far, either way, and keeps the others", () => {
+		expect(lines(projectModel(model, "open"))).toEqual(["open>open", "root>near"]);
+	});
+
+	test("stays in what the panel and About list", () => {
+		const listed = projectModel(model, "open").allConnections.flatMap(({ joins }) =>
+			joins.map((edge) => edge.id),
+		);
+		expect(listed.toSorted()).toEqual(["down", "from-door", "own", "up"]);
+	});
+
+	test("draws no line in a comparison, in a focus or in an exact view", () => {
+		const base = modelOf(modules, [{ id: "own", from: "open", to: "open" }]);
+		const compared = projectModel(model, "open", null, {}, base);
+		expect(lines(compared)).toEqual(["open>open", "root>near"]);
+		expect(compared.held?.edges.map((edge) => edge.id)).toEqual(["own", "from-door"]);
+		expect(lines(projectModel(model, "open", ["down"]))).toEqual([]);
+		const visibility = { modules: ["open", "near"], relationships: ["down"], flows: [] };
+		expect(lines(projectModel(model, "open", null, {}, undefined, visibility))).toEqual([]);
+	});
+});
+
 describe("two-way lines", () => {
 	const reached = [{ id: "open" }, { id: "p", parent: "open" }, { id: "q", parent: "open" }];
 

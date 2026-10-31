@@ -440,6 +440,7 @@ export {
 	EVERYTHING_VIEW,
 	MIXED_KIND,
 	RESERVED_VIEW_NAMES,
+	containersOf,
 	findView,
 	overviewContent,
 	overviewLines,

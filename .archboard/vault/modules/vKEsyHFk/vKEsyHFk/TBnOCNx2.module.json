@@ -132,19 +132,6 @@
       "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
     },
     {
-      "order": 18000,
-      "kind": "call",
-      "label": "copy PNG and HTML together",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/runtime/clients/clipboard/copy-image.ts",
-        "symbol": "fork"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#sp1HWQNm",
-      "to": "vKEsyHFk/vKEsyHFk#yEgsaWnA"
-    },
-    {
       "order": 19000,
       "kind": "dependency",
       "label": "imports packages through their exports",

@@ -146,6 +146,36 @@ describe("ROOT_UNCONNECTED", () => {
 	});
 });
 
+describe("CONTAINER_LINE_TO_OWN_PART", () => {
+	const deep = "Shop#Deep";
+	const modules = [...model().modules, part(deep, { parent: first })];
+
+	test("names each relationship between a module and a part it holds, on the file of its source", () => {
+		const relationships = [
+			relationship(box, first),
+			relationship(deep, box),
+			relationship(first, second),
+			relationship(first, other),
+		];
+		expect(
+			structureDiagnostics(model({ modules, relationships })).filter(
+				({ code }) => code === "CONTAINER_LINE_TO_OWN_PART",
+			),
+		).toMatchObject([
+			{
+				severity: "warning",
+				file: `${box}.module.json`,
+				subject: { kind: "edge", id: `${box}>${first}`, name: "Box -> First" },
+			},
+			{
+				severity: "warning",
+				file: `${deep}.module.json`,
+				subject: { kind: "edge", id: `${deep}>${box}`, name: "Deep -> Box" },
+			},
+		]);
+	});
+});
+
 test("a current flow with no summary is an error that names the flow and its file", () => {
 	const described = flow(first, second);
 	const silent = { ...described.flows[0]! };

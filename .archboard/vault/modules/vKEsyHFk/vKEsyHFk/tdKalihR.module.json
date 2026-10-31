@@ -31,19 +31,6 @@
       "to": "vKEsyHFk/vKEsyHFk#Biz0M6Ld"
     },
     {
-      "order": 41000,
-      "kind": "data",
-      "label": "list the known repositories",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workspace/src/server/projections/repository-listing.ts",
-        "symbol": "listRegistry"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#7YCu9h8P",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
       "order": 70058,
       "kind": "call",
       "label": "read registry fields",
