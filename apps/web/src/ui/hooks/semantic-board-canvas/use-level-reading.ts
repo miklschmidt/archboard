@@ -7,14 +7,12 @@
 //
 // A board somebody drilled into is not addressed at all. The trail is local on
 // purpose and the address still names where the reader started, so there is
-// nothing above to hold the level's reading and this holds it instead. It is
-// reset whenever the level changes, because the ids do not carry: a view is a
-// subject of one board and a variant id belongs to one board, so
-// what was being read a level up means nothing here. What replaces them is the
-// target's own — its views, its variants, its current state — because a board
-// one level down is still a board somebody is reading, and hiding its controls
-// left a reader unable to switch grammar or to see whether what they were
-// looking at was the architecture, a proposal, or history.
+// nothing above to hold the level's view and this holds it instead. It is reset
+// whenever the level changes, because the ids do not carry: a view is a subject
+// of one board, so what was being read a level up means nothing here. What
+// replaces it is the target's own views, because a board one level down is still
+// a board somebody is reading, and hiding its controls left a reader unable to
+// switch grammar. The variant is the one the link that led here asked for.
 
 import { useCallback, useMemo, useState } from "react";
 
@@ -35,13 +33,8 @@ interface OwnReading {
 	 */
 	readonly onView: ((view: string | null) => void) | undefined;
 	/**
-	 * The person chose a state of the pane's own architecture.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	readonly onVariant: ((variant: string | null) => void) | undefined;
-	/**
 	 * The user changed, by hand, how a board they walked down into is read. The shell hears of
-	 * a choice about the pane's own board through the two above, and of this no other way.
+	 * a choice about the pane's own board through the one above, and of this no other way.
 	 * @param part What their choice was about.
 	 */
 	readonly onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
@@ -66,8 +59,6 @@ interface LevelPlace {
 	readonly vault: string;
 	/** The view chosen there, or null for the whole variant. */
 	readonly view: string | null;
-	/** The variant chosen there, or null for whichever is current. */
-	readonly variant: string | null;
 }
 
 /**
@@ -103,40 +94,11 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	const [place, setPlace] = useState<LevelPlace | null>(null);
 	const here = placeAt(place, depth, board, vault);
 
-	// Choosing a way of reading says nothing about which state to read. Falling
-	// back to null here would answer that question too, with "whichever is
-	// current" — so a link followed into another board's "as built" would quietly
-	// become its current architecture the moment somebody switched grammar, and
-	// the reader would be looking at a different thing than the one they asked
-	// for. What the link asked for stands until somebody chooses otherwise.
-	const asked = drill.variant ?? null;
 	const { onUserChanged } = own;
 	const onView = useCallback(
 		(view: string | null): void => {
 			onUserChanged?.("view");
-			setPlace((current) => {
-				// Nothing chosen here yet and "the current one, please" are different
-				// answers that look alike: both are null. Falling through the second
-				// to the link's variant would undo a choice somebody has just made,
-				// so the place itself decides — absent means nobody has said, and
-				// present means they have, whatever they said.
-				const held = placeAt(current, depth, board, vault);
-				return { depth, board, vault, view, variant: held === null ? asked : held.variant };
-			});
-		},
-		[asked, board, depth, vault, onUserChanged],
-	);
-	// A board owns its views, so changing its state keeps the question being read.
-	const onVariant = useCallback(
-		(variant: string | null): void => {
-			onUserChanged?.("variant");
-			setPlace((current) => ({
-				depth,
-				board,
-				vault,
-				view: placeAt(current, depth, board, vault)?.view ?? null,
-				variant,
-			}));
+			setPlace({ depth, board, vault, view });
 		},
 		[board, depth, vault, onUserChanged],
 	);
@@ -150,28 +112,12 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 				variant: drill.variant,
 				view: own.view,
 				onView: own.onView,
-				onVariant: own.onVariant,
 			};
 		}
 		// Until somebody chooses at this level, the level is read as the link that
 		// led here asked for it: that variant, and the whole of it.
-		return {
-			variant: here === null ? drill.variant : (here.variant ?? undefined),
-			view: here?.view ?? undefined,
-			onView,
-			onVariant,
-		};
-	}, [
-		depth,
-		ownDepth,
-		drill.variant,
-		here,
-		onVariant,
-		onView,
-		own.onVariant,
-		own.onView,
-		own.view,
-	]);
+		return { variant: drill.variant, view: here?.view ?? undefined, onView };
+	}, [depth, ownDepth, drill.variant, here, onView, own.onView, own.view]);
 }
 
 export { useLevelReading, type OwnReading, type PaneReading };

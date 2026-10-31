@@ -115,11 +115,6 @@ interface MountOptions extends StagePassThrough {
 	readonly onViewChange?: ((view: string | null) => void) | undefined;
 	/** Which variant of its board the pane is showing. */
 	readonly variant?: string | undefined;
-	/**
-	 * The pane offered a different state of the architecture.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	readonly onVariantChange?: ((variant: string | null) => void) | undefined;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean | undefined;
 	/**
@@ -147,7 +142,6 @@ const READING_PROPS = [
 	"view",
 	"onViewChange",
 	"variant",
-	"onVariantChange",
 	"reducedMotion",
 	"onReading",
 	"onOpenCode",
@@ -295,13 +289,6 @@ function Held(props: HeldProps): JSX.Element {
 		setPicked(id);
 	}
 	/**
-	 * Take the pane's choice of state and feed it back to the pane.
-	 * @param chosen The variant's id, or null for whichever is current.
-	 */
-	function onVariantChange(chosen: string | null): void {
-		setVariant(chosen ?? undefined);
-	}
-	/**
 	 * Read the chosen view, as the shell does.
 	 * @param chosen The view, or null for Everything.
 	 */
@@ -315,7 +302,6 @@ function Held(props: HeldProps): JSX.Element {
 			board: "pipeline",
 			...paneReading(props),
 			variant,
-			onVariantChange,
 			view,
 			onViewChange,
 			driven,

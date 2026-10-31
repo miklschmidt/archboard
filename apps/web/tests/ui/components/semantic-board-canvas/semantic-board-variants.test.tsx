@@ -2,12 +2,10 @@
 // architecture, and the states that used to be current.
 //
 // A proposal nobody can reach is a proposal nobody reviews. The navigator offers
-// every state of every board, and so does the About page of the pane's header,
-// which opens one in the pane; the sidebar offers none. These check what the pane
-// still owns: the state it is told to show is the one it asks the server for, a
-// state chosen on the page is asked of the shell the way the navigator asks for
-// it, and moving between states is reading rather than editing, which fits the
-// selected view to the arriving variant.
+// every state of every board; the sidebar offers none. These check what the pane
+// still owns: the state it is told to show is the one it asks the server for, and
+// moving between states is reading rather than editing, which fits the selected
+// view to the arriving variant.
 
 import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
@@ -24,11 +22,6 @@ import {
 	settle,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import { cameraNow, pressKey } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
-import {
-	listedVariants,
-	openAboutPage,
-	variantEntry,
-} from "#tests/ui/support/semantic-board-canvas/variants-page.ts";
 
 /**
  * One board document with a family of variants.
@@ -187,62 +180,6 @@ test.each([false, true])(
 		expect(cameraNow()).toEqual(fitted);
 	},
 );
-
-test("the About page asks the shell for a state by its id, and for the current one as no state", async () => {
-	server.documents["pipeline"] = boardOf([AS_IT_IS, PROPOSED]);
-	server.reply = { status: 200, body: drawing(1) };
-	const asked: (string | null)[] = [];
-	/**
-	 * Keep what the pane asked the shell to show.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	function record(variant: string | null): void {
-		asked.push(variant);
-	}
-	mountStage(null, { onVariantChange: record });
-	await settle();
-	openAboutPage();
-
-	// A state is named by its id, so the pane stays on it. The current one is
-	// asked for by no name, the way the navigator asks, so the pane follows it
-	// when a proposal is adopted instead of staying on what has become history.
-	await act(async () => {
-		fireEvent.click(variantEntry("v2"));
-		fireEvent.click(variantEntry("v1"));
-	});
-	expect(asked).toEqual(["v2", null]);
-});
-
-/**
- * The About page, while it is open.
- * @returns The page, or null.
- */
-function aboutPageNow(): HTMLElement | null {
-	return document.querySelector<HTMLElement>("[data-slot='board-page'][data-tab='about']");
-}
-
-test("the About page waits for the board before it lists anything", async () => {
-	serving([AS_IT_IS, PROPOSED]);
-	const read = Promise.withResolvers<void>();
-	server.held["pipeline"] = read.promise;
-	mountStage();
-	await settle();
-	openAboutPage();
-	// A page that read an absent board as a board with no variants would say
-	// that nothing it describes is built.
-	expect(aboutPageNow()?.getAttribute("aria-busy")).toBe("true");
-	expect(listedVariants()).toEqual([]);
-
-	await act(async () => {
-		read.resolve();
-	});
-	await settle();
-	expect(aboutPageNow()?.getAttribute("aria-busy")).toBeNull();
-	expect(listedVariants()).toEqual([
-		["v1", "current"],
-		["v2", "draft"],
-	]);
-});
 
 test("Everything fits the whole proposal and current state instead of zooming to changed subjects", async () => {
 	serving([AS_IT_IS, PROPOSED]);

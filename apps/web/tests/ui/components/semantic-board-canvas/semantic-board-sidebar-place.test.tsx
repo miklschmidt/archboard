@@ -8,9 +8,8 @@
 // asked for that a released pick takes away, a panel that is put away without
 // giving the keyboard back, a control that says the sidebar is shown while
 // a presented walkthrough has it stepped aside, and a tab chosen in a docked
-// sidebar that turns into a float when a second pane arrives, a pick during
-// a presented walkthrough that lays a panel nobody sees over the picture, and a
-// pick on the About page that lays a panel over the page's own controls.
+// sidebar that turns into a float when a second pane arrives, and a pick during
+// a presented walkthrough that lays a panel nobody sees over the picture.
 
 import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
@@ -29,7 +28,6 @@ import {
 	viewport,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import { sidebarSettled } from "#tests/ui/support/semantic-board-canvas/sidebar-probes.ts";
-import { openAboutPage } from "#tests/ui/support/semantic-board-canvas/variants-page.ts";
 
 beforeAll(() => {
 	// This DOM has no fullscreen to report; a browser that is not in one says null.
@@ -231,26 +229,4 @@ test("a presented walkthrough steps the sidebar aside: its control is held, and 
 	await settle();
 	expect(placeNow()).toBe("floating");
 	expect(part("semantic-sidebar-toggle").hasAttribute("aria-disabled")).toBe(false);
-});
-
-test("a pick on the About page lays no panel over the page, and the diagram gives the pick its panel", async () => {
-	server.documents["pipeline"] = EXPLAINED_BOARD;
-	await mountPane(SHARED);
-	await settle();
-	openAboutPage();
-	await settle();
-
-	act(() => {
-		fireEvent.click(document.querySelector("[data-slot='about-part'][data-part='n1']")!);
-	});
-	await sidebarSettled();
-	expect(column()).toBeNull();
-	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
-
-	act(() => {
-		fireEvent.click(document.querySelector("[data-slot='board-tab'][data-tab='diagram']")!);
-	});
-	await settle();
-	expect(placeNow()).toBe("floating");
-	expect(part("semantic-sidebar").getAttribute("data-tab")).toBe("selection");
 });

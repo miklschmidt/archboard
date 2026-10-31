@@ -99,15 +99,6 @@ interface SemanticBoardStageProps {
 	 */
 	onViewChange?: ((view: string | null) => void) | undefined;
 	/**
-	 * The person chose a different state of this architecture.
-	 *
-	 * Owned above the stage for the same reason the view is: which variant a
-	 * pane is showing is part of what the pane is showing, and so part of its
-	 * board key — `semantic:pipeline@7c40IV7N`.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	onVariantChange?: ((variant: string | null) => void) | undefined;
-	/**
 	 * What this pane is actually reading, whenever that changes.
 	 *
 	 * The pane's address says what it was opened on; this says what is on
@@ -253,7 +244,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const level = useLevelReading(drill, {
 		view: props.view,
 		onView: props.onViewChange,
-		onVariant: props.onVariantChange,
 		onUserChanged,
 	});
 	// The explanations belong to the board on screen, so drilling into another
