@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
       "name": "A reader opens a card's board",
+      "summary": "Follows a card's drill-down to a board and variant, in this vault or in the repository that the link names. When nothing can open, the inspector beside the picture says why.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#2YI34Bnu",
@@ -291,12 +292,12 @@
             }
           ]
         }
-      ],
-      "summary": "Follows a card's drill-down to a board and variant, in this vault or in the repository that the link names. When nothing can open, the inspector beside the picture says why."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#kLbQ8AUu",
       "name": "A flight carries the reader into a card",
+      "summary": "Flies the camera into a card with the target board placed inside it, so the reader keeps their place. With no motion, picture or drawn card, the board opens the plain way.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#gIakrnWa",
         "vKEsyHFk/UOXNWLhR#hc77pwzB",
@@ -348,7 +349,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
                     "symbol": "semanticRenderQuery"
                   }
                 },
@@ -501,12 +502,12 @@
             "symbol": "open"
           }
         }
-      ],
-      "summary": "Flies the camera into a card with the target board placed inside it, so the reader keeps their place. With no motion, picture or drawn card, the board opens the plain way."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#h21SnbZx",
       "name": "A walkthrough step is shown",
+      "summary": "Turns the step on screen into what to light and where to look, and glides the camera there. The last focus holds while the step's picture is on its way, and a subject the picture lacks is named.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#aYC7if1N",
         "vKEsyHFk/UOXNWLhR#LayJIvbq",
@@ -747,12 +748,12 @@
             }
           ]
         }
-      ],
-      "summary": "Turns the step on screen into what to light and where to look, and glides the camera there. The last focus holds while the step's picture is on its way, and a subject the picture lacks is named."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#DVK0aLi6",
       "name": "A reader works the picture with the pointer",
+      "summary": "Decides what a press becomes: a drag pans, a click picks what is under it or opens a door, and a double-click opens the card's board. The press stops any zoom or ease first, so the picture answers the hand.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#FyxVdk20",
@@ -887,12 +888,12 @@
             }
           ]
         }
-      ],
-      "summary": "Decides what a press becomes: a drag pans, a click picks what is under it, and a double-click opens the card's board. The press stops any zoom or ease first, so the picture answers the hand."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#p6VME8e5",
       "name": "A wheel zooms the picture",
+      "summary": "A trackpad pinch zooms at once about the pointer, and a wheel turn eases there on the frame clock unless motion is reduced. Both keep the place under the pointer still.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#D6ZnKISi",
         "vKEsyHFk/UOXNWLhR#ZTOokYub",
@@ -1038,12 +1039,12 @@
             "symbol": "frameClock"
           }
         }
-      ],
-      "summary": "A trackpad pinch zooms at once about the pointer, and a wheel turn eases there on the frame clock unless motion is reduced. Both keep the place under the pointer still."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#CBMtXkZw",
       "name": "A part picked elsewhere is brought into view",
+      "summary": "When a list, a search or an agent picks a part out of view, the camera glides just far enough to show it. A pick from the picture stays put, and so does one while a walkthrough or panel moves the camera.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#aYC7if1N",
         "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
@@ -1147,12 +1148,12 @@
             }
           ]
         }
-      ],
-      "summary": "When a list, a search or an agent picks a part out of view, the camera glides just far enough to show it. A pick from the picture stays put, and so does one while a walkthrough or panel moves the camera."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#4cmw9x2t",
       "name": "A part is poked and lights what it is wired to",
+      "summary": "Lights the relationships of the picked or resting part, and on request traces how far it reaches. It stands down while a step, a group or a leaving picture says what the picture is about.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#bofpU6mt",
@@ -1304,12 +1305,12 @@
             "symbol": "lightInk"
           }
         }
-      ],
-      "summary": "Lights the relationships of the picked or resting part, and on request traces how far it reaches. It stands down while a step, a group or a leaving picture says what the picture is about."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#8y13ofdf",
       "name": "A replay draws a talk frame by frame",
+      "summary": "Drives the viewer from a stepped clock with boards read from the talk. A frame fails if anything moved outside the clock or read another board, so the video shows what was recorded.",
       "participants": [
         "vKEsyHFk/yejBBUFY#aixSjfNe",
         "vKEsyHFk/UOXNWLhR#qV7dcNI5",
@@ -1456,12 +1457,12 @@
             }
           ]
         }
-      ],
-      "summary": "Drives the viewer from a stepped clock with boards read from the talk. A frame fails if anything moved outside the clock or read another board, so the video shows what was recorded."
+      ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#RYeM7bcW",
       "name": "A new picture replaces the last",
+      "summary": "Brings a picture in by a cut, by carrying on from the last picture, or part by part beside a ghost of the leaving one. The motion runs on the frame clock, so a replay can step it.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#3iSHwOiM",
@@ -1630,8 +1631,7 @@
             }
           ]
         }
-      ],
-      "summary": "Brings a picture in by a cut, by carrying on from the last picture, or part by part beside a ghost of the leaving one. The motion runs on the frame clock, so a replay can step it."
+      ]
     }
   ]
 }

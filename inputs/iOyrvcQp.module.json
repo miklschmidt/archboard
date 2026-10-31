@@ -3,13 +3,13 @@
   "name": "Right panel",
   "kind": "module",
   "responsibility": "Stands beside the picture on every Diagram reading and says what is selected, or what is open while nothing is, over what can be done and the Legend",
-  "description": "A selection never moves the picture, because the panel always holds its place. Beside what it explains it lists the flows and walkthroughs that concern the open module. One click opens a door, and a click with Ctrl selects it. A door's tip shows up to eight endpoints, and About keeps the whole list. Every tab that shows panel rows composes them from this module's Row, Body, Head, Section and Rows.",
+  "description": "A selection never moves the picture, because the panel always holds its place. Beside what it explains it lists the flows and walkthroughs that concern the open module. One click opens a door, and a click with Ctrl selects it. A door's tip shows up to eight endpoints, and About keeps the whole list. The panel's contents compose its Row, Body, Head, Section and Rows.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/architecture-model/ModelPanel.tsx"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#iOyrvcQp",
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "outgoing": []
 }
