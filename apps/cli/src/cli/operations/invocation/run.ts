@@ -1,4 +1,5 @@
 import { modelLocalityContract, modelFootprintContract } from "#cli/operations/model/history.ts";
+import { modelInspectContract } from "#cli/operations/model/inspect.ts";
 import { modelRasterizeContract } from "#cli/operations/model/rasterize.ts";
 import { modelReplayContract } from "#cli/operations/model/replay.ts";
 import { modelInitContract } from "#cli/operations/model/initialize.ts";
@@ -104,6 +105,9 @@ const COMMANDS: Record<string, CommandRoute> = {
 				contract(modelExplainContract, "apps/cli/src/cli/operations/model/explain.ts"),
 			),
 			read: child(contract(modelReadContract, "apps/cli/src/cli/operations/model/read.ts")),
+			inspect: child(
+				contract(modelInspectContract, "apps/cli/src/cli/operations/model/inspect.ts"),
+			),
 			proposals: child(
 				contract(modelProposalsContract, "apps/cli/src/cli/operations/model/read.ts"),
 			),

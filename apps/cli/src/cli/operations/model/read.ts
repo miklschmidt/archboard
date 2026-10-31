@@ -1,8 +1,33 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
+import { describedComparison } from "#cli/rules/model/compared-interfaces.ts";
+
+const unavailableOutcome = {
+	id: "unavailable",
+	exit: 2,
+	stream: "stdout-and-stderr",
+	presentation: ["diagnostics", "result"],
+	description:
+		"The requested model or module is unavailable. The result carries affected paths, identities and recovery actions.",
+} as const;
+
+/**
+ * How a command presents a read that refused.
+ * @param result The structured refusal.
+ * @returns Its declared outcome and diagnostics.
+ */
+function refusedRead(result: Extract<ArchitectureModelRead, { success: false }>) {
+	return {
+		outcome: unavailableOutcome.id,
+		diagnostics: result.diagnostics.map(
+			(diagnostic) =>
+				`${diagnostic.code} ${diagnostic.file}${diagnostic.path === undefined ? "" : `:${diagnostic.path}`}: ${diagnostic.message} ${diagnostic.recovery}`,
+		),
+	};
+}
 
 const modelReadContract = defineCommand({
 	path: ["model", "read"],
@@ -167,16 +192,7 @@ const modelReadContract = defineCommand({
 	prerequisites: ["server"],
 	effects: ["read"],
 	refusals: [serverRefusal],
-	outcomes: [
-		{
-			id: "unavailable",
-			exit: 2,
-			stream: "stdout-and-stderr",
-			presentation: ["diagnostics", "result"],
-			description:
-				"The requested model or module is unavailable. The result carries affected paths, identities and recovery actions.",
-		},
-	],
+	outcomes: [unavailableOutcome],
 	relationships: [
 		{
 			method: "GET",
@@ -199,18 +215,7 @@ const modelReadContract = defineCommand({
 			input.flow,
 			input,
 		);
-		return {
-			result,
-			...(result.success
-				? {}
-				: {
-						outcome: "unavailable",
-						diagnostics: result.diagnostics.map(
-							(diagnostic) =>
-								`${diagnostic.code} ${diagnostic.file}${diagnostic.path === undefined ? "" : `:${diagnostic.path}`}: ${diagnostic.message} ${diagnostic.recovery}`,
-						),
-					}),
-		};
+		return { result, ...(result.success ? {} : refusedRead(result)) };
 	},
 });
 
@@ -232,5 +237,63 @@ const modelCompareContract = defineCommand({
 	...modelReadContract,
 	path: ["model", "compare"],
 	summary: "Compare coherent canonical architectural states",
+	description:
+		"Reads the selected state with its comparison. Interface changes come first, on standard error and in the comparison: an interface change costs every caller, and a change inside a module costs one module. The interface measures of each state follow side by side, as counts that are never combined and rank no state. The comparison also lists every stable subject. Use --beside for a competing proposal that is not the base. The selectors are those of model read.",
+	examples: [
+		"archboard model compare --state 'Queued fulfilment'",
+		"archboard model compare --state 'One index' --beside 'Entry per job'",
+	],
+	parameters: [
+		...modelReadContract.parameters,
+		{
+			kind: "option",
+			key: "beside",
+			spellings: ["--beside"],
+			value: "required",
+			occurrences: "append",
+			placeholder: "id|name",
+			description: "Another state whose interface measures go beside these two",
+		},
+	],
+	input: {
+		ingress: modelReadContract.input.ingress.extend({ beside: z.array(z.string()).optional() }),
+	},
+	output: {
+		cases: [
+			{
+				id: "json",
+				when: {},
+				mode: "json",
+				description: "The selected state with its comparison, or structured diagnostics",
+				presentation: ["diagnostics", "result"],
+			},
+		],
+		/**
+		 * Select the machine-readable result.
+		 * @returns The JSON output case.
+		 */
+		select: () => "json",
+	},
+	/**
+	 * Read the comparison and say its interface sections ahead of the answer.
+	 * @param input The selectors of the two states and any put beside them.
+	 * @param context The invocation prerequisites.
+	 * @returns The shared result with its words.
+	 */
+	async handler(input, context) {
+		// The parser answers false for an absent flag, and a false `compare` asks for no comparison.
+		const execution = await modelReadContract.handler({ ...input, compare: true }, context);
+		return {
+			...execution,
+			diagnostics: [...describedComparison(execution.result), ...(execution.diagnostics ?? [])],
+		};
+	},
 });
-export { modelContract, modelReadContract, modelProposalsContract, modelCompareContract };
+export {
+	modelContract,
+	modelReadContract,
+	modelProposalsContract,
+	modelCompareContract,
+	refusedRead,
+	unavailableOutcome,
+};
