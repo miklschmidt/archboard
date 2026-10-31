@@ -25,5 +25,45 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 100360,
+      "kind": "call",
+      "label": "SemanticPresentation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthrough.tsx",
+        "symbol": "SemanticPresentation"
+      },
+      "to": "vKEsyHFk#UDOCb9mn",
+      "id": "vKEsyHFk#b12AWQKQ"
+    },
+    {
+      "order": 100370,
+      "kind": "call",
+      "label": "useBoardCamera",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthrough.tsx",
+        "symbol": "useBoardCamera"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
+      "id": "vKEsyHFk#SXdcqAEW"
+    },
+    {
+      "order": 109000,
+      "kind": "call",
+      "label": "projectModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelWalkthrough.tsx",
+        "symbol": "projectModel"
+      },
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd",
+      "id": "vKEsyHFk#8KlWRv4K"
+    }
+  ]
 }

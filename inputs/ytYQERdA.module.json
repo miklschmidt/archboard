@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/application/start-actions.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "schemaVersion": 1,
   "id": "vKEsyHFk#ytYQERdA",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 100070,
+      "kind": "call",
+      "label": "chooseCheckout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/application/start-actions.ts",
+        "symbol": "chooseCheckout"
+      },
+      "to": "vKEsyHFk#hUWolXaH",
+      "id": "vKEsyHFk#pZDPDMHD"
+    }
+  ]
 }

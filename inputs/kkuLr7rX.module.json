@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#kkuLr7rX",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 102000,
+      "kind": "call",
+      "label": "the vault of inspection, search, history and the header",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "usePaneVault"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#5llRZ8no",
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
+    },
+    {
+      "order": 77000,
+      "kind": "call",
+      "description": "The inspector reads its board on the same terms as the picture and hears it change, so what it explains is read again.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "useSemanticBoardChanges"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#ieYgCFQc",
+      "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
+    },
+    {
+      "order": 83000,
+      "kind": "call",
+      "description": "The stage's panels read the board document, the vault check and a part's history through the viewer's queries.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "semanticBoardDocumentQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#hxPvFxCk",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    }
+  ]
 }

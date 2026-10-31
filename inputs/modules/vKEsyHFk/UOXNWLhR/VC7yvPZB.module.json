@@ -40,6 +40,19 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#rHkIhwXz",
       "to": "vKEsyHFk/UOXNWLhR#bx5fJdP8"
+    },
+    {
+      "order": 100550,
+      "kind": "call",
+      "label": "sameBoardName",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-semantic-board-changes.ts",
+        "symbol": "sameBoardName"
+      },
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+      "id": "vKEsyHFk#srwMw5ek"
     }
   ]
 }

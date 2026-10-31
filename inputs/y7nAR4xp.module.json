@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#y7nAR4xp",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 70000,
+      "kind": "call",
+      "label": "the relationships that are lit",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+        "symbol": "lightInk"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
+      "to": "vKEsyHFk/UOXNWLhR#WT3s42AE"
+    }
+  ]
 }

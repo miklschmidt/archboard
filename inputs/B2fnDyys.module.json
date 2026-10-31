@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
   "schemaVersion": 1,
   "id": "vKEsyHFk#B2fnDyys",
-  "outgoing": []
+  "parent": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+  "outgoing": [
+    {
+      "order": 53000,
+      "kind": "call",
+      "label": "read the picture's key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx",
+        "symbol": "SemanticLegend"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
+      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    }
+  ]
 }

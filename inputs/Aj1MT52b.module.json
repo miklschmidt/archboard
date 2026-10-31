@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Aj1MT52b",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+  "outgoing": [
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "projectModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-reading.ts",
+        "symbol": "projectModel"
+      },
+      "id": "vKEsyHFk/yejBBUFY#scByKwmU",
+      "to": "vKEsyHFk/yejBBUFY#IgYndyJd"
+    }
+  ]
 }

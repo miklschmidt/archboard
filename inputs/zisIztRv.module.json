@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
   "schemaVersion": 1,
   "id": "vKEsyHFk#zisIztRv",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
+  "outgoing": [
+    {
+      "order": 5020,
+      "kind": "call",
+      "label": "read model authority",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "architectureSummaryQuery"
+      },
+      "id": "vKEsyHFk#7EsWuSSD",
+      "to": "vKEsyHFk#cNN2C3v4"
+    },
+    {
+      "order": 5010,
+      "kind": "call",
+      "label": "read registered repositories",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "repositoriesQuery"
+      },
+      "id": "vKEsyHFk#i32p6taI",
+      "to": "vKEsyHFk#dneK7oM5"
+    },
+    {
+      "order": 100530,
+      "kind": "call",
+      "label": "architectureFeed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts",
+        "symbol": "architectureFeed"
+      },
+      "to": "vKEsyHFk#ocmFAfbs",
+      "id": "vKEsyHFk#TilDLxTW"
+    }
+  ]
 }

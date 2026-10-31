@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
   "schemaVersion": 1,
   "id": "vKEsyHFk#4bhWaQLm",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#xsn0RvSi",
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "one per socket generation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/workbench-socket.ts",
+        "symbol": "createTransport"
+      },
+      "id": "vKEsyHFk/yejBBUFY#rcSUaP1b",
+      "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    }
+  ]
 }

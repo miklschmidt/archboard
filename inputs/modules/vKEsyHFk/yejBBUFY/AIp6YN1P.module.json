@@ -28,32 +28,5 @@
       "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 67000,
-      "kind": "call",
-      "label": "Fetch the canonical model",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/queries.ts",
-        "symbol": "readModel"
-      },
-      "id": "vKEsyHFk/yejBBUFY#TuSq1VHw",
-      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
-    },
-    {
-      "order": 76000,
-      "kind": "call",
-      "label": "prepareContentHere",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
-        "symbol": "prepareContentHere"
-      },
-      "id": "vKEsyHFk/yejBBUFY#uykc1ukm",
-      "to": "vKEsyHFk/yejBBUFY#hDWpDois"
-    }
-  ]
+  "outgoing": []
 }

@@ -7,8 +7,140 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#zBANpjYZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "call",
+      "label": "pan and zoom by hand",
+      "description": "SemanticDiagram reads the supplied camera controller through useCameraWith; the viewer entry point creates it once for the pane.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useCameraWith"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#cdwXdyXo",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "order": 42000,
+      "kind": "call",
+      "label": "the pointer on the picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useDiagramGestures"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#bZN2wZZn",
+      "to": "vKEsyHFk/UOXNWLhR#FyxVdk20"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "label": "the pick, and the part the pointer rests on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useLighting"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#dH2wBxla",
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "the code check's warnings on the picture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useCodeMarks"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
+      "to": "vKEsyHFk/UOXNWLhR#ZUQ9Usdh"
+    },
+    {
+      "order": 103000,
+      "kind": "call",
+      "label": "the card picked, when it links down",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "useDrillOpen"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#CB6Uuw6y",
+      "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu"
+    },
+    {
+      "order": 70022,
+      "kind": "call",
+      "label": "apply picture and camera interaction",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "moveCameraByKey"
+      },
+      "id": "vKEsyHFk#MtvcBtx6",
+      "to": "vKEsyHFk#6pGUygoC"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "carry the drawn picture in from the last",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "usePictureTransition"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
+    },
+    {
+      "order": 7000,
+      "kind": "call",
+      "label": "pick attention",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "surfaceMarks"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "order": 100450,
+      "kind": "call",
+      "label": "subjectMarks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "subjectMarks"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
+      "id": "vKEsyHFk#baaAG6WM"
+    },
+    {
+      "order": 100460,
+      "kind": "call",
+      "label": "seenFromFar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "seenFromFar"
+      },
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
+      "id": "vKEsyHFk#jy4JXRWM"
+    }
+  ]
 }
