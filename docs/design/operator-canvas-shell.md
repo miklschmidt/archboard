@@ -121,16 +121,17 @@ filled the first screen with controls, adoption prose and tours.
   regions are off by default, and their switches turn them on.
 - **Only one overlay opens at a time.** The Key closes the panel while it is open,
   and About covers both. The selection stays, so the panel returns.
-- **About holds every long list and names its subject.** Its bar reads `Open scope`
-  or `Selected subject`, with a link to the other one. About opens on the selection
-  when there is one. On the scope, its outline leads to the reading's state, parts,
-  nearby modules, connections, interface and groups. State prose, `Decision and
-  history`, `Model ownership` and source evidence live here, never in the panel.
-  A choice in a list keeps the page in place, so a reader builds a selection there:
-  Enter selects a row, and Ctrl or Command with Enter adds it.
+- **About holds every long list and names its subject.** The end of its title row
+  reads `Open scope`. While something is selected, it offers `Open scope` and
+  `Selected subject`. About opens on the selection when there is one. On the scope,
+  its outline leads to the walkthroughs, parts, nearby modules, connections,
+  interface, groups and states. State prose, `Decision and history`, `Model
+  ownership` and source evidence live here, never in the panel. A choice in a list
+  keeps the page in place, so a reader builds a selection there: Enter selects a
+  row, and Ctrl or Command with Enter adds it.
 
-The rest of this section records the sidebar of retained board recordings, which
-still use it. The About page below keeps its structure for them too.
+The next section records the sidebar of retained board recordings, which still use
+it.
 
 ## The pane sidebar
 
@@ -172,9 +173,8 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The
-  navigator lists the variants of every board. The About page of the pane's
-  header lists them with the record of each and opens one in the pane. The
-  breadcrumb in the header names the one on screen (TASK-388). Views live here
+  navigator lists the variants of every board. The breadcrumb in the header
+  names the one on screen (TASK-388). Views live here
   and not in a switcher on the picture, because a switcher over the picture can
   cover what it switches.
 
@@ -286,9 +286,7 @@ pans or zooms. With two panes it is away, so that each picture keeps its room,
 until somebody asks for it. The control then lays its panel over the edge of the
 picture, and a pin at the end of the tab row docks it. A pick lays an away
 sidebar over the picture in the same way, and letting go puts it away again, so
-neither refits the picture under the pointer that made it. A pick made on the
-About page lays no panel over the page, because the panel would cover the
-page's own controls. Its panel comes when the diagram does. A float the person
+neither refits the picture under the pointer that made it. A float the person
 asked for stays until they put it away, or press Escape inside it, which gives
 the keyboard back to the control. Hiding a docked sidebar and showing it again
 docks it again. A sidebar that is away is nowhere: it leaves no strip, no row of
@@ -365,27 +363,37 @@ light theme.
 
 ## The About page
 
-Added 2026-10-15 (TASK-475). The pane's header offers two ways to read a board:
-Diagram, the picture, and About, one page about the board. The About page
-replaced four pages of the header: Parts, Relationships, Variants and
-Walkthroughs. Each of them answered one question and hid the others, so a reader
-had to know which page held an answer before they looked for it.
+Added 2026-10-15 (TASK-475). Revised 2026-10-31 (TASK-559.15): this design moved
+from the page of a board to the canonical reading. The page of a board is gone,
+because only a retained recording could still reach it.
 
-![The About page of Archboard server in a lone pane](assets/about-page.png)
+The pane's header offers two ways to read a model: Diagram, the picture, and
+About, one page of what the reading holds. About replaced four pages of the
+header: Parts, Relationships, Variants and Walkthroughs. Each of them answered one
+question and hid the others, so a reader had to know which page held an answer
+before they looked for it.
 
-The image is a rendered capture of the dogfood vault at 1920×1080, not a
-mockup: the About page of `Archboard server` in a lone pane, in the light theme,
-at the top of the page.
+![About on the Browser module in a lone pane](assets/about-page.png)
 
-The page lies over the picture and scrolls, and the sidebar stays beside it. It
-reads the board document that the pane already holds and writes nothing (ADR
-0023). The tab is kept with the board it was chosen on, so a drill-down opens
-the board below as a diagram.
+The image is a rendered capture of the dogfood model at 1920×1080, not a mockup:
+About on `Browser` in a lone pane, in the light theme, at the top of the page.
 
-The head of the page names the board in the display face, in capitals. One line
-under the name gives the board's level, and then the variant on screen, with its
-lifecycle mark and where it stands. The summary of the variant follows. A board
-with no such variant says so, and the timeline below lists its variants.
+The page lies over the picture and scrolls, and the picture keeps its camera. It
+reads what the reader already holds, with the catalogue of states, and writes
+nothing (ADR 0023).
+
+The head of the page names its subject in the display face, in capitals. The
+subject is the open module, the flow of a flow reading, the model at the roots, or
+the selection. One line under the name gives the mark and name of the kind, the
+code path, and the state on screen with its lifecycle mark and where it stands. The
+responsibility follows in the reading size. The roots have no responsibility, so
+the summary of the state stands there. A module's description follows it in the
+muted size. Warnings on the subject stand under these.
+
+The end of the title row holds what concerns the whole page: which subject the page
+describes, the count of warnings for the whole model, and what can be done with the
+selection. These controls scroll with the title. No bar stands above the page,
+because each word of a bar had a place in the head.
 
 An outline lists the sections, each with its mark and its count. On a page
 1040 px wide or more, the outline is a column to the left of the sections, and
@@ -393,49 +401,56 @@ it stays in place while the page scrolls. On a narrower page, as in a pane that
 shares the centre, the outline is a bar at the top of the page. A piece of gold
 marks the section being read. Choosing an entry brings its section to the top
 and gives the heading of the section the keyboard. The last section is tall
-enough that every section can come to the top.
+enough that every section can come to the top. A page of one section has no
+outline.
 
 The sections come in the order a reader asks
 ([the study of that order](pane-sidebar-hierarchy.md)). A section with nothing
 to show is absent from the page and from the outline.
 
-1. The walkthroughs, each a card set as a script. The head of the card has the
-   name, the number of steps, the summary, Present and Narrate. Each step is a
-   row with its number, its heading and its words. Beside them stand the view
-   that the step is told through and the subjects that it focuses. Each
-   subject is a chip with the icon of its kind. A step that names no view says
-   that it uses the view on screen, because a presentation keeps that view for
-   the step. The control at the end of a step presents the walkthrough from
-   that step.
-2. The parts, in their containment: a container, then the parts that it holds,
-   one rail in, as the navigator lists boards. A row gives the kind, the name,
-   how many parts the part holds, its responsibility, its groups and the board
-   that it opens. The column for groups and the column for the board are there
-   only when some part has one.
-3. The relationships, as a table of where each one starts, where it ends, what
-   it carries and its kind. A row lights while a part at either end is picked
-   out.
-4. The variants, on one timeline with branches, as the navigator draws them.
-   Each variant has its mark, its name, where it stands and the reason in its
-   record. A variant whose record gives no reason shows its summary. The one
-   on screen is marked, and choosing another reads it in the pane.
+1. The steps of a flow, in a flow reading. Each step is a row with its number,
+   its words, its two ends and its kind.
+2. The walkthroughs of the open scope, each a card set as a script. The left
+   column stays the way to navigate them. The head of the card has the name, the
+   number of steps, the summary, Present and Narrate. Each step is a row with its
+   number, its heading and its words. Beside them stand the reading that the step
+   opens and the subjects that it focuses. Each subject is a chip with the icon of
+   its kind. The control at the end of a step presents the walkthrough from that
+   step. A page of more than three walkthroughs folds each card to its head, and
+   the number of steps unfolds it, because the root of a model holds many.
+3. The parts, in their containment: a container, then the parts that it holds,
+   one rail in. The list stops there, because a model holds hundreds of modules,
+   and each row says how many parts it holds. A row gives the kind, the name, the
+   responsibility, the groups and the code path. The column for groups and the
+   column for code are there only when some part has one.
+4. The nearby modules, in the same table.
+5. The connections, as a table of where each one starts, where it ends, what it
+   carries and its kinds. A row lights while a module at either end is selected.
+6. The interface and the groups.
+7. The states, on one timeline with branches. Each state has its mark, its name,
+   where it stands and the reason in its record. A state whose record gives no
+   reason shows its summary. The state on screen is marked, and it holds its prose
+   and its decision and history inside its entry. Choosing another reads it in the
+   pane.
 
-Choosing a row or a chip picks its subject in the pane, and the page stays. The
-sidebar explains the subject, and the picture marks it when the diagram comes
-back. In a pane that shares the centre, the sidebar stays away until the diagram
-comes back or the person shows it. The control at the end of a part's or a
-relationship's row picks the subject and opens the diagram. Then it fits the
-camera to the subject, as a code warning does. If the view on screen does not
-draw the subject, the pane opens Everything first.
+About on a selection has the same anatomy. A module has its walkthroughs, its
+parts, `Sends to`, `Receives from`, its endpoints, `Code and evidence` and `Code
+history`, in the tables above. A line, a flow, a collection and several subjects
+have one section.
 
-A walkthrough is presented over the picture, so presenting from the page opens
-the diagram. Leaving the walkthrough brings the page back. Choosing About while a
-walkthrough is presented leaves the walkthrough. The page keeps its place on each
-board: after a walkthrough or the diagram, it opens where the reader left it.
+Choosing a row or a chip selects its subject, and the page stays. The picture marks
+the subject when the diagram comes back. The control at the end of a row selects the
+subject and opens the diagram. The camera moves only far enough to show the subject,
+as it does for a selection in the picture. A module that the picture does not draw
+opens the part that holds it.
+
+A walkthrough is presented over the picture, so presenting from the page opens the
+diagram. Leaving the walkthrough brings the page back. The page keeps its place for
+each subject: after a walkthrough or the diagram, it opens where the reader left it.
 
 While the content of the page is narrower than 860 px, as in a pane that shares
-the centre, the view and the subjects of a step stand under its words. The
-groups of a part and the board that it opens stand under its responsibility.
+the centre, the reading and the subjects of a step stand under its words. The
+columns for groups and code leave the table of parts.
 
 ## The left column
 

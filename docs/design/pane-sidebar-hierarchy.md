@@ -16,9 +16,7 @@ only. [The reader redesign](reader-redesign.md) records why. The study below
 describes the tab as it stood, and retained board recordings still use it.
 
 Revised 2026-10-03 (TASK-388). The tab no longer lists the variants of a board
-that a reader reached by a drill-down (task 7 below). The About page of the
-pane's header lists them with the record of each and opens one in the pane. The
-header's breadcrumb names the one on screen. The changes section names the
+that a reader reached by a drill-down (task 7 below). The header's breadcrumb names the one on screen. The changes section names the
 variant that it is compared with in its own heading. The rest of the study
 stands as it was found.
 
