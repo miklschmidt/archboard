@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T03:49:00Z'
-updated_date: '2026-10-31T08:00:00Z'
+updated_date: '2026-10-31T08:07:00Z'
 labels:
   - frontend
   - board
@@ -71,4 +71,6 @@ Built and committed. The projection treats every open module alike, so a reading
 Measures on the real core under Bun, milliseconds. Base readings: Commands 176, Browser 172, Workspace packages 410. One expansion: Commands + Command contract 99, + Command startup 95, + Server access 93, + Workspace packages 504; Browser + Archboard server 286, + Workspace packages 351; Workspace packages + Agent CLI 367, + Browser 353, + Workbench example 223, + Archboard server 512. Two expansions reach 1448. 33 readings, 0 refused, 11 over 500. The router's greedy pass takes most of that time, and that code is unchanged.
 
 Measures in a cold browser, click to new picture: 447 to 523 ms for the small expansions and 672 to 1005 ms for those with Workspace packages. One long task of about 330 ms comes before the picture, where the core takes about 100 ms under Bun. A door's navigation stays quicker because its picture is drawn ahead on hover. AC 5 stays unchecked: transitions, reduced motion and the landing hold, but the time does not hold on every expansion.
+
+Merged to integrate/pr19, gate 21 of 21 in 165 s, server 17842 restarted. Criterion 5 stays open: 11 of 33 measured expanded readings pass 500 ms, the worst 1448 ms, and the router's greedy pass takes most of that time. Criterion 6 waits for the owner.
 <!-- SECTION:NOTES:END -->
