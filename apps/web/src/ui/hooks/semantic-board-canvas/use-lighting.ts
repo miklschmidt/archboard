@@ -7,11 +7,12 @@
 // and gives the pick back when it goes. A row of the sidebar's list lights the
 // relationship it is about while it is pointed at. A trace asked of the picked
 // part lights, beyond its connections, everything it reaches in one direction,
-// each further hop more faintly.
+// each further hop more faintly. Several subjects picked at once stay as drawn,
+// with the lines between them, and the rest recedes.
 //
-// The light is attention only. It stands down while a presented step or a group
-// says what the picture is about, while the picture is leaving, and for a part
-// with nothing drawn to light.
+// The light is attention only. It stands down while a presented step says what
+// the picture is about, while the picture is leaving, and for a part with nothing
+// drawn to light.
 
 import { useMemo, type PointerEvent } from "react";
 
@@ -19,6 +20,7 @@ import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/sema
 import type { Peeked, Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { useRestingPart } from "#ui/hooks/semantic-board-canvas/use-resting-part.ts";
 import {
+	litBySeveral,
 	litInPicture,
 	withReach,
 	type Wiring,
@@ -34,6 +36,8 @@ interface LightingInputs {
 	readonly atlas: SemanticAtlas;
 	/** The subject picked out, or null. */
 	readonly selection: string | null;
+	/** The subjects picked out when there are several, or null. */
+	readonly several?: ReadonlySet<string> | null;
 	/** What the sidebar is asking the picture to show. */
 	readonly peeked: Peeked;
 	/** What a presented step's veil leaves standing, or null for no veil. */
@@ -65,7 +69,7 @@ interface Lighting {
 
 /**
  * Whether something else says what the picture is about: a presented walkthrough,
- * a group, or the picture leaving.
+ * several picks, or the picture leaving.
  * @param inputs What decides the lighting.
  * @returns True when the light stands down.
  */
@@ -146,11 +150,14 @@ function reachBeyond(
  * @returns What is lit, how strongly, and the handlers that move it.
  */
 function useLighting(inputs: LightingInputs): Lighting {
-	const { content: wiring, atlas, selection, veil } = inputs;
+	const { content: wiring, atlas, selection, several = null, veil } = inputs;
 	const { part, onHover, release } = useRestingPart(atlas);
 	const trace = traceOf(inputs);
 	const poked = pokedBy(inputs, trace, part);
-	const lit = useMemo(() => litInPicture(wiring, atlas, poked), [wiring, atlas, poked]);
+	const lit = useMemo(
+		() => litInPicture(wiring, atlas, poked) ?? litBySeveral(wiring, several),
+		[wiring, atlas, poked, several],
+	);
 	const reach = useMemo(
 		() => (lit === null ? null : reachBeyond(wiring, trace, poked === selection)),
 		[lit, wiring, trace, poked, selection],

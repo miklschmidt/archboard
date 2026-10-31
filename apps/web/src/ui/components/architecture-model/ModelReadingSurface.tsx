@@ -143,7 +143,7 @@ function ReadingCaption(props: {
  * @returns The legend.
  */
 function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
-	const { accepted, location } = props.reader;
+	const { accepted, location, selection } = props.reader;
 	const { shown, scene } = accepted;
 	return (
 		<ModelLegend
@@ -152,6 +152,8 @@ function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 			picture={scene?.picture.key ?? null}
 			filters={location.grammar === "architecture" ? location.filters : NO_FILTERS}
 			onToggle={location.toggleFilter}
+			onShowAll={location.showAllKinds}
+			selection={selection}
 		/>
 	);
 }
@@ -165,7 +167,8 @@ interface ReadingPanelProps {
 }
 
 /**
- * The column beside the picture: what is selected, or else what is open, over the legend.
+ * The column beside the picture: what is selected, or else what is open, over the legend. The
+ * legend ends the column, so a selection never moves a group tag out from under the pointer.
  * @param props The surface and what the panel explains.
  * @returns The panel.
  */
@@ -204,12 +207,12 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 					<ModelPanelScope name={head.name} description={head.description ?? head.lead} />
 				)}
 			</ModelPanel.Subject>
-			<ReadingLegend reader={reader} />
 			{selecting && (
 				<ModelPanelActions {...subject}>
 					<SelectionControls {...props.actions} />
 				</ModelPanelActions>
 			)}
+			<ReadingLegend reader={reader} />
 		</ModelPanel>
 	);
 }

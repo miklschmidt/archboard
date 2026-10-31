@@ -30,8 +30,9 @@ what the marks of the picture mean.
   a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
   description, and with a selection it shows the subject. The panel is always there, so a selection never refits the
   picture.
-- Legend: the foot of the right panel, above any action bar. It needs no click, and it lists the kinds, line types and
-  groups of the reading. A long subject scrolls above it.
+- Legend: the foot of the right panel, under any action bar, so that a selection never moves it. A group's tag is a
+  control, and a bar under the legend put the tag out from under the pointer. It needs no click, and it lists the
+  kinds, line types and groups of the reading. A long subject scrolls above it.
 - About: every long list. It names whether it describes the open scope or the selected subject. It covers the panel
   and has no column of its own.
 

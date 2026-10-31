@@ -1,6 +1,6 @@
 // The right panel of a reading: a column that stands beside the picture on every Diagram reading,
 // so a selection never moves the picture. It says what is selected, or what is open while nothing
-// is, over the legend and what can be done. Long lists and evidence live on About.
+// is, over what can be done and the legend. Long lists and evidence live on About.
 
 import { RiCloseLine } from "@remixicon/react";
 import {
@@ -31,7 +31,7 @@ interface ModelPanelProps {
 	readonly onClose: (() => void) | undefined;
 	/** Whether About lies over it. It then holds nothing and keeps its room, so the picture keeps its camera. */
 	readonly covered: boolean;
-	/** Its `ModelPanel.Subject`, then the legend and any `ModelPanel.Foot`. */
+	/** Its `ModelPanel.Subject`, then any `ModelPanel.Foot` and the legend. */
 	readonly children: ReactNode;
 }
 
@@ -272,7 +272,7 @@ function Row({
 }
 
 /**
- * What can be done with the subject, pinned at the foot of the panel.
+ * What can be done with the subject, pinned under it and over the legend.
  * @param props The actions.
  * @param props.children The actions.
  * @returns The foot.
@@ -281,7 +281,7 @@ function Foot(props: { readonly children: ReactNode }): JSX.Element {
 	return (
 		<footer
 			data-slot="model-panel-foot"
-			className="border-border flex shrink-0 flex-wrap items-center gap-2 border-t p-3"
+			className="border-border flex shrink-0 flex-wrap items-center gap-1.5 border-t py-3 pr-3 pl-4"
 		>
 			{props.children}
 		</footer>

@@ -466,18 +466,45 @@
 
 /* A group's tag: one bright piece on any ground, cut from --tag, which a tag
    sets to its --tag-<name> (theme.css). Every stop stays in OKLCH, because a mix
-   toward a dark colour in sRGB turns orange brown. A tag's size is its site's. */
+   toward a dark colour in sRGB turns orange brown. A tag's size is its site's.
+   A tag that is a button lights under the pointer. While it is on the gradient
+   turns over, the shadow moves inside and a gold mark stands under it, as under
+   a key held pressed in. */
 @utility group-tag {
+	--tag-face-top: oklch(from var(--tag) calc(l + 0.02) calc(c + 0.02) h);
+	--tag-face-foot: oklch(from var(--tag) calc(l - 0.06) calc(c + 0.03) h);
+	position: relative;
 	color: oklch(from var(--tag) 0.2 0.03 h);
 	border: 1px solid oklch(from var(--tag) calc(l - 0.26) calc(c - 0.02) h);
 	border-radius: 5px;
-	background-image: linear-gradient(
-		180deg,
-		oklch(from var(--tag) calc(l + 0.02) calc(c + 0.02) h),
-		oklch(from var(--tag) calc(l - 0.06) calc(c + 0.03) h)
-	);
+	background-image: linear-gradient(180deg, var(--tag-face-top), var(--tag-face-foot));
 	box-shadow: inset 0 1px 0 oklch(1 0.05 95 / 0.5);
 	font-weight: 600;
+	&:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+	&:is(button):hover:not(:disabled, [aria-pressed="true"]) {
+		background-image: linear-gradient(
+			180deg,
+			oklch(from var(--tag-face-top) calc(l + 0.05) c h),
+			oklch(from var(--tag-face-foot) calc(l + 0.05) c h)
+		);
+	}
+	&[aria-pressed="true"],
+	&:is(button):active:not(:disabled) {
+		background-image: linear-gradient(0deg, var(--tag-face-top), var(--tag-face-foot));
+		box-shadow: inset 0 1px 3px oklch(from var(--tag) 0.2 0.03 h / 0.55);
+	}
+	&[aria-pressed="true"]::after {
+		position: absolute;
+		inset-inline: 2px;
+		bottom: -5px;
+		height: 2px;
+		border-radius: 1px;
+		background-color: var(--primary-mark);
+		content: "";
+	}
 }
 
 /* A name set as a title, in the display face: a picked part, a variant, a

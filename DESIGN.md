@@ -342,7 +342,7 @@ along the line on both grounds.
 
 **The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
-**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
+**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
 
 **The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.
 
@@ -401,21 +401,33 @@ subject on the picture. Its actions stand at the foot of the column, under the l
 Long lists and evidence live on About, which lies over the panel, so the panel keeps its
 room and the picture keeps its camera. A pane presented fullscreen has no panel.
 
-The legend stands at the foot of the panel, above the actions, and needs no click. A long
-subject scrolls above it, and the whole legend stays on screen. A heading row holds
-`Legend` and the control `Filter`. Under it stand the kinds in two columns, a thin rule,
-the line types in two columns, a thin rule, and the groups. A section with nothing to
-show is absent. The legend lists what the reading draws and what a reader hid. A hidden
-line type stays, dimmed, and the heading row says how many are hidden. `Filter` puts a
-switch at the end of each line type, and a mixed line has none, because it is no kind of
-relationship.
+The legend is a tray at the foot of the panel (Tray Chalk and `shadow-edge-up`), and it needs
+no click. A long subject scrolls above it, and the whole legend stays on screen. It ends the
+column, so a selection never moves it. A heading row holds `Legend` and, at the start of the
+second column, the key `Filter`. Under it stand the kinds in two columns, a thin rule, the line
+types in two columns, a thin rule, and the groups. A row is 24px high, and every mark stands in
+a box 22px wide, so the names start on one line. A section with nothing to show is absent.
+
+The rows come from the whole reading, not from what the picture draws now, and each list keeps
+the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
+type that a reader hid stays, dimmed. So does a part kind, a mixed line or a line's mark that
+left the picture with it. A chip that the picture does not draw takes the icon that the policy
+names. `Filter` is an outline key with a funnel and the count of hidden kinds in mono, and it
+grows into the free room of its column. While the switches show it is pressed in, with a gold
+mark under its words, as the dock's conversation key is. `Show all` stands at the end of the
+row while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
+line has no switch, because it is no kind of relationship.
 
 A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
 both themes, cut from the dark value of its palette color (`--tag-<name>`): a gradient
 from L+.02 C+.02 to L-.06 C+.03, a 1px edge at L-.26 C-.02, ink at oklch(0.2 0.03 H), an
 inset top highlight, weight 600 and 5px corners. The `group-tag` utility holds the one
 recipe. Its stops stay in OKLCH, because a mix toward a dark color in sRGB turns orange
-brown. A tag has no switch.
+brown. A tag is a button. It selects what the picture draws of its group, doors included,
+through the ordinary selection, and a second press clears it. While the selection is exactly
+those parts the tag is on: its gradient turns over, its shadow moves inside and a 2px piece of
+Gold Mark stands under it. Under the pointer the tag lights a step. A group whose parts a
+filter took off the picture keeps its tag, dimmed and held.
 
 ### Pane sidebar
 

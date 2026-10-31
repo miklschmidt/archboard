@@ -249,6 +249,10 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		},
 		[filters, navigate, userChanged],
 	);
+	const showAllKinds = useCallback((): void => {
+		userChanged?.("view");
+		void navigate({ hideKinds: undefined });
+	}, [navigate, userChanged]);
 	const toggleEveryLine = useCallback((): void => {
 		userChanged?.("view");
 		void navigate({ everyLine: everyLine === undefined ? "1" : undefined });
@@ -357,6 +361,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 		focus,
 		filters,
 		toggleFilter,
+		showAllKinds,
 		toggleEveryLine,
 		reveal,
 		setFocus,

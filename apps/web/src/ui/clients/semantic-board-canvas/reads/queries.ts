@@ -5,6 +5,7 @@
 // `board-refresh.ts`'s to decide.
 
 import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
 
 import { BOARD_CACHE_MS } from "@archboard/timing";
 import { type SemanticRenderRequest } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
@@ -195,8 +196,37 @@ function codeFindingsQuery(vault: string) {
 	});
 }
 
+/** One icon's path data, as the Archboard server serves it. */
+const IconSchema = z.object({ paths: z.array(z.string()) });
+
+/**
+ * One icon's path data, fetched once by name.
+ * @param name The Remix Icon's export name.
+ * @returns The query options.
+ */
+function iconQuery(name: string) {
+	return queryOptions({
+		queryKey: ["diagram-icon", name],
+		/**
+		 * Fetch the icon's paths.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The paths.
+		 */
+		queryFn: async (context): Promise<readonly string[]> => {
+			const response = await fetch(`/assets/diagram-icons/${encodeURIComponent(name)}.json`, {
+				signal: context.signal,
+			});
+			if (!response.ok) throw new Error(`No icon called ${name}`);
+			return IconSchema.parse(await response.json()).paths;
+		},
+		staleTime: Infinity,
+		retry: false,
+	});
+}
+
 export {
 	codeFindingsQuery,
+	iconQuery,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,
 	semanticRenderQuery,
