@@ -66,10 +66,8 @@ The model derives incoming relationships, so a relationship has one definition a
 _Avoid_: edge, arrow, link, connector, relation, line (that is what a picture draws)
 
 **Whole-module endpoint**:
-The end of a relationship that names a module with parts and none of those parts.
-It stays on the module's boundary, and a reading never invents an inner end for it.
-It makes a caller and no entry point, so `archboard check code` reports it as information with `RELATIONSHIP_ON_CONTAINER`.
-An author prefers the part that makes or answers the call, and the end stays acceptable when no part stands for the call.
+The end of a relationship that names a module with parts and none of those parts, so it stays on the module's boundary and makes a caller and no entry point.
+An author prefers the part that makes or answers the call, and `archboard check code` reports the end as information with `RELATIONSHIP_ON_CONTAINER`.
 _Avoid_: port (that is where the renderer attaches a line)
 
 **Flow collection**:
@@ -291,7 +289,7 @@ _Avoid_: scene (that is what the renderer core answers), board, workspace, sessi
 The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk.
 
 **Measures**:
-The destination of the left column that lists every module of a reading with its interface measures, its commits and its unjoined pairs, sorted by one count at a time.
+The destination of the left column that lists every module of the model on show with its interface measures, its commits and its unjoined pairs, sorted by one count at a time.
 It shows counts only: no score combines them, and the user judges them (ADR 0044).
 _Avoid_: ranking, scorecard, hotspot list
 
@@ -319,43 +317,72 @@ A reading draws it open as a frame or closed as a card, and it keeps its kind, i
 _Avoid_: container kind, group, platform tag
 
 **Frame**:
-The outline that a picture draws around the parts of an open module.
+The outline that a picture draws around the parts of an open module: a well with an edge tab on its top edge.
 _Avoid_: box, region, lane, group
 
+**Well**:
+The floor of a frame, cut into whatever holds it, with the frame's parts standing on it.
+_Avoid_: tray (that is a plate at the foot of a column)
+
+**Edge of the well**:
+The top edge of a well: one line and one inner shadow across its whole width, which runs on under the edge tab and parts the tab from the floor.
+
 **Edge tab**:
-The one line on a frame's edge that names an open module, with its icon and code path.
+The one raised line on the edge of a well that names an open module, with its icon and code path.
+Its left side is the side of the frame.
+_Avoid_: header, card (a frame holds none for its own module)
+
+**Foot of a tab**:
+The stretch of the edge of the well under an edge tab.
+What a frame holds reaches the frame here, and what stands outside reaches it on its outline.
 
 **Door**:
-A module outside the open one that a line reaches, drawn as a bright button.
-Its arrow points up, sideways or down by its place in the module tree.
+A module outside the open one that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
+One click opens it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it.
 _Avoid_: nearby context, external (that is a kind)
 
 **Line**:
-The mark that joins a pair of drawn parts in a picture.
+The mark that joins a pair of drawn parts in a picture, and it ends on the parts that own it.
 One line can hold several relationships, which makes it a joined line, and it has no identity of its own.
 _Avoid_: edge, relationship (that is authored), connector, aggregate connection
+
+**Shared trunk**:
+The stretch that the lines of one kind between one door and several parts run on together, from three lines each way.
+Each line wears its words on its own branch, beside its part and before it joins.
+_Avoid_: bus
 
 **Icon chip**:
 The icon and its surrounding tile that identify a module's kind.
 _Avoid_: comparison badge, card body
 
 **Group tag**:
-A bright named tag on a card.
+A bright named tag on a card, and the same tag in the Legend, where a press selects the parts of its group.
 A group has no frame or region and no tinted face.
 
 **Legend**:
 What explains the marks of a picture: kinds, line types and groups.
-It always stands at the foot of the right column on a Diagram reading.
+It always stands at the foot of the Right panel on a Diagram reading, over the engine switch.
 _Avoid_: Key, filters
 
 **Right panel**:
-The permanent right column of a Diagram reading.
-It shows the open module, or the selected subject, above the Legend.
+The permanent right column of a Diagram reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, and its Trace controls.
+The Legend and the engine switch close it, and long lists stay in About.
 _Avoid_: inspector
+
+**Interface line**:
+The line of the Right panel that counts the entries, hidden parts, callers and pass-through entry points of a module with parts, and `to module` when callers reach the module itself.
+Each count selects what it counts on the module's picture, and no score combines them.
+
+**Entries**:
+The count of a container's entry points, as the interface line and Measures write it.
+
+**To module**:
+The count of distinct callers whose relationship ends on a module itself and names no part, as the interface line and Measures write it.
+It states a fact, not a warning.
 
 **Caption**:
 The one line over a picture, which states the open module's responsibility or a flow's collection and summary.
-It also states how many lines the picture leaves out.
+It also holds the comparison control, and `Clear focus` while a focus stands.
 _Avoid_: subtitle, narrative
 
 **Crumbs**:
@@ -452,14 +479,27 @@ How large a picture shows whole in the reference pane: the scale that fits it.
 It breaks ties between pictures that read equally well, and never outweighs how easily a picture reads.
 _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
+**Landing whole**:
+How a module's picture first shows: whole in the room of its pane, at no more than a scale of 1.
+A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller.
+_Avoid_: floor, zoom to fit
+
+**Far view**:
+What a picture draws below a scale of 0.857: each card keeps its box, and its words grow so that they still read.
+_Avoid_: thumbnail, overview
+
+**Far type scale**:
+The one size that sets the words of every far card of a picture: what a name of 12 px needs where the picture lands, or less if a card's box holds less.
+_Avoid_: card zoom
+
 **Light**:
 The attention that a picture keeps around a part that a user picks out or points at, which writes nothing.
 It covers the part, its contents, every relationship that touches them, and the modules and containers at their other ends, and the rest recedes.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:
-A user's question of a picked part: how far does it reach, onward along what it sends to or back along what sends to it.
-Each further hop lights more faintly, and nothing is written.
+A user's question of a selected module, asked with `Trace onward` or `Trace back`: how far does it reach along what it sends to, or back along what sends to it.
+Each further hop lights more faintly, a card stands for all that it holds, and nothing is written.
 _Avoid_: impact analysis, blast radius, dependency graph
 
 **Dive**:
@@ -635,8 +675,13 @@ _Avoid_: engine (that is a layout engine), WASM module
 
 **Layout engine**:
 The part of the renderer core that places a picture's cards and routes its lines.
-Blocks is the default, and Track is the alternative that a render can ask for (ADR 0064).
-_Avoid_: renderer core, layout mode
+Blocks is the default, and Tracks is the alternative, which the switch in the Right panel offers and a render asks for with `--layout track` (ADR 0064).
+_Avoid_: renderer core, layout mode, Track (`track` is only the value of a flag or a field)
+
+**Dense placement**:
+What Blocks tries first on a reading of one open frame of cards, or of a root with 18 or more lines: the parts on a shared grid, and the doors round the frame.
+A reading that it cannot route, or that holds a nested frame, keeps legacy placement.
+_Avoid_: compaction (that takes empty bands out of a routed drawing)
 
 **Scene**:
 The ordered, positioned list of what a picture is made of: shapes, glyph runs and the marks that a painter animates.
@@ -800,8 +845,8 @@ It carries what the user last said or, with nothing said, the voice model's own 
 _Avoid_: delegation (that is the coordinator giving work to the workhorse), request, callback
 
 **Spoken answer**:
-What the voice coordinator gives the voice model to say to the user.
-It is the only thing the voice model reacts to, and everything else reaches it as quiet context.
+What the voice coordinator gives the voice model to say to the user, as the result of a handoff.
+Apart from a narration's steps and news that stops a narration, all else reaches the voice model as quiet context.
 _Avoid_: final, reply, response
 
 **Steer**:
@@ -810,8 +855,8 @@ Steering never stops the turn.
 _Avoid_: interrupt, inject, cancel
 
 **Workhorse stop**:
-A request to stop the workhorse of one checkout and its sub-agents and to clear its pending requests.
-Accepting the request does not prove that its work stopped.
+A request to interrupt the running turn of the workhorse of one checkout, or of every workhorse of a tab session.
+A sent interrupt does not prove that work stopped: only workhorse news that its turn ended proves it.
 _Avoid_: steer, pause, end voice
 
 **Shown conversation**:
@@ -840,7 +885,7 @@ _Avoid_: annotation, note
 ### Legacy formats
 
 **Legacy board**:
-A document of the format that the model replaced: one description of one subject with its own level, views, variants and version.
+A document of the format that the model replaced: one description of one subject with its own level, views, drill-downs, variants and version.
 It is not part of the live model, and the runtime decodes it only for migration and exact retained history.
 _Avoid_: board (for anything live), note
 

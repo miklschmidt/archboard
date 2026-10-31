@@ -1,9 +1,11 @@
 ---
 id: TASK-559.32
 title: Bring the docs and the model up to the merged reader
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - '@claude'
 created_date: '2026-10-31T06:36:00Z'
+updated_date: '2026-10-31T06:38:00Z'
 labels:
   - docs
   - model
