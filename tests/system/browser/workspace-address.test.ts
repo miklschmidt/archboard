@@ -283,6 +283,7 @@ test("a plain address waits for a choice and returns to it, and choosing a check
 	await pollUntil(() => addressSearch(browser), choseOrders, "the choice to write the address");
 	await browser.run(["open", server.base]);
 	await pollUntil(() => addressSearch(browser), choseOrders, "the plain address to restore it");
+	await pollUntil(() => paneSays(browser, "A", "Main checkout"), Boolean, "the restored picture");
 
 	await browser.run([
 		"open",

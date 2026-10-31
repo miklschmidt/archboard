@@ -62,6 +62,14 @@ const PICTURE_MS = durations({
 	 * with only the old picture cannot tell that the pane heard them.
 	 */
 	waitNotice: 800,
+	/**
+	 * How long a picture waits for this browser's picture store before it draws anyway.
+	 *
+	 * A kept picture only saves a redraw, and the store usually answers within 50 ms. Pulls against
+	 * a store that never answers: a page that reloads during the first open of the store leaves
+	 * every later open waiting, and no error says so.
+	 */
+	storeWait: 400,
 });
 
 /**

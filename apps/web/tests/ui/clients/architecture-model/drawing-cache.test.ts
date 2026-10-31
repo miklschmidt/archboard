@@ -1,4 +1,5 @@
-import { expect, test } from "bun:test";
+import { PICTURE_MS } from "@archboard/timing";
+import { expect, jest, test } from "bun:test";
 import {
 	cachedModelDrawing,
 	forgetStalePictures,
@@ -157,4 +158,21 @@ test("canonical scenes survive reload only under their exact key and refused sto
 	};
 	expect(await cachedModelDrawing(refused, "first-scene", draw)).toBe(drawing);
 	expect(layouts).toBe(4);
+});
+
+test("a store that never answers does not hold a picture back", async () => {
+	jest.useFakeTimers();
+	try {
+		const silent = (): Promise<never> => new Promise(() => undefined);
+		const storage: PictureStorage = { get: silent, set: silent, del: silent, keys: silent };
+		const drawn = cachedModelDrawing(storage, "first-scene", async () => DRAWING);
+		for (let wait = 0; wait < 2; wait++) {
+			await Promise.resolve();
+			await Promise.resolve();
+			jest.advanceTimersByTime(PICTURE_MS.storeWait);
+		}
+		expect(await drawn).toBe(DRAWING);
+	} finally {
+		jest.useRealTimers();
+	}
 });
