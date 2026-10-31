@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 101330,
+      "kind": "call",
+      "label": "optional",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/migration.ts",
+        "symbol": "QualifiedSubjectIdSchema.optional"
+      },
+      "id": "vKEsyHFk#ntqObdQq",
+      "to": "vKEsyHFk#lnAGztQm"
+    },
+    {
       "order": 120000,
       "kind": "call",
       "emphasis": "normal",
@@ -46,17 +59,17 @@
       "to": "vKEsyHFk#RasDH9DI"
     },
     {
-      "order": 101330,
+      "order": 123400,
       "kind": "call",
-      "label": "optional",
+      "label": "SemanticBoardSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/shared/schemas/migration.ts",
-        "symbol": "QualifiedSubjectIdSchema.optional"
+        "symbol": "SemanticBoardSchema"
       },
-      "to": "vKEsyHFk#lnAGztQm",
-      "id": "vKEsyHFk#ntqObdQq"
+      "to": "vKEsyHFk#OAnOdFft",
+      "id": "vKEsyHFk#veY9cXQg"
     }
   ]
 }

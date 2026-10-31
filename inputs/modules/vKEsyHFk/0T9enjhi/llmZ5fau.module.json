@@ -84,6 +84,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#JGBxddlN",
       "to": "vKEsyHFk/0T9enjhi#d8uON4nq"
+    },
+    {
+      "order": 123550,
+      "kind": "call",
+      "label": "everyStep",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+        "symbol": "everyStep"
+      },
+      "to": "vKEsyHFk#nRX8oZ5h",
+      "id": "vKEsyHFk#TKgTkSI2"
     }
   ]
 }

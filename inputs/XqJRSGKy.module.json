@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/model-edit/flow-state.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "schemaVersion": 1,
   "id": "vKEsyHFk#XqJRSGKy",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "outgoing": [
+    {
+      "order": 123450,
+      "kind": "call",
+      "label": "selectModule",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/flow-state.ts",
+        "symbol": "selectModule"
+      },
+      "to": "vKEsyHFk#92f9M6zF",
+      "id": "vKEsyHFk#Zb3GcfQn"
+    }
+  ]
 }

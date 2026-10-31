@@ -21,8 +21,8 @@
         "path": "apps/web/src/ui/components/semantic-board-canvas/PaneHeaderFrame.tsx",
         "symbol": "usePaneChrome"
       },
-      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL",
-      "id": "vKEsyHFk#AjUAoTP6"
+      "id": "vKEsyHFk#AjUAoTP6",
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
     },
     {
       "order": 100470,
@@ -34,8 +34,8 @@
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticEngineBar.tsx",
         "symbol": "LAYOUT_ENGINES"
       },
-      "to": "vKEsyHFk#b3RjWlpQ",
-      "id": "vKEsyHFk#8FuGkQt2"
+      "id": "vKEsyHFk#8FuGkQt2",
+      "to": "vKEsyHFk#b3RjWlpQ"
     },
     {
       "order": 100480,
@@ -47,8 +47,8 @@
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
         "symbol": "vaultCheckQuery"
       },
-      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-      "id": "vKEsyHFk#JiVU2U2N"
+      "id": "vKEsyHFk#JiVU2U2N",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
     },
     {
       "order": 100490,
@@ -60,8 +60,8 @@
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
         "symbol": "usePaneVault"
       },
-      "to": "vKEsyHFk/UOXNWLhR#51hijVQY",
-      "id": "vKEsyHFk#LTaZQ1Ci"
+      "id": "vKEsyHFk#LTaZQ1Ci",
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
     },
     {
       "order": 100500,
@@ -73,8 +73,73 @@
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticSubjectTip.tsx",
         "symbol": "tipAnchor"
       },
-      "to": "vKEsyHFk#mwEYjSuY",
-      "id": "vKEsyHFk#uGPEdgG8"
+      "id": "vKEsyHFk#uGPEdgG8",
+      "to": "vKEsyHFk#mwEYjSuY"
+    },
+    {
+      "order": 121120,
+      "kind": "call",
+      "label": "SemanticLegend",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardPanel.tsx",
+        "symbol": "SemanticLegend"
+      },
+      "to": "vKEsyHFk#xlY0cAvH",
+      "id": "vKEsyHFk#ZmZTpqGc"
+    },
+    {
+      "order": 122430,
+      "kind": "call",
+      "label": "CodeWarnings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageHeader.tsx",
+        "symbol": "CodeWarnings"
+      },
+      "to": "vKEsyHFk#3du2hZok",
+      "id": "vKEsyHFk#uzVkgD4J"
+    },
+    {
+      "order": 122560,
+      "kind": "call",
+      "label": "PaneHeader",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageHeader.tsx",
+        "symbol": "PaneHeader"
+      },
+      "to": "vKEsyHFk#igSZZtkk",
+      "id": "vKEsyHFk#ZFjP3OAx"
+    },
+    {
+      "order": 122590,
+      "kind": "call",
+      "label": "SemanticDiagram",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageWaiting.tsx",
+        "symbol": "SemanticDiagram"
+      },
+      "to": "vKEsyHFk#clZbLqpX",
+      "id": "vKEsyHFk#UzyUL7kb"
+    },
+    {
+      "order": 122600,
+      "kind": "call",
+      "label": "SemanticInspector",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageSidebar.tsx",
+        "symbol": "SemanticInspector"
+      },
+      "to": "vKEsyHFk#Pd14KfMb",
+      "id": "vKEsyHFk#Bl89O3vE"
     }
   ]
 }

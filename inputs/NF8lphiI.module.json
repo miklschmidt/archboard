@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/rules/host/text-input.ts"
   },
-  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
   "schemaVersion": 1,
   "id": "vKEsyHFk#NF8lphiI",
-  "outgoing": []
+  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "outgoing": [
+    {
+      "order": 121050,
+      "kind": "call",
+      "label": "cloneAndFreeze",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/text-input.ts",
+        "symbol": "cloneAndFreeze"
+      },
+      "to": "vKEsyHFk#lIOYEqMz",
+      "id": "vKEsyHFk#qI0VgZOc"
+    }
+  ]
 }

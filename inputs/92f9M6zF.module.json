@@ -25,18 +25,6 @@
       "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
     },
     {
-      "order": 224000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-read.ts",
-        "symbol": "readRequestedArchitecture"
-      },
-      "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",
-      "to": "vKEsyHFk/0T9enjhi#FlAxCoeb"
-    },
-    {
       "order": 94000,
       "kind": "dependency",
       "emphasis": "normal",
@@ -47,6 +35,31 @@
       },
       "id": "vKEsyHFk/0T9enjhi#41Ear2yX",
       "to": "vKEsyHFk#lnAGztQm"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "SemanticBoardConfigurationSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#BADMPDPc",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+    },
+    {
+      "order": 101130,
+      "kind": "call",
+      "label": "errorMessage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "errorMessage"
+      },
+      "id": "vKEsyHFk#tdus4ecR",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
     },
     {
       "order": 137000,
@@ -75,29 +88,42 @@
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
     },
     {
-      "order": 96000,
+      "order": 224000,
       "kind": "call",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/read/model-read.ts",
-        "symbol": "SemanticBoardConfigurationSchema"
+        "symbol": "readRequestedArchitecture"
       },
-      "id": "vKEsyHFk/0T9enjhi#BADMPDPc",
-      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
+      "id": "vKEsyHFk/0T9enjhi#SF2mgNXu",
+      "to": "vKEsyHFk/0T9enjhi#FlAxCoeb"
     },
     {
-      "order": 101130,
+      "order": 123160,
       "kind": "call",
-      "label": "errorMessage",
+      "label": "readModelFiles",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/read/model-read.ts",
-        "symbol": "errorMessage"
+        "symbol": "readModelFiles"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#tdus4ecR"
+      "to": "vKEsyHFk#LKzM5UTh",
+      "id": "vKEsyHFk#rRpzyrm7"
+    },
+    {
+      "order": 123570,
+      "kind": "call",
+      "label": "modelDiagnostics",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-read.ts",
+        "symbol": "modelDiagnostics"
+      },
+      "to": "vKEsyHFk#nRX8oZ5h",
+      "id": "vKEsyHFk#KkIzNoEv"
     }
   ]
 }

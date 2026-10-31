@@ -7,8 +7,48 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/runtime/rules/host/bodies.ts"
   },
-  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
   "schemaVersion": 1,
   "id": "vKEsyHFk#6nQOarel",
-  "outgoing": []
+  "parent": "vKEsyHFk/qKGcB6vZ#YVc05dVh",
+  "outgoing": [
+    {
+      "order": 120880,
+      "kind": "call",
+      "label": "captureExecutionContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/bodies.ts",
+        "symbol": "captureExecutionContext"
+      },
+      "to": "vKEsyHFk#s0GbdiHw",
+      "id": "vKEsyHFk#xcXUeCgu"
+    },
+    {
+      "order": 120970,
+      "kind": "call",
+      "label": "createTextUserInput",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/bodies.ts",
+        "symbol": "createTextUserInput"
+      },
+      "to": "vKEsyHFk#NF8lphiI",
+      "id": "vKEsyHFk#IJwSWc7O"
+    },
+    {
+      "order": 121020,
+      "kind": "call",
+      "label": "cloneAndFreeze",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/host/bodies.ts",
+        "symbol": "cloneAndFreeze"
+      },
+      "to": "vKEsyHFk#lIOYEqMz",
+      "id": "vKEsyHFk#S8MSeQKj"
+    }
+  ]
 }

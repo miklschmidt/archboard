@@ -27,6 +27,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#JgtXFRyO",
       "to": "vKEsyHFk/SMjRfwN3#R9St060W"
+    },
+    {
+      "order": 120210,
+      "kind": "call",
+      "label": "HeadlessChromiumError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/clients/headless-chromium/devtools.ts",
+        "symbol": "HeadlessChromiumError"
+      },
+      "to": "vKEsyHFk#oJdb7leQ",
+      "id": "vKEsyHFk#ibn5Zs39"
     }
   ]
 }

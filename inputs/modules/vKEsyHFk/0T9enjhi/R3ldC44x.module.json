@@ -44,8 +44,34 @@
         "path": "packages/board/src/runtime/store/format/decode.ts",
         "symbol": "errorMessage"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#pSqmXsV3"
+      "id": "vKEsyHFk#pSqmXsV3",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 123190,
+      "kind": "call",
+      "label": "legacyGroupProblem",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/format/decode.ts",
+        "symbol": "legacyGroupProblem"
+      },
+      "to": "vKEsyHFk#LKzM5UTh",
+      "id": "vKEsyHFk#lvnI5bma"
+    },
+    {
+      "order": 123590,
+      "kind": "call",
+      "label": "parseSemanticBoard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/format/decode.ts",
+        "symbol": "parseSemanticBoard"
+      },
+      "to": "vKEsyHFk#nRX8oZ5h",
+      "id": "vKEsyHFk#GBMHb6oM"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/model-edit/flow-placement.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
   "schemaVersion": 1,
   "id": "vKEsyHFk#OODdTfsS",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#Zeo3aQWz",
+  "outgoing": [
+    {
+      "order": 123540,
+      "kind": "call",
+      "label": "nestedSteps",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/flow-placement.ts",
+        "symbol": "nestedSteps"
+      },
+      "to": "vKEsyHFk#nRX8oZ5h",
+      "id": "vKEsyHFk#CxvySMsc"
+    }
+  ]
 }

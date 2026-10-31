@@ -47,8 +47,8 @@
         "path": "packages/workbench/src/ui/components/voice/TalkControl.tsx",
         "symbol": "Button"
       },
-      "to": "vKEsyHFk#F0yAXqqz",
-      "id": "vKEsyHFk#ZbbQXAYY"
+      "id": "vKEsyHFk#ZbbQXAYY",
+      "to": "vKEsyHFk#F0yAXqqz"
     },
     {
       "order": 102820,
@@ -60,8 +60,47 @@
         "path": "packages/workbench/src/ui/components/voice/TalkControl.tsx",
         "symbol": "cn"
       },
-      "to": "vKEsyHFk#vBno2R4h",
-      "id": "vKEsyHFk#mBH48TAY"
+      "id": "vKEsyHFk#mBH48TAY",
+      "to": "vKEsyHFk#vBno2R4h"
+    },
+    {
+      "order": 120300,
+      "kind": "call",
+      "label": "useCircleState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "symbol": "useCircleState"
+      },
+      "to": "vKEsyHFk#qMlqEbRv",
+      "id": "vKEsyHFk#1gKPs2MB"
+    },
+    {
+      "order": 121730,
+      "kind": "call",
+      "label": "useVoiceBoxPresence",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/VoiceBox.tsx",
+        "symbol": "useVoiceBoxPresence"
+      },
+      "to": "vKEsyHFk/yejBBUFY#sOSPdXJh",
+      "id": "vKEsyHFk#EjPzseps"
+    },
+    {
+      "order": 121870,
+      "kind": "call",
+      "label": "IconAction",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/voice/MuteAction.tsx",
+        "symbol": "IconAction"
+      },
+      "to": "vKEsyHFk#UdjZB2G9",
+      "id": "vKEsyHFk#eNeKGImw"
     }
   ]
 }

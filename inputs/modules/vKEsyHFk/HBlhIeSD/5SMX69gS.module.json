@@ -34,6 +34,19 @@
   ],
   "outgoing": [
     {
+      "order": 27000,
+      "kind": "dependency",
+      "label": "read the inspected canonical state",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
+      "to": "vKEsyHFk#92f9M6zF"
+    },
+    {
       "order": 43000,
       "kind": "call",
       "label": "read selected canonical states",
@@ -71,58 +84,6 @@
       },
       "id": "vKEsyHFk#inAwwoLx",
       "to": "vKEsyHFk/6E6hL0Zk#3CaBjhIM"
-    },
-    {
-      "order": 71000,
-      "kind": "call",
-      "label": "where a use no import resolves is defined",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
-        "symbol": "openLanguageServers"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
-      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
-    },
-    {
-      "order": 87000,
-      "kind": "call",
-      "label": "reads each draft at its own ref",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
-        "symbol": "nodesAtOwnRef"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 122000,
-      "kind": "call",
-      "label": "each draft at its own ref; how far each board is behind",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
-        "symbol": "nodesAtOwnRef"
-      },
-      "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
-      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
-    },
-    {
-      "order": 27000,
-      "kind": "dependency",
-      "label": "read the inspected canonical state",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#fVxcoo6Q",
-      "to": "vKEsyHFk#92f9M6zF"
     },
     {
       "order": 70053,
@@ -164,6 +125,32 @@
       "to": "vKEsyHFk#1glMtQCD"
     },
     {
+      "order": 71000,
+      "kind": "call",
+      "label": "where a use no import resolves is defined",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/resolution.ts",
+        "symbol": "openLanguageServers"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#uZdil5lI",
+      "to": "vKEsyHFk/6E6hL0Zk#1aoB46lM"
+    },
+    {
+      "order": 87000,
+      "kind": "call",
+      "label": "reads each draft at its own ref",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#m1F0u7X1",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
       "order": 101370,
       "kind": "call",
       "label": "HistoricalRevisionSchema",
@@ -173,8 +160,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
         "symbol": "HistoricalRevisionSchema"
       },
-      "to": "vKEsyHFk#OAnOdFft",
-      "id": "vKEsyHFk#MDH5WazV"
+      "id": "vKEsyHFk#MDH5WazV",
+      "to": "vKEsyHFk#OAnOdFft"
     },
     {
       "order": 101380,
@@ -186,8 +173,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
         "symbol": "HistoricalRevisionSchema.safeParse"
       },
-      "to": "vKEsyHFk#FqLZ2AuG",
-      "id": "vKEsyHFk#wDiNyv3B"
+      "id": "vKEsyHFk#wDiNyv3B",
+      "to": "vKEsyHFk#FqLZ2AuG"
     },
     {
       "order": 101390,
@@ -199,8 +186,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
         "symbol": "messagesOf"
       },
-      "to": "vKEsyHFk#nRX8oZ5h",
-      "id": "vKEsyHFk#mGetoXCp"
+      "id": "vKEsyHFk#mGetoXCp",
+      "to": "vKEsyHFk#nRX8oZ5h"
     },
     {
       "order": 101400,
@@ -212,8 +199,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
         "symbol": "snapshotCheckoutAccess"
       },
-      "to": "vKEsyHFk#bfNV87nt",
-      "id": "vKEsyHFk#B7qukXQ6"
+      "id": "vKEsyHFk#B7qukXQ6",
+      "to": "vKEsyHFk#bfNV87nt"
     },
     {
       "order": 101410,
@@ -225,8 +212,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
         "symbol": "readSemanticBoardConfiguration"
       },
-      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe",
-      "id": "vKEsyHFk#j19KkNt6"
+      "id": "vKEsyHFk#j19KkNt6",
+      "to": "vKEsyHFk/0T9enjhi#AJGft3Pe"
     },
     {
       "order": 101420,
@@ -238,8 +225,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/checkouts.ts",
         "symbol": "bindingPathOf"
       },
-      "to": "vKEsyHFk#FtQbFdCL",
-      "id": "vKEsyHFk#BThkcpfR"
+      "id": "vKEsyHFk#BThkcpfR",
+      "to": "vKEsyHFk#FtQbFdCL"
     },
     {
       "order": 101430,
@@ -251,8 +238,8 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/claims/claims.ts",
         "symbol": "nodeSubject"
       },
-      "to": "vKEsyHFk#jhHYXNzd",
-      "id": "vKEsyHFk#UBK1DbR7"
+      "id": "vKEsyHFk#UBK1DbR7",
+      "to": "vKEsyHFk#jhHYXNzd"
     },
     {
       "order": 101440,
@@ -264,8 +251,47 @@
         "path": "packages/code-intel/src/runtime/operations/code-check/plans.ts",
         "symbol": "isPathWithin"
       },
-      "to": "vKEsyHFk#HbGqiAcL",
-      "id": "vKEsyHFk#ilchhvCy"
+      "id": "vKEsyHFk#ilchhvCy",
+      "to": "vKEsyHFk#HbGqiAcL"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "label": "each draft at its own ref; how far each board is behind",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/ref-code.ts",
+        "symbol": "nodesAtOwnRef"
+      },
+      "id": "vKEsyHFk/6E6hL0Zk#eW22MD6a",
+      "to": "vKEsyHFk/HBlhIeSD#radK8osF"
+    },
+    {
+      "order": 121380,
+      "kind": "call",
+      "label": "commitOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/candidate.ts",
+        "symbol": "commitOf"
+      },
+      "to": "vKEsyHFk#VMLoO0AP",
+      "id": "vKEsyHFk#7tLvxWAu"
+    },
+    {
+      "order": 121550,
+      "kind": "call",
+      "label": "CodeCheckAnswerSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
+        "symbol": "CodeCheckAnswerSchema"
+      },
+      "to": "vKEsyHFk#wXDQ5ETr",
+      "id": "vKEsyHFk#UVcvIYB1"
     }
   ]
 }

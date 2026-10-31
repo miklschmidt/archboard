@@ -34,8 +34,21 @@
         "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
         "symbol": "isRecord"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#1dFJuLcY"
+      "id": "vKEsyHFk#1dFJuLcY",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 121650,
+      "kind": "call",
+      "label": "isBoardRefusal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "isBoardRefusal"
+      },
+      "to": "vKEsyHFk#EPFoLCRu",
+      "id": "vKEsyHFk#XYzAy4HF"
     }
   ]
 }

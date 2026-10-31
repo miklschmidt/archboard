@@ -21,8 +21,34 @@
         "path": "packages/board/src/runtime/operations/history/states.ts",
         "symbol": "archiveRecords"
       },
-      "to": "vKEsyHFk#FLJEC9yO",
-      "id": "vKEsyHFk#NhwOM3Rb"
+      "id": "vKEsyHFk#NhwOM3Rb",
+      "to": "vKEsyHFk#FLJEC9yO"
+    },
+    {
+      "order": 122460,
+      "kind": "call",
+      "label": "retainedRoots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/states.ts",
+        "symbol": "retainedRoots"
+      },
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l",
+      "id": "vKEsyHFk#DRAQazC9"
+    },
+    {
+      "order": 123300,
+      "kind": "call",
+      "label": "SelectedStateSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/states.ts",
+        "symbol": "SelectedStateSchema"
+      },
+      "to": "vKEsyHFk#OAnOdFft",
+      "id": "vKEsyHFk#Lb4bcUg0"
     }
   ]
 }

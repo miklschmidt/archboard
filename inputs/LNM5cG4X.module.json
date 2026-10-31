@@ -12,6 +12,58 @@
   "parent": "vKEsyHFk/0T9enjhi#Bd4GPG6d",
   "outgoing": [
     {
+      "order": 100790,
+      "kind": "call",
+      "label": "GitObjectIdSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "GitObjectIdSchema"
+      },
+      "id": "vKEsyHFk#7DQIuP0N",
+      "to": "vKEsyHFk#TqtKogi0"
+    },
+    {
+      "order": 100800,
+      "kind": "call",
+      "label": "safeParse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "GitObjectIdSchema.safeParse"
+      },
+      "id": "vKEsyHFk#WBgveZvA",
+      "to": "vKEsyHFk#lnAGztQm"
+    },
+    {
+      "order": 100810,
+      "kind": "call",
+      "label": "isArchiveAncestor",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "isArchiveAncestor"
+      },
+      "id": "vKEsyHFk#eQFcGDZz",
+      "to": "vKEsyHFk#FLJEC9yO"
+    },
+    {
+      "order": 100820,
+      "kind": "call",
+      "label": "ArchiveError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/publication.ts",
+        "symbol": "ArchiveError"
+      },
+      "id": "vKEsyHFk#JLNXIyfA",
+      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
       "order": 161000,
       "kind": "call",
       "emphasis": "normal",
@@ -44,56 +96,30 @@
       "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
     },
     {
-      "order": 100790,
+      "order": 123680,
       "kind": "call",
-      "label": "GitObjectIdSchema",
+      "label": "readArchitectureCheckpoint",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/history/publication.ts",
-        "symbol": "GitObjectIdSchema"
+        "symbol": "readArchitectureCheckpoint"
       },
-      "to": "vKEsyHFk#TqtKogi0",
-      "id": "vKEsyHFk#7DQIuP0N"
+      "to": "vKEsyHFk#fbXmgVn2",
+      "id": "vKEsyHFk#n7zMSrdo"
     },
     {
-      "order": 100800,
+      "order": 123740,
       "kind": "call",
-      "label": "safeParse",
+      "label": "archiveFailure",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/history/publication.ts",
-        "symbol": "GitObjectIdSchema.safeParse"
+        "symbol": "archiveFailure"
       },
-      "to": "vKEsyHFk#lnAGztQm",
-      "id": "vKEsyHFk#WBgveZvA"
-    },
-    {
-      "order": 100810,
-      "kind": "call",
-      "label": "isArchiveAncestor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/publication.ts",
-        "symbol": "isArchiveAncestor"
-      },
-      "to": "vKEsyHFk#FLJEC9yO",
-      "id": "vKEsyHFk#eQFcGDZz"
-    },
-    {
-      "order": 100820,
-      "kind": "call",
-      "label": "ArchiveError",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/history/publication.ts",
-        "symbol": "ArchiveError"
-      },
-      "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku",
-      "id": "vKEsyHFk#JLNXIyfA"
+      "to": "vKEsyHFk#QdaDrU3Z",
+      "id": "vKEsyHFk#NEIKqgmK"
     }
   ]
 }

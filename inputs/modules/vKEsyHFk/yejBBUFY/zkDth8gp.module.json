@@ -27,6 +27,19 @@
   ],
   "outgoing": [
     {
+      "order": 2000,
+      "kind": "call",
+      "label": "a session per pane, opened in a vault; show a board in one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
+        "symbol": "usePaneSession"
+      },
+      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
+      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
+    },
+    {
       "order": 56000,
       "kind": "call",
       "label": "one session per pane, opened in the page's opening vault",
@@ -118,17 +131,17 @@
       "to": "vKEsyHFk/UOXNWLhR#j9uyTKyA"
     },
     {
-      "order": 2000,
+      "order": 122670,
       "kind": "call",
-      "label": "a session per pane, opened in a vault; show a board in one",
+      "label": "usePublishedNarration",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/application/ApplicationPane.tsx",
-        "symbol": "usePaneSession"
+        "symbol": "usePublishedNarration"
       },
-      "id": "vKEsyHFk/yejBBUFY#x9gy2EYu",
-      "to": "vKEsyHFk/yejBBUFY#ScHf2pj3"
+      "to": "vKEsyHFk#idEKSUcN",
+      "id": "vKEsyHFk#qvOkqfu6"
     }
   ]
 }

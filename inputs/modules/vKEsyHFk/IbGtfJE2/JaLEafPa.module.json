@@ -84,6 +84,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#7KrvUnRu",
       "to": "vKEsyHFk/IbGtfJE2#yohDGrXU"
+    },
+    {
+      "order": 120640,
+      "kind": "call",
+      "label": "layingProblems",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/evaluation/command.ts",
+        "symbol": "layingProblems"
+      },
+      "to": "vKEsyHFk#4otJEWRE",
+      "id": "vKEsyHFk#45mKg6DK"
     }
   ]
 }

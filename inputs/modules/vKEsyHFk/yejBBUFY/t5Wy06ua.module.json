@@ -41,6 +41,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#yRl53uvR",
       "to": "vKEsyHFk#vBno2R4h"
+    },
+    {
+      "order": 120260,
+      "kind": "call",
+      "label": "OrbStageContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/orb/OrbStage.tsx",
+        "symbol": "OrbStageContext"
+      },
+      "to": "vKEsyHFk#qMlqEbRv",
+      "id": "vKEsyHFk#pKySGns5"
     }
   ]
 }

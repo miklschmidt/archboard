@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentComposer.tsx",
         "symbol": "usesCommandKey"
       },
-      "to": "vKEsyHFk#vBno2R4h",
-      "id": "vKEsyHFk#Sm9RHEJe"
+      "id": "vKEsyHFk#Sm9RHEJe",
+      "to": "vKEsyHFk#vBno2R4h"
     },
     {
       "order": 102720,
@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "DropdownMenu"
       },
-      "to": "vKEsyHFk#F0yAXqqz",
-      "id": "vKEsyHFk#SwcGKfYZ"
+      "id": "vKEsyHFk#SwcGKfYZ",
+      "to": "vKEsyHFk#F0yAXqqz"
     },
     {
       "order": 102730,
@@ -47,8 +47,47 @@
         "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
         "symbol": "DropdownMenu.Trigger"
       },
-      "to": "vKEsyHFk#9MSCOT9c",
-      "id": "vKEsyHFk#59R27gaQ"
+      "id": "vKEsyHFk#59R27gaQ",
+      "to": "vKEsyHFk#9MSCOT9c"
+    },
+    {
+      "order": 121790,
+      "kind": "call",
+      "label": "VoiceLines",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "VoiceLines"
+      },
+      "to": "vKEsyHFk#tFxmhl53",
+      "id": "vKEsyHFk#yl3hVa2W"
+    },
+    {
+      "order": 121860,
+      "kind": "call",
+      "label": "IconAction",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "IconAction"
+      },
+      "to": "vKEsyHFk#UdjZB2G9",
+      "id": "vKEsyHFk#cURXtopp"
+    },
+    {
+      "order": 122260,
+      "kind": "call",
+      "label": "Conversation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/panel/AgentPanel.tsx",
+        "symbol": "Conversation"
+      },
+      "to": "vKEsyHFk#VrlbYhEm",
+      "id": "vKEsyHFk#ErNC0gwt"
     }
   ]
 }

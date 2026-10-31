@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#ZP5lfDZ6",
       "to": "vKEsyHFk/SMjRfwN3#AVCQVNqI"
+    },
+    {
+      "order": 120220,
+      "kind": "call",
+      "label": "messageOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/runtime/processes/headless-chromium/launch.ts",
+        "symbol": "messageOf"
+      },
+      "to": "vKEsyHFk#oJdb7leQ",
+      "id": "vKEsyHFk#1dcwGknu"
     }
   ]
 }

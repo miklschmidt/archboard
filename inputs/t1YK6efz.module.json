@@ -21,8 +21,21 @@
         "path": "apps/web/src/ui/clients/architecture-model/events.ts",
         "symbol": "semanticBoardKeys"
       },
-      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje",
-      "id": "vKEsyHFk#s6w31soI"
+      "id": "vKEsyHFk#s6w31soI",
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
+    },
+    {
+      "order": 122500,
+      "kind": "call",
+      "label": "architectureModelKeys",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/events.ts",
+        "symbol": "architectureModelKeys"
+      },
+      "to": "vKEsyHFk#o54dJ4QZ",
+      "id": "vKEsyHFk#7Qk9Gflm"
     }
   ]
 }

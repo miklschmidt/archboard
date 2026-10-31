@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/read/reading-readiness.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
   "schemaVersion": 1,
   "id": "vKEsyHFk#mYxQTwlP",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#cNaEpWjJ",
+  "outgoing": [
+    {
+      "order": 123580,
+      "kind": "call",
+      "label": "everyStep",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/reading-readiness.ts",
+        "symbol": "everyStep"
+      },
+      "to": "vKEsyHFk#nRX8oZ5h",
+      "id": "vKEsyHFk#CVDw6EC7"
+    }
+  ]
 }

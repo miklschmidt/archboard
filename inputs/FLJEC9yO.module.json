@@ -12,6 +12,69 @@
   "parent": "vKEsyHFk/0T9enjhi#ZRq51Ecz",
   "outgoing": [
     {
+      "order": 101230,
+      "kind": "call",
+      "label": "repoIdentityAt",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "repoIdentityAt"
+      },
+      "id": "vKEsyHFk#B5sFOy5Q",
+      "to": "vKEsyHFk#RN0NHMRQ"
+    },
+    {
+      "order": 101240,
+      "kind": "call",
+      "label": "resolveRegisteredCheckout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "resolveRegisteredCheckout"
+      },
+      "id": "vKEsyHFk#gIt61Pfp",
+      "to": "vKEsyHFk#bfNV87nt"
+    },
+    {
+      "order": 104000,
+      "kind": "dependency",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "ArchitectureCheckpointSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#1RheXFhl",
+      "to": "vKEsyHFk#lnAGztQm"
+    },
+    {
+      "order": 106000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk/0T9enjhi#WjLC9RCr",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    },
+    {
+      "order": 160000,
+      "kind": "call",
+      "label": "ArchitectureModuleEditSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "RecordedModuleEditSchema"
+      },
+      "id": "vKEsyHFk/0T9enjhi#2fr60kVw",
+      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
       "order": 171000,
       "kind": "dependency",
       "label": "archive context and shared failure contract",
@@ -23,6 +86,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#QrFo5jjd",
       "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
+    },
+    {
+      "order": 210000,
+      "kind": "call",
+      "label": "captureBoundSources",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-archive.ts",
+        "symbol": "captureBoundSources"
+      },
+      "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
+      "to": "vKEsyHFk/0T9enjhi#D5PpXrVK"
     },
     {
       "order": 221000,
@@ -39,80 +115,30 @@
       "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
     },
     {
-      "order": 210000,
+      "order": 123210,
       "kind": "call",
-      "label": "captureBoundSources",
+      "label": "modelRevision",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "captureBoundSources"
+        "symbol": "modelRevision"
       },
-      "id": "vKEsyHFk/0T9enjhi#kn7RIsa6",
-      "to": "vKEsyHFk/0T9enjhi#D5PpXrVK"
+      "to": "vKEsyHFk#LKzM5UTh",
+      "id": "vKEsyHFk#rDXj3EfR"
     },
     {
-      "order": 104000,
-      "kind": "dependency",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "ArchitectureCheckpointSchema"
-      },
-      "id": "vKEsyHFk/0T9enjhi#1RheXFhl",
-      "to": "vKEsyHFk#lnAGztQm"
-    },
-    {
-      "order": 160000,
+      "order": 123350,
       "kind": "call",
-      "label": "ArchitectureModuleEditSchema",
+      "label": "FamilyStandingSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "RecordedModuleEditSchema"
+        "symbol": "FamilyStandingSchema"
       },
-      "id": "vKEsyHFk/0T9enjhi#2fr60kVw",
-      "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
-    },
-    {
-      "order": 106000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "git"
-      },
-      "id": "vKEsyHFk/0T9enjhi#WjLC9RCr",
-      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
-    },
-    {
-      "order": 101230,
-      "kind": "call",
-      "label": "repoIdentityAt",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "repoIdentityAt"
-      },
-      "to": "vKEsyHFk#RN0NHMRQ",
-      "id": "vKEsyHFk#B5sFOy5Q"
-    },
-    {
-      "order": 101240,
-      "kind": "call",
-      "label": "resolveRegisteredCheckout",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive.ts",
-        "symbol": "resolveRegisteredCheckout"
-      },
-      "to": "vKEsyHFk#bfNV87nt",
-      "id": "vKEsyHFk#gIt61Pfp"
+      "to": "vKEsyHFk#OAnOdFft",
+      "id": "vKEsyHFk#H1OJO4PW"
     }
   ]
 }

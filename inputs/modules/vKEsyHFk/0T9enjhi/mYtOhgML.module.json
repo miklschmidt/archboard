@@ -61,6 +61,19 @@
       "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
     },
     {
+      "order": 39000,
+      "kind": "data",
+      "label": "find vaults through the chosen checkouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/bound-vaults.ts",
+        "symbol": "chosenCheckouts"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
       "order": 76000,
       "kind": "call",
       "label": "read models bound to a repository",
@@ -74,17 +87,17 @@
       "to": "vKEsyHFk#92f9M6zF"
     },
     {
-      "order": 39000,
-      "kind": "data",
-      "label": "find vaults through the chosen checkouts",
+      "order": 123180,
+      "kind": "call",
+      "label": "servedVaultOf",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/bound-vaults.ts",
-        "symbol": "chosenCheckouts"
+        "symbol": "servedVaultOf"
       },
-      "id": "vKEsyHFk/vKEsyHFk#fDI8NrtW",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+      "to": "vKEsyHFk#LKzM5UTh",
+      "id": "vKEsyHFk#ynxHVboj"
     }
   ]
 }

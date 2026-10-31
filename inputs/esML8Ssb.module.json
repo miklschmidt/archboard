@@ -34,8 +34,21 @@
         "path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-support.ts",
         "symbol": "logicalToolCallKey"
       },
-      "to": "vKEsyHFk#SJIukO2J",
-      "id": "vKEsyHFk#GRrVJRL3"
+      "id": "vKEsyHFk#GRrVJRL3",
+      "to": "vKEsyHFk#SJIukO2J"
+    },
+    {
+      "order": 122200,
+      "kind": "call",
+      "label": "CodexDynamicEpochQuarantinedError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/dynamic-tools/quarantine/quarantine-owners.ts",
+        "symbol": "CodexDynamicEpochQuarantinedError"
+      },
+      "to": "vKEsyHFk#VCUZ3sJA",
+      "id": "vKEsyHFk#dpGpH4qH"
     }
   ]
 }

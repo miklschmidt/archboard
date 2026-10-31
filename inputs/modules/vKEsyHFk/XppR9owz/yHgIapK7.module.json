@@ -89,6 +89,19 @@
       "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
     },
     {
+      "order": 70056,
+      "kind": "call",
+      "label": "report local request failures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "isRecord"
+      },
+      "id": "vKEsyHFk#V2ti26xJ",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
       "order": 76000,
       "kind": "call",
       "label": "address each request with its board, vault, and write claims",
@@ -102,17 +115,17 @@
       "to": "vKEsyHFk/XppR9owz#fF4A9uvU"
     },
     {
-      "order": 70056,
+      "order": 121640,
       "kind": "call",
-      "label": "report local request failures",
-      "emphasis": "muted",
+      "label": "isBoardRefusal",
+      "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
-        "symbol": "isRecord"
+        "symbol": "isBoardRefusal"
       },
-      "id": "vKEsyHFk#V2ti26xJ",
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+      "to": "vKEsyHFk#EPFoLCRu",
+      "id": "vKEsyHFk#1emjm7CL"
     }
   ]
 }

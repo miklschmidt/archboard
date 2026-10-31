@@ -60,6 +60,19 @@
       },
       "id": "vKEsyHFk/SJ2JMVyz#r2qUGCrz",
       "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6"
+    },
+    {
+      "order": 122130,
+      "kind": "call",
+      "label": "operationError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-operations/validation.ts",
+        "symbol": "operationError"
+      },
+      "to": "vKEsyHFk#upkxFKdx",
+      "id": "vKEsyHFk#deQFgIBf"
     }
   ]
 }

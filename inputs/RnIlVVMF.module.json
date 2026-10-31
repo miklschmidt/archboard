@@ -12,17 +12,30 @@
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "outgoing": [
     {
-      "order": 71000,
+      "order": 1000,
       "kind": "render",
-      "label": "the opener settings dialog, when the person opens it",
+      "label": "the desktop frame",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/SettingsHosts.tsx",
-        "symbol": "OpenerSettings"
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "Shell"
       },
-      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
-      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "order": 11000,
+      "kind": "render",
+      "label": "dock, conversation, voice box, the presentation's voice key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
+        "symbol": "AgentDock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "to": "vKEsyHFk#UdjZB2G9"
     },
     {
       "order": 14000,
@@ -38,30 +51,17 @@
       "to": "vKEsyHFk#cDHGFIqY"
     },
     {
-      "order": 1000,
+      "order": 27000,
       "kind": "render",
-      "label": "the desktop frame",
+      "label": "over voice's pane, or the presented one",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/Application.tsx",
-        "symbol": "Shell"
+        "path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
+        "symbol": "VoiceSubtitles"
       },
-      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
-      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
-    },
-    {
-      "order": 59000,
-      "kind": "call",
-      "label": "a pane focused, a board opened, a fix asked for",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/Application.tsx",
-        "symbol": "conversationActivation"
-      },
-      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
-      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
+      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
     },
     {
       "order": 43000,
@@ -77,30 +77,134 @@
       "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
     },
     {
-      "order": 27000,
-      "kind": "render",
-      "label": "over voice's pane, or the presented one",
+      "order": 59000,
+      "kind": "call",
+      "label": "a pane focused, a board opened, a fix asked for",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
-        "symbol": "VoiceSubtitles"
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "conversationActivation"
       },
-      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
-      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
+      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
     },
     {
-      "order": 11000,
+      "order": 71000,
       "kind": "render",
-      "label": "dock, conversation, voice box, the presentation's voice key",
+      "label": "the opener settings dialog, when the person opens it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/SettingsHosts.tsx",
+        "symbol": "OpenerSettings"
+      },
+      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 120050,
+      "kind": "call",
+      "label": "repositoriesQuery",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/StartShell.tsx",
+        "symbol": "repositoriesQuery"
+      },
+      "to": "vKEsyHFk#dneK7oM5",
+      "id": "vKEsyHFk#KC4adFaV"
+    },
+    {
+      "order": 120940,
+      "kind": "call",
+      "label": "boardAddressOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "boardAddressOf"
+      },
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+      "id": "vKEsyHFk#IM0lYjWb"
+    },
+    {
+      "order": 121240,
+      "kind": "call",
+      "label": "RecordingStage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "RecordingStage"
+      },
+      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u",
+      "id": "vKEsyHFk#0LNFhjGj"
+    },
+    {
+      "order": 122660,
+      "kind": "call",
+      "label": "useAgentView",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
-        "symbol": "AgentDock"
+        "symbol": "useAgentView"
       },
-      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
-      "to": "vKEsyHFk#UdjZB2G9"
+      "to": "vKEsyHFk#idEKSUcN",
+      "id": "vKEsyHFk#pos1EDuV"
+    },
+    {
+      "order": 122750,
+      "kind": "call",
+      "label": "LiveBinding",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "LiveBinding"
+      },
+      "to": "vKEsyHFk#N8qU9kdQ",
+      "id": "vKEsyHFk#DnVwnsYb"
+    },
+    {
+      "order": 122930,
+      "kind": "call",
+      "label": "createStartActions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/StartShell.tsx",
+        "symbol": "createStartActions"
+      },
+      "to": "vKEsyHFk#RS7Hip6l",
+      "id": "vKEsyHFk#heDqFTar"
+    },
+    {
+      "order": 123020,
+      "kind": "call",
+      "label": "vaultOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "vaultOf"
+      },
+      "to": "vKEsyHFk#KtIXTBxn",
+      "id": "vKEsyHFk#kXrMWiuF"
+    },
+    {
+      "order": 123050,
+      "kind": "call",
+      "label": "ModelState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/StartShell.tsx",
+        "symbol": "ModelState"
+      },
+      "to": "vKEsyHFk#KlkhOfpx",
+      "id": "vKEsyHFk#kpf9uZgW"
     }
   ]
 }

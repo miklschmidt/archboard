@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/architecture-model/walkthroughs.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "schemaVersion": 1,
   "id": "vKEsyHFk#5rt5ufIt",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 122530,
+      "kind": "call",
+      "label": "readModel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/walkthroughs.ts",
+        "symbol": "readModel"
+      },
+      "to": "vKEsyHFk#o54dJ4QZ",
+      "id": "vKEsyHFk#Uvs6YVUh"
+    }
+  ]
 }

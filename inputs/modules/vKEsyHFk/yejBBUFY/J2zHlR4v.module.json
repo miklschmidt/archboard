@@ -33,6 +33,19 @@
       "emphasis": "normal",
       "id": "vKEsyHFk/yejBBUFY#DTvtRXMv",
       "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    },
+    {
+      "order": 123070,
+      "kind": "call",
+      "label": "ModelCorrections",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelStateHistory.tsx",
+        "symbol": "ModelCorrections"
+      },
+      "to": "vKEsyHFk#KlkhOfpx",
+      "id": "vKEsyHFk#zMBFHJEc"
     }
   ]
 }

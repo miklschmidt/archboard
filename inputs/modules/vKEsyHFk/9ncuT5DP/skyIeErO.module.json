@@ -96,8 +96,21 @@
         "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
         "symbol": "createIdentityLedger"
       },
-      "to": "vKEsyHFk#SJIukO2J",
-      "id": "vKEsyHFk#kKpXAOyU"
+      "id": "vKEsyHFk#kKpXAOyU",
+      "to": "vKEsyHFk#SJIukO2J"
+    },
+    {
+      "order": 121500,
+      "kind": "call",
+      "label": "composeCodexWorkbenchGeneration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/workbench.ts",
+        "symbol": "composeCodexWorkbenchGeneration"
+      },
+      "to": "vKEsyHFk#jYL62RKv",
+      "id": "vKEsyHFk#NujJIMD6"
     }
   ]
 }

@@ -52,6 +52,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#DElPMBfe",
       "to": "vKEsyHFk/IbGtfJE2#TJmrdpKj"
+    },
+    {
+      "order": 120710,
+      "kind": "call",
+      "label": "runProcess",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/codex-grader.ts",
+        "symbol": "runProcess"
+      },
+      "to": "vKEsyHFk#nLuz2WXh",
+      "id": "vKEsyHFk#XUxjOt1J"
     }
   ]
 }

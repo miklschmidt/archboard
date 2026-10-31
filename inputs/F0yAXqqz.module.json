@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/ui-kit/src/ui/components"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
   "schemaVersion": 1,
   "id": "vKEsyHFk#F0yAXqqz",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#l5jdGkb1",
+  "outgoing": [
+    {
+      "order": 120620,
+      "kind": "call",
+      "label": "cn",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/ui-kit/src/ui/components/IconButton.tsx",
+        "symbol": "cn"
+      },
+      "to": "vKEsyHFk#vBno2R4h",
+      "id": "vKEsyHFk#eeRwOjtP"
+    }
+  ]
 }

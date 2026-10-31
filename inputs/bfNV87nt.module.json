@@ -21,8 +21,47 @@
         "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
         "symbol": "repoRootOf"
       },
-      "to": "vKEsyHFk#RN0NHMRQ",
-      "id": "vKEsyHFk#llhM7dQZ"
+      "id": "vKEsyHFk#llhM7dQZ",
+      "to": "vKEsyHFk#RN0NHMRQ"
+    },
+    {
+      "order": 120550,
+      "kind": "call",
+      "label": "checkoutsReadFrom",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#QNCwmrh5",
+      "id": "vKEsyHFk#dEw1JLsr"
+    },
+    {
+      "order": 120580,
+      "kind": "call",
+      "label": "checkoutsReadFrom",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "id": "vKEsyHFk#sOnpdNnP"
+    },
+    {
+      "order": 120680,
+      "kind": "call",
+      "label": "resolveRegisteredCheckoutWith",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/operations/checkout-snapshot.ts",
+        "symbol": "resolveRegisteredCheckoutWith"
+      },
+      "to": "vKEsyHFk#HbGqiAcL",
+      "id": "vKEsyHFk#4OyokIsV"
     }
   ]
 }

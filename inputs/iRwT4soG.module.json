@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/server/projections"
   },
-  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#iRwT4soG",
-  "outgoing": []
+  "parent": "vKEsyHFk/6E6hL0Zk#MYbmjfIR",
+  "outgoing": [
+    {
+      "order": 122290,
+      "kind": "call",
+      "label": "JsonValueSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/projections/browser-state/approval-projection.ts",
+        "symbol": "JsonValueSchema"
+      },
+      "to": "vKEsyHFk#6kbdM85r",
+      "id": "vKEsyHFk#MncSqvr3"
+    }
+  ]
 }

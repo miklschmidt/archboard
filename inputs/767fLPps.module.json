@@ -40,6 +40,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#KIRE5kGi",
       "to": "vKEsyHFk/SMjRfwN3#PhFc1AJ9"
+    },
+    {
+      "order": 121190,
+      "kind": "call",
+      "label": "tailOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/processes/video-encoder.ts",
+        "symbol": "tailOf"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#QNRrx3i3",
+      "id": "vKEsyHFk#MUBVWavH"
     }
   ]
 }

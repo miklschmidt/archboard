@@ -12,19 +12,6 @@
   "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "outgoing": [
     {
-      "order": 102000,
-      "kind": "call",
-      "label": "the vault of inspection, search, history and the header",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
-        "symbol": "usePaneVault"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#5llRZ8no",
-      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
-    },
-    {
       "order": 77000,
       "kind": "call",
       "description": "The inspector reads its board on the same terms as the picture and hears it change, so what it explains is read again.",
@@ -49,6 +36,45 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#hxPvFxCk",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 102000,
+      "kind": "call",
+      "label": "the vault of inspection, search, history and the header",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "usePaneVault"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#5llRZ8no",
+      "to": "vKEsyHFk/UOXNWLhR#51hijVQY"
+    },
+    {
+      "order": 122480,
+      "kind": "call",
+      "label": "DetailsPanel",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "DetailsPanel"
+      },
+      "to": "vKEsyHFk#sMbrFELA",
+      "id": "vKEsyHFk#66dwLuPa"
+    },
+    {
+      "order": 122980,
+      "kind": "call",
+      "label": "SidebarRegion",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "symbol": "SidebarRegion"
+      },
+      "to": "vKEsyHFk#H96nhWro",
+      "id": "vKEsyHFk#QQXIULnA"
     }
   ]
 }

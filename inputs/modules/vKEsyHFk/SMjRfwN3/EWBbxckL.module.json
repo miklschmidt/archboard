@@ -124,8 +124,34 @@
         "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
         "symbol": "voiceSamples"
       },
-      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW",
-      "id": "vKEsyHFk#Zzb7e9hI"
+      "id": "vKEsyHFk#Zzb7e9hI",
+      "to": "vKEsyHFk/vKEsyHFk#VgzgNAGW"
+    },
+    {
+      "order": 120530,
+      "kind": "call",
+      "label": "WalkthroughRecordingError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "symbol": "WalkthroughRecordingError"
+      },
+      "to": "vKEsyHFk/XppR9owz#XAJYaUnv",
+      "id": "vKEsyHFk#y8HABQVg"
+    },
+    {
+      "order": 121080,
+      "kind": "call",
+      "label": "voiceLevels",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
+        "symbol": "voiceLevels"
+      },
+      "to": "vKEsyHFk#lo01LmIv",
+      "id": "vKEsyHFk#eZX8gmuW"
     }
   ]
 }

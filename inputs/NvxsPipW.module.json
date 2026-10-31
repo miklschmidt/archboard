@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
       "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
+    {
+      "order": 121480,
+      "kind": "call",
+      "label": "requireCreated",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "symbol": "requireCreated"
+      },
+      "to": "vKEsyHFk#jYL62RKv",
+      "id": "vKEsyHFk#FNYVH4TC"
     }
   ]
 }

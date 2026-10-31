@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
       "to": "vKEsyHFk#92f9M6zF"
+    },
+    {
+      "order": 120150,
+      "kind": "call",
+      "label": "assertCanonicalFixture",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/laying.ts",
+        "symbol": "assertCanonicalFixture"
+      },
+      "to": "vKEsyHFk/IbGtfJE2#WbFIRpiE",
+      "id": "vKEsyHFk#Qg4CIUzb"
     }
   ]
 }
