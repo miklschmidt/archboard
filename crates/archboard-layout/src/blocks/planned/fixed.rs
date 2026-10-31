@@ -2,12 +2,12 @@
 
 use super::{
     geometry::{contains, crosses_box, length},
-    model::Model,
+    model::{Endpoint, Model, Scope},
     shape::{ScopePlacement, Shape},
     topology::Topology,
 };
 use crate::{
-    blocks::assembly::{Placed, PlacedLine},
+    blocks::assembly::{Placed, PlacedArea, PlacedLine},
     geometry::{Point, Rect, inflate},
     graph::Node,
 };
@@ -96,71 +96,75 @@ fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
     }
 }
 
+/// The box an endpoint ends on, with a frame's tab for a frame's outer endpoint.
+fn endpoint_box(endpoint: &Endpoint<'_>, drawing: &Placed) -> Result<(Rect, Option<Rect>), String> {
+    let id = &endpoint.node.id;
+    if let Some(card) = drawing.cards.iter().find(|card| card.id == *id) {
+        return Ok((card.bx, None));
+    }
+    let frame = drawing
+        .frames
+        .iter()
+        .find(|frame| frame.id == *id)
+        .ok_or_else(|| format!("No placed endpoint for {id}"))?
+        .bx;
+    let tab = Rect {
+        x: frame.x,
+        y: frame.y,
+        ..endpoint.bounds
+    };
+    if endpoint.foot.is_some() {
+        return Ok((frame, Some(tab)));
+    }
+    let foot = Rect {
+        y: tab.y + tab.height,
+        height: 0.0,
+        ..tab
+    };
+    Ok((foot, None))
+}
+
+/// The room a scope holds: a frame's body, a group's region, or the whole page.
+fn scope_bounds(model: &Model<'_>, scope: &Scope<'_>, drawing: &Placed) -> Option<Rect> {
+    if let Some(header) = scope.header {
+        let endpoint = &model.endpoints[header];
+        let frame = drawing
+            .frames
+            .iter()
+            .find(|frame| frame.id == endpoint.node.id)?;
+        let tab = endpoint.bounds.height;
+        return Some(Rect {
+            y: frame.bx.y + tab,
+            height: frame.bx.height - tab,
+            ..frame.bx
+        });
+    }
+    if let Some(group) = scope.group {
+        let held = |region: &&PlacedArea| {
+            region.group == group && region.parent.as_deref() == scope.semantic_parent
+        };
+        return drawing.regions.iter().find(held).map(|region| region.bx);
+    }
+    Some(Rect {
+        x: 0.0,
+        y: 0.0,
+        width: drawing.width,
+        height: drawing.height,
+    })
+}
+
 fn placement(model: &Model<'_>, drawing: Placed) -> Result<Shape, String> {
     let mut shape = Shape::new(drawing);
     for (index, endpoint) in model.endpoints.iter().enumerate() {
-        let id = &endpoint.node.id;
-        let at = if let Some(card) = shape.drawing.cards.iter().find(|card| card.id == *id) {
-            card.bx
-        } else {
-            let frame = shape
-                .drawing
-                .frames
-                .iter()
-                .find(|frame| frame.id == *id)
-                .ok_or_else(|| format!("No placed endpoint for {id}"))?
-                .bx;
-            let tab = Rect {
-                x: frame.x,
-                y: frame.y,
-                ..endpoint.bounds
-            };
-            if endpoint.foot.is_some() {
-                std::rc::Rc::make_mut(&mut shape.tabs).insert(index, tab);
-                frame
-            } else {
-                Rect {
-                    y: tab.y + tab.height,
-                    height: 0.0,
-                    ..tab
-                }
-            }
-        };
+        let (at, tab) = endpoint_box(endpoint, &shape.drawing)?;
+        if let Some(tab) = tab {
+            std::rc::Rc::make_mut(&mut shape.tabs).insert(index, tab);
+        }
         std::rc::Rc::make_mut(&mut shape.endpoints).insert(index, at);
     }
     for (index, scope) in model.scopes.iter().enumerate() {
-        let bounds = if let Some(header) = scope.header {
-            shape
-                .drawing
-                .frames
-                .iter()
-                .find(|frame| frame.id == model.endpoints[header].node.id)
-                .map(|frame| {
-                    let tab = model.endpoints[header].bounds.height;
-                    Rect {
-                        y: frame.bx.y + tab,
-                        height: frame.bx.height - tab,
-                        ..frame.bx
-                    }
-                })
-        } else if let Some(group) = scope.group {
-            shape
-                .drawing
-                .regions
-                .iter()
-                .find(|region| {
-                    region.group == group && region.parent.as_deref() == scope.semantic_parent
-                })
-                .map(|region| region.bx)
-        } else {
-            Some(Rect {
-                x: 0.0,
-                y: 0.0,
-                width: shape.drawing.width,
-                height: shape.drawing.height,
-            })
-        }
-        .ok_or_else(|| format!("No placed scope {index}"))?;
+        let bounds = scope_bounds(model, scope, &shape.drawing)
+            .ok_or_else(|| format!("No placed scope {index}"))?;
         std::rc::Rc::make_mut(&mut shape.scopes).insert(index, ScopePlacement { bounds });
     }
     audit_endpoints(model, &shape)?;

@@ -12,10 +12,10 @@ use crate::paint::crossings::{
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
 use crate::paint::door::{door_definitions, door_shadow, paint_door};
-use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
 };
+use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::far_card::Part;
 use crate::paint::flowchart_shapes::FlowchartShapes;
 use crate::paint::junctions::junction_marks;

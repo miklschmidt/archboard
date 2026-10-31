@@ -34,7 +34,7 @@ impl Shape {
         self.tabs
             .get(&endpoint)
             .copied()
-            .unwrap_or(self.endpoints[&endpoint])
+            .unwrap_or_else(|| self.endpoints[&endpoint])
     }
 
     /// What one line keeps clear of at one endpoint: its own ends are bare, and

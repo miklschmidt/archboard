@@ -254,15 +254,7 @@ pub(super) fn door_shadow(
     palette: &Palette,
     standing: Option<Standing>,
 ) -> Items {
-    shadow_under(
-        id,
-        rect,
-        DOOR_RADIUS,
-        Lift::Chip,
-        palette,
-        standing,
-        None,
-    )
+    shadow_under(id, rect, DOOR_RADIUS, Lift::Chip, palette, standing, None)
 }
 
 /// One door, with its seat, its ring, its face, its words and its standing's marks.

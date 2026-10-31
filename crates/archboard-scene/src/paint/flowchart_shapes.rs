@@ -188,7 +188,12 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
 }
 
 /// The selection ring round an outline: outside it, or inside it on a removed shape.
-pub(super) fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Items {
+pub(super) fn ring(
+    outline: &[Point],
+    radius: f64,
+    standing: Option<Standing>,
+    palette: &Palette,
+) -> Items {
     let by = if standing == Some(Standing::Removed) {
         OUTLINE_WIDTH / 2.0
     } else {
