@@ -1,7 +1,7 @@
 ---
 id: TASK-559.07
 title: Start on a reading that means something
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-10-30T16:44:00Z'
@@ -49,3 +49,9 @@ Branch feat/reader-start. Start rule: the address, then this browser's last read
 
 Merged in 4214f6f81 from feat/reader-start. The gate passed 21 of 21 tasks, exit 0. Start rule in ADR 0069. Open: a chooser page answers browser show with BROWSER_REQUIRED and its message still says to open the plain address; the model module LMJVhlqw says that the page resolves its served vault; source-checkout fails when an outside process probes a new port.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The plain address no longer opens an unrelated repository. One rule, made in the browser before any pane exists, decides the start: an address, then this browser last reading, then the one repository with a model, otherwise a chooser. No repository, a missing repository, no model, a planning model and a legacy model each show their own state and action, and a loading message appears after 800 ms and names its destination. The gate on 4214f6f81 passed 21 of 21 tasks in 166 seconds. ADR 0069 records the rule.
+<!-- SECTION:FINAL_SUMMARY:END -->
