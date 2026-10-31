@@ -21,8 +21,8 @@
         "path": "packages/board/src/runtime/operations/history/retained-module.ts",
         "symbol": "decodeModel"
       },
-      "to": "vKEsyHFk#YxSPoGVG",
-      "id": "vKEsyHFk#X1wZyTb8"
+      "id": "vKEsyHFk#X1wZyTb8",
+      "to": "vKEsyHFk#YxSPoGVG"
     },
     {
       "order": 100960,
@@ -34,8 +34,8 @@
         "path": "packages/board/src/runtime/operations/history/retained-module.ts",
         "symbol": "readCheckpointInputs"
       },
-      "to": "vKEsyHFk#p631X5Hn",
-      "id": "vKEsyHFk#nAzDCcjH"
+      "id": "vKEsyHFk#nAzDCcjH",
+      "to": "vKEsyHFk#p631X5Hn"
     },
     {
       "order": 100970,
@@ -47,8 +47,34 @@
         "path": "packages/board/src/runtime/operations/history/retained-module.ts",
         "symbol": "readingArchive"
       },
-      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq",
-      "id": "vKEsyHFk#sXdAJ6Mg"
+      "id": "vKEsyHFk#sXdAJ6Mg",
+      "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 123770,
+      "kind": "call",
+      "label": "historyResult",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retained-module.ts",
+        "symbol": "historyResult"
+      },
+      "to": "vKEsyHFk#4czF1NpR",
+      "id": "vKEsyHFk#ZwXP9xA6"
+    },
+    {
+      "order": 123790,
+      "kind": "call",
+      "label": "modelRecords",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/retained-module.ts",
+        "symbol": "modelRecords"
+      },
+      "to": "vKEsyHFk#4oqzZBp2",
+      "id": "vKEsyHFk#BxeLrNTW"
     }
   ]
 }

@@ -19,19 +19,6 @@
   ],
   "outgoing": [
     {
-      "order": 98000,
-      "kind": "call",
-      "label": "resolve the narrated pane tab",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
-        "symbol": "tabSessionOf"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#FdocgDPR",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
-    },
-    {
       "order": 70004,
       "kind": "call",
       "label": "read narrated presentation position",
@@ -45,6 +32,19 @@
       "to": "vKEsyHFk/Oi6SBIAM#74SVrhRe"
     },
     {
+      "order": 98000,
+      "kind": "call",
+      "label": "resolve the narrated pane tab",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+        "symbol": "tabSessionOf"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#FdocgDPR",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
       "order": 102320,
       "kind": "call",
       "label": "panes",
@@ -54,8 +54,21 @@
         "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
         "symbol": "panes"
       },
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw",
-      "id": "vKEsyHFk#ea177Qo1"
+      "id": "vKEsyHFk#ea177Qo1",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 121900,
+      "kind": "call",
+      "label": "semanticPaneContextFor",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/walkthrough-narration.ts",
+        "symbol": "semanticPaneContextFor"
+      },
+      "to": "vKEsyHFk#o9R4Jb78",
+      "id": "vKEsyHFk#3KNDpzam"
     }
   ]
 }

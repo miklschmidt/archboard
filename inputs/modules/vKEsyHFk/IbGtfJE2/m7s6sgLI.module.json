@@ -27,6 +27,19 @@
       },
       "id": "vKEsyHFk#OFpAXpvp",
       "to": "vKEsyHFk/SMjRfwN3#5ut3UjV6"
+    },
+    {
+      "order": 120830,
+      "kind": "call",
+      "label": "RunManifestSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/grading/grading-retry.ts",
+        "symbol": "RunManifestSchema"
+      },
+      "to": "vKEsyHFk#ceSdCNn0",
+      "id": "vKEsyHFk#qA99hhUW"
     }
   ]
 }

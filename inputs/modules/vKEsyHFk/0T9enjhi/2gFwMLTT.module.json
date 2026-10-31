@@ -149,6 +149,45 @@
       },
       "id": "vKEsyHFk/0T9enjhi#8KIXscUH",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 122680,
+      "kind": "call",
+      "label": "StateMetadataSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "StateMetadataSchema"
+      },
+      "to": "vKEsyHFk#cQnRbGCD",
+      "id": "vKEsyHFk#ipL7uwVw"
+    },
+    {
+      "order": 123110,
+      "kind": "call",
+      "label": "readModelFiles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "readModelFiles"
+      },
+      "to": "vKEsyHFk#OJRnI6a2",
+      "id": "vKEsyHFk#EKVUaDgS"
+    },
+    {
+      "order": 123290,
+      "kind": "call",
+      "label": "ArchitecturePortableBundleSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/history/portable.ts",
+        "symbol": "ArchitecturePortableBundleSchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#9MScrLbW"
     }
   ]
 }

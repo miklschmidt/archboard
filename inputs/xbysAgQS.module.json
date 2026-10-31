@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/ui/components/runtime"
   },
-  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
   "schemaVersion": 1,
   "id": "vKEsyHFk#xbysAgQS",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#0x47EMoO",
+  "outgoing": [
+    {
+      "order": 120270,
+      "kind": "call",
+      "label": "useAgentRuntime",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/runtime/AgentRuntimeProvider.tsx",
+        "symbol": "useAgentRuntime"
+      },
+      "to": "vKEsyHFk#aQ50dyDC",
+      "id": "vKEsyHFk#m3XtYkaV"
+    }
+  ]
 }

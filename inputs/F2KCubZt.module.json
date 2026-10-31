@@ -23,6 +23,32 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#fVScKEoP",
       "to": "vKEsyHFk/9ncuT5DP#hCKEBd5f"
+    },
+    {
+      "order": 121480,
+      "kind": "call",
+      "label": "requireCreated",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "symbol": "requireCreated"
+      },
+      "to": "vKEsyHFk#vnSTaxfU",
+      "id": "vKEsyHFk#OMgP09DU"
+    },
+    {
+      "order": 124940,
+      "kind": "call",
+      "label": "createServerBrowserProjectionBudget",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/server/services/generation/gateway-binding.ts",
+        "symbol": "createServerBrowserProjectionBudget"
+      },
+      "to": "vKEsyHFk#qdll9Moe",
+      "id": "vKEsyHFk#p81UHjpY"
     }
   ]
 }

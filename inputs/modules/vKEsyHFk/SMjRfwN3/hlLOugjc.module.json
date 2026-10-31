@@ -32,6 +32,19 @@
       },
       "id": "vKEsyHFk/SMjRfwN3#IOU51tal",
       "to": "vKEsyHFk#VP3z5VFD"
+    },
+    {
+      "order": 121060,
+      "kind": "call",
+      "label": "RecordingStateSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/walkthrough/src/runtime/clients/recording-page.ts",
+        "symbol": "RecordingStateSchema"
+      },
+      "to": "vKEsyHFk#r5pBkwgu",
+      "id": "vKEsyHFk#3QkeKnGz"
     }
   ]
 }

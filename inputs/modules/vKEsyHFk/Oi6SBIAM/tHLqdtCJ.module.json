@@ -28,6 +28,19 @@
   ],
   "outgoing": [
     {
+      "order": 50000,
+      "kind": "dependency",
+      "label": "name the checkout in board context",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "checkoutOfVault"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#hRBLvJyD",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
       "order": 70005,
       "kind": "call",
       "label": "subscribe to durable changes",
@@ -54,17 +67,30 @@
       "to": "vKEsyHFk/6E6hL0Zk#C9EOzoYB"
     },
     {
-      "order": 50000,
-      "kind": "dependency",
-      "label": "name the checkout in board context",
+      "order": 121760,
+      "kind": "call",
+      "label": "ArchboardContextSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
-        "symbol": "checkoutOfVault"
+        "symbol": "ArchboardContextSchema"
       },
-      "id": "vKEsyHFk/vKEsyHFk#hRBLvJyD",
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+      "to": "vKEsyHFk#pk2hibEi",
+      "id": "vKEsyHFk#AtTuO4AQ"
+    },
+    {
+      "order": 122210,
+      "kind": "dependency",
+      "label": "semantic context types",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/projections/semantic-context/semantic-input.ts",
+        "symbol": "SemanticContextInput"
+      },
+      "to": "vKEsyHFk#bo8IC8ny",
+      "id": "vKEsyHFk#LJSUa8My"
     }
   ]
 }

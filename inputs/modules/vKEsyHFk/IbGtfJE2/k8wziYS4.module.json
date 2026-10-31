@@ -48,8 +48,8 @@
         "path": "packages/skills/src/runtime/schemas/suite.ts",
         "symbol": "VariantLifecycleSchema"
       },
-      "to": "vKEsyHFk#8zoNGyLV",
-      "id": "vKEsyHFk#qEFknAWX"
+      "id": "vKEsyHFk#qEFknAWX",
+      "to": "vKEsyHFk#8zoNGyLV"
     },
     {
       "order": 102140,
@@ -61,8 +61,8 @@
         "path": "packages/skills/src/runtime/schemas/suite.ts",
         "symbol": "VariantLifecycleSchema.optional"
       },
-      "to": "vKEsyHFk#PecEiDcH",
-      "id": "vKEsyHFk#DwpA4v5a"
+      "id": "vKEsyHFk#DwpA4v5a",
+      "to": "vKEsyHFk#PecEiDcH"
     },
     {
       "order": 102150,
@@ -74,8 +74,21 @@
         "path": "packages/skills/src/runtime/schemas/suite.ts",
         "symbol": "DiagramThemeSchema"
       },
-      "to": "vKEsyHFk#rFcG6JwD",
-      "id": "vKEsyHFk#qtz4ywnE"
+      "id": "vKEsyHFk#qtz4ywnE",
+      "to": "vKEsyHFk#rFcG6JwD"
+    },
+    {
+      "order": 120860,
+      "kind": "call",
+      "label": "HomePathSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/schemas/suite.ts",
+        "symbol": "HomePathSchema"
+      },
+      "to": "vKEsyHFk#ceSdCNn0",
+      "id": "vKEsyHFk#K9v5eRJb"
     }
   ]
 }

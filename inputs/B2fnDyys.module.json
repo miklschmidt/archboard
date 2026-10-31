@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    },
+    {
+      "order": 122990,
+      "kind": "call",
+      "label": "SidebarSection",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx",
+        "symbol": "SidebarSection"
+      },
+      "to": "vKEsyHFk#UDOCb9mn",
+      "id": "vKEsyHFk#zRRNri0G"
     }
   ]
 }

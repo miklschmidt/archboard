@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-realtime-voice/src/ui"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
   "schemaVersion": 1,
   "id": "vKEsyHFk#dWTkKgeh",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#lU0khwR0",
+  "outgoing": [
+    {
+      "order": 122330,
+      "kind": "call",
+      "label": "parseRealtimeSessionId",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/clients/media/media-state.ts",
+        "symbol": "parseRealtimeSessionId"
+      },
+      "to": "vKEsyHFk#IDqYdDcJ",
+      "id": "vKEsyHFk#2NeodTWz"
+    }
+  ]
 }

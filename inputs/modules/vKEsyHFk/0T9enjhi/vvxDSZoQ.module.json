@@ -122,6 +122,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#hVCOfnrb",
       "to": "vKEsyHFk/0T9enjhi#8nPhZJ6C"
+    },
+    {
+      "order": 124890,
+      "kind": "call",
+      "label": "selectReferenceSubject",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-navigation.ts",
+        "symbol": "selectReferenceSubject"
+      },
+      "to": "vKEsyHFk#ZFPbsdoT",
+      "id": "vKEsyHFk#iIraVahZ"
     }
   ]
 }

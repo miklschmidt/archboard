@@ -37,6 +37,71 @@
   ],
   "outgoing": [
     {
+      "order": 70028,
+      "kind": "call",
+      "label": "retain original migration trees",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/install-candidate.ts",
+        "symbol": "tree"
+      },
+      "id": "vKEsyHFk#N8bivOLt",
+      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
+    },
+    {
+      "order": 101000,
+      "kind": "call",
+      "label": "editResult",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/apply.ts",
+        "symbol": "editResult"
+      },
+      "id": "vKEsyHFk#hxgOoecT",
+      "to": "vKEsyHFk#4czF1NpR"
+    },
+    {
+      "order": 101010,
+      "kind": "call",
+      "label": "activeJournal",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/apply.ts",
+        "symbol": "activeJournal"
+      },
+      "id": "vKEsyHFk#P5PY8e5j",
+      "to": "vKEsyHFk#dNZg9H4I"
+    },
+    {
+      "order": 101020,
+      "kind": "call",
+      "label": "errorMessage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/inputs.ts",
+        "symbol": "errorMessage"
+      },
+      "id": "vKEsyHFk#fHhC2zyt",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 101030,
+      "kind": "call",
+      "label": "GitObjectIdSchema.safeParse",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/preview.ts",
+        "symbol": "GitObjectIdSchema.safeParse"
+      },
+      "id": "vKEsyHFk#cPUqjwMf",
+      "to": "vKEsyHFk#DDYjjcyl"
+    },
+    {
       "order": 110000,
       "kind": "call",
       "emphasis": "normal",
@@ -241,69 +306,82 @@
       "to": "vKEsyHFk/0T9enjhi#e0GTqv1k"
     },
     {
-      "order": 70028,
+      "order": 121270,
       "kind": "call",
-      "label": "retain original migration trees",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/legacy-inventory/install-candidate.ts",
-        "symbol": "tree"
-      },
-      "id": "vKEsyHFk#N8bivOLt",
-      "to": "vKEsyHFk/0T9enjhi#DQ99hH5l"
-    },
-    {
-      "order": 101000,
-      "kind": "call",
-      "label": "editResult",
+      "label": "readingDiagnostics",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/legacy-inventory/apply.ts",
-        "symbol": "editResult"
+        "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "readingDiagnostics"
       },
-      "to": "vKEsyHFk#4czF1NpR",
-      "id": "vKEsyHFk#hxgOoecT"
+      "to": "vKEsyHFk#LtGlmMNS",
+      "id": "vKEsyHFk#Eh7dH63Z"
     },
     {
-      "order": 101010,
+      "order": 122770,
       "kind": "call",
-      "label": "activeJournal",
+      "label": "SemanticIdSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/legacy-inventory/apply.ts",
-        "symbol": "activeJournal"
+        "path": "packages/board/src/runtime/operations/legacy-inventory/inventory.ts",
+        "symbol": "SemanticIdSchema"
       },
-      "to": "vKEsyHFk#dNZg9H4I",
-      "id": "vKEsyHFk#P5PY8e5j"
+      "to": "vKEsyHFk#WI7DYDWp",
+      "id": "vKEsyHFk#nTfcO69y"
     },
     {
-      "order": 101020,
+      "order": 123130,
       "kind": "call",
-      "label": "errorMessage",
+      "label": "parseBoardKey",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "parseBoardKey"
+      },
+      "to": "vKEsyHFk#OJRnI6a2",
+      "id": "vKEsyHFk#Uaz2gXaB"
+    },
+    {
+      "order": 123310,
+      "kind": "call",
+      "label": "addressedVariant",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "addressedVariant"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#JNNXR6uV"
+    },
+    {
+      "order": 123510,
+      "kind": "call",
+      "label": "mappedIdentity",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
+        "symbol": "mappedIdentity"
+      },
+      "to": "vKEsyHFk#VjHIz7Ds",
+      "id": "vKEsyHFk#1lEknZLf"
+    },
+    {
+      "order": 123670,
+      "kind": "call",
+      "label": "unknownVocabularyReferences",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/legacy-inventory/inputs.ts",
-        "symbol": "errorMessage"
+        "symbol": "unknownVocabularyReferences"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#fHhC2zyt"
-    },
-    {
-      "order": 101030,
-      "kind": "call",
-      "label": "GitObjectIdSchema.safeParse",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/legacy-inventory/preview.ts",
-        "symbol": "GitObjectIdSchema.safeParse"
-      },
-      "to": "vKEsyHFk#DDYjjcyl",
-      "id": "vKEsyHFk#cPUqjwMf"
+      "to": "vKEsyHFk#oB5Tk0LU",
+      "id": "vKEsyHFk#bZ31Ni4w"
     }
   ]
 }

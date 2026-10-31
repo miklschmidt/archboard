@@ -37,6 +37,45 @@
   ],
   "outgoing": [
     {
+      "order": 101300,
+      "kind": "call",
+      "label": "stateDir",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-state.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk#wJQVbLLR",
+      "to": "vKEsyHFk#VLvE4C5w"
+    },
+    {
+      "order": 101310,
+      "kind": "call",
+      "label": "git",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-state.ts",
+        "symbol": "git"
+      },
+      "id": "vKEsyHFk#geFlY76q",
+      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx"
+    },
+    {
+      "order": 101320,
+      "kind": "call",
+      "label": "optionalValue",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/store/model-state.ts",
+        "symbol": "optionalValue"
+      },
+      "id": "vKEsyHFk#WY6WrvuQ",
+      "to": "vKEsyHFk#p631X5Hn"
+    },
+    {
       "order": 145000,
       "kind": "call",
       "label": "durable state files and parent directories",
@@ -76,43 +115,30 @@
       "to": "vKEsyHFk/0T9enjhi#nqi2h0Ku"
     },
     {
-      "order": 101300,
+      "order": 123230,
       "kind": "call",
-      "label": "stateDir",
+      "label": "holdBoard",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/model-state.ts",
-        "symbol": "stateDir"
+        "symbol": "holdBoard"
       },
-      "to": "vKEsyHFk#VLvE4C5w",
-      "id": "vKEsyHFk#wJQVbLLR"
+      "to": "vKEsyHFk#OJRnI6a2",
+      "id": "vKEsyHFk#c6JvbPaH"
     },
     {
-      "order": 101310,
+      "order": 123610,
       "kind": "call",
-      "label": "git",
+      "label": "operationSubjects",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/store/model-state.ts",
-        "symbol": "git"
+        "symbol": "operationSubjects"
       },
-      "to": "vKEsyHFk/0T9enjhi#RfwX9gsx",
-      "id": "vKEsyHFk#geFlY76q"
-    },
-    {
-      "order": 101320,
-      "kind": "call",
-      "label": "optionalValue",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-state.ts",
-        "symbol": "optionalValue"
-      },
-      "to": "vKEsyHFk#p631X5Hn",
-      "id": "vKEsyHFk#WY6WrvuQ"
+      "to": "vKEsyHFk#VjHIz7Ds",
+      "id": "vKEsyHFk#qFYLORuW"
     }
   ]
 }

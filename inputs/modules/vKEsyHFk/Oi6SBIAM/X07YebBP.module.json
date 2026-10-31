@@ -129,6 +129,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
       "to": "vKEsyHFk#OJRnI6a2"
+    },
+    {
+      "order": 121320,
+      "kind": "call",
+      "label": "isArchitectureFeed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
+        "symbol": "isArchitectureFeed"
+      },
+      "to": "vKEsyHFk#itx3hFZ9",
+      "id": "vKEsyHFk#9rl9M3ry"
     }
   ]
 }

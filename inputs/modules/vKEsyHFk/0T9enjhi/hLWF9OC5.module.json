@@ -37,6 +37,32 @@
   ],
   "outgoing": [
     {
+      "order": 101150,
+      "kind": "call",
+      "label": "modelBoundaryFailure",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "symbol": "modelBoundaryFailure"
+      },
+      "id": "vKEsyHFk#O6zi92qk",
+      "to": "vKEsyHFk/0T9enjhi#YREYrbYW"
+    },
+    {
+      "order": 101160,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
+        "symbol": "logger"
+      },
+      "id": "vKEsyHFk#yF3Y3d8y",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
       "order": 140000,
       "kind": "call",
       "label": "subscribe to local durable news",
@@ -89,30 +115,17 @@
       "to": "vKEsyHFk/0T9enjhi#MI2LKBji"
     },
     {
-      "order": 101150,
+      "order": 123170,
       "kind": "call",
-      "label": "modelBoundaryFailure",
+      "label": "modelFilesToken",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/read/model-watch.ts",
-        "symbol": "modelBoundaryFailure"
+        "symbol": "modelFilesToken"
       },
-      "to": "vKEsyHFk/0T9enjhi#YREYrbYW",
-      "id": "vKEsyHFk#O6zi92qk"
-    },
-    {
-      "order": 101160,
-      "kind": "call",
-      "label": "logger",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-watch.ts",
-        "symbol": "logger"
-      },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#yF3Y3d8y"
+      "to": "vKEsyHFk#OJRnI6a2",
+      "id": "vKEsyHFk#g8JiEx1J"
     }
   ]
 }

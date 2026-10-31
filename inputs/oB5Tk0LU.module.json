@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/operations/check"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#oB5Tk0LU",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [
+    {
+      "order": 123470,
+      "kind": "call",
+      "label": "containersOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/check/structure.ts",
+        "symbol": "containersOf"
+      },
+      "to": "vKEsyHFk#VjHIz7Ds",
+      "id": "vKEsyHFk#rhAocSqo"
+    }
+  ]
 }

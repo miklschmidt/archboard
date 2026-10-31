@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/codex-app-server/src/runtime/schemas"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
   "schemaVersion": 1,
   "id": "vKEsyHFk#RE5czL9l",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
+  "outgoing": [
+    {
+      "order": 120450,
+      "kind": "call",
+      "label": "CodexSafeI64Schema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/schemas/config-schemas.ts",
+        "symbol": "CodexSafeI64Schema"
+      },
+      "to": "vKEsyHFk#zak0fJpW",
+      "id": "vKEsyHFk#T0tM6OrE"
+    }
+  ]
 }

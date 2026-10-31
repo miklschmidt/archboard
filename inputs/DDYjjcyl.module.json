@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
   "outgoing": [
     {
+      "order": 101340,
+      "kind": "call",
+      "label": "CodeBindingSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model.ts",
+        "symbol": "CodeBindingSchema"
+      },
+      "id": "vKEsyHFk#aVxUOlmb",
+      "to": "vKEsyHFk#DHejIb8K"
+    },
+    {
       "order": 186000,
       "kind": "call",
       "label": "FlowCollectionSchema",
@@ -25,17 +38,43 @@
       "to": "vKEsyHFk/0T9enjhi#O4jP5DrF"
     },
     {
-      "order": 101340,
+      "order": 122740,
       "kind": "call",
-      "label": "CodeBindingSchema",
+      "label": "GitObjectIdSchema",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/shared/schemas/model.ts",
-        "symbol": "CodeBindingSchema"
+        "symbol": "GitObjectIdSchema"
       },
-      "to": "vKEsyHFk#DHejIb8K",
-      "id": "vKEsyHFk#aVxUOlmb"
+      "to": "vKEsyHFk#cQnRbGCD",
+      "id": "vKEsyHFk#EpcsTxGV"
+    },
+    {
+      "order": 122840,
+      "kind": "call",
+      "label": "SemanticIdSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model.ts",
+        "symbol": "SemanticIdSchema"
+      },
+      "to": "vKEsyHFk#WI7DYDWp",
+      "id": "vKEsyHFk#shnWecbF"
+    },
+    {
+      "order": 123440,
+      "kind": "call",
+      "label": "SelectedStateSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model.ts",
+        "symbol": "SelectedStateSchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#23bUFNU5"
     }
   ]
 }

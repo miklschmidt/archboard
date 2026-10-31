@@ -33,6 +33,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#TyhSCbgO",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 120410,
+      "kind": "call",
+      "label": "failure",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/store/storage.ts",
+        "symbol": "failure"
+      },
+      "to": "vKEsyHFk#xTJaU0d7",
+      "id": "vKEsyHFk#A5Q6IQ5T"
     }
   ]
 }

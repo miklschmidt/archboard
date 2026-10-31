@@ -26,6 +26,32 @@
       "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
     },
     {
+      "order": 7000,
+      "kind": "call",
+      "label": "pick attention",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "surfaceMarks"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "carry the drawn picture in from the last",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "usePictureTransition"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
+    },
+    {
       "order": 42000,
       "kind": "call",
       "label": "the pointer on the picture",
@@ -52,6 +78,19 @@
       "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     },
     {
+      "order": 70022,
+      "kind": "call",
+      "label": "apply picture and camera interaction",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "moveCameraByKey"
+      },
+      "id": "vKEsyHFk#MtvcBtx6",
+      "to": "vKEsyHFk#6pGUygoC"
+    },
+    {
       "order": 72000,
       "kind": "call",
       "label": "the code check's warnings on the picture",
@@ -63,6 +102,32 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#YMCk1Omy",
       "to": "vKEsyHFk/UOXNWLhR#ZUQ9Usdh"
+    },
+    {
+      "order": 100450,
+      "kind": "call",
+      "label": "subjectMarks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "subjectMarks"
+      },
+      "id": "vKEsyHFk#baaAG6WM",
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt"
+    },
+    {
+      "order": 100460,
+      "kind": "call",
+      "label": "seenFromFar",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+        "symbol": "seenFromFar"
+      },
+      "id": "vKEsyHFk#jy4JXRWM",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     },
     {
       "order": 103000,
@@ -78,69 +143,43 @@
       "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu"
     },
     {
-      "order": 70022,
+      "order": 122410,
       "kind": "call",
-      "label": "apply picture and camera interaction",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "moveCameraByKey"
-      },
-      "id": "vKEsyHFk#MtvcBtx6",
-      "to": "vKEsyHFk#6pGUygoC"
-    },
-    {
-      "order": 37000,
-      "kind": "call",
-      "label": "carry the drawn picture in from the last",
+      "label": "CameraSurface",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "usePictureTransition"
+        "symbol": "CameraSurface"
       },
-      "id": "vKEsyHFk/UOXNWLhR#6xbUaU8d",
-      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
+      "to": "vKEsyHFk#gdhU9KU2",
+      "id": "vKEsyHFk#I9eRekr0"
     },
     {
-      "order": 7000,
+      "order": 122910,
       "kind": "call",
-      "label": "pick attention",
+      "label": "useViewerMarks",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "surfaceMarks"
+        "symbol": "useViewerMarks"
       },
-      "id": "vKEsyHFk/UOXNWLhR#I1b9UiOY",
-      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+      "to": "vKEsyHFk#y7nAR4xp",
+      "id": "vKEsyHFk#KvyjWc9I"
     },
     {
-      "order": 100450,
+      "order": 122970,
       "kind": "call",
-      "label": "subjectMarks",
+      "label": "LeavingPart",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "subjectMarks"
+        "symbol": "LeavingPart"
       },
-      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
-      "id": "vKEsyHFk#baaAG6WM"
-    },
-    {
-      "order": 100460,
-      "kind": "call",
-      "label": "seenFromFar",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "seenFromFar"
-      },
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
-      "id": "vKEsyHFk#jy4JXRWM"
+      "to": "vKEsyHFk#UDOCb9mn",
+      "id": "vKEsyHFk#1mVMk54O"
     }
   ]
 }

@@ -23,6 +23,45 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#r1SrbjWJ",
       "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
+    },
+    {
+      "order": 122580,
+      "kind": "call",
+      "label": "SemanticDiagram",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx",
+        "symbol": "SemanticDiagram"
+      },
+      "to": "vKEsyHFk#zBANpjYZ",
+      "id": "vKEsyHFk#8PEyIIGw"
+    },
+    {
+      "order": 122650,
+      "kind": "call",
+      "label": "pictureMarks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx",
+        "symbol": "pictureMarks"
+      },
+      "to": "vKEsyHFk#ll0dXqBT",
+      "id": "vKEsyHFk#P8wF1JA7"
+    },
+    {
+      "order": 123010,
+      "kind": "call",
+      "label": "SemanticRefreshFailure",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticStageView.tsx",
+        "symbol": "SemanticRefreshFailure"
+      },
+      "to": "vKEsyHFk#UDOCb9mn",
+      "id": "vKEsyHFk#vr4rToNT"
     }
   ]
 }

@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
         "symbol": "useClock"
       },
-      "to": "vKEsyHFk#asINbd7Q",
-      "id": "vKEsyHFk#Txrk15hq"
+      "id": "vKEsyHFk#Txrk15hq",
+      "to": "vKEsyHFk#asINbd7Q"
     },
     {
       "order": 102680,
@@ -47,8 +47,8 @@
         "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
         "symbol": "cn"
       },
-      "to": "vKEsyHFk#LvyHYvBp",
-      "id": "vKEsyHFk#jWNaqNHC"
+      "id": "vKEsyHFk#jWNaqNHC",
+      "to": "vKEsyHFk#LvyHYvBp"
     },
     {
       "order": 102690,
@@ -60,8 +60,8 @@
         "path": "packages/workbench/src/ui/components/dock/IconAction.tsx",
         "symbol": "Tooltip"
       },
-      "to": "vKEsyHFk#Kayrf3gV",
-      "id": "vKEsyHFk#sy34TBNM"
+      "id": "vKEsyHFk#sy34TBNM",
+      "to": "vKEsyHFk#Kayrf3gV"
     },
     {
       "order": 102700,
@@ -73,8 +73,60 @@
         "path": "packages/workbench/src/ui/components/dock/IconAction.tsx",
         "symbol": "Tooltip.Trigger"
       },
-      "to": "vKEsyHFk#xHJMa8m8",
-      "id": "vKEsyHFk#cgwR2Kc0"
+      "id": "vKEsyHFk#cgwR2Kc0",
+      "to": "vKEsyHFk#xHJMa8m8"
+    },
+    {
+      "order": 120250,
+      "kind": "call",
+      "label": "useCircleState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "useCircleState"
+      },
+      "to": "vKEsyHFk#aQ50dyDC",
+      "id": "vKEsyHFk#bfgFGgpU"
+    },
+    {
+      "order": 120350,
+      "kind": "call",
+      "label": "SubtitlesToggle",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "SubtitlesToggle"
+      },
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc",
+      "id": "vKEsyHFk#YeK7qymg"
+    },
+    {
+      "order": 121780,
+      "kind": "call",
+      "label": "VoiceContextDetails",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDetails.tsx",
+        "symbol": "VoiceContextDetails"
+      },
+      "to": "vKEsyHFk#x6rUtUXI",
+      "id": "vKEsyHFk#MMowtnLm"
+    },
+    {
+      "order": 121960,
+      "kind": "call",
+      "label": "ConversationList",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/dock/AgentDock.tsx",
+        "symbol": "ConversationList"
+      },
+      "to": "vKEsyHFk#ud9JAuEd",
+      "id": "vKEsyHFk#cZYKmqOh"
     }
   ]
 }

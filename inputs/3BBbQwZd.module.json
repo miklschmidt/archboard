@@ -21,8 +21,8 @@
         "path": "packages/workbench/src/ui/components/thread/TurnParts.tsx",
         "symbol": "clockDuration"
       },
-      "to": "vKEsyHFk#LvyHYvBp",
-      "id": "vKEsyHFk#9vC9VCJY"
+      "id": "vKEsyHFk#9vC9VCJY",
+      "to": "vKEsyHFk#LvyHYvBp"
     },
     {
       "order": 102780,
@@ -34,8 +34,8 @@
         "path": "packages/workbench/src/ui/components/thread/TurnParts.tsx",
         "symbol": "useClock"
       },
-      "to": "vKEsyHFk#asINbd7Q",
-      "id": "vKEsyHFk#slF8EUv7"
+      "id": "vKEsyHFk#slF8EUv7",
+      "to": "vKEsyHFk#asINbd7Q"
     },
     {
       "order": 102790,
@@ -47,8 +47,8 @@
         "path": "packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
         "symbol": "Tooltip"
       },
-      "to": "vKEsyHFk#Kayrf3gV",
-      "id": "vKEsyHFk#mDmktsKz"
+      "id": "vKEsyHFk#mDmktsKz",
+      "to": "vKEsyHFk#Kayrf3gV"
     },
     {
       "order": 102800,
@@ -60,8 +60,21 @@
         "path": "packages/workbench/src/ui/components/thread/tooltip-icon-button.tsx",
         "symbol": "Tooltip.Provider"
       },
-      "to": "vKEsyHFk#xHJMa8m8",
-      "id": "vKEsyHFk#TfPGPaw4"
+      "id": "vKEsyHFk#TfPGPaw4",
+      "to": "vKEsyHFk#xHJMa8m8"
+    },
+    {
+      "order": 120290,
+      "kind": "call",
+      "label": "useCopyToClipboard",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/ui/components/thread/markdown-text.tsx",
+        "symbol": "useCopyToClipboard"
+      },
+      "to": "vKEsyHFk#aQ50dyDC",
+      "id": "vKEsyHFk#XQFsrTi2"
     }
   ]
 }

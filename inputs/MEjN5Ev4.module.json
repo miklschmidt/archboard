@@ -21,8 +21,125 @@
         "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/validation.ts",
         "symbol": "logicalToolCallKey"
       },
-      "to": "vKEsyHFk#zak0fJpW",
-      "id": "vKEsyHFk#vjHbtU2b"
+      "id": "vKEsyHFk#vjHbtU2b",
+      "to": "vKEsyHFk#zak0fJpW"
+    },
+    {
+      "order": 120040,
+      "kind": "call",
+      "label": "DynamicToolEnvelopeSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/response.ts",
+        "symbol": "DynamicToolEnvelopeSchema"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#ZDMIGM5P",
+      "id": "vKEsyHFk#lPuqwFzB"
+    },
+    {
+      "order": 120060,
+      "kind": "call",
+      "label": "sameThreadLinkIdentity",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/delivery-authority.ts",
+        "symbol": "sameThreadLinkIdentity"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#byMaoUe0",
+      "id": "vKEsyHFk#LCAOQB2S"
+    },
+    {
+      "order": 120390,
+      "kind": "call",
+      "label": "sameRealtimeGeneration",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/delivery-authority.ts",
+        "symbol": "sameRealtimeGeneration"
+      },
+      "to": "vKEsyHFk#zgqWCe1A",
+      "id": "vKEsyHFk#gpm3X9NE"
+    },
+    {
+      "order": 120500,
+      "kind": "call",
+      "label": "workhorseLinkOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/delivery-authority.ts",
+        "symbol": "workhorseLinkOf"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#e4OAPDNW",
+      "id": "vKEsyHFk#SiEIsGEU"
+    },
+    {
+      "order": 120690,
+      "kind": "call",
+      "label": "toolRoleOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-tools/call-identity.ts",
+        "symbol": "toolRoleOf"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#7Mxz4kA6",
+      "id": "vKEsyHFk#M0s1Wl6s"
+    },
+    {
+      "order": 120890,
+      "kind": "call",
+      "label": "captureExecutionContext",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/spoken-approval/validation.ts",
+        "symbol": "captureExecutionContext"
+      },
+      "to": "vKEsyHFk#Z51P4fEi",
+      "id": "vKEsyHFk#5Btmd68v"
+    },
+    {
+      "order": 121010,
+      "kind": "call",
+      "label": "cloneAndFreeze",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/coordinator-callbacks/normalize.ts",
+        "symbol": "cloneAndFreeze"
+      },
+      "to": "vKEsyHFk#Bw2iy2vF",
+      "id": "vKEsyHFk#KhJydrFw"
+    },
+    {
+      "order": 121280,
+      "kind": "call",
+      "label": "CodexWorkhorseOperationsError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/workhorse-operations/operation-errors.ts",
+        "symbol": "CodexWorkhorseOperationsError"
+      },
+      "to": "vKEsyHFk/9ncuT5DP#iLWBCObu",
+      "id": "vKEsyHFk#Ac8l7kji"
+    },
+    {
+      "order": 122270,
+      "kind": "call",
+      "label": "canTransitionRealtimeState",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/runtime/rules/realtime/phase.ts",
+        "symbol": "canTransitionRealtimeState"
+      },
+      "to": "vKEsyHFk#IDqYdDcJ",
+      "id": "vKEsyHFk#ukqhg8rn"
     }
   ]
 }

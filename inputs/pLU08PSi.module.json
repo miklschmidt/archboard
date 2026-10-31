@@ -23,6 +23,45 @@
       },
       "id": "vKEsyHFk/yejBBUFY#Cw08FQeQ",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 120820,
+      "kind": "call",
+      "label": "handleSocketMessage",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "symbol": "handleSocketMessage"
+      },
+      "to": "vKEsyHFk/yejBBUFY#8yYKWsmB",
+      "id": "vKEsyHFk#5PhI2NbU"
+    },
+    {
+      "order": 120910,
+      "kind": "call",
+      "label": "createPaneSocketConnector",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "symbol": "createPaneSocketConnector"
+      },
+      "to": "vKEsyHFk#1eB2iikc",
+      "id": "vKEsyHFk#xO8bNxlm"
+    },
+    {
+      "order": 120960,
+      "kind": "call",
+      "label": "boardAddressOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/pane-session/pane-core.ts",
+        "symbol": "boardAddressOf"
+      },
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+      "id": "vKEsyHFk#8mG3sNVs"
     }
   ]
 }

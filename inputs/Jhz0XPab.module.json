@@ -12,6 +12,19 @@
   "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
   "outgoing": [
     {
+      "order": 13000,
+      "kind": "call",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "to": "vKEsyHFk#wZ90dXOO"
+    },
+    {
       "order": 22000,
       "kind": "call",
       "label": "send, Talk, narrate",
@@ -38,17 +51,69 @@
       "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
     },
     {
-      "order": 13000,
+      "order": 120660,
       "kind": "call",
-      "label": "opening address; write what panes show and where",
+      "label": "ApplicationPane",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
-        "symbol": "useWorkspaceAddress"
+        "path": "apps/web/src/ui/hooks/application/use-pane-views.ts",
+        "symbol": "ApplicationPane"
       },
-      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
-      "to": "vKEsyHFk#wZ90dXOO"
+      "to": "vKEsyHFk/yejBBUFY#zkDth8gp",
+      "id": "vKEsyHFk#csiPHSqX"
+    },
+    {
+      "order": 120950,
+      "kind": "call",
+      "label": "boardAddressOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
+        "symbol": "boardAddressOf"
+      },
+      "to": "vKEsyHFk/yejBBUFY#DW1hIFRx",
+      "id": "vKEsyHFk#lQ5Q97Fw"
+    },
+    {
+      "order": 122620,
+      "kind": "call",
+      "label": "PaneSubtitles",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-subtitle-overlay.ts",
+        "symbol": "PaneSubtitles"
+      },
+      "to": "vKEsyHFk#Nuk1wzUM",
+      "id": "vKEsyHFk#m6G0iRu5"
+    },
+    {
+      "order": 122760,
+      "kind": "call",
+      "label": "createPaneMoves",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-panes.ts",
+        "symbol": "createPaneMoves"
+      },
+      "to": "vKEsyHFk#tb9Ti9Be",
+      "id": "vKEsyHFk#Cs04tZW4"
+    },
+    {
+      "order": 122870,
+      "kind": "call",
+      "label": "agentActions",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-agent.ts",
+        "symbol": "agentActions"
+      },
+      "to": "vKEsyHFk#oS1YUa8j",
+      "id": "vKEsyHFk#gaulnQHm"
     }
   ]
 }

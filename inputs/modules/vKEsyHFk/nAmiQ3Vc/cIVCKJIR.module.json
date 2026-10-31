@@ -14,5 +14,19 @@
   "formerNames": [
     "Board refusal formatter"
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 120460,
+      "kind": "call",
+      "label": "boardRefusalOf",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "boardRefusalOf"
+      },
+      "to": "vKEsyHFk#7re3ZFvo",
+      "id": "vKEsyHFk#2Vff9e7f"
+    }
+  ]
 }

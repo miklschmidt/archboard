@@ -12,17 +12,17 @@
   "parent": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",
   "outgoing": [
     {
-      "order": 70001,
-      "kind": "call",
-      "label": "publish host changes",
-      "emphasis": "muted",
+      "order": 18000,
+      "kind": "data",
+      "label": "changes since its cursor",
+      "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createArchboardAnnouncements"
+        "symbol": "semanticChangeFeed"
       },
-      "id": "vKEsyHFk#RZlJRIaF",
-      "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+      "id": "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
+      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
     },
     {
       "order": 20000,
@@ -38,56 +38,17 @@
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
-      "order": 75000,
+      "order": 30000,
       "kind": "call",
-      "label": "the brief's input for the board a pane shows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "semanticInputFor"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#IFPR1GJT",
-      "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
-    },
-    {
-      "order": 70002,
-      "kind": "call",
-      "label": "supply the model catalogue",
+      "description": "the pane a context is for, and its board",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createArchboardCoordinatorContextSource"
+        "symbol": "panes"
       },
-      "id": "vKEsyHFk#jKN6JFi4",
-      "to": "vKEsyHFk/qKGcB6vZ#ZilfteOF"
-    },
-    {
-      "order": 70003,
-      "kind": "call",
-      "label": "run captured explanation actions",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createExplanationActions"
-      },
-      "id": "vKEsyHFk#pTZh5zI9",
-      "to": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
-    },
-    {
-      "order": 18000,
-      "kind": "data",
-      "label": "changes since its cursor",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "semanticChangeFeed"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#52NUP6Ut",
-      "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
+      "id": "vKEsyHFk/Oi6SBIAM#HgatVqjT",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
       "order": 49000,
@@ -116,17 +77,56 @@
       "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA"
     },
     {
-      "order": 30000,
+      "order": 61000,
+      "kind": "dependency",
+      "label": "host Archboard on the voice agent",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createVoiceAgent"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#hfMj0fMk",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "order": 70001,
       "kind": "call",
-      "description": "the pane a context is for, and its board",
+      "label": "publish host changes",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "panes"
+        "symbol": "createArchboardAnnouncements"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#HgatVqjT",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+      "id": "vKEsyHFk#RZlJRIaF",
+      "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE"
+    },
+    {
+      "order": 70002,
+      "kind": "call",
+      "label": "supply the model catalogue",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createArchboardCoordinatorContextSource"
+      },
+      "id": "vKEsyHFk#jKN6JFi4",
+      "to": "vKEsyHFk/qKGcB6vZ#ZilfteOF"
+    },
+    {
+      "order": 70003,
+      "kind": "call",
+      "label": "run captured explanation actions",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createExplanationActions"
+      },
+      "id": "vKEsyHFk#pTZh5zI9",
+      "to": "vKEsyHFk/SJ2JMVyz#bxWDGUJk"
     },
     {
       "order": 73000,
@@ -142,6 +142,84 @@
       "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     },
     {
+      "order": 75000,
+      "kind": "call",
+      "label": "the brief's input for the board a pane shows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "semanticInputFor"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#IFPR1GJT",
+      "to": "vKEsyHFk/Oi6SBIAM#tHLqdtCJ"
+    },
+    {
+      "order": 102490,
+      "kind": "call",
+      "label": "createServerCodexBrowserSocketOwner",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "createServerCodexBrowserSocketOwner"
+      },
+      "id": "vKEsyHFk#r9VTWM2h",
+      "to": "vKEsyHFk#vnSTaxfU"
+    },
+    {
+      "order": 102500,
+      "kind": "call",
+      "label": "checkoutOfVault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "checkoutOfVault"
+      },
+      "id": "vKEsyHFk#pmMGRELj",
+      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN"
+    },
+    {
+      "order": 102510,
+      "kind": "call",
+      "label": "logger",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "logger"
+      },
+      "id": "vKEsyHFk#SvKizApD",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 102520,
+      "kind": "call",
+      "label": "reportStartupOwnership",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "reportStartupOwnership"
+      },
+      "id": "vKEsyHFk#6FcXE2pt",
+      "to": "vKEsyHFk#J9IpEl0k"
+    },
+    {
+      "order": 102530,
+      "kind": "call",
+      "label": "liveWorkhorseCheckouts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/owner/wiring.ts",
+        "symbol": "liveWorkhorseCheckouts"
+      },
+      "id": "vKEsyHFk#KraMLEQW",
+      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8"
+    },
+    {
       "order": 123000,
       "kind": "call",
       "label": "host Archboard on the voice agent; start and stop it",
@@ -155,82 +233,82 @@
       "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
     },
     {
-      "order": 61000,
-      "kind": "dependency",
-      "label": "host Archboard on the voice agent",
+      "order": 121360,
+      "kind": "call",
+      "label": "productionModule.createServerVoiceAgentOptions",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createVoiceAgent"
+        "symbol": "productionModule.createServerVoiceAgentOptions"
       },
-      "id": "vKEsyHFk/vKEsyHFk#hfMj0fMk",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+      "to": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
+      "id": "vKEsyHFk#yyReUovt"
     },
     {
-      "order": 102490,
+      "order": 121680,
       "kind": "call",
-      "label": "createServerCodexBrowserSocketOwner",
+      "label": "resetCodexWorkbenchWiring",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "createServerCodexBrowserSocketOwner"
+        "symbol": "resetCodexWorkbenchWiring"
       },
-      "to": "vKEsyHFk#vnSTaxfU",
-      "id": "vKEsyHFk#r9VTWM2h"
+      "to": "vKEsyHFk#wN7gU7A0",
+      "id": "vKEsyHFk#vGcOqUa7"
     },
     {
-      "order": 102500,
+      "order": 121720,
       "kind": "call",
-      "label": "checkoutOfVault",
+      "label": "productionModule",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "checkoutOfVault"
+        "symbol": "productionModule"
       },
-      "to": "vKEsyHFk/nAmiQ3Vc#pgD9YyAN",
-      "id": "vKEsyHFk#pmMGRELj"
+      "to": "vKEsyHFk#cd3tPI2p",
+      "id": "vKEsyHFk#WxZAntDC"
     },
     {
-      "order": 102510,
+      "order": 121920,
       "kind": "call",
-      "label": "logger",
+      "label": "workbenchFeedFor",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "logger"
+        "symbol": "workbenchFeedFor"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#SvKizApD"
+      "to": "vKEsyHFk#o9R4Jb78",
+      "id": "vKEsyHFk#UGOHP2aE"
     },
     {
-      "order": 102520,
+      "order": 121990,
       "kind": "call",
-      "label": "reportStartupOwnership",
+      "label": "narrationChangesOf",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "reportStartupOwnership"
+        "symbol": "narrationChangesOf"
       },
-      "to": "vKEsyHFk#J9IpEl0k",
-      "id": "vKEsyHFk#6FcXE2pt"
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI",
+      "id": "vKEsyHFk#jVXIciAm"
     },
     {
-      "order": 102530,
+      "order": 122250,
       "kind": "call",
-      "label": "liveWorkhorseCheckouts",
+      "label": "isArchboardRecording",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
-        "symbol": "liveWorkhorseCheckouts"
+        "symbol": "isArchboardRecording"
       },
-      "to": "vKEsyHFk/9ncuT5DP#ME7EbWl8",
-      "id": "vKEsyHFk#KraMLEQW"
+      "to": "vKEsyHFk#bo8IC8ny",
+      "id": "vKEsyHFk#xNMyeZey"
     }
   ]
 }

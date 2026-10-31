@@ -12,20 +12,6 @@
   "parent": "vKEsyHFk/wAHh0HTa#ql0DevMk",
   "outgoing": [
     {
-      "order": 12000,
-      "kind": "event",
-      "label": "a request the child made of us",
-      "description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-app-server/src/runtime/services/session.ts",
-        "symbol": "onServerRequest"
-      },
-      "id": "vKEsyHFk/wAHh0HTa#blvoJ8p8",
-      "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
-    },
-    {
       "order": 4000,
       "kind": "rpc",
       "label": "JSON-RPC over stdio",
@@ -43,6 +29,20 @@
       "to": "vKEsyHFk/vKEsyHFk#xr1MHYE7"
     },
     {
+      "order": 12000,
+      "kind": "event",
+      "label": "a request the child made of us",
+      "description": "createCodexSession registers reverseRequests.onServerRequest with the transport. The transport invokes this subscribed callback; it does not import the private reverse-requests file.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/services/session.ts",
+        "symbol": "onServerRequest"
+      },
+      "id": "vKEsyHFk/wAHh0HTa#blvoJ8p8",
+      "to": "vKEsyHFk/wAHh0HTa#3FR6mev4"
+    },
+    {
       "order": 101560,
       "kind": "call",
       "label": "protocolErrorFrame",
@@ -52,8 +52,34 @@
         "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
         "symbol": "protocolErrorFrame"
       },
-      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta",
-      "id": "vKEsyHFk#bnceAgwa"
+      "id": "vKEsyHFk#bnceAgwa",
+      "to": "vKEsyHFk/wAHh0HTa#Sk7GfGta"
+    },
+    {
+      "order": 120170,
+      "kind": "call",
+      "label": "createInboundRouter",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "symbol": "createInboundRouter"
+      },
+      "to": "vKEsyHFk/qKGcB6vZ#LHBPlItu",
+      "id": "vKEsyHFk#D5GKmeWi"
+    },
+    {
+      "order": 120190,
+      "kind": "call",
+      "label": "CodexTransportClosedError",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/clients/transport.ts",
+        "symbol": "CodexTransportClosedError"
+      },
+      "to": "vKEsyHFk#vi5P5qlJ",
+      "id": "vKEsyHFk#uYQ1wf75"
     }
   ]
 }

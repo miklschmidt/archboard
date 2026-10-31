@@ -21,8 +21,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelAboutFrame.tsx",
         "symbol": "KindIcon"
       },
-      "to": "vKEsyHFk#UDOCb9mn",
-      "id": "vKEsyHFk#F8Z4L5U4"
+      "id": "vKEsyHFk#F8Z4L5U4",
+      "to": "vKEsyHFk#UDOCb9mn"
     },
     {
       "order": 100130,
@@ -34,8 +34,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelChanges.tsx",
         "symbol": "Tree"
       },
-      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5",
-      "id": "vKEsyHFk#mzJe8w2c"
+      "id": "vKEsyHFk#mzJe8w2c",
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
     },
     {
       "order": 100140,
@@ -47,8 +47,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelClaims.tsx",
         "symbol": "architectureClaimsQuery"
       },
-      "to": "vKEsyHFk#cNN2C3v4",
-      "id": "vKEsyHFk#g11ELCQR"
+      "id": "vKEsyHFk#g11ELCQR",
+      "to": "vKEsyHFk#cNN2C3v4"
     },
     {
       "order": 100150,
@@ -60,8 +60,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelClaims.tsx",
         "symbol": "takeBackClaim"
       },
-      "to": "vKEsyHFk#lYFJYN2S",
-      "id": "vKEsyHFk#IE1B5z9h"
+      "id": "vKEsyHFk#IE1B5z9h",
+      "to": "vKEsyHFk#lYFJYN2S"
     },
     {
       "order": 100170,
@@ -73,8 +73,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelColumn.tsx",
         "symbol": "usePaneChrome"
       },
-      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL",
-      "id": "vKEsyHFk#NqyyjaaL"
+      "id": "vKEsyHFk#NqyyjaaL",
+      "to": "vKEsyHFk/UOXNWLhR#kCxSbcFL"
     },
     {
       "order": 100180,
@@ -86,8 +86,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDestinationState.tsx",
         "symbol": "useModelLocation"
       },
-      "to": "vKEsyHFk/yejBBUFY#w46oCRoH",
-      "id": "vKEsyHFk#f1MDuPML"
+      "id": "vKEsyHFk#f1MDuPML",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
     },
     {
       "order": 100190,
@@ -99,8 +99,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "usePictureTransition"
       },
-      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM",
-      "id": "vKEsyHFk#8tp45HoM"
+      "id": "vKEsyHFk#8tp45HoM",
+      "to": "vKEsyHFk/UOXNWLhR#3iSHwOiM"
     },
     {
       "order": 100200,
@@ -112,8 +112,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "useAutoFit"
       },
-      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ",
-      "id": "vKEsyHFk#PGSoR5rW"
+      "id": "vKEsyHFk#PGSoR5rW",
+      "to": "vKEsyHFk/UOXNWLhR#VcgeYlnZ"
     },
     {
       "order": 100210,
@@ -125,8 +125,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "useCameraWith"
       },
-      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
-      "id": "vKEsyHFk#ZRgyuzrv"
+      "id": "vKEsyHFk#ZRgyuzrv",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
     },
     {
       "order": 100220,
@@ -138,8 +138,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "seenFromFar"
       },
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU",
-      "id": "vKEsyHFk#yDZo7J6F"
+      "id": "vKEsyHFk#yDZo7J6F",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     },
     {
       "order": 100230,
@@ -151,8 +151,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "useReveal"
       },
-      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
-      "id": "vKEsyHFk#dvjY3Q44"
+      "id": "vKEsyHFk#dvjY3Q44",
+      "to": "vKEsyHFk/UOXNWLhR#CDWaLOJ7"
     },
     {
       "order": 100240,
@@ -164,8 +164,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "useDiagramGestures"
       },
-      "to": "vKEsyHFk/UOXNWLhR#FyxVdk20",
-      "id": "vKEsyHFk#lYsz6bow"
+      "id": "vKEsyHFk#lYsz6bow",
+      "to": "vKEsyHFk/UOXNWLhR#FyxVdk20"
     },
     {
       "order": 100250,
@@ -177,8 +177,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "moveCameraByKey"
       },
-      "to": "vKEsyHFk#6pGUygoC",
-      "id": "vKEsyHFk#NSFv2GBd"
+      "id": "vKEsyHFk#NSFv2GBd",
+      "to": "vKEsyHFk#6pGUygoC"
     },
     {
       "order": 100260,
@@ -190,8 +190,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "CameraSurface"
       },
-      "to": "vKEsyHFk#gdhU9KU2",
-      "id": "vKEsyHFk#iyCPDLR1"
+      "id": "vKEsyHFk#iyCPDLR1",
+      "to": "vKEsyHFk#gdhU9KU2"
     },
     {
       "order": 100270,
@@ -203,8 +203,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "surfaceMarks"
       },
-      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",
-      "id": "vKEsyHFk#9tinXc2A"
+      "id": "vKEsyHFk#9tinXc2A",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
     },
     {
       "order": 100280,
@@ -216,8 +216,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "beatFocus"
       },
-      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
-      "id": "vKEsyHFk#UlyPVpp4"
+      "id": "vKEsyHFk#UlyPVpp4",
+      "to": "vKEsyHFk/UOXNWLhR#z0dvHsUt"
     },
     {
       "order": 100290,
@@ -229,8 +229,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "useLighting"
       },
-      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ",
-      "id": "vKEsyHFk#kHQWw7vH"
+      "id": "vKEsyHFk#kHQWw7vH",
+      "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     },
     {
       "order": 100300,
@@ -242,8 +242,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "subjectTip"
       },
-      "to": "vKEsyHFk#Gobjwcsf",
-      "id": "vKEsyHFk#Wt11jeNB"
+      "id": "vKEsyHFk#Wt11jeNB",
+      "to": "vKEsyHFk#Gobjwcsf"
     },
     {
       "order": 100310,
@@ -255,8 +255,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
         "symbol": "markCodeWarnings"
       },
-      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
-      "id": "vKEsyHFk#ELIDFb3C"
+      "id": "vKEsyHFk#ELIDFb3C",
+      "to": "vKEsyHFk/gbyqW4H3#n7ZlRkbA"
     },
     {
       "order": 100320,
@@ -268,8 +268,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelHistory.tsx",
         "symbol": "modelHistoryQuery"
       },
-      "to": "vKEsyHFk#eO8ppFTZ",
-      "id": "vKEsyHFk#vBBowUOi"
+      "id": "vKEsyHFk#vBBowUOi",
+      "to": "vKEsyHFk#eO8ppFTZ"
     },
     {
       "order": 100330,
@@ -281,8 +281,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelLegend.tsx",
         "symbol": "iconQuery"
       },
-      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-      "id": "vKEsyHFk#2nZ1CgTt"
+      "id": "vKEsyHFk#2nZ1CgTt",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
     },
     {
       "order": 100340,
@@ -294,8 +294,8 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelPublication.tsx",
         "symbol": "architecturePublicationQuery"
       },
-      "to": "vKEsyHFk#GR5F7OtR",
-      "id": "vKEsyHFk#M616jpWp"
+      "id": "vKEsyHFk#M616jpWp",
+      "to": "vKEsyHFk#GR5F7OtR"
     },
     {
       "order": 100350,
@@ -307,8 +307,86 @@
         "path": "apps/web/src/ui/components/architecture-model/ModelReadingSurface.tsx",
         "symbol": "PeekProvider"
       },
-      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt",
-      "id": "vKEsyHFk#1prlLzRJ"
+      "id": "vKEsyHFk#1prlLzRJ",
+      "to": "vKEsyHFk/UOXNWLhR#bofpU6mt"
+    },
+    {
+      "order": 122640,
+      "kind": "call",
+      "label": "ModelStateHistory",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelStateDetails.tsx",
+        "symbol": "ModelStateHistory"
+      },
+      "to": "vKEsyHFk/yejBBUFY#J2zHlR4v",
+      "id": "vKEsyHFk#WAoBVEfb"
+    },
+    {
+      "order": 122860,
+      "kind": "call",
+      "label": "ModelWalkthroughReader",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelPreviewReader.tsx",
+        "symbol": "ModelWalkthroughReader"
+      },
+      "to": "vKEsyHFk/yejBBUFY#r5MuZktA",
+      "id": "vKEsyHFk#yE4hxtb8"
+    },
+    {
+      "order": 122900,
+      "kind": "call",
+      "label": "useViewerMarks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelDiagram.tsx",
+        "symbol": "useViewerMarks"
+      },
+      "to": "vKEsyHFk#y7nAR4xp",
+      "id": "vKEsyHFk#QBwfxRhJ"
+    },
+    {
+      "order": 122940,
+      "kind": "call",
+      "label": "ModelCodeWarnings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelAbout.tsx",
+        "symbol": "ModelCodeWarnings"
+      },
+      "to": "vKEsyHFk#u7mw3HwL",
+      "id": "vKEsyHFk#chpECAUJ"
+    },
+    {
+      "order": 123240,
+      "kind": "call",
+      "label": "useReferenceNavigation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModuleReferences.tsx",
+        "symbol": "useReferenceNavigation"
+      },
+      "to": "vKEsyHFk#RILUrr2x",
+      "id": "vKEsyHFk#3kH5XmA0"
+    },
+    {
+      "order": 123260,
+      "kind": "call",
+      "label": "ModuleNavigation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModelAboutSelection.tsx",
+        "symbol": "ModuleNavigation"
+      },
+      "to": "vKEsyHFk#DDaHHLlj",
+      "id": "vKEsyHFk#Skmts4qy"
     }
   ]
 }

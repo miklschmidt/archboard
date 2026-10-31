@@ -37,6 +37,32 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#LYFH1rhE",
       "to": "vKEsyHFk/SMjRfwN3#EqEyDg2D"
+    },
+    {
+      "order": 120740,
+      "kind": "call",
+      "label": "sequentially",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+        "symbol": "sequentially"
+      },
+      "to": "vKEsyHFk#ThrdM0iN",
+      "id": "vKEsyHFk#fQKKdpuB"
+    },
+    {
+      "order": 120790,
+      "kind": "call",
+      "label": "namedEntry",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/captures.ts",
+        "symbol": "namedEntry"
+      },
+      "to": "vKEsyHFk#Ir2uY43V",
+      "id": "vKEsyHFk#3YwQv43A"
     }
   ]
 }

@@ -7,8 +7,22 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/architecture-model/history.ts"
   },
-  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "schemaVersion": 1,
   "id": "vKEsyHFk#eO8ppFTZ",
-  "outgoing": []
+  "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
+  "outgoing": [
+    {
+      "order": 122510,
+      "kind": "call",
+      "label": "architectureModelKeys",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/architecture-model/history.ts",
+        "symbol": "architectureModelKeys"
+      },
+      "to": "vKEsyHFk#cNN2C3v4",
+      "id": "vKEsyHFk#oiMbPIOj"
+    }
+  ]
 }

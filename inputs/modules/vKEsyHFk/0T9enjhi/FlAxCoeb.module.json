@@ -58,6 +58,32 @@
       },
       "id": "vKEsyHFk/0T9enjhi#FheDJtzv",
       "to": "vKEsyHFk/0T9enjhi#KJy5yYuq"
+    },
+    {
+      "order": 122780,
+      "kind": "call",
+      "label": "QualifiedSubjectIdSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-explanation.ts",
+        "symbol": "QualifiedSubjectIdSchema"
+      },
+      "to": "vKEsyHFk#WI7DYDWp",
+      "id": "vKEsyHFk#lgh2mkpw"
+    },
+    {
+      "order": 123330,
+      "kind": "call",
+      "label": "StateSelectionSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/read/model-explanation.ts",
+        "symbol": "StateSelectionSchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#EvqDXLrK"
     }
   ]
 }

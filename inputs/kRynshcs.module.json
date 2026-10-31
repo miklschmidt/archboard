@@ -23,6 +23,32 @@
       },
       "id": "vKEsyHFk#LfkZEor0",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 120140,
+      "kind": "call",
+      "label": "writeFileAtomic",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/registry-file.ts",
+        "symbol": "writeFileAtomic"
+      },
+      "to": "vKEsyHFk/0T9enjhi#qTv7HuBw",
+      "id": "vKEsyHFk#wuEfzwxp"
+    },
+    {
+      "order": 121210,
+      "kind": "call",
+      "label": "stateDir",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workspace/src/runtime/store/registry-file.ts",
+        "symbol": "stateDir"
+      },
+      "to": "vKEsyHFk#VLvE4C5w",
+      "id": "vKEsyHFk#jiVh4Zml"
     }
   ]
 }

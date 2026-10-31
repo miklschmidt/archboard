@@ -23,6 +23,32 @@
       },
       "id": "vKEsyHFk/yejBBUFY#LyoUBIl0",
       "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 123040,
+      "kind": "call",
+      "label": "useModelNavigation",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx",
+        "symbol": "useModelNavigation"
+      },
+      "to": "vKEsyHFk#KtBdeME1",
+      "id": "vKEsyHFk#NbckL3UJ"
+    },
+    {
+      "order": 123080,
+      "kind": "call",
+      "label": "ModuleReferences",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/architecture-model/ModuleNavigation.tsx",
+        "symbol": "ModuleReferences"
+      },
+      "to": "vKEsyHFk#Bm1ASkd5",
+      "id": "vKEsyHFk#g9xspcWl"
     }
   ]
 }

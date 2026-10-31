@@ -27,8 +27,34 @@
         "path": "packages/codex-app-server/src/runtime/protocol/wire.ts",
         "symbol": "CodexTransportUsageError"
       },
-      "to": "vKEsyHFk#vi5P5qlJ",
-      "id": "vKEsyHFk#LjIsXp7y"
+      "id": "vKEsyHFk#LjIsXp7y",
+      "to": "vKEsyHFk#vi5P5qlJ"
+    },
+    {
+      "order": 120360,
+      "kind": "call",
+      "label": "CodexSafeI64Schema.refine",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/protocol/approval-schemas.ts",
+        "symbol": "CodexSafeI64Schema.refine"
+      },
+      "to": "vKEsyHFk#RE5czL9l",
+      "id": "vKEsyHFk#9uPKGkVM"
+    },
+    {
+      "order": 120440,
+      "kind": "call",
+      "label": "CodexSafeI64Schema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-app-server/src/runtime/protocol/approval-schemas.ts",
+        "symbol": "CodexSafeI64Schema"
+      },
+      "to": "vKEsyHFk#zak0fJpW",
+      "id": "vKEsyHFk#UFphSXUk"
     }
   ]
 }

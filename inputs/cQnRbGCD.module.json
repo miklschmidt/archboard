@@ -7,8 +7,35 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/schemas/model-definitions.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
   "schemaVersion": 1,
   "id": "vKEsyHFk#cQnRbGCD",
-  "outgoing": []
+  "parent": "vKEsyHFk/0T9enjhi#ZLJy8ivl",
+  "outgoing": [
+    {
+      "order": 122810,
+      "kind": "call",
+      "label": "DescriptionSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-definitions.ts",
+        "symbol": "DescriptionSchema"
+      },
+      "to": "vKEsyHFk#WI7DYDWp",
+      "id": "vKEsyHFk#RE1AAoge"
+    },
+    {
+      "order": 123410,
+      "kind": "call",
+      "label": "MigrationReadingsSchema",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/shared/schemas/model-definitions.ts",
+        "symbol": "MigrationReadingsSchema"
+      },
+      "to": "vKEsyHFk#8zoNGyLV",
+      "id": "vKEsyHFk#uWCIZs8O"
+    }
+  ]
 }

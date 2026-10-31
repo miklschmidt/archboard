@@ -13,19 +13,6 @@
   "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
   "outgoing": [
     {
-      "order": 82000,
-      "kind": "call",
-      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/main.tsx",
-        "symbol": "startWalkthroughReplay"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
-      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
-    },
-    {
       "order": 11000,
       "kind": "http",
       "label": "the page",
@@ -37,6 +24,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#k5pgt4eX",
       "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "order": 82000,
+      "kind": "call",
+      "description": "A page opened to replay a recorded talk starts the replay instead of the application.",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "startWalkthroughReplay"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#pszRWvFQ",
+      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
     },
     {
       "order": 102000,
@@ -62,6 +62,19 @@
       },
       "id": "vKEsyHFk/6E6hL0Zk#HlVF0G3N",
       "to": "vKEsyHFk#7ElpT3ls"
+    },
+    {
+      "order": 122610,
+      "kind": "call",
+      "label": "Application",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/main.tsx",
+        "symbol": "Application"
+      },
+      "to": "vKEsyHFk#Nuk1wzUM",
+      "id": "vKEsyHFk#imTf563S"
     }
   ]
 }

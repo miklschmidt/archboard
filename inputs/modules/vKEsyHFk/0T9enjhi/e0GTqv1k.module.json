@@ -47,6 +47,19 @@
       "to": "vKEsyHFk/vKEsyHFk#8XKRkSHl"
     },
     {
+      "order": 101040,
+      "kind": "call",
+      "label": "correctionCandidate",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
+        "symbol": "correctionCandidate"
+      },
+      "id": "vKEsyHFk#fXatx0uw",
+      "to": "vKEsyHFk#GH83MYZ4"
+    },
+    {
       "order": 147000,
       "kind": "call",
       "label": "decodeModel",
@@ -151,17 +164,17 @@
       "to": "vKEsyHFk#33V6sZtB"
     },
     {
-      "order": 101040,
+      "order": 123140,
       "kind": "call",
-      "label": "correctionCandidate",
+      "label": "readModelFiles",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/board/src/runtime/operations/model-edit/candidate.ts",
-        "symbol": "correctionCandidate"
+        "symbol": "readModelFiles"
       },
-      "to": "vKEsyHFk#GH83MYZ4",
-      "id": "vKEsyHFk#fXatx0uw"
+      "to": "vKEsyHFk#OJRnI6a2",
+      "id": "vKEsyHFk#YXx2T6Xm"
     }
   ]
 }

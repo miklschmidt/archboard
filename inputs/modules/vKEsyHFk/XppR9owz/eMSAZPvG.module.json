@@ -33,32 +33,6 @@
   ],
   "outgoing": [
     {
-      "order": 57000,
-      "kind": "call",
-      "label": "spawn it detached",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "spawn"
-      },
-      "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 58000,
-      "kind": "call",
-      "label": "identity probe",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "markServerIdentityVerified"
-      },
-      "id": "vKEsyHFk/XppR9owz#qXImR60k",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
       "order": 33000,
       "kind": "dependency",
       "label": "the Codex executable",
@@ -85,6 +59,32 @@
       "to": "vKEsyHFk#nErRivc3"
     },
     {
+      "order": 57000,
+      "kind": "call",
+      "label": "spawn it detached",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "spawn"
+      },
+      "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
+      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
+    },
+    {
+      "order": 58000,
+      "kind": "call",
+      "label": "identity probe",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "markServerIdentityVerified"
+      },
+      "id": "vKEsyHFk/XppR9owz#qXImR60k",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
       "order": 101940,
       "kind": "call",
       "label": "codedError",
@@ -94,8 +94,34 @@
         "path": "packages/server-lifecycle/src/runtime/operations/server-spawn-target.ts",
         "symbol": "codedError"
       },
-      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-      "id": "vKEsyHFk#vjFCNsNE"
+      "id": "vKEsyHFk#vjFCNsNE",
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 121610,
+      "kind": "call",
+      "label": "readPidFile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "readPidFile"
+      },
+      "to": "vKEsyHFk#4ivi78qP",
+      "id": "vKEsyHFk#DroBYTqV"
+    },
+    {
+      "order": 121660,
+      "kind": "call",
+      "label": "validateTiming",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/server-startup-cleanup.ts",
+        "symbol": "validateTiming"
+      },
+      "to": "vKEsyHFk#J9IpEl0k",
+      "id": "vKEsyHFk#QAeJDBIB"
     }
   ]
 }
