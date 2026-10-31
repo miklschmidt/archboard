@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-31T01:51:00Z'
-updated_date: '2026-10-31T03:02:00Z'
+updated_date: '2026-10-31T03:06:00Z'
 labels:
   - frontend
 dependencies:
@@ -31,7 +31,7 @@ The owner thought the legend was deleted, because the Key button at the lower le
 - [ ] #4 The picture fits inside the room the column leaves, and a selection never refits it
 - [x] #5 The whole legend stays on screen on every corpus reading, and a long subject scrolls above it
 - [x] #6 A group shows as a tag in both themes, in the look of the card tag, and the legend has no group switch
-- [ ] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
+- [x] #7 The name is Legend in the product, the code and the docs, and the word Key for this surface is gone
 - [x] #8 The bottom left button is gone, and so is any code that only served the overlay
 - [ ] #9 The owner accepts it by eye
 <!-- AC:END -->
@@ -63,4 +63,6 @@ Group tag finish computed from --semantic-orange in both themes: same stops in d
 Criterion 4 stays open. The second half is proven: a selection leaves the picture frame and its transform identical. The first half is true for the frame, which ends at the column, but not for every drawing. The camera keeps its landing rule (LANDING_FLOOR 0.6), so a drawing that needs less than 0.6 to fit stands at 0.6 and is cut, and the reader pans. On 27 of 112 readings that happens, Commands among them. On the old 1599 px pane it happened on 20 of those 27, so the column adds 7. The rule stays, because the brief keeps the camera moves and a rebuilt picture is coming.
 Criterion 7 stays open until the rewrite of CONTEXT.md lands, because that file still names the Key at this head.
 Two facts stale after this change, in files out of scope here: the comment on REFERENCE_WIDTH in packages/renderer/src/shared/constants/shell-geometry.ts says the panel lies over the picture, and its value 1271 (mirrored in crates/archboard-layout/src/constants.rs) is above the real room of 1191, which is 1239 less margins. The gates in docs/design/reader-redesign.md were measured at the old pane.
+
+Merged from feat/reader-legend at 6d5287ba8. The full gate passed on the merge in 153 seconds, 21 of 21. Criterion 4 stays open: a selection never refits the picture, but the landing rule stops at scale 0.6, so 27 of 112 readings are cut and the reader pans. On the old pane it was 20 of those 27. The root shows the summary of its state, because a model has no description. Two panes leave each picture 439 px wide.
 <!-- SECTION:NOTES:END -->
