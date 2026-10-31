@@ -159,6 +159,8 @@ pub enum Role {
     },
     /// The mark of a board a part opens, and which way that board lies.
     DrillMark(DrillDirection),
+    /// The arrow of a door.
+    DoorArrow,
     /// A standing's pin on a corner.
     Pin,
     /// The warning on a subject nobody has decided yet.

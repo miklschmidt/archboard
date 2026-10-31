@@ -22,7 +22,9 @@ type Node = VariantContent["nodes"][number];
 type Edge = VariantContent["edges"][number];
 
 /** A card as a picture draws it: the code path is read for the picture and stored nowhere. */
-type DrawnNode = Node & { readonly codePath?: string; readonly door?: true };
+type DrawnNode = Node & { readonly codePath?: string; readonly door?: DoorWay };
+/** Where a door lies in the tree from the open module. */
+type DoorWay = "up" | "across" | "down";
 /** What a reading hands the renderer. */
 type DrawnContent = Omit<VariantContent, "nodes" | "edges"> & {
 	nodes: DrawnNode[];
@@ -452,6 +454,8 @@ function drawingContent(
 	framing: { parents: ReadonlySet<string>; doors: readonly Node[] },
 ): DrawnContent {
 	const doors = new Set(framing.doors.map((node) => node.id));
+	const byId = new Map(complete.nodes.map((node) => [node.id, node]));
+	const [open] = framing.parents;
 	const childrenOf = containment(complete);
 	const onTrunk = busLines(connections, doors);
 	return {
@@ -459,7 +463,9 @@ function drawingContent(
 			.filter((node) => visible.has(node.id))
 			.map((node) => {
 				const { description: _description, binding: _binding, ...drawn } = node;
-				const card = doors.has(node.id) ? nameOnly(drawn) : withCodePath(drawn, node, childrenOf);
+				const card = doors.has(node.id)
+					? nameOnly(drawn, doorWay(byId, node.id, open))
+					: withCodePath(drawn, node, childrenOf);
 				if (node.parent !== undefined && framing.parents.has(node.parent)) return card;
 				const { parent: _parent, ...unframed } = card;
 				return unframed;
@@ -476,13 +482,28 @@ function drawingContent(
 }
 
 /**
- * A door says only what it is called.
+ * A door says only what it is called, and which way it lies.
  * @param card The drawn module.
+ * @param door Which way it lies from the open module.
  * @returns The card without its responsibility.
  */
-function nameOnly(card: DrawnNode): DrawnNode {
+function nameOnly(card: DrawnNode, door: DoorWay): DrawnNode {
 	const { responsibility: _responsibility, ...named } = card;
-	return { ...named, door: true };
+	return { ...named, door };
+}
+
+/**
+ * Where a door lies in the tree from the open module.
+ * @param byId Every module by its identity.
+ * @param door The door's module.
+ * @param open The open module, if the reading has one.
+ * @returns Whether it lies higher, level or deeper.
+ */
+function doorWay(byId: ReadonlyMap<string, Node>, door: string, open: string | undefined): DoorWay {
+	const depth = (id: string) => ancestors(byId, id).length;
+	const levels = open === undefined ? 0 : depth(door) - depth(open);
+	if (levels === 0) return "across";
+	return levels < 0 ? "up" : "down";
 }
 
 /**

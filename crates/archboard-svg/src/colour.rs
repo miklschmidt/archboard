@@ -19,6 +19,7 @@ pub(crate) fn css(colour: &Colour) -> String {
     match colour {
         Colour::Token { token } => format!("var(--{})", word(token)),
         Colour::Palette { color } => format!("var(--semantic-{})", word(color)),
+        Colour::Bright { color } => format!("var(--bright-{})", word(color)),
         Colour::Black => "black".to_owned(),
         Colour::White => "white".to_owned(),
         Colour::Transparent => "transparent".to_owned(),
@@ -39,6 +40,16 @@ pub(crate) fn css(colour: &Colour) -> String {
             css(ink),
             js::number(*lightness),
             js::number(*cap),
+            js::number(*chroma)
+        ),
+        Colour::Shifted {
+            ink,
+            lightness,
+            chroma,
+        } => format!(
+            "oklch(from {} calc(l + {}) calc(c + {}) h)",
+            css(ink),
+            js::number(*lightness),
             js::number(*chroma)
         ),
         Colour::Held { ink, least, most } => format!(

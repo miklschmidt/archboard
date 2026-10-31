@@ -102,6 +102,19 @@ pub const DIAGRAM_MARGIN: f64 = 20.0;
 pub(crate) const PLANNED_FRAME_MARGIN: f64 = 16.0;
 /// The distance from the page edge to a planned board's dashed frame.
 pub(crate) const PLANNED_FRAME_INSET: f64 = 8.0;
+/// How tall a door stands, and how round its corners are.
+pub const DOOR_HEIGHT: f64 = 34.0;
+pub(crate) const DOOR_RADIUS: f64 = 8.0;
+/// The room inside a door, on either side of its words.
+pub(crate) const DOOR_PADDING: f64 = 10.0;
+/// A door's icon when the picture is seen near, and from far away.
+pub(crate) const DOOR_ICON: f64 = 18.0;
+pub(crate) const DOOR_FAR_ICON: f64 = 22.0;
+/// How far in from a door's right end its arrow stands.
+pub(crate) const DOOR_ARROW_INSET: f64 = 18.0;
+/// The room a door keeps past its name for its arrow.
+pub(crate) const DOOR_ARROW_ROOM: f64 = 34.0;
+
 /// How tall a frame's edge tab stands: the room its far name and path take on one line.
 pub const TAB_HEIGHT: f64 = 36.0;
 /// The room inside a frame's edge tab, on either side of its words.

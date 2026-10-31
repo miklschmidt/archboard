@@ -32,7 +32,7 @@ pub enum Standing {
 }
 
 /// One of the vault policy's named colours.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 #[expect(
     missing_docs,

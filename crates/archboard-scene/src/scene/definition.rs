@@ -8,6 +8,7 @@ use ts_rs::TS;
 
 use crate::drawing::Emphasis;
 use crate::geometry::{Point, Rect};
+use crate::request::PaletteColor;
 use crate::scene::colour::Colour;
 use crate::scene::shape::{PathStep, Shape};
 
@@ -84,6 +85,13 @@ pub enum GradientId {
     FlowGold,
     /// The light along a legend's sample of a pulse.
     LegendPulse,
+    /// The face of a door of one colour, or of the primary action's own.
+    Door {
+        /// Its colour.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        #[ts(optional)]
+        color: Option<PaletteColor>,
+    },
 }
 
 /// The mask that hides what one line must not show.

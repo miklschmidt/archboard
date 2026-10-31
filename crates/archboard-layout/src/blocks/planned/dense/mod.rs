@@ -23,6 +23,8 @@ const CELL_GAP: f64 = 96.0;
 const LABEL_RUN: f64 = 64.0;
 /// The widest grid a frame takes.
 const MOST_COLUMNS: usize = 6;
+/// Room under the tab when a line runs from it to a part, with its words.
+const FOOT_ROOM: f64 = 72.0;
 
 /// One way to set a reading out.
 #[derive(Clone, Copy, Debug)]
@@ -46,6 +48,8 @@ struct Reading<'a> {
     frame: &'a Node,
     /// The size of the frame's edge tab, with the shoulder of the frame beside it.
     tab: Point,
+    /// Where the first row stands from the frame's top.
+    first_row: f64,
     doors: Vec<&'a Node>,
     items: Vec<Item<'a>>,
     joins: Vec<Join>,
@@ -112,6 +116,11 @@ impl<'a> Reading<'a> {
         });
         let edges = graph.edges.as_deref().unwrap_or_default();
         let joins = joins_of(edges, &mut items);
+        let inside = |id: &str| items.iter().any(|item| item.node.id == id);
+        let footed = edges.iter().any(|edge| {
+            (edge.source() == frame.id && inside(edge.target()))
+                || (edge.target() == frame.id && inside(edge.source()))
+        });
         let depth = depths(items.len(), &joins);
         let mut order: Vec<usize> = (0..items.len()).collect();
         order.sort_by_key(|&at| depth[at]);
@@ -131,6 +140,7 @@ impl<'a> Reading<'a> {
                 x: frame.w(),
                 y: frame.h(),
             },
+            first_row: frame.h() + CONTAINER_INSET + if footed { FOOT_ROOM } else { 0.0 },
             doors: graph
                 .kids()
                 .iter()
@@ -168,7 +178,7 @@ impl<'a> Reading<'a> {
         let gaps = self.column_gaps(grid, room);
         let xs = stations(CONTAINER_INSET, &widths, gaps.iter().copied());
         let ys = stations(
-            self.tab.y + CONTAINER_INSET,
+            self.first_row,
             &heights,
             std::iter::repeat(CELL_GAP + room),
         );
@@ -176,13 +186,13 @@ impl<'a> Reading<'a> {
             .items
             .iter()
             .zip(&grid.cells)
-            .map(|(item, &cell)| {
+            .map(|(_, &cell)| {
                 let (x, y) = grid.at(cell);
                 Rect {
                     x: xs[x],
                     y: ys[y],
-                    width: item.node.w(),
-                    height: item.node.h(),
+                    width: widths[x],
+                    height: heights[y],
                 }
             })
             .collect();

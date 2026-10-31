@@ -2,7 +2,7 @@
 //! board's own JSON (`@archboard/board/content`): what a layout places, and
 //! what the painter is told about each of them.
 
-use archboard_scene::drawing::{EdgeFacts, Emphasis, NodeFacts, Traffic};
+use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Traffic};
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// One part of a board: a card, or a container of other parts.
@@ -37,9 +37,9 @@ pub struct Node {
         deserialize_with = "present"
     )]
     pub drills: bool,
-    /// Whether it stands outside the open frame as a door.
-    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
-    pub door: bool,
+    /// Which way it lies from the open frame, when it stands outside it as a door.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub door: Option<DoorWay>,
 }
 
 /// Whether a field is there, whatever it holds.

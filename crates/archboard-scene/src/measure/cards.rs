@@ -9,6 +9,7 @@ use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, ARCHITECTURE_NOTE_GAP, CARD_NOTE_FONT,
     CARD_PATH_FONT, CARD_TITLE_FONT, DRILL_MARK_ROOM, ICON_CHIP_SIZE, PARENT_TITLE_SIZE,
     PART_NOTE_LINE, PART_NOTE_SIZE, PART_PATH_LINE, PART_PATH_SIZE, PART_TITLE_LINE,
+    DOOR_ARROW_ROOM, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING,
     PART_TITLE_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_FAR_NAME, TAB_FAR_PATH, TAB_HEIGHT, TAB_ICON_GAP,
     TAB_MOST, TAB_PADDING, TAB_PATH_GAP, TAB_SHOULDER,
 };
@@ -113,7 +114,7 @@ pub fn measure_node<N: Clone>(node: N, words: &CardWords<'_>, container: bool) -
         return one_line(node, words, TAB_SHOULDER);
     }
     if words.door {
-        return one_line(node, words, 0.0);
+        return door(node, words);
     }
     let size = Size {
         least: CARD_LEAST,
@@ -150,6 +151,22 @@ pub(crate) const TAB_FAR: TabLine = TabLine {
     path: TAB_FAR_PATH,
 };
 
+/// A door's line as the picture draws it near.
+const DOOR_NEAR: TabLine = TabLine {
+    left: DOOR_PADDING + DOOR_ICON + TAB_ICON_GAP - 2.0,
+    baseline: 22.0,
+    name: PARENT_TITLE_SIZE,
+    path: PART_PATH_SIZE,
+};
+
+/// A door's line as the picture draws it from far away.
+pub(crate) const DOOR_FAR: TabLine = TabLine {
+    left: DOOR_PADDING + DOOR_FAR_ICON + TAB_ICON_GAP - 2.0,
+    baseline: 24.0,
+    name: TAB_FAR_NAME,
+    path: TAB_FAR_PATH,
+};
+
 /// A tab's name and path on its one line. A name is never cut, and a path keeps its tail.
 pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<TextRun> {
     let set = |text: String, x: f64, size: f64, style: Style| TextRun {
@@ -169,9 +186,24 @@ pub(crate) fn tab_runs(line: TabLine, name: &str, path: Option<&str>) -> Vec<Tex
     std::iter::once(title).chain(path).collect()
 }
 
-/// A frame's edge tab or a door: one line with a name and a code path. It is as
-/// wide as its words from far away, with some room beside it. A frame keeps a
-/// shoulder there. Its responsibility stays out of the picture.
+/// A door: its name on one line, as wide as the name from far away, with its arrow.
+fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
+    let far = tab_runs(DOOR_FAR, words.name, None);
+    let end = far.last().map_or(0.0, |run| run.x + run.width);
+    MeasuredNode {
+        node,
+        width: end + DOOR_ARROW_ROOM,
+        height: DOOR_HEIGHT,
+        header_height: 0.0,
+        runs: tab_runs(DOOR_NEAR, words.name, None),
+        headers: None,
+        pointed: None,
+    }
+}
+
+/// A frame's edge tab: one line with its name and code path. It is as wide as
+/// its words from far away, and its frame keeps a shoulder beside it. Its
+/// responsibility stays out of the picture.
 fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
     let far = tab_runs(TAB_FAR, words.name, words.path);
     let end = far.last().map_or(0.0, |run| run.x + run.width);

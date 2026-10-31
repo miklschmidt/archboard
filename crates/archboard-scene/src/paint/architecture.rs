@@ -11,7 +11,7 @@ use crate::paint::crossings::{
     Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
-use crate::paint::door::paint_door;
+use crate::paint::door::{door_definitions, door_shadow, paint_door};
 use crate::paint::edge_tab::{paint_measured_frame, paint_measured_header};
 use crate::paint::edge_line::{
     arrowhead_reach, label_shadow, line_ink, paint_edge_line, paint_edge_words,
@@ -196,7 +196,7 @@ impl<'p> Painting<'p> {
         let masks = crossing_masks(edges, cutouts);
         let shaped = |id: &str| page.shapes.is_some_and(|shapes| shapes.has(id));
         let doors: HashSet<&str> = (drawing.drawing.cards.iter())
-            .filter(|card| card.measured.node.door)
+            .filter(|card| card.measured.node.door.is_some())
             .map(|card| card.measured.node.id.as_str())
             .collect();
         let ports = ports_of(&drawing.drawing.cards, edges, &|id| {
@@ -292,8 +292,8 @@ impl<'p> Painting<'p> {
     /// The shadow under a card: its shape's own, or the slab's.
     fn card_shadow(&self, card: &Node) -> Items {
         let id = &card.measured.node.id;
-        if card.measured.node.door {
-            return Items::new();
+        if card.measured.node.door.is_some() {
+            return door_shadow(id, card.bounds, self.palette, self.standings.of(id));
         }
         let standing = self.standings.of(id);
         match self.shapes_of(id) {
@@ -382,8 +382,8 @@ impl<'p> Painting<'p> {
             standing,
             unsettled,
         };
-        if card.measured.node.door {
-            return paint_door(self.ctx, card, &part, self.palette);
+        if let Some(way) = card.measured.node.door {
+            return paint_door(self.ctx, card, way, &part, self.palette);
         }
         let cut = self.plan.cut_of(id);
         paint_measured_card(self.ctx, card, &part, self.palette, cut)
@@ -418,8 +418,14 @@ impl<'p> Painting<'p> {
     fn layers(&self, stacked: &Stacked<'_>, traffic: &HashMap<String, Items>) -> Vec<Items> {
         let edges = &self.drawing.bridged.edges;
         let routes: Vec<&Curve> = edges.iter().map(|routed| &routed.curve).collect();
-        let mut painted: Vec<Items> =
-            vec![definitions(self.masks.definitions.clone()), self.cuts()];
+        let doors = (self.drawing.drawing.cards.iter())
+            .filter(|card| card.measured.node.door.is_some())
+            .map(|card| self.appearance_of(&card.measured.node.id));
+        let mut painted: Vec<Items> = vec![
+            definitions(self.masks.definitions.clone()),
+            self.cuts(),
+            definitions(door_definitions(doors)),
+        ];
         painted.extend(stacked.containers.iter().map(|held| self.frame(held)));
         painted.extend(
             stacked
