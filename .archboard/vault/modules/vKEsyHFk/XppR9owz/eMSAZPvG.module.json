@@ -33,6 +33,19 @@
   ],
   "outgoing": [
     {
+      "order": 33000,
+      "kind": "dependency",
+      "label": "the Codex executable",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "resolveCodexExecutable"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
+      "to": "vKEsyHFk#06cbjPhn"
+    },
+    {
       "order": 57000,
       "kind": "call",
       "label": "spawn it detached",
@@ -59,17 +72,30 @@
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     },
     {
-      "order": 33000,
+      "order": 45000,
       "kind": "dependency",
-      "label": "the Codex executable",
+      "label": "observe and stop the server process",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "resolveCodexExecutable"
+        "symbol": "readProcessObservation"
       },
-      "id": "vKEsyHFk/vKEsyHFk#z5LT96h1",
-      "to": "vKEsyHFk/vKEsyHFk#vEVm326r"
+      "id": "vKEsyHFk/vKEsyHFk#q7GKxqKL",
+      "to": "vKEsyHFk#R3jPedS8"
+    },
+    {
+      "order": 49000,
+      "kind": "dependency",
+      "label": "locate the server pidfile",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/store/pidfile.ts",
+        "symbol": "stateDir"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
+      "to": "vKEsyHFk#Q1jP0WbC"
     }
   ]
 }

@@ -16,19 +16,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [
-    {
-      "order": 25000,
-      "kind": "dependency",
-      "label": "the chosen checkouts",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "chosenCheckouts"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#Ggbqp1CU",
-      "to": "vKEsyHFk/vKEsyHFk#tdKalihR"
-    }
-  ]
+  "outgoing": []
 }

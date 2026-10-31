@@ -14,5 +14,19 @@
   "formerNames": [
     "Board refusal formatter"
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 75000,
+      "kind": "call",
+      "label": "send each operation as JSON",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#k8S5STpk",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    }
+  ]
 }

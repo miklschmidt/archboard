@@ -23,6 +23,19 @@
       },
       "id": "vKEsyHFk/IbGtfJE2#ETX9M5TU",
       "to": "vKEsyHFk/IbGtfJE2#JDTuIZQZ"
+    },
+    {
+      "order": 55000,
+      "kind": "dependency",
+      "label": "validate canonical evaluation inputs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/operations/runs/laying.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#wSGdfYDg",
+      "to": "vKEsyHFk#ZGONZKxj"
     }
   ]
 }

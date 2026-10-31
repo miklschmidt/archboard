@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
+    },
+    {
+      "order": 37000,
+      "kind": "dependency",
+      "label": "narrated walkthroughs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/rules/realtime/presentation-mode.ts",
+        "symbol": "languageName"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
+      "to": "vKEsyHFk#6RJ25ejV"
     }
   ]
 }
