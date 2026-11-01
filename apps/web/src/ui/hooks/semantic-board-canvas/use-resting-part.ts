@@ -11,7 +11,7 @@
 import {
 	pickedElements,
 	pickedTarget,
-} from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
+} from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";

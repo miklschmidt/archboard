@@ -29,7 +29,7 @@ import {
 	takePointerToDrag,
 	type Drag,
 } from "#ui/clients/semantic-board-canvas/subjects/pointer-gesture.ts";
-import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
+import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
 import { openableAt } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { controlAt, subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 

@@ -5,7 +5,7 @@
 // camera it opened under: a pan, a zoom or a new picture puts the part
 // somewhere else, so the tip closes rather than pointing at where it was.
 
-import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
+import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
