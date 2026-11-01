@@ -49,6 +49,8 @@ items. It pairs groups by subject id and mixes typed geometry, opacity and trans
 The entrance, the departure, the far swap and the dive follow the same rule. All of them
 run with no GPU and no DOM, and the Rust tests own them. The durations stay in
 `@archboard/timing`, and the page hands them to the painter.
+An in-between is also a scene, so a picture that arrives during a flight starts from
+what shows. Nothing lands first.
 
 ### The page keeps the decisions, and the stage keeps the motion
 
@@ -107,7 +109,11 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 - README takes run with `--disable-gpu`, so they paint on the CPU. They did not run again
   with this change.
 - The page holds a canvas and an SVG. TASK-561 follows this change to reduce the DOM.
+- Vello fills fixed buffers for each frame and reports nothing when one is full, so a
+  large board on a large canvas stops drawing with no error. `crates/vendor/vello_encoding`
+  raises two of those limits for 48 MB more GPU memory, and no test owns the budget.
 - On the measured Linux machine, headless Chromium with a GPU adapter drew a blank canvas on 2026-11-01.
   The owner states that there is no fix for this.
   So GPU parity and frame measurements run in a browser with a window. The notes of
-  TASK-560 hold the facts.
+  TASK-560 hold the facts. TASK-562 read frames from the WebGPU swap texture in headless
+  Chrome on the same machine, and those frames are correct.

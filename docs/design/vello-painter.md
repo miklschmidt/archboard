@@ -80,6 +80,7 @@ The worst diffs are antialiasing of small words and line tips at half scale, and
 Traffic on the largest board differed by 0.09% to 0.27%.
 
 The door fix came after this run and after the frame measurements below. It changed layout and no painter code, and nobody measured these numbers again.
+TASK-562 changed the painter after this run, and [Parity on the current painter](#parity-on-the-current-painter) holds the later numbers.
 
 ## The hill climb
 
@@ -117,30 +118,85 @@ Both columns ran on the same copy of the vault with a load under 5. The painter 
 | Veil          | Traffic on an unlit line recedes twice, as it did through the line's mask.                   | A walkthrough step shows no pulses on what it is not about.                                                        |
 | CPU traffic   | Traffic on the CPU painter rests as long as its last frame took.                             | See below.                                                                                                         |
 
+### What the first pass got wrong
+
+The tables above ran at 1920x1080 under emulation, and the first pass judged each moment against the old page.
+Both were wrong. The real window is 6144 by 1640 CSS pixels at a device pixel ratio of 1.25, so its canvas holds 13.3 million pixels.
+That size showed a black first load, a frozen first scroll and a dive that stood still, and 1920x1080 hid all three.
+The brief asked for the best motion that the GPU painter can give, so the old page is no measure of it.
+TASK-562 did the pass again, and the two sections below replace the claims of the first pass.
+
+## Vello's fixed buffers
+
+Vello 0.11 fills fixed buffers for each frame. A path costs tiles for its whole box inside the clip and the viewport, so the cost grows with zoom and canvas size.
+The table gives the tiles of one still picture of 32 cards and 83 lines on the 13.3 million pixel canvas.
+The default limit is 2.1 million tiles. Traffic comes on top of these numbers.
+
+| Zoom | Tiles     |
+| ---- | --------- |
+| 1    | 858,000   |
+| 1.2  | 1,100,000 |
+| 2    | 1,890,000 |
+| 4    | 2,480,000 |
+| 8    | 2,900,000 |
+
+If a buffer fills, Vello skips the raster and reports no error. Before the first frame, the canvas shows nothing. After it, the canvas keeps its last frame while the frame loop and its submits go on.
+A measure of frame gaps cannot see that fault, so read the picture itself.
+`crates/vendor/vello_encoding` raises `tiles` to `1 << 22` and `ptcl` to `1 << 24`, for 48 MB more GPU memory.
+A see-through layer also clips to what it holds, because a layer the size of the canvas costs tiles for all of it.
+No test owns this budget. A board that fills these buffers stops drawing, with no error.
+
+## The climb at the real window
+
+Each round filmed one moment on a large board at the real canvas size and changed one thing.
+A film holds the page's clock, steps it by one frame, and reads the frame that the painter drew. So it has no timing noise, and a look at the frames decides each round.
+The first films ran in a private headless sway at 7680x2160. Later films ran in headless Chrome on the same NVIDIA adapter, and they read each frame from the WebGPU swap texture, because that browser shows no WebGPU canvas in a screenshot.
+Both labs show 60 Hz at most, so their frame gaps count only as long gaps. No run measured 120 Hz at this canvas size.
+
+| Moment                  | What the film showed                                                                   | Change                                                                                                                 | Result                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| First load              | A black canvas, then the whole picture at once.                                        | One GPU starts as the page boots and finishes a first frame on a canvas nobody sees. A canvas is transparent until its first frame lands. | The entrance plays in order with no black.                                                      |
+| Entrance                | Shadows and junction marks stood at full strength on an empty board.                   | Each shadow comes in with what casts it.                                                                               | Nothing stands before its owner.                                                                |
+| First scroll            | The canvas held its last frame from the first wheel notch, at scale 1.06 up to 8.      | The Vello buffers above.                                                                                               | The wheel draws at every scale up to 8.                                                         |
+| Pan and zoom            | Traffic held still during a camera move.                                               | The hold is gone.                                                                                                      | Traffic runs through every camera move.                                                         |
+| Near and far            | The swap waited for the camera to rest, so a zoom ended in a second change.            | The stage watches the camera it draws and starts the swap at the crossing.                                             | The swap happens during the zoom.                                                               |
+| A door opens            | Everything moved at once, and a large toggle read as a tangle.                         | A staged flight: a card starts gently, a line that travels far recedes and returns, a label that crosses leaves and returns, and pulses ride the line. | The cards stay easy to follow, and the landing pop fell from 3157 changed pixels to 159.        |
+| A double line in flight | It lost its core and drew as a solid band.                                             | Each line has a mask for each frame.                                                                                   | The core travels with the line.                                                                 |
+| Click on a door         | Nothing moved for 250 to 600 ms while the next picture was laid out.                   | The picture steps back at once. The picture is drawn ahead while the reader rests on the card.                         | A rested door takes off 109 to 163 ms after the click, against 390 to 780 ms.                   |
+| Dive                    | The camera stood still for 600 ms and cut, and the board shrank by a fifth at landing. | The Vello buffers above. A glide uses the flight's curve, and a flight ends at the fit where the pane lands.           | The inset stands exactly where the board lands.                                                 |
+| Takeover                | The old hover light dimmed every card for one frame.                                   | A picture that takes the stage over has no last light.                                                                 | No change at takeover.                                                                          |
+| The way back            | The board shrank alone on an empty stage for 300 ms.                                   | Each fade of a dive follows the camera's place on the path, not the clock.                                             | The board settles into its card, and the parent comes up around it.                             |
+| A picture during a flight | The board jumped to the last picture and set off again, with 52,467 changed pixels in one frame. | The next flight starts from the in-between, and following a picture stops a glide where it is drawn.          | The frame changes 15,238 pixels, the same as its neighbors.                                     |
+
+At the real canvas size the painter takes 3.6 to 4 ms of main thread for a frame at the median and 5.2 to 6.3 ms at the 90th percentile.
+From submit to done takes 7.4 to 7.6 ms at the median and 10.4 to 11 ms at the 90th percentile. Each frame submits twice, for the render and for the blit.
+
 ### What the last pass covered
 
-The last pass ran on the final build. It captured frames on both pages at the same moments, and each sheet put the painter above the old page.
-It covered 12 moments:
+The last pass filmed these moments at the real canvas size on the final painter:
 
-- A toggle on a middle board and on the largest board.
-- A dive, the way back, and opening a leaf.
-- A first load, a breadcrumb, and opening a sequence.
-- A pointer's rest with its light, recede and tip.
-- The fit key, a zoom through the far view, and a walkthrough step.
+- A first load, a door that opens, and a picture that arrives during that flight.
+- A dive, the way back, and the takeover at the end of each.
+- A pointer's rest, a pick with its sweep, and the recede.
+- The fit key, the arrow keys, a drag, a wheel in and out, and a pinch, each through the far view where it reaches it.
+- Opening a sequence, the departure of the last picture, and a change from one flow to another.
+- A door and a dive with `prefers-reduced-motion`, where each is one cut and no pulse shows.
 
-The pass found nothing left to improve at the level of the painter.
-The pass before it also covered a flowchart entrance, traffic in motion, and a rest in the far view. They match the old page.
-With `prefers-reduced-motion`, two screenshots 700 ms apart were the same, no ink waited, and a toggle produced 4 frames.
+These moments had no film at this size, so this pass says nothing about them:
 
-The walkthrough step is on the example model's recorded tour, because a copy of a vault outside Git has no retained walkthrough.
-No pass judged the width of a sweep in the far view at close range.
+- A walkthrough step, because a copy of a vault outside Git has no retained walkthrough.
+- The light theme.
+- Any moment at 120 Hz.
 
-Four things stay, by choice:
+These things stay after the pass, and each one has a reason:
 
-- A toggle pauses for 100 to 150 ms before its flight on the largest board. About a third of that is layout of the hidden SVG, which TASK-561 can remove.
-- A pill that opens into a container grows as a large colored box while it crosses to the container's look. The old page does the same.
-- A first load starts about 150 ms later than on the old page, because the ink waits for the painter. The reader sees the entrance in exchange.
-- A receded line keeps its arrowhead. On the old page the head vanishes under a veil.
+- A new picture is drawn on the main thread, which stalls it for about 90 ms just before a flight on a large board. Pulses and the step back stop for that time. A move of that draw to a worker is a decision for the owner.
+- A door that the reader did not rest on waits for layout, with the step back as its answer.
+- The words of a card fade out and return during a flight that turned around, because the in-between holds no words that match the next picture.
+- The pulses of a sequence stop for a flight and start again when it lands.
+- A flight takes 640 ms at any distance, inside the band that the note on `PICTURE_MS.transition` in `@archboard/timing` gives. This pass tested no longer flight.
+- A first load starts about 150 ms later than on the old page, because the ink waits for the painter.
+- A receded line keeps its arrowhead.
 
 ### The CPU painter
 
