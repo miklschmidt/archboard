@@ -33,6 +33,8 @@ pub enum Purpose {
     Ring,
     /// A stroked or filled line or mark: a route, a glyph, a cutout, a bracket.
     Line,
+    /// The two rails of a double line: one wide stroke, with its core masked out.
+    Rail,
     /// A swipe laid under a line that stands for something.
     Swipe,
     /// A shape that is not a box, with straight sides and rounded corners: a

@@ -10,12 +10,10 @@ use crate::measure::cards::{Style, TITLE, path_runs};
 use crate::measure::width;
 use crate::paint::design::{
     ARCHITECTURE_CARD_PADDING, ARCHITECTURE_ICON_GAP, CARD_NOTE_FONT, CARD_THICKNESS,
-    DRILL_MARK_ROOM, FAR_TAG, ICON_CHIP_SIZE, PART_NOTE_SIZE, PART_PATH_SIZE, PART_TITLE_SIZE,
-    TAG_BESIDE, TAG_GAP,
+    DRILL_MARK_ROOM, FAR_SCALE, FAR_TAG, ICON_CHIP_SIZE, PART_NOTE_SIZE, PART_PATH_SIZE,
+    PART_TITLE_SIZE, TAG_BESIDE, TAG_GAP,
 };
 
-/// The scale of every far card: a name of 18 units, 12 px at a scale of 2/3.
-const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
 /// Below this scale a card's far words are no larger than its near ones.
 const FAR_FLOOR: f64 = 1.0;
 /// How finely a picture's scale is sought: half a unit of a name.

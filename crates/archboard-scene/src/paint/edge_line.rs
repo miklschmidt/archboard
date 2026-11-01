@@ -6,7 +6,7 @@ use crate::drawing::{Edge, Emphasis};
 use crate::geometry::{Point, label_anchor_of, round_coord};
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, route, shape};
-use crate::paint::design::PILL_RADIUS;
+use crate::paint::design::{PILL_RADIUS, RAILS};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -18,7 +18,7 @@ use crate::paint::styles::{
     relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
-use crate::request::{LineAppearance, Standing};
+use crate::request::{Dash, LineAppearance, Standing};
 use crate::scene::{
     Colour, Definition, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId, PathStep, Purpose,
     Role, Shape, Stroke, SubjectKind,
@@ -148,6 +148,13 @@ pub(super) fn paint_edge_line(
             .unfilled()
             .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
     ));
+    if appearance.dash == Dash::Mixed {
+        parts.push(shape(
+            Shape::path(Purpose::Rail, route(&routed.curve))
+                .unfilled()
+                .stroked(Stroke::new(&ink, RAILS).rounded()),
+        ));
+    }
     parts.push(shape(line));
     for (port, well) in ports {
         parts.push(port_inside(port, *well, &stroke, width, palette));

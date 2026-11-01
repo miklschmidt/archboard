@@ -8,7 +8,7 @@ use crate::geometry::{Rect, canvas_for, curve_bounds, inflate, union};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, lines};
 use crate::paint::crossings::{
-    Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, trunk_cutouts,
+    Cutout, Masks, crossing_cutouts, crossing_masks, label_cutouts, rail_cutouts, trunk_cutouts,
 };
 use crate::paint::design::{DIAGRAM_MARGIN, SLAB_RADIUS};
 use crate::paint::door::{door_colours, door_shadow, paint_door};
@@ -28,7 +28,7 @@ use crate::paint::slab::{Lift, shadow_under};
 use crate::paint::standing::{Standings, Unsettled, marked_box};
 use crate::paint::styles::{head_of, quietened, relationship_ink, stroke_width};
 use crate::paint::traffic::{TrafficLine, paint_traffic};
-use crate::request::{LineAppearance, NodeAppearance, Standing};
+use crate::request::{Dash, LineAppearance, NodeAppearance, Standing};
 use crate::scene::{Atlas, Colour, Definition, Item, SubjectKind};
 
 /// Boxes by subject id, in the order they were found.
@@ -166,8 +166,10 @@ impl<'p> Painting<'p> {
     ) -> Painting<'p> {
         let edges = &drawing.bridged.edges;
         let removed = |id: &str| standings.of(id) == Some(Standing::Removed);
-        let mut cutouts: Vec<Cutout> = crossing_cutouts(edges, &drawing.bridged.bridges);
-        cutouts.extend(trunk_cutouts(edges));
+        let double = |routed: &Edge| look_of(vocabulary, &routed.edge.id).dash == Dash::Mixed;
+        let mut cutouts: Vec<Cutout> = crossing_cutouts(edges, &drawing.bridged.bridges, &double);
+        cutouts.extend(trunk_cutouts(edges, &double));
+        cutouts.extend(rail_cutouts(edges, &double));
         let see_through: Vec<Rect> = edges
             .iter()
             .filter(|routed| removed(&routed.edge.id))

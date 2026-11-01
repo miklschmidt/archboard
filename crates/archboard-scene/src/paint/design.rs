@@ -65,6 +65,10 @@ pub(crate) const SLAB_RADIUS: f64 = 8.0;
 pub(crate) const CARD_THICKNESS: f64 = 4.0;
 /// How far the lit lip of a tray shows below its floor.
 pub(crate) const TRAY_LIP: f64 = 2.0;
+/// How thick a well shows its walls, the top wall and the two side walls alike.
+pub(crate) const TRAY_WALL: f64 = 6.0;
+/// The thin shadow line under a well's lip, at its foot.
+pub(crate) const TRAY_CREASE: f64 = 1.0;
 /// How far a container's words stand in from the outer edge of its box.
 const HEADER_SLAB_INSET: f64 = 8.0;
 /// How tall a type chip's front edge shows.
@@ -169,6 +173,15 @@ pub const LANDING_ROOM: (f64, f64) = (
     SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH - RIGHT_PANEL_WIDTH - 2.0 * FIT_MARGIN,
     955.0,
 );
+/// How much larger everything a far view sets larger stands: a far card's words
+/// and every line with its arrowhead.
+pub const FAR_SCALE: f64 = 18.0 / PART_TITLE_SIZE;
+/// How thick a line of normal weight is drawn.
+pub const LINE_WIDTH: f64 = 1.4;
+/// How thick a line of hero weight is drawn.
+pub const HERO_LINE_WIDTH: f64 = 2.2;
+/// How wide a double line's rails stand, side to side.
+pub const RAILS: f64 = 3.6;
 /// The room between an architecture card's edge and its chip and words.
 pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.
