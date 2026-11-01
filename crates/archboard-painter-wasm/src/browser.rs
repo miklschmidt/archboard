@@ -364,6 +364,13 @@ impl Painter {
         }
     }
 
+    /// Whether traffic is all that moves at a moment.
+    #[wasm_bindgen(js_name = trafficAlone)]
+    #[must_use]
+    pub fn traffic_alone(&self, now: f64) -> bool {
+        self.stage.traffic_alone(now)
+    }
+
     /// Draw the frame of a moment, in milliseconds, and say whether the next
     /// moment will look different.
     ///

@@ -357,6 +357,16 @@ fn traffic_asks_for_frames_while_it_runs_and_none_while_it_is_held() {
 }
 
 #[test]
+fn traffic_is_alone_until_anything_else_moves() {
+    let mut stage = stage_of(traffic_picture());
+    pulses(&mut stage, 0.0);
+    assert!(stage.traffic_alone(0.0));
+    stage.set_far(true, 100.0, 0.0);
+    assert!(!stage.traffic_alone(50.0));
+    assert!(stage.traffic_alone(100.0));
+}
+
+#[test]
 fn a_carried_clock_runs_on_and_hidden_traffic_draws_nothing() {
     let mut stage = stage_of(traffic_picture());
     stage.set_picture_time(7.0);

@@ -485,8 +485,10 @@ class PictureStage {
 		this.#frame = null;
 		if (this.#started === null) return;
 		fitPainter(this.#started);
+		const clock = frameClock();
+		const began = clock.now();
 		try {
-			if (this.#started.painter.frame(now)) this.#invalidate();
+			if (this.#started.painter.frame(now)) this.#nextFrame(now, clock.now() - began);
 		} catch (cause) {
 			void this.#replacePainter(cause);
 			return;
@@ -494,6 +496,21 @@ class PictureStage {
 		this.#name(this.#started);
 		this.#ink.show();
 	};
+
+	/**
+	 * Ask for the next frame. Traffic on the CPU rests as long as its last frame took, which
+	 * leaves a reader half of the thread. A recording's clock stands still, so nothing rests there.
+	 * @param now The last frame's time.
+	 * @param cost How long the last frame took.
+	 */
+	#nextFrame(now: number, cost: number): void {
+		const started = this.#started;
+		if (started?.kind === "cpu" && cost > 0 && started.painter.trafficAlone(now)) {
+			frameClock().after(cost, this.#invalidate);
+			return;
+		}
+		this.#invalidate();
+	}
 
 	/** Start the painter, the first time there is something to paint. */
 	async #start(): Promise<void> {

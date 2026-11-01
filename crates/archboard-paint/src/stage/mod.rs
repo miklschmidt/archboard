@@ -522,9 +522,19 @@ impl Stage {
 
     /// Whether a value is still changing at a moment.
     fn changing(&self, now: f64) -> bool {
+        self.moving_traffic() || self.moving(now)
+    }
+
+    /// Whether traffic is all that moves at a moment.
+    #[must_use]
+    pub fn traffic_alone(&self, now: f64) -> bool {
+        self.moving_traffic() && !self.moving(now)
+    }
+
+    /// Whether anything but traffic moves at a moment.
+    fn moving(&self, now: f64) -> bool {
         let lighting = &self.lighting;
-        self.moving_traffic()
-            || self.flying(now)
+        self.flying(now)
             || self.presentation.sweep.is_some()
             || ![self.glide.x, self.glide.y, self.glide.scale, self.far]
                 .iter()
