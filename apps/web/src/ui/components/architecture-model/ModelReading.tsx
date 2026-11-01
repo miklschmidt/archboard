@@ -109,16 +109,6 @@ function offeredBy(model: Content, walk: ChangeWalk): readonly Destination[] {
 }
 
 /**
- * What the Changes tab says: how many there are, then where the reader stands among them.
- * @param walk The walk.
- * @returns The words, or nothing while no proposal is read.
- */
-function walkFact(walk: ChangeWalk): string | undefined {
-	if (!walk.reviewing) return undefined;
-	return walk.position === undefined ? String(walk.count) : `${walk.position + 1} of ${walk.count}`;
-}
-
-/**
  * What a proposal changes, in the left column. An interface change selects its module the way a
  * count of the interface line does, and this list stands beside About, so it brings the picture back.
  * @param props The reader.
@@ -178,10 +168,6 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	);
 	const records = keepsRecord(model);
 	const { reference } = reader.comparison;
-	const walker = useMemo(
-		() => (reviewing ? <ModelChanges.Walker walk={walk} /> : undefined),
-		[reviewing, walk],
-	);
 	const collections = useMemo(() => flowCollections(model, reference), [model, reference]);
 	return (
 		<>
@@ -199,8 +185,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				onDestination={reader.onDestination}
 				flows={depicted.flows.length}
 				walkthroughs={model.walkthroughs.length}
-				changes={walkFact(walk)}
-				walker={walker}
+				changes={reviewing ? String(walk.count) : undefined}
 				offered={offeredBy(model, walk)}
 			>
 				<ModelColumn.List value="modules">
@@ -259,15 +244,15 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 }
 
 /**
- * The header of a reading: the crumbs, the open module's code path, the state chip and
- * `Diagram | About`. A code path says where a module is, so a flow shows none.
+ * The header of a reading: the crumbs, the open module's code path, the state chip, the walk of a
+ * proposal's changes and `Diagram | About`. A code path says where a module is, so a flow shows none.
  * @param props The reader.
  * @param props.reader The reader.
  * @returns The parts of the header.
  */
 function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, accepted, onOpen } = reader;
+	const { model, location, structure, tree, accepted, walk, onOpen } = reader;
 	const { opened, trail } = structure;
 	const ending = endingOf(reader);
 	return (
@@ -289,6 +274,7 @@ function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
 					onOpen={reader.openHistory}
 				/>
 			)}
+			{walk.reviewing && <ModelChanges.Walker walk={walk} />}
 		</ModelHeading>
 	);
 }

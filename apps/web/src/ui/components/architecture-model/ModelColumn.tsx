@@ -1,4 +1,4 @@
-import { Fragment, type JSX, type ReactNode } from "react";
+import type { JSX, ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 import { Badge, Tabs } from "@archboard/ui-kit/components";
@@ -19,8 +19,6 @@ interface ColumnDestinationsProps {
 	readonly walkthroughs?: number;
 	/** What the Changes tab says of the walk, while a proposal is read. */
 	readonly changes?: string | undefined;
-	/** The controls of the walk, which stand at the end of the Changes tab's row. */
-	readonly walker?: ReactNode;
 	/** The lists, each in a {@link ColumnList}. */
 	readonly children: ReactNode;
 }
@@ -31,9 +29,6 @@ interface DestinationEntry {
 	readonly label: string;
 	readonly count: string;
 }
-
-/** How many tabs the column holds on one row. */
-const TABS_ON_A_ROW = 5;
 
 /**
  * What a tab says of how many things it holds.
@@ -56,16 +51,22 @@ function ColumnFind(props: { readonly children: ReactNode }): JSX.Element | null
 }
 
 /**
- * The tabs a reading offers.
+ * The tabs a reading offers. Six tabs hold one row only without the counts of the model, so Changes
+ * takes their room while a proposal is read.
  * @param props The destinations and what the tabs say of them.
  * @returns The tabs.
  */
 function destinationEntries(props: ColumnDestinationsProps): readonly DestinationEntry[] {
 	const { offered, flows = 0, walkthroughs = 0, changes = "" } = props;
+	const counted = changes === "";
 	const all: readonly DestinationEntry[] = [
 		{ value: "modules", label: "Modules", count: "" },
-		{ value: "flows", label: "Flows", count: countOf(flows) },
-		{ value: "walkthroughs", label: "Walkthroughs", count: countOf(walkthroughs) },
+		{ value: "flows", label: "Flows", count: counted ? countOf(flows) : "" },
+		{
+			value: "walkthroughs",
+			label: "Walkthroughs",
+			count: counted ? countOf(walkthroughs) : "",
+		},
 		{ value: "history", label: "History", count: "" },
 		{ value: "measures", label: "Measures", count: "" },
 		{ value: "changes", label: "Changes", count: changes },
@@ -76,7 +77,7 @@ function destinationEntries(props: ColumnDestinationsProps): readonly Destinatio
 /**
  * Put a reader's destinations in the left column while its pane has focus: tabs on the top edge of
  * a well, with the count of the whole model on Flows and Walkthroughs, so a list here never changes
- * under a reader. A proposal adds Changes on a row of its own, and the walk stands at the end of it.
+ * under a reader. A proposal adds Changes to the row.
  * @param props The destination on screen and the lists.
  * @returns The destinations, or nothing while another pane has focus.
  */
@@ -93,7 +94,11 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 					onValueChange={onDestination}
 					className="min-h-0 flex-1 gap-0 px-2 pb-2"
 				>
-					<DestinationTabs entries={destinationEntries(props)} walker={props.walker} />
+					<Tabs.List variant="edge" className="shrink-0">
+						{destinationEntries(props).map((entry) => (
+							<DestinationTab key={entry.value} entry={entry} />
+						))}
+					</Tabs.List>
 					<div data-slot="column-well" className="column-well flex-1">
 						{props.children}
 					</div>
@@ -102,43 +107,6 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 			)}
 		</>
 	);
-}
-
-/**
- * The tabs, and at the end of the last row the controls of the walk.
- * @param props The tabs and the controls.
- * @param props.entries The tabs.
- * @param props.walker The controls of the walk.
- * @returns The rows.
- */
-function DestinationTabs(props: {
-	readonly entries: readonly DestinationEntry[];
-	readonly walker: ReactNode;
-}): JSX.Element {
-	const { entries, walker } = props;
-	return (
-		<div className="relative shrink-0">
-			<Tabs.List variant="edge">
-				{entries.map((entry, index) => (
-					<Fragment key={entry.value}>
-						{index === TABS_ON_A_ROW && <TabRowBreak />}
-						<DestinationTab entry={entry} />
-					</Fragment>
-				))}
-			</Tabs.List>
-			{walker !== undefined && (
-				<div className="absolute right-0 bottom-1 flex items-center">{walker}</div>
-			)}
-		</div>
-	);
-}
-
-/**
- * The rule that sends the next tab to a row of its own.
- * @returns The rule.
- */
-function TabRowBreak(): JSX.Element {
-	return <span aria-hidden="true" className="border-border w-full border-t" />;
 }
 
 /**

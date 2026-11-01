@@ -27,6 +27,7 @@ import {
 import { serverPath } from "./support/navigator-support.ts";
 
 const WAIT = { timeoutMs: 10_000 } as const;
+const TAB_TOPS = `[...document.querySelectorAll('[data-destination]')].map(tab => tab.offsetTop)`;
 
 /** A flow for the proposal to change, because most changes in a proposal are steps. */
 const REQUESTS = {
@@ -117,12 +118,12 @@ async function claimOn(
 /**
  * Where a proposal's walk stands.
  * @param browser The page.
- * @returns The row it stands on, what the tab says and the grammar on show.
+ * @returns The row it stands on, what the walk says and the grammar on show.
  */
 function walkPlace(browser: AgentBrowserSession) {
-	return browser.eval<{ lit: string | null; tab: string; grammar: string | null }>(`({
+	return browser.eval<{ lit: string | null; walk: string; grammar: string | null }>(`({
 		lit: document.querySelector('[data-slot="model-changes"] [data-change-id][aria-selected="true"]')?.getAttribute('data-change-id') ?? null,
-		tab: document.querySelector('[data-destination="changes"]')?.textContent ?? '',
+		walk: document.querySelector('[data-slot="model-change-walk"]')?.textContent ?? '',
 		grammar: document.querySelector('[data-slot="model-reading"]')?.getAttribute('data-grammar') ?? null,
 	})`);
 }
@@ -131,12 +132,12 @@ function walkPlace(browser: AgentBrowserSession) {
  * Wait for the walk to stand on a change.
  * @param browser The page.
  * @param id The change.
- * @param position The position that the tab shows.
+ * @param position The position that the walk shows.
  */
 async function standsOn(browser: AgentBrowserSession, id: string, position: string): Promise<void> {
 	await pollUntil(
 		() => walkPlace(browser),
-		(now) => now.lit === id && now.tab.includes(position),
+		(now) => now.lit === id && now.walk.includes(position),
 		`the walk at ${position} on ${id}`,
 		WAIT,
 	);
@@ -219,6 +220,7 @@ test("proposal comparison draws removed definitions from its coherent base and e
 			`document.querySelector('[data-slot="model-interface-unchanged"]') !== null`,
 		),
 	).toBe(true);
+	expect(new Set(await browser.eval<number[]>(TAB_TOPS)).size).toBe(1);
 	for (const [index, id] of rows.entries()) {
 		await browser.run(index === 0 ? ["click", '[data-slot="model-change-next"]'] : ["press", "n"]);
 		await standsOn(browser, id, `${index + 1} of ${rows.length}`);

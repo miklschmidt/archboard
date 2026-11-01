@@ -269,13 +269,13 @@ function KeyCap(props: { readonly letter: string }): JSX.Element {
 }
 
 /**
- * The controls of the walk, which name the keys that do the same.
+ * The controls of the walk, which say where the reader stands and name the keys that do the same.
  * @param props The walk.
  * @param props.walk The walk.
  * @returns The controls.
  */
 function ChangesWalker(props: { readonly walk: ChangeWalk }): JSX.Element {
-	const { hasPrevious, hasNext, step } = props.walk;
+	const { hasPrevious, hasNext, step, position, count } = props.walk;
 	const previous = useCallback((): void => void step(-1), [step]);
 	const next = useCallback((): void => void step(1), [step]);
 	return (
@@ -294,6 +294,11 @@ function ChangesWalker(props: { readonly walk: ChangeWalk }): JSX.Element {
 				<RiArrowLeftSLine aria-hidden="true" className="size-4" />
 				<KeyCap letter="P" />
 			</Button>
+			{position !== undefined && (
+				<span data-slot="model-change-place" className="text-control px-1 tabular-nums">
+					{position + 1} of {count}
+				</span>
+			)}
 			<Button
 				size="sm"
 				data-slot="model-change-next"
