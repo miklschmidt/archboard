@@ -3,8 +3,7 @@
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{
-    Clip, ClipId, Definition, Group, Item, Mask, MaskId, PathStep, Purpose, Role, Scene, Shape,
-    Transform,
+    Clip, ClipId, Definition, Group, Item, Mask, MaskId, Purpose, Role, Scene, Shape, Transform,
 };
 
 use super::Between;
@@ -256,7 +255,7 @@ fn an_added_line_draws_on_from_its_start() {
         (solid(&group), shape_of(&group, Purpose::Line).clone())
     };
 
-    let (visible, begun) = stroke(0.54);
+    let (visible, begun) = stroke(PHASES.transition.draw_start);
     assert_eq!(visible, 0.0, "invisible where its phase begins");
     let dash = begun.stroke.as_ref().expect("stroked");
     assert_eq!(
@@ -280,21 +279,14 @@ fn an_added_lines_arrowhead_waits_until_it_is_nearly_drawn() {
         let group = drawing(&body, "f")[0].clone();
         (solid(&group), shape_of(&group, Purpose::Line).clone())
     };
-    let (_, nearly) = stroke(0.95);
-    assert!(
-        nearly.marker.is_none(),
-        "no arrowhead before it is nearly there"
-    );
-    let (_, there) = stroke(0.97);
-    assert!(
-        there.marker.is_some(),
-        "the arrowhead appears at arrowheadAt"
-    );
+    let (_, there) = (0..2000)
+        .map(|step| stroke(f64::from(step) * 0.002))
+        .find(|(_, shape)| shape.marker.is_some())
+        .expect("it lands");
     let partly = there.stroke.as_ref().expect("stroked");
-    assert!(
-        partly.dash_offset.expect("an offset") < partly.dashes[0],
-        "still drawing"
-    );
+    let left = partly.dash_offset.expect("an offset") / partly.dashes[0];
+    assert!(left > 0.0, "still drawing");
+    assert!(left < 0.1, "no arrowhead before it is nearly there");
 }
 
 /// A line whose route gets two legs longer.
@@ -330,21 +322,21 @@ fn a_line_keeps_both_its_routes_at_the_ends_of_its_move() {
 }
 
 #[test]
-fn a_line_between_routes_of_different_lengths_is_a_cubic_for_each_leg() {
-    let (_, _, between) = a_longer_route();
-    let middle = between.at(0.4);
-    let steps = route_of(drawing(&middle, "e")[0]);
-    assert!(matches!(steps[0], PathStep::Move { .. }));
+fn a_line_that_changes_its_shape_leaves_and_is_drawn_again_rather_than_swinging() {
+    let (from, to, between) = a_longer_route();
+    let leaving = between.at(0.2);
     assert_eq!(
-        steps.len(),
-        4,
-        "a move and a cubic for each of the longer route's legs"
+        route_of(drawing(&leaving, "e")[0]),
+        route_of(drawing(&from.body, "e")[0])
     );
-    assert!(
-        steps[1..]
-            .iter()
-            .all(|step| matches!(step, PathStep::Cubic { .. }))
-    );
+    let drawn = between.at(between.length() * 0.9);
+    let group = drawing(&drawn, "e")[0];
+    assert_eq!(route_of(group), route_of(drawing(&to.body, "e")[0]));
+    let dash = shape_of(group, Purpose::Line)
+        .stroke
+        .as_ref()
+        .expect("stroked");
+    assert!(!dash.dashes.is_empty(), "it is being drawn");
 }
 
 #[test]

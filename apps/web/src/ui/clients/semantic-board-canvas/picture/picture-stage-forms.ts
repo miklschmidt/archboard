@@ -73,6 +73,7 @@ function headingJson(heading: Departure | null): string {
 const PHASES = JSON.stringify({
 	transition: PICTURE_TRANSITION_PHASES,
 	entry: PICTURE_ENTRY_PHASES,
+	enter: PICTURE_MS.entry,
 	exit: PICTURE_MS.exit,
 });
 

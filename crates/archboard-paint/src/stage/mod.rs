@@ -15,11 +15,11 @@ use std::collections::{HashMap, HashSet};
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
-use crate::between::{Heading, Phases};
+use crate::between::{Entrance, Heading, Phases};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
-use crate::flight::{Dive, Flight, Ghost, Leaving};
+use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::pick::Targets;
@@ -154,10 +154,23 @@ impl Stage {
         self.find_warnings();
     }
 
-    /// Put a picture on the stage in place of what stands there.
+    /// Put a picture on the stage in place of what stands there. The sparks of a
+    /// board that bloomed inside a card run on over the board that takes over.
     pub fn show(&mut self, painting: Painting) {
+        let bloom = self.bloom_of(&painting);
+        let enter = self.phases.as_ref().map(|phases| phases.enter);
         self.stand(painting);
         self.lit_afresh = true;
+        self.flight = bloom
+            .zip(enter)
+            .and_then(|(bloom, ms)| Flight::landed_from(bloom, ms, self.now));
+    }
+
+    /// The board that bloomed inside a card, when a flight has brought it here.
+    fn bloom_of(&mut self, painting: &Painting) -> Option<Entrance> {
+        self.dive
+            .take_if(|dive| dive.way == DiveWay::In && dive.inset.scene == painting.scene)?
+            .bloom
     }
 
     /// Carry the picture on the stage into the next, over a time in

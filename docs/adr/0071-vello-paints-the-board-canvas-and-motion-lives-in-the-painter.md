@@ -83,6 +83,14 @@ A door to a board at the same depth goes sideways too, because a flight into it 
 Only another view of one board and a reading of no board keep the rack of focus and the bloom.
 The way never depends on the route, so a card, a door, a crumb, the list and Back agree.
 
+### A line is drawn along the connections
+
+The owner tested the depth moves and found the lines too fast for how much was going on.
+A spark now draws each line, in the order that the connections give, so a board builds along the way its parts talk.
+A card takes the spark round its edge and sends its own lines on.
+A line that changes its shape in a move leaves and is drawn again, because a board of lines swinging at once reads as a tangle.
+The lines run on past the rest of the move, so the cards can be read first, and a move's progress runs past 1 for that time.
+
 ### The page keeps the decisions, and the stage keeps the motion
 
 The page decides which arrival a picture gets and how far the shared cards moved.

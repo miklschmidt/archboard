@@ -253,7 +253,7 @@ The focal moment is a card that opens into its board. Every other move is a quie
 | A move to a shallower board | The picture faded, and the next came in by reading order.             | The camera flies out of the card that held this board. With no such card, the two boards zoom out as one.                |
 | A move at the same depth    | The picture faded, and the next came in by reading order.             | The two boards travel sideways together, in the order of the tree, with a smear along the way.                           |
 | A view of the same board    | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.         |
-| A first load                | Frames, then cards down the board, then lines, then all labels.       | A wave leaves the middle: cards, then lines with light at their heads, then each label as its line reaches it.           |
+| A first load                | Frames, then cards down the board, then lines, then all labels.       | A wave of cards leaves the middle. Sparks then draw the lines along the connections, and each label comes as they reach. |
 | A door opens                | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur.       |
 | A door closes               | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                       |
 
@@ -272,6 +272,27 @@ A passage (`crates/archboard-paint/src/passage.rs`) is a move between boards wit
 | Out      | Shrinks and fades, and stays in focus. | Settles from round the reader.                  | The next board comes into focus last.      |
 
 The strip of boards is as short as the widest board lets it be. The next board is in sight before the last has gone, and no frame in the middle of the move is empty. The boards stand 8 percent further apart than the edge of the canvas needs, so the slow end of the move leaves nothing at the edge.
+
+### Lines follow the connections
+
+The owner looked at the depth moves and said: "It's a bit tooo fast now for how much is going on with those lines." They suggested lines that animate along traced connections, or a reveal from the top left to the bottom right.
+
+The film showed two causes. On a first load, every line appeared in about 180 ms. On a door, every line swung from its old route to its new route at once, and the middle of the move was a web of diagonals.
+
+`crates/archboard-paint/src/between/circuit.rs` gives the order. A spark leaves each card that nothing feeds. Where it lands, the lines of that card start, so a board builds along the way its parts talk. A ring has no start, so a spark enters it at its top left card.
+
+The more lines run at once, the slower each goes, by the square root of their number. At one pace, most lines flash on at the start, because most lines stand near a source. In full proportion, the last lone line whips across the board.
+
+`crates/archboard-paint/src/between/spark.rs` draws the spark and the rim. A rim starts where a line lands on a card, and it runs both ways round the card's edge. Each card takes one rim, from the first line that lands on it.
+
+| Moment                | Sparks start | The last spark lands | The rest of the move lands |
+| --------------------- | ------------ | -------------------- | -------------------------- |
+| A first load          | 198 ms       | 2,128 ms             | 760 ms                     |
+| A move on one picture | 269 ms       | 1,920 ms             | 640 ms                     |
+
+A small board does not stretch to fill this time, and it lands early. A line with a different number of points, or points that move more than 10 units apart, counts as a new shape. A line that keeps its shape rides with its cards.
+
+A diagonal reveal from the top left was filmed for comparison. It reads tidily, but its order says nothing about the board, so the order of the connections stayed. A traffic pulse mixes toward white, and a white spark vanishes on the chalk ground, so a spark mixes toward `Token::DiagramText`.
 
 ### What the lens costs
 
@@ -299,4 +320,7 @@ The pass over the depth moves filmed these moves in the repository's own model a
 It also filmed a move to a grandchild, a move two levels up, a change of mind during a passage, a door to a shallower board, Back, and a sideways move on the light ground.
 Eight sideways moves between two large boards gave 913 frames in about 16 seconds, with 11 frames over 25 ms.
 A move that a walkthrough makes between boards was not filmed in this pass. The film of a walkthrough stayed on one board.
+
+The pass over the lines filmed a first load at full pixel scale on both grounds, a door, and a flight into a card, and looked at the frames. It also filmed a first load with `prefers-reduced-motion`, and the diagonal reveal on a first load and a door.
+A door on the large board gave 103 frames in headless Chrome at 60 Hz, with a median of 4.9 ms on the main thread for each frame and 9 frames over 25 ms. The longest gap, 83 ms, follows one main-thread task of 86 ms when the picture arrives.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.

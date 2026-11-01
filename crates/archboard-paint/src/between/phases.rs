@@ -30,6 +30,10 @@ pub struct Transition {
     pub inside_start: f64,
     /// The parts inside a door show in full by here.
     pub inside_end: f64,
+    /// A spark starts to redraw the lines here.
+    pub draw_start: f64,
+    /// The last spark lands by here, past the end of the rest of the move.
+    pub draw_end: f64,
 }
 
 /// When, as shares of an entrance, each part of a picture arrives
@@ -45,14 +49,12 @@ pub struct Entry {
     pub cards_start_by: f64,
     /// How long each card takes to arrive.
     pub card_span: f64,
-    /// The first line begins drawing here.
+    /// A spark starts to draw the lines here.
     pub lines_start: f64,
-    /// The last line begins drawing by here.
-    pub lines_start_by: f64,
+    /// The last spark lands by here, past the end of the rest of the entrance.
+    pub draw_end: f64,
     /// How long a line's pulses take to come in once it is drawn.
     pub pulse_span: f64,
-    /// How long each line takes to draw on.
-    pub line_span: f64,
     /// Every label arrives from here to the end.
     pub labels_start: f64,
 }
@@ -60,13 +62,15 @@ pub struct Entry {
 /// Every number of a move that lives in `@archboard/timing`.
 ///
 /// It reads as `{"transition": PICTURE_TRANSITION_PHASES, "entry":
-/// PICTURE_ENTRY_PHASES, "exit": PICTURE_MS.exit}`.
+/// PICTURE_ENTRY_PHASES, "enter": PICTURE_MS.entry, "exit": PICTURE_MS.exit}`.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct Phases {
     /// One picture turning into the next.
     pub transition: Transition,
     /// A picture arriving with nothing to carry it from.
     pub entry: Entry,
+    /// How long a picture takes to arrive, in milliseconds.
+    pub enter: f64,
     /// How long a picture takes to leave, in milliseconds.
     pub exit: f64,
 }
@@ -89,6 +93,8 @@ pub(crate) mod fixtures {
             labels_start: 0.66,
             inside_start: 0.08,
             inside_end: 0.46,
+            draw_start: 0.42,
+            draw_end: 3.0,
         },
         entry: Entry {
             frames_end: 0.3,
@@ -96,11 +102,11 @@ pub(crate) mod fixtures {
             cards_start_by: 0.3,
             card_span: 0.48,
             lines_start: 0.26,
-            lines_start_by: 0.56,
+            draw_end: 2.8,
             pulse_span: 0.12,
-            line_span: 0.42,
             labels_start: 0.66,
         },
+        enter: 760.0,
         exit: 280.0,
     };
 }
@@ -112,9 +118,9 @@ mod tests {
     #[test]
     fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
         let phases: Phases = serde_json::from_str(
-            r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46},
-                "entry":{"framesEnd":0.3,"cardsStart":0.02,"cardsStartBy":0.3,"cardSpan":0.48,"linesStart":0.26,"linesStartBy":0.56,"pulseSpan":0.12,"lineSpan":0.42,"labelsStart":0.66},
-                "exit":280}"#,
+            r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46,"drawStart":0.42,"drawEnd":3.0},
+                "entry":{"framesEnd":0.3,"cardsStart":0.02,"cardsStartBy":0.3,"cardSpan":0.48,"linesStart":0.26,"drawEnd":2.8,"pulseSpan":0.12,"labelsStart":0.66},
+                "enter":760,"exit":280}"#,
         )
         .expect("the timing package's phases");
         assert_eq!(phases, PHASES);

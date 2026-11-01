@@ -85,8 +85,8 @@ impl Flight {
         let between = Box::new(Between::new(from, to, shift, phases));
         Flight::Carry {
             definitions: Definitions::listed(&between.definitions()),
+            time: Stretch::of(ms * between.length()),
             between,
-            time: Stretch::of(ms),
         }
     }
 
@@ -97,10 +97,24 @@ impl Flight {
         ms: f64,
         handover: Option<Handover<'_>>,
     ) -> Flight {
+        let entrance = Box::new(Entrance::new(scene, phases, handover));
         Flight::Enter {
-            entrance: Box::new(Entrance::new(scene, phases, handover)),
-            time: Stretch::of(ms),
+            time: Stretch::of(ms * entrance.length()),
+            entrance,
         }
+    }
+
+    /// An entrance that went on inside a card and has landed, so that its sparks
+    /// run on over the board that took over.
+    pub(crate) fn landed_from(entrance: Entrance, ms: f64, now: f64) -> Option<Flight> {
+        let length = entrance.length();
+        (length > 1.0).then(|| Flight::Enter {
+            entrance: Box::new(entrance),
+            time: Stretch {
+                start: Some(now - ms),
+                ms: ms * length,
+            },
+        })
     }
 
     /// The subjects that fly over from the last picture, when the flight is an
@@ -126,6 +140,16 @@ impl Flight {
         }
     }
 
+    /// How far through the flight a moment is, as a share of the time of its
+    /// move: past 1 while a spark runs on.
+    fn progress(&self, now: f64) -> f64 {
+        let length = match self {
+            Flight::Carry { between, .. } => between.length(),
+            Flight::Enter { entrance, .. } => entrance.length(),
+        };
+        self.time().share(now) * length
+    }
+
     /// Whether the flight has landed by a moment.
     pub(crate) fn landed(&self, now: f64) -> bool {
         self.time().share(now) >= 1.0
@@ -133,28 +157,28 @@ impl Flight {
 
     /// What the flight shows at a moment.
     pub(crate) fn items(&mut self, now: f64) -> Vec<Item> {
-        let share = self.time().share(now);
+        let progress = self.progress(now);
         match self {
             Flight::Carry {
                 between,
                 definitions,
                 ..
             } => {
-                definitions.replace_masks(between.masks_at(share));
-                between.at(share)
+                definitions.replace_masks(between.masks_at(progress));
+                between.at(progress)
             }
-            Flight::Enter { entrance, .. } => entrance.at(share),
+            Flight::Enter { entrance, .. } => entrance.at(progress),
         }
     }
 
     /// What the flight shows at a moment as a scene, and how far back of its
     /// place it stands. `landed` is the picture the flight lands on.
     pub(crate) fn seen_at(&self, now: f64, landed: &Scene) -> (Scene, (f64, f64)) {
-        let share = self.time().share(now);
+        let progress = self.progress(now);
         match self {
-            Flight::Carry { between, .. } => between.seen_at(share, landed),
+            Flight::Carry { between, .. } => between.seen_at(progress, landed),
             Flight::Enter { entrance, .. } => {
-                let body = entrance.at(share);
+                let body = entrance.at(progress);
                 let scene = Scene {
                     body,
                     ..landed.clone()
@@ -167,9 +191,9 @@ impl Flight {
     /// The box of the door that opens at a moment, and how far through the move
     /// that moment is, when a door opens.
     pub(crate) fn opening(&self, now: f64) -> Option<(Rect, f64)> {
-        let share = self.time().share(now);
+        let progress = self.progress(now).min(1.0);
         match self {
-            Flight::Carry { between, .. } => Some((between.opening_at(share)?, share)),
+            Flight::Carry { between, .. } => Some((between.opening_at(progress)?, progress)),
             Flight::Enter { .. } => None,
         }
     }
@@ -177,7 +201,7 @@ impl Flight {
     /// How far through an entrance a moment is, when the flight is one.
     pub(crate) fn entering(&self, now: f64) -> Option<f64> {
         match self {
-            Flight::Enter { time, .. } => Some(time.share(now)),
+            Flight::Enter { .. } => Some(self.progress(now).min(1.0)),
             Flight::Carry { .. } => None,
         }
     }
@@ -377,9 +401,13 @@ impl Dive {
     /// What the board inside the card shows at a moment.
     pub(crate) fn inset_at(&self, now: f64) -> Vec<Item> {
         let bloomed = ((self.along(now) - BLOOM.0) / (BLOOM.1 - BLOOM.0)).clamp(0.0, 1.0);
-        self.bloom
-            .as_ref()
-            .map_or_else(|| self.inset.scene.body.clone(), |bloom| bloom.at(bloomed))
+        self.bloom.as_ref().map_or_else(
+            || self.inset.scene.body.clone(),
+            |bloom| match self.way {
+                DiveWay::In => bloom.at(bloomed),
+                DiveWay::Out => bloom.at(bloomed * bloom.length()),
+            },
+        )
     }
 
     /// Whether the fades have ended by a moment.

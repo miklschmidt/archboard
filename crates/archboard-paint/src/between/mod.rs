@@ -6,7 +6,8 @@
 //! clock or keeps state between frames, so a test of it needs no GPU and no
 //! DOM, and the same inputs give the same bytes.
 //!
-//! The in-between is plain items. Progress is a share of the whole move, and
+//! The in-between is plain items. Progress is a share of the move, past 1 while
+//! the last sparks run on, and
 //! every phase of it comes from [`Phases`], which the host reads from
 //! `@archboard/timing`. [`Between`] turns one scene into the next, [`Entrance`]
 //! brings a scene in with nothing to carry it from, and [`departure()`] sends the
@@ -14,7 +15,9 @@
 
 mod arrive;
 mod card;
+mod circuit;
 mod content;
+mod definitions;
 mod departure;
 mod ease;
 mod entrance;
@@ -27,6 +30,7 @@ mod phases;
 mod plan;
 mod rename;
 mod ride;
+mod spark;
 #[cfg(test)]
 mod testing;
 #[cfg(test)]
@@ -40,12 +44,15 @@ use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, Subject
 
 use arrive::{Ground, Grow, LABEL_GONE_BY, Leave, Swap};
 use card::CardCarry;
+use circuit::{Span, Spans, label_span, length_of, line_spans};
 use content::{is_parked, shell, unpark, unpark_held};
+use definitions::{borrowed_definitions, clear_definitions, masks_of};
 use ease::emphasised;
-use found::{Form, Found, found, holds_subject, pair};
-use line::{DrawOn, LineCarry};
+use found::{Form, Found, Pairing, found, holds_subject, pair};
+use line::{LineCarry, reroutes};
 use plan::{Mover, Plan, Riding, Wiring};
 use ride::{Ride, mark_of};
+use spark::{DrawOn, redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
 
 pub use departure::{Heading, departure, visible_at};
@@ -104,6 +111,8 @@ pub struct Between {
     phases: Transition,
     /// The largest door that opens in the move.
     opening: Option<Unfold>,
+    /// Where the move ends, as a share of its time: past 1, while a spark runs.
+    length: f64,
 }
 
 /// Whether a label moves further than it is tall.
@@ -116,8 +125,12 @@ fn carried(
     old: &Found<'_>,
     new: &Found<'_>,
     masks: (Option<&Mask>, Option<&Mask>),
+    spans: &Spans<'_>,
     phases: Transition,
 ) -> Option<Mover> {
+    if let Some(&span) = spans.get(new.id).filter(|_| old.form() == new.form()) {
+        return Some(redrawn(old, new, span, phases));
+    }
     let ground = Ground::new(old.group, new.group, phases);
     let swap = || Some(Mover::Swap(Swap::new(old.group, new.group, phases)));
     let still = |carry: Option<Mover>| {
@@ -144,8 +157,35 @@ fn carried(
     }
 }
 
+/// The lines that a spark draws in a move, which are those that change their shape
+/// and those only the next scene has, by their places in the next scene. A line
+/// inside a door rides in with the door.
+fn drawn_lines(
+    (old, new): (&[Found<'_>], &[Found<'_>]),
+    pairing: &Pairing,
+    doors: &Doors,
+    scene: &Scene,
+    phases: Transition,
+) -> Vec<(usize, Span)> {
+    let lines =
+        |&&(a, b): &&(usize, usize)| old[a].form() == Form::Line && new[b].form() == Form::Line;
+    let changed = pairing
+        .shared
+        .iter()
+        .filter(lines)
+        .filter(|&&(a, b)| reroutes(old[a].group, new[b].group))
+        .map(|&(_, b)| b);
+    let added = pairing
+        .added
+        .iter()
+        .copied()
+        .filter(|&b| new[b].form() == Form::Line && doors.carrying(&new[b]).is_none());
+    let drawn: Vec<usize> = changed.chain(added).collect();
+    line_spans(new, &drawn, scene, (phases.draw_start, phases.draw_end))
+}
+
 /// The mover of a subject only the next scene has.
-fn arriving(new: &Found<'_>, doors: &Doors, phases: Transition) -> Mover {
+fn arriving(new: &Found<'_>, doors: &Doors, spans: &Spans<'_>, phases: Transition) -> Mover {
     if let Some(unfold) = doors.carrying(new) {
         let fade = if new.is_label() {
             (phases.labels_start, 1.0)
@@ -154,17 +194,17 @@ fn arriving(new: &Found<'_>, doors: &Doors, phases: Transition) -> Mover {
         };
         return Mover::Inside(Box::new(Inside::arriving(new.group.clone(), unfold, fade)));
     }
+    let span = spans.get(new.id).copied();
     if new.form() == Form::Line {
-        let draw = DrawOn::new(new.group, phases.enter_start, 1.0, phases.arrowhead_at);
-        return Mover::Draw(draw);
+        let span = span.unwrap_or((phases.enter_start, 1.0));
+        return Mover::Draw(DrawOn::new(new.group, span, phases.arrowhead_at));
     }
-    // New labels arrive together, as the last layer, once their lines are in.
-    let start = if new.is_label() {
-        phases.labels_start
+    let (start, end) = if new.is_label() {
+        span.map_or((phases.labels_start, 1.0), label_span)
     } else {
-        phases.enter_start
+        (phases.enter_start, 1.0)
     };
-    Mover::Grow(Grow::new(new, start, 1.0))
+    Mover::Grow(Grow::new(new, start, end))
 }
 
 /// What a move would park, among some items, to any depth: the shadows and the
@@ -253,6 +293,10 @@ struct LastPicture<'a> {
     parked: &'a [Group],
     /// The new subjects that ride inside a door, by id.
     inside: HashMap<&'a str, Unfold>,
+    /// When a spark draws each line it draws.
+    spans: &'a Spans<'a>,
+    /// Where the move ends.
+    length: f64,
 }
 
 /// What moves a shadow. It rides under the card that casts it, or inside the door
@@ -264,6 +308,10 @@ fn shadow_of(
     phases: Transition,
 ) -> Option<Mover> {
     let owner = group.members.first()?;
+    if let Some(&span) = last.spans.get(owner.as_str()) {
+        let (start, end) = label_span(span);
+        return Some(Mover::Frame(item.clone(), start, end));
+    }
     let ground = last
         .parked
         .iter()
@@ -296,10 +344,17 @@ fn furniture_of(item: &Item, last: &LastPicture<'_>, phases: Transition) -> Opti
         return None;
     };
     match &group.role {
-        Role::Junctions => Some(Mover::Frame(item.clone(), phases.labels_start, 1.0)),
+        Role::Junctions => {
+            let end = last.length;
+            Some(Mover::Frame(item.clone(), phases.labels_start * end, end))
+        }
         Role::Shadow(_) => shadow_of(item, group, last, phases),
         Role::Traffic(line) => {
             mark_of(group)?;
+            if let Some(&(_, end)) = last.spans.get(line.as_str()) {
+                let span = 1.0 - phases.arrowhead_at;
+                return Some(Mover::Frame(item.clone(), end, end + span));
+            }
             match last.traffic.get(line.as_str()) {
                 Some(&old) if old == group => None,
                 Some(&old) => Ride::new(old, group, phases).map(|ride| Mover::Ride(Box::new(ride))),
@@ -324,71 +379,6 @@ fn depth_of(body: &[Item], kind: SubjectKind) -> usize {
     first.unwrap_or(body.len())
 }
 
-/// Every definition among some items, to any depth.
-fn defined_in(items: &[Item], found: &mut Vec<Definition>) {
-    for item in items {
-        match item {
-            Item::Definitions { definitions } => found.extend(definitions.iter().cloned()),
-            Item::Group(group) => defined_in(&group.items, found),
-            Item::Viewport(viewport) => defined_in(&viewport.items, found),
-            _ => {}
-        }
-    }
-}
-
-/// Drop definitions from a body whose complete definitions were lifted into
-/// the scene. A body's old mask must not replace the mask of the current frame.
-fn clear_definitions(items: &mut Vec<Item>) {
-    items.retain(|item| !matches!(item, Item::Definitions { .. }));
-    for item in items {
-        match item {
-            Item::Group(group) => clear_definitions(&mut group.items),
-            Item::Viewport(viewport) => clear_definitions(&mut viewport.items),
-            _ => {}
-        }
-    }
-}
-
-/// Every mask of a scene, by the name of its line.
-fn masks_of(scene: &Scene) -> HashMap<String, Mask> {
-    let mut known = scene.definitions.clone();
-    defined_in(&scene.body, &mut known);
-    known
-        .into_iter()
-        .filter_map(|definition| match definition {
-            Definition::Mask(mask) => Some((mask.id.line.clone(), mask)),
-            _ => None,
-        })
-        .collect()
-}
-
-/// Every definition of the next scene, wherever it stands, and the last scene's
-/// beside them: its masks and clips are renamed already, and its arrowheads and
-/// gradients are named by what they are, so the next scene's own stand for the
-/// same ones.
-fn borrowed_definitions(last: &Scene, next: &Scene) -> Vec<Definition> {
-    let mut known = next.definitions.clone();
-    defined_in(&next.body, &mut known);
-    let mut kept = known.clone();
-    let mut theirs = last.definitions.clone();
-    defined_in(&last.body, &mut theirs);
-    for definition in theirs {
-        let own = match &definition {
-            Definition::Marker(marker) => known
-                .iter()
-                .any(|d| matches!(d, Definition::Marker(m) if m.id == marker.id)),
-            Definition::Gradient(gradient) => known
-                .iter()
-                .any(|d| matches!(d, Definition::Gradient(g) if g.id == gradient.id)),
-            Definition::Mask(_) | Definition::Clip(_) => false,
-        };
-        if !own {
-            kept.push(definition);
-        }
-    }
-    kept
-}
-
 impl Between {
     /// Prepare the move from `from` to `to`.
     ///
@@ -406,13 +396,18 @@ impl Between {
         unpark_held(&mut next.body);
         let (old, new) = (found(&last), found(&next));
         let pairing = pair(&old, &new);
+        let doors = Doors::of(&old, &new, &pairing, phases);
+        let times = drawn_lines((&old, &new), &pairing, &doors, &next, phases);
+        let length = length_of(times.iter().map(|&(_, span)| span));
+        let spans: Spans<'_> = times.iter().map(|&(at, span)| (new[at].id, span)).collect();
         let moved: HashMap<&str, (f64, f64)> = pairing
             .shared
             .iter()
             .filter(|&&(a, b)| old[a].form() == Form::Card && new[b].form() == Form::Card)
             .filter_map(|&(a, b)| {
                 let (from, to) = (old[a].frame?, new[b].frame?);
-                let rides = !(new[b].is_label() && crosses(from, to));
+                let lifted = crosses(from, to) || spans.contains_key(new[b].id);
+                let rides = !(new[b].is_label() && lifted);
                 rides.then_some((new[b].id, (from.x - to.x, from.y - to.y)))
             })
             .collect();
@@ -431,15 +426,15 @@ impl Between {
                     &old[a],
                     &new[b],
                     (masks.0.as_ref(), masks.1.as_ref()),
+                    &spans,
                     phases,
                 ),
             )
         });
-        let doors = Doors::of(&old, &new, &pairing, phases);
         let arrivals = pairing
             .added
             .iter()
-            .map(|&b| (b, Some(arriving(&new[b], &doors, phases))));
+            .map(|&b| (b, Some(arriving(&new[b], &doors, &spans, phases))));
         for (b, mover) in carries.chain(arrivals) {
             if let Some(mover) = mover {
                 of_subject[b] = Some(movers.len());
@@ -450,6 +445,7 @@ impl Between {
         traffic_in(&last.body, &mut traffic);
         let mut landing = HashMap::new();
         traffic_in(&next.body, &mut landing);
+        landing.retain(|line, _| !spans.contains_key(line));
         let pulses = (depth_of(&next.body, SubjectKind::Edge), phases.exit_end);
         let stopping = stopping(&traffic, &landing, &parked, &moved, pulses);
         let known = LastPicture {
@@ -457,6 +453,8 @@ impl Between {
             traffic,
             parked: &parked,
             inside: doors.inside(&new, &pairing.added),
+            spans: &spans,
+            length,
         };
         let furniture = |item: &Item, _: bool| furniture_of(item, &known, phases);
         let wiring = Wiring {
@@ -464,6 +462,7 @@ impl Between {
             furniture: &furniture,
         };
         let mut plan = Plan::new(&next.body, movers, &wiring);
+        plan.cover(rims(&new, &times));
         let mut leavers: Vec<(usize, Mover)> = pairing
             .removed
             .iter()
@@ -484,7 +483,13 @@ impl Between {
             shift,
             phases,
             opening: doors.focus(),
+            length,
         }
+    }
+
+    /// Where the move ends, as a share of its time.
+    pub(crate) fn length(&self) -> f64 {
+        self.length
     }
 
     /// The box of the door that opens at a progress, in the picture's units, when
@@ -493,12 +498,12 @@ impl Between {
         self.opening.map(|unfold| unfold.box_at(progress))
     }
 
-    /// The in-between at a progress from 0 to 1, as a scene body.
+    /// The in-between at a progress from 0 to its length, as a scene body.
     ///
-    /// At 1 it is the next scene's body. What the move parks, a line's ports,
-    /// comes back on landing.
+    /// At its length it is the next scene's body. What the move parks, a line's
+    /// ports, comes back on landing.
     pub fn at(&self, progress: f64) -> Vec<Item> {
-        if progress >= 1.0 {
+        if progress >= self.length {
             return self.landed.clone();
         }
         let progress = progress.max(0.0);
@@ -521,11 +526,11 @@ impl Between {
         (self.shift.0 * left, self.shift.1 * left)
     }
 
-    /// The in-between at a progress from 0 to 1 as a scene, and how far back of
-    /// its place it stands. A picture that arrives during a move starts from it,
-    /// so that it takes over from what the reader sees.
+    /// The in-between at a progress as a scene, and how far back of its place it
+    /// stands. A picture that arrives during a move starts from it, so that it
+    /// takes over from what the reader sees.
     pub fn seen_at(&self, progress: f64, landed: &Scene) -> (Scene, (f64, f64)) {
-        if progress >= 1.0 {
+        if progress >= self.length {
             return (landed.clone(), (0.0, 0.0));
         }
         let masks = self.masks_at(progress);

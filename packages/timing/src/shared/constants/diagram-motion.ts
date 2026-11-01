@@ -31,7 +31,8 @@ const PICTURE_MS = durations({
 	 * reads as a jump with a smear on it; longer than about three quarters and the
 	 * board feels like it is waiting for the animation rather than the reader.
 	 * Everything below is a fraction of this one number, so the whole choreography
-	 * shortens or lengthens together.
+	 * shortens or lengthens together. Sparks that redraw lines run on past it, up to
+	 * `drawEnd` of it, once the rest of the move has landed.
 	 */
 	transition: 640,
 	/**
@@ -52,8 +53,8 @@ const PICTURE_MS = durations({
 	 * where it stood. Another board comes in on a passage over the same time, which
 	 * takes the reader sideways, in or out along the module tree.
 	 * Pulls against the wait itself: somebody who asked for a board wants to read
-	 * it, so the whole entrance is barely longer than a transition, and a card is
-	 * readable well before the last line is drawn.
+	 * it, so the cards land in this time and a card is readable well before the
+	 * last line is drawn. The sparks that draw the lines run on up to `drawEnd` of it.
 	 */
 	entry: 760,
 	/**
@@ -153,6 +154,20 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	 */
 	insideStart: 0.08,
 	insideEnd: 0.46,
+	/**
+	 * A line whose route changes shape does not swing across the board: a board of
+	 * lines swinging at once is a tangle. It fades out with what leaves, and a spark
+	 * redraws it from here, once the cards are nearly in place.
+	 */
+	drawStart: 0.42,
+	/**
+	 * The last spark lands by here. This is past 1, because the lines go on after the
+	 * rest of the move has landed. Pulls against a reader who waits for the last line:
+	 * shorter than about a second and a half and a board of lines reads as a flicker;
+	 * the cards are in place long before it, so a longer run costs little, but past
+	 * about two seconds it stops being a gesture.
+	 */
+	drawEnd: 3.0,
 });
 
 /** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
@@ -164,17 +179,21 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	cardsStartBy: 0.3,
 	/** How long each card takes to arrive. */
 	cardSpan: 0.48,
-	/** The first line begins drawing here, and the last by `linesStartBy`. */
+	/** Sparks start to run along the lines here, from the cards that nothing feeds. */
 	linesStart: 0.26,
-	linesStartBy: 0.56,
-	/** How long each line takes to draw on. */
-	lineSpan: 0.42,
+	/**
+	 * The last spark lands by here. This is past 1, because the lines go on after the
+	 * rest of the entrance has landed. A board of a hundred lines drawn in less than a
+	 * second is a flash, and sparks that run for much over two seconds hold up a reader
+	 * who is already reading the cards.
+	 */
+	drawEnd: 2.8,
 	/** How long a line's pulses take to come in once the line is drawn. */
 	pulseSpan: 0.12,
 	/**
 	 * What stands on the lines and belongs to none of them, the marks where routes
 	 * join, arrives from here to the end. A label that names a line arrives as the
-	 * line reaches it: the wave leaves the middle, so labels ring outward with it.
+	 * spark reaches it.
 	 */
 	labelsStart: 0.66,
 });

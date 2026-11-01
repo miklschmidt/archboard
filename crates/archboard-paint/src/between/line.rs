@@ -1,5 +1,4 @@
-//! Carrying a connection's line from its old route to its new one, and
-//! drawing a new line on.
+//! Carrying a connection's line from its old route to its new one.
 //!
 //! A line is drawn as a few shapes with different jobs: the stroke, the halos
 //! that light when it is selected, and, in a proposal, a swipe of the
@@ -10,30 +9,29 @@
 //! shape is morphed along the route. A shape whose look changed, a stroke that
 //! took a standing's colour and arrowhead, has its old self borrowed and
 //! morphed beside it, the two cross-fading. A swipe that appears or disappears
-//! morphs with the stroke, fading in or out. A line only the next scene has is
-//! drawn from its start to its end, its arrowhead appearing once it is nearly
-//! there.
+//! morphs with the stroke, fading in or out.
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::paint::design::RAIL_GAP;
 use archboard_scene::scene::{
-    Cap, Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
+    Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
 };
 
 use super::content::look;
-use super::ease::{ease_in_out, ease_out, emphasised, phase, receded};
+use super::ease::{ease_in_out, emphasised, phase, receded};
 use super::found::Found;
 use super::morph::{Morph, length, route_of};
 use super::phases::Transition;
 use crate::path::path_of;
 
-/// How much of an arrival is spent fading in before the rest is drawing on.
-const ARRIVE_FADE_SHARE: f64 = 0.25;
-
 /// How far a line recedes when it travels far, so that the eye stays on the cards.
 const DEEPEST: f64 = 0.5;
 /// How far a line travels before it recedes that far, in the picture's units.
 const FAR_TRAVEL: f64 = 240.0;
+
+/// How far a line's points can move apart before it counts as another shape, in
+/// the picture's units.
+const SAME_SHAPE: f64 = 10.0;
 
 /// Where the cuts of the last picture are gone, as a share of the move.
 const OLD_CUTS_GONE_BY: f64 = 0.1;
@@ -105,6 +103,18 @@ pub(super) fn start_of(group: &Group) -> Option<Point> {
     })
 }
 
+/// Where a line ends, and how far it runs: the last point of its first route.
+pub(super) fn end_of(group: &Group) -> Option<(Point, f64)> {
+    group.items.iter().find_map(|item| match item {
+        Item::Shape(shape) => {
+            let steps = route_of(&shape.geometry)?;
+            let end = path_of(&steps).elements().last()?.end_point()?;
+            Some((Point { x: end.x, y: end.y }, length(&steps)?))
+        }
+        _ => None,
+    })
+}
+
 /// The outline of a line's first route.
 pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
     group.items.iter().find_map(|item| match item {
@@ -149,11 +159,41 @@ fn without_ports_and_pulses(items: &[Item]) -> Vec<Item> {
 }
 
 /// A line's group as it stands in flight, its ports and pulses parked.
-fn in_flight(group: &Group) -> Group {
+pub(super) fn in_flight(group: &Group) -> Group {
     Group {
         items: without_ports_and_pulses(&group.items),
         ..super::content::shell(group)
     }
+}
+
+/// Whether a line changes its shape between two pictures. A line that keeps its
+/// shape rides along with its cards. A carry can show any other only as a line
+/// that swings across the board.
+pub(super) fn reroutes(before: &Group, after: &Group) -> bool {
+    let turns = |group: &Group| {
+        let steps = paths(group).stroke.map_or_else(Vec::new, |(_, shape)| {
+            route_of(&shape.geometry).unwrap_or_default()
+        });
+        let path = path_of(&steps);
+        path.elements()
+            .iter()
+            .filter_map(kurbo::PathEl::end_point)
+            .collect::<Vec<_>>()
+    };
+    let (old, new) = (turns(before), turns(after));
+    if old.len() != new.len() {
+        return true;
+    }
+    let moves = old.iter().zip(&new).map(|(a, b)| *b - *a);
+    let (mut least, mut most) = (
+        (f64::INFINITY, f64::INFINITY),
+        (f64::NEG_INFINITY, f64::NEG_INFINITY),
+    );
+    for moved in moves {
+        least = (least.0.min(moved.x), least.1.min(moved.y));
+        most = (most.0.max(moved.x), most.1.max(moved.y));
+    }
+    most.0 - least.0 > SAME_SHAPE || most.1 - least.1 > SAME_SHAPE
 }
 
 /// A shape of the next line that morphs along its route, and fades in when it
@@ -469,119 +509,5 @@ fn slid(shape: &Shape, slide: &Slide, along: f64, swapped: f64) -> Shape {
         dim(shape, swapped)
     } else {
         shape
-    }
-}
-
-/// The light at the head of a line being drawn on, as the pulses it will carry
-/// are lit (ADR 0027): how far it reaches back, how much wider than the line it
-/// is, and how much of it shows. It cools where the line lands.
-const SPARK: [(f64, f64, f64); 3] = [(64.0, 3.4, 0.1), (36.0, 1.3, 0.3), (14.0, 0.5, 0.95)];
-
-/// Where the light at a line's head starts to cool, as a share of its drawing.
-const SPARK_COOLS_FROM: f64 = 0.82;
-
-/// One layer of the light at the head of a line.
-fn spark(shape: &Shape, length: f64, head: f64, (reach, wider, light): (f64, f64, f64)) -> Item {
-    let mut lit = shape.clone();
-    lit.marker = None;
-    lit.start_marker = None;
-    if let Some(stroke) = &mut lit.stroke {
-        let period = reach + length * 2.0;
-        stroke.paint = white();
-        stroke.width = Some(stroke.width.unwrap_or(1.0) + wider);
-        stroke.opacity = Some(light);
-        stroke.cap = Some(Cap::Round);
-        stroke.dashes = vec![reach, length * 2.0];
-        stroke.dash_offset = Some((period + reach - head).rem_euclid(period));
-    }
-    Item::Shape(lit)
-}
-
-/// A shape being drawn on, and how long its route is.
-#[derive(Clone, Copy, Debug)]
-struct Stroked {
-    child: usize,
-    length: f64,
-}
-
-/// A line only the next scene has, drawn on from its start.
-#[derive(Clone, Debug)]
-pub(super) struct DrawOn {
-    template: Group,
-    strokes: Vec<Stroked>,
-    start: f64,
-    end: f64,
-    arrowhead_at: f64,
-}
-
-impl DrawOn {
-    /// Prepare to draw a line on between two points of the move.
-    ///
-    /// A dashed line keeps its dashes and simply fades in: drawing it on means
-    /// taking its dash away.
-    pub(super) fn new(group: &Group, start: f64, end: f64, arrowhead_at: f64) -> DrawOn {
-        let strokes = group
-            .items
-            .iter()
-            .enumerate()
-            .filter_map(|(child, item)| {
-                let Item::Shape(shape) = item else {
-                    return None;
-                };
-                shape
-                    .stroke
-                    .as_ref()
-                    .filter(|stroke| stroke.dashes.is_empty())?;
-                let length = length(&route_of(&shape.geometry)?).filter(|length| *length > 0.0)?;
-                Some(Stroked { child, length })
-            })
-            .collect();
-        let mut template = in_flight(group);
-        template.mask.clone_from(&group.mask);
-        DrawOn {
-            template,
-            strokes,
-            start,
-            end,
-            arrowhead_at,
-        }
-    }
-
-    /// The line this far through the move.
-    pub(super) fn at(&self, progress: f64) -> Group {
-        let arrived = phase(progress, self.start, self.end);
-        let mut group = self.template.clone();
-        group.opacity =
-            Some(group.opacity.unwrap_or(1.0) * ease_out(phase(arrived, 0.0, ARRIVE_FADE_SHARE)));
-        if arrived >= 1.0 {
-            return group;
-        }
-        let drawn = emphasised(arrived);
-        for &Stroked { child, length } in &self.strokes {
-            let Some(Item::Shape(shape)) = group.items.get_mut(child) else {
-                continue;
-            };
-            // One dash as long as the line, pulled back all the way and let out.
-            if let Some(stroke) = &mut shape.stroke {
-                stroke.dashes = vec![length, length];
-                stroke.dash_offset = Some(length * (1.0 - drawn));
-            }
-            // The arrowheads wait until the line is nearly there.
-            if arrived < self.arrowhead_at {
-                shape.marker = None;
-                shape.start_marker = None;
-            }
-        }
-        let cooled = 1.0 - phase(arrived, SPARK_COOLS_FROM, 1.0);
-        if let Some(&Stroked { child, length }) = self.strokes.last()
-            && let Some(Item::Shape(shape)) = self.template.items.get(child)
-        {
-            let lights = SPARK.map(|(reach, wider, light)| (reach, wider, light * cooled));
-            let head = length * drawn;
-            group
-                .items
-                .extend(lights.map(|layer| spark(shape, length, head, layer)));
-        }
-        group
     }
 }

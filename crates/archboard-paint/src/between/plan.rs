@@ -9,8 +9,9 @@ use super::arrive::{Ground, Grow, Leave, Swap};
 use super::card::CardCarry;
 use super::content::shell;
 use super::ease::{ease_out, emphasised, phase};
-use super::line::{DrawOn, LineCarry};
+use super::line::LineCarry;
 use super::ride::Ride;
+use super::spark::{DrawOn, Rim};
 use super::unfold::Inside;
 
 /// What changes a part of the picture during a move.
@@ -38,6 +39,10 @@ pub(super) enum Mover {
     Ride(Box<Ride>),
     /// A part that rides inside a door.
     Inside(Box<Inside>),
+    /// One subject's old self and new self, each on its own way.
+    Both(Box<Mover>, Box<Mover>),
+    /// The edge of a card taking the spark that landed on it.
+    Rim(Box<Rim>),
 }
 
 impl Mover {
@@ -54,6 +59,12 @@ impl Mover {
             Mover::Riding(riding) => vec![riding.at(progress)],
             Mover::Ride(ride) => ride.at(progress),
             Mover::Inside(inside) => inside.at(progress),
+            Mover::Rim(rim) => rim.at(progress),
+            Mover::Both(old, new) => {
+                let mut both = old.at(progress);
+                both.extend(new.at(progress));
+                both
+            }
             Mover::Frame(item, start, end) => {
                 vec![faded_in(item, ease_out(phase(progress, *start, *end)))]
             }
@@ -205,6 +216,13 @@ impl Plan {
         Plan {
             slots,
             movers: walk.movers,
+        }
+    }
+
+    /// Put some movers over everything else.
+    pub(super) fn cover(&mut self, movers: Vec<Mover>) {
+        for mover in movers {
+            self.insert(self.slots.len(), mover);
         }
     }
 
