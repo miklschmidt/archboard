@@ -88,17 +88,17 @@ Each round changed one thing and compared numbers and captured frames with the r
 
 | Moment | Mean gap, old page | Mean gap, painter | Longest gap, old page | Longest gap, painter | Slow, old page | Slow, painter |
 | ------ | ------------------ | ----------------- | --------------------- | -------------------- | -------------- | ------------- |
-| Wheel  | 8.54 ms            | 8.37 ms           | 66.7 ms               | 16.8 ms              | 1              | 0             |
-| Pinch  | 8.65 ms            | 8.33 ms           | 58.3 ms               | 9.5 ms               | 2              | 0             |
-| Keys   | 8.47 ms            | 8.33 ms           | 16.7 ms               | 8.5 ms               | 0              | 0             |
-| Drag   | 9.63 ms            | 8.33 ms           | 66.7 ms               | 9.7 ms               | 2              | 0             |
-| Idle   | 8.57 ms            | 8.37 ms           | 16.8 ms               | 16.7 ms              | 0              | 0             |
-| Open   | 9.70 ms            | 8.45 ms           | 141.6 ms              | 33.3 ms              | 7              | 1             |
-| Toggle | 31.63 ms           | 9.13 ms           | 750.0 ms              | 150.1 ms             | 68             | 10            |
-| Dive   | 14.42 ms           | 8.92 ms           | 350.0 ms              | 99.9 ms              | 58             | 11            |
+| Wheel  | 8.54 ms            | 8.35 ms           | 66.7 ms               | 16.7 ms              | 1              | 0             |
+| Pinch  | 8.65 ms            | 8.33 ms           | 58.3 ms               | 9.2 ms               | 2              | 0             |
+| Keys   | 8.47 ms            | 8.33 ms           | 16.7 ms               | 8.8 ms               | 0              | 0             |
+| Drag   | 9.63 ms            | 8.33 ms           | 66.7 ms               | 9.6 ms               | 2              | 0             |
+| Idle   | 8.57 ms            | 8.35 ms           | 16.8 ms               | 16.6 ms              | 0              | 0             |
+| Open   | 9.70 ms            | 8.41 ms           | 141.6 ms              | 33.4 ms              | 7              | 1             |
+| Toggle | 31.63 ms           | 9.15 ms           | 750.0 ms              | 150.1 ms             | 68             | 11            |
+| Dive   | 14.42 ms           | 8.75 ms           | 350.0 ms              | 83.4 ms              | 58             | 9             |
 
-Long tasks in a toggle fell from 4431 ms to 514 ms, and in a dive from 2563 ms to 304 ms.
-Both columns ran on the same copy of the vault with a load under 5, one after the other.
+Long tasks in a toggle fell from 4431 ms to 559 ms, and in a dive from 2563 ms to 195 ms.
+Both columns ran on the same copy of the vault with a load under 5. The painter column is the final build, after the rebase onto `main`.
 
 ### What the rounds changed
 
