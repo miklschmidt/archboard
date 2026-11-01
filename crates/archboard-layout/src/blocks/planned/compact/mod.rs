@@ -219,13 +219,13 @@ fn keep_aligned(
 }
 
 /// Bring the cards of a station that stand near each other to the last of them, and say
-/// whether any moved.
+/// whether any moved. It counts back from the last card, so the rows it leaves stand clearly
+/// apart and none misses another by a little.
 fn gather(mut standing: &[(f64, usize)], shifts: &mut [f64]) -> bool {
     let mut moved = false;
-    while let Some(&(first, _)) = standing.first() {
-        let count = standing.partition_point(|&(at, _)| at - first <= STAY_ALIGNED);
-        let (near, rest) = standing.split_at(count);
-        let to = near[near.len() - 1].0;
+    while let Some(&(to, _)) = standing.last() {
+        let start = standing.partition_point(|&(at, _)| to - at > STAY_ALIGNED);
+        let (rest, near) = standing.split_at(start);
         for &(at, body) in near {
             shifts[body] += to - at;
             moved |= at != to;
