@@ -29,17 +29,17 @@ mod testing;
 #[cfg(test)]
 mod tests;
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use archboard_scene::scene::{Definition, Item, Role, Scene, SubjectKind, Transform};
 
 use arrive::{Ground, Grow, Leave, Swap};
 use card::CardCarry;
-use content::unpark;
+use content::{unpark, unpark_held};
 use ease::{emphasised, phase};
 use found::{Form, Found, found, holds_subject, pair};
 use line::{DrawOn, LineCarry};
-use plan::{Mover, Plan, Wiring};
+use plan::{Mover, Plan, Riding, Wiring};
 
 pub use departure::{Heading, departure};
 pub use entrance::Entrance;
@@ -103,6 +103,37 @@ fn arriving(new: &Found<'_>, phases: Transition) -> (Mover, bool) {
         phases.enter_start
     };
     (Mover::Grow(Grow::new(new, start, 1.0)), false)
+}
+
+/// What moves a shadow or the marks where routes join. A shadow rides under the
+/// card that casts it, and one that nothing carries comes in with what is new.
+/// The marks stand where the routes land, so they come in as the lines arrive.
+fn furniture_of(
+    item: &Item,
+    moved: &HashMap<&str, (f64, f64)>,
+    phases: Transition,
+) -> Option<Mover> {
+    let Item::Group(group) = item else {
+        return None;
+    };
+    let landing = (phases.labels_start, 1.0);
+    match group.role {
+        Role::Junctions => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
+        Role::Shadow(_) => {
+            let owner = group.members.first()?;
+            match moved.get(owner.as_str()) {
+                Some(&(0.0, 0.0)) => None,
+                Some(&back) => Some(Mover::Riding(Box::new(Riding {
+                    shadow: group.clone(),
+                    back,
+                    start: phases.move_start,
+                    end: phases.move_end,
+                }))),
+                None => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
+            }
+        }
+        _ => None,
+    }
 }
 
 /// Where in a body a subject only the last scene had goes, so that it is drawn
@@ -171,9 +202,18 @@ impl Between {
         rename::scene(&mut last);
         unpark(&mut last.body);
         let mut next = to.clone();
-        unpark(&mut next.body);
+        unpark_held(&mut next.body);
         let (old, new) = (found(&last), found(&next));
         let pairing = pair(&old, &new);
+        let moved: HashMap<&str, (f64, f64)> = pairing
+            .shared
+            .iter()
+            .filter(|&&(a, b)| old[a].form() == Form::Card && new[b].form() == Form::Card)
+            .filter_map(|&(a, b)| {
+                let (from, to) = (old[a].frame?, new[b].frame?);
+                Some((new[b].id, (from.x - to.x, from.y - to.y)))
+            })
+            .collect();
         let mut movers = Vec::new();
         let mut of_subject = vec![None; new.len()];
         let mut silent = HashSet::new();
@@ -194,9 +234,10 @@ impl Between {
                 }
             }
         }
+        let furniture = |item: &Item, _: bool| furniture_of(item, &moved, phases);
         let wiring = Wiring {
             of_subject: &of_subject,
-            furniture: &|_, _| None,
+            furniture: &furniture,
             silent: &silent,
         };
         let mut plan = Plan::new(&next.body, movers, &wiring);
@@ -225,9 +266,8 @@ impl Between {
 
     /// The in-between at a progress from 0 to 1, as a scene body.
     ///
-    /// At 1 it is the next scene's body. Whatever the move parks, the shadows
-    /// under the lines and the marks where routes join, a line's mask, its ports
-    /// and its pulses, comes back on landing.
+    /// At 1 it is the next scene's body. What the move parks, a line's mask, its
+    /// ports and its pulses, comes back on landing.
     pub fn at(&self, progress: f64) -> Vec<Item> {
         if progress >= 1.0 {
             return self.landed.clone();

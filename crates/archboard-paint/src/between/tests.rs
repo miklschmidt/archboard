@@ -370,19 +370,30 @@ fn a_title_stays_while_a_changed_note_swaps_through_the_move() {
 }
 
 #[test]
-fn what_a_move_parks_waits_for_the_landing() {
-    let frame = rect(10.0, 10.0, 100.0, 50.0);
-    let body = vec![shadow(), card("a", frame, &["Title"])];
-    let from = scene(body.clone(), &[("a", frame)]);
-    let to = scene(body, &[("a", frame)]);
-    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let has_shadow = |items: &[Item]| {
-        items
-            .iter()
-            .any(|item| matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_))))
+fn a_shadow_rides_under_the_card_that_casts_it() {
+    let cast = || {
+        let Item::Group(group) = shadow() else {
+            unreachable!("a shadow is a group");
+        };
+        Item::Group(group.standing_with(vec!["a".to_owned()]))
     };
-    assert!(!has_shadow(&between.at(0.5)));
-    assert!(has_shadow(&between.at(1.0)));
+    let (here, there) = (
+        rect(10.0, 10.0, 100.0, 50.0),
+        rect(110.0, 10.0, 100.0, 50.0),
+    );
+    let from = scene(vec![cast(), card("a", here, &["Title"])], &[("a", here)]);
+    let to = scene(vec![cast(), card("a", there, &["Title"])], &[("a", there)]);
+    let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let riding = between.at(0.3);
+    let moved = riding.iter().find_map(|item| match item {
+        Item::Group(group) if group.items.iter().any(
+            |inside| matches!(inside, Item::Group(shadow) if matches!(shadow.role, Role::Shadow(_))),
+        ) => group.transform,
+        _ => None,
+    });
+    let moved = moved.expect("the shadow moves");
+    assert!(moved.x < 0.0 && moved.x > -100.0, "it is on its way");
+    assert_eq!(between.at(1.0), to.body, "it lands on the scene itself");
 }
 
 #[test]

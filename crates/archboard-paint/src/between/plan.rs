@@ -5,12 +5,12 @@
 
 use std::collections::HashSet;
 
-use archboard_scene::scene::{Group, Item, Role};
+use archboard_scene::scene::{Group, Item, Role, Transform};
 
 use super::arrive::{Ground, Grow, Leave, Swap};
 use super::card::CardCarry;
 use super::content::shell;
-use super::ease::{ease_out, phase};
+use super::ease::{ease_out, emphasised, phase};
 use super::line::{DrawOn, LineCarry};
 
 /// What changes a part of the picture during a move.
@@ -30,8 +30,10 @@ pub(super) enum Mover {
     Line(LineCarry, Option<Ground>),
     /// A subject that only becomes more or less visible.
     Visible(Group, Ground),
-    /// Part of the ground of a picture, faded in with its frames.
+    /// Part of the ground of a picture, faded in between two points of the move.
     Frame(Item, f64, f64),
+    /// A shadow that rides under the card that casts it.
+    Riding(Box<Riding>),
 }
 
 impl Mover {
@@ -45,6 +47,7 @@ impl Mover {
             Mover::Card(card, ground) => grounded(card.at(progress), *ground, progress),
             Mover::Line(line, ground) => grounded(line.at(progress), *ground, progress),
             Mover::Visible(group, ground) => grounded(group.clone(), Some(*ground), progress),
+            Mover::Riding(riding) => vec![riding.at(progress)],
             Mover::Frame(item, start, end) => {
                 vec![faded_in(item, ease_out(phase(progress, *start, *end)))]
             }
@@ -90,6 +93,27 @@ enum Slot {
     Shell(Group, Vec<Slot>),
     /// The part a mover draws.
     Mover(usize),
+}
+
+/// A shadow on its way with the card that casts it.
+#[derive(Clone, Debug)]
+pub(super) struct Riding {
+    /// The shadow, where the next picture draws it.
+    pub(super) shadow: Group,
+    /// How far back the card starts.
+    pub(super) back: (f64, f64),
+    pub(super) start: f64,
+    pub(super) end: f64,
+}
+
+impl Riding {
+    /// The shadow at a moment of the move.
+    fn at(&self, progress: f64) -> Item {
+        let left = 1.0 - emphasised(phase(progress, self.start, self.end));
+        let mut around = Group::new(Role::Move, vec![Item::Group(self.shadow.clone())]);
+        around.transform = Some(Transform::translate(self.back.0 * left, self.back.1 * left));
+        Item::Group(around)
+    }
 }
 
 /// Which movers stand where, as the body of a scene is walked.

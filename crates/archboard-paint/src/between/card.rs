@@ -37,6 +37,12 @@ const LABEL_OVERLAP: f64 = 0.12;
 /// boxed by, which lies three units outside the body.
 const MARK_MARGIN: f64 = 14.0;
 
+/// How many times larger one box is than the other, on a side, for what a card
+/// was drawn with to stop following the box. A door that opens into a frame is
+/// a button and then a tray, and a button stretched to a tray's size is a bar of
+/// bright colour across the board.
+const OPENS_INTO: f64 = 1.5;
+
 /// The smallest side a clip is given, so that a box shrinking to nothing does
 /// not divide by nothing.
 const LEAST_SIDE: f64 = 1e-3;
@@ -93,6 +99,8 @@ impl Anchor {
 enum Place {
     /// A box: its edges relative to the card's.
     Rect { dx: f64, dy: f64, dw: f64, dh: f64 },
+    /// A box of its own size that rides the corner of the card's box.
+    Riding { dx: f64, dy: f64 },
     /// A line: each end's coordinates relative to the card's box.
     Line {
         x: (Anchor, Anchor),
@@ -142,6 +150,10 @@ impl Frame {
                     height: (card.height + dh).max(0.0),
                 };
             }
+            (Geometry::Rect { rect, .. }, Place::Riding { dx, dy }) => {
+                rect.x = card.x + dx;
+                rect.y = card.y + dy;
+            }
             (Geometry::Line { from, to }, Place::Line { x, y }) => {
                 *from = Point {
                     x: x.0.at(card.x, card.width),
@@ -156,6 +168,19 @@ impl Frame {
         }
         Item::Shape(shape)
     }
+
+    /// The same shape at its own size, riding the corner of the card's box.
+    fn riding(mut self) -> Frame {
+        if let Place::Rect { dx, dy, .. } = self.place {
+            self.place = Place::Riding { dx, dy };
+        }
+        self
+    }
+}
+
+/// Whether one box is so much larger than the other that a card opens or closes.
+fn opens(small: Rect, large: Rect) -> bool {
+    large.width > small.width * OPENS_INTO || large.height > small.height * OPENS_INTO
 }
 
 /// Whether a content item is a mark astride the card's edge, a standing's pin
@@ -266,11 +291,21 @@ impl CardCarry {
         let pick = |from: &[&Item], at: &[usize]| -> Vec<Item> {
             at.iter().map(|&index| from[index].clone()).collect()
         };
+        let framed = |shape: &&Shape, card: Rect, rides: bool| {
+            Frame::of(shape, card).map(|frame| if rides { frame.riding() } else { frame })
+        };
         Some(CardCarry {
             shell: shell(after.group),
             fixed: new.fixed.iter().map(|item| (*item).clone()).collect(),
-            frames: new.frame.iter().filter_map(|s| Frame::of(s, to)).collect(),
-            old_frames: fading.iter().filter_map(|s| Frame::of(s, from)).collect(),
+            frames: new
+                .frame
+                .iter()
+                .filter_map(|shape| framed(shape, to, opens(to, from)))
+                .collect(),
+            old_frames: fading
+                .iter()
+                .filter_map(|shape| framed(shape, from, opens(from, to)))
+                .collect(),
             kept: Wrapped::of(pick(&new.content, &kept).iter(), to),
             incoming: Wrapped::of(pick(&new.content, &arriving).iter(), to),
             outgoing: Wrapped::of(pick(&old.content, &leaving).iter(), from),

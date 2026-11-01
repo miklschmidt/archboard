@@ -31,6 +31,20 @@ pub(super) fn unpark(items: &mut Vec<Item>) {
     }
 }
 
+/// Take out what a move parks from inside each subject, where a shadow that the
+/// picture draws under every line does not stand.
+pub(super) fn unpark_held(items: &mut [Item]) {
+    for item in items {
+        if let Item::Group(group) = item {
+            if group.subject.is_some() {
+                unpark(&mut group.items);
+            } else {
+                unpark_held(&mut group.items);
+            }
+        }
+    }
+}
+
 /// A group with none of its items: what it is, and not what it holds.
 pub(super) fn shell(group: &Group) -> Group {
     Group {
