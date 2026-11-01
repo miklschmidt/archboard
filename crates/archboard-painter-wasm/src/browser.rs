@@ -247,6 +247,14 @@ impl Painter {
         self.stage.set_far_line(scale, ms);
     }
 
+    /// Say whether the next picture is on its way, and how long the picture on
+    /// the stage takes to step back for it or to step forward again.
+    #[wasm_bindgen(js_name = setAwaited)]
+    pub fn set_awaited(&mut self, awaited: bool, ms: f64, now: f64) {
+        let now = self.clock.at(now);
+        self.stage.set_awaited(awaited, ms, now);
+    }
+
     /// Say what is marked on the picture, as JSON.
     ///
     /// # Errors

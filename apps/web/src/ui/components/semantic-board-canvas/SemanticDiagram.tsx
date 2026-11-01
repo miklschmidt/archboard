@@ -273,6 +273,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			reducedMotion,
 		},
 		true,
+		false,
 	);
 	const tip = useSubjectTip({ drawing, camera });
 	const { dismiss: dismissTip, onHover: tipHover } = tip;

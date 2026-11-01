@@ -165,6 +165,10 @@ fn between(from: Transform, to: Transform, share: f64) -> Transform {
     }
 }
 
+/// How far what a flight lets go of first steps back while the next picture is
+/// on its way.
+const AWAITED_DEPTH: f64 = 0.45;
+
 /// No move.
 const STILL: Transform = Transform::translate(0.0, 0.0);
 
@@ -176,6 +180,17 @@ fn rest_of(recede: &Recede, role: &Role) -> f64 {
         Role::Label => recede.labels,
         Role::Traffic(_) => recede.rest * recede.rest,
         _ => recede.rest,
+    }
+}
+
+/// How much of a group shows while the next picture is on its way. What a flight
+/// lets go of first starts to go at once.
+fn awaiting(awaited: f64, role: &Role) -> f64 {
+    match role {
+        Role::Line(_) | Role::Label | Role::Traffic(_) | Role::Junctions => {
+            1.0 - AWAITED_DEPTH * awaited
+        }
+        _ => 1.0,
     }
 }
 
@@ -333,7 +348,8 @@ impl<C: Canvas> Walk<'_, C> {
             Role::NearView | Role::FarView | Role::Chip { .. }
         );
         let words = if spoken { inside.words } else { 1.0 };
-        let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words;
+        let waiting = awaiting(self.presentation.awaited, &group.role);
+        let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words * waiting;
         // Nothing of it shows, and the cuts of a mask must not run on what is under it.
         if opacity <= 0.0 {
             return;

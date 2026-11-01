@@ -56,6 +56,8 @@ impl Default for Recede {
 pub struct Presentation {
     /// Where the picture lies.
     pub camera: Camera,
+    /// How far the picture has stepped back for the next, from 0 to 1.
+    pub awaited: f64,
     /// How far the picture is through its swap to the far view: 0 is the near
     /// view and 1 is the far view.
     pub far: f64,

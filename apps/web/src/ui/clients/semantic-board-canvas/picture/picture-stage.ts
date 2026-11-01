@@ -57,6 +57,7 @@ class PictureStage {
 		painting: undefined,
 		camera: { x: 0, y: 0, scale: 1 },
 		farLine: { scale: 0, ms: 0 },
+		awaited: false,
 		marks: { selected: new Set(), whole: new Set() },
 		light: null,
 		trafficShown: true,
@@ -278,6 +279,18 @@ class PictureStage {
 		this.#held.camera = { x, y, scale };
 		this.#tell((painter) => {
 			painter.setCamera(x, y, scale, ms, frameClock().now());
+		});
+	}
+
+	/**
+	 * Say whether the next picture is on its way, so that the one here steps back for it.
+	 * @param awaited Whether it is.
+	 * @param ms How long the picture here takes to step back or forward.
+	 */
+	setAwaited(awaited: boolean, ms: number): void {
+		this.#held.awaited = awaited;
+		this.#tell((painter) => {
+			painter.setAwaited(awaited, ms, frameClock().now());
 		});
 	}
 

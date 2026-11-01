@@ -65,6 +65,8 @@ pub struct Stage {
     size: (f64, f64),
     phases: Option<Phases>,
     flight: Option<Flight>,
+    /// How far the picture has stepped back for the next.
+    awaited: Fade,
     leaving: Option<Leaving>,
     ghost: Option<Ghost>,
     dive: Option<Dive>,
@@ -99,6 +101,7 @@ impl Stage {
             size,
             phases: None,
             flight: None,
+            awaited: Fade::still(0.0),
             leaving: None,
             ghost: None,
             dive: None,
@@ -420,6 +423,15 @@ impl Stage {
         self.presentation.sweep = None;
     }
 
+    /// Say whether the next picture is on its way, and how long the picture on
+    /// the stage takes to step back for it or to step forward again. It starts a
+    /// flight at the reader's click, while the next picture is still being drawn.
+    pub fn set_awaited(&mut self, awaited: bool, ms: f64, now: f64) {
+        self.now = now;
+        let goal = if awaited { 1.0 } else { 0.0 };
+        self.awaited = self.awaited.toward(goal, now, 0.0, ms, EASE_OUT);
+    }
+
     /// Light the picture.
     pub fn set_light(&mut self, light: &Light, now: f64) {
         self.now = now;
@@ -465,6 +477,7 @@ impl Stage {
             sweep.advance(now);
         }
         self.presentation.recede = self.lighting.recede_at(now);
+        self.presentation.awaited = self.awaited.at(now);
         self.settle();
     }
 
@@ -507,9 +520,15 @@ impl Stage {
         self.flying(now)
             || self.presentation.sweep.is_some()
             || self.lighting.moving(now)
-            || ![self.glide.x, self.glide.y, self.glide.scale, self.far]
-                .iter()
-                .all(|fade| fade.done(now))
+            || ![
+                self.glide.x,
+                self.glide.y,
+                self.glide.scale,
+                self.far,
+                self.awaited,
+            ]
+            .iter()
+            .all(|fade| fade.done(now))
     }
 
     /// Whether a whole picture is on the move at a moment.

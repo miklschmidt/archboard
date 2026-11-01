@@ -35,6 +35,14 @@ const PICTURE_MS = durations({
 	 */
 	transition: 640,
 	/**
+	 * How long the picture on the stage takes to step back once the next one is on
+	 * its way. A large board takes a moment to lay out, and this answers the click
+	 * at once. A flight then goes on from where this stands.
+	 */
+	awaitIn: 160,
+	/** How long a picture takes to step forward again, as a flight starts or the wait ends. */
+	awaitOut: 300,
+	/**
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
 	 * the first picture of a page, another board, another view of this one.
 	 *
