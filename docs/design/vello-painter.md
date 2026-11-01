@@ -148,6 +148,16 @@ Traffic alone used to take the whole thread, with a mean gap of 24.7 ms. It now 
 On a small board the painter takes 21% of the main thread with traffic running, against 8% on the old page.
 A quarter of the frame goes to the gradient tables of `vello_common`, which it builds again each frame.
 
+Firefox 158 on Linux has no WebGPU, so it takes the CPU painter. In a real run it drew the largest board correctly at 1920x1080.
+The table holds two runs of each page. The SVG column is the page before this change, with its DOM motion.
+Slow share is the part of the frames that took over 25 ms.
+
+| Moment | Mean gap, CPU painter | Mean gap, SVG | Longest gap, CPU painter | Longest gap, SVG | Slow share, CPU painter | Slow share, SVG |
+| ------ | --------------------- | ------------- | ------------------------ | ---------------- | ----------------------- | --------------- |
+| Idle   | 13.1 ms               | 8.4 ms        | 63 ms                    | 17 ms            | 14%                     | 0%              |
+| Toggle | 22.7 ms               | 20.2 ms       | 138 ms                   | 517 ms           | 33%                     | 14%             |
+| Wheel  | 22.9 ms               | 16.7 ms       | 67 ms                    | 373 ms           | 34%                     | 10%             |
+
 A failed painter releases its resources and restores the SVG glyphs and definitions.
 The stage hides the failed canvas while a replacement starts.
 The surface keeps complete ink if the CPU painter also fails.

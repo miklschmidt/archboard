@@ -107,6 +107,6 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 - README takes run with `--disable-gpu`, so they paint on the CPU. They did not run again
   with this change.
 - The page holds a canvas and an SVG. TASK-561 follows this change to reduce the DOM.
-- Headless Chromium with a GPU adapter draws a blank canvas in the runs of 2026-11-01.
+- Headless Chromium with a GPU adapter draws a blank canvas, and there is no fix for this.
   So GPU parity and frame measurements run in a browser with a window. The notes of
   TASK-560 hold the facts.

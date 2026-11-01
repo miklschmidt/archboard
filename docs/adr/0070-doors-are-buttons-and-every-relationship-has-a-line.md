@@ -27,6 +27,9 @@ look from a mockup. A door keeps its color on both themes, and no palette color
 turns pale or brown. The reason is that `--bright-<name>` is the dark value of
 the palette color on either ground.
 
+A door keeps its measured size wherever it stands. The owner saw doors grow to
+the height of the cards beside them and ruled that a door never grows.
+
 The arrow on a door points up, sideways or down by the depth of its module
 against the open module. Across this repository, 296 doors lead up, 326 lead
 sideways and none lead down, because a door is a child of the common ancestor.
