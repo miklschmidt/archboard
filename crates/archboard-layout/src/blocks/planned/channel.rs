@@ -10,7 +10,7 @@ use crate::geometry::{Point, Rect, inflate};
 use super::geometry::{contains, intersection, length};
 use super::model::Model;
 use super::ports::{center, port};
-use super::shape::Shape;
+use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
 
 pub(super) fn feasible(
@@ -78,7 +78,7 @@ impl<'a, 'g> Probe<'a, 'g> {
                         .scopes
                         .iter()
                         .filter(|(scope, _)| foreign(model, topology, index, **scope))
-                        .map(|(_, placed)| inflate(placed.bounds, 16.0))
+                        .map(|(_, placed)| inflate(placed.bounds, LINE_CLEAR))
                         .collect();
                     Rc::new(FixedGeometry {
                         cards: super::clearance::Clearance::new(cards),

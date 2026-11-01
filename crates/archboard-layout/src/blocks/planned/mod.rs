@@ -24,6 +24,7 @@ mod port_spacing;
 mod portals;
 mod ports;
 mod reading;
+mod room;
 mod runs;
 mod shape;
 mod topology;
@@ -99,7 +100,7 @@ pub(super) fn route_candidates(
         };
         match fixed::route(graph, drawing, orders) {
             Ok(next) => {
-                let next_score = reading::rank(&next.edges);
+                let next_score = reading::drawn_rank(&next);
                 let first = reference.get_or_insert_with(|| next.clone());
                 if next_score < score && reading::worth_placing(&next, first, graph) {
                     score = next_score;

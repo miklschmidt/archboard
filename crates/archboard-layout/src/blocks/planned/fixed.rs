@@ -36,7 +36,7 @@ pub(super) fn route(
     Ok(drawing)
 }
 
-/// Take a routed shape's empty bands and guard what is left.
+/// Close the space that a routed shape leaves, and guard what is left.
 pub(super) fn settled(
     model: &Model<'_>,
     topology: &Topology,

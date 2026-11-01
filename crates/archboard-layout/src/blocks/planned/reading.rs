@@ -10,6 +10,8 @@ use crate::{
 
 /// A crossing costs the same travel as two and a half bends.
 const CROSSING_COST: f64 = 300.0;
+/// A crossing beside an arrow costs a finished drawing what two crossings cost.
+const CROWDED_COST: f64 = 2.0 * CROSSING_COST;
 
 /// Prefer crossings at least two lanes from a card's attachment.
 const APPROACH_ROOM: f64 = 2.0 * LANE;
@@ -74,10 +76,12 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
-/// How a finished drawing ranks: whether it lands whole, its long detours, its
-/// crowded approaches, then the work of tracing its lines times the room it takes.
-pub(super) type Order = (bool, usize, usize, f64);
+/// How a finished drawing ranks: whether it lands whole, its long detours, then the
+/// work of tracing its lines, with its crowded approaches, times the room it takes.
+pub(super) type Order = (bool, bool, usize, f64);
 
+/// The scale that a landing must reach for its words to read (the first gate of the reader).
+const NEAR_SCALE: f64 = 0.6;
 /// The shape of the room a picture lands in, width over height.
 const PANE_SHAPE: f64 = LANDING_ROOM.0 / LANDING_ROOM.1;
 /// The largest page a reading settles for. Past it, a reading of few lines tries more room.
@@ -107,13 +111,24 @@ fn long_detours(lines: &[PlacedLine]) -> usize {
         .count()
 }
 
+/// A drawing as it was routed. Contraction brings cards and crossings together, so a
+/// route's own measures read this, and only the room a drawing takes reads what contraction left.
+fn as_routed(drawing: &crate::blocks::assembly::Placed) -> &crate::blocks::assembly::Placed {
+    drawing.routed.as_deref().unwrap_or(drawing)
+}
+
+/// How a finished drawing's routes rank.
+pub(super) fn drawn_rank(drawing: &crate::blocks::assembly::Placed) -> (usize, u64) {
+    rank(&as_routed(drawing).edges)
+}
+
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
-    let (approaches, cost) = rank(&drawing.edges);
+    let (crowded, cost) = drawn_rank(drawing);
     (
         drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
-        long_detours(&drawing.edges),
-        approaches,
-        (1.0 + f64::from_bits(cost)) * room_taken(drawing),
+        drawing.width * NEAR_SCALE > LANDING_ROOM.0 || drawing.height * NEAR_SCALE > LANDING_ROOM.1,
+        long_detours(&as_routed(drawing).edges),
+        (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST) * room_taken(drawing),
     )
 }
 
@@ -125,6 +140,8 @@ pub(super) fn worth_placing(
     first: &crate::blocks::assembly::Placed,
     graph: &crate::graph::Node,
 ) -> bool {
+    let area = next.width * next.height / (first.width * first.height);
+    let (next, first) = (as_routed(next), as_routed(first));
     let grows_detour = next.edges.iter().any(|edge| {
         first
             .edges
@@ -136,7 +153,6 @@ pub(super) fn worth_placing(
                 length > direct * 1.5 && length - direct > before - previous_direct + 300.0
             })
     });
-    let area = next.width * next.height / (first.width * first.height);
     !grows_detour
         && !spreads_fan(next, first, graph)
         && (area <= 1.0

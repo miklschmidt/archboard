@@ -7,6 +7,8 @@ use crate::{
 use std::{collections::BTreeMap, rc::Rc};
 
 pub(super) const CLEAR: f64 = 32.0;
+/// How far a line stands off what it does not join: sixteen, less what a sum of moves rounds away.
+pub(super) const LINE_CLEAR: f64 = 16.0 - 1e-6;
 
 #[derive(Clone)]
 pub(super) struct ScopePlacement {
@@ -48,7 +50,7 @@ impl Shape {
         } else if foot.is_some_and(own) {
             self.solid(id)
         } else {
-            inflate(self.solid(id), 16.0)
+            inflate(self.solid(id), LINE_CLEAR)
         }
     }
 
