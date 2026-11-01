@@ -50,9 +50,16 @@ function withProject<T>(
 	}
 }
 
-function lint(root: string, config: string, file: string): CommandResult {
+function lint(root: string, config: string, ...files: readonly string[]): CommandResult {
 	const result = Bun.spawnSync({
-		cmd: [vp, "lint", `--config=${config}`, "--disable-nested-config", "--format=default", file],
+		cmd: [
+			vp,
+			"lint",
+			`--config=${config}`,
+			"--disable-nested-config",
+			"--format=default",
+			...files,
+		],
 		cwd: root,
 		stdout: "pipe",
 		stderr: "pipe",
@@ -312,17 +319,14 @@ describe("the frame clock rule follows the board canvas into apps/web", () => {
 		// Catches the restriction vanishing when the canvas moves: the override named only
 		// the old paths. A sibling behavior stays free to read the clock, so it was not widened.
 		withProject({ ".oxlintrc.jsonc": repositoryConfig(".oxlintrc.jsonc") }, files, (root) => {
-			for (const file of canvas) {
-				const result = lint(root, ".oxlintrc.jsonc", file);
-				refused(result, "eslint(no-restricted-properties)");
-				refused(result, "eslint(no-restricted-globals)");
-			}
+			const restricted = lint(root, ".oxlintrc.jsonc", ...canvas);
+			refused(restricted, "eslint(no-restricted-properties)");
+			for (const rule of ["no-restricted-properties", "no-restricted-globals"])
+				expect(restricted.output.split(`eslint(${rule})`)).toHaveLength(canvas.length + 1);
 			// Sibling behaviors and canvas tests keep their browser clocks.
-			for (const file of [...sibling, ...tests]) {
-				const result = lint(root, ".oxlintrc.jsonc", file);
-				expect(result.output, file).not.toContain("no-restricted-properties");
-				expect(result.exitCode, result.output).toBe(0);
-			}
+			const free = lint(root, ".oxlintrc.jsonc", ...sibling, ...tests);
+			expect(free.output).not.toContain("no-restricted-properties");
+			expect(free.exitCode, free.output).toBe(0);
 		});
 	});
 });
