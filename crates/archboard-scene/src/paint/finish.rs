@@ -1,21 +1,30 @@
-//! The bright finish of a door and of a group's tag: one recipe. A colour takes
-//! its dark value on both themes, and every step from it is in OKLCH, so that a
-//! hue never turns to brown.
+//! The bright finish of a door and of a group's tag: one recipe. On the dark theme
+//! a colour is bright under dark ink. On the light theme it stands at one deeper
+//! lightness under white ink tinted with its hue, so every colour holds that ink.
+//! Every step from a colour is in OKLCH, so that a hue never turns to brown.
 
 use std::collections::BTreeSet;
 
 use crate::geometry::Point;
+use crate::paint::colour::light_dark;
 use crate::request::PaletteColor;
 use crate::scene::{Colour, Definition, Gradient, GradientForm, GradientId, Stop, Token};
 
 /// The ink on a finish: the deep tone of its hue.
-const INK_LIGHTNESS: f64 = 0.2;
-const INK_CHROMA: f64 = 0.03;
+const INK: (f64, f64) = (0.2, 0.03);
 
-/// The steps from a bright colour, in OKLCH lightness and chroma.
+/// The steps from a bright colour on the dark theme, in OKLCH lightness and chroma.
 const TOP: (f64, f64) = (0.02, 0.02);
 const BOTTOM: (f64, f64) = (-0.06, 0.03);
 const EDGE: (f64, f64) = (-0.26, -0.02);
+const RULE: (f64, f64) = (-0.24, 0.0);
+
+/// The tones of a colour on the light theme, each a lightness and a chroma cap.
+const LIGHT_TOP: (f64, f64) = (0.66, 0.2);
+const LIGHT_BOTTOM: (f64, f64) = (0.58, 0.2);
+const LIGHT_EDGE: (f64, f64) = (0.46, 0.17);
+const LIGHT_INK: (f64, f64) = (0.985, 0.018);
+const LIGHT_RULE: (f64, f64) = (0.82, 0.11);
 
 /// The colours of a finish.
 pub(super) struct Finish {
@@ -23,6 +32,8 @@ pub(super) struct Finish {
     pub bottom: Colour,
     pub rim: Colour,
     pub ink: Colour,
+    /// The rule that parts a door's arrow from its control.
+    pub rule: Colour,
 }
 
 /// One step from a bright colour.
@@ -34,6 +45,16 @@ fn step(bright: &Colour, (lightness, chroma): (f64, f64)) -> Colour {
     }
 }
 
+/// One tone of a bright colour.
+fn tone(bright: &Colour, (lightness, cap): (f64, f64)) -> Colour {
+    Colour::Tone {
+        ink: Box::new(bright.clone()),
+        lightness,
+        cap,
+        chroma: 1.0,
+    }
+}
+
 /// The finish of one colour. With no colour it is the primary action's own.
 pub(super) fn finish_of(color: Option<PaletteColor>) -> Finish {
     let Some(color) = color else {
@@ -42,19 +63,16 @@ pub(super) fn finish_of(color: Option<PaletteColor>) -> Finish {
             bottom: Token::PrimaryBottom.into(),
             rim: Token::PrimaryEdge.into(),
             ink: Token::PrimaryForeground.into(),
+            rule: Token::PrimaryEdge.into(),
         };
     };
     let bright = Colour::Bright { color };
     Finish {
-        top: step(&bright, TOP),
-        bottom: step(&bright, BOTTOM),
-        rim: step(&bright, EDGE),
-        ink: Colour::Tone {
-            ink: Box::new(bright),
-            lightness: INK_LIGHTNESS,
-            cap: INK_CHROMA,
-            chroma: 1.0,
-        },
+        top: light_dark(&tone(&bright, LIGHT_TOP), &step(&bright, TOP)),
+        bottom: light_dark(&tone(&bright, LIGHT_BOTTOM), &step(&bright, BOTTOM)),
+        rim: light_dark(&tone(&bright, LIGHT_EDGE), &step(&bright, EDGE)),
+        ink: light_dark(&tone(&bright, LIGHT_INK), &tone(&bright, INK)),
+        rule: light_dark(&tone(&bright, LIGHT_RULE), &step(&bright, RULE)),
     }
 }
 

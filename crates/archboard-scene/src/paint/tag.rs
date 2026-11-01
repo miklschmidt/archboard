@@ -5,11 +5,12 @@
 use crate::geometry::{Point, Rect, round_coord};
 use crate::measure::width;
 use crate::paint::build::{Items, concat, lines, shape, text};
+use crate::paint::colour::translucent;
 use crate::paint::design::{
     FAR_TAG, TAG_FONT, TAG_GAP, TAG_HEIGHT, TAG_PADDING, TAG_RADIUS, TAG_SIZE,
 };
 use crate::paint::finish::finish_of;
-use crate::paint::slab::{across, boxed};
+use crate::paint::slab::{Rim, boxed, rim_band};
 use crate::request::GroupTag;
 use crate::scene::{Colour, GradientId, Paint, Pointer, Purpose, Shape, Stroke, Text};
 
@@ -32,12 +33,13 @@ fn tag(group: &GroupTag, at: Point, scale: f64) -> Items {
         height: TAG_HEIGHT * scale,
     };
     let radius = TAG_RADIUS * scale;
-    let inner = Rect {
-        x: rect.x + radius,
-        width: rect.width - 2.0 * radius,
-        ..rect
-    };
     let rim = RIM * scale.sqrt();
+    let inner = Rect {
+        x: rect.x + rim / 2.0,
+        y: rect.y + rim / 2.0,
+        width: rect.width - rim,
+        height: rect.height - rim,
+    };
     lines(vec![
         shape(
             Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius)))
@@ -49,10 +51,12 @@ fn tag(group: &GroupTag, at: Point, scale: f64) -> Items {
                 })
                 .stroked(Stroke::new(&finish.rim, rim)),
         ),
-        across(
+        rim_band(
             inner,
-            rect.y + rim * 1.2,
-            Stroke::new(&Colour::White, rim).at(HIGHLIGHT),
+            radius - rim / 2.0,
+            rim,
+            Rim::Top,
+            &translucent(&Colour::White, HIGHLIGHT),
         ),
         text(Text::set(
             Point {

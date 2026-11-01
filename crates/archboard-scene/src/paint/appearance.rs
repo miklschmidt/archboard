@@ -32,6 +32,15 @@ const TRAY_SINK_MAX: Share = Share {
     dark: 0.8,
 };
 const LABEL_EDGE: f64 = 0.6;
+/// How far a well's walls go from its floor toward the shade of a front edge.
+const TOP_WALL: Share = Share {
+    light: 0.8,
+    dark: 0.45,
+};
+const SIDE_WALL: Share = Share {
+    light: 0.4,
+    dark: 0.28,
+};
 const CHIP_FACE: Inked = Inked {
     light: ToneStep::new(0.955, 0.17),
     dark: 0.2,
@@ -76,8 +85,11 @@ fn floor_at(depth: f64, palette: &Palette) -> Colour {
 
 /// A frame's well at a depth, and the raised tab that stands on its edge.
 pub(super) fn tray_look(palette: &Palette, depth: f64) -> TrayLook {
+    let floor = floor_at(depth, palette);
     TrayLook {
-        floor: floor_at(depth, palette),
+        top_wall: tinted(&floor, Some(&palette.slab_deep), TOP_WALL),
+        side_wall: tinted(&floor, Some(&palette.slab_deep), SIDE_WALL),
+        floor,
         tab: palette.tray_tab.clone(),
         line: palette.tray_line.clone(),
     }

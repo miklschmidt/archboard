@@ -51,12 +51,14 @@
    amber, which sits on the gold's hue, so no comparison mark reads as a
    choice.
 
-   The picture builds its parts as blocks lit from above: each part has a
-   top face, a front edge along its foot that shows how thick it is, and a soft
-   shadow it casts down and a little to the right. A card is a slab
+   The light falls straight down on every surface. The picture builds its parts
+   as blocks: each part has a top face with a fine highlight along its top edge,
+   a front edge along its foot that shows how thick it is, and a soft shadow it
+   casts down, which spills a little to the right and the left. A card is a slab
    (--slab-face on --slab-edge). A container is a neutral well cut into what
-   holds it: a floor (--tray-floor) a step darker than the page, one inner
-   shadow down from its top edge and a lit lip (--tray-lip) at its bottom. A
+   holds it: walls a shade under its floor, a floor (--tray-floor) a step
+   darker than the page, one inner shadow down from its top wall and a lit
+   lip (--tray-lip) over a crease at its foot. A
    raised tab (--tray-tab) stands on that edge at the top left, lighter than the
    floor, and one thin line (--border) goes round the tab and the well. A
    container nested in another is cut a step deeper, its floor sinking toward
@@ -75,8 +77,8 @@
    below the front edge, so that a port does not read as a dark spot on a card.
 
    On the light ground the picture is crisp and vivid rather than pastel. Its
-   own neutrals are the shell's warm chalk (hue near 85): a card face a soft
-   off-white and never pure white, a tray floor a step under the chalk ground,
+   own neutrals are the shell's warm chalk (hue near 85): a card face a warm
+   grey that stands apart from the ground and a well's floor, lit at its top, a tray floor a step under the chalk ground,
    a front edge that is the face in shade, and a warm shadow. A colour on it is
    a clean tone of its own hue. Every named colour except the gold of
    yellow keeps APCA Lc 53 or more as a line on the ground and a tray's
@@ -171,9 +173,9 @@
 	--sidebar-ring: oklch(0.62 0.13 78);
 	--raised: oklch(0.986 0.003 88);
 	--highlight: oklch(1 0 0 / 0.85);
-	--slab-face: oklch(0.96 0.004 85);
-	--slab-edge: oklch(0.815 0.004 85);
-	--slab-deep: oklch(0.86 0.006 85);
+	--slab-face: oklch(0.915 0.005 85);
+	--slab-edge: oklch(0.76 0.006 85);
+	--slab-deep: oklch(0.8 0.006 85);
 	--slab-glint: oklch(1 0 0);
 	--slab-sheen: oklch(1 0 0 / 0.3);
 	--slab-shadow: oklch(0.33 0.035 65 / 0.16);
@@ -181,9 +183,9 @@
 	--tray-sink: oklch(0.95 0.005 85);
 	--tray-lip: oklch(1 0 0);
 	--tray-tab: oklch(1 0 0);
-	--port-wall: oklch(0.68 0.008 80);
-	--port-lip: oklch(0.93 0.004 85);
-	--port-deep: oklch(0.6 0.01 78);
+	--port-wall: oklch(0.62 0.008 80);
+	--port-lip: oklch(0.89 0.005 85);
+	--port-deep: oklch(0.55 0.01 78);
 
 	/* A door's button keeps these bright values on both themes: the dark theme's
 	   named colours, which the light theme's darker ones must not replace. */

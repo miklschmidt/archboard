@@ -20,7 +20,7 @@ use crate::paint::far_view::{Place, far_layer, moving_words, near_layer, shared_
 use crate::paint::palette::Palette;
 use crate::paint::slab::slab_seat;
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
-use crate::paint::toggle::toggle_end;
+use crate::paint::toggle::{quiet_rule, toggle_end};
 use crate::paint::tray::{Well, tab_view, well_body};
 use crate::request::{NodeAppearance, Standing};
 use crate::scene::{Group, Role, SubjectKind};
@@ -119,7 +119,13 @@ fn line_views(
             .node
             .toggle
             .map_or_else(Items::new, |toggle| {
-                toggle_end(tab, toggle, &ink.foreground, scale)
+                toggle_end(
+                    tab,
+                    toggle,
+                    &ink.foreground,
+                    quiet_rule(&ink.foreground),
+                    scale,
+                )
             })
     };
     let near = words_in(&placed.measured.runs, near_tab, &ink);

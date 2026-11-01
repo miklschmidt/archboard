@@ -165,6 +165,8 @@ const SHIFTED_OKLCH = /^from\s+([\s\S]+)\s+calc\(l \+ (-?[\d.]+)\)\s+calc\(c \+ 
 function resolve(expression: string, theme: DiagramTheme): Rgba {
 	const text = expression.trim();
 	if (text === "transparent") return TRANSPARENT;
+	if (text === "white") return { r: 255, g: 255, b: 255, a: 1 };
+	if (text === "black") return { r: 0, g: 0, b: 0, a: 1 };
 	const call = /^([a-z-]+)\(([\s\S]*)\)$/u.exec(text);
 	if (call === null) return literalColour(text);
 	const [, name, inner] = call;

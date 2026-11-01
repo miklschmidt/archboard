@@ -1,7 +1,7 @@
 //! Depth by thickness. Every part of the picture is a block lit from above: a
 //! flat top face with a fine highlight along its top edge and light that falls
-//! off down it, a front edge along its foot, and a soft shadow it casts down
-//! and to the right. A proposal's standing takes over the outline of the face.
+//! off down it, a front edge along its foot, and a soft shadow it casts straight
+//! down. A proposal's standing takes over the outline of the face.
 //! A removed block is a flat, see-through ghost in the dashed border of a
 //! removal. A part opens with its seat, its box unpainted, which takes the
 //! pointer.
@@ -16,7 +16,7 @@ use crate::paint::shadow::{SHADOW_REACH, shadow_definitions, smooth_shadow};
 use crate::paint::standing::{OUTLINE_WIDTH, ink_of, outline_dash};
 use crate::request::Standing;
 use crate::scene::{
-    ClipId, Colour, Definition, Geometry, Gradient, GradientForm, GradientId, Group, Paint,
+    ClipId, Colour, Definition, Gradient, GradientForm, GradientId, Group, Paint, PathStep,
     Pointer, Purpose, Role, ShadowOf, Shape, Stop, Stroke,
 };
 
@@ -44,8 +44,8 @@ const GLINT_WIDTH: f64 = 1.0;
 
 /// How far the highlight mixes a face toward the glint, on each ground.
 const GLINT: Share = Share {
-    light: 0.45,
-    dark: 0.09,
+    light: 0.8,
+    dark: 0.26,
 };
 
 /// The fine highlight along the top edge of a face.
@@ -53,7 +53,7 @@ pub(super) fn glint_of(face: &Colour, palette: &Palette) -> Colour {
     tinted(face, Some(&palette.slab_glint), GLINT)
 }
 
-const SOFT_SHEEN: f64 = 0.2;
+const SOFT_SHEEN: f64 = 0.55;
 
 /// Which sort of block casts a shadow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -92,24 +92,54 @@ pub(super) fn plate(rect: Rect, radius: f64) -> Shape {
     Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius))).pointer(Pointer::None)
 }
 
-/// A line across a box at one height, which takes no pointer.
-pub(super) fn across(rect: Rect, y: f64, stroke: Stroke) -> Items {
+/// Which edge of a rounded box catches a band of light or shade.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Rim {
+    Top,
+    Foot,
+}
+
+/// A band along one edge of a rounded box, as an inset box shadow draws it: the
+/// box less itself moved in by the band's depth. The band thins round each corner
+/// and is gone at the corner's side, so it merges with the curve.
+pub(super) fn rim_band(rect: Rect, radius: f64, depth: f64, rim: Rim, ink: &Colour) -> Items {
+    let (left, right) = (rect.x, rect.x + rect.width);
+    let (edge, way, turn) = match rim {
+        Rim::Top => (rect.y, 1.0, true),
+        Rim::Foot => (rect.y + rect.height, -1.0, false),
+    };
+    let at = |x: f64, y: f64| Point {
+        x: round_coord(x),
+        y: round_coord(y),
+    };
+    let arc = |to: Point, clockwise: bool| PathStep::Arc {
+        radius: at(radius, radius),
+        clockwise,
+        to,
+    };
+    let steps = vec![
+        PathStep::Move {
+            to: at(left, edge + way * radius),
+        },
+        arc(at(left + radius, edge), turn),
+        PathStep::Across {
+            x: round_coord(right - radius),
+        },
+        arc(at(right, edge + way * radius), turn),
+        PathStep::Down {
+            y: round_coord(edge + way * (radius + depth)),
+        },
+        arc(at(right - radius, edge + way * depth), !turn),
+        PathStep::Across {
+            x: round_coord(left + radius),
+        },
+        arc(at(left, edge + way * (radius + depth)), !turn),
+        PathStep::Close,
+    ];
     shape(
-        Shape::new(
-            Purpose::Rule,
-            Geometry::Line {
-                from: Point {
-                    x: round_coord(rect.x),
-                    y: round_coord(y),
-                },
-                to: Point {
-                    x: round_coord(rect.x + rect.width),
-                    y: round_coord(y),
-                },
-            },
-        )
-        .pointer(Pointer::None)
-        .stroked(stroke),
+        Shape::path(Purpose::Solid, steps)
+            .pointer(Pointer::None)
+            .filled(ink),
     )
 }
 

@@ -10,6 +10,7 @@ use crate::measure::{DOOR_FAR, tab_runs};
 use crate::paint::Ctx;
 use crate::paint::build::{Items, concat, grouped, lines, shape};
 use crate::paint::cards::halo;
+use crate::paint::colour::translucent;
 use crate::paint::design::{
     DOOR_ARROW_INSET, DOOR_FAR_ICON, DOOR_HEIGHT, DOOR_ICON, DOOR_PADDING, DOOR_RADIUS,
     ICON_CHIP_SIZE, TOGGLE_ROOM,
@@ -20,7 +21,7 @@ use crate::paint::finish::{Finish, finish_of};
 use crate::paint::icons::glyph_group;
 use crate::paint::palette::Palette;
 use crate::paint::slab::{
-    Lift, across, boxed, shadow_under, slab_seat, slab_shadow, standing_border,
+    Lift, Rim, boxed, rim_band, shadow_under, slab_seat, slab_shadow, standing_border,
 };
 use crate::paint::standing::{standing_palette, standing_pin, subject, warning_badge};
 use crate::paint::styles::Styles;
@@ -33,11 +34,9 @@ use crate::scene::{
 
 /// How heavy a door's rim is.
 const RIM: f64 = 1.0;
-/// How far inside the rim a door's highlight and its foot line run.
-const LINE_INSET: f64 = 1.2;
 /// How strong the highlight along a door's top is.
 const HIGHLIGHT: f64 = 0.55;
-/// How strong the dark line along a door's foot is.
+/// How strong the dark band along a door's foot is.
 const FOOT: f64 = 0.22;
 /// How heavy a door's arrow is.
 const ARROW_WIDTH: f64 = 1.7;
@@ -57,13 +56,16 @@ pub(super) fn door_colours<'a>(
 }
 
 /// What a door looks like: a face in its colour's gradient, with a rim, a fine
-/// highlight along its top and a dark line along its foot.
+/// highlight along its top and a dark band along its foot, each of which merges
+/// with the curve of a corner.
 fn button(rect: Rect, color: Option<PaletteColor>, finish: &Finish) -> Items {
     let inner = Rect {
-        x: rect.x + DOOR_RADIUS,
-        width: rect.width - 2.0 * DOOR_RADIUS,
-        ..rect
+        x: rect.x + RIM / 2.0,
+        y: rect.y + RIM / 2.0,
+        width: rect.width - RIM,
+        height: rect.height - RIM,
     };
+    let radius = DOOR_RADIUS - RIM / 2.0;
     lines(vec![
         shape(
             Shape::rect(Purpose::Plate, boxed(rect), Some(DOOR_RADIUS))
@@ -73,15 +75,19 @@ fn button(rect: Rect, color: Option<PaletteColor>, finish: &Finish) -> Items {
                 })
                 .stroked(Stroke::new(&finish.rim, RIM)),
         ),
-        across(
+        rim_band(
             inner,
-            rect.y + LINE_INSET,
-            Stroke::new(&Colour::White, RIM).at(HIGHLIGHT),
+            radius,
+            RIM,
+            Rim::Top,
+            &translucent(&Colour::White, HIGHLIGHT),
         ),
-        across(
+        rim_band(
             inner,
-            rect.y + rect.height - LINE_INSET,
-            Stroke::new(&Colour::Black, RIM).at(FOOT),
+            radius,
+            RIM,
+            Rim::Foot,
+            &translucent(&Colour::Black, FOOT),
         ),
     ])
 }
@@ -138,7 +144,7 @@ fn views(
     ctx: &Ctx<'_>,
     runs: (&[TextRun], &[TextRun]),
     rect: Rect,
-    (way, toggle, ink): (DoorWay, Option<Toggle>, &Colour),
+    (way, toggle, ink, rule): (DoorWay, Option<Toggle>, &Colour, &Colour),
     appearance: &NodeAppearance,
     palette: &Palette,
 ) -> Items {
@@ -159,8 +165,11 @@ fn views(
         width: rect.width - toggle.map_or(0.0, |_| TOGGLE_ROOM),
         ..rect
     };
-    let control =
-        |scale: f64| toggle.map_or_else(Items::new, |toggle| toggle_end(rect, toggle, ink, scale));
+    let control = |scale: f64| {
+        toggle.map_or_else(Items::new, |toggle| {
+            toggle_end(rect, toggle, ink, Stroke::new(rule, 1.0), scale)
+        })
+    };
     lines(vec![
         shared_chip(
             glyph_group(
@@ -239,7 +248,7 @@ pub(super) fn paint_door(
                     ctx,
                     (&placed.measured.runs, &far),
                     rect,
-                    (way, part.node.toggle, &ink),
+                    (way, part.node.toggle, &ink, &finish.rule),
                     appearance,
                     palette,
                 ),

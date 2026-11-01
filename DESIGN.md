@@ -10,7 +10,7 @@ colors:
   reading-tone: "oklch(0.935 0.006 85)"
   well-floor: "oklch(0.95 0.005 255)"
   tab-piece: "oklch(1 0 0)"
-  slab-face: "oklch(0.96 0.004 85)"
+  slab-face: "oklch(0.915 0.005 85)"
   card-white: "oklch(1 0 0)"
   rule: "oklch(0.905 0.005 85)"
   field-rule: "oklch(0.88 0.006 85)"
@@ -183,7 +183,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on a page or in the right panel, raised as a plate.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of a field sunk into the column. It is the floor of a nested container on the picture, so the column and the picture are one material.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece raised on the edge of a well: the open tab of the left column, and its chosen row.
-- **Slab Face** (`--slab-face`, oklch(0.96 0.004 85), dark oklch(0.31 0.007 75)): the top face of a number badge and of the bar of a `Measures` row, on a front edge of `--slab-edge`.
+- **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge and of the bar of a `Measures` row, on a front edge of `--slab-edge`.
 - **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and raised controls.
 - **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.72 0.01 80)): text.
 - **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane.
@@ -331,10 +331,10 @@ records the construction.
 
 On chalk the picture is crisp and vivid, never pastel or dusty. Its own
 neutrals are the shell's warm chalk, near hue 85, and never blue: a card
-face a soft off-white, never pure white (oklch(0.96 0.004 85), lit to 0.97 at
-its top), a tray floor a step under the ground (oklch(0.974 0.003 88)) and a
+face a warm grey that stands apart from the ground and a well's floor
+(oklch(0.915 0.005 85), lit at its top), a tray floor a step under the ground (oklch(0.974 0.003 88)) and a
 warm shadow. Under a card's foot that shadow is lighter than the front edge,
-so the edge ends where the card ends. It falls only down and to the right,
+so the edge ends where the card ends. The light falls straight down on every surface, so a shadow falls down and spills a little to the right and the left,
 with a faint ring round the card. A label's face is the card's. A front edge
 is the face in shade, never a lighter strip: the neutral face's own neutral at
 lightness 0.815

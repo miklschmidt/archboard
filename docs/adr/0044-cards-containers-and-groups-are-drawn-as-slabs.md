@@ -448,3 +448,11 @@ The light picture's own neutrals move from near hue 255 to the shell's warm chal
 neutrals, the navy shadow and the navy words that the earlier amendments on this page describe. The owner found the
 blue backgrounds wrong for the product: Archboard stays on the neutral or warm side of grey. The dark theme does not
 change. The left column's well shares `--tray-sink` with the picture, so it warms with it.
+
+The light has been straight top down on every surface since the owner set it when the slab design began. The shadow
+never matched that rule, and point 2 above said it fell to the right. A shadow now falls down and spills a little to the
+right and the left, and nothing casts to one side. A card gets a warm grey face on the light theme, so it stands
+apart from both the ground and a well's floor, and a stronger top highlight in both themes. A well gets back the depth
+of a slab: walls, a lip and a crease round its floor, under the edge tab of 2026-10-31. On the
+light theme a door and a tag stand at one deeper lightness and carry white ink tinted with their hue. A mixed line is a
+double line, two rails with a clear core, which has no dash to drift out of step.

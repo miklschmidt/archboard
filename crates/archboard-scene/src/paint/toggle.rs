@@ -12,7 +12,7 @@ use crate::scene::{Cap, Colour, Geometry, Group, PathStep, Pointer, Purpose, Rol
 
 /// How far the rule stands in from the top and the foot of what it parts.
 const RULE_INSET: f64 = 8.0;
-/// How strong the rule is.
+/// How strong a quiet rule is.
 const RULE: f64 = 0.4;
 /// How far the glyph reaches from its centre.
 const GLYPH: f64 = 5.5;
@@ -58,8 +58,19 @@ fn glyph(toggle: Toggle, at: Point, scale: f64) -> Vec<PathStep> {
     steps
 }
 
+/// The rule of a control that stands on a surface with no finish of its own.
+pub(super) fn quiet_rule(ink: &Colour) -> Stroke {
+    Stroke::new(ink, 1.0).at(RULE)
+}
+
 /// The control at the right end of a box, in the ink of what it stands on.
-pub(super) fn toggle_end(rect: Rect, toggle: Toggle, ink: &Colour, scale: f64) -> Items {
+pub(super) fn toggle_end(
+    rect: Rect,
+    toggle: Toggle,
+    ink: &Colour,
+    rule: Stroke,
+    scale: f64,
+) -> Items {
     let end = Rect {
         x: rect.x + rect.width - TOGGLE_ROOM,
         width: TOGGLE_ROOM,
@@ -96,7 +107,7 @@ pub(super) fn toggle_end(rect: Rect, toggle: Toggle, ink: &Colour, scale: f64) -
                     },
                 )
                 .pointer(Pointer::None)
-                .stroked(Stroke::new(ink, 1.0).at(RULE)),
+                .stroked(rule),
             ),
             shape(
                 Shape::path(Purpose::Line, glyph(toggle, middle, scale))
