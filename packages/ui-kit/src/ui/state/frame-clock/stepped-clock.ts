@@ -3,22 +3,15 @@
 // Time stands still until the renderer says where it is now. Timers run at the
 // times they were due, frames are run when the renderer asks, and every
 // animation the browser runs by itself is paused and set to where this clock
-// says it is. A picture's traffic runs on each picture's own clock, which is
-// carried from where it was last stood.
+// says it is.
 //
 // A frame anything on the page asks of the browser, a library's included, is
 // run by this clock instead, at this clock's time. An animation on a timeline
 // it cannot stand is a picture the renderer cannot reproduce, so the clock
 // records it as a violation instead of letting it pass.
 
-import {
-	pictureOf,
-	syncAnimation,
-	syncPictureAnimation,
-	type DrivenAnimation,
-	type PictureAdoption,
-} from "#ui/state/frame-clock/animation-sync.ts";
-import { PICTURE_CLOCK, type FrameClock } from "#ui/state/frame-clock/clock.ts";
+import { syncAnimation, type DrivenAnimation } from "#ui/state/frame-clock/animation-sync.ts";
+import type { FrameClock } from "#ui/state/frame-clock/clock.ts";
 
 /** Something that moved outside the clock. */
 interface ClockViolation {
@@ -69,7 +62,6 @@ class SteppedClock implements FrameClock {
 	#requests = 0;
 	readonly #frames = new Map<number, (time: number) => void>();
 	readonly #timers = new Map<number, Timer>();
-	readonly #pictures = new WeakMap<object, PictureAdoption>();
 	readonly #animations = new WeakMap<DrivenAnimation, number>();
 	readonly #finished = new WeakSet<DrivenAnimation>();
 	readonly #noticed: ClockViolation[] = [];
@@ -131,25 +123,6 @@ class SteppedClock implements FrameClock {
 	}
 
 	/**
-	 * Where a picture's own clock stands by this one.
-	 * @param root The picture's root.
-	 * @returns Its time, in seconds.
-	 */
-	pictureTime(root: object): number {
-		const { base, at } = this.#adoptionOf(root);
-		return base + (this.#time - at) / 1000;
-	}
-
-	/**
-	 * Stand a picture's own clock somewhere, from now.
-	 * @param root The picture's root.
-	 * @param seconds Where.
-	 */
-	setPictureTime(root: object, seconds: number): void {
-		this.#pictures.set(root, { base: seconds, at: this.#time });
-	}
-
-	/**
 	 * Move the clock on, running every timer that falls due on the way at its own time.
 	 * @param to Where the clock is now, in milliseconds; never earlier than it was.
 	 */
@@ -174,8 +147,7 @@ class SteppedClock implements FrameClock {
 	}
 
 	/**
-	 * Stand every animation in a document where this clock says it is: a
-	 * picture's traffic where its picture's clock stands, any other from when it began.
+	 * Stand every animation in a document where this clock says it is, from when it began.
 	 * @param document The document.
 	 */
 	syncAnimations(document: AnimatedDocument): void {
@@ -186,11 +158,7 @@ class SteppedClock implements FrameClock {
 			finished: this.#finished,
 		};
 		for (const animation of document.getAnimations()) {
-			const picture = animation.id === PICTURE_CLOCK ? pictureOf(animation.effect?.target) : null;
-			const outcome =
-				picture === null
-					? syncAnimation(animation, book)
-					: syncPictureAnimation(animation, this.#adoptionOf(picture), book);
+			const outcome = syncAnimation(animation, book);
 			if (outcome !== null) this.#notice(outcome);
 		}
 	}
@@ -233,19 +201,6 @@ class SteppedClock implements FrameClock {
 	 */
 	#notice(what: string): void {
 		this.#noticed.push({ at: this.#time, what });
-	}
-
-	/**
-	 * Where a picture's clock was stood, standing it at nought now when it never was.
-	 * @param root The picture's root.
-	 * @returns Its adoption.
-	 */
-	#adoptionOf(root: object): PictureAdoption {
-		const known = this.#pictures.get(root);
-		if (known !== undefined) return known;
-		const adopted = { base: 0, at: this.#time };
-		this.#pictures.set(root, adopted);
-		return adopted;
 	}
 }
 

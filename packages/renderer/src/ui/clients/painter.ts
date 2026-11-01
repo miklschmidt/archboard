@@ -16,13 +16,6 @@ const PAINTER_WASM = new URL(
 /** Which painter draws a canvas. */
 type PainterKind = "gpu" | "cpu";
 
-/** What a browser's WebGPU answers about an adapter, as far as the choice reads it. */
-interface WebGpu {
-	readonly requestAdapter: (options: {
-		readonly powerPreference: "high-performance";
-	}) => Promise<{ readonly info?: { readonly isFallbackAdapter?: boolean } } | null>;
-}
-
 /** A painter at work on a canvas. */
 interface StartedPainter {
 	readonly painter: Painter;
@@ -58,11 +51,10 @@ function loadPainter(): Promise<void> {
  * @returns The reason, or null when it gave a real adapter.
  */
 async function gpuRefusal(): Promise<string | null> {
-	const { gpu } = navigator as Navigator & { readonly gpu?: WebGpu };
-	if (gpu === undefined) return "This browser has no WebGPU.";
-	const adapter = await gpu.requestAdapter({ powerPreference: "high-performance" });
+	if (!("gpu" in navigator)) return "This browser has no WebGPU.";
+	const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
 	if (adapter === null) return "WebGPU gave no adapter.";
-	return adapter.info?.isFallbackAdapter === true ? "WebGPU gave a software adapter." : null;
+	return adapter.info.isFallbackAdapter ? "WebGPU gave a software adapter." : null;
 }
 
 /**

@@ -12,10 +12,7 @@ import {
 } from "react";
 
 import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
-import {
-	attachStage,
-	stageOf,
-} from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
+import { attachStage, stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	useCameraView,
 	type BoardCamera,

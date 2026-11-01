@@ -1,0 +1,122 @@
+// What a stage says to its painter, in the forms the painter reads, and what it
+// keeps for a painter that starts late.
+
+import type { StartedPainter } from "@archboard/renderer/browser";
+import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import type { DiveWay } from "#ui/clients/semantic-board-canvas/picture/picture-dive.ts";
+import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+
+/** Where the camera puts the picture, in the surface's own pixels. */
+interface StageCamera {
+	readonly x: number;
+	readonly y: number;
+	readonly scale: number;
+}
+
+/** What is marked on the picture, each by its subject's id. */
+interface StageMarks {
+	readonly selected: ReadonlySet<string>;
+	readonly whole: ReadonlySet<string>;
+}
+
+/** A distance, in the surface's own pixels or the picture's units. */
+interface StageShift {
+	readonly x: number;
+	readonly y: number;
+}
+
+/** A flight between a board and the board inside its card. */
+interface StageDive {
+	readonly way: DiveWay;
+	readonly card: string;
+	readonly frame: SemanticBox;
+}
+
+/** How the picture stands in the light, in the form the painter reads. */
+interface StageLight {
+	readonly rest: number;
+	readonly labels: number;
+	readonly subjects: Readonly<Record<string, { readonly opacity: number; readonly delay: number }>>;
+	readonly duration: number;
+}
+
+/** What the stage holds for a painter that has not started or is replaced. */
+interface Held {
+	painting: string | undefined;
+	camera: StageCamera;
+	cameraMs: number;
+	far: boolean;
+	marks: StageMarks;
+	light: StageLight | null;
+	trafficShown: boolean;
+	heads: Readonly<Record<string, number>>;
+	warned: ReadonlySet<string>;
+}
+
+/**
+ * Where a picture is going, as the painter reads it.
+ * @param heading Where the reader went, if somewhere.
+ * @returns The JSON.
+ */
+function headingJson(heading: Departure | null): string {
+	return JSON.stringify(heading === null ? null : { way: heading.way, toward: heading.toward });
+}
+
+/** At which points of a move each of its parts happens, as the painter reads them. */
+const PHASES = JSON.stringify({
+	transition: PICTURE_TRANSITION_PHASES,
+	entry: PICTURE_ENTRY_PHASES,
+	exit: PICTURE_MS.exit,
+});
+
+/**
+ * The marks as the painter reads them.
+ * @param marks The marks.
+ * @returns JSON.
+ */
+function marksJson(marks: StageMarks): string {
+	return JSON.stringify({
+		selected: [...marks.selected],
+		whole: [...marks.whole],
+	});
+}
+
+/**
+ * Size a canvas to its box, in device pixels.
+ * @param canvas The canvas.
+ * @returns Whether its size changed.
+ */
+function sizeCanvas(canvas: HTMLCanvasElement): boolean {
+	const ratio = window.devicePixelRatio || 1;
+	const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+	const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
+	if (canvas.width === width && canvas.height === height) return false;
+	canvas.width = width;
+	canvas.height = height;
+	return true;
+}
+
+/**
+ * Keep a painter's size to its canvas.
+ * @param started The painter at work.
+ */
+function fitPainter(started: StartedPainter): void {
+	if (sizeCanvas(started.canvas)) {
+		started.painter.resize(started.canvas.width, started.canvas.height);
+	}
+}
+
+export {
+	PHASES,
+	fitPainter,
+	headingJson,
+	marksJson,
+	sizeCanvas,
+	type Held,
+	type StageCamera,
+	type StageDive,
+	type StageLight,
+	type StageMarks,
+	type StageShift,
+};

@@ -1,30 +1,25 @@
 // A pane's surface across pictures: which pictures are carried, which come in
 // part by part and which are cut to, and what a picture arriving in flight does.
 //
-// What these catch: a first picture or another board's that pops in whole, an
-// entrance that builds in markup order rather than down the board, a flight
-// landed by its own picture answered twice, and a surface left anywhere but on
-// the picture the server drew.
+// What these catch: a first picture or another board's that pops in whole, a
+// flight landed by its own picture answered twice, a picture that arrives in
+// flight without landing the last, and traffic that runs in the page.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
-import { afterAll, afterEach, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
 import { act, cleanup, render } from "@testing-library/react";
 import { createElement, useState, type JSX } from "react";
 
-import { PICTURE_ENTRY_PHASES, PICTURE_MS } from "@archboard/timing";
+import { PICTURE_MS } from "@archboard/timing";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { TRANSITION_ATTRIBUTE } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import { enterPicture } from "#ui/clients/semantic-board-canvas/picture/picture-entrance.ts";
+import { stagePicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
+import { A, B, picture } from "#tests/ui/support/semantic-board-canvas/picture-fixtures.ts";
 import {
-	A,
-	AB,
-	B,
-	bodyOf,
-	picture,
-	surfaceElement,
-	type Card,
-} from "#tests/ui/support/semantic-board-canvas/picture-fixtures.ts";
+	calls,
+	forgetCalls,
+	told,
+} from "#tests/ui/support/semantic-board-canvas/recording-stage.ts";
 
 beforeAll(() => {
 	GlobalRegistrator.register();
@@ -35,97 +30,13 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
-afterEach(() => {
-	cleanup();
+beforeEach(() => {
+	forgetCalls();
+	followed.length = 0;
 });
 
-/**
- * The label drawn for a connection, as a pill.
- * @param id The connection.
- * @param y How far down the pill sits.
- * @returns The pill, as a card.
- */
-function pill(id: string, y: number): Card {
-	return { id, label: true, box: { x: 130, y, width: 50, height: 20 }, title: id };
-}
-
-describe("a picture with nothing to carry it from", () => {
-	const LOW: Card = { id: "n3", box: { x: 10, y: 300, width: 100, height: 60 }, title: "Gamma" };
-
-	test("every connection label arrives together at the end, whenever its own line was drawn", () => {
-		const surface = surfaceElement();
-		// One line near the top, drawn early in the wave; one near the bottom, drawn late.
-		const early = { id: "e1", d: "M110,40 L200,40" };
-		const late = { id: "e2", d: "M110,330 L200,330" };
-		const drawn = picture([A, B, LOW, pill("e1", 30), pill("e2", 320)], [early, late]);
-		const entrance = enterPicture(surface, drawn);
-		/**
-		 * How visible a connection's label is.
-		 * @param id The connection.
-		 * @returns Its opacity.
-		 */
-		const labelOf = (id: string): number =>
-			Number(
-				surface.querySelectorAll<SVGGElement>(`g[data-semantic-id="${id}"]`)[1]!.style.opacity,
-			);
-		const { labelsStart } = PICTURE_ENTRY_PHASES;
-		entrance.seek(labelsStart);
-		expect(labelOf("e1")).toBe(0);
-		expect(labelOf("e2")).toBe(0);
-		entrance.seek((labelsStart + 1) / 2);
-		expect(labelOf("e1")).toBeGreaterThan(0);
-		expect(labelOf("e1")).toBe(labelOf("e2"));
-		entrance.seek(1);
-		expect(labelOf("e1")).toBe(1);
-		expect(labelOf("e2")).toBe(1);
-	});
-
-	test("a line higher on the board draws on before one below it, whatever arrowhead it defines", () => {
-		const surface = surfaceElement();
-		const high = { id: "e1", d: "M110,40 L200,40" };
-		const low = { id: "e2", d: "M110,330 L200,330" };
-		const entrance = enterPicture(surface, picture([A, B, LOW], [high, low]));
-		/**
-		 * How much of a line's stroke is still to be drawn.
-		 * @param id The line.
-		 * @returns Its dash offset.
-		 */
-		const undrawn = (id: string): number =>
-			Number(
-				surface
-					.querySelector(`g[data-semantic-id="${id}"] > path:not(.ab-halo)`)!
-					.getAttribute("stroke-dashoffset"),
-			);
-		entrance.seek(PICTURE_ENTRY_PHASES.linesStartBy);
-		expect(undrawn("e1")).toBeLessThan(undrawn("e2"));
-	});
-
-	test("cards arrive down the board, lines draw on after the cards, and it lands untouched", () => {
-		const surface = surfaceElement();
-		// Drawn lowest first, so the order they arrive in is the board's, not the markup's.
-		const drawn = picture([LOW, A], [AB]);
-		const entrance = enterPicture(surface, drawn);
-		const top = surface.querySelector<SVGGElement>(`g[data-semantic-id="n1"]`)!;
-		const low = surface.querySelector<SVGGElement>(`g[data-semantic-id="n3"]`)!;
-		const line = surface.querySelector<SVGGElement>(`g[data-semantic-id="e1"]`)!;
-		const stroke = line.querySelectorAll<SVGPathElement>(":scope > path")[1]!;
-		expect(Number(top.style.opacity)).toBe(0);
-		expect(Number(low.style.opacity)).toBe(0);
-		expect(Number(line.style.opacity)).toBe(0);
-		// The card higher on the board is on its way before the one below it.
-		entrance.seek(PICTURE_ENTRY_PHASES.cardsStartBy / 2);
-		expect(Number(top.style.opacity)).toBeGreaterThan(Number(low.style.opacity));
-		// A line waits for the cards it joins.
-		expect(Number(stroke.getAttribute("stroke-dashoffset"))).toBeCloseTo(90, 3);
-		entrance.seek(1);
-		expect(Number(top.style.opacity)).toBe(1);
-		expect(Number(low.style.opacity)).toBe(1);
-		expect(Number(stroke.getAttribute("stroke-dashoffset"))).toBe(0);
-		entrance.finish();
-		const plain = document.createElement("div");
-		plain.innerHTML = drawn.svg;
-		expect(surface.innerHTML).toBe(plain.innerHTML);
-	});
+afterEach(() => {
+	cleanup();
 });
 
 /** The frame clock, driven by hand. */
@@ -217,18 +128,15 @@ function withFramesByHand(run: () => void): void {
 }
 
 /**
- * How visible a subject's group is on the surface.
- * @param surface The surface.
- * @param id The subject.
- * @returns Its opacity, 1 when nothing was set.
+ * What the stage was told to do with a picture.
+ * @returns The calls, in order.
  */
-function visibility(surface: Element, id: string): number {
-	const group = surface.querySelector<SVGGElement>(`g[data-semantic-id="${id}"]`)!;
-	return group.style.opacity === "" ? 1 : Number(group.style.opacity);
+function moves(): readonly string[] {
+	return told.map((one) => one.call).filter((call) => call !== "learnGroups");
 }
 
 describe("the surface across pictures", () => {
-	test("a picture arriving mid-flight lands the flight, then flies to its own final state", () => {
+	test("a picture arriving in flight lands the flight, then carries on from it", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
 			const second = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }], []);
@@ -237,63 +145,64 @@ describe("the surface across pictures", () => {
 				createElement(Surface, { drawing: first, reducedMotion: false }),
 			);
 			const surface = container.querySelector("[data-slot='surface']")!;
-			expect(bodyOf(surface, "n1")).toEqual(A.box);
+			runFrames(PICTURE_MS.entry + 1);
+			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
+			forgetCalls();
 			frames.now = 1000;
-			followed.length = 0;
 			rerender(createElement(Surface, { drawing: second, reducedMotion: false }));
 			// The only shared card moved 290 across, so the camera follows it by as much.
 			expect(followed).toEqual([{ x: -290, y: 0 }]);
+			expect(calls("carry")).toEqual([[second.painting, { x: -290, y: 0 }]]);
+			expect(surface.hasAttribute("data-picture-motion")).toBe(true);
 			runFrames(1000 + PICTURE_MS.transition / 2);
-			expect(bodyOf(surface, "n1").x).toBeGreaterThan(A.box.x);
-			expect(bodyOf(surface, "n1").x).toBeLessThan(300);
 			// The same picture answered again is not another picture: the flight
 			// keeps flying rather than landing on itself, and nothing moves the camera.
-			const inFlight = bodyOf(surface, "n1").x;
 			rerender(createElement(Surface, { drawing: { ...second }, reducedMotion: false }));
-			expect(bodyOf(surface, "n1").x).toBe(inFlight);
+			expect(moves()).toEqual(["carry"]);
 			expect(followed).toHaveLength(1);
-			// The third picture lands the second first: the surface is exactly the
-			// second picture, and the new flight starts from it.
+			// The third picture lands the second first, and the new flight starts from it.
 			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));
-			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 10, width: 100, height: 60 });
-			expect(surface.querySelector("g[data-semantic-id='n2']")).not.toBeNull();
+			expect(moves()).toEqual(["carry", "land", "carry"]);
 			runFrames(1000 + PICTURE_MS.transition / 2 + PICTURE_MS.transition + 1);
-			expect(bodyOf(surface, "n1")).toEqual({ x: 300, y: 200, width: 100, height: 60 });
-			expect(surface.querySelector(`[${TRANSITION_ATTRIBUTE}]`)).toBeNull();
+			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 			// Reduced motion cuts: the next picture is simply there.
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
-			expect(surface.querySelector(`[${TRANSITION_ATTRIBUTE}]`)).toBeNull();
-			expect(bodyOf(surface, "n1")).toEqual(A.box);
+			expect(moves().at(-1)).toBe("show");
+			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 		});
 	});
 
 	test("a first picture and another board's come in part by part; reduced motion cuts", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
+			const other = picture([B], [], { board: "engine" });
 			const { rerender, container } = render(
 				createElement(Surface, { drawing: first, reducedMotion: false }),
 			);
 			const surface = container.querySelector("[data-slot='surface']")!;
-			expect(visibility(surface, "n1")).toBe(0);
+			expect(moves()).toEqual(["enter"]);
+			expect(surface.hasAttribute("data-picture-motion")).toBe(true);
 			runFrames(PICTURE_MS.entry + 1);
-			expect(visibility(surface, "n1")).toBe(1);
-			expect(surface.querySelector<SVGGElement>("g[data-semantic-id='n1']")!.style.opacity).toBe(
-				"",
-			);
+			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 
 			frames.now = 2000;
-			rerender(
-				createElement(Surface, {
-					drawing: picture([B], [], { board: "engine" }),
-					reducedMotion: false,
-				}),
-			);
-			expect(visibility(surface, "n2")).toBe(0);
+			rerender(createElement(Surface, { drawing: other, reducedMotion: false }));
+			expect(moves()).toEqual(["enter", "enter"]);
 			runFrames(2000 + PICTURE_MS.entry + 1);
-			expect(visibility(surface, "n2")).toBe(1);
 
 			rerender(createElement(Surface, { drawing: first, reducedMotion: true }));
-			expect(visibility(surface, "n1")).toBe(1);
+			expect(moves()).toEqual(["enter", "enter", "show"]);
+			expect(surface.querySelector("g[data-semantic-id='n1']")).not.toBeNull();
 		});
+	});
+
+	test("a picture's traffic never runs in the page, because the stage draws it", () => {
+		const surface = document.createElement("div");
+		stagePicture(
+			surface,
+			'<svg><g class="ab-pulse" data-traffic="e1"><animate/></g><g data-semantic-id="n1"></g></svg>',
+		);
+		expect(surface.querySelector(".ab-pulse")).toBeNull();
+		expect(surface.querySelector("[data-semantic-id='n1']")).not.toBeNull();
 	});
 });

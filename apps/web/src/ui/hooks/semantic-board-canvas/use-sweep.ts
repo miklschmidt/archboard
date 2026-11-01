@@ -4,7 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
-import { sweepLines } from "#ui/clients/semantic-board-canvas/picture/picture-sweep.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 
 /**
  * The subjects in one set and not in another.
@@ -36,12 +36,8 @@ function useSweep(
 	useLayoutEffect(() => {
 		const before = lastLight.current;
 		lastLight.current = light;
-		if (
-			picture === null ||
-			light === null ||
-			reducedMotion ||
-			!(picture.root instanceof SVGElement)
-		) {
+		const stage = picture === null ? null : stageOf(picture.surface);
+		if (!stage || light === null || reducedMotion) {
 			return undefined;
 		}
 		/**
@@ -50,7 +46,11 @@ function useSweep(
 		 * @returns The wait, in milliseconds.
 		 */
 		const wait = (id: string): number => ((reach?.get(id) ?? 1) - 1) * EXPLORING_MS.reachHop;
-		return sweepLines(picture.root, newIn(light, before), wait);
+		const delays = Object.fromEntries([...newIn(light, before)].map((id) => [id, wait(id)]));
+		stage.sweep(delays, EXPLORING_MS.sweepShortest, EXPLORING_MS.sweepLongest);
+		return () => {
+			stage.clearSweep();
+		};
 	}, [picture, light, reach, reducedMotion]);
 }
 

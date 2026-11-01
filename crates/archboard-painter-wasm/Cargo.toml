@@ -25,8 +25,8 @@ vello = { version = "0.11", default-features = false, features = ["wgpu"] }
 wasm-bindgen = "0.2.129"
 wasm-bindgen-futures = "0.4.79"
 web-sys = { version = "0.3.106", features = [
-  "CanvasRenderingContext2d",
-  "HtmlCanvasElement",
-  "ImageData",
+	"CanvasRenderingContext2d",
+	"HtmlCanvasElement",
+	"ImageData",
 ] }
 wgpu = { version = "30", default-features = false, features = ["webgpu", "wgsl"] }

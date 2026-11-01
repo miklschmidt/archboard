@@ -2,7 +2,6 @@
 // that hold a transition or an entrance to what it does with one.
 
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { TRANSITION_ATTRIBUTE } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
 
 /** A box, as the atlas spells it. */
 interface Box {
@@ -188,22 +187,8 @@ function bodyOf(surface: Element, id: string): Box {
 	};
 }
 
-/**
- * One wrapper the transition added to the picture.
- * @param surface The surface.
- * @param role What the wrapper holds.
- * @returns The wrapper.
- */
-function wrapper(surface: Element, role: string): SVGGElement {
-	const found = surface.querySelector<SVGGElement>(`[${TRANSITION_ATTRIBUTE}="${role}"]`);
-	if (found === null) {
-		throw new Error(`no ${role} wrapper`);
-	}
-	return found;
-}
-
 const A: Card = { id: "n1", box: { x: 10, y: 10, width: 100, height: 60 }, title: "Alpha" };
 const B: Card = { id: "n2", box: { x: 200, y: 10, width: 100, height: 60 }, title: "Beta" };
 const AB: Line = { id: "e1", d: "M110,40 L200,40" };
 
-export { A, AB, B, bodyOf, picture, surfaceElement, wrapper, type Box, type Card, type Line };
+export { A, AB, B, bodyOf, picture, surfaceElement, type Box, type Card, type Line };

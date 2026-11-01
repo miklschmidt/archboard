@@ -18,7 +18,15 @@ import {
 	type Size,
 } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { glidePath } from "#ui/rules/semantic-board-canvas/camera/camera-glide.ts";
-import { easeInOut } from "#ui/clients/semantic-board-canvas/picture/picture-motion.ts";
+
+/**
+ * How far along an ease in and out is.
+ * @param t How far through, 0 to 1.
+ * @returns How far along, 0 to 1.
+ */
+function easeInOut(t: number): number {
+	return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
 
 /** The attribute a surface carries while the camera is gliding. */
 const CAMERA_MOTION_ATTRIBUTE = "data-camera-motion";

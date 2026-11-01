@@ -1,4 +1,5 @@
-// How the picture on the stage is seen: lit, and from near or far.
+// How the picture on the stage is seen: lit, from near or far, and with or
+// without its traffic.
 
 import { useLayoutEffect, useMemo } from "react";
 
@@ -30,6 +31,9 @@ function useStageLook(picture: StagedPicture | null, state: LightState, far: boo
 			stageOf(picture.surface)?.setFar(far, reducedMotion ? 0 : FAR_VIEW_SWAP_MS);
 		}
 	}, [picture, far, reducedMotion]);
+	useLayoutEffect(() => {
+		if (picture !== null) stageOf(picture.surface)?.setTrafficShown(!reducedMotion);
+	}, [picture, reducedMotion]);
 }
 
 export { useStageLook };

@@ -18,6 +18,7 @@ const content = orderedFixture({
 function drawing(svg: string): RenderedDiagram {
 	return {
 		svg,
+		painting: "",
 		width: 400,
 		height: 300,
 		appearances: [],

@@ -136,73 +136,6 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 		const id = markedId(group);
 		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
 	}
-	raiseSelected(surface);
-}
-
-/**
- * The groups a selection draws over everything else: a card, a line, a step.
- * Never a container, a flow or a participant's lifeline,
- * each of which runs under what it holds or crosses.
- */
-const RAISED = `[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card'],[${TRAFFIC_ATTRIBUTE}]`;
-
-/**
- * The groups that draw a line on an architecture picture, a relationship's route
- * and its traffic: raised over the other lines, but under the cards, so a
- * selected line's ring and its pulses never lie on the face of a card it runs
- * into, and show only in the ports cut in it.
- */
-const LINES = `[data-semantic-kind='edge'],[${TRAFFIC_ATTRIBUTE}]`;
-
-/**
- * The first card drawn after a group, which a raised line goes under.
- * @param group The group.
- * @returns The card's group, or null when no card is drawn after it.
- */
-function nextCard(group: Element): Element | null {
-	for (let next = group.nextElementSibling; next !== null; next = next.nextElementSibling) {
-		if (next.matches("[data-depiction='card']")) return next;
-	}
-	return null;
-}
-
-/** Where each raised group stood before it was raised, to go back to when it is let go. */
-const raisedFrom = new WeakMap<Element, Comment>();
-
-/**
- * Draw every selected card, line and step over the rest of the picture, and
- * put each one no longer selected back where the picture drew it. A picture
- * draws its parts in layers, so a selected line ran under the lines and
- * labels drawn after it; raised, it is drawn last among its siblings, in
- * the order the picture drew the selected ones.
- * @param surface The element the picture was put into.
- */
-function raiseSelected(surface: Element): void {
-	for (const group of surface.querySelectorAll(MARKED)) {
-		raise(group, group.classList.contains(SELECTED_CLASS) && group.matches(RAISED));
-	}
-}
-
-/**
- * Draw one group last among its siblings, leaving a mark where it stood, or
- * put it back on its mark.
- * @param group The group.
- * @param raised Whether it is drawn last.
- */
-function raise(group: Element, raised: boolean): void {
-	const slot = raisedFrom.get(group);
-	if (raised === (slot !== undefined)) return;
-	if (slot === undefined) {
-		const mark = group.ownerDocument.createComment("");
-		group.before(mark);
-		raisedFrom.set(group, mark);
-		const card = group.matches(LINES) ? nextCard(group) : null;
-		if (card === null) group.parentNode?.append(group);
-		else card.before(group);
-	} else {
-		slot.replaceWith(group);
-		raisedFrom.delete(group);
-	}
 }
 
 /** The class the surface carries while a presented step veils what it is not about. */
@@ -308,7 +241,6 @@ const PROBING_CLASS = "is-probing";
 /** The class it adds when the pointer rests on a part, which lights more lightly than a pick. */
 const PROBING_LIGHT_CLASS = "is-probing-light";
 
-
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a
  * presented step veils the picture, that it is seen from far away, where each
@@ -380,7 +312,6 @@ function keepingMarks(surface: Element, stage: () => void): void {
 			group.classList.add(...marks);
 		}
 	}
-	raiseSelected(surface);
 }
 
 export {
@@ -396,7 +327,6 @@ export {
 	markReach,
 	markSubjects,
 	markVeil,
-	raise,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

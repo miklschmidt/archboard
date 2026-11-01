@@ -11,7 +11,6 @@ import { useLayoutEffect } from "react";
 
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
-import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
 import {
 	markReach,
 	markSubjects,
@@ -45,14 +44,12 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, attended);
-			lightInk(picture.root);
 		}
 	}, [picture, attended]);
 	// The veil is its own mark, independent of attention.
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markVeil(picture.surface, veil);
-			lightInk(picture.root);
 		}
 	}, [picture, veil]);
 	// A trace grades what it reached by how far it is, on top of the veil's marks.
@@ -67,7 +64,6 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 			stageOf(picture.surface)?.setMarks({
 				selected: attended,
 				whole: veil ?? NOTHING,
-				stuck: NOTHING,
 			});
 		}
 	}, [picture, attended, veil]);

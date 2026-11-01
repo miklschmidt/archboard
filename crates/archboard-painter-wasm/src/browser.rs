@@ -149,22 +149,19 @@ impl Painter {
     /// # Errors
     ///
     /// The painting does not read as one.
-    #[allow(
-        clippy::too_many_arguments,
-        reason = "a page calls this with plain numbers"
-    )]
     pub fn enter(
         &mut self,
         painting: &str,
-        exit: f64,
+        heading: &str,
         ms: f64,
         moved_x: f64,
         moved_y: f64,
         now: f64,
     ) -> Result<(), JsError> {
         let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
+        let heading = serde_json::from_str(heading).map_err(unread)?;
         self.stage
-            .enter(painting, (exit, ms), (moved_x, moved_y), now);
+            .enter(painting, heading, ms, (moved_x, moved_y), now);
         Ok(())
     }
 

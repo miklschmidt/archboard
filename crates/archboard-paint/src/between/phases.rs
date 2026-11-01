@@ -54,13 +54,15 @@ pub struct Entry {
 /// Every number of a move that lives in `@archboard/timing`.
 ///
 /// It reads as `{"transition": PICTURE_TRANSITION_PHASES, "entry":
-/// PICTURE_ENTRY_PHASES}`.
+/// PICTURE_ENTRY_PHASES, "exit": PICTURE_MS.exit}`.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct Phases {
     /// One picture turning into the next.
     pub transition: Transition,
     /// A picture arriving with nothing to carry it from.
     pub entry: Entry,
+    /// How long a picture takes to leave, in milliseconds.
+    pub exit: f64,
 }
 
 #[cfg(test)]
@@ -90,6 +92,7 @@ pub(super) mod fixtures {
             line_span: 0.38,
             labels_start: 0.66,
         },
+        exit: 280.0,
     };
 }
 
@@ -101,7 +104,8 @@ mod tests {
     fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
         let phases: Phases = serde_json::from_str(
             r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66},
-                "entry":{"framesEnd":0.35,"cardsStart":0.04,"cardsStartBy":0.4,"cardSpan":0.42,"linesStart":0.34,"linesStartBy":0.62,"lineSpan":0.38,"labelsStart":0.66}}"#,
+                "entry":{"framesEnd":0.35,"cardsStart":0.04,"cardsStartBy":0.4,"cardSpan":0.42,"linesStart":0.34,"linesStartBy":0.62,"lineSpan":0.38,"labelsStart":0.66},
+                "exit":280}"#,
         )
         .expect("the timing package's phases");
         assert_eq!(phases, PHASES);

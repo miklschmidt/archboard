@@ -6,10 +6,9 @@
 // the stage moves itself, which never needs the traffic stood still.
 
 import { act, fireEvent } from "@testing-library/react";
-import { afterEach, beforeEach, expect, test } from "bun:test";
+import { beforeEach, expect, test } from "bun:test";
 
 import { EXPLORING_MS } from "@archboard/timing";
-import { PICTURE_CLOCK } from "@archboard/ui-kit/frame-clock";
 import {
 	cameraNow,
 	pointerAt,
@@ -21,68 +20,37 @@ import {
 	mountStage,
 	server,
 	settle,
-	surface,
 	viewport,
 	type MountOptions,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
-
-/** A moving mark of traffic, reduced to what pacing touches. */
-class FakeTraffic {
-	readonly id = PICTURE_CLOCK;
-	playbackRate = 1;
-	playState: AnimationPlayState = "running";
-
-	/** Stop it where it is. */
-	pause(): void {
-		this.playState = "paused";
-	}
-
-	/** Run it from where it stands. */
-	play(): void {
-		this.playState = "running";
-	}
-}
-
-/**
- * The animations of an element that has none.
- * @returns None.
- */
-function noAnimations(): [] {
-	return [];
-}
-
-// This DOM runs no animations, so the page is told that it can list them.
-let listed = true;
+import {
+	calls,
+	forgetCalls,
+	told,
+} from "#tests/ui/support/semantic-board-canvas/recording-stage.ts";
 
 beforeEach(() => {
-	const dom = Element.prototype as { getAnimations?: unknown };
-	listed = "getAnimations" in dom;
-	if (!listed) dom.getAnimations = noAnimations;
-});
-
-afterEach(() => {
-	if (!listed) delete (Element.prototype as { getAnimations?: unknown }).getAnimations;
+	forgetCalls();
 });
 
 /**
- * Mount a pane and give its picture some traffic.
+ * Mount a pane, and forget what the mount told the stage.
  * @param options How the pane is mounted, when not alone with nothing picked.
- * @returns The traffic.
  */
-async function mountWithTraffic(options?: MountOptions): Promise<FakeTraffic> {
+async function mountAtRest(options?: MountOptions): Promise<void> {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, options);
 	await settle();
-	const traffic = new FakeTraffic();
-	/**
-	 * The surface's animations: the traffic.
-	 * @returns Them.
-	 */
-	function trafficOnSurface(): FakeTraffic[] {
-		return [traffic];
-	}
-	Object.assign(surface(), { getAnimations: trafficOnSurface });
-	return traffic;
+	forgetCalls();
+}
+
+/**
+ * The last thing the stage was told about its traffic.
+ * @returns The call's name, or null when it was told nothing.
+ */
+function lastPace(): string | null {
+	const paces = new Set(["holdTraffic", "resumeTraffic", "releaseTraffic"]);
+	return told.findLast((one) => paces.has(one.call))?.call ?? null;
 }
 
 /** Drag the picture fast, and keep the pointer down. */
@@ -95,62 +63,54 @@ function dragPicture(): void {
 }
 
 test("traffic stands still under a drag and comes back gently the moment the drag is let go", async () => {
-	const traffic = await mountWithTraffic();
+	await mountAtRest();
 	const frames = takeFrames();
 	try {
 		dragPicture();
-		expect(traffic.playState).toBe("paused");
+		expect(lastPace()).toBe("holdTraffic");
 
 		pointerAt("pointerup", { x: 300, t: 1082 });
 		frames.run(100);
 
-		// The traffic is already creeping back.
-		expect(traffic.playState).toBe("running");
-		expect(traffic.playbackRate).toBeGreaterThan(0);
-		expect(traffic.playbackRate).toBeLessThan(0.05);
-
-		frames.run(EXPLORING_MS.trafficStart / 2);
-		expect(traffic.playbackRate).toBeGreaterThan(0.3);
-		expect(traffic.playbackRate).toBeLessThan(0.7);
-		frames.run(EXPLORING_MS.trafficStart / 2 + 100);
-		expect(traffic.playbackRate).toBe(1);
+		expect(lastPace()).toBe("resumeTraffic");
+		expect(calls("resumeTraffic").at(-1)).toEqual([EXPLORING_MS.trafficStart]);
 	} finally {
 		frames.restore();
 	}
 });
 
 test("a drag that rests with the pointer held down keeps the traffic still", async () => {
-	const traffic = await mountWithTraffic();
+	await mountAtRest();
 	const frames = takeFrames();
 	try {
 		dragPicture();
 		frames.run(EXPLORING_MS.cameraRest * 4);
 
-		expect(traffic.playState).toBe("paused");
+		expect(lastPace()).toBe("holdTraffic");
 	} finally {
 		frames.restore();
 	}
 });
 
 test("a key that moves the camera stands the traffic still until the camera has settled", async () => {
-	const traffic = await mountWithTraffic();
+	await mountAtRest();
 	const frames = takeFrames();
 	try {
 		act(() => {
 			fireEvent.keyDown(viewport(), { key: "ArrowLeft" });
 		});
 		frames.run(32);
-		expect(traffic.playState).toBe("paused");
+		expect(lastPace()).toBe("holdTraffic");
 
 		frames.run(3000);
-		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+		expect(lastPace()).toBe("resumeTraffic");
 	} finally {
 		frames.restore();
 	}
 });
 
 test("a camera the stage moves itself leaves the traffic running", async () => {
-	const traffic = await mountWithTraffic();
+	await mountAtRest();
 	const frames = takeFrames();
 	try {
 		act(() => {
@@ -158,7 +118,7 @@ test("a camera the stage moves itself leaves the traffic running", async () => {
 		});
 		frames.run(EXPLORING_MS.cameraFit + 100);
 
-		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+		expect(calls("holdTraffic")).toEqual([]);
 	} finally {
 		frames.restore();
 	}
@@ -175,7 +135,7 @@ function reachesUnderThePanel(): DOMRect {
 test("a pick that a panel laid over the picture would cover moves the picture clear and leaves the traffic running", async () => {
 	// Two panes share the centre, so a pick lays the sidebar's panel over the
 	// picture's edge. This DOM lays nothing out, so the card says where it stands.
-	const traffic = await mountWithTraffic({
+	await mountAtRest({
 		live: true,
 		chrome: {
 			letter: null,
@@ -199,12 +159,9 @@ test("a pick that a panel laid over the picture would cover moves the picture cl
 		// land inside this test: answered after it, it renders outside act and
 		// leaves React a passive-effect flush that runs after the DOM is gone.
 		await settle();
-		frames.run(32);
-		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
-
-		frames.run(1000);
+		frames.run(1032);
 		expect(cameraNow().x).toBeLessThan(before);
-		expect([traffic.playState, traffic.playbackRate]).toEqual(["running", 1]);
+		expect(calls("holdTraffic")).toEqual([]);
 	} finally {
 		frames.restore();
 	}

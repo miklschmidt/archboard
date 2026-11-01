@@ -6,10 +6,10 @@
 // of the room through a whole glide, not only where it lands.
 //
 // What moves is the head's group, by a transform of its own, and a class that
-// shows the frame's ground the picture draws behind it (`is-stuck`). A moved
-// head is drawn over the rest of the picture, as a selected card is, because
-// the messages it stands over are drawn after it. All of it is taken off again
-// as soon as the head is back where the picture drew it.
+// shows the frame's ground the picture draws behind it (`is-stuck`). The stage
+// draws a moved head over the rest of the picture, as a selected card is,
+// because the messages it stands over are drawn after it. All of it is taken
+// off again as soon as the head is back where the picture drew it.
 
 import { useLayoutEffect } from "react";
 
@@ -17,7 +17,7 @@ import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/sema
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { cameraOf } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { flowRows, headDrop } from "#ui/rules/semantic-board-canvas/camera/flow-head.ts";
-import { raise } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 
 /** The attribute on the group holding one flow's head of cards, naming the flow. */
 const HEAD_ATTRIBUTE = "data-flow-head";
@@ -33,7 +33,6 @@ const STUCK_CLASS = "is-stuck";
 function placeHead(head: SVGElement, drop: number): void {
 	head.style.transform = drop > 0 ? `translate(0px, ${drop}px)` : "";
 	head.classList.toggle(STUCK_CLASS, drop > 0);
-	raise(head, drop > 0);
 }
 
 /**
@@ -48,8 +47,9 @@ function useStickyHeads(picture: StagedPicture | null, atlas: SemanticAtlas): vo
 		}
 		const heads = [...picture.root.querySelectorAll<SVGElement>(`[${HEAD_ATTRIBUTE}]`)].flatMap(
 			(group) => {
-				const rows = flowRows(atlas, group.getAttribute(HEAD_ATTRIBUTE) ?? "");
-				return rows === null ? [] : [{ group, rows }];
+				const flow = group.getAttribute(HEAD_ATTRIBUTE) ?? "";
+				const rows = flowRows(atlas, flow);
+				return rows === null ? [] : [{ flow, group, rows }];
 			},
 		);
 		if (heads.length === 0) {
@@ -58,17 +58,21 @@ function useStickyHeads(picture: StagedPicture | null, atlas: SemanticAtlas): vo
 		/** Place every head for the camera the surface is drawn with now. */
 		const place = (): void => {
 			const camera = cameraOf(picture.surface.style.transform);
-			if (camera !== null) {
-				for (const { group, rows } of heads) {
-					placeHead(group, headDrop(rows, camera));
-				}
+			if (camera === null) return;
+			const drops: Record<string, number> = {};
+			for (const { flow, group, rows } of heads) {
+				drops[flow] = headDrop(rows, camera);
+				placeHead(group, drops[flow]);
 			}
+			stage?.setHeads(drops);
 		};
+		const stage = stageOf(picture.surface);
 		place();
 		const watching = new MutationObserver(place);
 		watching.observe(picture.surface, { attributes: true, attributeFilter: ["style"] });
 		return () => {
 			watching.disconnect();
+			stage?.setHeads({});
 		};
 	}, [picture, atlas]);
 }

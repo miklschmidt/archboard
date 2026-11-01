@@ -457,7 +457,7 @@ function useSceneMarks(
 	const warned = useMemo(() => projectedMarks(warnings, connections), [warnings, connections]);
 	// Before the viewer's marks, so a line's group made to hold a warning is lit and veiled with the rest.
 	useLayoutEffect(() => {
-		if (staged !== null) markCodeWarnings(staged.root, warned);
+		if (staged !== null) markCodeWarnings(staged, warned);
 	}, [staged, warned]);
 	const attended = useMemo(
 		() => projectedMarks(subjectMarks(null, focus, [...selected]), connections),

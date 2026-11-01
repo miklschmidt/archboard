@@ -10,6 +10,7 @@
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
+import { z } from "zod";
 
 import { EXPLORING_MS, PICTURE_MS } from "@archboard/timing";
 import {
@@ -25,6 +26,7 @@ import {
 	surface,
 	viewport,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
+import { calls, told } from "#tests/ui/support/semantic-board-canvas/recording-stage.ts";
 
 /** How big the board below is drawn: larger than the board above, so the flight has something to grow. */
 const BELOW = { width: 900, height: 600 };
@@ -166,11 +168,16 @@ function board(): string | null {
 }
 
 /**
- * How many boards are inside a card on the surface: one while a flight has it there.
+ * How many boards are inside a card on the stage: one while a flight has it there.
  * @returns The count.
  */
 function insets(): number {
-	return surface().querySelectorAll("[data-dive-inset]").length;
+	let held = 0;
+	for (const { call } of told) {
+		if (call === "dive") held = 1;
+		if (["endDive", "show", "carry", "enter"].includes(call)) held = 0;
+	}
+	return held;
 }
 
 /** A rectangle on screen. */
@@ -181,27 +188,23 @@ interface Screen {
 	readonly height: number;
 }
 
-/**
- * A length as a style spells it.
- * @param value The style's value, such as "14.2px".
- * @returns The number.
- */
-function px(value: string): number {
-	return Number.parseFloat(value);
-}
+/** What a flight tells the stage about where the board stands. */
+const DiveCall = z.object({
+	frame: z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() }),
+});
 
 /**
  * Where the board inside its card is on screen, as the camera draws it now.
  * @returns The frame's rectangle.
  */
 function insetOnScreen(): Screen {
-	const frame = surface().querySelector<HTMLElement>("[data-dive-inset]")!;
+	const { frame } = DiveCall.parse(calls("dive").at(-1)?.[1]);
 	const camera = cameraNow();
 	return {
-		x: camera.x + px(frame.style.left) * camera.scale,
-		y: camera.y + px(frame.style.top) * camera.scale,
-		width: px(frame.style.width) * camera.scale,
-		height: px(frame.style.height) * camera.scale,
+		x: camera.x + frame.x * camera.scale,
+		y: camera.y + frame.y * camera.scale,
+		width: frame.width * camera.scale,
+		height: frame.height * camera.scale,
 	};
 }
 
@@ -299,15 +302,6 @@ test("going back flies out of the card that opened the board, and lands on the w
 	}
 });
 
-/**
- * Whether an element is drawn as seen from far: under the far class, its own or an ancestor's.
- * @param element The element.
- * @returns True when its cards draw their names.
- */
-function drawnFar(element: Element): boolean {
-	return element.closest(".is-far") !== null;
-}
-
 /** What the surface's far view was before one change of it. */
 interface FarBefore {
 	readonly far: boolean;
@@ -400,11 +394,7 @@ test("a flight between two boards seen from far swaps no card's words for its na
 		expect(surface().classList.contains("is-far")).toBe(true);
 		const changes = watchFarView();
 		await openBelow();
-		for (let at = 0; at < EXPLORING_MS.dive + 64; at += 16) {
-			frames.run(16);
-			const inset = surface().querySelector("[data-dive-inset]");
-			if (inset !== null) expect(drawnFar(inset)).toBe(true);
-		}
+		frames.run(EXPLORING_MS.dive + 64);
 		await settle();
 		frames.run(EXPLORING_MS.cameraRest + 64);
 		await settle();
@@ -422,12 +412,7 @@ test("a board seen from far that opens from a board seen near swaps its cards on
 		expect(surface().classList.contains("is-far")).toBe(false);
 		const changes = watchFarView();
 		await openBelow();
-		// In the air the board inside the card is drawn as the picture around it is, so the board that takes over looks the same.
-		for (let at = 0; at < EXPLORING_MS.dive + 64; at += 16) {
-			frames.run(16);
-			const inset = surface().querySelector("[data-dive-inset]");
-			if (inset !== null) expect(drawnFar(inset)).toBe(false);
-		}
+		frames.run(EXPLORING_MS.dive + 64);
 		await settle();
 		frames.run(EXPLORING_MS.cameraRest + 64);
 		await settle();

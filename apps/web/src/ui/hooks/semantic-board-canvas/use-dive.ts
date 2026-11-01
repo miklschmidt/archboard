@@ -27,10 +27,10 @@ import { legInto, legOut, reached, type Leg } from "#ui/rules/semantic-board-can
 import {
 	endOnInput,
 	stageIn,
-	startDive,
 	type DiveWay,
 	type Stage,
 } from "#ui/clients/semantic-board-canvas/picture/picture-dive.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	stagePicture,
 	type MovingPicture,
@@ -105,7 +105,7 @@ interface Plan {
 	/** The picture that sits inside the card. */
 	readonly child: MovingPicture;
 	/** The picture the surface holds for the flight when it is not the one on it. */
-	readonly standing: string | null;
+	readonly standing: MovingPicture | null;
 }
 
 /** A request to fly: over which picture, which way, to what, and how to plan it. */
@@ -161,6 +161,17 @@ function whenLanded(surface: HTMLElement, then: () => void): () => void {
 }
 
 /**
+ * Put a picture up for a flight, when it is not the one on the surface.
+ * @param surface The surface.
+ * @param picture The picture, or null for the one that stands there.
+ */
+function putUp(surface: HTMLElement, picture: MovingPicture | null): void {
+	if (picture === null) return;
+	stagePicture(surface, picture.svg);
+	stageOf(surface)?.show(picture.painting);
+}
+
+/**
  * Put the board inside its card and fly the camera to the end of the flight.
  *
  * The camera counts as the reader's while it flies, so the pane does not fit it
@@ -182,15 +193,12 @@ function fly(
 	land: (letGo: () => void) => void,
 	giveUp: () => void,
 ): (() => void) | null {
-	const { stage, camera, leg } = takeoff;
+	const { stage, camera, leg, card, way, child } = takeoff;
+	const painter = stageOf(stage.surface);
 	const letGo = camera.hold();
-	if (takeoff.standing !== null) stagePicture(stage.surface, takeoff.standing);
+	putUp(stage.surface, takeoff.standing);
 	if (leg.from !== null) camera.glide(leg.from, 0, false);
-	const dive = startDive(stage.surface, takeoff.child, leg.inset, takeoff.way, takeoff.card);
-	if (dive === null) {
-		letGo();
-		return null;
-	}
+	painter?.dive(child.painting, { way, card, frame: leg.inset }, EXPLORING_MS.dive);
 	const stops: (() => void)[] = [];
 	let landed = false;
 	/** Let go of everything the flight listens to or holds. */
@@ -216,7 +224,7 @@ function fly(
 	);
 	if (!camera.glide(leg.to, EXPLORING_MS.dive, true)) {
 		release();
-		dive.cancel();
+		painter?.endDive();
 		letGo();
 		return null;
 	}
@@ -224,7 +232,7 @@ function fly(
 	return (): void => {
 		landed = true;
 		release();
-		dive.cancel();
+		painter?.endDive();
 		letGo();
 	};
 }
@@ -261,9 +269,8 @@ function holdsStill(now: DiveInputs): boolean {
 /**
  * The pane as a flight would find it: with room, motion allowed and a picture to fly over.
  *
- * Not while a picture is still coming in or being carried. When that flight
- * lands it writes the picture to the surface again, which would take the board
- * inside the card away in the middle of the dive.
+ * Not while a picture is still coming in or being carried: a dive starts from
+ * a picture at rest.
  * @param now What decides whether a flight can be made.
  * @returns The stage and its room, or null.
  */
@@ -493,7 +500,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 		 */
 		const plan: Trip["plan"] = (parent, room, seen) => {
 			const leg = legOut(parent, card, child, room, seen);
-			return leg === null ? null : { card, leg, child, standing: parent.svg };
+			return leg === null ? null : { card, leg, child, standing: parent };
 		};
 		begin({ at: child, way: "out", to, plan }, proceed);
 	}

@@ -164,15 +164,17 @@ impl Stage {
 
     /// Bring a picture in part by part, what is left of the last one finishing
     /// over it, where it was last seen, moved with its pane by `moved` canvas
-    /// pixels. `exit` is the whole time a picture takes to leave.
+    /// pixels. `heading` says where the reader went when the picture was never
+    /// sent on its way.
     pub fn enter(
         &mut self,
         painting: Painting,
-        (exit, ms): (f64, f64),
+        heading: Option<Heading>,
+        ms: f64,
         moved: (f64, f64),
         now: f64,
     ) {
-        self.ghost = self.ghost_of_last(exit, moved, now);
+        self.ghost = self.ghost_of_last(heading, moved, now);
         let flight = self
             .phases
             .as_ref()
@@ -185,7 +187,13 @@ impl Stage {
     }
 
     /// What is left of the picture on the stage, as a ghost.
-    fn ghost_of_last(&mut self, exit: f64, moved: (f64, f64), now: f64) -> Option<Ghost> {
+    fn ghost_of_last(
+        &mut self,
+        heading: Option<Heading>,
+        moved: (f64, f64),
+        now: f64,
+    ) -> Option<Ghost> {
+        let exit = self.phases.as_ref()?.exit;
         let last = self.shown.take()?;
         let leaving = self.leaving.take();
         let from = leaving
@@ -194,10 +202,13 @@ impl Stage {
         let camera = self.presentation.camera;
         Some(Ghost {
             picture: last.picture,
-            heading: leaving.map_or(Heading::Across, |leaving| leaving.heading),
+            heading: leaving
+                .map(|leaving| leaving.heading)
+                .or(heading)
+                .unwrap_or(Heading::Across),
             camera: Camera {
-                x: camera.x - moved.0,
-                y: camera.y - moved.1,
+                x: camera.x + moved.0,
+                y: camera.y + moved.1,
                 ..camera
             },
             from,
@@ -295,6 +306,16 @@ impl Stage {
     pub fn set_marks(&mut self, marks: Marks) {
         self.presentation.selected = marks.selected;
         self.presentation.whole = marks.whole;
+        self.forget_targets();
+    }
+
+    /// Drop what the pointer could land on, because the order or the place of
+    /// the parts changed. The next pick finds it again.
+    fn forget_targets(&mut self) {
+        if let Some(shown) = &mut self.shown {
+            shown.near = None;
+            shown.far = None;
+        }
     }
 
     /// Hold the flow heads down from where the picture drew them, each by a
@@ -303,6 +324,7 @@ impl Stage {
     /// apart from the marks.
     pub fn set_heads(&mut self, heads: HashMap<String, f64>) {
         self.presentation.heads = heads;
+        self.forget_targets();
     }
 
     /// Name the subject whose control the pointer rests on, or none.
@@ -593,8 +615,9 @@ impl Stage {
             return Vec::new();
         };
         let scene = &shown.picture.scene;
+        let presentation = &self.presentation;
         let targets = if far { &mut shown.far } else { &mut shown.near };
-        let targets = targets.get_or_insert_with(|| Targets::of(scene, far));
+        let targets = targets.get_or_insert_with(|| Targets::of(scene, far, presentation));
         let to_picture =
             (Affine::translate((camera.x, camera.y)) * Affine::scale(camera.scale)).inverse();
         targets.under(to_picture * Point::new(x, y))

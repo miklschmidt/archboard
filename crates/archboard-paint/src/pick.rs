@@ -3,12 +3,16 @@
 //! shape takes the pointer where it is painted, and an invisible stroke counts,
 //! because a line's wide halo is what makes it easy to hit.
 
+use std::ptr;
+
 use archboard_scene::scene::{
     Group, Item, Paint, Pointer, Role, Scene, Shape, Stroke, Transform, Viewport,
 };
 use kurbo::{Affine, BezPath, ParamCurve as _, PathEl, Point, Rect, Shape as _};
 
 use crate::path::{outline_of, placed};
+use crate::presentation::Presentation;
+use crate::raise::{Sequence, drawn_in_order};
 
 /// How finely a curve stands in for itself under the pointer.
 const FLATNESS: f64 = 0.25;
@@ -82,25 +86,48 @@ struct Around {
     transform: Affine,
     pointer: Option<Pointer>,
     marked: Option<u32>,
+    /// Whether a flow's head held down stands around it.
+    stuck: bool,
 }
 
 /// The walk that finds the targets of one view.
-struct Finder {
+struct Finder<'a> {
     far: bool,
+    presentation: &'a Presentation,
     next_mark: u32,
     found: Vec<Target>,
 }
 
-impl Finder {
-    /// Read some items.
+impl Finder<'_> {
+    /// Read some items. The numbers count in the picture's order, and the
+    /// targets end up in the order the items are drawn.
     fn items(&mut self, items: &[Item], around: Around) {
-        for item in items {
-            match item {
-                Item::Group(group) => self.group(group, around),
-                Item::Shape(shape) => self.shape(shape, around),
-                Item::Viewport(viewport) => self.viewport(viewport, around),
-                _ => {}
+        let Sequence::Raised(order) = drawn_in_order(items, self.presentation) else {
+            for item in items {
+                self.item(item, around);
             }
+            return;
+        };
+        let mut parts = Vec::with_capacity(items.len());
+        for item in items {
+            let start = self.found.len();
+            self.item(item, around);
+            parts.push((item, self.found.split_off(start)));
+        }
+        for item in order {
+            if let Some((_, part)) = parts.iter_mut().find(|(one, _)| ptr::eq(*one, item)) {
+                self.found.append(part);
+            }
+        }
+    }
+
+    /// Read an item.
+    fn item(&mut self, item: &Item, around: Around) {
+        match item {
+            Item::Group(group) => self.group(group, around),
+            Item::Shape(shape) => self.shape(shape, around),
+            Item::Viewport(viewport) => self.viewport(viewport, around),
+            _ => {}
         }
     }
 
@@ -118,17 +145,25 @@ impl Finder {
             self.next_mark += 1;
             self.next_mark - 1
         });
+        let drop = match &group.role {
+            Role::FlowHead(flow) => self.presentation.drop_of(flow),
+            _ => 0.0,
+        };
+        let lowered = around.transform * Affine::translate((0.0, drop));
         let held = Around {
-            transform: self.place_of(group).map_or(around.transform, |place| {
-                around.transform * placed(place.x, place.y, place.scale)
+            transform: self.place_of(group).map_or(lowered, |place| {
+                lowered * placed(place.x, place.y, place.scale)
             }),
             pointer: group.pointer.or(around.pointer),
             marked: marked.or(around.marked),
+            stuck: around.stuck || drop > 0.0,
         };
-        let hidden = matches!(
-            (&group.role, self.far),
-            (Role::FarView, false) | (Role::NearView, true) | (Role::HeadShade, _)
-        );
+        let hidden = match group.role {
+            Role::FarView => !self.far,
+            Role::NearView => self.far,
+            Role::HeadShade => !held.stuck,
+            _ => false,
+        };
         let before = self.found.len();
         self.items(&group.items, held);
         if hidden {
@@ -186,10 +221,12 @@ fn painted(stroke: &Stroke) -> bool {
 }
 
 impl Targets {
-    /// The targets of a scene, in the near or the far view.
-    pub(crate) fn of(scene: &Scene, far: bool) -> Targets {
+    /// The targets of a scene as a presentation draws it, in the near or the
+    /// far view.
+    pub(crate) fn of(scene: &Scene, far: bool, presentation: &Presentation) -> Targets {
         let mut finder = Finder {
             far,
+            presentation,
             next_mark: 0,
             found: Vec::new(),
         };
@@ -197,6 +234,7 @@ impl Targets {
             transform: Affine::IDENTITY,
             pointer: None,
             marked: None,
+            stuck: false,
         };
         finder.items(&scene.body, around);
         Targets(finder.found)
@@ -217,11 +255,13 @@ impl Targets {
 #[cfg(test)]
 mod tests {
     use super::Targets;
+    use crate::presentation::Presentation;
     use archboard_scene::geometry::{Point, Rect};
     use archboard_scene::scene::{
         Atlas, Colour, Group, Item, PathStep, Pointer, Purpose, Role, Scene, Shape, Stroke,
         Subject, SubjectKind, Token,
     };
+    use std::collections::{HashMap, HashSet};
 
     fn subject(id: &str, kind: SubjectKind) -> Subject {
         Subject {
@@ -249,6 +289,14 @@ mod tests {
         )
     }
 
+    /// A step: a kind of part that a selection raises.
+    fn selectable(id: &str, x: f64) -> Item {
+        let Item::Group(group) = card(id, x) else {
+            unreachable!("a card is a group");
+        };
+        Item::Group(group.drawing(subject(id, SubjectKind::Step)))
+    }
+
     fn scene(body: Vec<Item>) -> Scene {
         Scene {
             width: 100.0,
@@ -270,7 +318,11 @@ mod tests {
 
     #[test]
     fn the_topmost_shape_answers_first_and_groups_are_numbered_in_order() {
-        let targets = Targets::of(&scene(vec![card("a", 0.0), card("b", 5.0)]), false);
+        let targets = Targets::of(
+            &scene(vec![card("a", 0.0), card("b", 5.0)]),
+            false,
+            &Presentation::default(),
+        );
         assert_eq!(targets.under(at(7.0, 5.0)), vec![1, 0]);
         assert_eq!(targets.under(at(2.0, 5.0)), vec![0]);
         assert_eq!(targets.under(at(50.0, 50.0)), Vec::<i32>::new());
@@ -306,12 +358,14 @@ mod tests {
                 Token::Border,
             ))]),
             false,
+            &Presentation::default(),
         );
         assert_eq!(reached.under(at(25.0, 2.9)), vec![0]);
         assert_eq!(reached.under(at(25.0, 3.1)), Vec::<i32>::new());
         let unpainted = Targets::of(
             &scene(vec![line(archboard_scene::scene::Paint::None)]),
             false,
+            &Presentation::default(),
         );
         assert_eq!(unpainted.under(at(25.0, 0.0)), Vec::<i32>::new());
     }
@@ -319,9 +373,17 @@ mod tests {
     #[test]
     fn a_group_out_of_view_counts_but_takes_no_pointer() {
         let far = Item::Group(Group::new(Role::FarView, vec![card("a", 0.0)]));
-        let near = Targets::of(&scene(vec![far.clone(), card("b", 0.0)]), false);
+        let near = Targets::of(
+            &scene(vec![far.clone(), card("b", 0.0)]),
+            false,
+            &Presentation::default(),
+        );
         assert_eq!(near.under(at(5.0, 5.0)), vec![1]);
-        let seen = Targets::of(&scene(vec![far, card("b", 0.0)]), true);
+        let seen = Targets::of(
+            &scene(vec![far, card("b", 0.0)]),
+            true,
+            &Presentation::default(),
+        );
         assert_eq!(seen.under(at(5.0, 5.0)), vec![1, 0]);
     }
 
@@ -344,7 +406,47 @@ mod tests {
             )
             .drawing(subject("top", SubjectKind::Node)),
         );
-        let targets = Targets::of(&scene(vec![card("under", 0.0), refused]), false);
+        let targets = Targets::of(
+            &scene(vec![card("under", 0.0), refused]),
+            false,
+            &Presentation::default(),
+        );
         assert_eq!(targets.under(at(5.0, 5.0)), vec![0]);
+    }
+
+    #[test]
+    fn a_raised_part_takes_the_pointer_first_and_keeps_its_number() {
+        let plain = Targets::of(
+            &scene(vec![card("under", 0.0), card("over", 5.0)]),
+            false,
+            &Presentation::default(),
+        );
+        let point = at(7.0, 5.0);
+        assert_eq!(plain.under(point), vec![1, 0]);
+        let raised = Presentation {
+            selected: HashSet::from(["under".to_owned()]),
+            ..Presentation::default()
+        };
+        let lifted = Targets::of(
+            &scene(vec![selectable("under", 0.0), selectable("over", 5.0)]),
+            false,
+            &raised,
+        );
+        assert_eq!(lifted.under(point), vec![0, 1]);
+    }
+
+    #[test]
+    fn a_flow_head_held_down_takes_the_pointer_where_it_is_held() {
+        let head = Item::Group(Group::new(
+            Role::FlowHead("flow".to_owned()),
+            vec![card("head", 0.0)],
+        ));
+        let held = Presentation {
+            heads: HashMap::from([("flow".to_owned(), 30.0)]),
+            ..Presentation::default()
+        };
+        let targets = Targets::of(&scene(vec![head]), false, &held);
+        assert_eq!(targets.under(at(5.0, 35.0)), vec![0]);
+        assert_eq!(targets.under(at(5.0, 5.0)), Vec::<i32>::new());
     }
 }

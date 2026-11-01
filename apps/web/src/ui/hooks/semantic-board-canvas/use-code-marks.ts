@@ -35,7 +35,7 @@ function useCodeMarks(picture: StagedPicture | null, drawing: SemanticDrawing): 
 		[reading],
 	);
 	useLayoutEffect(() => {
-		if (picture !== null) markCodeWarnings(picture.root, warned);
+		if (picture !== null) markCodeWarnings(picture, warned);
 	}, [picture, warned]);
 }
 

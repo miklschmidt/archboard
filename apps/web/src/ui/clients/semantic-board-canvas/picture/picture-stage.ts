@@ -9,7 +9,22 @@
 // marks for search, copy, screen readers and the viewer.
 
 import type { StartedPainter } from "@archboard/renderer/browser";
+import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import {
+	PHASES,
+	fitPainter,
+	headingJson,
+	marksJson,
+	sizeCanvas,
+	type Held,
+	type StageCamera,
+	type StageDive,
+	type StageLight,
+	type StageMarks,
+	type StageShift,
+} from "#ui/clients/semantic-board-canvas/picture/picture-stage-forms.ts";
 
 /** The attribute on the surface that names the painter drawing it, once one has drawn. */
 const PAINTER_ATTRIBUTE = "data-painter";
@@ -23,83 +38,6 @@ const PICKED = "[data-semantic-id],[data-toggle]";
 /** The picture's surface, inside a viewport. */
 const SURFACE = "[data-slot='semantic-board-surface']";
 
-/** Where the camera puts the picture, in the surface's own pixels. */
-interface StageCamera {
-	readonly x: number;
-	readonly y: number;
-	readonly scale: number;
-}
-
-/** What is marked on the picture, each by its subject's id. */
-interface StageMarks {
-	readonly selected: ReadonlySet<string>;
-	readonly whole: ReadonlySet<string>;
-	readonly stuck: ReadonlySet<string>;
-}
-
-/** How the picture stands in the light, in the form the painter reads. */
-interface StageLight {
-	readonly rest: number;
-	readonly labels: number;
-	readonly subjects: Readonly<Record<string, { readonly opacity: number; readonly delay: number }>>;
-	readonly duration: number;
-}
-
-/** What a client tells the stage of one canvas. */
-interface PictureStage {
-	/**
-	 * Put a picture up in place of what stands there.
-	 * @param painting The picture's painting, or nothing when it has none.
-	 */
-	readonly show: (painting: string | undefined) => void;
-	/**
-	 * Note the groups of the picture just written into the surface.
-	 * @param root The element that holds them.
-	 */
-	readonly learnGroups: (root: ParentNode) => void;
-	/**
-	 * Move the picture.
-	 * @param camera Where it goes.
-	 * @param ms How long it takes.
-	 */
-	readonly setCamera: (camera: StageCamera, ms: number) => void;
-	/**
-	 * Swap between the near and the far view.
-	 * @param far Whether the picture is seen from far.
-	 * @param ms How long it takes.
-	 */
-	readonly setFar: (far: boolean, ms: number) => void;
-	/**
-	 * Say what is marked.
-	 * @param marks The marks.
-	 */
-	readonly setMarks: (marks: StageMarks) => void;
-	/**
-	 * Light the picture.
-	 * @param light How it stands in the light.
-	 */
-	readonly setLight: (light: StageLight) => void;
-	/**
-	 * What lies under a point on screen, the topmost first.
-	 * @param x The point's distance from the screen's left.
-	 * @param y The point's distance from the screen's top.
-	 * @returns The picture's groups, a null for a shape in none, or null while no painter works.
-	 */
-	readonly elementsAt: (x: number, y: number) => readonly (Element | null)[] | null;
-	/** Stop asking for frames and let the painter go. */
-	readonly dispose: () => void;
-}
-
-/** What the stage holds for a painter that has not started or is replaced. */
-interface Held {
-	painting: string | undefined;
-	camera: StageCamera;
-	cameraMs: number;
-	far: boolean;
-	marks: StageMarks;
-	light: StageLight | null;
-}
-
 /** Each surface's stage. */
 const stages = new WeakMap<Element, PictureStage>();
 
@@ -111,210 +49,457 @@ function pageIsDark(): boolean {
 	return document.documentElement.dataset["theme"] === "dark";
 }
 
-/**
- * The marks as the painter reads them.
- * @param marks The marks.
- * @returns JSON.
- */
-function marksJson(marks: StageMarks): string {
-	return JSON.stringify({
-		selected: [...marks.selected],
-		whole: [...marks.whole],
-		stuck: [...marks.stuck],
-	});
-}
+/** The painter's own interface. */
+type Painter = StartedPainter["painter"];
 
-/**
- * Size a canvas to its box, in device pixels.
- * @param canvas The canvas.
- * @returns Whether its size changed.
- */
-function sizeCanvas(canvas: HTMLCanvasElement): boolean {
-	const ratio = window.devicePixelRatio || 1;
-	const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
-	const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
-	if (canvas.width === width && canvas.height === height) return false;
-	canvas.width = width;
-	canvas.height = height;
-	return true;
-}
-
-/**
- * Start the stage of a surface.
- * @param surface The element the SVG is written into.
- * @param canvas The canvas behind it.
- * @returns The stage.
- */
-function createStage(surface: HTMLElement, canvas: HTMLCanvasElement): PictureStage {
-	const held: Held = {
+/** The stage of one canvas: all that a client tells it, handed to the painter at work. */
+class PictureStage {
+	readonly #surface: HTMLElement;
+	readonly #canvas: HTMLCanvasElement;
+	readonly #held: Held = {
 		painting: undefined,
 		camera: { x: 0, y: 0, scale: 1 },
 		cameraMs: 0,
 		far: false,
-		marks: { selected: new Set(), whole: new Set(), stuck: new Set() },
+		marks: { selected: new Set(), whole: new Set() },
 		light: null,
+		trafficShown: true,
+		heads: {},
+		warned: new Set(),
 	};
-	let started: StartedPainter | null = null;
-	let starting = false;
-	let disposed = false;
-	let frame: number | null = null;
-	let groups: readonly Element[] = [];
+	readonly #watching: ResizeObserver;
+	readonly #theme: MutationObserver;
+	#started: StartedPainter | null = null;
+	#starting = false;
+	#disposed = false;
+	#frame: number | null = null;
+	#groups: readonly Element[] = [];
+	#hoveredControl: string | null = null;
+
+	/**
+	 * Start the stage of a surface.
+	 * @param surface The element the SVG is written into.
+	 * @param canvas The canvas behind it.
+	 */
+	constructor(surface: HTMLElement, canvas: HTMLCanvasElement) {
+		this.#surface = surface;
+		this.#canvas = canvas;
+		this.#watching = new ResizeObserver(this.#invalidate);
+		this.#watching.observe(canvas);
+		this.#theme = new MutationObserver(this.#themeChanged);
+		this.#theme.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["data-theme"],
+		});
+		surface.parentElement?.addEventListener("pointermove", this.#hoverControl);
+		surface.parentElement?.addEventListener("pointerleave", this.#leaveControl);
+	}
+
+	/**
+	 * Put a picture up in place of what stands there.
+	 * @param painting The picture's painting, or nothing when it has none.
+	 */
+	show(painting: string | undefined): void {
+		this.#take(painting, (painter, taken) => {
+			painter.show(taken);
+		});
+	}
+
+	/**
+	 * Carry the picture on the stage into the next.
+	 * @param painting The next picture's painting, or nothing when it has none.
+	 * @param shift How far the cards the two share moved, in the picture's units.
+	 */
+	carry(painting: string | undefined, shift: StageShift): void {
+		this.#take(painting, (painter, taken) => {
+			painter.carry(taken, shift.x, shift.y, PICTURE_MS.transition, frameClock().now());
+		});
+	}
+
+	/**
+	 * Bring a picture in part by part, what is left of the last finishing over it.
+	 * @param painting The picture's painting, or nothing when it has none.
+	 * @param heading Where the reader went from the last picture, if somewhere.
+	 * @param moved How far the pane moved since the last picture was seen.
+	 */
+	enter(painting: string | undefined, heading: Departure | null, moved: StageShift): void {
+		const ratio = window.devicePixelRatio || 1;
+		const [x, y] = [moved.x * ratio, moved.y * ratio];
+		this.#take(painting, (painter, taken) => {
+			painter.enter(taken, headingJson(heading), PICTURE_MS.entry, x, y, frameClock().now());
+		});
+	}
+
+	/** Land whatever flies, at once. */
+	land(): void {
+		this.#tell((painter) => {
+			painter.land();
+		});
+	}
+
+	/**
+	 * Send the picture on its way out.
+	 * @param heading Where the reader went.
+	 * @param reducedMotion Whether the person asked for no motion; then it is simply gone.
+	 */
+	leave(heading: Departure, reducedMotion: boolean): void {
+		const ms = reducedMotion ? 0 : PICTURE_MS.exit;
+		this.#tell((painter) => {
+			painter.leave(headingJson(heading), ms, frameClock().now());
+		});
+	}
+
+	/** Bring back a picture the reader returned to before anything else arrived. */
+	stay(): void {
+		this.#tell((painter) => {
+			painter.stay();
+		});
+	}
+
+	/**
+	 * Put a board inside its card and start the fades of the flight.
+	 * @param painting The board's painting, or nothing when it has none.
+	 * @param dive The flight.
+	 * @param ms How long the flight takes.
+	 */
+	dive(painting: string | undefined, dive: StageDive, ms: number): void {
+		if (painting === undefined) return;
+		this.#tell((painter) => {
+			painter.dive(painting, JSON.stringify(dive), ms, frameClock().now());
+		});
+	}
+
+	/** Take the board inside a card away. */
+	endDive(): void {
+		this.#tell((painter) => {
+			painter.endDive();
+		});
+	}
+
+	/**
+	 * Show the traffic, or hide it from a reader who asked for no motion.
+	 * @param shown Whether it shows.
+	 */
+	setTrafficShown(shown: boolean): void {
+		this.#held.trafficShown = shown;
+		this.#tell((painter) => {
+			painter.setTrafficShown(shown);
+		});
+	}
+
+	/** Stand the traffic still until it is resumed. */
+	holdTraffic(): void {
+		this.#tell((painter) => {
+			painter.holdTraffic();
+		});
+	}
+
+	/**
+	 * Bring held traffic back to its speed, from standing still.
+	 * @param ms How long that takes.
+	 */
+	resumeTraffic(ms: number): void {
+		this.#tell((painter) => {
+			painter.resumeTraffic(ms, frameClock().now());
+		});
+	}
+
+	/** Let held traffic go at its speed at once. */
+	releaseTraffic(): void {
+		this.#tell((painter) => {
+			painter.releaseTraffic();
+		});
+	}
+
+	/**
+	 * Hold flows' heads in view.
+	 * @param heads How far each flow's head is moved down, in the picture's units.
+	 */
+	setHeads(heads: Readonly<Record<string, number>>): void {
+		this.#held.heads = heads;
+		this.#tell((painter) => {
+			painter.setHeads(JSON.stringify(heads));
+		});
+	}
+
+	/**
+	 * Say which subjects the code check warns about.
+	 * @param warned The subjects.
+	 */
+	setWarnings(warned: ReadonlySet<string>): void {
+		this.#held.warned = warned;
+		this.#tell((painter) => {
+			painter.setWarnings(JSON.stringify([...warned]));
+		});
+	}
+
+	/**
+	 * Draw relationships on along their routes.
+	 * @param delays How long each waits, in milliseconds.
+	 * @param shortest The shortest a sweep takes, in milliseconds.
+	 * @param longest The longest a sweep takes, in milliseconds.
+	 */
+	sweep(delays: Readonly<Record<string, number>>, shortest: number, longest: number): void {
+		this.#tell((painter) => {
+			painter.sweep(JSON.stringify(delays), shortest, longest, frameClock().now());
+		});
+	}
+
+	/** Take the sweep away. */
+	clearSweep(): void {
+		this.#tell((painter) => {
+			painter.clearSweep();
+		});
+	}
+
+	/**
+	 * Note the groups of the picture just written into the surface.
+	 * @param root The element that holds them.
+	 */
+	learnGroups(root: ParentNode): void {
+		this.#groups = [...root.querySelectorAll(PICKED)];
+	}
+
+	/**
+	 * Move the picture.
+	 * @param camera Where it goes.
+	 * @param ms How long it takes.
+	 */
+	setCamera(camera: StageCamera, ms: number): void {
+		const ratio = window.devicePixelRatio || 1;
+		const { x, y, scale } = {
+			x: camera.x * ratio,
+			y: camera.y * ratio,
+			scale: camera.scale * ratio,
+		};
+		this.#held.camera = { x, y, scale };
+		this.#held.cameraMs = ms;
+		this.#tell((painter) => {
+			painter.setCamera(x, y, scale, ms, frameClock().now());
+		});
+	}
+
+	/**
+	 * Swap between the near and the far view.
+	 * @param far Whether the picture is seen from far.
+	 * @param ms How long it takes.
+	 */
+	setFar(far: boolean, ms: number): void {
+		this.#held.far = far;
+		this.#tell((painter) => {
+			painter.setFar(far, ms, frameClock().now());
+		});
+	}
+
+	/**
+	 * Say what is marked.
+	 * @param marks The marks.
+	 */
+	setMarks(marks: StageMarks): void {
+		this.#held.marks = marks;
+		this.#tell((painter) => {
+			painter.setMarks(marksJson(marks));
+		});
+	}
+
+	/**
+	 * Light the picture.
+	 * @param light How it stands in the light.
+	 */
+	setLight(light: StageLight): void {
+		this.#held.light = light;
+		this.#tell((painter) => {
+			painter.setLight(JSON.stringify(light), frameClock().now());
+		});
+	}
+
+	/**
+	 * What lies under a point of the page, the topmost first.
+	 * @param x The point's distance from the page's left, in pixels.
+	 * @param y Its distance from the top.
+	 * @returns The groups, null for a shape in none, or null while no painter draws.
+	 */
+	elementsAt(x: number, y: number): readonly (Element | null)[] | null {
+		const started = this.#started;
+		if (started === null || !this.#surface.hasAttribute(PAINTER_ATTRIBUTE)) return null;
+		const box = started.canvas.getBoundingClientRect();
+		const ratio = window.devicePixelRatio || 1;
+		const under = started.painter.pick((x - box.left) * ratio, (y - box.top) * ratio);
+		return Array.from(under, (index) => this.#groups[index] ?? null);
+	}
+
+	/** Stop asking for frames and let the painter go. */
+	dispose(): void {
+		this.#disposed = true;
+		this.#watching.disconnect();
+		this.#theme.disconnect();
+		this.#surface.parentElement?.removeEventListener("pointermove", this.#hoverControl);
+		this.#surface.parentElement?.removeEventListener("pointerleave", this.#leaveControl);
+		if (this.#frame !== null) frameClock().cancelFrame(this.#frame);
+		this.#started?.painter.free();
+		this.#started = null;
+	}
+
+	/**
+	 * Tell the painter at work something, and draw what it changed.
+	 * @param change What to tell it.
+	 */
+	#tell(change: (painter: Painter) => void): void {
+		if (this.#started === null) return;
+		change(this.#started.painter);
+		this.#invalidate();
+	}
+
+	/**
+	 * Hold a picture, start the painter for it, and hand it over.
+	 * @param painting The picture's painting, or nothing when it has none.
+	 * @param hand How the painter takes it, once one is at work.
+	 */
+	#take(painting: string | undefined, hand: (painter: Painter, taken: string) => void): void {
+		const taken = painting === "" ? undefined : painting;
+		this.#held.painting = taken;
+		if (taken === undefined) {
+			this.#started?.painter.clear();
+			this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
+			return;
+		}
+		void this.#start();
+		this.#tell((painter) => {
+			hand(painter, taken);
+		});
+	}
 
 	/** Ask for one more frame, unless one is on its way. */
-	function invalidate(): void {
-		if (frame === null && started !== null) frame = frameClock().requestFrame(tick);
-	}
+	readonly #invalidate = (): void => {
+		if (this.#frame === null && this.#started !== null) {
+			this.#frame = frameClock().requestFrame(this.#tick);
+		}
+	};
+
+	/** Give the painter the page's theme. */
+	readonly #themeChanged = (): void => {
+		this.#tell((painter) => {
+			painter.setTheme(pageIsDark());
+		});
+	};
 
 	/**
 	 * Hand a painter everything the page says now.
 	 * @param painter The painter.
 	 */
-	function brief({ painter }: StartedPainter): void {
+	#brief(painter: Painter): void {
+		const { camera, far, marks, light, painting, trafficShown, heads, warned } = this.#held;
 		const now = frameClock().now();
+		painter.setPhases(PHASES);
 		painter.setTheme(pageIsDark());
-		painter.setCamera(held.camera.x, held.camera.y, held.camera.scale, 0, now);
-		painter.setFar(held.far, 0, now);
-		painter.setMarks(marksJson(held.marks));
-		if (held.light !== null) painter.setLight(JSON.stringify(held.light), now);
-		if (held.painting === undefined) painter.clear();
-		else painter.show(held.painting);
+		painter.setTrafficShown(trafficShown);
+		painter.setHeads(JSON.stringify(heads));
+		painter.setWarnings(JSON.stringify([...warned]));
+		painter.setCamera(camera.x, camera.y, camera.scale, 0, now);
+		painter.setFar(far, 0, now);
+		painter.setMarks(marksJson(marks));
+		if (light !== null) painter.setLight(JSON.stringify(light), now);
+		if (painting === undefined) painter.clear();
+		else painter.show(painting);
 	}
 
 	/**
 	 * Put a painter to work.
 	 * @param next The painter.
 	 */
-	function employ(next: StartedPainter): void {
-		started = next;
-		surface.removeAttribute(PAINTER_ATTRIBUTE);
-		brief(next);
-		invalidate();
+	#employ(next: StartedPainter): void {
+		this.#started = next;
+		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
+		this.#brief(next.painter);
+		this.#invalidate();
 	}
 
 	/**
 	 * Replace a painter that failed at work with Vello on the CPU.
 	 * @param cause What went wrong.
 	 */
-	async function replacePainter(cause: unknown): Promise<void> {
-		const failed = started;
-		started = null;
-		surface.removeAttribute(PAINTER_ATTRIBUTE);
+	async #replacePainter(cause: unknown): Promise<void> {
+		const failed = this.#started;
+		this.#started = null;
+		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
 		if (failed === null || failed.kind === "cpu") return;
 		const { fallBackToCpu } = await import("@archboard/renderer/browser");
-		if (!disposed) employ(fallBackToCpu(failed.canvas, pageIsDark(), String(cause)));
+		if (!this.#disposed) this.#employ(fallBackToCpu(failed.canvas, pageIsDark(), String(cause)));
+	}
+
+	/**
+	 * Say on the surface which painter drew the frame.
+	 * @param started The painter at work.
+	 */
+	#name(started: StartedPainter): void {
+		if (this.#held.painting === undefined) {
+			this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
+			return;
+		}
+		this.#surface.setAttribute(PAINTER_ATTRIBUTE, started.kind);
+		if (started.reason === null) this.#surface.removeAttribute(PAINTER_REASON_ATTRIBUTE);
+		else this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, started.reason);
 	}
 
 	/**
 	 * Draw the frame of a moment, and ask for the next while something moves.
 	 * @param now The frame's time.
 	 */
-	function tick(now: number): void {
-		frame = null;
-		if (started === null) return;
-		const { painter, kind, reason } = started;
-		sizeCanvasFor(started);
+	readonly #tick = (now: number): void => {
+		this.#frame = null;
+		if (this.#started === null) return;
+		fitPainter(this.#started);
 		try {
-			if (painter.frame(now)) invalidate();
+			if (this.#started.painter.frame(now)) this.#invalidate();
 		} catch (cause) {
-			void replacePainter(cause);
+			void this.#replacePainter(cause);
 			return;
 		}
-		if (held.painting === undefined) {
-			surface.removeAttribute(PAINTER_ATTRIBUTE);
-			return;
+		this.#name(this.#started);
+	};
+
+	/** Start the painter, the first time there is something to paint. */
+	async #start(): Promise<void> {
+		if (this.#starting || this.#started !== null) return;
+		this.#starting = true;
+		sizeCanvas(this.#canvas);
+		try {
+			const { startPainter } = await import("@archboard/renderer/browser");
+			const next = await startPainter(this.#canvas, pageIsDark());
+			if (this.#disposed) next.painter.free();
+			else this.#employ(next);
+		} catch (cause) {
+			// No painter at all: the SVG stays, a correct board, and says why.
+			this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, String(cause));
 		}
-		surface.setAttribute(PAINTER_ATTRIBUTE, kind);
-		if (reason === null) surface.removeAttribute(PAINTER_REASON_ATTRIBUTE);
-		else surface.setAttribute(PAINTER_REASON_ATTRIBUTE, reason);
 	}
 
 	/**
-	 * Keep a painter's size to its canvas.
-	 * @param painting The painter at work.
+	 * Light the control the pointer rests on.
+	 * @param subject Whose control it is, or null for none.
 	 */
-	function sizeCanvasFor(painting: StartedPainter): void {
-		if (sizeCanvas(painting.canvas)) {
-			painting.painter.resize(painting.canvas.width, painting.canvas.height);
-		}
+	#lightControl(subject: string | null): void {
+		if (subject === this.#hoveredControl) return;
+		this.#hoveredControl = subject;
+		this.#tell((painter) => {
+			painter.setHoveredToggle(subject ?? undefined);
+		});
 	}
 
-	/** Start the painter, the first time there is something to paint. */
-	function start(): void {
-		if (starting || started !== null) return;
-		starting = true;
-		sizeCanvas(canvas);
-		void import("@archboard/renderer/browser")
-			.then(({ startPainter }) => startPainter(canvas, pageIsDark()))
-			.then((next) => {
-				if (disposed) next.painter.free();
-				else employ(next);
-			});
-	}
+	/**
+	 * Find the control under the pointer, which CSS `:hover` found while the
+	 * surface took the pointer.
+	 * @param event The move.
+	 */
+	readonly #hoverControl = (event: PointerEvent): void => {
+		const control = this.elementsAt(event.clientX, event.clientY)?.[0]?.closest("[data-toggle]");
+		const subject = control?.closest("[data-semantic-id]")?.getAttribute("data-semantic-id");
+		this.#lightControl(subject ?? null);
+	};
 
-	const watching = new ResizeObserver(() => {
-		invalidate();
-	});
-	watching.observe(canvas);
-	const theme = new MutationObserver(() => {
-		started?.painter.setTheme(pageIsDark());
-		invalidate();
-	});
-	theme.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-
-	return {
-		show(painting) {
-			held.painting = painting;
-			if (painting === undefined || painting === "") {
-				held.painting = undefined;
-				started?.painter.clear();
-				surface.removeAttribute(PAINTER_ATTRIBUTE);
-				return;
-			}
-			start();
-			started?.painter.show(painting);
-			invalidate();
-		},
-		learnGroups(root) {
-			groups = [...root.querySelectorAll(PICKED)];
-		},
-		setCamera(camera, ms) {
-			const ratio = window.devicePixelRatio || 1;
-			held.camera = { x: camera.x * ratio, y: camera.y * ratio, scale: camera.scale * ratio };
-			held.cameraMs = ms;
-			const { x, y, scale } = held.camera;
-			started?.painter.setCamera(x, y, scale, ms, frameClock().now());
-			invalidate();
-		},
-		setFar(far, ms) {
-			held.far = far;
-			started?.painter.setFar(far, ms, frameClock().now());
-			invalidate();
-		},
-		setMarks(marks) {
-			held.marks = marks;
-			started?.painter.setMarks(marksJson(marks));
-			invalidate();
-		},
-		setLight(light) {
-			held.light = light;
-			started?.painter.setLight(JSON.stringify(light), frameClock().now());
-			invalidate();
-		},
-		elementsAt(x, y) {
-			if (started === null || !surface.hasAttribute(PAINTER_ATTRIBUTE)) return null;
-			const box = started.canvas.getBoundingClientRect();
-			const ratio = window.devicePixelRatio || 1;
-			const under = started.painter.pick((x - box.left) * ratio, (y - box.top) * ratio);
-			return Array.from(under, (index) => groups[index] ?? null);
-		},
-		dispose() {
-			disposed = true;
-			watching.disconnect();
-			theme.disconnect();
-			if (frame !== null) frameClock().cancelFrame(frame);
-			started?.painter.free();
-			started = null;
-		},
+	/** The pointer left: no control is under it. */
+	readonly #leaveControl = (): void => {
+		this.#lightControl(null);
 	};
 }
 
@@ -337,7 +522,7 @@ function attachStage(surface: HTMLElement, canvas: HTMLCanvasElement): () => voi
 	if (typeof ResizeObserver === "undefined" || typeof WebAssembly === "undefined") {
 		return () => undefined;
 	}
-	const stage = createStage(surface, canvas);
+	const stage = new PictureStage(surface, canvas);
 	stages.set(surface, stage);
 	return () => {
 		stage.dispose();
@@ -384,6 +569,8 @@ export {
 	stageOf,
 	type PictureStage,
 	type StageCamera,
+	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type StageShift,
 };

@@ -7,10 +7,10 @@
 // a key. It never returns at its speed: it starts as a creep and gathers it. What the
 // stage moves itself, a fit or a glide to a step, leaves it alone.
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
-import { paceTraffic } from "@archboard/ui-kit/frame-clock";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 
 /**
@@ -25,26 +25,26 @@ function useTrafficRest(
 	camera: Pick<BoardCamera, "subscribe" | "view">,
 	dragging: boolean,
 ): void {
-	const pace = useMemo(() => (surface === null ? null : paceTraffic(surface)), [surface]);
 	// Whatever was held runs at its speed again when the picture goes away.
-	useEffect(
-		() => () => {
-			pace?.release();
-		},
-		[pace],
-	);
+	useEffect(() => {
+		const stage = surface === null ? null : stageOf(surface);
+		return () => {
+			stage?.releaseTraffic();
+		};
+	}, [surface]);
 
 	const { subscribe, view } = camera;
 	useEffect(() => {
-		if (pace === null) return undefined;
+		const stage = surface === null ? null : stageOf(surface);
+		if (!stage) return undefined;
 		// A drag holds the traffic even while the pointer rests, and lets it go as it ends.
-		if (dragging) pace.hold();
-		else pace.resume(EXPLORING_MS.trafficStart);
+		if (dragging) stage.holdTraffic();
+		else stage.resumeTraffic(EXPLORING_MS.trafficStart);
 		return subscribe(() => {
-			if (view().moving) pace.hold();
-			else if (!dragging) pace.resume(EXPLORING_MS.trafficStart);
+			if (view().moving) stage.holdTraffic();
+			else if (!dragging) stage.resumeTraffic(EXPLORING_MS.trafficStart);
 		});
-	}, [pace, subscribe, view, dragging]);
+	}, [surface, subscribe, view, dragging]);
 }
 
 export { useTrafficRest };
