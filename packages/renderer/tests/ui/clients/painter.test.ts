@@ -22,6 +22,21 @@ await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", (
 }));
 const { startPainter } = await import("#ui/clients/painter.ts");
 
+/**
+ * Subscribe to a GPU painter, which must expose its stop notification.
+ * @param started The started painter.
+ * @param listener Who hears the stop.
+ * @returns Stop listening.
+ */
+function listen(
+	started: Awaited<ReturnType<typeof startPainter>>,
+	listener: (reason: string) => void,
+): () => void {
+	if (started.whenGpuStops === undefined)
+		throw new Error("The GPU painter has no stop notification.");
+	return started.whenGpuStops(listener);
+}
+
 test("GPU stops reach late subscribers and stay with the GPU that stopped", async () => {
 	GlobalRegistrator.register();
 	const previous = Object.getOwnPropertyDescriptor(globalThis, "ARCHBOARD_CORE_SOURCE_HASH");
@@ -40,19 +55,19 @@ test("GPU stops reach late subscribers and stay with the GPU that stopped", asyn
 		const first = await startPainter(document.createElement("canvas"), false);
 		stops[0]?.("first device stopped");
 		const late = mock();
-		const detachFirst = first.whenGpuStops?.(late);
+		const detachFirst = listen(first, late);
 		expect(late).toHaveBeenCalledTimes(1);
 		expect(late).toHaveBeenCalledWith("first device stopped");
-		detachFirst?.();
+		detachFirst();
 
 		const second = await startPainter(document.createElement("canvas"), false);
 		const live = mock();
-		const detachSecond = second.whenGpuStops?.(live);
+		const detachSecond = listen(second, live);
 		stops[0]?.("old device stopped again");
 		expect(live).not.toHaveBeenCalled();
 		await startPainter(document.createElement("canvas"), false);
 		expect(stops).toHaveLength(2);
-		detachSecond?.();
+		detachSecond();
 		stops[1]?.("second device stopped");
 		expect(live).not.toHaveBeenCalled();
 	} finally {
