@@ -11,9 +11,9 @@ export {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	present,
+	restPointer,
 	stageUrl,
 	withTake,
 	type Moment,
@@ -30,7 +30,6 @@ export {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./producer.ts";
 export {
-	readBoard,
 	startCheckoutServer,
 	startServer,
 	type TakeServer,

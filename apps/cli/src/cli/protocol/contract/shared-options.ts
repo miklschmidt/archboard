@@ -38,7 +38,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		value: "required",
 		placeholder: "key",
 		required: true,
-		description: "The board the command is about; there is no default board (ADR 0020)",
+		description: "The vault the command is about; there is no default",
 	},
 	doing: {
 		key: "doing",
@@ -47,7 +47,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		placeholder: "line",
 		required: true,
 		description:
-			"One present-tense line saying what this write does, shown on every pane holding the board " +
+			"One present-tense line saying what this write does, shown on every pane holding the model " +
 			"and never written to it",
 	},
 	"expect-version": {
@@ -57,7 +57,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 		placeholder: "n",
 		required: true,
 		description:
-			"The board version this write was read against; refused if the board has moved past it",
+			"The model revision this write was read against; refused if the model has moved past it",
 	},
 	"as-session": {
 		key: "as-session",

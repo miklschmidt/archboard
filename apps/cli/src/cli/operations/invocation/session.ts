@@ -97,12 +97,12 @@ const RETIRED_COMMANDS: Readonly<Record<string, string>> = {
 	pane: "Use `archboard browser open` or `archboard browser close <pane>`.",
 	panes: "Use `archboard browser panes`.",
 	selection: "Use `archboard browser panes`: it lists what each pane shows and what is selected.",
-	screenshot: "Use `archboard semantic rasterize <board> --out <file.png>`.",
+	screenshot: "Use `archboard model rasterize --out <file.png>`.",
 };
 
 /**
  * Explains an unknown command on stderr: a retired spelling points at its replacement, and
- * the removed `inject` says where board changes now go.
+ * the removed `inject` says where architecture changes now go.
  * @param name - The command name that matched nothing.
  */
 function reportUnknownCommand(name: string): void {
@@ -113,7 +113,7 @@ function reportUnknownCommand(name: string): void {
 	}
 	const migration =
 		name === "inject"
-			? " Board changes now reach the Codex workhorse of each browser tab. Ask it in the conversation."
+			? " Architecture changes now reach the Codex workhorse of each browser tab. Ask it in the conversation."
 			: "";
 	process.stderr.write(
 		`Unknown command "${name}".${migration} Run \`archboard help\` for the list.\n`,

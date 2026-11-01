@@ -106,18 +106,25 @@ function semanticVocabularyDiagnostics(
 	file: string,
 	policy: SemanticPolicy,
 ): VaultDiagnostic[] {
-	return references(board)
-		.filter((reference) => !known(reference, policy))
-		.map((reference) => ({
-			severity: "warning",
-			code: "UNKNOWN_VOCABULARY",
-			file,
-			board: board.name,
-			path: reference.path,
-			...(reference.variant === undefined ? {} : { variant: reference.variant }),
-			...(reference.subject === undefined ? {} : { subject: reference.subject }),
-			message: `${reference.vocabulary} has no definition for ${JSON.stringify(reference.value)}. Add it to .archboard/config.yaml or change this reference to a configured value; existing content remains readable with neutral appearance.`,
-		}));
+	return unknownVocabularyReferences(board, policy).map((reference) => ({
+		severity: "warning",
+		code: "UNKNOWN_VOCABULARY",
+		file,
+		board: board.name,
+		path: reference.path,
+		...(reference.variant === undefined ? {} : { variant: reference.variant }),
+		...(reference.subject === undefined ? {} : { subject: reference.subject }),
+		message: `${reference.vocabulary} has no definition for ${JSON.stringify(reference.value)}. Add it to .archboard/config.yaml or change this reference to a configured value; existing content remains readable with neutral appearance.`,
+	}));
+}
+/**
+ * Retain unknown vocabulary values and source coordinates for migration choices.
+ * @param board The complete original family, including reconciliation bases.
+ * @param policy The valid authored vocabulary.
+ * @returns Unconfigured original references.
+ */
+function unknownVocabularyReferences(board: SemanticBoard, policy: SemanticPolicy): Reference[] {
+	return references(board).filter((reference) => !known(reference, policy));
 }
 /**
  * Refuse only newly introduced unknown subject references; retained history remains editable.
@@ -151,4 +158,4 @@ function newVocabularyProblem(
 		? null
 		: `${unknown.path}: ${JSON.stringify(unknown.value)} is not configured in ${unknown.vocabulary}. Choose a configured value (archboard semantic config) or define it in .archboard/config.yaml.`;
 }
-export { semanticVocabularyDiagnostics, newVocabularyProblem };
+export { unknownVocabularyReferences, semanticVocabularyDiagnostics, newVocabularyProblem };

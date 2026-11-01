@@ -252,6 +252,7 @@ export function createServerRealtimeActions(
 	// The browser the last session started from, whose narrative a later session replaces.
 	let voicedBrowser: string | null = null;
 	let realtimeQueue = Promise.resolve();
+	let latestStart: Pick<ActiveRealtime, "connection"> | null = null;
 	// The start trace keeps every state the session moves through and every diagnostic it raises.
 	components.realtime.onSemanticEvent((event) => {
 		if (event.kind === "diagnostic") {
@@ -296,6 +297,8 @@ export function createServerRealtimeActions(
 			if (activeRealtime === active) {
 				activeRealtime = null;
 			}
+			forgetNarrative(narrativeAdapter, active.browserId);
+			if (voicedBrowser === active.browserId) voicedBrowser = null;
 		}
 	};
 
@@ -418,9 +421,12 @@ export function createServerRealtimeActions(
 		 * @param context The chat and the link it named.
 		 * @returns The answer, and the handle the chat holds the session by.
 		 */
-		start: (command, context) =>
-			serialize(async () => {
-				validateNarrative(narrativeAdapter, command.narrative);
+		start: async (command, context) => {
+			validateNarrative(narrativeAdapter, command.narrative);
+			const token = { connection: context.connection };
+			latestStart = token;
+			return serialize(async () => {
+				if (latestStart !== token) throw new Error("The voice start was canceled or replaced.");
 				trace.begin(context.chatId);
 				trace.note("requested", {
 					narrative: command.narrative !== undefined,
@@ -431,17 +437,18 @@ export function createServerRealtimeActions(
 				await freshCoordinator();
 				const pending = tracedPending(command.commandId, context);
 				activeRealtime = pending;
-				// Before the offer, which reads the binding: voice is bound to this checkout's workhorse.
-				threads.state.voiceCheckout = pending.checkout;
-				voicedCoordinator = pending.coordinatorThreadId;
 				forgetNarrative(narrativeAdapter, voicedBrowser);
 				voicedBrowser = pending.browserId;
 				try {
-					const narrative = prepareNarrative(
+					const narrative = await prepareNarrative(
 						narrativeAdapter,
 						command.narrative,
 						pending.browserId,
 					);
+					if (latestStart !== token) throw new Error("The voice start was canceled or replaced.");
+					requireActive(pending.handle, context);
+					threads.state.voiceCheckout = pending.checkout;
+					voicedCoordinator = pending.coordinatorThreadId;
 					if (narrative !== null)
 						trace.note("prepared", { unattended: isUnattended(narrativeAdapter, narrative) });
 					// Creating the offer subscribes the session to the host's voice input before it
@@ -468,12 +475,15 @@ export function createServerRealtimeActions(
 					};
 				} catch (error) {
 					trace.note("failed", { message: traceMessage(error) });
+					forgetNarrative(narrativeAdapter, pending.browserId);
+					voicedBrowser = null;
 					if (activeRealtime === pending) {
 						activeRealtime = null;
 					}
 					throw error;
 				}
-			}),
+			});
+		},
 		/**
 		 * Say something into the running session as typed text.
 		 * @param command The handle and the text.
@@ -497,12 +507,14 @@ export function createServerRealtimeActions(
 		 * @param context The chat and the link it named.
 		 * @returns The browser outcome.
 		 */
-		stop: (command, context) =>
-			serialize(async () => {
-				const active = requireActive(command.realtimeSessionHandle, context, false);
+		stop: async (command, context) => {
+			const active = requireActive(command.realtimeSessionHandle, context, false);
+			latestStart = null;
+			return serialize(async () => {
 				await stopActive(active);
 				return { outcome: "delivered" as const };
-			}),
+			});
+		},
 		/**
 		 * Stop the session a browser that has gone was speaking through.
 		 * @param context The chat and its connection.
@@ -510,6 +522,7 @@ export function createServerRealtimeActions(
 		 */
 		onBrowserDisconnect: async (context) => {
 			const active = activeRealtime;
+			if (latestStart?.connection === context.connection) latestStart = null;
 			if (active === null || active.connection !== context.connection) {
 				return;
 			}

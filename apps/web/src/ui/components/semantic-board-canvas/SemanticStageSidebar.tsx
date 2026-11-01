@@ -5,11 +5,11 @@
 // It is beside every state of the pane, not only a drawn one. An empty view is
 // left by choosing another view, and the board tab is where the views are.
 
-import { useCallback, useMemo, type JSX, type ReactNode } from "react";
+import { useCallback, useMemo, type JSX } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type {
-	PictureKey,
+	PictureLegend,
 	SemanticRender,
 } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
@@ -63,8 +63,6 @@ interface StageSidebarView extends Omit<
 	readonly groupControls: GroupControls;
 	/** How the vault's kinds look, for the details panel. */
 	readonly look: KindLook;
-	/** The search over every board's parts, at the sidebar's top. */
-	readonly search?: ReactNode;
 }
 
 /**
@@ -125,24 +123,20 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
  * The sidebar beside a semantic pane's picture.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
- * @param props.pictureKey What the key to the picture on screen lists.
+ * @param props.pictureLegend What the legend to the picture on screen lists.
  * @returns The sidebar.
  */
 function SemanticStageSidebar(props: {
 	readonly view: StageSidebarView;
-	readonly pictureKey: PictureKey | null;
+	readonly pictureLegend: PictureLegend | null;
 }): JSX.Element {
-	const { view, pictureKey } = props;
+	const { view, pictureLegend } = props;
 	const { level, onPick, selection } = view;
 	const clear = useCallback((): void => {
 		onPick(null);
 	}, [onPick]);
 	return (
-		<SemanticSidebar
-			sidebar={view.sidebar}
-			onClearSelection={selection === null ? null : clear}
-			search={view.search}
-		>
+		<SemanticSidebar sidebar={view.sidebar} onClearSelection={selection === null ? null : clear}>
 			<SidebarPanel tab="board">
 				<SemanticBoardPanel
 					answer={view.render.data}
@@ -154,7 +148,7 @@ function SemanticStageSidebar(props: {
 					groups={view.groups}
 					selectedGroup={view.group === null ? null : view.group.group}
 					onChooseGroup={view.onChooseGroup}
-					pictureKey={pictureKey}
+					pictureLegend={pictureLegend}
 					comparison={view.comparison}
 					onComparisonChange={view.onComparisonChange}
 				/>

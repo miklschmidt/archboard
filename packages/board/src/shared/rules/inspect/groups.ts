@@ -12,6 +12,8 @@
 // because something inside it is, and the group's boundary is drawn around its
 // members, not around whatever contains them: a service holding one grouped
 // module out of six is context for the reader, and is reported as such.
+// A relationship ends on a part, so one that reaches a part of a member reaches
+// that member.
 //
 // Where a card is placed is read off the same memberships (ADR 0038): a card
 // goes with the first group, in configuration order, that it belongs to, so
@@ -76,20 +78,39 @@ function groupsUsed(content: VariantContent): string[] {
 }
 
 /**
+ * The member at one end of a relationship.
+ * @param id The module at that end.
+ * @param members The group's members, by id.
+ * @param parents Each module's parent, by id.
+ * @returns The module, or the nearest module around it that is a member, if any.
+ */
+function memberAt(
+	id: string,
+	members: ReadonlySet<string>,
+	parents: ReadonlyMap<string, string>,
+): string | undefined {
+	for (let at: string | undefined = id; at !== undefined; at = parents.get(at))
+		if (members.has(at)) return at;
+	return undefined;
+}
+
+/**
  * The direction of one boundary relationship, seen from the group.
  * @param edge The relationship.
- * @param members The group's members, by id.
- * @returns The boundary edge, or null when both ends or neither end is a member.
+ * @param from The member at its start, if any.
+ * @param to The member at its end, if any.
+ * @returns The boundary edge, or null when both ends or neither end is in a member.
  */
-function boundaryOf(edge: SemanticEdge, members: ReadonlySet<string>): BoundaryEdge | null {
-	const fromInside = members.has(edge.from);
-	const toInside = members.has(edge.to);
-	if (fromInside === toInside) {
-		return null;
-	}
-	return fromInside
-		? { edge, direction: "outgoing", member: edge.from, neighbor: edge.to }
-		: { edge, direction: "incoming", member: edge.to, neighbor: edge.from };
+function boundaryOf(
+	edge: SemanticEdge,
+	from: string | undefined,
+	to: string | undefined,
+): BoundaryEdge | null {
+	if (from !== undefined && to === undefined)
+		return { edge, direction: "outgoing", member: from, neighbor: edge.to };
+	if (to !== undefined && from === undefined)
+		return { edge, direction: "incoming", member: to, neighbor: edge.from };
+	return null;
 }
 
 /**
@@ -106,11 +127,21 @@ function boundaryOf(edge: SemanticEdge, members: ReadonlySet<string>): BoundaryE
 function inspectGroup(content: VariantContent, group: string): GroupInspection {
 	const members = content.nodes.filter((node) => isMemberOf(node, group));
 	const inside = new Set(members.map((node) => node.id));
-	const internalEdges = content.edges.filter(
-		(edge) => inside.has(edge.from) && inside.has(edge.to),
+	const parents = new Map(
+		content.nodes.flatMap(({ id, parent }) =>
+			parent === undefined ? [] : [[id, parent] as const],
+		),
 	);
-	const boundaryEdges = content.edges.flatMap((edge) => {
-		const boundary = boundaryOf(edge, inside);
+	const crossings = content.edges.map((edge) => ({
+		edge,
+		from: memberAt(edge.from, inside, parents),
+		to: memberAt(edge.to, inside, parents),
+	}));
+	const internalEdges = crossings.flatMap(({ edge, from, to }) =>
+		from !== undefined && to !== undefined && from !== to ? [edge] : [],
+	);
+	const boundaryEdges = crossings.flatMap(({ edge, from, to }) => {
+		const boundary = boundaryOf(edge, from, to);
 		return boundary === null ? [] : [boundary];
 	});
 	const touched = new Set(boundaryEdges.map((boundary) => boundary.neighbor));

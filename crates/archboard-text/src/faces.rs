@@ -4,7 +4,7 @@
 //!
 //! The files are the bundled fonts of the renderer package
 //! (`packages/renderer/assets/fonts`, with their licences, sources and hashes
-//! in its README). The shell sets its own type from the same Onest and DM Mono
+//! in its README). The shell sets its own type from the same Onest and Maple Mono NL
 //! files, so they stay there, and the build of the core reads them in. Every
 //! face has 1000 units per em, so the glyphs of one run share one unit
 //! whichever face each comes from.
@@ -23,9 +23,9 @@ pub enum Face {
     SansRegular,
     /// Onest at 500, the static Medium file.
     SansMedium,
-    /// DM Mono at 400.
+    /// Maple Mono NL at 400.
     MonoRegular,
-    /// DM Mono at 500.
+    /// Maple Mono NL at 500.
     MonoMedium,
     /// Noto Sans at 400, for the Greek a regular face has no glyph for.
     GreekRegular,
@@ -66,8 +66,8 @@ impl Face {
         match self {
             Face::SansRegular => "Onest-wght-v1.000.ttf",
             Face::SansMedium => "Onest-Medium-v1.000.ttf",
-            Face::MonoRegular => "DMMono-Regular-v1.000.ttf",
-            Face::MonoMedium => "DMMono-Medium-v1.000.ttf",
+            Face::MonoRegular => "MapleMonoNL-Regular-Subset-v7.9.ttf",
+            Face::MonoMedium => "MapleMonoNL-Medium-Subset-v7.9.ttf",
             Face::GreekRegular => "NotoSans-Greek-Regular-v2.015.ttf",
             Face::GreekMedium => "NotoSans-Greek-Medium-v2.015.ttf",
             Face::Symbols => "NotoSansSymbols2-Subset-v2.008.ttf",
@@ -103,10 +103,14 @@ impl Face {
                 include_bytes!("../../../packages/renderer/assets/fonts/Onest-Medium-v1.000.ttf")
             }
             Face::MonoRegular => {
-                include_bytes!("../../../packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf")
+                include_bytes!(
+                    "../../../packages/renderer/assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf"
+                )
             }
             Face::MonoMedium => {
-                include_bytes!("../../../packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf")
+                include_bytes!(
+                    "../../../packages/renderer/assets/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf"
+                )
             }
             Face::GreekRegular => include_bytes!(
                 "../../../packages/renderer/assets/fonts/NotoSans-Greek-Regular-v2.015.ttf"

@@ -2,7 +2,7 @@
 
 use std::collections::BTreeMap;
 
-use crate::constants::HEADER_SLAB_INSET;
+use crate::constants::TAB_SHOULDER;
 use crate::geometry::{Rect, Side};
 use crate::graph::{Edge, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
 
@@ -24,12 +24,16 @@ pub(super) struct Scope<'a> {
     pub depth: usize,
 }
 
-/// A card or painted parent header, with four admissible wall candidates.
+/// A card or a frame, with its admissible walls. A frame is two endpoints: the
+/// frame as the scope around it reaches it, and the foot of its tab as what it
+/// holds reaches it.
 pub(super) struct Endpoint<'a> {
     pub node: &'a Node,
     pub scope: usize,
     pub bounds: Rect,
     pub walls: [Side; 4],
+    /// For a frame reached from outside, the endpoint of its tab's foot.
+    pub foot: Option<usize>,
 }
 
 /// The measured graph, normalized once without changing either engine's input.
@@ -83,10 +87,12 @@ impl<'a> Model<'a> {
             .map(|(index, edge)| (edge.id.as_str(), index))
             .collect();
         model.children(graph.kids(), 0, None, 0, &captions);
+        let feet: Vec<usize> = model.endpoints.iter().filter_map(|n| n.foot).collect();
         let ids: BTreeMap<_, _> = model
             .endpoints
             .iter()
             .enumerate()
+            .filter(|(i, _)| !feet.contains(i))
             .map(|(i, n)| (n.node.id.as_str(), i))
             .collect();
         for edge in &model.edges {
@@ -98,7 +104,9 @@ impl<'a> Model<'a> {
                     edge.id
                 ));
             };
-            model.ends.push((from, to));
+            model
+                .ends
+                .push((model.ending(from, to), model.ending(to, from)));
         }
         model.treatments = model
             .edges
@@ -119,6 +127,24 @@ impl<'a> Model<'a> {
             model.incoming[to].push(edge);
         }
         Ok(model)
+    }
+
+    /// Which endpoint of a subject a line from another subject ends on.
+    fn ending(&self, at: usize, other: usize) -> usize {
+        let foot = self.endpoints[at].foot;
+        foot.filter(|&foot| self.holds(self.endpoints[foot].scope, self.endpoints[other].scope))
+            .unwrap_or(at)
+    }
+
+    /// Whether one scope holds another, or is that other.
+    fn holds(&self, holder: usize, mut scope: usize) -> bool {
+        while scope != holder {
+            let Some(parent) = self.scopes[scope].parent else {
+                return false;
+            };
+            scope = parent;
+        }
+        true
     }
 
     fn children(
@@ -184,16 +210,14 @@ impl<'a> Model<'a> {
         } else {
             parent
         };
-        let inset = if header { HEADER_SLAB_INSET } else { 0.0 };
         let bounds = Rect {
-            x: inset,
-            y: inset,
-            width: node.w() - 2.0 * inset,
+            x: 0.0,
+            y: 0.0,
+            width: node.w() - if header { TAB_SHOULDER } else { 0.0 },
             height: if header {
                 node.option("archboard.header.size")
                     .and_then(|n| n.parse().ok())
                     .unwrap_or_else(|| node.h())
-                    - inset
             } else {
                 node.h()
             },
@@ -201,14 +225,24 @@ impl<'a> Model<'a> {
         let endpoint = self.endpoints.len();
         self.endpoints.push(Endpoint {
             node,
-            scope,
+            scope: parent,
             bounds,
             walls: [Side::Top, Side::Right, Side::Bottom, Side::Left],
+            foot: header.then_some(endpoint + 1),
         });
+        self.scopes[parent].children.push(Child::Endpoint(endpoint));
         if header {
+            self.endpoints.push(Endpoint {
+                node,
+                scope,
+                bounds,
+                walls: [Side::Bottom; 4],
+                foot: None,
+            });
+            self.scopes[scope]
+                .children
+                .push(Child::Endpoint(endpoint + 1));
             self.children(node.kids(), scope, Some(&node.id), depth + 1, captions);
-        } else {
-            self.scopes[scope].children.push(Child::Endpoint(endpoint));
         }
     }
 
@@ -225,7 +259,7 @@ impl<'a> Model<'a> {
                 scope.parent.is_none_or(|parent| parent < index)
                     && scope
                         .header
-                        .is_none_or(|header| self.endpoints[header].scope == index)
+                        .is_none_or(|header| Some(self.endpoints[header].scope) == scope.parent)
                     && scope.children.iter().all(|child| match child {
                         Child::Scope(child) => self.scopes[*child].parent == Some(index),
                         Child::Endpoint(child) => self.endpoints[*child].scope == index,

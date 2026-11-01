@@ -1,0 +1,11 @@
+{
+  "order": 48001,
+  "name": "Picture supply",
+  "kind": "module",
+  "responsibility": "Caches and draws captured diagram content through the local renderer",
+  "description": "Picture identity follows its captured content. Canonical drawing reuses the picture cache while retained readers supply their original content through an explicit provider.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#yJNjYLh1",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "outgoing": []
+}

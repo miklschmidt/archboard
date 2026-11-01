@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 
 import {
@@ -11,6 +10,7 @@ import { waitFor } from "../../server-state/support/http.ts";
 import { productionServer } from "../../server-state/support/production-server.ts";
 import { buildOwnedServerEnvironment } from "../../support/owned-server.ts";
 import { listOnlyVault } from "../../support/test-vault.ts";
+import { freeLoopbackPort } from "../../support/loopback-port.ts";
 const repoRoot = resolve(import.meta.dir, "../../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
 
@@ -95,19 +95,6 @@ export const pane = (clientId: string) => ({
 	board: "scratch",
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
 });
-async function freePort(): Promise<number> {
-	const server = createServer();
-	await new Promise<void>((done, reject) => {
-		server.once("error", reject);
-		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, done);
-	});
-	const address = server.address();
-	if (address === null || typeof address === "string") throw new Error("No loopback port.");
-	await new Promise<void>((done, reject) =>
-		server.close((error) => (error === undefined ? done() : reject(error))),
-	);
-	return address.port;
-}
 export async function startServer(options: {
 	readonly root: string;
 	readonly vault: string;
@@ -116,7 +103,7 @@ export async function startServer(options: {
 	readonly controlPath: string;
 	readonly readinessTimeoutMs?: number;
 }): Promise<ServerProcess> {
-	const port = await freePort();
+	const port = await freeLoopbackPort();
 	const base = `http://127.0.0.1:${port}`;
 	const paths = {
 		home: join(options.root, "home"),
@@ -211,6 +198,10 @@ export async function startServer(options: {
 
 export function extendFixture(root: string, storageMode?: StorageMode): string {
 	const source = readFileSync(fixtureSource, "utf8")
+		.replaceAll(
+			"./fake-codex-explanation-queue.ts",
+			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-explanation-queue.ts"),
+		)
 		.replaceAll(
 			"./fake-codex-production-data.ts",
 			join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production-data.ts"),

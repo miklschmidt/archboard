@@ -1,0 +1,28 @@
+{
+  "order": 960270,
+  "name": "Pane rules",
+  "kind": "function",
+  "responsibility": "Parses the board address of a pane and resolves the pane that a request names",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/server-lifecycle/src/runtime/rules"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#PmExcyj9",
+  "parent": "vKEsyHFk/vKEsyHFk#doujM3ih",
+  "outgoing": [
+    {
+      "order": 54000,
+      "kind": "dependency",
+      "label": "the board addresses of panes",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/rules/panes.ts",
+        "symbol": "paneBoardAddress"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#o56610zg",
+      "to": "vKEsyHFk#9VahN2IU"
+    }
+  ]
+}

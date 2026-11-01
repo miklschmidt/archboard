@@ -1,0 +1,28 @@
+{
+  "order": 4001,
+  "name": "runCommand",
+  "kind": "module",
+  "responsibility": "The seam a bound command is run through, with its contract and the signal",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/execution/runner.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#MmMnif7e",
+  "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+  "outgoing": [
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "executeCommand",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/execution/runner.ts",
+        "symbol": "runCommand"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#4vu1Jkwi",
+      "to": "vKEsyHFk/nAmiQ3Vc#Gq93nL5x"
+    }
+  ]
+}

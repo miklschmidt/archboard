@@ -1,56 +1,44 @@
-# Reconcile a proposal drawn before the code
+# Align the proposal and implementation
 
-Section 2 of the skill sends you here when the user drew a proposal for
-exactly this pull request before the code existed. The [split](split.md)
-sends you here for a design of the whole branch. The proposal says what was
-intended, and the head branch's code says what was built. Compare them in both
-directions:
+A proposal states intended architecture, and the diff states what the branch implements.
+Read both through their exact model state and source revisions.
+Use `model compare`, `model footprint`, and `check code --state` for the affected subjects.
 
-- **Built as proposed**: for each relationship of the proposal without an
-  `anchor`, find the code in the diff that makes it. Restate the relationship
-  with its `id`, its fields and that anchor. Bind each planned part to the
-  file that now implements it.
-- **Proposed but not built**: a relationship whose code you cannot find, a
-  part in `namedNotChanged`, and a `check code --variant` warning that the
-  run without `--variant` lacks.
-- **Built but not proposed**: a part in `changedNotNamed`, a
-  `RELATIONSHIP_UNDRAWN` warning, and code the diff adds that no part binds.
+Account for these outcomes:
 
-Settle each difference in one of two ways:
+- Implemented as proposed: preserve identities and attach the actual bindings and evidence anchors.
+- Proposed but unimplemented: keep that meaning proposed, or record its authorized removal.
+- Implemented but undescribed: update the proposal to describe the actual architectural change.
 
-- The code is the better answer, for example a call that lands on another
-  function than proposed: edit the proposal to match the code.
-- The difference changes what the proposal is for, such as a part dropped, a
-  boundary moved or a new dependency on another system: tell the user what
-  differs and ask whether to edit the proposal to match the code. The user
-  planned the other design and must know that the code built something else.
-  This is one of the two places where you ask (the other is the skill's
-  section 0). Once the user answers, say the difference in the Summary, in
-  one sentence.
+If a difference changes the approved design, use the existing authorization to resolve it.
+If that decision exceeds authorization, present the concrete source difference and required decision to the owner.
+Keep independent work available while that decision remains pending.
+Routine factual corrections need no repeated permission.
 
-The picture then shows what was built. Never draw a part that this pull
-request does not build.
+## Reconcile inherited changes
 
-## A design that changed through the stack
+Read `selectedState.standing` and each affected descendant before editing.
+Claim the state, structure, and affected subjects across the complete family.
+Use the consumer `model edit` reconciliation intent to follow a changed predecessor.
+Settle reported issues through the explicit settlement intent.
+A blocked descendant must wait for its ancestor's settlement.
 
-A design document can change in a later pull request of the stack that
-builds it. The design draft's reference then names an older commit than the
-document now has. Read the change with `git diff <commit> <branch> -- <path>`,
-where `<branch>` is the head branch of the pull request that changed the
-document. Edit the design draft's parts, relationships and flows to what the
-document now says. In the same edit, restate its `documents` with the reference at the commit
-you read, so that the draft names the version it now draws. A proposal that
-branched from the design draft kept the old reference: restate its list too
-when it draws the new version.
+Preserve the retained baseline that established each conflict.
+Keep proposal-side disputed meaning until explicit settlement.
+The shared writer installs safe inherited changes and descendant standing together.
+Use the returned complete revision for the next operation.
+A changed request needs a new operation identity.
 
-Done: every draft that names the design document names the commit whose
-version it draws, and `git diff <commit> <branch> -- <path>` is empty for
-each draft that draws the latest one.
+## Keep design evidence current
 
-## A design that several pull requests build
+If the design document changes, read its diff from the referenced commit.
+Update the affected proposal meaning and document reference through one complete edit.
+Keep unrelated proposals and their baselines unchanged.
+Use stable state IDs when names are ambiguous.
 
-A design that the user drew for more than this pull request is not this pull
-request's proposal. Leave it a draft as it is. Branch the pull request's own
-proposal as section 2 of the skill says, name its parts as the design names
-them, and draw only what this pull request builds. Never cut the design down
-into the proposal: the cut parts read as removed.
+A larger design can support a narrower implementation intent without losing its remaining planned subjects.
+Create a separate dependent proposal only when its actual complete predecessor fits that intent.
+Do not trim an inherited design to manufacture a narrower picture.
+Use reading scope and focus to narrow evidence instead.
+
+Done: proposal meaning matches the authorized change, document references identify its source, and affected standing is explicit.

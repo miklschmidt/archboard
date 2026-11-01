@@ -1,0 +1,23 @@
+{
+  "order": 72001,
+  "name": "Reference activation",
+  "kind": "module",
+  "responsibility": "Opens the captured reference destination through the existing reading router",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/architecture-model/use-reference-navigation.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#RILUrr2x",
+  "parent": "vKEsyHFk/yejBBUFY#0IYZeQvF",
+  "outgoing": [
+    {
+      "order": 80000,
+      "kind": "call",
+      "label": "follow explicit foreign subject",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/yejBBUFY#lE0UE0im",
+      "to": "vKEsyHFk/yejBBUFY#w46oCRoH"
+    }
+  ]
+}

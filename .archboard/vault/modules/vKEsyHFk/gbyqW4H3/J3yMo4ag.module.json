@@ -1,0 +1,15 @@
+{
+  "order": 7000,
+  "name": "Measured text",
+  "kind": "function",
+  "responsibility": "Measures every card, note and label in the faces the core carries",
+  "description": "The core shapes every run with archboard-text and breaks it at a width, so a width is never estimated and never asked of the place that draws (ADR 0059, TASK-520.07). Every layout and every painter read the same numbers here. The sequence grammar wraps its responsibilities and step notes with the same line breaking.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/measure"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#J3yMo4ag",
+  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+  "outgoing": []
+}

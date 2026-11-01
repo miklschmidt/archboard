@@ -163,8 +163,8 @@ fn join(
 fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape) -> Vec<Rect> {
     let mut boxes: Vec<_> = shape
         .endpoints
-        .values()
-        .map(|&r| inflate(r, 16.0))
+        .keys()
+        .map(|&id| inflate(shape.solid(id), 16.0))
         .collect();
     boxes.extend(shape.labels.values().map(|&r| inflate(r, 12.01)));
     boxes.extend(
@@ -174,16 +174,11 @@ fn obstacles(model: &Model<'_>, topology: &Topology, edge: usize, shape: &Shape)
             .iter()
             .map(|r| inflate(r.caption, 16.0)),
     );
-    let route = &topology.routes[edge];
     boxes.extend(
         shape
             .scopes
             .iter()
-            .filter(|(id, _)| {
-                !route.outward.contains(id)
-                    && !route.inward.contains(id)
-                    && !super::channel::ancestor(model, route.scope, **id)
-            })
+            .filter(|(id, _)| super::channel::foreign(model, topology, edge, **id))
             .map(|(_, s)| inflate(s.bounds, 16.0)),
     );
     for line in &shape.routes {

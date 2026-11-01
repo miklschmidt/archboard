@@ -103,7 +103,7 @@ fn outline_of(shape: FlowchartShape, rect: Rect) -> Polygon {
 fn look_of(shape: FlowchartShape) -> SlabLook {
     SlabLook {
         face: Paint::from(GradientId::FlowGold),
-        tintable: false,
+        soft: false,
         lit: Token::PrimaryTop.into(),
         edge: Token::PrimaryEdge.into(),
         thickness: CARD_THICKNESS,
@@ -188,7 +188,12 @@ fn side_near(outline: &[Point], corner: Point) -> Point {
 }
 
 /// The selection ring round an outline: outside it, or inside it on a removed shape.
-fn ring(outline: &[Point], radius: f64, standing: Option<Standing>, palette: &Palette) -> Items {
+pub(super) fn ring(
+    outline: &[Point],
+    radius: f64,
+    standing: Option<Standing>,
+    palette: &Palette,
+) -> Items {
     let by = if standing == Some(Standing::Removed) {
         OUTLINE_WIDTH / 2.0
     } else {

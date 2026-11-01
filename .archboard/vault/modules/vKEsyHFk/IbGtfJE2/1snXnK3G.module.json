@@ -1,0 +1,24 @@
+{
+  "order": 19000,
+  "name": "Codex CLI",
+  "kind": "external",
+  "responsibility": "The author, and one of the two graders; pinned to an exact version a batch refuses to differ from",
+  "description": "Authors run the model evals/pins.json pins (gpt-6-luna at high effort, workspace-write sandbox); the Codex grader runs the one evals/graders.json pins (gpt-6-astra at high effort, read-only).",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#1snXnK3G",
+  "outgoing": [
+    {
+      "order": 31000,
+      "kind": "call",
+      "label": "the author's archboard commands",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/processes/isolation.ts",
+        "symbol": "writeCliWrapper"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#NJCua3tZ",
+      "to": "vKEsyHFk/IbGtfJE2#fRFvnVRE"
+    }
+  ]
+}

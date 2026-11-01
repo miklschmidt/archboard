@@ -37,6 +37,25 @@ export function hiddenParentFrames(drawing: RenderedDiagram, content: VariantCon
 	});
 }
 
+/** A frame's seat: an unpainted rectangle that takes the pointer. */
+const SEAT =
+	/<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="10" pointer-events="all"/gu;
+
+/**
+ * The box of a seat, in page coordinates.
+ * @param seat The seat's match.
+ * @param shift What the body moves by.
+ * @returns Its box.
+ */
+function seatBox(seat: RegExpMatchArray, shift: DrawnPoint): DiagramBox {
+	return {
+		x: Number(seat[1]) + shift.x,
+		y: Number(seat[2]) + shift.y,
+		width: Number(seat[3]),
+		height: Number(seat[4]),
+	};
+}
+
 /**
  * Whether a point meets a rectangle's boundary within one unit.
  * @param point The route end.
@@ -71,19 +90,28 @@ export function headerCards(drawing: RenderedDiagram): Map<string, DiagramBox> {
 		)
 			continue;
 		const id = /data-semantic-id="([^"]+)"/u.exec(tag)?.[1];
-		// A tray paints its header slab below the route layer. Its first rounded
-		// card rectangle includes the base where a line meets that header.
-		const slab =
-			/<rect x="(-?[\d.]+)" y="(-?[\d.]+)" width="([\d.]+)" height="([\d.]+)" rx="8"/u.exec(chunk);
-		if (id !== undefined && slab !== null)
-			headers.set(id, {
-				x: Number(slab[1]) + shift.x,
-				y: Number(slab[2]) + shift.y,
-				width: Number(slab[3]),
-				height: Number(slab[4]),
-			});
+		// A frame seats its body first and its edge tab second.
+		const tab = [...chunk.matchAll(SEAT)][1];
+		if (id !== undefined && tab !== undefined) headers.set(id, seatBox(tab, shift));
 	}
 	return headers;
+}
+
+/**
+ * The bodies of semantic containers, in page coordinates: the frame below its tab.
+ * @param drawing The rendered architecture.
+ * @returns Their boxes, by container.
+ */
+function frameBodies(drawing: RenderedDiagram): Map<string, DiagramBox> {
+	const shift = bodyShift(drawing.svg);
+	const bodies = new Map<string, DiagramBox>();
+	for (const chunk of drawing.svg.split(/(?=<g data-semantic-kind=)/u)) {
+		const id = /^<g data-semantic-kind="region" data-semantic-id="([^"]+)"/u.exec(chunk)?.[1];
+		const body = [...chunk.matchAll(SEAT)][0];
+		if (id !== undefined && body !== undefined && !chunk.startsWith("<g data-semantic-part"))
+			bodies.set(id, seatBox(body, shift));
+	}
+	return bodies;
 }
 
 /**
@@ -95,6 +123,7 @@ export function headerCards(drawing: RenderedDiagram): Map<string, DiagramBox> {
 export function endsOffCards(drawing: RenderedDiagram, content: VariantContent): string[] {
 	const routes = routePoints(drawing.svg);
 	const headers = headerCards(drawing);
+	const bodies = frameBodies(drawing);
 	return content.edges.flatMap((edge) => {
 		const points = routes.get(edge.id);
 		if (points === undefined) return [];
@@ -102,12 +131,11 @@ export function endsOffCards(drawing: RenderedDiagram, content: VariantContent):
 			[edge.from, points[0]!],
 			[edge.to, points.at(-1)!],
 		] as const;
-		return ends.flatMap(([id, point], index) => {
-			const header = headers.get(id);
-			const box = index === 1 && header !== undefined ? header : drawing.atlas.nodes[id];
-			return box !== undefined &&
-				!onBoundary(point, box) &&
-				!(header !== undefined && onBoundary(point, header))
+		return ends.flatMap(([id, point]) => {
+			const faces = [drawing.atlas.nodes[id], headers.get(id), bodies.get(id)].filter(
+				(face) => face !== undefined,
+			);
+			return faces.length > 0 && !faces.some((face) => onBoundary(point, face))
 				? [`${edge.id}: line end misses ${id}`]
 				: [];
 		});

@@ -140,6 +140,28 @@ describe("the group a card is placed with", () => {
 });
 
 describe("memberships as a set", () => {
+	test("a relationship to a part of a member reaches that member, and one inside a member crosses nothing", () => {
+		const held = content({
+			nodes: [
+				{ id: "api", name: "API", kind: "service", groups: ["sales"] },
+				{ id: "route", name: "Route", kind: "route", parent: "api" },
+				{ id: "store", name: "Store", kind: "module", parent: "api" },
+				{ id: "ledger", name: "Ledger", kind: "service", groups: ["sales"] },
+				{ id: "web", name: "Web", kind: "ui" },
+			],
+			edges: [
+				{ id: "in", from: "web", to: "route", kind: "http" },
+				{ id: "own", from: "route", to: "store", kind: "call" },
+				{ id: "across", from: "store", to: "ledger", kind: "call" },
+			],
+		});
+		const sales = inspectGroup(held, "sales");
+		expect(sales.internalEdges.map((edge) => edge.id)).toEqual(["across"]);
+		expect(sales.boundaryEdges).toMatchObject([
+			{ direction: "incoming", member: "api", neighbor: "web" },
+		]);
+	});
+
 	test("the document refuses a non-canonical spelling and the boundary produces one", () => {
 		expect(SemanticNodeSchema.safeParse({ ...LEDGER, groups: ["b", "a"] }).success).toBe(false);
 		expect(SemanticNodeSchema.safeParse({ ...LEDGER, groups: ["a", "a"] }).success).toBe(false);

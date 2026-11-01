@@ -40,10 +40,10 @@ depth, faces and wordmark have moved on from the image, and
 - Pair a neutral sans serif with monospaced secondary text for identifiers,
   paths, versions, and timing, and set a name that titles a region in the
   display face.
-- Use a board navigator on the left (see [The navigator](#the-navigator)).
-  Put one sidebar beside the picture of each pane for the board and the
+- Use a left column for navigation (see [The left column](#the-left-column)).
+  Put one sidebar beside the picture of each pane for the open scope and the
   selection (see [The pane sidebar](#the-pane-sidebar)). Put the agent in one
-  dock at the foot of the navigator (see [The agent](#the-agent)), so nothing
+  dock at the foot of the column (see [The agent](#the-agent)), so nothing
   runs under the panes. Show the conversation beside the panes only on
   request. Each region must earn the space it takes.
 
@@ -59,7 +59,7 @@ The reference introduces three product additions worth building:
 - A shell inspector for the selected element and its persisted code binding.
 - A bottom agent surface that presents real agent state and `doing` data. This
   surface shipped as the agent bar (TASK-302) and is now the agent dock at the foot of
-  the navigator.
+  the left column.
 - A non-persistent focus mode for the architecture path connected to the
   selected element.
 - A lazy navigator preview that depicts the real current board scene without
@@ -86,7 +86,63 @@ state:
 - The mockup's tool rail communicates density and placement, not a drawing
   toolset: nobody draws on a board here.
 
+## The right panel, the legend and About
+
+Revised 2026-10-31 (TASK-559.19). The canonical reader has no pane sidebar and no
+`Architecture | Selection` tabs. [The reader redesign](reader-redesign.md) records
+why. An overlay panel and a legend behind a button replaced a permanent inspector,
+and the owner then took the legend for deleted, because the button went unnoticed for
+hours. The right side is now a short permanent column: it holds the legend and short
+text, and long lists stay in About.
+
+- **The right panel stands on every Diagram reading.** It is 360 px wide, or 46
+  percent of a narrow pane, in every pane. The picture fits the room that it leaves,
+  so a selection never refits the picture and the camera keeps its moves.
+- **With nothing selected, it says what is open.** It shows the open module's name
+  and description, or at the roots the model's name and the summary of its state,
+  because a model has no description of its own. A flow reading shows the flow.
+- **A click answers at once.** The card and the tree row light, and the panel names
+  the subject. Nothing moves, so a double click on a card lands on the card and
+  opens it.
+- **With a selection, it says what the subject is, how it stands, and what it
+  touches.** A module shows its name, kind, code path and responsibility, its warnings
+  and standing, then `Sends to` and `Receives from`. A door lists its real endpoints,
+  grouped by the part that reaches them. A line lists each relationship with its real
+  ends. A two-way line lists both directions, and a module's lists show each direction
+  of such a line with only what runs that way. Every row is an action that selects its
+  subject. A list shows 8 rows, then offers the rest in place.
+- **The action bar stands over the legend.** `Open module`, `Open code`, `Focus` and
+  `Explain` stay pinned there while the subject scrolls, because a bar under the legend
+  put a group's tag out from under the pointer. Escape and the close control let the
+  selection go, and the keyboard returns to the picture.
+- **Warnings sit on their subject.** The picture marks the warned subject, and the
+  panel and About give the check's words for a module, a line or a step. Only About
+  shows the count for the whole model.
+- **The legend stands at the foot of the panel and needs no click.** It replaces the
+  button at the picture's lower left and `Filters`, and it lists the kinds, line types
+  and groups of the reading. A mark explains, and `Filter` puts a switch on each line type that a reader
+  can hide. A kind that a reader hid stays in the legend, dimmed, and the heading row
+  says how many are hidden. A mixed line has a row and no switch, because it is no kind
+  of relationship. Groups close the legend as bright tags with no switch, and a press
+  on a tag selects the group's parts. A reading with no groups has no group section.
+  The layout engine switch stands under the legend on a structural reading.
+- **About holds every long list and names its subject.** The end of its title row
+  reads `Open scope`. While something is selected, it offers `Open scope` and
+  `Selected subject`. About opens on the selection when there is one. On the scope,
+  its outline leads to the walkthroughs, parts, nearby modules, connections,
+  interface, groups and states. State prose, `Decision and history`, `Model
+  ownership` and source evidence live here, never in the panel. A choice in a list
+  keeps the page in place, so a reader builds a selection there: Enter selects a
+  row, and Ctrl or Command with Enter adds it.
+
+The next section records the sidebar of retained board recordings, which still use
+it.
+
 ## The pane sidebar
+
+Revised 2026-10-30 (TASK-559.05). Navigation and reading controls left the sidebar
+for the left column and the pane header. The sidebar holds no way to another place.
+Its list of parts selects a part of the open scope and moves the reader nowhere.
 
 Revised 2026-09-17 (TASK-249), 2026-09-30 (TASK-383), 2026-10-03
 (TASK-388), 2026-10-04 (TASK-390) and 2026-10-06 (TASK-368.09, TASK-369.07). The generated reference above places selection details in a column
@@ -122,9 +178,8 @@ of the old inspector (`SIDEBAR_WIDTH`, 280 px) and two tabs:
      foot.
 
   A section with nothing to show is absent. The tab lists no variants. The
-  navigator lists the variants of every board. The About page of the pane's
-  header lists them with the record of each and opens one in the pane. The
-  breadcrumb in the header names the one on screen (TASK-388). Views live here
+  navigator lists the variants of every board. The breadcrumb in the header
+  names the one on screen (TASK-388). Views live here
   and not in a switcher on the picture, because a switcher over the picture can
   cover what it switches.
 
@@ -236,18 +291,14 @@ pans or zooms. With two panes it is away, so that each picture keeps its room,
 until somebody asks for it. The control then lays its panel over the edge of the
 picture, and a pin at the end of the tab row docks it. A pick lays an away
 sidebar over the picture in the same way, and letting go puts it away again, so
-neither refits the picture under the pointer that made it. A pick made on the
-About page lays no panel over the page, because the panel would cover the
-page's own controls. Its panel comes when the diagram does. A float the person
+neither refits the picture under the pointer that made it. A float the person
 asked for stays until they put it away, or press Escape inside it, which gives
 the keyboard back to the control. Hiding a docked sidebar and showing it again
 docks it again. A sidebar that is away is nowhere: it leaves no strip, no row of
 icons and no empty column. A pane presented fullscreen shows the picture without
 its sidebar. There is no strip above the picture.
 
-The search for a part sits above the tabs. Its shortcut, Ctrl or Command with
-Shift and K, shows an away sidebar in the pane that has focus and takes focus in
-the field. Ctrl or Command with Shift and F is the shell's and presents the pane.
+Ctrl or Command with Shift and F is the shell's and presents the pane.
 
 The sidebar eases in and out once. A docked column takes its width over 220 ms,
 on the curve of the conversation's slide, while its panel, held at its own width,
@@ -262,8 +313,7 @@ opens at the top of it and arrives with a 120 ms fade. The durations are
 goes at once.
 
 A presented walkthrough steps the sidebar aside. While it lasts the control in the
-header is held and says so, and neither it nor the search shortcut shows or hides
-the sidebar.
+header is held and says so, and it does not show or hide the sidebar.
 
 A presented walkthrough (TASK-250, TASK-392) is the picture and one plate laid over its
 foot, with the sidebar stepped aside. The plate is as wide as the pane less the margin it
@@ -318,27 +368,37 @@ light theme.
 
 ## The About page
 
-Added 2026-10-15 (TASK-475). The pane's header offers two ways to read a board:
-Diagram, the picture, and About, one page about the board. The About page
-replaced four pages of the header: Parts, Relationships, Variants and
-Walkthroughs. Each of them answered one question and hid the others, so a reader
-had to know which page held an answer before they looked for it.
+Added 2026-10-15 (TASK-475). Revised 2026-10-31 (TASK-559.15): this design moved
+from the page of a board to the canonical reading. The page of a board is gone,
+because only a retained recording could still reach it.
 
-![The About page of Archboard server in a lone pane](assets/about-page.png)
+The pane's header offers two ways to read a model: Diagram, the picture, and
+About, one page of what the reading holds. About replaced four pages of the
+header: Parts, Relationships, Variants and Walkthroughs. Each of them answered one
+question and hid the others, so a reader had to know which page held an answer
+before they looked for it.
 
-The image is a rendered capture of the dogfood vault at 1920×1080, not a
-mockup: the About page of `Archboard server` in a lone pane, in the light theme,
-at the top of the page.
+![About on the Browser module in a lone pane](assets/about-page.png)
 
-The page lies over the picture and scrolls, and the sidebar stays beside it. It
-reads the board document that the pane already holds and writes nothing (ADR
-0023). The tab is kept with the board it was chosen on, so a drill-down opens
-the board below as a diagram.
+The image is a rendered capture of the dogfood model at 1920×1080, not a mockup:
+About on `Browser` in a lone pane, in the light theme, at the top of the page.
 
-The head of the page names the board in the display face, in capitals. One line
-under the name gives the board's level, and then the variant on screen, with its
-lifecycle mark and where it stands. The summary of the variant follows. A board
-with no such variant says so, and the timeline below lists its variants.
+The page lies over the picture and scrolls, and the picture keeps its camera. It
+reads what the reader already holds, with the catalogue of states, and writes
+nothing (ADR 0023).
+
+The head of the page names its subject in the display face, in capitals. The
+subject is the open module, the flow of a flow reading, the model at the roots, or
+the selection. One line under the name gives the mark and name of the kind, the
+code path, and the state on screen with its lifecycle mark and where it stands. The
+responsibility follows in the reading size. The roots have no responsibility, so
+the summary of the state stands there. A module's description follows it in the
+muted size. Warnings on the subject stand under these.
+
+The end of the title row holds what concerns the whole page: which subject the page
+describes, the count of warnings for the whole model, and what can be done with the
+selection. These controls scroll with the title. No bar stands above the page,
+because each word of a bar had a place in the head.
 
 An outline lists the sections, each with its mark and its count. On a page
 1040 px wide or more, the outline is a column to the left of the sections, and
@@ -346,131 +406,152 @@ it stays in place while the page scrolls. On a narrower page, as in a pane that
 shares the centre, the outline is a bar at the top of the page. A piece of gold
 marks the section being read. Choosing an entry brings its section to the top
 and gives the heading of the section the keyboard. The last section is tall
-enough that every section can come to the top.
+enough that every section can come to the top. A page of one section has no
+outline.
 
 The sections come in the order a reader asks
 ([the study of that order](pane-sidebar-hierarchy.md)). A section with nothing
 to show is absent from the page and from the outline.
 
-1. The walkthroughs, each a card set as a script. The head of the card has the
-   name, the number of steps, the summary, Present and Narrate. Each step is a
-   row with its number, its heading and its words. Beside them stand the view
-   that the step is told through and the subjects that it focuses. Each
-   subject is a chip with the icon of its kind. A step that names no view says
-   that it uses the view on screen, because a presentation keeps that view for
-   the step. The control at the end of a step presents the walkthrough from
-   that step.
-2. The parts, in their containment: a container, then the parts that it holds,
-   one rail in, as the navigator lists boards. A row gives the kind, the name,
-   how many parts the part holds, its responsibility, its groups and the board
-   that it opens. The column for groups and the column for the board are there
-   only when some part has one.
-3. The relationships, as a table of where each one starts, where it ends, what
-   it carries and its kind. A row lights while a part at either end is picked
-   out.
-4. The variants, on one timeline with branches, as the navigator draws them.
-   Each variant has its mark, its name, where it stands and the reason in its
-   record. A variant whose record gives no reason shows its summary. The one
-   on screen is marked, and choosing another reads it in the pane.
+1. The steps of a flow, in a flow reading. Each step is a row with its number,
+   its words, its two ends and its kind.
+2. The walkthroughs of the open scope, each a card set as a script. The left
+   column stays the way to navigate them. The head of the card has the name, the
+   number of steps, the summary, Present and Narrate. Each step is a row with its
+   number, its heading and its words. Beside them stand the reading that the step
+   opens and the subjects that it focuses. Each subject is a chip with the icon of
+   its kind. The control at the end of a step presents the walkthrough from that
+   step. A page of more than three walkthroughs folds each card to its head, and
+   the number of steps unfolds it, because the root of a model holds many.
+3. The parts, in their containment: a container, then the parts that it holds,
+   one rail in. The list stops there, because a model holds hundreds of modules,
+   and each row says how many parts it holds. A row gives the kind, the name, the
+   responsibility, the groups and the code path. The column for groups and the
+   column for code are there only when some part has one.
+4. The nearby modules, in the same table.
+5. The connections, as a table of where each one starts, where it ends, what it
+   carries and its kinds. A row lights while a module at either end is selected.
+6. The interface and the groups.
+7. The states, on one timeline with branches. Each state has its mark, its name,
+   where it stands and the reason in its record. A state whose record gives no
+   reason shows its summary. The state on screen is marked, and it holds its prose
+   and its decision and history inside its entry. Choosing another reads it in the
+   pane.
 
-Choosing a row or a chip picks its subject in the pane, and the page stays. The
-sidebar explains the subject, and the picture marks it when the diagram comes
-back. In a pane that shares the centre, the sidebar stays away until the diagram
-comes back or the person shows it. The control at the end of a part's or a
-relationship's row picks the subject and opens the diagram. Then it fits the
-camera to the subject, as a code warning does. If the view on screen does not
-draw the subject, the pane opens Everything first.
+About on a selection has the same anatomy. A module has its walkthroughs, its
+parts, `Sends to`, `Receives from`, its endpoints, `Code and evidence` and `Code
+history`, in the tables above. A line, a flow, a collection and several subjects
+have one section.
 
-A walkthrough is presented over the picture, so presenting from the page opens
-the diagram. Leaving the walkthrough brings the page back. Choosing About while a
-walkthrough is presented leaves the walkthrough. The page keeps its place on each
-board: after a walkthrough or the diagram, it opens where the reader left it.
+Choosing a row or a chip selects its subject, and the page stays. The picture marks
+the subject when the diagram comes back. The control at the end of a row selects the
+subject and opens the diagram. The camera moves only far enough to show the subject,
+as it does for a selection in the picture. A module that the picture does not draw
+opens the part that holds it.
+
+A walkthrough is presented over the picture, so presenting from the page opens the
+diagram. Leaving the walkthrough brings the page back. The page keeps its place for
+each subject: after a walkthrough or the diagram, it opens where the reader left it.
 
 While the content of the page is narrower than 860 px, as in a pane that shares
-the centre, the view and the subjects of a step stand under its words. The
-groups of a part and the board that it opens stand under its responsibility.
+the centre, the reading and the subjects of a step stand under its words. The
+columns for groups and code leave the table of parts.
 
-## The navigator
+## The left column
 
-Revised 2026-09-23 (TASK-302) and 2026-09-30 (TASK-384). The board strip
-became a navigator that stays navigable at a few hundred boards without anybody
-filing them by hand. TASK-384 put every row on one grid.
-[The navigator's structure](navigator-structure.md) measures the tree before
-that change and says why it is drawn this way.
+Revised 2026-10-30 (TASK-559.05). The left column replaces the tree of boards.
+[The reader redesign](reader-redesign.md) records why. The column is 448 px wide
+(TASK-559.36), because five tabs and the table of `Measures` need that room, and
+lists where to go. The picture shows the place, and the right side explains
+what is selected or open. From the top, the column holds the wordmark, Find, the
+repository switcher, the destinations and the agent dock. The column is the same
+object as the picture: its list lies in a well, the open tab is the piece raised
+on the edge of that well, and a count is a low slab. DESIGN.md holds the recipe.
 
-![The navigator: a drill hierarchy with a board's variants, two panes on
-two boards, folders with nested drafts, and a
-filter](assets/operator-shell-navigator.png)
+![The left column at 1920×1080: Find, the repository switcher, the destinations
+with the Modules tree open on a module, and Talk at the
+foot](assets/operator-shell-navigator.png)
 
-The image holds rendered captures at 1920×1080, not mockups. From the left:
-the dogfood vault reading `Board rasterizer` (light), the dogfood vault with
-pane A on `Archboard` and pane B on `Voice coordinator` (dark), a vault with
-folders and nested drafts in two panes with agents at work (light), and a
-filter that finds variants by name (dark).
-
-- **Where a board sits is decided by what the boards say**, never by activity,
-  focus or recency. `/` folders in a name come first. Then comes the board
-  that it drills up from (a container's up link, else the closest coarser board
-  that drills down to it). A container link that runs down the levels counts as
-  a down link. Then comes name order that reads numbers as numbers. A vault with
-  no drill links is one alphabetical list. The order never moves under the
-  pointer.
+- **The reader of the focused pane fills the column.** The shell owns the frame
+  and holds no model knowledge. The reader of the focused pane puts Find and the
+  destinations in the frame, so the column changes when focus changes. The other
+  pane keeps its own path in its header.
+- **Find** reaches anything a reading can open: modules by name, code path or
+  words, flows, walkthroughs, bookmarks and former addresses. An exact name or
+  path comes first. Ctrl K or Command K takes focus in the field. Enter opens,
+  Alt and Enter opens beside, and Escape clears the field and then leaves it.
+- **The repository switcher** names the repository of the focused pane. While
+  two panes are open, it also shows the pane letter. Its list opens in the
+  column, in place of the destinations. A chevron on a row lists the checkouts
+  of that repository, and the field finds a repository or a checkout by name or
+  path, so the list stays usable with hundreds of checkouts. Enter opens the
+  first row, and Alt opens it beside. Escape clears the field and then closes the
+  list. Repositories that open on a reading come first, and the chosen checkout
+  comes first under its repository.
+- **A page with no reading has no pane.** Before a start opens, the column holds the
+  wordmark, the switcher, the field and the list, and the list stays open. The
+  middle holds one state: `No repository open`, `No repository yet`, or
+  `<name> is not here`. The agent dock returns with the first pane, because a
+  conversation needs a pane. The start rule is in
+  [the reader redesign](reader-redesign.md#start-and-states).
+- **The destinations** are `Modules`, `Flows`, `Walkthroughs`, `History` and
+  `Measures`, on one row. `Flows` and `Walkthroughs` show a count of the whole model. A retained original
+  has no `History`, so its four tabs keep one row. A reading that fails offers
+  `History` alone, so the reader can go on to a reading that opens. A proposal
+  read against its base adds `Changes` on a second row, and opens on it.
+- **`Modules` is a tree of the containment forest.** It opens the path to the
+  open scope and the branches that the reader opened. The ancestors of the open
+  row stick to the top while the column scrolls. Siblings sort by code path.
+  Unbound modules come last, and ties use authored order. A chain of modules with
+  one part each folds into one row, and the crumbs show each step.
+- **`Flows` and `Walkthroughs` stay open while the reader walks them.** They list
+  the whole model, and the right panel lists what touches the reading. A flow is
+  chosen first, and `Sequence` or `Flowchart` second.
+- **`Changes` lists every change of a proposal under the owner that holds it.**
+  A module owns its outgoing relationships, a flow its steps and a walkthrough
+  its beats. Rows take the column's grid, and each marker is the standing mark
+  of the picture. The tab shows the count, then the position, such as `12 of 49`.
+  The end of its row holds the walk: `Previous` and `Next`, each with its key cap,
+  because a key that nobody can see does not count. `N` and `P` do the same from
+  anywhere but a text field, and they bring the list back from another tab.
+- **`History` lists proposals first, then states, with their checkpoints folded.**
+  Its rows load only when it opens, and a click carries the picture to that
+  record. The comparison choice lives here. The state chip in the header opens
+  `History`. A row whose name another state shares shows its identity in its
+  facts, and the state chip adds the identity too, so a reader can tell which
+  draft they open.
+- **`Measures` lists every module with its counts, sorted by one of them.** It
+  answers where to look across the model. [The reader
+  redesign](reader-redesign.md#the-rule-of-the-screen) says what a row holds.
 - **One grid.** Every row is four columns placed by its depth alone: the
-  disclosure, the marker, the name and the facts. Each depth moves a row 16 px
-  to the right, one disclosure column, so a row's disclosure sits under its
-  parent's marker. A guide runs down from every open row, through the middle
-  of its disclosure. A board or folder row is 36 px for one line of name, and a
-  variant or Earlier row 30 px. The filter's icon
-  and the lamps of Working now sit in the marker column of the top rows, and
-  their text starts where the names of the top rows start.
-- **One row per board.** The row shows the board's mark, its full name, and
-  facts about the whole board: how many drafts it has, that nothing it
-  describes is built, and the pane letters while none of its variants is
-  listed. A long name wraps to a second line, then ends in an ellipsis.
-  Hovering the name shows the whole name and the board's level, and the row
-  says the level to assistive technology. The header names the level of the
-  board being read.
-  A board that cannot be read says why under its name.
-- **A board's variants sit one depth in, before the boards it drills down
-  to.** A mark says each variant's lifecycle: a check for current, a branch for
-  a draft, a clock for historical and an archive box for shelved. A variant's
-  name is smaller and lighter than a board's. The variant the board's name
-  opens comes first, then the other live variants. A draft nests under the
-  variant it was derived from, so the variants read as a timeline: a line
-  through the variant the board's name opens and its history, and a branch off
-  it for each draft. The historical and
-  shelved variants wait behind one Earlier row, newest first. While a filter
-  is on, the variants it finds are listed directly under their board, with no
-  Earlier row. The header draws the same lifecycle mark before the variant it
-  names (`src/ui/variant-lifecycle`). A board lists its
-  variants while it has more than one. A board has one disclosure. Opening it lists its variants
-  and the boards it drills down to together.
-- **The tree says what each pane shows.** The way to every pane's reading is
-  open. While two panes are open, each pane letter sits on exactly one row:
-  the variant's row where it is listed, else the board's row. One row is
-  selected, the one the active pane shows. It takes the reading tone, and its name keeps the foreground colour. The tree
-  draws its levels with rails and elbows, and the line from the root to the
-  selected row is lit in Gold Mark. A row under the pointer takes half the
-  reading tone and no lit line, so it never looks selected.
-  The pane sidebar marks its choices the same way. The active pane's board
-  sets its name in semibold.
-- **Finding is the filter**: Ctrl K, `/`, or typing in the tree. It keeps tree
-  order, dims the boards a match sits under, marks the matched letters, and
-  counts what it found. Enter opens, Alt opens beside, Escape clears.
-- **The tree is one tab stop** with the keys of a tree: Right opens a closed
-  row, then steps in. Left closes an open row, then steps out. If the person
-  is not in the navigator and a pane moves, the navigator reveals the row it
-  moved to.
-- **Working now** at the navigator's foot lists the boards agents are writing
-  or claiming, in the order they started, with what each said it is doing. In
-  the tree, a lamp on a board's mark says an agent works on it, and a faint
-  ring on a closed row says an agent works inside it.
+  disclosure, the marker, the name and the facts. Each depth moves a row 16 px to
+  the right. A row is 28 px high. One row is lit, the row of the open scope, as a
+  raised plate with a gold front edge. A row under the pointer takes half that
+  tone and no gold, so it never looks selected. A row of `Measures` has no depth,
+  so it keeps no room for a disclosure.
+- **Each tree is one tab stop** with the keys of a tree. Right opens a closed
+  row, then steps in. Left closes an open row, then steps out. Enter opens the
+  row, Alt and Enter opens it beside, and typing goes on to Find.
+- **Every move has a key that needs no tree**, so a presented pane keeps them.
+  Backspace goes up, or from a flow back to the structure. `[` and `]` walk a
+  selected card through its siblings, or else the open module, the flows or the
+  steps of a walkthrough. Enter opens the selected card, or else selects the first
+  card of the open module. `F` focuses the selection and clears a focus. `0` fits
+  the whole picture.
+
+The header of a pane holds the crumbs, the code path of the open module, the state
+chip and `Diagram | About`. `Bookmarks`, `Former addresses`, `Refresh` and the
+comparison menu are not in the first surface. Find reaches bookmarks and former
+addresses, and `History` holds the comparison. `Refresh` appears only when a read
+failed or the live feed is not healthy, because the feed keeps a reading current.
+A retained original is the exception, because no live feed serves it. Its header
+keeps its state, bookmarks, former addresses and `Refresh`.
 
 ## The agent
 
 Revised 2026-09-23 (TASK-302), 2026-09-29 (TASK-373) and 2026-10-11 (TASK-319). The collapsible workbench, its tabs, its session
 column and the Agent settings dialog are gone. The agent is one dock at the
-foot of the navigator. When the person asks, and only then, it is also one
+foot of the left column. When the person asks, and only then, it is also one
 conversation beside the panes:
 
 ![The agent bar and the conversation, finished and
@@ -478,9 +559,9 @@ working](assets/operator-shell-agent.png)
 
 Rendered captures at 1920×1080: a finished turn in the light theme, a turn at
 work in the dark theme. They predate the dock (TASK-373): the bar under the panes
-that they show is now the dock at the foot of the navigator.
+that they show is now the dock at the foot of the left column.
 
-- **The agent dock** sits in the navigator's column, so it takes no height
+- **The agent dock** sits in the left column, so it takes no height
   from the panes. Its line says in one phrase what
   the agent is doing: the current step of the plan, else the latest step. The
   line also says for how long, how far the agent is through its plan, what is
@@ -518,7 +599,7 @@ that they show is now the dock at the foot of the navigator.
   only, so a turn of the coordinator never makes the agent look busy. A new voice
   start replaces the coordinator, and the turns of the earlier one leave with it.
 - **The voice is read where its words are.** While the person wants subtitles and a
-  voice is live, the voice is not in the agent dock at the navigator's foot. It is
+  voice is live, the voice is not in the agent dock at the foot of the left column. It is
   in a capsule over the picture of the pane it runs for, with the orb in its round
   left end, its word and its words, and mute and the subtitles control as two keys
   that make its right end, and the dock's key reads End voice. Turning subtitles
@@ -584,7 +665,7 @@ The resulting application contract is:
 - **Onest 1.000** for human interface text: 400 for body copy, 500 for labels
   and metadata, 600 for headings, and 700 for emphasis. Human headings and
   labels stay normal or title case with normal tracking.
-- **DM Mono 1.000** only for technical tokens: 400 for values and timestamps,
+- **Maple Mono NL 7.9** only for technical tokens: 400 for values and timestamps,
   and 500 for compact technical emphasis such as the level badge. Repository
   names, paths, branches, commits, element IDs, and activity times are
   technical. State phrases, counts, navigator labels, inspector labels, and
@@ -600,9 +681,9 @@ is the source of the runtime Onest file, a variable TTF. This file carries the
 audited 1.000 outlines and supplies exact 400/500/600/700
 instances. The official [Onest 1.000 static
 release](https://github.com/simpals/onest/releases/tag/1.000) omits SemiBold,
-so the variable file is required for the 600 role. DM Mono Regular and Medium
-come from upstream commit
-[`57fadab`](https://github.com/googlefonts/dm-mono/tree/57fadabfb200a77de2812540026c249dc3013077/exports).
+so the variable file is required for the 600 role. Maple Mono NL Regular and
+Medium are subsets of the
+[7.9 release](https://github.com/subframe7536/maple-font/releases/tag/v7.9).
 Both families use the SIL Open Font License 1.1. Exact binary, license, source,
 and SHA-256 provenance is recorded beside the assets in
 `packages/renderer/assets/fonts/README.md`.

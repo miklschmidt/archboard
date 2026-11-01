@@ -10,6 +10,7 @@ use crate::paint::design::{
     CARD_NOTE_FONT, CARD_TITLE_FONT, LINE_STRENGTH_DARK, LINE_STRENGTH_LIGHT, NOTE_SIZE,
     PART_NOTE_SIZE, PART_TITLE_SIZE, PILL_FONT, PILL_TEXT_SIZE,
 };
+use crate::paint::design::{HERO_LINE_WIDTH, LINE_WIDTH};
 use crate::paint::palette::Palette;
 use crate::paint::standing::ink_of;
 use crate::request::{Arrowhead, Dash, LineAppearance, Standing};
@@ -21,10 +22,13 @@ pub(super) const WEIGHTS: [Emphasis; 3] = [Emphasis::Hero, Emphasis::Normal, Emp
 /// How thick a line of each weight is drawn.
 pub(super) fn stroke_width(weight: Emphasis) -> f64 {
     match weight {
-        Emphasis::Hero => 2.2,
-        Emphasis::Normal | Emphasis::Muted => 1.4,
+        Emphasis::Hero => HERO_LINE_WIDTH,
+        Emphasis::Normal | Emphasis::Muted => LINE_WIDTH,
     }
 }
+
+/// The gap a double line's rails leave down its middle.
+pub(super) const RAIL_GAP: f64 = 1.2;
 
 /// How long an arrowhead of each weight is, from its base to its tip.
 pub(super) const HEAD_LENGTH: f64 = 11.0;
@@ -136,7 +140,7 @@ pub(super) fn marker_for(weight: Emphasis, head: Head, standing: Option<Standing
 /// How a line of each dash is broken.
 pub(super) fn dash_array(dash: Dash) -> &'static [f64] {
     match dash {
-        Dash::Solid => &[],
+        Dash::Solid | Dash::Mixed => &[],
         Dash::Dashed => &[6.0, 4.0],
         Dash::Dotted => &[1.5, 3.5],
     }

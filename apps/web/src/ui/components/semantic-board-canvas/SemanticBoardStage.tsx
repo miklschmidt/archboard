@@ -11,7 +11,7 @@
 // A failed refresh keeps the last picture with a disclosure and retry. Query
 // owns fetched state; the pane owns camera and selection across requests (ADR 0023).
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
@@ -24,9 +24,10 @@ import type { BoardPlace } from "#ui/components/semantic-board-canvas/PaneHeader
 import { SemanticStageView } from "#ui/components/semantic-board-canvas/SemanticStageView.tsx";
 import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
 import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { useClearOfPanel } from "#ui/hooks/semantic-board-canvas/use-clear-of-panel.ts";
 import { useDeparture } from "#ui/hooks/semantic-board-canvas/use-departure.ts";
-import { useDive } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
+import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
 import { useDrillDown, type Dive } from "#ui/hooks/semantic-board-canvas/use-drill-down.ts";
 import { useDrillMoves } from "#ui/hooks/semantic-board-canvas/use-drill-moves.ts";
 import { useKindLook } from "#ui/hooks/semantic-board-canvas/use-kind-look.ts";
@@ -40,7 +41,6 @@ import { useSemanticBoardChanges } from "#ui/hooks/semantic-board-canvas/use-sem
 import { useSettledFocus } from "#ui/hooks/semantic-board-canvas/use-settled-focus.ts";
 import { useSidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import { useStageAppearances } from "#ui/hooks/semantic-board-canvas/use-stage-appearances.ts";
-import { useStageTab } from "#ui/hooks/semantic-board-canvas/use-stage-tab.ts";
 import { useSubjectFocus } from "#ui/hooks/semantic-board-canvas/use-subject-focus.ts";
 import { useVariantReading } from "#ui/hooks/semantic-board-canvas/use-variant-reading.ts";
 import {
@@ -99,15 +99,6 @@ interface SemanticBoardStageProps {
 	 */
 	onViewChange?: ((view: string | null) => void) | undefined;
 	/**
-	 * The person chose a different state of this architecture.
-	 *
-	 * Owned above the stage for the same reason the view is: which variant a
-	 * pane is showing is part of what the pane is showing, and so part of its
-	 * board key — `semantic:pipeline@7c40IV7N`.
-	 * @param variant The variant's id, or null for whichever is current.
-	 */
-	onVariantChange?: ((variant: string | null) => void) | undefined;
-	/**
 	 * What this pane is actually reading, whenever that changes.
 	 *
 	 * The pane's address says what it was opened on; this says what is on
@@ -145,11 +136,6 @@ interface SemanticBoardStageProps {
 	/** What the shell lays over the picture, such as subtitles of a voice: low in the frame, or at the foot of a presented walkthrough's box, where the camera keeps the picture clear of it. */
 	overlay?: ReactNode;
 	/**
-	 * The search over every board's parts, which the shell joins to this pane:
-	 * at the top of the sidebar, where the part it finds is explained.
-	 */
-	search?: ReactNode;
-	/**
 	 * The boards above one, outermost first, as the navigator places them, each
 	 * a way to it in this pane: the header's breadcrumb.
 	 * @param board The board on screen.
@@ -170,6 +156,25 @@ interface SemanticBoardStageProps {
 	 * module's hooks. The surface also carries `motion-reduce:` as the belt.
 	 */
 	reducedMotion?: boolean | undefined;
+}
+
+const NO_EDGES: readonly never[] = Object.freeze([]);
+
+/**
+ * How wide this stage's panel is, which a picture's area never narrows.
+ * @returns Its width.
+ */
+function sidebarWidth(): number {
+	return SIDEBAR_WIDTH;
+}
+
+/**
+ * The relationships of the variant on screen.
+ * @param reading What the board says about it, when that is known.
+ * @returns Its relationships, or none.
+ */
+function drawnEdges(reading: ReturnType<typeof useVariantReading>) {
+	return reading?.variant?.content.edges ?? NO_EDGES;
 }
 
 /**
@@ -239,7 +244,6 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const level = useLevelReading(drill, {
 		view: props.view,
 		onView: props.onViewChange,
-		onVariant: props.onVariantChange,
 		onUserChanged,
 	});
 	// The explanations belong to the board on screen, so drilling into another
@@ -290,15 +294,26 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
 		picture.current = element;
 	}, []);
+	const client = useQueryClient();
+	const drawForDive = useCallback(
+		async (to: Destination): Promise<SemanticDrawing | null> =>
+			drawingIn(await client.fetchQuery(semanticRenderQuery({ ...to, vault, comparison, layout }))),
+		[client, vault, comparison, layout],
+	);
 	const dive = useDive({
 		camera,
 		area: picture,
 		drawn,
-		reading: { vault, comparison, layout },
+		draw: drawForDive,
 		reducedMotion,
 		presenting: narrative.open !== null,
 	});
+	const fitPicture = useMemo(
+		() => (drawn === null ? null : JSON.stringify([drawn.board, drawn.variant.id, drawn.view?.id])),
+		[drawn],
+	);
 	useAutoFit(camera, drawn, focus, {
+		picture: fitPicture,
 		presenting: narrative.open !== null,
 		reducedMotion,
 		cut: dive.cut,
@@ -344,40 +359,30 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
 	const departure = useDeparture(drawn, drill.board, render);
-	const { tab, onTab, place } = useStageTab(drill.board, narrative.open !== null, choose);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
-	const sidebar = useSidebar(props.selection, resting, narrative.open !== null, tab === "about");
-	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion);
+	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
+	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion, sidebarWidth);
 	const onPickInPicture = useReveal({
 		camera,
 		atlas: drawn?.atlas ?? null,
-		reading,
+		edges: drawnEdges(reading),
 		selection: props.selection,
 		off: narrative.open !== null || sidebar.floating,
 		reducedMotion,
 		onPick,
 	});
-	const { appearances, key } = useStageAppearances(drawn, departure.leaving);
+	const { appearances, legend } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
-	const { goTo } = narrative;
-	const onReadBeat = useCallback(
-		(walkthrough: string, beat: number): void => {
-			choose(walkthrough);
-			goTo(beat);
-		},
-		[choose, goTo],
-	);
-	// The stage fits the subject, not the About page or the code warning that
-	// asks: the page goes as the diagram comes back, and a subject the view on
-	// screen does not draw is fitted only once the whole board's picture arrives.
+	// The stage fits the subject, not the code warning that asks: a subject the
+	// view on screen does not draw is fitted only once the whole board's picture
+	// arrives.
 	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
 	const onShow = useCallback(
 		(id: string): void => {
 			onPick(id);
-			onTab("diagram");
 			fitSubject(id);
 		},
-		[onPick, onTab, fitSubject],
+		[onPick, fitSubject],
 	);
 	const { onOpenDown, onBackTo } = useDrillMoves({
 		drill,
@@ -405,12 +410,8 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 			cut={dive.cut}
 			leaving={departure.leaving}
 			sidebar={sidebar}
-			pictureKey={key}
+			pictureLegend={legend}
 			look={look}
-			tab={tab}
-			onTab={onTab}
-			place={place}
-			onReadBeat={onReadBeat}
 			onShow={onShow}
 			attachPicture={attachPicture}
 			heading={departure.heading}

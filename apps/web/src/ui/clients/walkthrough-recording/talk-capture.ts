@@ -142,7 +142,7 @@ class TalkCapture {
 	/** What was last stamped of each line, by its id. */
 	readonly #said = new Map<string, string>();
 	#lines: readonly SaidLine[] = [];
-	#drawn: number | null = null;
+	#drawn: Extract<Unstamped, { kind: "drawn" }> | null = null;
 	#origin: number | null = null;
 	/** Whether the talk has ended, after which nothing more is stamped. */
 	#ended = false;
@@ -204,7 +204,7 @@ class TalkCapture {
 	begin(): void {
 		if (this.#origin !== null) return;
 		this.#origin = this.#now();
-		if (this.#drawn !== null) this.#stamp({ kind: "drawn", version: this.#drawn });
+		if (this.#drawn !== null) this.#stamp(this.#drawn);
 		this.#stampSaid();
 	}
 
@@ -227,12 +227,13 @@ class TalkCapture {
 
 	/**
 	 * The pane drew the board, at a version.
-	 * @param version The version.
+	 * @param version The version, or zero for a canonical model.
+	 * @param revision The exact canonical revision when present.
 	 */
-	drawn(version: number): void {
-		if (version === this.#drawn) return;
-		this.#drawn = version;
-		this.#stamp({ kind: "drawn", version });
+	drawn(version: number, revision?: string): void {
+		if (version === this.#drawn?.version && revision === this.#drawn.revision) return;
+		this.#drawn = { kind: "drawn", version, ...(revision === undefined ? {} : { revision }) };
+		this.#stamp(this.#drawn);
 	}
 
 	/**

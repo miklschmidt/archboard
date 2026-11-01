@@ -4,6 +4,10 @@ status: accepted
 
 # Boards carry anchors, and the code check reads them on request
 
+Canonical modules and source-owned relationships supersede board-owned claims below. Existing code inspection algorithms retain binding and anchor evidence.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Accepted on 2026-10-06 for TASK-367.02 after an independent review. It
 serves TASK-367 and its subtasks TASK-367.03 to TASK-367.27, TASK-368.10,
 TASK-368.11 and TASK-369.02, and Proposal 1 of the
@@ -595,16 +599,17 @@ a call across a network, through an event bus or through a value that a part
 receives. An anchor turns the relationship into a claim that the check holds to
 the code, and the findings about an anchor are warnings.
 
-| Code                       | Says                                                                                       | Severity                            | Task                     |
-| -------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ------------------------ |
-| `ANCHOR_PATH_MISSING`      | The anchored file is not in the checkout.                                                  | warning                             | TASK-367.05              |
-| `ANCHOR_SYMBOL_MISSING`    | The anchored file neither defines nor references the symbol.                               | warning                             | TASK-367.05              |
-| `BINDING_SYMBOL_MISSING`   | The bound file or directory does not define the symbol or declare the address.             | warning                             | TASK-367.05              |
-| `BINDING_PATH_MISSING`     | On a named draft, the bound path is not in the checkout.                                   | warning                             | TASK-367.05              |
-| `ANCHOR_MISMATCH`          | The anchor holds, and it does not support its relationship or step.                        | warning, information on a candidate | TASK-367.06, TASK-367.07 |
-| `RELATIONSHIP_UNDRAWN`     | Evidence joins two bound parts, and no relationship joins them.                            | warning, information on a candidate | TASK-367.07              |
-| `RELATIONSHIP_BACKWARDS`   | The relationship has no anchor, and accepted evidence runs only from its end to its start. | information                         | TASK-367.07              |
-| `RELATIONSHIP_UNSUPPORTED` | The relationship has no anchor, and no accepted evidence joins its ends.                   | information                         | TASK-367.07, TASK-367.23 |
+| Code                        | Says                                                                                       | Severity                            | Task                     |
+| --------------------------- | ------------------------------------------------------------------------------------------ | ----------------------------------- | ------------------------ |
+| `ANCHOR_PATH_MISSING`       | The anchored file is not in the checkout.                                                  | warning                             | TASK-367.05              |
+| `ANCHOR_SYMBOL_MISSING`     | The anchored file neither defines nor references the symbol.                               | warning                             | TASK-367.05              |
+| `BINDING_SYMBOL_MISSING`    | The bound file or directory does not define the symbol or declare the address.             | warning                             | TASK-367.05              |
+| `BINDING_PATH_MISSING`      | On a named draft, the bound path is not in the checkout.                                   | warning                             | TASK-367.05              |
+| `ANCHOR_MISMATCH`           | The anchor holds, and it does not support its relationship or step.                        | warning, information on a candidate | TASK-367.06, TASK-367.07 |
+| `RELATIONSHIP_UNDRAWN`      | Evidence joins two bound parts, and no relationship joins them.                            | warning, information on a candidate | TASK-367.07              |
+| `RELATIONSHIP_BACKWARDS`    | The relationship has no anchor, and accepted evidence runs only from its end to its start. | information                         | TASK-367.07              |
+| `RELATIONSHIP_UNSUPPORTED`  | The relationship has no anchor, and no accepted evidence joins its ends.                   | information                         | TASK-367.07, TASK-367.23 |
+| `RELATIONSHIP_ON_CONTAINER` | The relationship has an end on a module with parts, and neither end holds the other.       | information                         | TASK-559.28              |
 
 `ANCHOR_MISMATCH` says which of the two reasons holds. TASK-367.06 brings the
 definitions, so it reports a definition outside both ends. TASK-367.07 brings
@@ -1286,3 +1291,25 @@ These are the sources that TASK-367.01 rejected:
 - `CONTEXT.md` gains code check, anchor, symbol, code facts, evidence kind,
   candidate and finding. Its Binding and Logical address entries name the
   symbol.
+
+## Amendment of 2026-10-31: a relationship between two sides stands for their calls
+
+TASK-559.33 changes two rows of the findings table.
+
+`RELATIONSHIP_ON_CONTAINER` leaves the code check. It is now an error of the
+semantic check, because a code finding cannot be an error
+([ADR 0044](0044-a-containers-interface-is-what-relationships-from-outside-reach.md)).
+
+`RELATIONSHIP_UNDRAWN` keeps its evidence, but its severity changes in one case.
+Two parts meet at the children of their nearest holder, and those two children
+are the sides. If a relationship or a flow step joins the two sides, the finding
+is information, and it says that the relationship stands for the call. Otherwise
+the severity rule above holds.
+
+Before this change, a relationship between the holders of two parts counted as
+drawn. On this repository, frame relationships alone covered 554 pairs of parts.
+A frame end is now an error, and a relationship is not copied to give each call
+its own line, so those calls have no relationship of their own. A warning for
+each one asks for an import map. Removing the finding hides what the model leaves
+out. Information keeps the fact and stays out of the exit status. The model holds
+153 such findings after the repair.

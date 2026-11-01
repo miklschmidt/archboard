@@ -10,7 +10,6 @@
 import {
 	useCallback,
 	useEffect,
-	useLayoutEffect,
 	useMemo,
 	useState,
 	type JSX,
@@ -19,88 +18,40 @@ import {
 	type ReactNode,
 } from "react";
 
-import { EXPLORING_MS } from "@archboard/timing";
+import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
+import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
 import { SemanticSubjectTip } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
-import {
-	STAGE_CLASS,
-	StageSpinner,
-} from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
+import { STAGE_CLASS } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import {
 	useCameraWith,
 	type BoardCamera,
-	type CameraView,
 } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import { useCodeMarks } from "#ui/hooks/semantic-board-canvas/use-code-marks.ts";
 import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
 import { useDrillOpen } from "#ui/hooks/semantic-board-canvas/use-drill-open.ts";
+import { useLeaving } from "#ui/hooks/semantic-board-canvas/use-leaving.ts";
 import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
 import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
-import {
-	usePictureTransition,
-	type StagedPicture,
-} from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
+import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
+import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
 import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
-import { FAR_SCALE, PAN_STEP, type Size } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import {
-	leavePicture,
-	stayPicture,
-	type Departure,
-} from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
-import { NO_FOCUS, type BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
+	NO_FOCUS,
+	subjectMarks,
+	type BeatFocus,
+} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import type { OpenDown } from "#ui/rules/semantic-board-canvas/drilling/drill-target.ts";
-
-/** Which way each arrow key moves the diagram under the viewport. */
-const PAN_KEYS: Readonly<Record<string, readonly [number, number]>> = {
-	ArrowUp: [0, 1],
-	ArrowDown: [0, -1],
-	ArrowLeft: [1, 0],
-	ArrowRight: [-1, 0],
-};
-
-/** Which way each zoom key goes. Both spellings of each: shifted and not. */
-const ZOOM_KEYS: Readonly<Record<string, number>> = { "+": 1, "=": 1, "-": -1, _: -1 };
-
-/**
- * Act on a key that moves the camera: the arrows ease it, `+` and `-` ease a
- * zoom about the middle, and `0` glides to the whole board.
- * @param key The key that was pressed.
- * @param camera The camera.
- * @param content How big the diagram is, for the key that fits it.
- * @param reducedMotion Whether the person asked for no motion, which makes the fit a cut.
- * @returns True when the key was one of the camera's.
- */
-function moveCameraByKey(
-	key: string,
-	camera: BoardCamera,
-	content: Size,
-	reducedMotion: boolean,
-): boolean {
-	const pan = PAN_KEYS[key];
-	if (pan !== undefined) {
-		camera.ease(pan[0] * PAN_STEP, pan[1] * PAN_STEP);
-		return true;
-	}
-	const zoom = ZOOM_KEYS[key];
-	if (zoom !== undefined) {
-		camera.zoomCentre(zoom);
-		return true;
-	}
-	if (key === "0") {
-		camera.glide({ kind: "whole", content }, reducedMotion ? 0 : EXPLORING_MS.cameraFit);
-		return true;
-	}
-	return false;
-}
 
 /**
  * What the stage says about itself, for whoever reads it from outside: which
@@ -135,30 +86,6 @@ function stageMarks(
  */
 function isLeaving(departure: Departure | null): boolean {
 	return departure !== null;
-}
-
-/**
- * What a pane leaving its picture says aloud, and shows once the next is slow.
- * @param props Where the reader went, or null while they stay.
- * @param props.departure Where the reader went.
- * @param props.at Which part: the announcement, or the spinner over the picture.
- * @returns That part, or nothing while the pane stays.
- */
-function LeavingPart(props: {
-	readonly departure: Departure | null;
-	readonly at: "announcement" | "spinner";
-}): JSX.Element | null {
-	const { departure, at } = props;
-	if (departure === null) {
-		return null;
-	}
-	return at === "announcement" ? (
-		<p aria-live="polite" className="sr-only">
-			Drawing {departure.board}…
-		</p>
-	) : (
-		<StageSpinner className="pointer-events-none absolute inset-0" />
-	);
 }
 
 /** Inputs for a drawn board. */
@@ -249,34 +176,6 @@ function presentationMarks(step: number | null | undefined): {
 }
 
 /**
- * Send the picture on its way out while the pane is leaving it, and bring it
- * back when the reader returns to it before anything else arrived.
- * @param picture The picture on the surface.
- * @param leaving Where the reader went, or null while they stay.
- * @param reducedMotion Whether the person asked for no motion.
- * @returns Where the reader went, or null.
- */
-function useLeaving(
-	picture: StagedPicture | null,
-	leaving: Departure | null | undefined,
-	reducedMotion: boolean,
-): Departure | null {
-	const departure = leaving ?? null;
-	useLayoutEffect(() => {
-		const root = picture?.root;
-		if (!(root instanceof SVGElement)) {
-			return;
-		}
-		if (departure === null) {
-			stayPicture(root);
-		} else {
-			leavePicture(root, departure, reducedMotion);
-		}
-	}, [picture, departure, reducedMotion]);
-	return departure;
-}
-
-/**
  * What the board says about the variant the picture on the surface draws. While
  * another variant is being drawn the last picture stays up, and its tips and
  * double-clicks must not read the variant that has not arrived.
@@ -289,17 +188,6 @@ function drawnReading(
 	drawing: SemanticDrawing,
 ): VariantReading | null {
 	return reading?.variant?.id === drawing.variant.id ? reading : null;
-}
-
-/**
- * Whether the camera, where it last came to rest, is far enough away to draw
- * each card's name in place of what it says. Read at rest, so a zoom or a
- * flight that crosses the line swaps the two once, when it is over.
- * @param view Where the camera is, and where it last came to rest.
- * @returns True when it is.
- */
-function seenFromFar(view: CameraView): boolean {
-	return view.rest.scale < FAR_SCALE;
 }
 
 /**
@@ -337,26 +225,35 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// What the picture lights for a poke gives way to what a presented step or a
 	// group says the picture is about, and to the picture leaving.
 	const peeked = usePeeked();
-	const lighting = useLighting({
-		reading,
-		atlas: drawing.atlas,
-		selection,
-		peeked,
-		veil: props.veil,
-		presenting: props.presenting,
-		group: props.group,
-		departure,
-	});
+	const lightingInput = useMemo(
+		() => ({
+			content: reading?.variant?.content ?? null,
+			atlas: drawing.atlas,
+			selection,
+			peeked,
+			veil: props.veil,
+			enabled: props.presenting == null && props.group === null && departure === null,
+		}),
+		[
+			reading,
+			drawing.atlas,
+			selection,
+			peeked,
+			props.veil,
+			props.presenting,
+			props.group,
+			departure,
+		],
+	);
+	const lighting = useLighting(lightingInput);
 	// Before the viewer's marks, so a line's group made to hold a warning is
 	// there to be lit and veiled with the rest.
 	useCodeMarks(picture, drawing);
-	useViewerMarks(picture, {
-		selection,
-		focus,
-		group: props.group,
-		veil: lighting.standing,
-		reach: lighting.reach,
-	});
+	const attended = useMemo(
+		() => subjectMarks(selection, focus, props.group?.members),
+		[selection, focus, props.group],
+	);
+	useViewerMarks(picture, { attended, veil: lighting.standing, reach: lighting.reach });
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
@@ -472,4 +369,4 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 }
 
-export { SemanticDiagram, moveCameraByKey, type SemanticDiagramProps };
+export { SemanticDiagram, type SemanticDiagramProps };

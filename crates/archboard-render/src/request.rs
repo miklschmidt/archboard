@@ -55,7 +55,7 @@ impl Reading {
 pub struct GroupLook {
     /// What a reader sees it called.
     pub name: String,
-    /// The colour of what it places and of its regions.
+    /// The colour of its tag.
     pub color: PaletteColor,
 }
 
@@ -83,20 +83,9 @@ pub struct Policy {
     pub node_kinds: BTreeMap<String, KindLook>,
     /// Each relationship kind's look, by key.
     pub relationship_kinds: BTreeMap<String, RelationshipLook>,
-    /// The groups a part may be in, by id, in the order the policy lists them:
-    /// the first that holds a part places it.
+    /// The groups a part may be in, by id, in the order the policy lists them.
     #[serde(default)]
     pub groups: IndexMap<String, GroupLook>,
-}
-
-impl Policy {
-    /// Each group's colour, by group id.
-    pub fn group_colours(&self) -> BTreeMap<String, PaletteColor> {
-        self.groups
-            .iter()
-            .map(|(id, look)| (id.clone(), look.color))
-            .collect()
-    }
 }
 
 /// The durations and speeds a picture is drawn with, which the host holds

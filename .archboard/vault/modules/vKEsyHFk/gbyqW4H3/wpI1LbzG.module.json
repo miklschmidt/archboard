@@ -1,0 +1,45 @@
+{
+  "order": 2000,
+  "name": "Diagram rendering",
+  "kind": "function",
+  "responsibility": "Hands one reading to the renderer core, with the solves, icons, theme colours and clock of this host",
+  "description": "renderSemanticView serializes the request and calls the core's render with what the host gives it. It turns an empty answer into a SemanticRenderError. Core render does the rest.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/shared/rules/render/diagram.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#wpI1LbzG",
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "formerNames": [
+    "View dispatcher"
+  ],
+  "outgoing": [
+    {
+      "order": 60100,
+      "kind": "call",
+      "label": "draw the reading in the core",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "render"
+      },
+      "to": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+      "id": "vKEsyHFk#7pBgojOh"
+    },
+    {
+      "order": 60200,
+      "kind": "dependency",
+      "label": "what this host gives the core",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/renderer/src/shared/rules/render/diagram.ts",
+        "symbol": "rendererHost"
+      },
+      "to": "vKEsyHFk/gbyqW4H3#4nyk76pY",
+      "id": "vKEsyHFk#b5O0WPQs"
+    }
+  ]
+}

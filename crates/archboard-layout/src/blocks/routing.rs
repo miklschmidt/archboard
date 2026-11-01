@@ -6,7 +6,7 @@ use crate::geometry::{Point, Rect};
 use crate::placed::PlacedBlock;
 use crate::track::containers::Edges;
 use crate::track::route::{SceneLine, order_of, route_scene, trunk_kind};
-use crate::track::scene::{Map, Placement, Set};
+use crate::track::scene::{ItemId, Map, Placement, Set};
 use crate::track::score::laps_of;
 use crate::track::sides::fit_sides;
 
@@ -19,16 +19,37 @@ use super::walls::{
     wall_lines,
 };
 
-/// Route a placed block's lines on tracks and read it back.
+/// What a routing of a placed block keeps of an earlier one.
+pub(super) enum Settling<'a> {
+    /// The first routing of a placement: a crowded card stops it.
+    First,
+    /// A routing that stands: the width the block keeps at least, and its settled ports.
+    Again {
+        held: f64,
+        ports: &'a Map<String, f64>,
+    },
+}
+
+impl<'a> Settling<'a> {
+    /// The width and the ports this routing keeps, with `none` for the ports of a first one.
+    fn kept(&self, none: &'a Map<String, f64>) -> (f64, &'a Map<String, f64>) {
+        match self {
+            Settling::First => (0.0, none),
+            Settling::Again { held, ports } => (*held, ports),
+        }
+    }
+}
+
+/// Route a placed block's lines on tracks and read it back. A first routing
+/// answers the widths its crowded cards need instead, by card.
 pub(super) fn routed(
     tree: &BlockTree,
     id: BlockId,
     laid: &LaidMap,
     insets: Insets,
     placed: &PlacedBlock,
-    held: f64,
-    ports: &Map<String, f64>,
-) -> (Laid, f64) {
+    settling: &Settling<'_>,
+) -> Result<(Laid, f64), Map<String, f64>> {
     let block = tree.get(id);
     let mut scene = Placement::new(placed);
     if block.kind == Kind::Frame {
@@ -36,10 +57,9 @@ pub(super) fn routed(
         if let (Some(&item), Some(header)) = (scene.cards.get(&id), block.header.as_ref()) {
             let one = scene.item_mut(item);
             one.bx.x = block.lone.as_ref().map_or(0.0, super::lone::room_of) - insets.side;
-            one.bx.width = header.painted(placed.header).width;
-            one.inset = Some(crate::constants::HEADER_SLAB_INSET);
-            one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of)
-                + crate::constants::HEADER_SLAB_INSET;
+            one.bx.width = header.painted(placed.header).width - crate::constants::TAB_SHOULDER;
+            one.inset = Some(0.0);
+            one.face_top = block.lone.as_ref().map_or(0.0, super::lone::band_of);
         }
     }
     let inline = tree.nesting != Nesting::Blocks;
@@ -80,21 +100,29 @@ pub(super) fn routed(
             }
         })
         .collect();
-    let mut routes = route_scene(
-        &mut scene,
-        &lines,
-        insets.side,
-        insets.top,
-        rim_of(block, insets),
-    );
+    let reserve = matches!(settling, Settling::First);
+    let rim = rim_of(block, insets);
+    let mut routes = route_scene(&mut scene, &lines, (insets.side, insets.top), rim, reserve)
+        .map_err(|widths| by_card(&scene, &widths))?;
     for (key, points) in beside_points(&scene, &beside, insets.side) {
         routes.insert(key, points);
     }
     peers.finish(tree, block, laid, &mut scene, &mut routes, insets.side);
+    let settled = Map::default();
+    let (held, ports) = settling.kept(&settled);
     let (mut laid, left) = read(block, insets, &scene, routes, &edges, held);
     laid.header = placed.header;
     super::headers::place_header_entries(block, &mut laid, ports);
-    (laid, left)
+    Ok((laid, left))
+}
+
+/// Each crowded card's width, by the card's name.
+fn by_card(scene: &Placement, widths: &Map<ItemId, f64>) -> Map<String, f64> {
+    scene
+        .cards
+        .iter()
+        .filter_map(|(name, item)| Some((name.clone(), *widths.get(item)?)))
+        .collect()
 }
 
 /// Cards, labels, and the physical header ports of a routed scene.
@@ -188,6 +216,7 @@ fn read(
     (
         Laid {
             laps: Some(laps),
+            port_widths: Map::default(),
             width,
             height,
             boxes,

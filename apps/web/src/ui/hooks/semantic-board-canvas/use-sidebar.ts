@@ -18,15 +18,15 @@
 // floating panel, and hiding a docked sidebar means it docks again, and does
 // not float, when they ask for it back. A presented walkthrough steps the
 // sidebar aside, as it does the rest of the pane's chrome: while it lasts the
-// sidebar is not on screen, and nothing shows or hides it. A pick's float is laid
-// over the picture and never over the About page, where it would cover the
-// page's controls and the page already says what was picked: it comes with the
-// diagram, and the control still lays the panel over the page.
+// sidebar is not on screen, and nothing shows or hides it.
 
 import { useCallback, useId, useState } from "react";
 
 /** The sidebar's tabs. */
 type SidebarTab = "board" | "selection";
+
+/** A fresh set identifies a new canonical pick, even when it contains the same subjects. */
+type SidebarSelection = string | ReadonlySet<string> | null;
 
 /** What the sidebar is showing, and how to change it. */
 interface Sidebar {
@@ -65,7 +65,7 @@ interface Frame {
 	/** The tab to give back when the selection is let go. */
 	readonly before: SidebarTab;
 	/** The selection this state was last brought up to date with. */
-	readonly seen: string | null;
+	readonly seen: SidebarSelection;
 	/** Whether the person has it docked, when they have said; null leaves it to the pane. */
 	readonly pinned: boolean | null;
 	/** A docked sidebar the person put away, which docks again when they ask for it. */
@@ -80,7 +80,7 @@ interface Frame {
  * @param selection The selection now.
  * @returns The state after.
  */
-function followSelection(state: Frame, selection: string | null): Frame {
+function followSelection(state: Frame, selection: SidebarSelection): Frame {
 	if (selection !== null) {
 		const before = state.tab === "selection" ? state.before : state.tab;
 		return {
@@ -123,24 +123,6 @@ function placementOf(
 }
 
 /**
- * Whether the panel is laid over the picture now: a presented walkthrough steps
- * it aside, and the float a pick made waits while the About page is open.
- * @param floats Whether the person or a pick has it floating.
- * @param state The state.
- * @param steppedAside Whether a presented walkthrough has it stepped aside.
- * @param overPage Whether the About page lies over the picture.
- * @returns Whether its panel is laid over the picture.
- */
-function floatsNow(
-	floats: boolean,
-	state: Frame,
-	steppedAside: boolean,
-	overPage: boolean,
-): boolean {
-	return floats && !steppedAside && !(overPage && state.floatBy === "pick");
-}
-
-/**
  * The state after the control that shows and hides the sidebar was pressed.
  * @param state The state before.
  * @param docked Whether the sidebar is docked now.
@@ -163,15 +145,9 @@ function toggled(state: Frame, docked: boolean, floating: boolean, pinned: boole
  * @param selection The selected subject, or null.
  * @param resting Whether the sidebar stays away unless the person docks it: while two panes share the centre.
  * @param steppedAside Whether a presented walkthrough has the sidebar stepped aside.
- * @param overPage Whether the About page lies over the picture, which a pick's float waits behind.
  * @returns The sidebar state and its controls.
  */
-function useSidebar(
-	selection: string | null,
-	resting: boolean,
-	steppedAside: boolean,
-	overPage: boolean,
-): Sidebar {
+function useSidebar(selection: SidebarSelection, resting: boolean, steppedAside: boolean): Sidebar {
 	const [state, setState] = useState<Frame>({
 		tab: selection === null ? "board" : "selection",
 		before: "board",
@@ -187,8 +163,8 @@ function useSidebar(
 	const { pinned, docked } = placement;
 	// Stepped aside, the panel is laid over nothing, so nothing keeps clear of it,
 	// and a float the pick or the person asked for comes back when the walkthrough
-	// ends. A pick's float comes back as the diagram does.
-	const floating = floatsNow(placement.floating, state, steppedAside, overPage);
+	// ends.
+	const floating = placement.floating && !steppedAside;
 	// Brought up to date during render, as React asks for state derived from a
 	// prop: the tab and the selection are never seen out of step.
 	if (state.seen !== selection) {

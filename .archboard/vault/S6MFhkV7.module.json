@@ -1,0 +1,28 @@
+{
+  "order": 74000,
+  "name": "Layout scorecards",
+  "kind": "module",
+  "responsibility": "Measures saved fixture geometry against the drawing scorecard",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "docs/design/wide-board-layout-fixtures/measure.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#S6MFhkV7",
+  "parent": "vKEsyHFk#F0aENCVG",
+  "outgoing": [
+    {
+      "order": 71000,
+      "kind": "call",
+      "label": "render measured layout fixtures",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "docs/design/wide-board-layout-fixtures/measure.ts",
+        "symbol": "renderArchitecture"
+      },
+      "id": "vKEsyHFk#xTpg1eOM",
+      "to": "vKEsyHFk#jAl99x56"
+    }
+  ]
+}

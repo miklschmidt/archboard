@@ -1,0 +1,10 @@
+{
+  "order": 3001,
+  "name": "Pretext",
+  "kind": "external",
+  "responsibility": "Breaks a prepared string into lines at a given width",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#RvOyWmEb",
+  "outgoing": [],
+  "description": "Breaks the text of a voice subtitle box as the browser would, measuring its words with the browser's own canvas."
+}

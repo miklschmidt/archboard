@@ -189,9 +189,15 @@ describe("a part's near and far views", () => {
 			for (const key of ["x", "y", "scale"] as const) {
 				expect(chip!.drawn[key]).toBeCloseTo(chip!.near[key], 2);
 			}
-			expect(chip!.near.scale).toBe(1);
-			// From far it grows into a tile.
-			expect(chip!.far.scale).toBeGreaterThan(1.5);
+			expect(chip!.near.scale).toBeLessThanOrEqual(1);
+			// A card's chip stands still. A header's grows from far.
+			if (part === "card") {
+				for (const key of ["x", "y", "scale"] as const) {
+					expect(chip!.far[key]).toBeCloseTo(chip!.near[key], 2);
+				}
+			} else {
+				expect(chip!.far.scale).toBeGreaterThan(chip!.near.scale);
+			}
 
 			// Each view's words go to where the other view's words start, at the other's size.
 			expect(views.words).toHaveLength(2);
@@ -227,7 +233,8 @@ describe("a part's near and far views", () => {
 			theme: "light",
 		});
 		const [chip] = viewsOf(rendered.svg, "tall", "card").chips;
-		expect(chip!.far.y).toBeLessThanOrEqual(chip!.near.y);
+		const card = rendered.atlas.nodes["tall"]!;
+		expect(chip!.far.y - card.y).toBeLessThan(card.height / 3);
 	});
 
 	test("sequence save: a flow's heading, which has no chip, moves its words between the near and the far place", async () => {

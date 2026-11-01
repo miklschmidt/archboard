@@ -5,14 +5,13 @@
 
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import {
 	clientIds,
 	clients,
 	paneVaults,
 	panes,
 	socketVaults,
-	syncLockWatch,
 	forgetSemanticPaneContext,
 } from "@archboard/workbench/panes";
 
@@ -62,7 +61,6 @@ function movePaneVault(clientId: string, vault: string): void {
 		panes.set(clientId, { ...registration, vault });
 	}
 	forgetSemanticPaneContext(clientId);
-	syncLockWatch();
 }
 
 /**

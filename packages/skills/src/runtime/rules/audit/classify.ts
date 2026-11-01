@@ -132,7 +132,7 @@ function shellScript(words: readonly string[]): string | undefined {
 	return options[at + 1];
 }
 
-const WRITE_RE = /\barchboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u;
+const WRITE_RE = /\barchboard\s+model\s+(?:init|edit|plan|migrate|import|retain)\b/u;
 const HELP_RE = /\barchboard\b(?:\s+\S+)*\s+(?:help|--help|-h)\b|\barchboard\s+help\b/u;
 /**
  * The harness's own source, by the package that holds it. A batch recorded before the harness
@@ -151,7 +151,7 @@ const DISTRIBUTION_PATH_RE =
 const EVALUATION_INPUT_RE =
 	/\bevals\/(?:evals\.json|pins\.json|coverage\.json|rubric\.md|README\.md|fixtures\/S\d{2}\.json)\b/u;
 const OPERATION_RE =
-	/\barchboard\s+(?:semantic|repo|check|claim|release|start|stop|status|install-skill|browser)\b/u;
+	/\barchboard\s+(?:model|repo|check|start|stop|status|install-skill|browser)\b/u;
 const INVESTIGATION_RE =
 	/\b(?:rg|grep|cat|sed|head|tail|less|find|ls|tree|python3?|awk|wc|bat|fd|git\s+(?:log|show|grep|ls-files|blame|diff))\b/u;
 const SOURCE_RE = /\b(?:src|tests|docs)\/|\.(?:py|rst|toml|cfg|md|txt)\b/u;
@@ -222,7 +222,7 @@ function namesVault(script: string, vault: string): boolean {
  */
 function readsVocabulary(script: string, context: ClassificationContext): boolean {
 	return (
-		/\barchboard\s+semantic\s+config\b/u.test(script) ||
+		/\barchboard\s+model\s+config\b/u.test(script) ||
 		(INVESTIGATION_RE.test(script) &&
 			namesVault(script, context.vault) &&
 			/\bconfig\.ya?ml\b/u.test(script))
@@ -343,7 +343,7 @@ function simpleCommands(script: string): string[] {
 function invokesWrite(script: string): boolean {
 	return simpleCommands(script).some(
 		(command) =>
-			/^archboard\s+semantic\s+(?:new|edit|branch|resolve|adopt)\b/u.test(command) &&
+			/^archboard\s+model\s+(?:init|edit|plan|migrate|import|retain)\b/u.test(command) &&
 			!HELP_RE.test(command),
 	);
 }

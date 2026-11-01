@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { tmpdir } from "node:os";
+import { availableParallelism, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -73,6 +73,15 @@ interface OwnerAuditSample {
 }
 type OwnerEnvironment = Record<string, string>;
 
+/**
+ * How many owners share the machine. Each one drives a browser and a server and watches its
+ * own deadlines, so an owner keeps six cores to itself. A small machine runs one at a time.
+ * @returns The number of owners at once.
+ */
+function ownerJobs(): number {
+	return Math.max(1, Math.floor(availableParallelism() / 6));
+}
+
 function ownerIsClean(state: OwnerAuditSample): boolean {
 	return (
 		!state.groupAlive &&
@@ -134,13 +143,20 @@ function ownerEnvironment(
 	return env;
 }
 
-function spawnOwner(file: BrowserTestPath, env: OwnerEnvironment, testName?: string): OwnedChild {
+function spawnOwner(
+	file: BrowserTestPath,
+	env: OwnerEnvironment,
+	output: Buffer[] | null,
+	testName?: string,
+): OwnedChild {
 	const child = spawn("bun", browserOwnerCommandArguments(file, testName), {
 		cwd: repoRoot,
 		detached: true,
 		env,
-		stdio: "inherit",
+		stdio: output === null ? "inherit" : ["ignore", "pipe", "pipe"],
 	});
+	child.stdout?.on("data", (chunk: Buffer) => output?.push(chunk));
+	child.stderr?.on("data", (chunk: Buffer) => output?.push(chunk));
 	if (child.pid === undefined) throw new CouldNotRunError(`Bun did not return a pid for ${file}.`);
 	const pid = child.pid;
 	const exit = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
@@ -322,14 +338,17 @@ async function runSelection(
 	selection: BrowserSelection,
 	browserExecutable: string | undefined,
 ): Promise<number> {
-	let current: OwnedChild | null = null;
+	const running = new Set<OwnedChild>();
 	let interrupted: "SIGINT" | "SIGTERM" | null = null;
 	let interruption: Promise<void> | null = null;
 	const interrupt = (signal: "SIGINT" | "SIGTERM"): void => {
 		interrupted ??= signal;
 		if (!interruption) {
-			interruption = current ? stopOwnedChild(current) : Promise.resolve();
+			interruption = stopRunning();
 		}
+	};
+	const stopRunning = async (): Promise<void> => {
+		await Promise.all([...running].map((child) => stopOwnedChild(child)));
 	};
 	const onSigint = (): void => interrupt("SIGINT");
 	const onSigterm = (): void => interrupt("SIGTERM");
@@ -372,35 +391,61 @@ async function runSelection(
 		await ensureFreshFrontend(repoRoot, async (request) => {
 			if (interruptionSignal()) await raiseInterruption();
 			const build = spawnFrontendBuild(request);
-			current = build;
+			running.add(build);
 			try {
 				await finishChild(build, "Frontend build");
 			} finally {
-				current = null;
+				running.delete(build);
 			}
 		});
 		if (interruptionSignal()) await raiseInterruption();
-		for (const [index, file] of selection.files.entries()) {
-			if (interrupted) throw new InterruptedError(interrupted);
+		const jobs = Math.min(ownerJobs(), selection.files.length);
+		const total = selection.files.length;
+		let started = 0;
+		let completed = 0;
+		let failed = false;
+		const runOwner = async (index: number, file: BrowserTestPath): Promise<void> => {
 			const name = String(index + 1).padStart(2, "0");
 			const ownerRoot = join(laneRoot, name);
 			mkdirSync(join(ownerRoot, "tmp"), { recursive: true });
 			const env = ownerEnvironment(laneRoot, ownerRoot, laneBrowserExecutable);
 			process.stderr.write(
-				`# browser-lane ${JSON.stringify({ event: "started", file, completed: index, total: selection.files.length })}\n`,
+				`# browser-lane ${JSON.stringify({ event: "started", file, completed, total })}\n`,
 			);
-			current = spawnOwner(file, env, selection.testName);
-			const processGroup = current.pid;
+			// Owners at once would interleave their reports, so each prints whole when it ends.
+			const output = jobs === 1 ? null : ([] as Buffer[]);
+			const owner = spawnOwner(file, env, output, selection.testName);
+			running.add(owner);
 			try {
-				await finishChild(current, `Browser owner ${file}`);
+				await finishChild(owner, `Browser owner ${file}`);
 			} finally {
-				current = null;
-				await auditOwner({ file, root: ownerRoot, processGroup, env });
+				running.delete(owner);
+				if (output !== null) process.stdout.write(Buffer.concat(output));
+				await auditOwner({ file, root: ownerRoot, processGroup: owner.pid, env });
 			}
 			if (interruptionSignal()) await raiseInterruption();
+			completed += 1;
 			process.stderr.write(
-				`# browser-lane ${JSON.stringify({ event: "completed", file, completed: index + 1, total: selection.files.length })}\n`,
+				`# browser-lane ${JSON.stringify({ event: "completed", file, completed, total })}\n`,
 			);
+		};
+		// One failure starts no further owner, and the owners that run finish their cleanup.
+		const runOwners = async (): Promise<void> => {
+			while (started < total && !failed && !interruptionSignal()) {
+				const index = started;
+				started += 1;
+				try {
+					await runOwner(index, selection.files[index]!);
+				} catch (error) {
+					failed = true;
+					throw error;
+				}
+			}
+		};
+		const outcomes = await Promise.allSettled(Array.from({ length: jobs }, runOwners));
+		if (interruptionSignal()) await raiseInterruption();
+		for (const outcome of outcomes) {
+			if (outcome.status === "rejected") throw outcome.reason;
 		}
 		result = 0;
 	} catch (error) {
@@ -408,7 +453,7 @@ async function runSelection(
 	}
 	let cleanupFailure: unknown;
 	try {
-		if (current) await stopOwnedChild(current);
+		await stopRunning();
 		const pending = pendingInterruption();
 		if (pending) await pending;
 	} catch (error) {

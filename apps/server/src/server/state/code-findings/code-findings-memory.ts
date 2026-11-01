@@ -20,7 +20,9 @@
 import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
 
 /** What the last pass found on one board at one variant. */
-type RememberedReading = RememberedFindings["readings"][number];
+type RememberedReading =
+	| RememberedFindings["readings"][number]
+	| NonNullable<RememberedFindings["models"]>[number];
 
 /** What the server remembers of its code passes. */
 interface CodeFindingsMemory {
@@ -65,6 +67,17 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	 */
 	function remember(vault: string, answer: CodeCheckAnswer, checkedAt: Date): void {
 		const at = checkedAt.toISOString();
+		for (const read of answer.models ?? [])
+			readings.set(keyOf(vault, read.model, read.state ?? ""), {
+				vault,
+				reading: {
+					...read,
+					checkedAt: at,
+					findings: answer.findings.filter(
+						(finding) => finding.model === read.model && finding.state === read.state,
+					),
+				},
+			});
 		for (const read of answer.boards) {
 			readings.set(keyOf(vault, read.board, read.variant), {
 				vault,
@@ -87,7 +100,12 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 		return {
 			readings: [...readings.values()]
 				.filter((kept) => kept.vault === vault)
-				.map((kept) => kept.reading),
+				.map((kept) => kept.reading)
+				.filter((reading) => "board" in reading),
+			models: [...readings.values()]
+				.filter((kept) => kept.vault === vault)
+				.map((kept) => kept.reading)
+				.filter((reading) => "model" in reading),
 		};
 	}
 	return { remember, recall };

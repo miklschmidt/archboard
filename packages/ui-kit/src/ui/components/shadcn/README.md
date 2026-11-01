@@ -58,7 +58,8 @@ SHA-256 (first 16 hex) of each item's file content as served by
 | `tabs`          | `registry/base-nova/ui/tabs.tsx`          | `958b817b256cffae` |
 | `toggle-group`  | `registry/base-nova/ui/toggle-group.tsx`  | `143ec051e67e2d31` |
 | `dropdown-menu` | `registry/base-nova/ui/dropdown-menu.tsx` | `ba92acc16e141ad7` |
-| `skeleton`      | `registry/base-nova/ui/skeleton.tsx`      | `4c2af7fa9c645358` |
+| `command`       | `registry/base-nova/ui/command.tsx`       | `8364ab717110bce1` |
+| `popover`       | `registry/base-nova/ui/popover.tsx`       | `b6bc5045e7b67414` |
 | `toggle`        | `registry/base-nova/ui/toggle.tsx`        | `48ab6456afc25c4c` |
 
 ## Local deviations from the registry bytes
@@ -82,6 +83,10 @@ correctness check rather than a style rule.
   also positioned `fixed`, so a tooltip never makes the page larger than the
   window.
 - `badge.tsx`: a `size` axis (`default`, `technical`, `chip`) beside the
-  official variants; every official variant is untouched.
+  official variants, and a `count` variant, the low slab of a number; every
+  official variant is untouched.
+- `tabs.tsx`: the `underline` and `edge` variants beside the official ones.
+- `select.tsx` and `dropdown-menu.tsx`: their classes draw the shell's raised
+  trigger and its `menu-motion` popover in place of the registry's animation.
 - `toggle-group.tsx`: CSS custom properties in `style` are
   typed by `css-custom-properties.d.ts` instead of `as React.CSSProperties`.

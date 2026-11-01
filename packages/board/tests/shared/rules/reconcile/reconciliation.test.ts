@@ -160,7 +160,7 @@ describe("a real disagreement", () => {
 		expect(about(settled.issues, "n1")).toEqual([
 			{
 				subject: "n1",
-				what: "node",
+				what: "module",
 				kind: "competing-field",
 				field: "name",
 				mine: "Gateway",

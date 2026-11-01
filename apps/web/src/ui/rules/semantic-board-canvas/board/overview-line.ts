@@ -3,9 +3,12 @@
 // joins, so the id alone would read as that one relationship.
 
 import type { SemanticVariant } from "@archboard/board/document";
-import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
+import type { SemanticNode } from "@archboard/board/content";
 import { overviewLines } from "@archboard/board/views";
 import type { EdgeSubject } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+
+/** A line as the overview draws it. */
+type DrawnEdge = ReturnType<typeof overviewLines>[number]["line"];
 
 /**
  * One line of the overview that joins several relationships (ADR 0052), with
@@ -15,7 +18,7 @@ interface LineSubject {
 	/** Which sort of subject this is. */
 	readonly kind: "line";
 	/** The line, as the overview draws it. */
-	readonly line: SemanticEdge;
+	readonly line: DrawnEdge;
 	/** The drawn part it starts at. */
 	readonly from: SemanticNode | undefined;
 	/** The drawn part it ends at. */
@@ -30,7 +33,10 @@ interface LineSubject {
  * @param id The picked id.
  * @returns The line, or undefined when the id is not a joined line's.
  */
-function overviewLineOf(variant: SemanticVariant, id: string): LineSubject | undefined {
+function overviewLineOf(
+	variant: Pick<SemanticVariant, "content">,
+	id: string,
+): LineSubject | undefined {
 	const found = overviewLines(variant.content).find(({ line }) => line.id === id);
 	if (found === undefined || found.joins.length === 1) {
 		return undefined;
@@ -73,15 +79,15 @@ function pickedLine(
  * the board names it by when the variant no longer holds it.
  * @param from The part it starts at, when the variant holds it.
  * @param to The part it ends at, when the variant holds it.
- * @param edge The line, for the ids of its ends.
+ * @param edge The line, for the ids of its ends and whether it runs both ways.
  * @returns The words, such as "API → Store".
  */
 function endsOf(
 	from: SemanticNode | undefined,
 	to: SemanticNode | undefined,
-	edge: SemanticEdge,
+	edge: DrawnEdge,
 ): string {
-	return `${from?.name ?? edge.from} → ${to?.name ?? edge.to}`;
+	return `${from?.name ?? edge.from} ${edge.twoWay === true ? "↔" : "→"} ${to?.name ?? edge.to}`;
 }
 
 export { type LineSubject, endsOf, overviewLineOf, pickedLine };

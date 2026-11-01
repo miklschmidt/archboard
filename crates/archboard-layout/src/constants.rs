@@ -3,8 +3,12 @@
 
 pub(crate) use archboard_scene::geometry::BEND_RADIUS;
 pub(crate) use archboard_scene::paint::design::{
-    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, HEADER_SLAB_INSET, REGION_INSET,
+    ARCHITECTURE_HEADER_PADDING, CARD_RADIUS, TAB_SHOULDER,
 };
+use archboard_scene::paint::design::{FIT_MARGIN, HANDLE_WIDTH, NAVIGATOR_WIDTH, SHELL_WIDTH};
+
+/// How far a region stands in from what it holds.
+pub(crate) const REGION_INSET: f64 = 14.0;
 
 /// Equal space below a container title and at its sides and bottom.
 pub(crate) const CONTAINER_INSET: f64 = 20.0;
@@ -18,12 +22,7 @@ pub(crate) const APPROACH_STRAIGHT: f64 = 12.0;
 /// The page shape the renderer lays a board out for: width over height.
 pub(crate) const LAYOUT_ASPECT: f64 = 1.4;
 
-/// The width of the one viewport the shell supports.
-const SHELL_WIDTH: f64 = 1920.0;
-const NAVIGATOR_WIDTH: f64 = 320.0;
-const HANDLE_WIDTH: f64 = 1.0;
 const SIDEBAR_WIDTH: f64 = 280.0;
-const FIT_MARGIN: f64 = 24.0;
 
 /// The stage a lone pane draws its picture on.
 const STAGE_WIDTH: f64 = SHELL_WIDTH - NAVIGATOR_WIDTH - HANDLE_WIDTH;

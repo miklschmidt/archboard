@@ -3,6 +3,7 @@
 use crate::drawing::{TextRole, TextRun};
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, text};
+use crate::paint::colour::translucent;
 use crate::paint::palette::Palette;
 use crate::scene::{Colour, Text};
 
@@ -23,7 +24,7 @@ pub(super) fn paint_text_runs(
                     },
                     run.font,
                     run.font_size,
-                    fill.unwrap_or_else(|| ink_of(run, palette)).clone(),
+                    fill.map_or_else(|| ink_of(run, palette), Clone::clone),
                     &run.text,
                 ))
             })
@@ -31,11 +32,15 @@ pub(super) fn paint_text_runs(
     )
 }
 
+/// How much of the muted ink the folders of a path keep.
+const FOLDER_INK: f64 = 0.62;
+
 /// The ink a measured line takes by its role.
-fn ink_of<'p>(run: &TextRun, palette: &'p Palette) -> &'p Colour {
+fn ink_of(run: &TextRun, palette: &Palette) -> Colour {
     match run.role {
-        TextRole::Title => &palette.foreground,
-        TextRole::Label => &palette.pill_text,
-        TextRole::Note => &palette.muted,
+        TextRole::Title | TextRole::File => palette.foreground.clone(),
+        TextRole::Label => palette.pill_text.clone(),
+        TextRole::Note => palette.muted.clone(),
+        TextRole::Folder => translucent(&palette.muted, FOLDER_INK),
     }
 }

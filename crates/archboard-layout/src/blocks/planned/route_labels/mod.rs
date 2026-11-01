@@ -1,5 +1,9 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
+mod trunk;
+
+pub(super) use trunk::{branches, from_part, seat};
+
 use super::{
     geometry::{contains, length},
     model::Model,
@@ -261,31 +265,43 @@ fn slot_index(
         width: label.width.unwrap_or(0.0),
         height: label.height.unwrap_or(0.0),
     };
+    if let Some(&part_first) = shape.trunk.get(&edge) {
+        let spans = index.private(edge, &from_part(path, part_first));
+        return nearest(&spans, size, shape, edge, index, labels).map(|at| (at, false));
+    }
     let mut spans = index.private(edge, path);
-    // Every plate in a stack must meet its own line, not only the stack's envelope.
-    spans.retain(|span| !label.stacked || span.a.x == span.b.x);
     spans.sort_by(|a, b| {
         length(&[b.a, b.b])
             .total_cmp(&length(&[a.a, a.b]))
             .then(a.before.total_cmp(&b.before))
     });
-    for &span in &spans {
+    let midway = midway(&spans, size, shape, edge, index, labels);
+    midway
+        .map(|at| (at, false))
+        .or_else(|| nearest(&spans, size, shape, edge, index, labels).map(|at| (at, true)))
+}
+
+/// The middle of the longest run that holds the words.
+fn midway(
+    spans: &[Span],
+    size: Rect,
+    shape: &Shape,
+    edge: usize,
+    index: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> Option<Rect> {
+    spans.iter().find_map(|&span| {
         let horizontal = span.a.y == span.b.y;
         let required = if horizontal { size.width } else { size.height };
-        if length(&[span.a, span.b]) < required + 32.0 {
-            continue;
-        }
         let position = if horizontal {
             f64::midpoint(span.a.x, span.b.x)
         } else {
             f64::midpoint(span.a.y, span.b.y)
         };
         let label = at(span, position, size);
-        if clear(shape, edge, label, index, labels) {
-            return Some((label, false));
-        }
-    }
-    nearest(&spans, size, shape, edge, index, labels).map(|at| (at, true))
+        (length(&[span.a, span.b]) >= required + 32.0 && clear(shape, edge, label, index, labels))
+            .then_some(label)
+    })
 }
 
 fn nearest(
@@ -426,6 +442,18 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
     Some(fallbacks)
 }
 
+/// Whether a drawing dressed with its trunks' words keeps a plate where it stands: each
+/// plate there was seated around the others, and moving one can unseat the next.
+fn keeps(
+    shape: &Shape,
+    edge: usize,
+    at: Rect,
+    strokes: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> bool {
+    !shape.trunk.is_empty() && clear(shape, edge, at, strokes, labels)
+}
+
 fn available(
     model: &Model<'_>,
     shape: &Shape,
@@ -460,6 +488,10 @@ fn consistent(
             continue;
         }
         let old = shape.labels.remove(&edge)?;
+        if keeps(shape, edge, old, strokes, labels) {
+            shape.labels.insert(edge, old);
+            continue;
+        }
         let (label, _) = slot_index(
             model,
             edge,
@@ -509,6 +541,13 @@ fn update(
             continue;
         }
         let old = shape.labels.remove(&edge);
+        if let Some(kept) = old.filter(|&at| keeps(shape, edge, at, strokes, labels)) {
+            shape.labels.insert(edge, kept);
+            labels.remember(edge, kept);
+            continue;
+        }
+        // A plate that contraction carried with its run can fill the room it has exactly, so
+        // that no search finds it, and it can stay where it stands.
         let (label, fallback) = slot_index(
             model,
             edge,
@@ -516,7 +555,11 @@ fn update(
             &shape.routes[index].points,
             strokes,
             labels,
-        )?;
+        )
+        .or_else(|| {
+            old.filter(|&at| clear(shape, edge, at, strokes, labels))
+                .map(|at| (at, true))
+        })?;
         changed |= old != Some(label);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);

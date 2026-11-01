@@ -22,7 +22,6 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { PICTURE_MS, PRESENTATION_MS } from "@archboard/timing";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { Camera, FitTarget, Size } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
 
@@ -38,10 +37,19 @@ interface FitReading {
 
 /** How a pane says it is being read, before anything is decided about it. */
 interface FitRequest {
+	/** The caller identifies the picture independently from its dimensions. */
+	readonly picture: string | null;
 	readonly presenting: boolean;
 	readonly reducedMotion?: boolean | undefined;
 	/** The picture on screen is the one a flight arrived at: the camera lands on it at once. */
 	readonly cut?: boolean | undefined;
+	/** Where the camera rests when no beat asks for a place. The whole picture, unless a caller says. */
+	readonly resting?: FitTarget | undefined;
+	/**
+	 * The camera the reader left this reading at, when they came back to it.
+	 * @returns That camera, or null for a reading to fit afresh.
+	 */
+	readonly recall?: (() => HeldCamera | null) | undefined;
 }
 
 /** The camera a reader had before a presentation took it. */
@@ -127,6 +135,7 @@ interface FitMoment {
 	readonly picture: string | null;
 	readonly room: string;
 	readonly reading: FitReading;
+	readonly recall: FitRequest["recall"];
 }
 
 /**
@@ -143,6 +152,22 @@ function upToDate(last: Fitted, moment: FitMoment, camera: BoardCamera): boolean
 		return false;
 	}
 	return last.room === moment.room || (!moment.reading.presenting && camera.handled());
+}
+
+/**
+ * Return the camera the reader left a reading at, when they came back to that reading.
+ * A flight has already put the camera where it belongs.
+ * @param camera The camera.
+ * @param moment What the pane is showing.
+ * @param last What was last fitted.
+ * @returns Whether the camera moved.
+ */
+function returnTo(camera: BoardCamera, moment: FitMoment, last: Fitted): boolean {
+	const asked = last.picture !== moment.picture && !moment.reading.cut;
+	const left = asked ? moment.recall?.() : null;
+	return (
+		left != null && camera.glide(left.camera, stepDuration(moment.reading, true), left.handled)
+	);
 }
 
 /**
@@ -186,6 +211,7 @@ function keepFitted(
 	remember(held, camera, reading);
 	const moved =
 		giveBack(camera, held.current, reading) ||
+		returnTo(camera, moment, last) ||
 		moveTo(camera, moment.target, reading, last, picture);
 	if (!reading.presenting) {
 		held.current = null;
@@ -205,29 +231,30 @@ function keepFitted(
  */
 function useAutoFit(
 	camera: BoardCamera,
-	drawing: SemanticDrawing | null,
+	drawing: Size | null,
 	focus: BeatFocus,
-	request: FitRequest = { presenting: false },
+	request: FitRequest,
 ): void {
 	const reducedMotion = request.reducedMotion === true;
 	const cut = request.cut === true;
+	const { resting } = request;
 	const target = useMemo<FitTarget | null>(
 		() =>
 			drawing === null || camera.room === null
 				? null
-				: (focus.target ?? {
+				: (focus.target ??
+					resting ?? {
 						kind: "whole",
 						content: { width: drawing.width, height: drawing.height },
 					}),
-		[drawing, focus.target, camera.room],
+		[drawing, focus.target, camera.room, resting],
 	);
-	const picture =
-		drawing === null ? null : JSON.stringify([drawing.board, drawing.variant.id, drawing.view?.id]);
+	const { picture } = request;
 	const subject = picture === null ? null : JSON.stringify([picture, focus.key]);
 	const fitted = useRef<Fitted>({ subject: null, picture: null, room: null });
 	const held = useRef<HeldCamera | null>(null);
 	const room = roomKey(camera.room);
-	const { presenting } = request;
+	const { presenting, recall } = request;
 	// Before paint: the first picture fits at once; later readings and
 	// walkthrough steps start their glide from the camera the reader saw.
 	useLayoutEffect(() => {
@@ -236,8 +263,8 @@ function useAutoFit(
 			return;
 		}
 		const reading = { presenting, reducedMotion, cut };
-		keepFitted(camera, { target, subject, picture, room, reading }, fitted, held);
-	}, [camera, target, subject, picture, room, presenting, reducedMotion, cut]);
+		keepFitted(camera, { target, subject, picture, room, reading, recall }, fitted, held);
+	}, [camera, target, subject, picture, room, presenting, reducedMotion, cut, recall]);
 }
 
-export { useAutoFit, type FitReading };
+export { useAutoFit, type FitReading, type HeldCamera };

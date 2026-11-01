@@ -245,11 +245,11 @@ const AppliedAppearanceSchema = z.object({
 });
 
 /**
- * What a picture's key lists (TASK-383): one sample of each part kind and of
+ * What a picture's legend lists (TASK-383): one sample of each part kind and of
  * each relationship kind the picture draws, in the order it draws them, so
- * nothing in the key is absent from the picture.
+ * nothing in the legend is absent from the picture.
  */
-const PictureKeySchema = z.object({
+const PictureLegendSchema = z.object({
 	kinds: z.array(AppliedAppearanceSchema).readonly(),
 	relationships: z.array(AppliedAppearanceSchema).readonly(),
 });
@@ -262,8 +262,8 @@ const DrawnBoardSchema = RenderIdentitySchema.extend({
 	atlas: DiagramAtlasSchema,
 	/** Each subject the picture draws with the appearance it was drawn with, in drawing order. */
 	appearances: z.array(AppliedAppearanceSchema).readonly(),
-	/** What the picture's key lists, or null when it draws no subject of a kind. */
-	key: PictureKeySchema.nullable(),
+	/** What the picture's legend lists, or null when it draws no subject of a kind. */
+	legend: PictureLegendSchema.nullable(),
 	/** What the picture draws; `changes.standing` says how each of these stands, and no other. */
 	drawn: DrawnSubjectsSchema,
 });
@@ -301,7 +301,7 @@ function wasDrawn(reply: SemanticRenderReply): reply is DrawnBoard {
 
 export {
 	AppliedAppearanceSchema,
-	PictureKeySchema,
+	PictureLegendSchema,
 	OfferedViewSchema,
 	type OfferedView,
 	SubjectStandingSchema,

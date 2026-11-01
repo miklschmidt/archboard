@@ -1,0 +1,29 @@
+{
+  "order": 1005,
+  "name": "Application composition",
+  "kind": "module",
+  "responsibility": "Connects canonical pane and feature owners",
+  "description": "Mounts canonical readers and captured recordings. It never opens a live legacy board. Existing legacy addresses resolve through retained originals after migration. Unmigrated vaults expose explicit migration guidance. The shared pane session reports captured canonical readings to local agents.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.13 - Explain-the-captured-reading-through-local-agent-actions.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.14 - Present-and-record-dynamic-walkthroughs.md"
+    },
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-549.21 - Preserve-legacy-proposals-and-historical-coverage.md"
+    }
+  ],
+  "outgoing": []
+}

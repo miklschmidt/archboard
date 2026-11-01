@@ -176,7 +176,15 @@ test("Space presses a control that has focus and steps from anywhere else", asyn
  * @returns What the shell puts in its header.
  */
 function besideAnother(active: boolean): PaneChrome {
-	return { letter: null, controls: null, notice: null, shared: false, active };
+	return {
+		letter: null,
+		controls: null,
+		notice: null,
+		shared: false,
+		active,
+		column: null,
+		openBeside: null,
+	};
 }
 
 /**

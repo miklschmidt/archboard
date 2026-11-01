@@ -44,7 +44,7 @@ import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 interface VariantFootprintRequest {
 	/** The vault directory the board is in: its own checkout is read for its own repository. */
 	readonly vault: string;
-	readonly board: SemanticBoard;
+	readonly board: Pick<SemanticBoard, "id" | "name" | "variants" | "current">;
 	/**
 	 * The variant the proposal is read against: the board's current variant by
 	 * default. Undefined only with a proposal, which is then read against
@@ -406,14 +406,19 @@ function namedBy(
 	);
 }
 
+type FootprintEvidence = FootprintAnswer extends infer T
+	? T extends unknown
+		? Omit<T, "board" | "version">
+		: never
+	: never;
 /**
  * Read the footprint of a range of commits against a board's current variant,
  * and against a proposal when one is named.
  * @param request What to read.
  * @returns The footprint.
  */
-async function readVariantFootprint(request: VariantFootprintRequest): Promise<FootprintAnswer> {
-	const { vault, board, against, proposal, base, head, signal } = request;
+async function readFootprintEvidence(request: VariantFootprintRequest): Promise<FootprintEvidence> {
+	const { vault, against, proposal, base, head, signal } = request;
 	const all = partsOf(against, proposal);
 	const snapshot = await snapshotCheckoutAccess({
 		vault,
@@ -433,8 +438,6 @@ async function readVariantFootprint(request: VariantFootprintRequest): Promise<F
 		repositories.flatMap((one) => one.changed),
 	);
 	const common = {
-		board: board.name,
-		version: board.version,
 		base,
 		...(head === undefined ? {} : { head }),
 		against: against === undefined ? null : { id: against.id, name: against.name },
@@ -461,4 +464,18 @@ async function readVariantFootprint(request: VariantFootprintRequest): Promise<F
 	};
 }
 
-export { type VariantFootprintRequest, readVariantFootprint };
+/**
+ * Read immutable legacy analysis inputs through the shared evidence engine.
+ * @param request The retained semantic state and source range.
+ * @returns The original semantic receipt.
+ */
+async function readVariantFootprint(
+	request: Omit<VariantFootprintRequest, "board"> & { board: SemanticBoard },
+): Promise<FootprintAnswer> {
+	return {
+		board: request.board.name,
+		version: request.board.version,
+		...(await readFootprintEvidence(request)),
+	};
+}
+export { type VariantFootprintRequest, readVariantFootprint, readFootprintEvidence };

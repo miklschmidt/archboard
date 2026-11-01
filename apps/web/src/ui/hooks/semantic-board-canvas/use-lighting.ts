@@ -7,46 +7,45 @@
 // and gives the pick back when it goes. A row of the sidebar's list lights the
 // relationship it is about while it is pointed at. A trace asked of the picked
 // part lights, beyond its connections, everything it reaches in one direction,
-// each further hop more faintly.
+// each further hop more faintly. Several subjects picked at once stay as drawn,
+// with the lines between them, and the rest recedes.
 //
-// The light is attention only. It stands down while a presented step or a group
-// says what the picture is about, while the picture is leaving, and for a part
-// with nothing drawn to light.
+// The light is attention only. It stands down while a presented step says what
+// the picture is about, while the picture is leaving, and for a part with nothing
+// drawn to light.
 
 import { useMemo, type PointerEvent } from "react";
 
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { Peeked, Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { useRestingPart } from "#ui/hooks/semantic-board-canvas/use-resting-part.ts";
-import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import {
+	litBySeveral,
 	litInPicture,
 	withReach,
 	type Wiring,
 } from "#ui/rules/semantic-board-canvas/board/connections.ts";
-import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
-import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { reachOf } from "#ui/rules/semantic-board-canvas/board/reach.ts";
 import type { ProbeMode } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** What decides the lighting. */
 interface LightingInputs {
 	/** What the board says about the variant the picture draws, or null while that is not known. */
-	readonly reading: VariantReading | null;
+	readonly content: Wiring | null;
 	/** Where every subject of the picture ended up: only a drawn relationship has anything to light. */
 	readonly atlas: SemanticAtlas;
 	/** The subject picked out, or null. */
 	readonly selection: string | null;
+	/** The subjects picked out when there are several, or null. */
+	readonly several?: ReadonlySet<string> | null;
 	/** What the sidebar is asking the picture to show. */
 	readonly peeked: Peeked;
 	/** What a presented step's veil leaves standing, or null for no veil. */
 	readonly veil: ReadonlySet<string> | null;
-	/** The step of a presented walkthrough on screen, or null or undefined while none is presented. */
-	readonly presenting: number | null | undefined;
-	/** Whether a group is selected. */
-	readonly group: GroupSelection | null;
-	/** Where the reader went, while the picture is on its way out. */
-	readonly departure: Departure | null;
+	/** Whether ordinary exploration can light this reading. */
+	readonly enabled: boolean;
+	/** How a picture that is not the whole of `content` walks a trace. */
+	readonly traced?: (trace: Trace) => ReadonlyMap<string, number>;
 }
 
 /** What the picture lights, and what moves it. */
@@ -59,6 +58,8 @@ interface Lighting {
 	readonly reach: ReadonlyMap<string, number> | null;
 	/** How strongly the light answers, or null for no light. */
 	readonly mode: ProbeMode | null;
+	/** The part the pointer rests on, or null. */
+	readonly resting: string | null;
 	/**
 	 * The pointer moved over the picture while no gesture is under way.
 	 * @param event The move.
@@ -70,17 +71,12 @@ interface Lighting {
 
 /**
  * Whether something else says what the picture is about: a presented walkthrough,
- * a group, or the picture leaving.
+ * several picks, or the picture leaving.
  * @param inputs What decides the lighting.
  * @returns True when the light stands down.
  */
 function standsDown(inputs: LightingInputs): boolean {
-	return (
-		inputs.veil !== null ||
-		(inputs.presenting ?? null) !== null ||
-		inputs.group !== null ||
-		inputs.departure !== null
-	);
+	return inputs.veil !== null || !inputs.enabled;
 }
 
 /**
@@ -114,15 +110,6 @@ function pokedBy(
 }
 
 /**
- * The parts and relationships the board says the variant holds.
- * @param reading What the board says about the variant, or null.
- * @returns Them, or null while that is not known.
- */
-function wiringOf(reading: VariantReading | null): Wiring | null {
-	return reading?.variant?.content ?? null;
-}
-
-/**
  * How strongly the light answers.
  * @param lit What is lit, or null for no light.
  * @param poked The part the light is about.
@@ -141,21 +128,33 @@ function modeOf(
 }
 
 /**
+ * What a trace reached, by how many hops.
+ * @param inputs What decides the lighting.
+ * @param wiring What the variant says.
+ * @param trace The trace asked for.
+ * @returns The subjects and their hops.
+ */
+function hopsOf(inputs: LightingInputs, wiring: Wiring, trace: Trace): ReadonlyMap<string, number> {
+	return inputs.traced?.(trace) ?? reachOf(wiring, trace.part, trace.way).hops;
+}
+
+/**
  * What a trace reached beyond the first hop, with how many hops each is.
- * @param wiring What the variant says, or null while that is not known.
+ * @param inputs What decides the lighting.
  * @param trace The trace asked for, or null.
  * @param on Whether the light is about the part the trace was asked of.
  * @returns The subjects and their hops, or null without anything beyond.
  */
 function reachBeyond(
-	wiring: Wiring | null,
+	inputs: LightingInputs,
 	trace: Trace | null,
 	on: boolean,
 ): ReadonlyMap<string, number> | null {
+	const { content: wiring } = inputs;
 	if (wiring === null || trace === null || !on) {
 		return null;
 	}
-	const far = [...reachOf(wiring, trace.part, trace.way).hops].filter(([, hops]) => hops >= 2);
+	const far = [...hopsOf(inputs, wiring, trace)].filter(([, hops]) => hops >= 2);
 	return far.length === 0 ? null : new Map(far);
 }
 
@@ -165,15 +164,19 @@ function reachBeyond(
  * @returns What is lit, how strongly, and the handlers that move it.
  */
 function useLighting(inputs: LightingInputs): Lighting {
-	const { reading, atlas, selection, veil } = inputs;
-	const { part, onHover, release } = useRestingPart(atlas);
+	const { content: wiring, atlas, selection, several = null, veil } = inputs;
+	const { part, parts, onHover, release } = useRestingPart(atlas);
 	const trace = traceOf(inputs);
 	const poked = pokedBy(inputs, trace, part);
-	const wiring = wiringOf(reading);
-	const lit = useMemo(() => litInPicture(wiring, atlas, poked), [wiring, atlas, poked]);
+	const lit = useMemo(
+		() =>
+			litInPicture(wiring, atlas, poked === part ? parts : [poked].filter((id) => id !== null)) ??
+			litBySeveral(wiring, several),
+		[wiring, atlas, poked, part, parts, several],
+	);
 	const reach = useMemo(
-		() => (lit === null ? null : reachBeyond(wiring, trace, poked === selection)),
-		[lit, wiring, trace, poked, selection],
+		() => (lit === null ? null : reachBeyond(inputs, trace, poked === selection)),
+		[lit, inputs, trace, poked, selection],
 	);
 	const light = useMemo(
 		() => (lit === null || reach === null || wiring === null ? lit : withReach(wiring, lit, reach)),
@@ -184,6 +187,7 @@ function useLighting(inputs: LightingInputs): Lighting {
 		standing: veil ?? light,
 		reach,
 		mode: modeOf(lit, poked, selection),
+		resting: part,
 		onHover,
 		release,
 	};

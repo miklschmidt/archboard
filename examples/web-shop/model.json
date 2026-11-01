@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "Shop",
+  "name": "Shop",
+  "current": {
+    "id": "dAg7XGx2",
+    "name": "Synchronous checkout",
+    "summary": "A web shop. Shoppers place an order through the checkout API, which reserves the stock, charges the card and sends the receipt before it answers.",
+    "predecessor": "Shop",
+    "baseline": "8b2ff5e7a01b87fd4e4a293d972afdb9eef7fc78",
+    "createdAt": "2026-10-27T23:29:47.891Z",
+    "adoptedAt": "2026-10-27T23:30:43.574Z",
+    "reason": "The shop now draws its inventory internals inside the Inventory service that owns them. All earlier readings and the other proposals stay available.",
+    "previousCurrent": "Shop"
+  },
+  "retiredIds": [
+    "Shop/5IZTN4RT#CfNtly46",
+    "Shop/5IZTN4RT#lcChHpcr"
+  ]
+}

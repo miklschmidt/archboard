@@ -3,7 +3,6 @@ import { useCallback, useState, type JSX } from "react";
 
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { SemanticRender } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import type { BoardTab } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
 import { useCodeFindings } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
 
 /** What the last pass found on one board at one variant. */
@@ -12,8 +11,7 @@ type RememberedReading = RememberedFindings["readings"][number];
 /** The existing pane controls that a warning can use. */
 interface CodeWarningsProps {
 	readonly drawing: SemanticRender | undefined;
-	readonly onDiagram: (tab: BoardTab) => void;
-	/** Pick a subject out and show it on the diagram, as the About page's rows do. */
+	/** Pick a subject out and show it on the diagram. */
 	readonly onShow: (id: string) => void;
 }
 
@@ -47,16 +45,15 @@ function CodeWarnings(props: CodeWarningsProps): JSX.Element | null {
 function WarningSteps(
 	props: CodeWarningsProps & { readonly reading: RememberedReading },
 ): JSX.Element {
-	const { onDiagram, onShow } = props;
+	const { onShow } = props;
 	const warnings = props.reading.findings.filter((finding) => finding.severity === "warning");
 	const [position, setPosition] = useState(-1);
 	const onNext = useCallback((): void => {
 		const next = (position + 1) % warnings.length;
 		const id = warnings[next]?.subject?.id;
 		setPosition(next);
-		if (id === undefined) onDiagram("diagram");
-		else onShow(id);
-	}, [position, warnings, onDiagram, onShow]);
+		if (id !== undefined) onShow(id);
+	}, [position, warnings, onShow]);
 	const current = warnings[position];
 	return (
 		<WarningCount
@@ -110,4 +107,4 @@ function WarningCount(props: {
 	);
 }
 
-export { CodeWarnings };
+export { CodeWarnings, WarningCount };

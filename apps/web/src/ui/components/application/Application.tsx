@@ -1,3 +1,4 @@
+import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
 // workbench and the presentation composed over the shell. The sessions, the
 // transport, the runtime and the controllers are the state; this file only
@@ -6,17 +7,11 @@
 import { VaultDiagnostics } from "#ui/components/vault-diagnostics/VaultDiagnostics.tsx";
 import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
 
-import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { livePanesOver } from "#ui/rules/application/live-panes.ts";
-import {
-	codeTargetShellNotice,
-	infoNotice,
-	presentationNotice,
-} from "#ui/rules/application/notices.ts";
-import { OpenerSettings } from "@archboard/code-opener/opener-settings";
+import { presentationNotice } from "#ui/rules/application/notices.ts";
 import { paneEvents } from "#ui/rules/application/pane-events.ts";
-import { heldBoards, recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
+import { recordFor, type PaneRecords } from "#ui/rules/application/pane-records.ts";
 import { createShellActions, vaultOf } from "#ui/clients/application/shell-actions.ts";
 import {
 	addressingOver,
@@ -24,11 +19,10 @@ import {
 	openingPaneList,
 } from "#ui/clients/application/workspace-port.ts";
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
-import { applyTheme, initialTheme } from "#ui/clients/application/theme.ts";
+import { useTheme } from "#ui/hooks/application/use-theme.ts";
 import { usePaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import { usePaneViews } from "#ui/hooks/application/use-pane-views.ts";
 import { useSubtitleOverlay } from "#ui/hooks/application/use-subtitle-overlay.ts";
-import { useReleasedBoards } from "#ui/hooks/application/use-released-boards.ts";
 import {
 	shellPresentationOf,
 	useFullscreen,
@@ -53,51 +47,31 @@ import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addr
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
 import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
 import {
-	boardsIn,
-	useBoardCatalog,
-	type BoardCatalog,
-} from "#ui/hooks/board-catalog/use-board-catalog.ts";
-import { listedBoard, listedBoardKey } from "#ui/rules/board-catalog/listing.ts";
+	useModelCatalog,
+	type ModelCatalog,
+} from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
+import { useLastReading, useStart } from "#ui/hooks/board-routing/use-start.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import { servedVault } from "@archboard/server-requests";
-import type { BoardListing } from "#ui/rules/pane-session/session-types.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/components/application/PresentationVoiceKey.tsx";
-import type { AgentContext } from "@archboard/workbench/agent";
-import { SETTINGS_TRIGGER_ID } from "#ui/components/shell/BrandBar.tsx";
+import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
+import { StartShell } from "#ui/components/application/StartShell.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
+import { searchOfRepository } from "#ui/rules/board-routing/search.ts";
+import type { OpenStart } from "#ui/rules/board-routing/start.ts";
+import { ModelDraftContext } from "#ui/state/architecture-model/draft.ts";
+import { useRouter } from "@tanstack/react-router";
 import {
 	type SettingsSurface,
 	type ShellActions,
 	type ShellView,
 	type ThemeChoice,
 } from "#ui/rules/shell/contracts.ts";
-
-/**
- * The settings menu trigger: where a settings dialog returns focus, since the
- * menu item that opened it is gone by the time the dialog closes.
- * @returns The trigger, or null before the header mounts.
- */
-function settingsTrigger(): HTMLElement | null {
-	return document.getElementById(SETTINGS_TRIGGER_ID);
-}
-
-/**
- * The theme as state, applied to the document.
- * @returns The theme and its setter.
- */
-function useTheme(): [ThemeChoice, (theme: ThemeChoice) => void] {
-	const [theme, setTheme] = useState<ThemeChoice>(initialTheme);
-	useEffect(() => {
-		applyTheme(theme);
-	}, [theme]);
-	return [theme, setTheme];
-}
 
 /**
  * Keep the presentation on a pane that exists: when the presented or wanted
@@ -117,27 +91,6 @@ function usePresentationTransfer(panes: Panes, fullscreen: Fullscreen): void {
 	}, [list, target, paneRemoved]);
 }
 
-/**
- * What the agent reads with the next message: the board in the focused pane,
- * by the name the vault lists it under, and the state shown when it is not
- * the one the board's name opens.
- * @param listing The listing of the focused pane's repository.
- * @param boardKey The focused pane's board key, or null.
- * @returns The context.
- */
-function agentContextOf(listing: BoardListing, boardKey: string | null): AgentContext {
-	const address = boardAddressOf(boardKey);
-	if (address === null) return { board: null, state: null };
-	const board = listedBoard(listing, address.board);
-	if (board === undefined) return { board: address.board, state: address.variant ?? null };
-	const key = listedBoardKey(listing, boardKey);
-	const variant = board.variants.find((entry) => entry.key === key);
-	return {
-		board: board.name,
-		state: variant === undefined || variant.id === board.opens ? null : variant.name,
-	};
-}
-
 /** The agent's surfaces as the shell places them. */
 interface AgentSlots {
 	readonly dock: ReactNode;
@@ -149,8 +102,6 @@ interface AgentSlots {
 interface AgentSlotSources {
 	readonly agent: AgentSurfaces;
 	readonly workbench: Workbench;
-	/** The board the agent sees with the next message. */
-	readonly context: AgentContext;
 	readonly reducedMotion: boolean;
 	/** Whether the agent dock is off screen, as while a pane is presented fullscreen. */
 	readonly dockless: boolean;
@@ -161,26 +112,25 @@ interface AgentSlotSources {
  * voice key a presentation's bar carries. The dock and the panel read what changes
  * while the agent works themselves, so these elements are made again only when
  * the person acts.
- * @param sources The agent, the workbench, the context, the motion preference and whether the dock is off screen.
+ * @param sources The agent, the workbench, the motion preference and whether the dock is off screen.
  * @returns The slots.
  */
 function useAgentSlots(sources: AgentSlotSources): AgentSlots {
-	const { agent, workbench, context, reducedMotion, dockless } = sources;
+	const { agent, workbench, reducedMotion, dockless } = sources;
 	return useMemo(
 		() => ({
 			dock: (
 				<AgentDockSlot
 					agent={agent}
 					workbench={workbench}
-					context={context}
 					reducedMotion={reducedMotion}
 					dockless={dockless}
 				/>
 			),
-			panel: <AgentPanelSlot agent={agent} workbench={workbench} context={context} />,
+			panel: <AgentPanelSlot agent={agent} workbench={workbench} />,
 			voiceControls: <PresentationVoiceKey />,
 		}),
-		[agent, workbench, context, reducedMotion, dockless],
+		[agent, workbench, reducedMotion, dockless],
 	);
 }
 
@@ -188,7 +138,7 @@ function useAgentSlots(sources: AgentSlotSources): AgentSlots {
 interface ShellViewSources {
 	readonly theme: ThemeChoice;
 	readonly panes: Panes;
-	readonly catalog: BoardCatalog;
+	readonly catalog: ModelCatalog;
 	/** The mounted pane per pane id. */
 	readonly mounted: Readonly<Record<string, ReactNode>>;
 	readonly fullscreen: Fullscreen;
@@ -231,47 +181,13 @@ function useShellView(sources: ShellViewSources): ShellView {
 	);
 }
 
-/** Inputs for the settings dialog. */
-interface SettingsHostsProps {
-	surface: SettingsSurface | null;
-	notices: NoticeStack;
-	onClose: () => void;
-}
-
-/**
- * The settings dialog: where the server opens code.
- * @param props The open surface, the notices and the close.
- * @returns The open dialog, or nothing.
- */
-function SettingsHosts(props: SettingsHostsProps): JSX.Element | null {
-	const { surface, notices, onClose } = props;
-	const onSuccess = useCallback(
-		(message: string): void =>
-			notices.raise(infoNotice("opener-settings", "Opener settings", message)),
-		[notices],
-	);
-	const onFailure = useCallback(
-		(notice: CodeTargetNotice): void => notices.raise(codeTargetShellNotice(notice)),
-		[notices],
-	);
-	if (surface !== "opener") return null;
-	return (
-		<OpenerSettings
-			onSuccess={onSuccess}
-			onFailure={onFailure}
-			onClose={onClose}
-			finalFocus={settingsTrigger}
-		/>
-	);
-}
-
 /**
  * The vault each repository is read from, for the address bar; null until the
  * page has read the repositories, so a restore waits for them.
  * @param catalog The catalog.
  * @returns The lookup, or null.
  */
-function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | null) | null {
+function useVaultOf(catalog: ModelCatalog): ((repository: string) => string | null) | null {
 	const { repositories, loading } = catalog;
 	return useMemo(
 		() =>
@@ -281,10 +197,32 @@ function useVaultOf(catalog: BoardCatalog): ((repository: string) => string | nu
 }
 
 /**
+ * The vault a pane mounted now opens in: that of the pane beside it, then the one its start
+ * decided, so a second pane never lands on an unrelated repository.
+ * @param panes The panes as they are now.
+ * @param start The start.
+ * @param paneId The pane.
+ * @returns The vault.
+ */
+function vaultOfPane(panes: Panes, start: OpenStart, paneId: string): string {
+	const other = panes.list.panes.find((pane) => pane.paneId !== paneId);
+	const beside = other === undefined ? null : recordFor(panes.records, other.paneId).status.vault;
+	return beside ?? start.vaults[paneId] ?? start.first;
+}
+
+/** Inputs for the application once a start opened. */
+interface ApplicationBodyProps {
+	readonly start: OpenStart;
+	readonly catalog: ModelCatalog;
+}
+
+/**
  * The root component's body, inside the providers it needs.
+ * @param props The start and the repositories.
  * @returns The shell, the settings dialogs and the workbench.
  */
-function ApplicationBody(): JSX.Element {
+function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
+	const { start, catalog } = props;
 	const [theme, setTheme] = useTheme();
 	const reducedMotion = useReducedMotion();
 	const notices = useNotices();
@@ -308,23 +246,9 @@ function ApplicationBody(): JSX.Element {
 		() => announcingViews(paneReadings, addressing),
 		[paneReadings, addressing],
 	);
-	const held = useMemo(
-		() =>
-			heldBoards(
-				panes.records,
-				panes.list.panes.map((entry) => entry.paneId),
-			),
-		[panes.records, panes.list],
-	);
-	const catalog = useBoardCatalog();
-	useReleasedBoards(held, catalog);
 	const agentActivity = useAgentActivity();
 	const workbench = useWorkbench(panes.handles, panes.list.activePaneId);
-	const { vault: activeVault, boardKey: activeKey } = panes.active.status;
-	const context = useMemo(
-		() => agentContextOf(boardsIn(catalog, activeVault), activeKey),
-		[catalog, activeVault, activeKey],
-	);
+	const { vault: activeVault } = panes.active.status;
 	// The actions read the panes as they are when somebody acts, so a pane's news
 	// does not make them, and every control holding one, again.
 	const [panesNow] = useState(() => new LiveBinding<Panes>());
@@ -352,7 +276,7 @@ function ApplicationBody(): JSX.Element {
 	const fullscreen = useFullscreen({ onRefused });
 	// The agent dock is off screen while a pane is presented fullscreen.
 	const dockless = fullscreen.snapshot.paneId !== null;
-	const slots = useAgentSlots({ agent, workbench, context, reducedMotion, dockless });
+	const slots = useAgentSlots({ agent, workbench, reducedMotion, dockless });
 	// The address bar over the panes the shell already owns: it writes down what
 	// they show, and restores what a direct load or a Back/Forward asks for.
 	const repositoryVaults = useVaultOf(catalog);
@@ -362,6 +286,20 @@ function ApplicationBody(): JSX.Element {
 	panes.bindEvents(paneEvents({ notices, catalog, readings, workbench, activity: agentActivity }));
 
 	const openSettings = useCallback((surface: SettingsSurface): void => setSettings(surface), []);
+	const router = useRouter();
+	const readRepository = useCallback(
+		(paneId: string, repository: string): Promise<void> =>
+			router.navigate({
+				to: "/",
+				/**
+				 * The address with this pane in the repository.
+				 * @param previous The search parameters now.
+				 * @returns The next ones.
+				 */
+				search: (previous) => searchOfRepository(previous, paneId, repository),
+			}),
+		[router],
+	);
 	const composed = useMemo(
 		() =>
 			createShellActions({
@@ -373,10 +311,21 @@ function ApplicationBody(): JSX.Element {
 				fullscreen,
 				openSettings,
 				activate,
+				readRepository,
 			}),
-		[setTheme, addressing, livePanes, catalog, notices, fullscreen, openSettings, activate],
+		[
+			setTheme,
+			addressing,
+			livePanes,
+			catalog,
+			notices,
+			fullscreen,
+			openSettings,
+			activate,
+			readRepository,
+		],
 	);
-	const openBeside = useBesideOpening(panes, livePanes, composed);
+	const { openBeside, destination } = useBesideOpening(panes, livePanes, composed);
 	const actions = useMemo<ShellActions>(
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
@@ -417,11 +366,22 @@ function ApplicationBody(): JSX.Element {
 	const narration = useNarration(workbench, agent.voice, panes.list.activePaneId, selectPane);
 	const overlay = useSubtitleOverlay({
 		workbench,
+		activePaneId: panes.list.activePaneId,
 		reducedMotion,
 		recording: recorder !== null,
 		presentedPaneId: fullscreen.snapshot.paneId,
 	});
 	const recorded = useRecordedViews(recorder, workbench, { narration, overlay });
+	const [catalogNow] = useState(() => new LiveBinding<ModelCatalog>());
+	catalogNow.bind(catalog);
+	const openingVault = useCallback(
+		(paneId: string): string => {
+			const repository = destination();
+			const asked = repository === null ? null : vaultOf(catalogNow.read(), repository);
+			return asked ?? vaultOfPane(livePanes, start, paneId);
+		},
+		[livePanes, start, destination, catalogNow],
+	);
 	const mounted = usePaneViews({
 		panes,
 		theme,
@@ -429,6 +389,7 @@ function ApplicationBody(): JSX.Element {
 		reducedMotion,
 		onVariantChange,
 		openBoard: selectBoard,
+		openingVault,
 		...recorded,
 	});
 	const view = useShellView({
@@ -464,8 +425,8 @@ function ApplicationBody(): JSX.Element {
 	useStageEvents(fullscreen.stage, stageEvents);
 	const transport = workbench.owners?.transport ?? null;
 	// The bell speaks for the repository in front of the person.
-	const diagnosed = activeVault ?? servedVault();
-	const { ask } = agent;
+	const diagnosed = activeVault ?? start.first;
+	const { ask, draft, panel } = agent;
 	// A repair goes to the workhorse of the repository diagnosed, so its checkout is shown first.
 	// The server tells the workbench socket of the switch before it answers, but that answer can
 	// arrive first. A read on the socket comes after the news, so the repair is composed for the
@@ -483,6 +444,19 @@ function ApplicationBody(): JSX.Element {
 		() => <VaultDiagnostics vault={diagnosed} transport={transport} ask={askAboutDiagnosed} />,
 		[diagnosed, transport, askAboutDiagnosed],
 	);
+	// A state's way on goes to the conversation of the pane's checkout, and the reader sends it.
+	const fillDraft = useCallback(
+		(text: string): void => {
+			void activate(livePanes.active.status.paneId).then(() => {
+				panel.openPanel();
+				if (draft.get() !== text) draft.fill(text);
+				return undefined;
+			});
+		},
+		[activate, livePanes, panel, draft],
+	);
+	useLastReading();
+
 	const recordedPane = recordedPaneOf(recorded.recording, panes.list, mounted);
 	if (recordedPane !== null) {
 		return (
@@ -492,26 +466,41 @@ function ApplicationBody(): JSX.Element {
 		);
 	}
 	return (
-		<OrbStageProvider>
-			{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
-			<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
-				<Tooltip.Provider>
-					<Shell
-						view={view}
-						actions={actions}
-						diagnostics={diagnostics}
-						voiceControls={slots.voiceControls}
-						agentDock={slots.dock}
-						agentPanel={slots.panel}
-						agentPanelOpen={agent.panel.open}
-						onAgentPanelClose={agent.panel.closePanel}
-						attachStage={fullscreen.attachStage}
-					/>
-					<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
-				</Tooltip.Provider>
-			</VoiceSurfaceProvider>
-		</OrbStageProvider>
+		<ModelArrivalContext value={addressing.modelArriving}>
+			<ModelDraftContext value={fillDraft}>
+				<OrbStageProvider>
+					{/* The voice box over a pane reads the voice and its actions where it is drawn. */}
+					<VoiceSurfaceProvider voice={agent.voice} actions={agent.actions}>
+						<Tooltip.Provider>
+							<Shell
+								view={view}
+								actions={actions}
+								diagnostics={diagnostics}
+								voiceControls={slots.voiceControls}
+								agentDock={slots.dock}
+								agentPanel={slots.panel}
+								agentPanelOpen={agent.panel.open}
+								onAgentPanelClose={agent.panel.closePanel}
+								attachStage={fullscreen.attachStage}
+							/>
+							<SettingsHosts surface={settings} notices={notices} onClose={closeSettings} />
+						</Tooltip.Provider>
+					</VoiceSurfaceProvider>
+				</OrbStageProvider>
+			</ModelDraftContext>
+		</ModelArrivalContext>
 	);
+}
+
+/**
+ * The start, decided once: until it opens, no pane exists and the chooser stands.
+ * @returns The application, or the shell of a start that opened nothing yet.
+ */
+function ApplicationStart(): JSX.Element {
+	const catalog = useModelCatalog();
+	const start = useStart(catalog);
+	if (start.kind === "open") return <ApplicationBody start={start} catalog={catalog} />;
+	return <StartShell start={start} catalog={catalog} />;
 }
 
 /**
@@ -522,7 +511,7 @@ function ApplicationBody(): JSX.Element {
 function Application(): JSX.Element {
 	return (
 		<BoardCatalogProvider>
-			<ApplicationBody />
+			<ApplicationStart />
 		</BoardCatalogProvider>
 	);
 }

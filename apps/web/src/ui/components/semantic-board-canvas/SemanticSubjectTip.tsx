@@ -3,18 +3,24 @@
 // picture leaves out about it.
 
 import { useQuery } from "@tanstack/react-query";
-import { useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type JSX } from "react";
+import {
+	useLayoutEffect,
+	useMemo,
+	useRef,
+	useState,
+	type CSSProperties,
+	type JSX,
+	type ReactNode,
+} from "react";
 
 import { cn, Tooltip } from "@archboard/ui-kit/components";
 
-import { lineInk } from "@archboard/renderer/picture";
 import {
 	RelationshipSample,
 	TypeSample,
 } from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
 import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { VariantReading } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
-import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
 import {
 	subjectTip,
@@ -48,7 +54,24 @@ function SemanticSubjectTip(props: {
 		target === null
 			? null
 			: tipOver(target, props.appearance, props.reading, props.far, levels, props.overview);
-	const anchor = useTipAnchor(target);
+	return <SubjectTipBox target={target} tip={tip} />;
+}
+
+/**
+ * Lay a tip beside the part it is about.
+ * @param props The part and what to say.
+ * @param props.target The part under the pointer, or null.
+ * @param props.tip What the tip says, or null.
+ * @param props.children What a reader of this subject says beside it.
+ * @returns The tip, or nothing.
+ */
+function SubjectTipBox(props: {
+	readonly target: TipTarget | null;
+	readonly tip: SubjectTip | null;
+	readonly children?: ReactNode;
+}): JSX.Element | null {
+	const { tip } = props;
+	const anchor = useTipAnchor(props.target);
 	if (tip === null || anchor === null) {
 		return null;
 	}
@@ -60,9 +83,8 @@ function SemanticSubjectTip(props: {
 				look="card"
 				data-slot="semantic-subject-tip"
 				className="w-max min-w-56 flex-col items-stretch gap-2.5"
-				style={accentOf(tip.appearance)}
 			>
-				<TipLines tip={tip} />
+				<TipLines tip={tip}>{props.children}</TipLines>
 			</Tooltip.Content>
 		</Tooltip>
 	);
@@ -85,15 +107,17 @@ function useTipAnchor(target: TipTarget | null): TipAnchor | null {
  * the longer account, and what a double-click does.
  * @param props The tip.
  * @param props.tip What it says.
+ * @param props.children What stands before the last line.
  * @returns The lines that have something to say.
  */
-function TipLines(props: { readonly tip: SubjectTip }): JSX.Element {
+function TipLines(props: { readonly tip: SubjectTip; readonly children?: ReactNode }): JSX.Element {
 	const { tip } = props;
 	return (
 		<>
 			<TipHeading tip={tip} />
 			{tip.lead !== undefined && <p className="text-body shrink-0">{tip.lead}</p>}
 			{tip.body !== undefined && <TipBody key={tip.body} text={tip.body} />}
+			{props.children}
 			{tip.hint !== undefined && (
 				<p
 					data-slot="semantic-subject-tip-hint"
@@ -128,19 +152,6 @@ function tipOver(
 	return variant === null
 		? null
 		: subjectTip(variant, target, appearance, far, { here: reading?.level, levels }, overview);
-}
-
-/**
- * The tip's edge in the ink the picture draws the part's kind with: a card's
- * kind colour, a line's colour at its line strength.
- * @param appearance How the picture draws the part, when it names its type.
- * @returns The edge's style, or none when the picture names no type.
- */
-function accentOf(appearance: AppliedAppearance | undefined): CSSProperties | undefined {
-	if (appearance === undefined) return undefined;
-	const ink =
-		appearance.depiction === "" ? lineInk(appearance.lineColor) : paletteInk(appearance.typeColor);
-	return { borderLeftColor: ink, borderLeftWidth: 3 };
 }
 
 /**
@@ -237,4 +248,4 @@ function useCut(element: { readonly current: HTMLElement | null }): boolean {
 	return cut;
 }
 
-export { SemanticSubjectTip };
+export { SemanticSubjectTip, SubjectTipBox };

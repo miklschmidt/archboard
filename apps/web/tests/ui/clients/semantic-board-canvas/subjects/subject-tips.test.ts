@@ -153,7 +153,7 @@ test("a card with nothing more to say has a tip only from far away", () => {
 
 test("a label's tip names its words and the kind of line the picture draws them on", () => {
 	const picture = drawn();
-	expect(tipTargetAt(at(picture, "wire"), 0)).toBeNull();
+	expect(subjectTip(VARIANT, tipTargetAt(at(picture, "wire"), 0)!, undefined, false)).toBeNull();
 	const label = tipTargetAt(at(picture, "pill"), 0);
 	const tip = subjectTip(VARIANT, label!, LINE, false)!;
 	expect(tip.title).toBe("reads");

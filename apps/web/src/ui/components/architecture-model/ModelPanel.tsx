@@ -1,0 +1,302 @@
+// The right panel of a reading: a column that stands beside the picture on every Diagram reading,
+// so a selection never moves the picture. It says what is selected, or what is open while nothing
+// is, over what can be done and the legend. Long lists and evidence live on About.
+
+import { RiCloseLine } from "@remixicon/react";
+import {
+	useCallback,
+	useLayoutEffect,
+	useRef,
+	useState,
+	type ComponentProps,
+	type CSSProperties,
+	type JSX,
+	type ReactNode,
+	type RefObject,
+} from "react";
+import { SIDEBAR_MS } from "@archboard/timing";
+import { cn, IconButton } from "@archboard/ui-kit/components";
+
+/** The duration the stylesheet fades a new subject in with. */
+const PANEL_STYLE: CSSProperties = {
+	"--sidebar-subject-in-ms": `${SIDEBAR_MS.subjectIn}ms`,
+};
+
+/** How many rows of a list the panel shows before it offers the rest. */
+const ROWS_SHOWN = 8;
+
+/** Inputs for the panel. */
+interface ModelPanelProps {
+	/** Let go of the selection, while there is one. */
+	readonly onClose: (() => void) | undefined;
+	/** Whether About lies over it. It then holds nothing and keeps its room, so the picture keeps its camera. */
+	readonly covered: boolean;
+	/** Its `ModelPanel.Subject`, then any `ModelPanel.Foot` and the legend. */
+	readonly children: ReactNode;
+}
+
+/**
+ * Give the keyboard to the picture beside the panel.
+ * @param panel The panel's element.
+ */
+function focusPicture(panel: HTMLElement | null): void {
+	panel?.parentElement?.querySelector<HTMLElement>('[data-slot="model-diagram"]')?.focus();
+}
+
+/**
+ * Give the keyboard back to the picture when a selection lets go of what held it: the control that
+ * held it left with the subject, so nothing holds it now.
+ * @param panel The panel's element, which stands beside the picture.
+ * @param selecting Whether a selection stands.
+ */
+function useFocusBack(panel: RefObject<HTMLElement | null>, selecting: boolean): void {
+	const was = useRef(selecting);
+	useLayoutEffect(() => {
+		const letGo = was.current && !selecting;
+		was.current = selecting;
+		if (letGo && document.activeElement === document.body) focusPicture(panel.current);
+	}, [panel, selecting]);
+}
+
+/**
+ * The panel.
+ * @param props What it holds and the way to let go.
+ * @returns The column.
+ */
+function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
+	const panel = useRef<HTMLElement>(null);
+	const { onClose } = props;
+	useFocusBack(panel, onClose !== undefined);
+	return (
+		<aside
+			ref={panel}
+			aria-label="Right panel"
+			data-slot="model-panel"
+			style={PANEL_STYLE}
+			className={cn(
+				"border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col border-l in-data-presenting:hidden",
+				props.covered && "invisible",
+				onClose === undefined && "@max-[900px]/reading:hidden",
+			)}
+		>
+			{!props.covered && (
+				<>
+					{onClose !== undefined && (
+						<IconButton
+							label="Clear selection"
+							slot="semantic-selection-clear"
+							className="absolute top-3 right-3 z-10"
+							onClick={onClose}
+						>
+							<RiCloseLine />
+						</IconButton>
+					)}
+					{props.children}
+				</>
+			)}
+		</aside>
+	);
+}
+
+/**
+ * What the panel says of one subject. A caller keys it by the subject, so a new one opens at the
+ * top and arrives with a fade.
+ * @param props What it holds.
+ * @param props.children What it says.
+ * @returns The region that scrolls above the legend.
+ */
+function Subject(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<div data-slot="model-panel-subject" className="flex min-h-0 flex-1 flex-col">
+			{props.children}
+		</div>
+	);
+}
+
+/**
+ * What the panel says, which scrolls.
+ * @param props What it holds.
+ * @param props.children The head and the sections.
+ * @param props.slot Where a test finds what it explains.
+ * @param props.moduleId The module it explains, when it explains one.
+ * @returns The body.
+ */
+function Body(props: {
+	readonly children: ReactNode;
+	readonly slot: string;
+	readonly moduleId?: string | undefined;
+}): JSX.Element {
+	return (
+		<article
+			data-slot={props.slot}
+			data-module-id={props.moduleId}
+			className="flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto p-4"
+		>
+			{props.children}
+		</article>
+	);
+}
+
+/**
+ * Whose panel this is: its name, then one line that says what it is.
+ * @param props The name and the line.
+ * @param props.title The name.
+ * @param props.children The line.
+ * @returns The head.
+ */
+function Head(props: { readonly title: ReactNode; readonly children?: ReactNode }): JSX.Element {
+	return (
+		<header className="flex flex-col gap-1 pr-8">
+			<h3 className="title-name text-balance [overflow-wrap:anywhere]">{props.title}</h3>
+			{props.children !== undefined && (
+				<div className="text-body text-muted-foreground flex min-w-0 flex-wrap gap-x-2">
+					{props.children}
+				</div>
+			)}
+		</header>
+	);
+}
+
+/**
+ * One list of the panel, under its count.
+ * @param props The list.
+ * @param props.title What it lists.
+ * @param props.count How many it lists.
+ * @param props.slot Where a test finds it.
+ * @param props.action What acts on the list, at the end of its heading.
+ * @param props.children Its rows.
+ * @returns The section.
+ */
+function Section(props: {
+	readonly title: string;
+	readonly count?: number | undefined;
+	readonly slot: string;
+	readonly action?: ReactNode;
+	readonly children: ReactNode;
+}): JSX.Element {
+	return (
+		<section data-slot={props.slot} aria-label={props.title} className="flex flex-col gap-1">
+			<div className="flex items-center justify-between gap-2">
+				<h4 className="text-body text-muted-foreground flex items-baseline gap-2 font-semibold">
+					{props.title}
+					{props.count !== undefined && (
+						<span className="text-technical font-mono font-normal">{props.count}</span>
+					)}
+				</h4>
+				{props.action}
+			</div>
+			<ul className="-mx-2 flex flex-col">{props.children}</ul>
+		</section>
+	);
+}
+
+/**
+ * The rows of a list. Most lists show whole, and a long one offers the rest in place.
+ * @param props The list.
+ * @param props.items What it lists.
+ * @param props.limit How many rows it shows before it offers the rest.
+ * @param props.children One row.
+ * @returns The rows.
+ */
+function Rows<Item>(props: {
+	readonly items: readonly Item[];
+	readonly limit?: number | undefined;
+	readonly children: (item: Item) => ReactNode;
+}): JSX.Element {
+	const { items, limit = ROWS_SHOWN, children } = props;
+	const [whole, setWhole] = useState(false);
+	const showAll = useCallback((): void => setWhole(true), []);
+	const shown = whole ? items : items.slice(0, limit);
+	return (
+		<>
+			{shown.map((item) => children(item))}
+			{shown.length < items.length && (
+				<li>
+					<button
+						type="button"
+						data-slot="model-panel-more"
+						onClick={showAll}
+						className="text-body text-muted-foreground hover:text-foreground px-2 py-1"
+					>
+						{items.length - shown.length} more
+					</button>
+				</li>
+			)}
+		</>
+	);
+}
+
+/**
+ * One row of a list, which is an action. A long name stands over its detail.
+ * @param props The row's words and the button's own attributes.
+ * @param props.name What it names.
+ * @param props.detail What it says of that.
+ * @param props.stacked Whether the detail stands under the name.
+ * @param props.action What else can be done with what it names, at its end.
+ * @returns The row.
+ */
+function Row({
+	name,
+	detail,
+	stacked = false,
+	action,
+	...button
+}: ComponentProps<"button"> & {
+	readonly name: ReactNode;
+	readonly detail?: ReactNode;
+	readonly stacked?: boolean;
+	readonly action?: ReactNode;
+}): JSX.Element {
+	return (
+		<li className="flex items-center">
+			<button
+				type="button"
+				{...button}
+				className={cn(
+					"hover:bg-muted/60 aria-pressed:bg-sidebar-accent aria-[current=location]:bg-sidebar-accent rounded-control flex min-h-7 min-w-0 flex-1 gap-x-2 px-2 py-1 text-left",
+					stacked ? "flex-col" : "items-baseline",
+				)}
+			>
+				<span
+					className={cn(
+						"text-control font-normal [overflow-wrap:anywhere]",
+						!stacked && "max-w-3/4 shrink-0",
+					)}
+				>
+					{name}
+				</span>
+				<span
+					className={cn(
+						"text-body text-muted-foreground min-w-0 flex-1 truncate",
+						!stacked && "text-right",
+					)}
+				>
+					{detail}
+				</span>
+			</button>
+			{action}
+		</li>
+	);
+}
+
+/**
+ * What can be done with the subject, pinned under it and over the legend.
+ * @param props The actions.
+ * @param props.children The actions.
+ * @returns The foot.
+ */
+function Foot(props: { readonly children: ReactNode }): JSX.Element {
+	return (
+		<footer
+			data-slot="model-panel-foot"
+			className="border-border flex shrink-0 flex-wrap items-center gap-1.5 border-t py-3 pr-3 pl-4"
+		>
+			{props.children}
+		</footer>
+	);
+}
+
+/** The panel, with its parts. */
+const ModelPanel = Object.assign(ModelPanelRoot, { Subject, Body, Head, Section, Rows, Row, Foot });
+
+export { ModelPanel };

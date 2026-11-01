@@ -28,16 +28,16 @@
 }
 
 @font-face {
-	font-family: "Archboard DM Mono";
-	src: url("@archboard/renderer/fonts/DMMono-Regular-v1.000.ttf") format("truetype");
+	font-family: "Archboard Maple Mono";
+	src: url("@archboard/renderer/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 400;
 	font-display: block;
 }
 
 @font-face {
-	font-family: "Archboard DM Mono";
-	src: url("@archboard/renderer/fonts/DMMono-Medium-v1.000.ttf") format("truetype");
+	font-family: "Archboard Maple Mono";
+	src: url("@archboard/renderer/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf") format("truetype");
 	font-style: normal;
 	font-weight: 500;
 	font-display: block;
@@ -60,7 +60,7 @@
 	   the step number of a presented walkthrough, and the wordmark. */
 	--font-display: "Archboard Display", "Big Shoulders Display", sans-serif;
 	--font-sans: "Archboard Onest", ui-sans-serif, system-ui, sans-serif;
-	--font-mono: "Archboard DM Mono", ui-monospace, monospace;
+	--font-mono: "Archboard Maple Mono", ui-monospace, monospace;
 	--font-heading: var(--font-sans);
 	/* Type roles (TASK-150.08). Chrome uses technical, body, control, title, nav and
 	   name; a drawn board keeps its own. technical: identifiers, paths, versions,
@@ -148,6 +148,11 @@
 	--color-primary-edge: var(--primary-edge);
 	/* A plane raised over the chrome: the tray at the foot of a column. */
 	--color-raised: var(--raised);
+	/* The picture's own pieces, which the left column is built from: the face of a
+	   slab, the floor a well sinks to, and the lighter piece raised on a well's edge. */
+	--color-slab-face: var(--slab-face);
+	--color-tray-sink: var(--tray-sink);
+	--color-tray-tab: var(--tray-tab);
 	--color-popover-foreground: var(--popover-foreground);
 	--color-popover: var(--popover);
 	--color-card-foreground: var(--card-foreground);
@@ -182,6 +187,8 @@
 	   its shadow lies over the picture and the About page (z-20) and under
 	   menus and dialogs (z-50). */
 	--shadow-well: var(--elevation-well);
+	--shadow-sink: var(--elevation-sink);
+	--shadow-slab: var(--elevation-slab);
 	--shadow-edge-down: var(--elevation-edge-down);
 	--shadow-edge-side: var(--elevation-edge-side);
 	--shadow-edge-up: var(--elevation-edge-up);
@@ -243,7 +250,7 @@
 }
 [data-slot="semantic-board-surface"].is-presenting.is-veiled [data-semantic-id] {
 	opacity: 1;
-	filter: opacity(0.28);
+	filter: opacity(0.16);
 }
 [data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit,
 [data-slot="semantic-board-surface"].is-presenting.is-veiled .is-lit [data-semantic-id] {
@@ -268,10 +275,10 @@
 	transition: filter var(--lighting-ms, 0ms) ease-out;
 }
 [data-slot="semantic-board-surface"].is-probing {
-	--recede: 0.3;
+	--recede: 0.14;
 }
 [data-slot="semantic-board-surface"].is-probing.is-probing-light {
-	--recede: 0.5;
+	--recede: 0.24;
 }
 [data-slot="semantic-board-surface"].is-probing [data-semantic-id],
 [data-slot="semantic-board-surface"].is-probing [data-traffic],
@@ -314,17 +321,21 @@
 
 /* A relationship's label is never hidden (TASK-403). It is drawn at every zoom,
    seen from far as well as near. Where the rest of the picture recedes, under a
-   poke or under a presented step's veil, a label that is not lit recedes to half
-   at most, so its words can still be read. The board a flight carries inside a
+   poke or under a presented step's veil, a label that is not lit recedes less
+   than they do, so its words can still be made out. The board a flight carries inside a
    card keeps no filter, as above. */
 [data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
 	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, [data-dive-inset] *) {
-	filter: opacity(0.5);
+	filter: opacity(0.28);
 }
 
 /* A picture's traffic changes on every frame. On a compositing layer of its own
    only the traffic is painted again, not the cards and labels under it, which
    took a third of a core on an idle board (TASK-385.01). */
+[data-slot="semantic-board-surface"] .ab-toggle:hover > rect:nth-child(2) {
+	fill-opacity: 0.2;
+}
+
 [data-slot="semantic-board-surface"] .ab-pulse {
 	will-change: transform;
 }
@@ -359,6 +370,12 @@
               repaint over the picture slows down dragging it.
      well     a field sunk into a surface (--elevation-well): an inner shadow
               under its top edge.
+     sink     the well that a column's list lies in (--elevation-sink), cut as
+              the picture cuts a container: one inner shadow from the whole of
+              its top edge and a lit lip along its foot.
+     slab     a number that lies on a surface (--elevation-slab), built
+              as the picture builds a small part: a lit top edge, a front edge
+              along its foot and a short shadow.
      chrome   the navigator, a pane's header, the sidebar and the
               conversation's header stand on the ground and cast a short
               shadow onto what lies beside or under them
@@ -380,6 +397,12 @@
 :root {
 	/* Depth on chalk: shadows in a warm umber, highlights in white. */
 	--elevation-well: inset 0 1px 2px oklch(0.33 0.035 65 / 0.1);
+	/* The left column is the picture's own object, so its depth reads the picture's
+	   tokens, which hold both themes. */
+	--elevation-sink: inset 0 9px 9px -8px var(--slab-shadow), inset 0 -1px 0 var(--tray-lip);
+	--elevation-slab:
+		inset 0 1px 0 color-mix(in oklch, var(--slab-glint) 16%, transparent), 0 2px 0 var(--slab-edge),
+		0 3px 4px -1px var(--slab-shadow);
 	--elevation-edge-down:
 		0 1px 2px oklch(0.33 0.035 65 / 0.07), 0 8px 18px -8px oklch(0.33 0.035 65 / 0.2);
 	--elevation-edge-side:
@@ -461,6 +484,97 @@
 			var(--primary-top)
 		);
 		@apply shadow-primary-pressed;
+	}
+}
+
+/* A popover that a person opened, a select or a menu. It grows a little from its
+   control and fades in, once, as a layer of its own, so nothing over the picture
+   is painted again, and it leaves faster than it came. The durations are in
+   `COLUMN_MS`, and the page puts them on the root element (`shell-durations.ts`),
+   because a popover stands in a portal outside the shell. With reduced motion it is
+   there and gone at once. */
+@utility menu-motion {
+	transition:
+		opacity var(--popover-in-ms, 160ms) ease-out,
+		transform var(--popover-in-ms, 160ms) cubic-bezier(0.22, 1, 0.36, 1);
+	&[data-starting-style] {
+		opacity: 0;
+		transform: translateY(-4px) scale(0.97);
+	}
+	&[data-side="top"][data-starting-style] {
+		transform: translateY(4px) scale(0.97);
+	}
+	&[data-ending-style] {
+		opacity: 0;
+		transform: scale(0.98);
+		transition-duration: var(--popover-out-ms, 110ms);
+		transition-timing-function: ease-in;
+	}
+}
+
+/* The well that a column's list lies in, cut as the picture cuts a container: a floor
+   a step under the chrome, one thin line round it, an inner shadow down from the whole
+   of its top edge and a lit lip along its foot. The shadow is a layer over the list, so
+   what scrolls in the well passes under it. What stands proud of the floor, such as the
+   shelf of a list, stands over that layer. */
+@utility column-well {
+	position: relative;
+	isolation: isolate;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+	border-top: 1px solid var(--border);
+	background-color: var(--tray-sink);
+	&::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: 15;
+		pointer-events: none;
+		border-radius: inherit;
+		box-shadow: var(--shadow-sink);
+	}
+}
+
+/* A group's tag: one bright piece on any ground, cut from --tag, which a tag
+   sets to its --bright-<name> (theme.css). Every stop stays in OKLCH, because a mix
+   toward a dark colour in sRGB turns orange brown. A tag's size is its site's.
+   A tag that is a button lights under the pointer. While it is on the gradient
+   turns over and the shadow moves inside, as under a key held pressed in. */
+@utility group-tag {
+	--tag-face-top: oklch(from var(--tag) calc(l + 0.02) calc(c + 0.02) h);
+	--tag-face-foot: oklch(from var(--tag) calc(l - 0.06) calc(c + 0.03) h);
+	position: relative;
+	color: oklch(from var(--tag) 0.2 0.03 h);
+	border: 1px solid oklch(from var(--tag) calc(l - 0.26) calc(c - 0.02) h);
+	border-radius: 5px;
+	background-image: linear-gradient(180deg, var(--tag-face-top), var(--tag-face-foot));
+	box-shadow: inset 0 1px 0 oklch(1 0.05 95 / 0.5);
+	font-weight: 600;
+	/* On the light theme a tag stands deeper under white ink tinted with its hue,
+	   as a door does (`finish.rs`). */
+	:root:not([data-theme="dark"]) & {
+		--tag-face-top: oklch(from var(--tag) 0.66 min(c, 0.2) h);
+		--tag-face-foot: oklch(from var(--tag) 0.58 min(c, 0.2) h);
+		color: oklch(from var(--tag) 0.985 min(c, 0.018) h);
+		border-color: oklch(from var(--tag) 0.46 min(c, 0.17) h);
+	}
+	&:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+	&:is(button):hover:not(:disabled, [aria-pressed="true"]) {
+		background-image: linear-gradient(
+			180deg,
+			oklch(from var(--tag-face-top) calc(l + 0.05) c h),
+			oklch(from var(--tag-face-foot) calc(l + 0.05) c h)
+		);
+	}
+	&[aria-pressed="true"],
+	&:is(button):active:not(:disabled) {
+		background-image: linear-gradient(0deg, var(--tag-face-top), var(--tag-face-foot));
+		box-shadow: inset 0 1px 3px oklch(from var(--tag) 0.2 0.03 h / 0.55);
 	}
 }
 
@@ -1062,10 +1176,81 @@
 	transition-timing-function: ease-in;
 }
 
+/* The left column's tabs stand on the top edge of its well, as a container's name
+   stands on the picture (ADR 0044). The open tab is the lighter piece raised on that
+   edge, with the well's own corners. Its side turns into the edge in a crisp concave
+   curve in place of reaching it, the top edge runs on under it, and one line goes round
+   the tab and the well. The rules stand outside any layer, so they replace the
+   registry's trigger. */
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"] {
+	--foot: 5px;
+	flex: none;
+	gap: 6px;
+	height: 32px;
+	padding: 0 4px;
+	border: 1px solid transparent;
+	border-bottom: 0;
+	border-radius: 5px 5px 0 0;
+	background: none;
+	color: var(--muted-foreground);
+	font-size: var(--text-control);
+	line-height: var(--text-control--line-height);
+	font-weight: 500;
+	transition: color 120ms ease-out;
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:hover {
+	color: var(--foreground);
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]:focus-visible {
+	box-shadow: inset 0 0 0 2px var(--ring);
+	outline: none;
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active] {
+	z-index: 1;
+	border-color: var(--border);
+	background-color: var(--tray-tab);
+	box-shadow:
+		inset 0 1px 0 var(--highlight),
+		0 -3px 6px -3px var(--slab-shadow);
+	color: var(--foreground);
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::before,
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"]::after {
+	content: none;
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before,
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
+	content: "";
+	position: absolute;
+	inset: auto;
+	bottom: 0;
+	width: calc(var(--foot) + 1px);
+	height: var(--foot);
+	opacity: 1;
+	pointer-events: none;
+	--curve:
+		transparent var(--foot), var(--border) var(--foot), var(--border) calc(var(--foot) + 1px),
+		var(--tray-tab) calc(var(--foot) + 1.5px);
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before {
+	right: 100%;
+	background:
+		radial-gradient(circle at 0 0, var(--curve)),
+		linear-gradient(to left, var(--tray-tab) 1px, transparent 1px);
+}
+[data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
+	left: 100%;
+	background:
+		radial-gradient(circle at 100% 0, var(--curve)),
+		linear-gradient(to right, var(--tray-tab) 1px, transparent 1px);
+}
+
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
    place of the system's full-width one. */
 [data-slot="semantic-sidebar-panel"],
-[data-slot="semantic-sidebar-panel"] * {
+[data-slot="semantic-sidebar-panel"] *,
+[data-slot="navigator-column"] *,
+[data-slot="model-panel"] * {
 	scrollbar-width: thin;
 	scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
 }
@@ -1075,6 +1260,16 @@
    and two panels are never drawn in one frame. */
 [data-slot="semantic-sidebar-panel"] [data-slot="tabs-content"][data-ending-style] {
 	display: none;
+}
+
+/* A new subject of the right panel arrives the same way, at the top of the panel. */
+[data-slot="model-panel-subject"] {
+	transition: opacity var(--sidebar-subject-in-ms, 120ms) ease-out;
+}
+@starting-style {
+	[data-slot="model-panel-subject"] {
+		opacity: 0;
+	}
 }
 
 /* A tab's panel arrives with a short fade. The selection's is keyed by what is
@@ -1087,60 +1282,6 @@
 	[data-slot="semantic-sidebar-panel"] [data-slot="tabs-content"] {
 		opacity: 0;
 	}
-}
-
-/* The navigator's tree lines (tree-guides). Each row draws, for every row it
-   sits under, a line through the middle of that row's chevron. Where it hangs
-   from its parent the line turns to it with an elbow, and the last of a
-   parent's rows ends the line there; a row with a chevron gets a short elbow
-   and a row without one an elbow that runs on to its marker (--tick). --row-mid
-   is the middle of a row's first line. The way from the top to the selected row
-   is lit in Gold Mark, down to the middle of each row on it, and every other
-   line is quiet. */
-[data-slot="tree-guide"] {
-	--guide: color-mix(in oklch, var(--foreground) 11%, transparent);
-	--guide-lit: var(--primary-mark);
-	position: absolute;
-	inset-block: 0;
-	width: 0;
-	pointer-events: none;
-}
-[data-slot="tree-guide"]::before {
-	content: "";
-	position: absolute;
-	inset-block: 0;
-	left: 0;
-	width: 1px;
-	background: var(--guide);
-}
-[data-guide="last"]::before {
-	bottom: auto;
-	height: calc(var(--row-mid) + 1px);
-}
-[data-guide="elbow"]::after,
-[data-guide="last"]::after {
-	content: "";
-	position: absolute;
-	top: var(--row-mid);
-	left: 0;
-	width: var(--tick);
-	height: 1px;
-	background: var(--guide);
-}
-[data-lit="rail"]::before,
-[data-lit="branch"]::before {
-	background: var(--guide-lit);
-}
-[data-lit="mid"]::before {
-	background: linear-gradient(
-		to bottom,
-		var(--guide-lit) calc(var(--row-mid) + 1px),
-		var(--guide) 0
-	);
-}
-[data-lit="mid"]::after,
-[data-lit="branch"]::after {
-	background: var(--guide-lit);
 }
 
 @layer base {

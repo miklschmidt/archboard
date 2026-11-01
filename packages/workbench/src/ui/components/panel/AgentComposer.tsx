@@ -16,13 +16,11 @@ import {
 } from "react";
 
 import { usesCommandKey } from "@archboard/ui-kit/components";
-import type { AgentContext } from "#ui/state/surfaces/contracts.ts";
 import type { DraftStore } from "#ui/state/surfaces/draft-store.ts";
 
 /** Inputs for the composer. */
 interface AgentComposerProps {
 	readonly draft: DraftStore;
-	readonly context: AgentContext;
 	/** A turn is running: Enter steers it. */
 	readonly running: boolean;
 	/**
@@ -35,18 +33,17 @@ interface AgentComposerProps {
 
 /**
  * What the empty composer says: who it talks to, about what.
- * @param context The board the agent will read.
  * @param running Whether a turn is running.
  * @returns The placeholder.
  */
-function placeholderOf(context: AgentContext, running: boolean): string {
+function placeholderOf(running: boolean): string {
 	if (running) return `Steer the agent · ${usesCommandKey() ? "⌘" : "Ctrl"}+Enter to queue`;
-	return context.board === null ? "Ask the agent" : `Ask about ${context.board}`;
+	return "Ask the agent";
 }
 
 /**
  * The composer.
- * @param props The draft, the context and the send.
+ * @param props The draft and the send action.
  * @returns The composer.
  */
 function AgentComposer(props: AgentComposerProps): JSX.Element {
@@ -94,7 +91,7 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 					onChange={handleChange}
 					onKeyDown={handleKeyDown}
 					aria-label="Message the agent"
-					placeholder={placeholderOf(props.context, running)}
+					placeholder={placeholderOf(running)}
 					className="text-control placeholder:text-muted-foreground [field-sizing:content] max-h-[30vh] min-h-6 min-w-0 flex-1 resize-none bg-transparent py-[3px] font-normal outline-none"
 				/>
 				<button

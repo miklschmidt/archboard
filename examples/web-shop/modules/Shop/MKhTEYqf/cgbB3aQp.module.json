@@ -1,0 +1,42 @@
+{
+  "order": 1000,
+  "name": "Storefront",
+  "kind": "ui",
+  "responsibility": "Where shoppers browse, fill a basket and pay",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#cgbB3aQp",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "http",
+      "label": "POST /orders",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 80,
+        "volume": 1
+      },
+      "id": "Shop/MKhTEYqf#LrbGsGwG",
+      "to": "Shop/MKhTEYqf#kZjjfq1m"
+    },
+    {
+      "order": 3000,
+      "kind": "http",
+      "label": "how many are left",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 60,
+        "volume": 1.5
+      },
+      "id": "Shop/5IZTN4RT#5gz3tKp7",
+      "to": "Shop/5IZTN4RT#Nmg4K8ge"
+    },
+    {
+      "order": 6000,
+      "kind": "http",
+      "label": "PUT /basket",
+      "emphasis": "muted",
+      "id": "Shop/MKhTEYqf#3PN9WBRn",
+      "to": "Shop/MKhTEYqf#4M4pdgk0"
+    }
+  ]
+}

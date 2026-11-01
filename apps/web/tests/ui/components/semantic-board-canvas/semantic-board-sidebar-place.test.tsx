@@ -1,24 +1,19 @@
 // Where the sidebar is beside a pane, and how a person shows it, hides it and
-// puts it away: the one control in the pane's header, a panel laid over the
-// picture while two panes share the centre, and the search shortcut.
+// puts it away: the one control in the pane's header, and a panel laid over the
+// picture while two panes share the centre.
 //
 // What these catch: a sidebar that leaves a bar or an empty column behind, a
 // hidden sidebar that comes back somewhere else, a pick that docks a sidebar and
 // so refits the picture under the pointer that made it, a float the person
 // asked for that a released pick takes away, a panel that is put away without
-// giving the keyboard back, and a shortcut that does nothing until the sidebar
-// has been opened some other way, a control that says the sidebar is shown while
+// giving the keyboard back, a control that says the sidebar is shown while
 // a presented walkthrough has it stepped aside, and a tab chosen in a docked
-// sidebar that turns into a float when a second pane arrives, a pick during
-// a presented walkthrough that lays a panel nobody sees over the picture, and a
-// pick on the About page that lays a panel over the page's own controls.
+// sidebar that turns into a float when a second pane arrives, and a pick during
+// a presented walkthrough that lays a panel nobody sees over the picture.
 
 import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
-import { createElement } from "react";
-
 import type { PaneChrome } from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
-import { PartSearch } from "#ui/components/semantic-board-canvas/PartSearch.tsx";
 import { EXPLAINED_BOARD } from "#tests/ui/support/semantic-board-canvas/render-answers.ts";
 import {
 	changeChromeInShell,
@@ -33,7 +28,6 @@ import {
 	viewport,
 } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import { sidebarSettled } from "#tests/ui/support/semantic-board-canvas/sidebar-probes.ts";
-import { openAboutPage } from "#tests/ui/support/semantic-board-canvas/variants-page.ts";
 
 beforeAll(() => {
 	// This DOM has no fullscreen to report; a browser that is not in one says null.
@@ -47,18 +41,9 @@ const SHARED: PaneChrome = {
 	notice: null,
 	shared: true,
 	active: true,
+	column: null,
+	openBeside: null,
 };
-
-/** The same pane while the other one has focus. */
-const NOT_ACTIVE: PaneChrome = { ...SHARED, active: false };
-
-/** Nothing is chosen in these tests. */
-function noChoice(): void {
-	// A search that finds nothing has nothing to choose.
-}
-
-/** The search over parts, with no board to search. */
-const SEARCH = createElement(PartSearch, { boards: [], onChoose: noChoice });
 
 /**
  * Mount a pane that holds its own selection, with a picture drawn.
@@ -67,7 +52,7 @@ const SEARCH = createElement(PartSearch, { boards: [], onChoose: noChoice });
  */
 async function mountPane(chrome?: PaneChrome): Promise<void> {
 	server.reply = { status: 200, body: drawing(1) };
-	mountStage(null, { live: true, chrome, search: SEARCH });
+	mountStage(null, { live: true, chrome });
 	await settle();
 }
 
@@ -195,43 +180,6 @@ test("pinning docks a floating panel, and hiding it then asking for it back dock
 	expect(placeNow()).toBe("docked");
 });
 
-/**
- * Press the shortcut for the search over parts.
- */
-function pressSearchShortcut(): void {
-	act(() => {
-		fireEvent.keyDown(window, { key: "K", ctrlKey: true, shiftKey: true });
-	});
-}
-
-test("the search shortcut shows an away sidebar in the pane with focus and takes focus in the field", async () => {
-	await mountPane(SHARED);
-	expect(column()).toBeNull();
-
-	pressSearchShortcut();
-	await settle();
-	expect(placeNow()).toBe("floating");
-	const field = document.activeElement;
-	expect(field?.getAttribute("role")).toBe("combobox");
-	// Nothing is typed, so no list is drawn, and the field names none.
-	expect(field?.hasAttribute("aria-controls")).toBe(false);
-
-	// Escape in the empty field lets go of the field and puts the float away, and
-	// the keyboard goes back to the control, not to the body of the page.
-	act(() => {
-		fireEvent.keyDown(field ?? document.body, { key: "Escape" });
-	});
-	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
-	expect(focusedSlot()).toBe("semantic-sidebar-toggle");
-});
-
-test("the search shortcut is for the pane with focus alone", async () => {
-	await mountPane(NOT_ACTIVE);
-	pressSearchShortcut();
-	await settle();
-	expect(column()).toBeNull();
-});
-
 test("letting go of a pick from inside the panel that it floated gives the keyboard back to the control", async () => {
 	await mountPane(SHARED);
 	await pickCard();
@@ -265,7 +213,6 @@ test("a presented walkthrough steps the sidebar aside: its control is held, and 
 	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
 
 	press("semantic-sidebar-toggle");
-	pressSearchShortcut();
 	await settle();
 	expect(column()).toBeNull();
 
@@ -282,26 +229,4 @@ test("a presented walkthrough steps the sidebar aside: its control is held, and 
 	await settle();
 	expect(placeNow()).toBe("floating");
 	expect(part("semantic-sidebar-toggle").hasAttribute("aria-disabled")).toBe(false);
-});
-
-test("a pick on the About page lays no panel over the page, and the diagram gives the pick its panel", async () => {
-	server.documents["pipeline"] = EXPLAINED_BOARD;
-	await mountPane(SHARED);
-	await settle();
-	openAboutPage();
-	await settle();
-
-	act(() => {
-		fireEvent.click(document.querySelector("[data-slot='about-part'][data-part='n1']")!);
-	});
-	await sidebarSettled();
-	expect(column()).toBeNull();
-	expect(part("semantic-sidebar-toggle").getAttribute("aria-expanded")).toBe("false");
-
-	act(() => {
-		fireEvent.click(document.querySelector("[data-slot='board-tab'][data-tab='diagram']")!);
-	});
-	await settle();
-	expect(placeNow()).toBe("floating");
-	expect(part("semantic-sidebar").getAttribute("data-tab")).toBe("selection");
 });

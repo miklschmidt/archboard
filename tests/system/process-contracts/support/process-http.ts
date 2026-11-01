@@ -2,6 +2,7 @@ import { createServer } from "node:net";
 import path from "node:path";
 
 import { z } from "zod";
+import { freeLoopbackPort } from "../../support/loopback-port.ts";
 
 const HealthSchema = z.looseObject({ pid: z.number().int().positive() });
 const ReadySchema = z.looseObject({ pid: z.number().int().positive() });
@@ -30,29 +31,6 @@ function sanitizedEnvironment(
 	};
 }
 
-async function availablePort(): Promise<number> {
-	const server = createServer();
-	await new Promise<void>((resolve, reject) => {
-		server.once("error", reject);
-		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
-	});
-	const address = server.address();
-	if (address === null || typeof address === "string") {
-		throw new Error("Port probe returned no TCP port.");
-	}
-	await new Promise<void>((resolve, reject) => {
-		server.close((...errors: readonly [Readonly<Error>?]) => {
-			const [error] = errors;
-			if (error === undefined) {
-				resolve();
-			} else {
-				reject(error);
-			}
-		});
-	});
-	return address.port;
-}
-
 async function portIsReusable(port: number): Promise<boolean> {
 	const server = createServer();
 	try {
@@ -74,5 +52,5 @@ async function portIsReusable(port: number): Promise<boolean> {
 	}
 }
 
-export { HealthSchema, ReadySchema, availablePort, portIsReusable, sanitizedEnvironment };
+export { HealthSchema, ReadySchema, freeLoopbackPort, portIsReusable, sanitizedEnvironment };
 export type { ChildEnvironment };

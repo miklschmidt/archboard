@@ -1,0 +1,46 @@
+{
+  "order": 15000,
+  "name": "Card blocks",
+  "kind": "function",
+  "responsibility": "Ranks a block's cards, labels and ports with Graphviz, then routes its lines on tracks between the ranks",
+  "description": "Each channel between ranks grows to fit its tracks, so the block's size is final when it answers. Graphviz is asked once for each graph a layout gives it (Engine in card_layout.rs), and track/graphviz.rs reads its answer into diagram coordinates.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout/src/blocks/card_layout.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#Wp2usbe5",
+  "parent": "vKEsyHFk/OjRLKb74#tppVDaSZ",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "rank and order the cards",
+      "emphasis": "normal",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/blocks/card_layout.rs",
+        "symbol": "render"
+      },
+      "id": "vKEsyHFk/OjRLKb74#Md6tqK1p",
+      "to": "vKEsyHFk/OjRLKb74#KdNM1Q56"
+    },
+    {
+      "order": 24000,
+      "kind": "call",
+      "label": "hold hidden parts below the first entry points",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-layout/src/blocks/card_graph.rs",
+        "symbol": "entry_row_edges"
+      },
+      "id": "vKEsyHFk/OjRLKb74#c6EtTjBt",
+      "to": "vKEsyHFk/OjRLKb74#jLUi9ZuH"
+    }
+  ]
+}

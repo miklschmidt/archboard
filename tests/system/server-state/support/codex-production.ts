@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { WebSocket } from "ws";
 import { vaultIn } from "../../support/test-vault.ts";
+import { onlyVault } from "./http.ts";
 
 interface WorkbenchResult {
 	readonly ok: boolean;
@@ -55,6 +56,10 @@ function prepareProductionFixture(
 	writeFileSync(
 		executablePath,
 		readFileSync(executableSource, "utf8")
+			.replaceAll(
+				"./fake-codex-explanation-queue.ts",
+				join(dirname(executableSource), "fake-codex-explanation-queue.ts"),
+			)
 			.replaceAll(
 				"./fake-codex-production-data.ts",
 				join(dirname(executableSource), "fake-codex-production-data.ts"),
@@ -132,15 +137,9 @@ async function openApplicationSocket(
 	} = {},
 ): Promise<ApplicationSocket> {
 	const endpoint = new URL(options.endpoint ?? base);
-	// The pane names the one vault the server reports, as the browser does.
+	// The pane names the one vault the server lists, as the browser does.
 	if (options.endpoint === undefined) {
-		const vault =
-			options.vault ??
-			(
-				(await (await fetch(new URL("/api/served-vault", base))).json()) as {
-					vault: string;
-				}
-			).vault;
+		const vault = options.vault ?? (await onlyVault(base));
 		endpoint.searchParams.set("clientId", clientId);
 		endpoint.searchParams.set("vault", vault);
 		endpoint.searchParams.set("tabSession", options.tabSession ?? "system-tab");

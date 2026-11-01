@@ -32,8 +32,8 @@ use crate::sequence::card::{
 use crate::sequence::design::{
     ARCHITECTURE_CARD_PADDING, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
     CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN, FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP,
-    HEADER_HEIGHT, HEADER_HEIGHT_WITH_NOTE, HEADER_SLAB_INSET, ICON_MIN_CARD_WIDTH, LIFELINE_GAP,
-    NEST_INSET, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
+    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, ICON_MIN_CARD_WIDTH, LIFELINE_GAP, NEST_INSET,
+    TAB_PADDING, TAB_SHOULDER, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
 };
 use crate::sequence::frames::{place_frames, span_around};
 use crate::sequence::messages::frame_span;
@@ -164,8 +164,8 @@ pub(super) struct FlowLayout<'a> {
     pub frame: Rect,
     /// Where the frame's name and summary go.
     pub header: Rect,
-    /// The header slab the name and summary stand on, its front edge included.
-    pub slab: Rect,
+    /// The tab the name and summary stand in, at its widest.
+    pub tab: Rect,
     /// Where the lifelines stop.
     pub lifeline_bottom: f64,
     /// Its participants, in the order the flow states them.
@@ -231,6 +231,9 @@ fn participant_node(id: &str, by_id: &HashMap<&str, &Node>) -> Node {
             name: id.to_owned(),
             kind: "other".to_owned(),
             responsibility: None,
+            code_path: None,
+            door: None,
+            toggle: None,
             parent: None,
             groups: Vec::new(),
             drills: false,
@@ -379,18 +382,16 @@ fn layout_flow<'a>(
     let count = nodes.len() as f64;
     let content_width = column_width * count + COLUMN_GAP * (count - 1.0);
 
-    // The header slab stands in the frame's well as a container's does, with
-    // the words on it as a card's stand on its own, and the heads stand as far
-    // under its foot as in from the frame's sides.
-    let slab_top = top + HEADER_SLAB_INSET;
-    let header_top = slab_top + ARCHITECTURE_CARD_PADDING;
+    // The name and the summary stand in the frame's tab, and the heads stand as
+    // far under the well's edge as in from the frame's sides.
+    let header_top = top + ARCHITECTURE_CARD_PADDING;
     let header_height = if flow.summary.is_none() {
-        HEADER_HEIGHT
+        FLOW_HEADING
     } else {
-        HEADER_HEIGHT_WITH_NOTE
+        FLOW_HEADING_WITH_NOTE
     };
-    let slab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
-    let cards_top = slab_foot + NEST_INSET;
+    let tab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
+    let cards_top = tab_foot + NEST_INSET;
     let (cards, tallest) = head_cards(nodes, &centres, cards_top, (column_width, notes));
     let first_row = cards_top + tallest + LIFELINE_GAP + FIRST_MESSAGE_DROP;
 
@@ -451,16 +452,16 @@ fn layout_flow<'a>(
             height: lifeline_bottom + CONTAINER_BOTTOM_PAD - top,
         },
         header: Rect {
-            x: x + HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING,
+            x: x + TAB_PADDING,
             y: header_top,
-            width: width - (HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING) * 2.0,
+            width: width - TAB_SHOULDER - TAB_PADDING * 2.0,
             height: header_height,
         },
-        slab: Rect {
-            x: x + HEADER_SLAB_INSET,
-            y: slab_top,
-            width: width - HEADER_SLAB_INSET * 2.0,
-            height: slab_foot - slab_top,
+        tab: Rect {
+            x,
+            y: top,
+            width: width - TAB_SHOULDER,
+            height: tab_foot - top,
         },
         lifeline_bottom,
         columns,

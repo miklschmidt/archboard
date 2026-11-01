@@ -1,0 +1,132 @@
+{
+  "order": 960070,
+  "name": "Application frame",
+  "kind": "ui",
+  "responsibility": "Lays out the desktop frame and mounts what stands around the panes: the catalogue, the agent surfaces, the orb and the settings",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/application/Application.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#mlSnLR16",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "render",
+      "label": "the desktop frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "Shell"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4dl0EE8i",
+      "to": "vKEsyHFk/yejBBUFY#c4LPnwh5"
+    },
+    {
+      "order": 11000,
+      "kind": "render",
+      "label": "dock, conversation, voice box, the presentation's voice key",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/AgentSurfaceSlots.tsx",
+        "symbol": "AgentDock"
+      },
+      "id": "vKEsyHFk/yejBBUFY#WchncnH1",
+      "to": "vKEsyHFk#UoblaIEv"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "read canonical repository summaries",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "useModelCatalog"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ep2NF6Z5",
+      "to": "vKEsyHFk#upjMkmlU"
+    },
+    {
+      "order": 27000,
+      "kind": "render",
+      "label": "over voice's pane, or the presented one",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/PaneSubtitles.tsx",
+        "symbol": "VoiceSubtitles"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vm1xFAYO",
+      "to": "vKEsyHFk/yejBBUFY#0yb2VbKc"
+    },
+    {
+      "order": 28000,
+      "kind": "call",
+      "label": "the recorder, when the address asks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-page-recording.ts",
+        "symbol": "openWalkthroughRecorder"
+      },
+      "id": "vKEsyHFk/yejBBUFY#4zVUlTbS",
+      "to": "vKEsyHFk/yejBBUFY#Dvxjjmxv"
+    },
+    {
+      "order": 43000,
+      "kind": "render",
+      "label": "the stage the one orb is flown on",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "OrbStageProvider"
+      },
+      "id": "vKEsyHFk/yejBBUFY#ZISV4NoQ",
+      "to": "vKEsyHFk/yejBBUFY#t5Wy06ua"
+    },
+    {
+      "order": 59000,
+      "kind": "call",
+      "label": "a pane focused, a board opened, a fix asked for",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "conversationActivation"
+      },
+      "id": "vKEsyHFk/yejBBUFY#XjRK4GvJ",
+      "to": "vKEsyHFk/yejBBUFY#cLeaiTWy"
+    },
+    {
+      "order": 71000,
+      "kind": "render",
+      "label": "the opener settings dialog, when the person opens it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/SettingsHosts.tsx",
+        "symbol": "OpenerSettings"
+      },
+      "id": "vKEsyHFk/yejBBUFY#wEaLH20o",
+      "to": "vKEsyHFk/yejBBUFY#4LDuKQvq"
+    },
+    {
+      "order": 980130,
+      "kind": "call",
+      "label": "the panes the address opens",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/application/Application.tsx",
+        "symbol": "openingPaneList"
+      },
+      "to": "vKEsyHFk#fLxtu2P4",
+      "id": "vKEsyHFk#c77ph39b"
+    }
+  ]
+}

@@ -18,7 +18,7 @@ import { holding } from "./holding.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { inRepository } from "./producer.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
-import { startServer, type TakeServer, type TrackedVault } from "./server.ts";
+import { startServer, type TakeServer, type TakeSource } from "./server.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { ROOT, inOrder, scratch } from "./tools.ts";
 
@@ -46,7 +46,7 @@ interface Moment {
  */
 async function withTake(
 	name: string,
-	vault: TrackedVault,
+	vault: TakeSource,
 	codex: boolean,
 	scene: (server: TakeServer, browser: Browser) => Promise<void>,
 ): Promise<void> {
@@ -167,14 +167,14 @@ async function present(page: Page): Promise<void> {
  */
 async function fit(page: Page): Promise<void> {
 	const panes = await page.evaluate(
-		`document.querySelectorAll("[data-slot='semantic-board-viewport']").length`,
+		`document.querySelectorAll("[data-slot='model-diagram']").length`,
 	);
 	// One pane takes the key at a time: the key goes to the pane just focused.
 	await inOrder(
 		Array.from({ length: Number(panes) }, (_, index) => index),
 		async (index) => {
 			await page.evaluate(
-				`document.querySelectorAll("[data-slot='semantic-board-viewport']")[${index}].focus()`,
+				`document.querySelectorAll("[data-slot='model-diagram']")[${index}].focus()`,
 			);
 			await page.key("0");
 		},
@@ -183,17 +183,36 @@ async function fit(page: Page): Promise<void> {
 }
 
 /**
- * Fold away every pane's sidebar that is open, so the picture has the room: fold the first one
- * still open, let it animate, and look again.
+ * Take the pointer off whatever it rests on, and put it on empty canvas: a point of a pane's
+ * picture that no drawn subject covers. A pointer over a row of the Right panel peeks at that row's
+ * part and washes out the selected one, so a clip moves it away once it has clicked.
  * @param page The shell.
+ * @param pane The pane whose canvas it rests on.
+ * @throws {Error} When the pane's picture has no empty point.
  */
-async function foldSidebars(page: Page): Promise<void> {
-	const open = "[data-slot='semantic-sidebar-toggle'][aria-expanded='true']";
-	if (!(await page.evaluate(`!!document.querySelector(${JSON.stringify(open)})`))) return;
-	await page.click(open);
-	await Bun.sleep(400);
-	await foldSidebars(page);
+async function restPointer(page: Page, pane = "A"): Promise<void> {
+	const at = PointSchema.parse(
+		await page.evaluate(`(() => {
+		const stage = document.querySelector("[data-slot='pane-stage'][data-pane='${pane}']");
+		if (!stage) return null;
+		const box = stage.getBoundingClientRect();
+		for (let y = box.bottom - 48; y > box.top + 48; y -= 32) {
+			for (let x = box.left + 48; x < box.right - 48; x += 32) {
+				const element = document.elementFromPoint(x, y);
+				if (element && element.closest("[data-slot='semantic-board-surface']") && !element.closest("[data-semantic-id], [data-slot='model-panel']")) {
+					return { x: Math.round(x), y: Math.round(y) };
+				}
+			}
+		}
+		return null;
+	})()`),
+	);
+	if (at === null) throw new Error(`Pane ${pane} has no empty canvas to rest the pointer on.`);
+	await page.moveTo(at, 18);
 }
+
+/** A point of the page, in CSS pixels. */
+const PointSchema = z.object({ x: z.number(), y: z.number() }).nullable();
 
 /**
  * The 16:9 rectangle a thumbnail is cut from: around the elements, at least a minimum width,
@@ -261,13 +280,23 @@ class Terminal {
 	 * @param browser The take's browser.
 	 * @param theme Its theme, the shell's.
 	 * @param height Its height, the shell window's.
+	 * @param options What differs from the hero's terminal.
+	 * @param options.width Its width: 600 when absent. A shell narrower than 1348 px hides its Right
+	 * panel until something is selected, so a clip about that panel gives the shell the room.
+	 * @param options.path The folder its header names: `~/web-shop` when absent.
 	 * @returns The terminal.
 	 */
-	static async open(browser: Browser, theme: "light" | "dark", height: number): Promise<Terminal> {
+	static async open(
+		browser: Browser,
+		theme: "light" | "dark",
+		height: number,
+		options: { readonly width?: number; readonly path?: string } = {},
+	): Promise<Terminal> {
+		const { width = 600, path } = options;
 		const page = await browser.open({
-			url: stageUrl("terminal.html", { theme }),
+			url: stageUrl("terminal.html", { theme, ...(path === undefined ? {} : { path }) }),
 			theme,
-			width: 600,
+			width,
 			height,
 		});
 		await page.waitFor("window.ready === true", "the terminal page");
@@ -341,9 +370,9 @@ export {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	present,
+	restPointer,
 	stageUrl,
 	withTake,
 	type Moment,

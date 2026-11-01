@@ -11,11 +11,11 @@ use std::rc::Rc;
 use crate::ecma::{abs, max, min, number_of};
 use crate::geometry::{Point, Side};
 use crate::placed::PlacedEdge;
-use crate::track::chains::{ChainId, Kind, LANE, Station, StationId, Track};
+use crate::track::chains::{ChainId, Kind, LANE, Station, StationId, Track, chain_kind};
 use crate::track::channels::{End, Net, NetId};
 use crate::track::containers::{Containers, Edges};
 use crate::track::jogs::nothing;
-use crate::track::scene::{Map, Placement, Set, centre_x};
+use crate::track::scene::{ItemId, Map, Placement, Set, centre_x};
 use crate::track::spacing::Rim;
 
 /// Space kept around the drawing.
@@ -136,7 +136,7 @@ impl Track<'_> {
 
     /// A chain's nets: one for each pair of stations on neighbouring bands, top to bottom.
     fn nets_of(&mut self, line: &SceneLine<'_>, chain: ChainId) -> Vec<NetId> {
-        let kind: Rc<str> = chain_kind(line, self.chain(chain).upward).into();
+        let kind: Rc<str> = chain_kind(&line.kind, self.chain(chain).upward).into();
         let stations = self.chain(chain).stations.clone();
         let edge: Rc<str> = line.id.as_str().into();
         (0..stations.len() - 1)
@@ -466,16 +466,6 @@ impl Track<'_> {
     }
 }
 
-/// What a line's nets must share with another's to share a trunk: its kind,
-/// and its direction, since a trunk carries its lines one way.
-fn chain_kind(line: &SceneLine<'_>, upward: bool) -> String {
-    if upward {
-        format!("{}|upward", line.kind)
-    } else {
-        line.kind.to_string()
-    }
-}
-
 /// Each line's nets: an inner line's on its chain, in the order given, then a
 /// wall line's one net from or to its wall.
 fn routed_of(
@@ -513,14 +503,15 @@ fn routed_of(
 /// the bands for the tracks each channel holds. `margin` is how far every x
 /// moves, `top` where the first band starts, and `rim` the room the block
 /// keeps at its edge rows where no line turns. Answers each line's points,
-/// from its source to its target.
+/// from its source to its target. With `reserve`, a crowded card stops the
+/// routing before anything settles, and the answer is the widths it needs.
 pub(crate) fn route_scene(
     scene: &mut Placement,
     lines: &[SceneLine<'_>],
-    margin: f64,
-    top: f64,
+    (margin, top): (f64, f64),
     rim: Option<Rim>,
-) -> Map<String, Vec<Point>> {
+    reserve: bool,
+) -> Result<Map<String, Vec<Point>>, Map<ItemId, f64>> {
     let mut track = Track::new(scene);
     let inner: Vec<&SceneLine<'_>> = lines.iter().filter(|line| line.wall.is_none()).collect();
     let chains: Map<String, ChainId> = inner
@@ -541,7 +532,10 @@ pub(crate) fn route_scene(
         .iter()
         .map(|line| {
             let chain = chains[&line.id];
-            (chain, chain_kind(line, track.chain(chain).upward).into())
+            (
+                chain,
+                chain_kind(&line.kind, track.chain(chain).upward).into(),
+            )
         })
         .collect();
     track.relay_laps(&kinds, &movable);
@@ -553,6 +547,10 @@ pub(crate) fn route_scene(
         .collect();
     let routes: Vec<Vec<NetId>> = routed.values().map(|route| route.nets.clone()).collect();
     track.bundle_trunks(&nets);
+    let crowded = track.required_port_widths(&nets);
+    if reserve && !crowded.is_empty() {
+        return Err(crowded);
+    }
     track.assign_ports(&nets);
     track.slide_labels(&nets);
     if track.straighten_into_containers(&all) {
@@ -586,7 +584,7 @@ pub(crate) fn route_scene(
         (containers.closings(), containers.facing())
     };
     track.space_bands(&nets, &closings, &facing, &rising, top, rim);
-    routed
+    Ok(routed
         .iter()
         .map(|(id, route)| {
             let mut points = track.points_of(&route.nets, margin);
@@ -595,5 +593,5 @@ pub(crate) fn route_scene(
             }
             (id.clone(), points)
         })
-        .collect()
+        .collect())
 }

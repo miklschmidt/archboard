@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // `check code` against the vault of a linked worktree (ADR 0049,
 // TASK-472.03): a binding into the vault's own repository reads the worktree's
 // files while the main checkout is the chosen one, and a binding into another
@@ -90,19 +91,12 @@ afterAll(async () => {
 });
 
 test("check code reads the worktree for its own repository and the chosen checkout for another", () => {
-	const made = cli(
-		["semantic", "new", "orders", "--doing", "drawing the worktree's bindings"],
-		JSON.stringify({
-			level: "system",
-			nodes: [
-				{ name: "Worktree", kind: "service", binding: binding(ORDERS, "inTheWorktree") },
-				{ name: "Main", kind: "service", binding: binding(ORDERS, "inTheMainCheckout") },
-				{ name: "Billing", kind: "service", binding: binding(BILLING, "inBilling") },
-				{ name: "Not billing", kind: "service", binding: binding(BILLING, "inTheWorktree") },
-			],
-		}),
-	);
-	expect(made.status, made.stderr).toBe(0);
+	seedCanonicalFixture(vault, "orders", [
+		{ name: "Worktree", kind: "service", binding: binding(ORDERS, "inTheWorktree") },
+		{ name: "Main", kind: "service", binding: binding(ORDERS, "inTheMainCheckout") },
+		{ name: "Billing", kind: "service", binding: binding(BILLING, "inBilling") },
+		{ name: "Not billing", kind: "service", binding: binding(BILLING, "inTheWorktree") },
+	]);
 
 	const checked = cli(["check", "code"]);
 	const answer = JSON.parse(checked.stdout) as {

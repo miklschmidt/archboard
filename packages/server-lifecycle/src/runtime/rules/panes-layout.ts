@@ -6,6 +6,8 @@
 // error.
 
 import type { parseBoardKey } from "@archboard/board/address";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
 
 type BoardIdentity = ReturnType<typeof parseBoardKey>;
 
@@ -111,6 +113,8 @@ interface PaneReport {
 	own: boolean;
 	rect: Rect;
 	reading: PaneReading;
+	/** The model reading it last reported, or null when it has reported none. */
+	architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"] | null;
 	/** When this pane last told the server about itself. */
 	at: string;
 }
@@ -152,6 +156,8 @@ interface PaneContext {
 	identity(board: string): BoardIdentity | null;
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
+	/** The model reading this pane last reported, or null when it has reported none. */
+	architecture(clientId: string): PaneReport["architecture"];
 	/** The repository and the checkout of a vault. */
 	whereabouts(vault: string): VaultWhereabouts;
 	/** The vault the caller's command finds, or null when it finds none. */

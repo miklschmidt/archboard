@@ -33,12 +33,12 @@ describe("command-contract introspection", () => {
 	});
 
 	test("staged metadata names when a stage runs and what it does", async () => {
-		const { browserShowContract } = await import("#cli/operations/pane/pane.ts");
+		const { paneOpenContract } = await import("#cli/operations/pane/pane.ts");
 		const proof = introspectContracts([
-			{ name: "browser show", classification: "browser", contract: browserShowContract },
+			{ name: "browser open", classification: "browser", contract: paneOpenContract },
 		]);
-		const showArguments = proof[0]?.input.stages.find((stage) => stage.name === "show-arguments");
-		expect(showArguments?.when).toBe("after-server");
-		expect(showArguments?.rules.join(" ")).toContain("board");
+		const openArguments = proof[0]?.input.stages.find((stage) => stage.name === "open-arguments");
+		expect(openArguments?.when).toBe("after-server");
+		expect(openArguments?.schema).toMatchObject({ type: "array", items: { type: "string" } });
 	});
 });

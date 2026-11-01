@@ -6,7 +6,7 @@ use crate::drawing::{Edge, Emphasis};
 use crate::geometry::{Point, label_anchor_of, round_coord};
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, route, shape};
-use crate::paint::design::PILL_RADIUS;
+use crate::paint::design::{PILL_RADIUS, RAILS};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
 use crate::paint::slab::{Lift, shadow_under, slab, slab_seat, slab_shadow};
@@ -18,7 +18,7 @@ use crate::paint::styles::{
     relationship_ink, stroke_width,
 };
 use crate::paint::text_runs::paint_text_runs;
-use crate::request::{LineAppearance, Standing};
+use crate::request::{Dash, LineAppearance, Standing};
 use crate::scene::{
     Colour, Definition, Group, Head, Item, LineFacts, Marker, MarkerId, MaskId, PathStep, Purpose,
     Role, Shape, Stroke, SubjectKind,
@@ -137,6 +137,7 @@ pub(super) fn paint_edge_line(
             ink: ink.clone(),
         };
         line.marker = Some(id.clone());
+        line.start_marker = edge.two_way.then(|| id.clone());
         parts.push(vec![Item::Definitions {
             definitions: vec![Definition::Marker(arrowhead_marker(id, head, weight, &ink))],
         }]);
@@ -147,6 +148,13 @@ pub(super) fn paint_edge_line(
             .unfilled()
             .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
     ));
+    if appearance.dash == Dash::Mixed {
+        parts.push(shape(
+            Shape::path(Purpose::Rail, route(&routed.curve))
+                .unfilled()
+                .stroked(Stroke::new(&ink, RAILS).rounded()),
+        ));
+    }
     parts.push(shape(line));
     for (port, well) in ports {
         parts.push(port_inside(port, *well, &stroke, width, palette));
@@ -185,19 +193,23 @@ pub(super) fn paint_edge_words(
         None => Items::new(),
         Some(label) => {
             let mut parts = vec![slab_seat(label.bounds, PILL_RADIUS)];
-            for chip in label.chips() {
-                // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
-                if standing == Some(Standing::Removed) {
-                    parts.push(slab_shadow(
-                        chip,
-                        PILL_RADIUS,
-                        Lift::Chip,
-                        palette,
-                        standing,
-                    ));
-                }
-                parts.push(slab(chip, &label_look(palette), palette, standing, None));
+            // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
+            if standing == Some(Standing::Removed) {
+                parts.push(slab_shadow(
+                    label.bounds,
+                    PILL_RADIUS,
+                    Lift::Chip,
+                    palette,
+                    standing,
+                ));
             }
+            parts.push(slab(
+                label.bounds,
+                &label_look(palette),
+                palette,
+                standing,
+                None,
+            ));
             parts.push(paint_text_runs(
                 &label.measured.runs,
                 label.bounds,
@@ -221,21 +233,14 @@ pub(super) fn paint_edge_words(
 pub(super) fn label_shadow(routed: &Edge, palette: &Palette, standing: Option<Standing>) -> Items {
     match &routed.label {
         None => Items::new(),
-        Some(label) => lines(
-            label
-                .chips()
-                .map(|chip| {
-                    shadow_under(
-                        &routed.edge.id,
-                        chip,
-                        PILL_RADIUS,
-                        Lift::Chip,
-                        palette,
-                        standing,
-                        None,
-                    )
-                })
-                .collect(),
+        Some(label) => shadow_under(
+            &routed.edge.id,
+            label.bounds,
+            PILL_RADIUS,
+            Lift::Chip,
+            palette,
+            standing,
+            None,
         ),
     }
 }

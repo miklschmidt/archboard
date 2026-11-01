@@ -1,0 +1,9 @@
+{
+  "order": 10000,
+  "name": "Warehouse system",
+  "kind": "external",
+  "responsibility": "What the warehouse says is on its shelves",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#Klj9foM9",
+  "outgoing": []
+}

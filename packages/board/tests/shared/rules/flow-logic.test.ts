@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { BoardCreateInputSchema, FlowStepInputSchema } from "#shared/protocol/board-input.ts";
+import { NewStepSchema } from "#shared/schemas/model-flows.ts";
 import { compareVariants, withRemoved } from "#shared/rules/compare/variants.ts";
 import { DiagramGrammarSchema } from "#shared/schemas/vocabulary.ts";
 import { reconcileVariant } from "#shared/rules/reconcile/variant.ts";
@@ -77,7 +77,7 @@ describe("what a flow's logic must say to be written", () => {
 	const message = { from: "CLI", to: "Server", label: "edit" };
 
 	test("a decision, a loop and a message without a kind are all steps", () => {
-		const decision = FlowStepInputSchema.safeParse({
+		const decision = NewStepSchema.safeParse({
 			kind: "decision",
 			question: "Held?",
 			alternatives: [
@@ -85,14 +85,14 @@ describe("what a flow's logic must say to be written", () => {
 				{ label: "no", steps: [] },
 			],
 		});
-		const loop = FlowStepInputSchema.safeParse({
+		const loop = NewStepSchema.safeParse({
 			kind: "loop",
 			condition: "for each",
 			steps: [message],
 		});
 		expect(decision.success).toBe(true);
 		expect(loop.success).toBe(true);
-		expect(FlowStepInputSchema.safeParse(message).success).toBe(true);
+		expect(NewStepSchema.safeParse(message).success).toBe(true);
 	});
 
 	test.each([
@@ -112,12 +112,12 @@ describe("what a flow's logic must say to be written", () => {
 			],
 		],
 	])("a decision with %s is refused", (_case, alternatives) => {
-		const parsed = FlowStepInputSchema.safeParse({ kind: "decision", question: "?", alternatives });
+		const parsed = NewStepSchema.safeParse({ kind: "decision", question: "?", alternatives });
 		expect(parsed.success).toBe(false);
 	});
 
 	test("a loop that repeats nothing is refused", () => {
-		const parsed = FlowStepInputSchema.safeParse({ kind: "loop", condition: "while", steps: [] });
+		const parsed = NewStepSchema.safeParse({ kind: "loop", condition: "while", steps: [] });
 		expect(parsed.success).toBe(false);
 	});
 
@@ -126,36 +126,6 @@ describe("what a flow's logic must say to be written", () => {
 		expect(parsed.success).toBe(false);
 		expect(parsed.error?.issues[0]?.message).toContain('"sequence"');
 		expect(DiagramGrammarSchema.safeParse("flowchart").success).toBe(true);
-	});
-
-	test("a whole board states a branching flow in one create", () => {
-		const parsed = BoardCreateInputSchema.safeParse({
-			name: "b",
-			level: "system",
-			nodes: [
-				{ name: "CLI", kind: "app" },
-				{ name: "Server", kind: "service" },
-			],
-			flows: [
-				{
-					name: "One edit",
-					participants: ["CLI", "Server"],
-					steps: [
-						message,
-						{
-							kind: "decision",
-							question: "Held?",
-							alternatives: [
-								{ label: "yes", steps: [{ ...message, kind: "return" }] },
-								{ label: "no", steps: [] },
-							],
-						},
-					],
-				},
-			],
-			views: [{ name: "Logic", grammar: "flowchart" }],
-		});
-		expect(parsed.success).toBe(true);
 	});
 });
 

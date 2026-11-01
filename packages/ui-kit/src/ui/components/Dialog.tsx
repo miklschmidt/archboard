@@ -2,11 +2,13 @@
 // `Dialog.Content`, `Dialog.Header`, `Dialog.Title`, `Dialog.Description`, `Dialog.Footer`),
 // and the parts every settings and board dialog shares say what it is doing:
 // `Dialog.Busy` while a request is in flight, `Dialog.Error` for the host's failure and
-// `Dialog.Cancel` for the footer's dismissing action.
+// `Dialog.Cancel` for the footer's dismissing action, and `Dialog.Technical` sets an identifier,
+// path, version or time in the mono face.
 
 import { BusyText } from "#ui/components/dialog-parts/BusyText.tsx";
 import { DialogCancel } from "#ui/components/dialog-parts/DialogCancel.tsx";
 import { DialogErrorAlert } from "#ui/components/dialog-parts/DialogErrorAlert.tsx";
+import { Technical } from "#ui/components/dialog-parts/Technical.tsx";
 import {
 	DialogContent,
 	DialogDescription,
@@ -26,6 +28,7 @@ const Dialog = Object.assign(DialogRoot, {
 	Error: DialogErrorAlert,
 	Footer: DialogFooter,
 	Header: DialogHeader,
+	Technical,
 	Title: DialogTitle,
 	Trigger: DialogTrigger,
 });

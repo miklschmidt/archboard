@@ -1,106 +1,93 @@
 # Archboard
 
-A shared architecture surface. Agents author a codebase's architecture on boards
-that express its meaning, and users read them.
+Archboard is a shared architecture surface for a codebase.
+Agents author one model that decomposes recursively into modules, and users read it.
 
 ## Language
 
-### The surface
+### The model
 
-**Board**:
-A semantically named description of one architectural subject or question at one
-abstraction level. A board owns its shared views and the tree of variants recording
-how that diagram evolves.
-_Avoid_: document, drawing, diagram, whiteboard, sketch
+**Model**:
+The one architecture that one vault holds, assembled from its modules, relationships, flows, walkthroughs and active proposals.
+It has a stable identity and a name, and every reading derives from it.
+_Avoid_: board, document, drawing, diagram, whiteboard, sketch
+
+**Manifest**:
+The record that gives a model its stable identity, its name and its optional current designation.
+It holds no copy of the modules.
+_Avoid_: index, catalogue
+
+**Vault**:
+The directory that holds one model, in a checkout or in a registered local directory.
+A vault in a checkout is versioned with its repository, so each checkout has its own copy, and its model can describe any repository.
+_Avoid_: library, workspace, store, repository, folder
+
+**Untracked vault**:
+A vault in a directory that is not a Git checkout.
+It has no repository identity, and its history stays local until somebody publishes it.
+_Avoid_: loose vault, external vault, global vault
+
+**Module**:
+One architectural responsibility with a stable qualified identity, a whole to its callers and a system of parts to the user who opens it.
+A module decomposes into modules, and each of those can decompose again.
+_Avoid_: board, node, box, component, entity, vertex, block, level
+
+**Containment**:
+One module being structurally part of another, with at most one parent in the same model.
+Parents form a containment forest, which has no levels and stores no depth.
+_Avoid_: level, depth, tier, layer, lane, frame, rectangle
+
+**Root module**:
+A module with no parent.
+_Avoid_: root board, top level
+
+**Part**:
+A child module as the open module shows it.
+The word names a role in a reading, not a second kind of thing.
+_Avoid_: node, element
+
+**Subject**:
+Anything in a model with its own identity: a module, a relationship, a flow collection, a flow, a step, a walkthrough or a beat.
+_Avoid_: element, entity, object
+
+**Qualified identity**:
+The stable identity of a subject: an origin namespace and a short local ID, which an imported subject extends with its original legacy board.
+No name, path or code binding establishes it.
+_Avoid_: name, path, alias
 
 **Former name**:
-A name a board or variant had before it was renamed. It keeps opening what it
-named — a drill-down on another board, a saved pane address, a command — and no
-other board may take it; the board's own name always wins over another's former
-one. A rename changes a name and nothing else (ADR 0036).
+A name that a subject had before a rename.
+If it matches exactly one subject, it still finds that subject, and a rename changes nothing else (ADR 0036).
 _Avoid_: alias, old name, redirect
 
-**Canvas**:
-The live, pannable and zoomable surface on which exactly one board is open at a
-time for exploration and inspection.
-_Avoid_: scene (that is what the renderer core answers), workspace, session, drawing area
+**Relationship**:
+A directed architectural connection that one module owns and that names another module as its target.
+The model derives incoming relationships, so a relationship has one definition at its source.
+_Avoid_: edge, arrow, link, connector, relation, line (that is what a picture draws)
 
-**Archboard server**:
-The one process on the machine that serves every vault. It serves the vault of
-every registered checkout and untracked vault, the panes in the browser, and
-Codex for the agents. The first command that finds none starts it, and every call
-names the vault that it means. A worktree of archboard itself runs its own
-server, from its own source, on a port of its own.
-_Avoid_: canvas server, canvas (that is the surface), host, backend
+**Whole-module endpoint**:
+The end of a relationship that names a module with parts and none of those parts, which makes a caller and no entry point.
+A module with parts cannot point at anything, so `archboard check` fails on this end with `RELATIONSHIP_ON_CONTAINER`, and the author moves it to the part that owns the code.
+The only exception joins a module to a part that it holds.
+_Avoid_: port (that is where the renderer attaches a line)
 
-**View**:
-A named way of reading a board, with a shared diagram grammar and scope across
-every variant. The view stays the same while the selected variant supplies the
-architectural content.
-_Avoid_: board, pane, variant
-
-**Overview**:
-The reading a board opens on, which nobody authors (ADR 0052). It draws the
-root parts, and every container is closed. The board is the container of its
-subject, so no part stands for the board itself. All relationships from one drawn part to another are one
-line. A line that joins several stacks their labels. It draws no line between a container and a part that it holds.
-_Avoid_: whole board, summary view, default view
-
-**Everything**:
-The reading of every part and every relationship, asked for as the view of
-that name. No authored view can be called Overview or Everything.
-_Avoid_: whole variant (in a reader's words), all view
-
-**Grammar**:
-What a view draws its scope as: `architecture`, `sequence` or `flowchart`.
-_Avoid_: diagram type, layout, mode
-
-**Sequence view**:
-A view in the `sequence` grammar. It draws one flow's participants as columns
-and every message in order, a decision as an `alt` frame and a loop as a
-`loop` frame. The grammar was called `data-flow` before schema 2.5.0.
-_Avoid_: data-flow view, sequence diagram (for the view)
-
-**Flowchart view**:
-A view in the `flowchart` grammar. It draws one flow's steps from a start to an
-end: a message as a box, a decision as a diamond with a labelled line for each
-alternative, and a loop as a hexagon (ADR 0053).
-_Avoid_: logic view, decision tree, activity diagram
-
-**Pane**:
-One of several side-by-side slots, each holding its own canvas, so that two
-boards can be worked on at once.
-_Avoid_: split, view, tab, panel, frame, window
-
-**User**:
-Whoever is reading the canvas and talking to it. A user reads, picks things out
-and speaks; agents author.
-_Avoid_: person, human, operator, viewer
-
-**Node**:
-An architectural unit described on a board, with an identity and kind independent
-of how it is drawn. It has a name and may carry a short responsibility and a detailed
-description.
-_Avoid_: box, component, entity, vertex, block
-
-**Edge**:
-A connection between two nodes standing for a dependency, call, or flow.
-_Avoid_: arrow, link, connector, relation, line
+**Flow collection**:
+A named group of flows that an author keeps together.
+A flow belongs to its collection, not to a module, and its participants can come from anywhere in the model.
+_Avoid_: flow file, module flows
 
 **Flow**:
-One request, job or event told as an ordered exchange between the nodes it
-names as participants. Its steps say what happens, in what order, and under
-which condition (ADR 0053).
+One request, job or event told as an ordered exchange between the modules it names as participants.
+Its summary says what the exchange does and why it matters, and its steps say what happens and in what order (ADR 0053).
 _Avoid_: sequence (that is a reading of it), data flow, scenario
 
 **Step**:
-One thing that happens in a flow: a message, a decision or a loop. Each step
-has its own minted id, and its place in the flow is part of its meaning.
+One thing that happens in a flow: a message, a decision or a loop.
+Each step has its own identity, and its position in the flow is part of its meaning.
 _Avoid_: call (in a flow), row, line
 
 **Message**:
-A step from one participant to another, or to itself, with a label and a kind:
-`sync`, `return`, `async` or `self`.
+A step from one participant to another, or to itself, with a label and a kind: `sync`, `return`, `async` or `self`.
 _Avoid_: edge, relationship, arrow
 
 **Decision**:
@@ -109,253 +96,127 @@ The alternatives rejoin after it (ADR 0053).
 _Avoid_: branch node, condition, if-step
 
 **Alternative**:
-One answer to a decision's question, with its own label and the steps that run
-on that answer.
+One answer to a decision's question, with its own label and the steps that run on that answer.
 _Avoid_: branch, case, arm, path
 
 **Loop**:
-A step that repeats the steps it holds while its condition holds. A count that
-the source fixes on one message is that message's `repeat`, not a loop.
+A step that repeats the steps it holds while its condition holds.
+A count that the source fixes on one message is that message's `repeat`, not a loop.
 _Avoid_: repeat (that is a count on one message), iteration
-
-**Card**:
-The compact depiction of a node with no children shown inside it in the selected
-reading. It is a presentation of a node, not a node kind.
-_Avoid_: node, leaf kind
-
-**Container**:
-A node that has children on a variant. A view that shows its children draws it
-expanded, enclosing them, and a view that shows it alone draws it as a card.
-Either way it keeps its kind, its identity and its interface.
-_Avoid_: container kind, group, platform tag
-
-**Icon chip**:
-The icon and its surrounding tile identifying a node's kind on a card or container.
-_Avoid_: comparison badge, card body
-
-### Commands
-
-**Board operation**:
-An action whose subject is an explicitly named Board. It resolves the Board's
-Note directly and needs no live Canvas, Pane, selection, camera, or connected
-browser.
-_Avoid_: canvas command, pane command, headless command
-
-**Browser operation**:
-An action whose subject is a live Archboard browser session: showing a Board in
-a Pane, opening or closing a Pane, or reading what each Pane shows and what the
-user selected. It never changes a Board's Note.
-_Avoid_: view command, board command, pane command
-
-**Board render**:
-An image of one named Board drawn without a live Pane: an SVG from the renderer,
-or a PNG drawn in a private headless browser. It never attaches to a browser
-session. It carries its Render recipe, so it can be drawn again and compared.
-Blocks is the default layout engine. `--layout track` selects Track (ADR 0064).
-_Avoid_: screenshot, pane export, artifact, export
-
-**Render recipe**:
-What a Board render records about how it was drawn: the Board, the variant or
-"current", the view, the comparison, and the drawing choices such as theme and
-legend. It is not the command line: it holds no output path, and it names a
-variant or a view by id, not by the name somebody typed.
-_Avoid_: render request, render settings, command, export options
-
-**Embed**:
-A Board render that a repository keeps under Git, so that a document can show
-it. It carries its Render recipe, and the embeds check keeps it current. A
-render on stdout, on the clipboard or in a folder that Git ignores is no embed.
-_Avoid_: artifact, export, tracked render, asset
-
-**Tracked embed**:
-An Embed that its Board lists, so that the Board's side knows where the picture
-is shown, also in another repository. Somebody asks for each one: no Embed is
-tracked by default.
-_Avoid_: tracked render, subscription, registered embed
-
-**Renderer core**:
-The Rust crate that measures, lays out and paints a Board. Bun and the browser
-load it as WebAssembly, and a native frontend links it (ADR 0059).
-_Avoid_: engine (that is a layout engine), WASM module
-
-**Scene**:
-The ordered, positioned list of what a picture is made of: shapes, glyph runs,
-and the marks that a painter animates. The renderer core answers it, and each
-group in it names its subject and role. It holds no interaction state, so it is
-never the Canvas that shows it.
-_Avoid_: paint list, display list, render tree, canvas
-
-**Painter**:
-What turns a Scene into what a frontend shows. The SVG painter is part of
-the renderer core. A native frontend paints the list itself.
-_Avoid_: rasterizer (that makes a PNG from SVG), backend
 
 ### Meaning
 
 **Vault vocabulary**:
-The consumer-defined set of board levels, node kinds and relationship kinds used
-to describe architecture across a vault. It names architectural meaning independently
-of the visual policy used to depict it.
-_Avoid_: palette, theme, board content
+The consumer-defined set of module kinds, relationship kinds and groups that describe architecture across a vault.
+It names meaning independently of the vault policy that depicts it.
+_Avoid_: palette, theme, model content
 
 **Kind**:
-The consumer-defined node type: what sort of architectural unit a node stands
-for, such as an API, Kubernetes cluster, queue or third-party library. The
-vocabulary offers one kind per level, so a node standing for another board can
-carry that board's level as its kind (ADR 0029).
-_Avoid_: category, role, class, drawing shape
+The consumer-defined module type: what sort of architectural unit a module stands for, such as an API, a queue or a third-party library.
+A module keeps its kind in every scope.
+_Avoid_: category, role, class, drawing shape, level
 
 **External**:
-The kind for code this codebase does not own: a library, a framework, a
-runtime, a shell, a hosted service, a caller outside the checkout. Never a part
-of this codebase that a reader reaches through another board.
-_Avoid_: third-party kind for our own parts, link node, outside board
-
-**Standing-for node**:
-A node whose subject is what another board describes, carrying that board's
-level as its kind and the drill-down that opens it. It is a real participant on
-its own board first; a node added only to carry a link is a button, and a
-diagram has no buttons (ADR 0029).
-_Avoid_: link node, button, stub, proxy node
+The kind for code that this codebase does not own: a library, a framework, a runtime, a hosted service or a caller outside the checkout.
+Outside the open scope does not mean external, because a door can be a module of this codebase.
+_Avoid_: third-party kind for our own parts, link node
 
 **Relationship kind**:
-The consumer-defined type of architectural relationship represented by an edge.
+The consumer-defined type of an architectural relationship.
 _Avoid_: line style, arrowhead, emphasis
 
 **Traffic**:
-An optional illustration of flow along a connection: a steady train of pulses
-that fly along its line, with independent volume and speed. It is neither
-measured real-world activity nor connection importance.
+An optional illustration of flow along a relationship: a steady train of pulses that fly along its line, with independent volume and speed.
+It is neither measured real-world activity nor the importance of the relationship.
 _Avoid_: emphasis, pulse count, shot
 
 **Traffic volume**:
-The authored rate of a connection's traffic. With the traffic speed it sets how
-far apart the pulses are: the speed divided by the volume, within limits. A
-pulse flies twice the authored speed, so pulses reach the end of the line twice
-as often as the volume says. It is not a count of marks on the line.
+The authored rate of a relationship's traffic.
+It is not a count of marks on the line.
 _Avoid_: dot count, shot rate, traffic speed
 
 **Traffic speed**:
-How fast a pulse flies along a connection, in diagram units per second. A pulse
-flies twice the authored speed (held between 8 and 600), and the distance
-between two pulses is the authored speed divided by the volume. A longer line
-takes a pulse longer to cross, and a higher speed is a faster line.
+How fast a pulse flies along a relationship.
+A longer line takes a pulse longer to cross, and a higher speed is a faster line.
 _Avoid_: traversal duration, traffic volume
 
 **Emphasis**:
-The author-declared importance of a connection in the board's explanation,
-independent of its relationship kind and traffic.
+The author-declared importance of a relationship in the model's explanation, independent of its kind and its traffic.
 _Avoid_: traffic volume, line weight
 
-**Binding**:
-The optional association between a node and its primary code location. Each node
-has at most one binding, and two nodes on one board can name different repositories.
-A binding can name a symbol: the definition at its path that the node stands for
-(ADR 0046).
-_Avoid_: link, mapping, reference, pointer, association
+**Code binding**:
+The optional association between a module and its primary code location: a repository identity, a path, and an optional symbol, branch or commit.
+It belongs to the module's meaning, and a module has at most one (ADR 0046).
+_Avoid_: link, mapping, reference, pointer, association, logical address
+
+**Code path**:
+The repository path that a card shows: the path of its code binding, or the folder that the parts of an unbound container share.
+It never establishes identity or containment.
+_Avoid_: binding (that is authored), source link
 
 **Anchor**:
-The one place in code that an author cites as proof of a relationship or a flow
-step: a repository, a file in it and a symbol in that file. It is bookkeeping.
-Comparison ignores it, and the code check holds it to the code (ADR 0046).
-_Avoid_: evidence (that is what the code check finds), citation, source line,
-proof, location, binding (that belongs to a node)
+The one place in code that an author cites as proof of a relationship or a flow step: a repository, a file in it and a symbol in that file.
+It is bookkeeping, so comparison ignores it, and the code check holds it to the code (ADR 0046).
+_Avoid_: evidence (that is what the code check finds), citation, source line, proof, location, binding (that belongs to a module)
 
 **Document reference**:
-One file in a repository that a variant draws, such as a design document, an
-ADR, a task or a plan: a repository identity and a path, and the branch or
-commit of the version that the variant draws. A variant holds a list of them,
-and a branch copies the list (ADR 0054).
-_Avoid_: link, attachment, citation, binding (that belongs to a node), anchor
-(that proves a relationship)
+One file in a repository that a module or a state names, such as a design document, an ADR, a task or a plan: a repository identity, a path, and the branch or commit of its version (ADR 0054).
+_Avoid_: link, attachment, citation, binding (that belongs to a module), anchor (that proves a relationship)
+
+**Model reference**:
+An explicit reference that a module holds to one subject of a model, naming its repository, model, subject and state.
+It gives read navigation only, so it establishes no containment and transfers no ownership (ADR 0066).
+_Avoid_: drill-down, link, cross-board link
 
 **Symbol**:
-A name that code or infrastructure defines or references: a definition or a
-reference in code, or the address of a declaration in infrastructure or Nix,
-such as `Deployment/checkout`. A binding can name the definition that its node
-stands for, and an anchor always names a symbol (ADR 0046).
-_Avoid_: identifier, address alone (a logical address names code on any
-machine), line, fragment
+A name that code or infrastructure defines or references, such as a definition in code or the address of a declaration in infrastructure.
+A code binding can name the definition that its module stands for, and an anchor always names a symbol (ADR 0046).
+_Avoid_: identifier, address alone, line, fragment
 
 **Code target**:
-The action offered when a user activates a binding. It is derived anew for
-this machine and is never part of the board.
+The action that a code binding offers a user.
+It is derived anew for this machine and is never part of the model.
 _Avoid_: binding, persisted link, file URL, local binding, remote binding
 
 **Opener**:
-The machine-wide choice of application used to open a code target that resolves
-inside a registered checkout.
+The machine-wide choice of application that opens a code target inside a registered checkout.
 _Avoid_: editor, file handler, command
 
-**Logical address**:
-A machine-independent way of naming code: a repository identity and a path
-within it. A binding can also name the symbol at that path, and the branch and
-commit at which the binding was last confirmed.
-_Avoid_: path, file reference, location, URI
-
 **Repository identity**:
-What a repository is called in a way that is the same in every clone and on
-every machine: host, owner and name, taken from its `origin` remote. A
-repository with no remote is called by the directory name of its main checkout,
-so all its worktrees share one identity.
+What a repository is called in a way that is the same in every clone and on every machine: its host, owner and name.
+A repository with no remote takes the directory name of its main checkout, so all its worktrees share one identity.
 _Avoid_: repo URL, remote, origin, project, package
 
 **Checkout**:
-One copy of a repository sitting at a path on one machine.
+One copy of a repository at a path on one machine.
 _Avoid_: clone, working copy, workspace, local repo
 
 **Checkout registry**:
-The machine-local record of every checkout known here, each with its repository
-identity, of every untracked vault with its registry name, and of the chosen
-checkout of each identity. The only place a directory on one machine is written
-down.
+The machine-local record of every known checkout with its repository identity, of every untracked vault, and of the chosen checkout of each identity.
+It owns no architecture content, and it is the only place that writes down a directory of this machine.
 _Avoid_: index, cache, catalogue, repo config
 
 **Chosen checkout**:
-The one checkout of a repository identity that this machine reads for it. The
-browser reads its vault, and a binding or drill-down that another vault makes
-into that identity resolves there. A binding into a vault's own repository
-resolves in the vault's own checkout instead. A person changes the choice with
-`repo use` or the navigator's menu, and an agent's `browser show` from another
-checkout of the identity changes it too, and so does a finished `semantic move`
-into a checkout that is not chosen. No other board command does, nor does a
-command that only registers a checkout. An identity whose chosen checkout was
-forgotten has none until somebody chooses again, and its bindings resolve as
-unregistered.
+The one checkout of a repository identity that this machine reads for it.
+Anything that names that identity from another vault resolves there (ADR 0049).
 _Avoid_: default checkout, primary checkout, active checkout, project
 
 ### Structure
 
-**Containment**:
-One node being structurally part of another, with at most one structural parent.
-Containment expresses membership independently of how nodes are drawn.
-_Avoid_: lane, frame, rectangle
-
 **Group**:
-A concern a node belongs to, defined once in the vault configuration under a
-stable readable id with a display name and a colour: an effort, a team, a
-migration, a family of parts. A node's memberships are an explicit set of those
-ids; a node may be in several groups, inherits none from its parent, and a group
-is independent of containment and of kind. Renaming a group changes no board. Inspecting a group
-reads its members, the relationships between them, the relationships crossing its
-boundary and their direction, and the immediate neighbours those reach.
-_Avoid_: tag, category, layer, swimlane, label
+A concern that a module belongs to, defined once in the vault configuration with a stable id, a display name and a color: an effort, a team, a migration or a family of modules.
+A module can be in several groups and inherits none from its parent, and a group is independent of containment and of kind.
+_Avoid_: category, layer, swimlane, label, region
 
 **Interface**:
-A container's entry points on one variant, derived from the relationships of
-the variant and never authored. It belongs to the container, not to a drawing
-of it. It says which parts callers reach, not everything a caller must know,
-and not what the code exposes (ADR 0044).
-_Avoid_: API, surface, contract, public parts, declared interface (that is what
-the code exposes), drawn interface
+A container's entry points in one state, derived from the relationships and never authored.
+It says which parts callers reach, not everything a caller must know and not what the code exposes (ADR 0044).
+_Avoid_: API, surface, contract, public parts, declared interface (that is what the code exposes), drawn interface
 
 **Entry point**:
-A child of a container that a relationship from outside the container reaches,
-on the child or on a part inside it. Outside is every part that is neither the
-container nor below it. An entry point is always a child, so a nested container
-answers for its own children.
-_Avoid_: endpoint (either end of a relationship), port (where the renderer
-attaches a line), export, public part
+A child of a container that a relationship from outside the container reaches, on the child or on a module inside it.
+An entry point is always a child, so a nested container answers for its own children.
+_Avoid_: endpoint (either end of a relationship), port (where the renderer attaches a line), export, public part
 
 **Hidden part**:
 A child of a container that no relationship from outside the container reaches.
@@ -363,525 +224,718 @@ Entry points and hidden parts divide a container's children between them.
 _Avoid_: private part, internal part, implementation detail
 
 **Caller**:
-A part outside a container where a relationship into the container starts,
-whatever the relationship's kind. A relationship that ends on the container
-itself makes a caller and no entry point.
+A module outside a container where a relationship into the container starts, whatever the relationship's kind.
+A relationship that ends on the container itself makes a caller and no entry point, so an author moves it to the part that answers the call.
 _Avoid_: client, consumer, dependent, user (that is whoever reads the canvas)
 
+**Interface change**:
+What a comparison says moved in a container's interface: an entry point added or removed, a part that moved into or out of the interface, or a caller gained or lost.
+It costs every caller, so a comparison states it first, and it sets no comparison status (ADR 0044).
+_Avoid_: breaking change, API diff
+
 **Pass-through entry point**:
-An entry point with no children that sends exactly one relationship, of the
-same kind as every relationship it receives. The board shows its shape and not
-what its body does, so it is a question for the reader, never a fault.
+An entry point with no children that sends exactly one relationship, of the same kind as every relationship it receives.
+The model shows its shape and not what its body does, so it is a question for the user, never a fault.
 _Avoid_: wrapper, proxy, facade, shallow part
 
-**Interface measures**:
-Five counts of one container on one variant: its entry points, hidden parts,
-callers, outgoing relationships and pass-through entry points. They say what the
-board claims about the container. They are the same for every drawing of the
-variant and are never combined into one score.
-_Avoid_: scorecard (that is how a drawing reads), depth, depth score, metrics
+**Pass-through container**:
+A module with parts and no code binding, which no relationship or flow names, and whose parts no relationship or flow joins.
+It is a warning, because it has no code and no job of its own.
+_Avoid_: layer, empty container
 
-**Visual policy**:
-The vault-wide interpretation of semantic vocabulary as appearance, shared by
-all boards and variants without changing their architectural meaning.
-_Avoid_: board content, variant, style override
+**Interface measures**:
+The counts of one container in one state: its entry points, hidden parts, callers, outgoing relationships and pass-through entry points.
+They say what the model claims about the container and are never combined into one score.
+_Avoid_: scorecard, depth score, metrics
+
+**Group boundary**:
+The relationships with a member of a group at exactly one end, and the modules at their far ends.
+It follows the members, not the containers around them.
+_Avoid_: group interface, region, group edge
+
+**Design lens**:
+A read that states facts about a design and gives no verdict: an interface, an interface change, locality or a branch footprint.
+_Avoid_: score, audit, lint
+
+**Vault policy**:
+The vault configuration that holds the vault vocabulary and how each word looks: its name, icon, color, dash and arrowhead.
+It changes how a model looks and never what it means.
+_Avoid_: visual policy, model content, style override
 
 **Color palette**:
-The curated set of named colors available to a visual policy.
+The curated set of named colors available to a vault policy.
 _Avoid_: vault vocabulary, group
 
-**Presentation intent**:
-What a board's depiction should explain: its focal subject, main flow, and
-diagram grammar. It expresses the intended reading without specifying geometry
-or styling.
-_Avoid_: coordinates, theme, layout settings
+### The surface
 
-**Level**:
-The required abstraction classification of a board, chosen from the vocabulary
-defined by the vault's consumer — commonly system, service, module — and
-listed there coarsest first, which is how the navigator knows which of two
-drilled boards sits above the other. A
-system board shows interactions between services; a service board shows interactions
-between its modules, with navigation connecting these separate boards. A node
-is at its board's level unless it says otherwise, and the only nodes that say
-otherwise are the ones standing for another board, which say it by carrying
-that board's level as their kind.
-_Avoid_: layer, depth, zoom, tier, granularity
+**User**:
+Whoever reads the canvas and talks to it.
+A user reads, picks things out and speaks, and agents author.
+_Avoid_: person, human, operator, viewer
 
-**Drill-down**:
-Moving from a node on one board to an explicitly linked board and variant
-describing that node's internals. It is an affordance on a part the board draws
-for its own sake: upward from the container the board describes, downward or
-sideways from a card. Without a repository identity it stays in the vault of the
-board that carries it. With one (`repo`, an identity as a binding names it,
-never a path) the board is in the vault of that identity's chosen checkout, with
-its former names and case-insensitive names as in any vault; an identity that
-names the vault's own repository stays in the vault. An untracked vault has no
-identity, so no drill-down reaches one.
-_Avoid_: zoom in, expand, descend, navigate, open
+**Archboard server**:
+The one process on a machine that serves every vault, the panes in the browser and Codex for the agents.
+Every call names the vault that it means, and a worktree of Archboard itself runs its own server.
+_Avoid_: canvas server, canvas (that is the surface), host, backend
 
-**Variant**:
-One named state in a board's evolution, standing in exactly one lifecycle:
-current, draft, historical or shelved. Each successor has one predecessor, and a
-predecessor may have several competing successors. Every variant but the current
-one shows how it differs from the current variant through the board's shared
-views; on a board with no current variant, a draft shows its changes relative to
-its predecessor.
-_Avoid_: version (that is which edit the board's note is),
-revision, branch, mode, state
+**Pane**:
+One of the side-by-side slots that each hold their own canvas, so that two readings can stand side by side.
+_Avoid_: split, view, tab, panel, frame, window
 
-**Current**:
-The designation of the variant that describes the architecture that exists. A
-board has at most one. A board for something nobody has built yet has none: every
-variant on it is a draft or shelved, and that absence is how the board says nothing it
-describes exists. Moving this designation preserves the names and identities of
-both states. A board's bare name opens its current variant; on a board with none
-it opens the one draft no other draft came before, and asking which variant is
-current still answers none.
-_Avoid_: latest, default proposal
+**Canvas**:
+The live, pannable and zoomable surface in a pane that shows one reading at a time.
+_Avoid_: scene (that is what the renderer core answers), board, workspace, session, drawing area
 
-**Adoption**:
-Explicitly designating a variant as the implemented architecture and recording when
-the designation changed. A formerly current state is retained as named history; on a
-board that had no current variant, adoption is the moment its architecture starts
-existing, and nothing becomes history. A proposal built on a state that a later
-adoption superseded is adopted only when forced, and the record says so (ADR 0037).
-_Avoid_: promotion, rename, merge
+**Left column**:
+The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk.
 
-**Historical variant**:
-A formerly current architectural state retained under its name after a successor
-is adopted. It refuses ordinary edits so it preserves what existed. An explicit
-correction repairs its description against stated historical Git commits and
-records the reason without changing its identity or adoption history.
-_Avoid_: abandoned proposal, snapshot, shelved variant (that was never current)
+**Measures**:
+The destination of the left column that lists every module of the model on show with its interface measures, its commits, the modules it changes with and its unjoined pairs, sorted by one count at a time.
+The user can read the most first or the fewest first, and can show all modules, those with parts or those with no parts.
+A module with no such count stays last, and a column that is none on every module has no place.
+A tie between counts of pairs goes to the module whose strongest pair shares the most commits.
+A module with parts counts the commits of its whole code path.
+The Right panel of a selected module lists the modules that it changes with, each with its shared commits and a mark where no relationship joins the two.
+It shows counts only: no score combines them, and the user judges them (ADR 0044).
+_Avoid_: ranking, scorecard, hotspot list
 
-**Shelved variant**:
-A proposal nobody intends to carry out, retained under its name with everything
-it says. Shelving records when it was let go and why. A shelved variant stops
-following the variant it came from, so edits above it raise nothing to settle,
-and it is refused for content edits and for adoption the way history is —
-propose it again by branching from it. Every drill-down naming it still opens it.
-_Avoid_: abandoned, archived, deleted, closed, rejected, superseded (that is a
-historical variant), withdrawn (that is a rolled-back optimistic edit)
+**Diagram reading**:
+A reading on the page that shows its picture, beside About.
+_Avoid_: board, view
 
-**Reconciliation**:
-Bringing a draft variant up to date with its predecessor while retaining its own
-proposed changes. Nonconflicting changes carry through automatically; conflicting
-edits or broken references require resolution. Only a draft inherits: adopted,
-historical and shelved states do not, and shelving clears any standing the
-proposal was holding rather than asking somebody to settle it first.
-_Avoid_: comparison, adoption
+**About**:
+The page of a reading that holds its long lists and names whether it describes the open scope or the selected subject.
+_Avoid_: inspector, details
 
-**Walkthrough**:
-An optional agent-authored narrative belonging to a variant, explaining it through ordered text,
-target views, and focused diagram subjects. It supports presenting architecture
-while highlighting the parts being discussed.
-_Avoid_: variant, flow
+**Picture**:
+What a reading draws: the open module with its parts and doors, or one flow.
+The projection decides it, so the browser, the command line and every render draw the same picture.
+_Avoid_: board, diagram, screenshot
 
-**Walkthrough box**:
-The plate a presented walkthrough lays over the foot of its pane's picture. It
-holds the step's number, its heading and its words (the caption), the name of
-the walkthrough, the keys that step and leave, and a rail of steps that goes to
-any of them. At its foot is a pill for the voice: the key that starts a
-narration while voice is off, and the voice box while it is live. A recording
-and the replay of a kept talk draw it without the keys that step and leave. It
-is presentation: the browser's own, written nowhere.
-_Avoid_: caption strip (its retired form), presentation bar (the bar over a
-fullscreen presentation), subtitle bar
+**Card**:
+The compact depiction of a module with no children shown inside it in the selected reading.
+It is a presentation of a module, not a kind of module.
+_Avoid_: node, leaf kind
 
-**Narration**:
-A voice session started to explain one walkthrough while the user steps
-through it by hand. Archboard opens its first step in the pane. It hands the
-voice model each step once the pane says the step is on screen, and the voice
-explains the step and waits. The position in the walkthrough stays the pane's,
-and the words follow the picture.
-_Avoid_: playback, autoplay, slideshow
+**Container**:
+A module that holds modules.
+A reading draws it open as a frame or closed as a card, and it keeps its kind, its identity and its interface either way.
+_Avoid_: container kind, group, platform tag
 
-**Recording**:
-One walkthrough presented from its first step to its last with nobody at the
-controls, written to a video file with the voice explaining it. The page moves
-to the next step once the voice finishes the one on screen, and keeps a talk.
-The video's picture is then rendered from the talk, frame by frame. A board made
-only to be recorded can be discarded once its recording is written
-(`--discard`). The one other command that deletes a board is `semantic delete`.
-_Avoid_: playback, autoplay, screencast, export
+**Frame**:
+The outline that a picture draws around the parts of an open module or an expanded module: a well with an edge tab on its top edge.
+_Avoid_: box, region, lane, group
 
-**Talk**:
-What a recording keeps of its live pass. It holds the voice's sound, and the
-events of the talk, counted in samples of that sound: each step shown, each
-change to what the voice said and each board version drawn. It also holds the
-board and the vault policy that the picture is drawn from. So it renders again
-without the board, without Codex and without a new voice session. It is a
-directory of `talk.json` and `voice.wav`. The Talk control, which starts voice,
-is another thing.
-_Avoid_: take, capture, session, transcript (the conversation's record), video
-(that is the recording)
+**Well**:
+The floor of a frame, cut into whatever holds it, with the frame's parts standing on it.
+_Avoid_: tray (that is a plate at the foot of a column)
 
-**Subtitle**:
-What the voice model is saying, laid over the picture of the pane voice runs
-for, one cue of two lines at a time. The transcript arrives a word at a time on
-the audio clock, so each word is shown as it arrives, and the subtitle goes once
-the voice has been silent longer than it pauses mid-thought. It is presentation:
-the browser's own, written nowhere, and the user can turn it off. What the
-user says is never subtitled.
-_Avoid_: caption (the walkthrough's step text), transcript (the conversation's record)
+**Edge of the well**:
+The top edge of a well: one line and one inner shadow across its whole width, which runs on under the edge tab and parts the tab from the floor.
 
-**Voice box**:
-The subtitle's box with the voice in it. While the user wants subtitles and a
-voice is live and a box is on the page, the voice's orb, its state in a word,
-mute and the subtitles control are in a box over the picture of the pane voice
-runs for, beside the words, and the agent dock does not draw the circle: it
-gives the voice up only to a box that is there. Turning subtitles off flies the
-one orb back to the dock. While a walkthrough is presented the voice box is in
-the foot of the walkthrough box. A fullscreen presentation has no dock, so the
-box carries the voice there whatever the user wants of subtitles, which then
-decide only whether there are words. A recording draws the same voice box at
-the foot of its walkthrough box, its orb moved by the recorded voice. It is
-presentation, like the subtitle.
-_Avoid_: caption box, voice panel, subtitle bar
+**Edge tab**:
+The one raised line on the edge of a well that names an open module, with its icon and code path.
+Its left side is the side of the frame (ADR 0070).
+_Avoid_: header, card (a frame holds none for its own module)
 
-**Pane news**:
-Where a user's reading of a pane stands after they changed it by hand: the board,
-variant or view they are now looking at, what they now have selected, or the pane
-they moved to. It is told to the voice model as one sentence of names, saying
-only what changed, as quiet context. During a narration, a pick or a view or
-variant the user chose is told as speech, and the narrator stops for it. A
-change an agent or the canvas caused is never pane news.
-_Avoid_: callback, telemetry, event, selection report
+**Foot of a tab**:
+The stretch of the edge of the well under an edge tab.
+What a frame holds reaches the frame here, and what stands outside reaches it on its outline.
 
-**Outside change**:
-A board change made by an agent that is neither the workhorse nor the voice
-coordinator of this tab session. The workhorse of another tab is such an agent,
-and so is a write that names no session. The voice model and the coordinator are
-both told, when a pane of the tab shows that board. Neither asked for the
-change, and what they know of the board is no longer true. Such an agent moving
-one of the tab's panes is told the same way, and never as the user's doing.
-_Avoid_: external edit, foreign write, third-party change
+**Door**:
+A module outside the open one that a line reaches, drawn as a bright button whose arrow points up, sideways or down by its place in the module tree.
+One click opens it, its plus, when it holds parts, expands it, its tip lists the endpoints behind its lines, and Ctrl with a click selects it (ADR 0070).
+_Avoid_: nearby context, external (that is a kind)
 
-**Comparison**:
-The differences between two board variants, identified by the stable identities
-of their architectural content. The current variant is now and is the reference:
-a historical, draft or shelved variant's views show its comparison with the
-current variant as derived change marks, rather than authored content, and the
-current variant shows none. A board with no current variant has no now, so each
-of its drafts is compared with the variant it was branched from. Reconciliation
-and adoption follow the predecessor, never this reading.
-_Avoid_: variant, diff
+**Line**:
+The mark that joins a pair of drawn parts in a picture, and it ends on the parts that own it.
+One line can hold several relationships, which makes it a joined line, and it has no identity of its own.
+_Avoid_: edge, relationship (that is authored), connector, aggregate connection
 
-**Comparison status**:
-The derived added, changed, removed or unchanged standing of a subject against
-the variant its own variant is compared with: added is only on this variant,
-removed is only on the other.
-_Avoid_: authored flag, selection, current designation
+**Shared trunk**:
+The stretch that the lines of one kind between one door and several parts run on together, from three lines each way.
+Each line wears its words on its own branch, beside its part and before it joins.
+_Avoid_: bus
 
-**Note**:
-The `.semantic.json` document in the vault holding one board and its variants.
-The note is the authoritative persisted content of the board.
-_Avoid_: page, record
+**Icon chip**:
+The icon and its surrounding tile that identify a module's kind.
+_Avoid_: comparison badge, card body
 
-**Version**:
-Which persisted edit of a board it is, shared by all its variants. A writer
-names the version it edited so a change based on an older board can be refused.
-_Avoid_: revision, generation, sequence, edition, variant (that is a different
-architectural state, rather than the board's edit counter)
+**Group tag**:
+A bright named tag on a card, and the same tag in the Legend, where a press selects the parts of its group.
+A group has no frame or region and no tinted face.
 
-**Vault**:
-The `.archboard/vault` directory of one checkout, where its boards are kept. A
-vault is versioned with its repository, so each checkout has its own copy, and
-its boards can describe any repository. A meta project that plans across
-repositories is a repository too. A command finds a vault from its working
-directory or `-C`, and the server serves no other directory.
-_Avoid_: library, workspace, store, repository, folder
+**Legend**:
+What explains the marks of a picture: kinds, line types and groups.
+It always stands at the foot of the Right panel on a Diagram reading, over the engine switch.
+_Avoid_: Key, filters
 
-**Untracked vault**:
-A vault in a directory that is not a git checkout, at `<dir>/.archboard/vault`.
-It has no repository identity, so no board in another vault can drill down
-into it.
-_Avoid_: loose vault, external vault, global vault
+**Right panel**:
+The permanent right column of a Diagram reading, which shows the open module or the selected subject, with its interface line, the flows and walkthroughs that touch it, and its Trace controls.
+The Legend and the engine switch close it, and long lists stay in About.
+_Avoid_: inspector
+
+**Interface line**:
+The line of the Right panel that counts the entries, callers and pass-through entry points of a module with parts, and `to module` when callers reach the module itself.
+Its hidden parts stand apart under Implementation, because they are not part of the interface.
+Each count selects what it counts on the module's picture, and no score combines them.
+
+**Entries**:
+The count of a container's entry points, as the interface line and Measures write it.
+
+**To module**:
+The count of distinct callers whose relationship ends on a module itself and names no part, as the interface line and Measures write it.
+It states a fact, not a warning.
+
+**Caption**:
+The one line over a picture, which states the open module's responsibility or a flow's collection and summary.
+It also holds the comparison control, and `Clear focus` while a focus stands.
+_Avoid_: subtitle, narrative
+
+**Crumbs**:
+The containment path from the root to the open module in a pane's header.
+
+**Folded chain**:
+A chain of modules with one part each, which the module tree shows as one row and the crumbs show step by step.
 
 ### Reading
 
+**Reading**:
+A content-free selection of what to draw: its model, state or checkpoint, scope, expanded modules, focus, filters, grammar and optional flow.
+It owns no architecture, so agents and users compose readings on demand and nobody authors one first.
+_Avoid_: view, board
+
+**Scope**:
+What a reading examines: one open module, or, with no module open, the root modules.
+Changing the scope changes the reading and leaves the architecture as it is.
+_Avoid_: level, zoom, board, view
+
+**Open module**:
+The module that a reading has open, whose parts it shows with their own internals closed.
+Opening a module changes the scope and nothing else, and it works again on any part that has children.
+_Avoid_: drill-down, zoom in, descend, board
+
+**Expanded module**:
+A module that a reading opens beside its open module, in the same picture, as another frame with its parts.
+Expanding a door keeps the scope, and a line to that module then ends on the part that owns it.
+_Avoid_: second scope, drill-down, merged view
+
+**Root reading**:
+The reading with no open module, which nobody authors.
+It draws the root modules of a model, each one closed.
+_Avoid_: overview, whole board, summary view, default view
+
+**Focus**:
+A reading narrowed to exact chosen subjects and their mutual lines, where the rest become doors.
+It changes the reading and never creates a module or changes containment.
+_Avoid_: zoom, isolate, spotlight
+
+**Selection**:
+The subjects that a user picked out in a pane, held by stable identity.
+It is presentation, so it stays out of the address, adds no browser history and writes nothing.
+_Avoid_: highlight, focus (that is part of a reading)
+
+**Filter**:
+A choice in a reading to hide a relationship kind.
+It acts on relationships before they join, and the model keeps every relationship.
+_Avoid_: legend (that explains the marks)
+
+**Grammar**:
+What a reading draws its subject as: `architecture`, `sequence` or `flowchart`.
+_Avoid_: diagram type, layout, mode
+
+**Sequence reading**:
+A reading in the `sequence` grammar.
+It draws one flow's participants as columns and every message in order, a decision as an `alt` frame and a loop as a `loop` frame.
+_Avoid_: sequence view, data-flow view, sequence diagram (for the reading)
+
+**Flowchart reading**:
+A reading in the `flowchart` grammar.
+It draws one flow's steps from a start to an end: a message as a box, a decision as a diamond with a labelled line for each alternative, and a loop as a hexagon (ADR 0053).
+_Avoid_: flowchart view, logic view, decision tree, activity diagram
+
+**Projection**:
+The one shared derivation that turns a coherent reading of a model into what the renderer draws.
+The browser and the server use the same rules, and nothing stores the result as architecture.
+_Avoid_: view model, board document, copy
+
+**Accepted scene**:
+The one scene that a pane draws, held with the model revision, projection, reading and selected identities that produced it.
+A requested destination stays separate until its matching scene arrives, and a late result never replaces a newer destination.
+_Avoid_: latest scene
+
+**Start**:
+The one decision about what a page opens, made before any pane exists (ADR 0069).
+The address decides first, then the last reading, then one listed repository with a model, then the repository chooser.
+_Avoid_: default vault, served vault, landing page
+
+**Last reading**:
+The address of the most recent reading in one browser, for one server.
+_Avoid_: default reading, session restore
+
+**Repository chooser**:
+The list of repositories that a page shows after a start that ends with no pane.
+_Avoid_: picker, landing page
+
 **Reading direction**:
-The way a view's architecture reads across the page: always from the top down.
-It is a property of the rendered variant, never of its authored content.
+The way a picture reads across the page: always from the top down.
+It is a property of the picture, never of authored content.
 _Avoid_: orientation, rotation, layout direction, landscape, portrait
 
 **Reference pane**:
-What a drawing is measured against. Its width is the shell's: a lone pane's
-picture at the one supported size, beside its docked sidebar, with the
-conversation shut and the fit margin taken off either side. Its height is not
-the shell's: it is that width over the page shape the renderer lays boards out
-for, a tuned 1.4, so a row of the shell never lays a board out again.
+What a picture is measured against: one fixed page shape that the renderer lays every picture out for, so a row of the shell never lays a picture out again.
 _Avoid_: viewport, screen, window, canvas size, page
 
 **Fit**:
-How large a drawing shows whole in the reference pane: the scale that fits it,
-capped at one. A guideline: it breaks ties between drawings that read equally
-well, and never outweighs how easily a drawing reads.
+How large a picture shows whole in the reference pane: the scale that fits it.
+It breaks ties between pictures that read equally well, and never outweighs how easily a picture reads.
 _Avoid_: density, aspect ratio, zoom (that is the camera's)
 
-**Scorecard**:
-Every measure a reader pays for in one drawing. The reading measures decide:
-crossings, stacked and double-tracked lines, hooks, crowded ports and labels,
-bends and route length. Fit, page area and card share break ties between
-drawings that read equally well.
-_Avoid_: score, cost, quality metric
+**Landing whole**:
+How a module's picture first shows: whole in the room of its pane, at no more than a scale of 1.
+A sequence or a flowchart keeps a landing of 0.6 on the head of its frame when whole would read smaller (ADR 0070).
+_Avoid_: floor, zoom to fit
+
+**Far view**:
+What a picture draws below a scale of 0.857: each card keeps its box, and its words grow so that they still read.
+_Avoid_: thumbnail, overview
+
+**Far type scale**:
+The one size that sets the words of every far card of a picture: what a name of 12 px needs where the picture lands, or less if a card's box holds less.
+_Avoid_: card zoom
 
 **Light**:
-What the picture leaves as drawn when a user picks a part out or rests the
-pointer on one: the part and everything it contains, every relationship that
-touches any of it, the parts at their other ends, and the containers that hold
-them. The rest recedes. A relationship is lit along the whole of its route, even
-where the picture has another relationship draw a stretch of a lane they share.
-The light is attention, like the selection: nothing is written, and a presented
-walkthrough step or a selected group takes its place.
+The attention that a picture keeps around a part that a user picks out or points at, which writes nothing.
+It covers the part, its contents, every relationship that touches them, and the modules and containers at their other ends, and the rest recedes.
 _Avoid_: highlight, focus mode, dim, spotlight
 
 **Trace**:
-A user's question of a picked part: how far does it reach? Onward lights
-everything the part sends to, directly or through other parts. Back lights
-everything that sends to it. Each further relationship hop lights more faintly,
-and a part reached by more than one route is as near as its nearest route. A
-trace belongs to the part and goes with the pick. Nothing is written, and no
-traffic or telemetry is implied: it is a walk along the relationships the board
-states.
+A user's question of a selected module, asked with `Trace onward` or `Trace back`: how far does it reach along what it sends to, or back along what sends to it.
+Each further hop lights more faintly, a card stands for all that it holds, and nothing is written.
 _Avoid_: impact analysis, blast radius, dependency graph
 
 **Dive**:
-How a drill-down looks. The board that a card opens is put inside the card, the
-camera flies into the card, and the board grows to the size of the pane. Going
-back out runs the flight the other way. At the end of the flight the board
-itself takes over from the picture inside the card, in the same place. The dive
-is presentation: it happens when the board's picture is to hand in a moment,
-and it gives way to the plain opening of the board when it cannot happen.
-_Avoid_: zoom transition, page transition, animation
+How opening a module looks: the module's picture stands inside its card, and the camera flies into the card until the picture fills the pane.
+Going back out runs the flight the other way, and a flight that cannot happen becomes a plain change.
+_Avoid_: drill-down, zoom transition, page transition, animation
+
+### States and proposals
+
+**State**:
+One identified architecture of a whole model, standing in exactly one lifecycle: current, draft, historical or shelved.
+A state keeps its identity and its lasting name through every change of lifecycle.
+_Avoid_: variant, version, revision, branch, mode
+
+**Current**:
+The optional designation of the state that describes the architecture that exists.
+A model has at most one, and a checkpoint alone never selects it.
+_Avoid_: latest, default proposal, archive tip
+
+**Planning model**:
+A model with no current state, for something nobody has built yet.
+It differs from a model that is unavailable or not migrated.
+_Avoid_: empty model, unmigrated model
+
+**Adoption**:
+Explicitly designating a proposal as the implemented architecture and recording why and when.
+A formerly current state stays as history, and a Git merge or an approval never adopts a proposal.
+_Avoid_: promotion, rename, merge
+
+**Historical state**:
+A formerly current state retained under its name after a successor is adopted.
+It refuses ordinary edits, and only a correction changes what it says.
+_Avoid_: historical variant, abandoned proposal, snapshot, shelved state (that was never current)
+
+**Shelved state**:
+A proposal nobody intends to carry out, retained under its name with everything it says and the reason that somebody let it go.
+It stops following its predecessor and refuses edits and adoption.
+_Avoid_: shelved variant, abandoned, archived, deleted, closed, rejected, superseded (that is a historical state), withdrawn
+
+**Proposal**:
+One independently identified draft state: a change nobody has built yet, stored as identity changes against a retained baseline.
+Independent proposals can share a name and stay independent identities (ADR 0067).
+_Avoid_: plan, design, RFC, draft variant
+
+**Predecessor**:
+The state that a proposal follows.
+A child proposal follows its own predecessor, not another proposal with a similar name.
+_Avoid_: parent (that is containment)
+
+**Baseline**:
+The exact retained reading that a proposal's changes are stored against.
+_Avoid_: snapshot, copy
+
+**Proposal family**:
+A proposal with every proposal that follows it, which one operation reconciles together.
+_Avoid_: stack, variant tree
+
+**Reconciliation**:
+Bringing a proposal up to date with its predecessor while it keeps its own changes.
+Independent changes carry through, and conflicting changes stay explicit until settlement.
+_Avoid_: comparison, adoption
+
+**Standing**:
+The durable record that a proposal holds open issues or waits on a blocked ancestor.
+A comparison never establishes it.
+_Avoid_: status, conflict flag
+
+**Settlement**:
+One explicit choice for every open issue of a proposal, made in one intent.
+_Avoid_: merge, automatic resolution
+
+**Comparison**:
+The differences between two states, identified by the stable identities of their subjects.
+By default, a non-current state compares with current, or with its predecessor in a model with no current state.
+_Avoid_: diff, variant, reconciliation
+
+**Comparison status**:
+The derived added, changed, removed or unchanged mark of a subject against the state that it is compared with.
+_Avoid_: authored flag, selection, current designation, standing (that belongs to a proposal)
+
+**Change list**:
+One row for each changed subject of a comparison, under the subject that owns it.
+
+**Walk**:
+Moving through a change list in order.
+
+**Place**:
+Where a user stands in a walk, which follows the subject's identity, not its position.
+
+**Checkpoint**:
+An exact retained copy of a model's authored inputs and their selection metadata, held in Git.
+It selects no current state and leaves a checkout's branch, HEAD and index as they are.
+_Avoid_: snapshot, backup, commit
+
+**History archive**:
+The independent Git record that retains checkpoints and lifecycle records apart from source history.
+Its order supplies no architecture ancestry and no current designation.
+_Avoid_: history branch, backup
+
+**Publication**:
+The explicit transfer of retained architecture to a named remote.
+A normal source push does not publish it.
+_Avoid_: push, sync, upload
+
+**Correction**:
+An explicit change to retained historical meaning, with a reason and immutable source evidence.
+It keeps the original record readable and tied to the corrected state.
+_Avoid_: edit, amendment, rewrite
+
+### Authoring and recovery
+
+**Intent**:
+One complete authorized architecture operation.
+It names its operation identity, writer, doing line, exact target and complete expected revision.
+_Avoid_: patch, edit
+
+**Doing**:
+The one line that an agent says about the model as it writes, shown on the canvas while the write lands.
+A claim's reason is the campaign, and a doing is one step of it.
+_Avoid_: description, why, message, comment, log, reason (that is the claim's)
+
+**Claim**:
+A writer's visible ownership of affected subjects, states and structure scopes while it works.
+It permits reading, and a human can take it back.
+_Avoid_: lock, lease (that is the short installation hold)
+
+**Installation lease**:
+The short vault-wide hold that serializes durable writes.
+It stays free between operations, so no agent holds it while it works.
+_Avoid_: lock, claim
+
+**Complete revision**:
+The fingerprint of every authored input that establishes the selected model.
+A writer names a fresh one, not the version of a selected file, so a change based on an older read is refused.
+_Avoid_: version, read token, generation, sequence, edition, variant
+
+**Pending transaction**:
+An accepted write that stopped before durable completion, so ordinary reads refuse with `RECOVERY_REQUIRED`.
+Explicit recovery finishes it from the original operation and checkout.
+_Avoid_: partial write, crash state
+
+### Commands
+
+**Model operation**:
+An action whose subject is the model of a named vault.
+It goes through the shared runtime and needs no live canvas, pane, selection, camera or connected browser.
+_Avoid_: board operation, canvas command, pane command, headless command
+
+**Browser operation**:
+An action whose subject is a live Archboard browser session: showing a reading in a pane, opening or closing a pane, or reading what each pane shows and what the user selected.
+It never changes the model.
+_Avoid_: view command, board command, pane command
+
+**Render**:
+An image of one reading drawn without a live pane: an SVG from the renderer, or a PNG captured from that reading.
+It carries its render recipe, so it can be drawn again and compared.
+_Avoid_: board render, screenshot, pane export, artifact, export
+
+**Render recipe**:
+What a render records about how it was drawn: the model identity, the reading selectors, the input revision and the picture digest.
+It holds no output path, and it names subjects by identity, not by the name somebody typed.
+_Avoid_: render request, render settings, command, export options
+
+**Embed**:
+A render that a repository keeps under Git, so that a document can show it.
+The embeds check finds it by its render recipe, and a render that Git does not track is no embed.
+_Avoid_: artifact, export, tracked render, tracked embed, asset
+
+**Renderer core**:
+The Rust crate that measures, lays out and paints a reading.
+Bun and the browser load it as WebAssembly, and a native frontend links it (ADR 0059).
+_Avoid_: engine (that is a layout engine), WASM module
+
+**Layout engine**:
+The part of the renderer core that places a picture's cards and routes its lines.
+Blocks is the default, and Tracks is the alternative, which the switch in the Right panel offers and a render asks for with `--layout track` (ADR 0064).
+_Avoid_: renderer core, layout mode, Track (`track` is only the value of a flag or a field)
+
+**Dense placement**:
+What Blocks tries first on a reading of one open frame of cards, or of a root with 18 or more lines: the parts start on a grid, and the doors stand round the frame.
+A reading that it cannot route, or that holds a nested frame, keeps legacy placement.
+_Avoid_: compaction (that closes the space nothing uses in a routed drawing, so its parts need not stay on the grid)
+
+**Scene**:
+The ordered, positioned list of what a picture is made of: shapes, glyph runs and the marks that a painter animates.
+The renderer core answers it, and it holds no interaction state, so it is never the canvas that shows it.
+_Avoid_: paint list, display list, render tree, canvas
+
+**Painter**:
+What turns a scene into what a frontend shows.
+The SVG painter is part of the renderer core, and a native frontend paints the list itself.
+_Avoid_: rasterizer (that makes a PNG from SVG), backend
 
 ### Commits
 
-**Behind**:
-A board is behind its code by the commits that changed a part's bound files
-after its last change. Its last change is the last commit that adopted a
-variant, or changed a part, relationship, flow or step of the current variant.
-Being behind says where to look, not what is wrong. It is derived from Git on
-request, never stored, and never a warning (ADR 0045).
-_Avoid_: staleness and stale (a server that runs older source), drift (live
-infrastructure against its code), lag, freshness, out of date
+**Locality**:
+The answer to which bound modules change often and which change together, read from Git on request.
+_Avoid_: behind, staleness, drift, freshness
 
 **Hotspot**:
-A part that many commits in a period changed, a year by default. A board's
-hotspots are its parts ranked by that count. The count is of commits only, not
-of the size or the complexity of the code, and it leaves large commits out
-(ADR 0045).
-_Avoid_: churn (that counts changed lines), heat, activity, hot path, window
-(that is a browser window)
+A module that many commits in a period changed.
+The count is of commits only, not of the size or the complexity of the code, and it leaves large commits out (ADR 0045).
+_Avoid_: churn (that counts changed lines), heat, activity, hot path, window (that is a browser window)
 
 **Change coupling**:
-Two parts of one board whose bound declarations or paths change together often
-enough to pass code-maat's filters. Its degree is their shared commits over the
-mean of their own. A pair that nothing on the board joins asks whether the
-board misses a dependency, or whether two parts carry one decision. A
-relationship or a flow step joins two parts, and so does one that ends on a
-container around either part, or containment itself (ADR 0045).
-_Avoid_: temporal coupling (it means three different things in three books),
-logical coupling, evolutionary coupling, co-change
+Two modules whose bound declarations or paths change together often enough to pass code-maat's filters.
+A pair that nothing in the model joins asks whether the model misses a dependency, or whether two modules carry one decision (ADR 0045).
+_Avoid_: temporal coupling, logical coupling, evolutionary coupling, co-change
 
-**Footprint**:
-The parts whose bound declarations or paths a commit range changed, usually a
-branch since its merge base, set against the parts that its proposal names:
-named and changed, changed but not named, and named but not changed (ADR 0045).
-_Avoid_: impact, change set, touched parts, diff (that is a comparison)
+**Branch footprint**:
+The modules whose bound declarations or paths a local source range changed, set against the modules that a selected proposal names (ADR 0045).
+_Avoid_: footprint alone, impact, change set, touched parts, diff (that is a comparison)
 
 **Large commit**:
-A commit that changes more than 30 files, code-maat's default limit. Hotspots
-and change coupling leave large commits out, because they make unrelated parts
-look coupled. Behind and a footprint keep them and say which ones are large
-(ADR 0045).
-_Avoid_: sweep (the archboard-dev pass after a removal or a rename), bulk
-commit, big commit
+A commit that changes so many files that it makes unrelated modules look coupled.
+Hotspots and change coupling leave it out, and a branch footprint keeps it and says that it is large (ADR 0045).
+_Avoid_: sweep, bulk commit, big commit
 
 ### Evidence
 
 **Semantics check**:
-Reading a vault's boards against the vault's own configuration: the board
-families, the vocabulary that the boards use, and the configuration itself. It
-reads no code and no Git, and it is the check that canvases poll.
-`archboard check semantics` runs it, and so do `archboard check` and
-`archboard check all`.
+Reading a vault's model against the vault's own configuration.
+It reads no code and no Git.
 _Avoid_: plain check, board check, vault check, lint
 
 **Embeds check**:
-Reading the Embeds of a repository against the boards they draw, in this vault
-or in another repository's vault. It says which Embed is outdated or lost its
-board, and it can draw each outdated one again. When no checkout on this
-machine holds that vault, it fetches the vault of the repository's default
-branch.
+Reading the embeds of a repository against the models that they draw, to say which embed is outdated or lost its subject.
+It can draw each outdated embed again from its render recipe.
 _Avoid_: artifact check, render check, docs check
 
 **Code check**:
-Reading, on request, the code and the infrastructure that the bindings and
-anchors of a board name. It reports findings on the current variant or on a
-named draft. `archboard check code` runs it, and so do `archboard check` and
-`archboard check all`, with the other checks. The Semantics check, which
-canvases poll, never does (ADR 0046, ADR 0057).
-_Avoid_: lint, scan, drift detection, the check alone (that is `archboard check`,
-which runs every check)
+Comparing, on request, what a state claims with the code and infrastructure that its code bindings and anchors name.
+It reports findings on the current state or on a selected proposal (ADR 0046, ADR 0068).
+_Avoid_: code inspection, lint, scan, drift detection, the check alone (that runs every check)
 
 **Code facts**:
-What one file tells the code check: what it defines, with the visibility of each
-definition, what it references, and what it imports. They are derived from the
-file on request and never written to a file (ADR 0046).
+What one file tells the code check: what it defines, with the visibility of each definition, what it references and what it imports.
+They are derived from the file on request and never written to a file (ADR 0046).
 _Avoid_: index, symbol table, syntax tree, parse result
 
 **Evidence kind**:
-What one piece of code or infrastructure proves about two parts: a call, a
-configured path, a permission, an import, a build dependency or provisioning.
+What one piece of code or infrastructure proves about two modules: a call, a configured path, a permission, an import, a build dependency or provisioning.
 Each relationship kind can name the evidence kinds that it accepts (ADR 0046).
-_Avoid_: relationship kind (that is what the board claims), link type,
-dependency type, path alone (that is the file field of a binding)
+_Avoid_: relationship kind (that is what the model claims), link type, dependency type, path alone
 
 **Use as a value**:
-A use at run time of a name that runs none of its code. It reads a constant,
-passes the name on, or tests a value against a class, as `instanceof` and a
-catch do. It is call evidence, so it supports a relationship. The code check
-never calls a dependency undrawn on it alone (ADR 0046).
+A use at run time that runs none of the name's code, such as reading a constant or testing a value against a class.
+It is call evidence, so it supports a relationship, and the code check never calls a dependency undrawn on it alone (ADR 0046).
 _Avoid_: read, weak call, reference (that is any use)
 
 **Candidate**:
-Evidence that the code check matched by name only, so the name can stand for
-another definition. Two things make evidence resolved instead: a language
-server that named its definition, or code that names the file or the address
-that it reaches, as an import path does. A finding on a candidate is
-information, never a warning (ADR 0046).
+Evidence that the code check matched by name only, so the name can stand for another definition.
+A finding on a candidate is information, never a warning (ADR 0046).
 _Avoid_: match, hit, guess, possible finding, unresolved evidence
 
 **Finding**:
-One thing that the code check reports about one part, relationship or flow
-step. It has the shape of a vault diagnostic, with the evidence that it rests
-on, and its severity is warning or information (ADR 0046).
-_Avoid_: diagnostic (what the Semantics check reports), issue,
-violation, drift, problem
+One thing that the code check reports about one module, relationship or flow step, with the evidence that it rests on.
+Its severity is warning or information (ADR 0046).
+_Avoid_: diagnostic (what the semantics check reports), issue, violation, drift, problem
+
+### Walkthroughs and voice
+
+**Walkthrough**:
+An authored sequence of beats that explains a state or a retained checkpoint of a model.
+It holds no geometry and no copy of the architecture.
+_Avoid_: variant, flow
+
+**Beat**:
+One stop of a walkthrough: its title, its narrative and its complete reading.
+It inherits nothing from the beat before it.
+_Avoid_: step (that belongs to a flow), slide
+
+**Walkthrough box**:
+The plate that a presented walkthrough lays over the foot of its pane's picture.
+It holds the beat's number, title and narrative, the keys that step and leave, and a rail of beats, and the browser alone owns it.
+_Avoid_: caption strip, presentation bar, subtitle bar
+
+**Narration**:
+A voice session that explains one walkthrough while the user steps through it by hand.
+The position stays the pane's, and the words follow the picture.
+_Avoid_: playback, autoplay, slideshow
+
+**Recording**:
+One walkthrough presented from its first beat to its last with nobody at the controls, written to a video file with the voice explaining it.
+It keeps a talk, and the video's picture is then rendered from the talk, frame by frame.
+_Avoid_: playback, autoplay, screencast, export
+
+**Talk**:
+What a recording keeps of its live pass: the voice's sound, the events counted in samples of that sound, and the input that draws the picture.
+It renders again without the model, Codex or a new voice session, and it is not the Talk control that starts voice.
+_Avoid_: take, capture, session, transcript (the conversation's record), video (that is the recording)
+
+**Subtitle**:
+What the voice model is saying, laid over the picture of the pane that voice runs for, one cue of two lines at a time.
+It is presentation, the browser's own, and what the user says is never subtitled.
+_Avoid_: caption, transcript (the conversation's record)
+
+**Voice box**:
+The subtitle's box with the voice in it: the orb, its state in a word, mute and the subtitles control, over the picture of the pane that voice runs for.
+While a walkthrough is presented, it stands in the foot of the walkthrough box.
+_Avoid_: caption box, voice panel, subtitle bar
+
+**Pane news**:
+Where a user's reading of a pane stands after they changed it by hand, told to the voice model as one sentence of names.
+A change that an agent or the canvas caused is never pane news.
+_Avoid_: callback, telemetry, event, selection report
+
+**Outside change**:
+A model change by an agent that is neither the workhorse nor the voice coordinator of this tab session.
+The voice model and the coordinator are both told, because neither asked for it.
+_Avoid_: external edit, foreign write, third-party change
 
 ### Working
 
 **Tab session**:
-The work of one browser tab with Codex: one voice coordinator for the whole
-app, and one workhorse for each checkout that the tab works in. The tab keeps the session id in
-sessionStorage, and both of its panes name that id to the server. So a reload
-keeps the conversation, and a new tab or window starts a new one. A tab that the
-browser duplicates shares the session of the original. Each tab session has its
-own voice coordinator and voice session, and for each checkout its own thread
-link, workhorse, queue and approvals. It also has its own command lease. So two
-tabs can talk at the same time. A session ends 60
-seconds after the last pane of its tab closes. A reload within that time keeps
-the conversation and its approvals. When a session ends, Archboard cancels its
-approvals and stops the board news to its workhorses. It unsubscribes each of
-its threads once no turn runs on it, and Codex then unloads the thread.
+The work of one browser tab with Codex: one voice coordinator for the whole app and one workhorse for each checkout that the tab works in.
+A reload keeps it, and a new tab or window starts a new one.
 _Avoid_: browser session (that names the realtime handle), session alone, canvas
 
 **Workhorse**:
-The Codex thread of a tab session that works in one checkout, for architectural
-inspection, analysis, and proposals. It runs in that checkout's directory, so it
-reads that repository's own agent instructions and skills. The checkout is the
-directory that holds the vault: a checkout root, or the directory that holds an
-untracked vault. A tab session has at most one for each checkout, and every
-pane of the tab shows the one of the shown conversation. A new chosen checkout
-of a repository moves the panes, but not the shown conversation, and every
-workhorse stays linked. It can continue its work while the voice
-coordinator answers and investigates separately.
-_Avoid_: main agent, coding thread, backend agent, worker (that is also an agent
-role)
+The Codex thread of a tab session that works in one checkout, for architectural inspection, analysis and proposals.
+It runs in that checkout's directory, so it reads that repository's own agent instructions and skills.
+_Avoid_: main agent, coding thread, backend agent, worker (that is also an agent role)
 
 **Thread link**:
-The runtime association between one tab session, one checkout and one
-controllable Codex workhorse on Archboard's owned app-server child. The first
-typed message for that checkout makes it, or the coordinator's first
-delegation to it. New conversation links a new workhorse in place of the one in
-the shown conversation. The link never lives in the
-board or follows the active thread of another client. Child exit and the end of
-the tab session clear it, so the next message or Talk makes a new one.
-_Avoid_: binding (that means node-to-code here), attachment, selected thread,
-active task, task link
+The runtime association between one tab session, one checkout and one controllable Codex workhorse.
+It never lives in the model or follows the active thread of another client.
+_Avoid_: binding (that means module to code here), attachment, selected thread, active task, task link
 
 **Voice coordinator**:
-The fast Codex thread beside the workhorses of a tab session. It serves the
-whole app and works in no checkout: it runs in a directory of its own under the
-state directory, which holds no vault, so it names the vault with `-C` on every
-command. It starts with the first message or Talk
-of the tab. A coordinator carries at most one voice
-session, so a later voice start replaces it with a fresh one. Realtime voice
-attaches to it. It handles conversation and reading boards. It gives
-work in a checkout to the workhorse of that checkout, and it starts that
-workhorse if there is none. With the voice model it is one assistant: the
-voice model speaks, and the coordinator is its subconscious, which reads the
-boards, follows its workhorses and decides what the voice model says. With no
-voice session it has nothing to do and is never run.
-_Avoid_: voice model (that is only one part of the realtime path), voice agent,
-router, facilitator, copilot
+The fast Codex thread beside the workhorses of a tab session, which serves the whole app and works in no checkout.
+With the voice model it is one assistant: the voice model speaks, and the coordinator reads the architecture, follows its workhorses and decides what the voice model says.
+_Avoid_: voice model (that is only one part of the realtime path), voice agent, router, facilitator, copilot
 
 **Voice model**:
-The realtime speech model the user talks to. It listens and speaks, and it hands
-off to the voice coordinator for anything that needs a board or work.
+The realtime speech model that the user talks to.
+It listens and speaks, and it hands off to the voice coordinator for anything that needs architecture or work.
 _Avoid_: voice coordinator, voice agent, assistant
 
 **Handoff**:
-The voice model passing the conversation to the voice coordinator and waiting for
-its answer. It carries what the user last said. When the user said nothing, it
-carries the voice model's own words, which are never a request from the user.
-_Avoid_: delegation (that is the coordinator giving work to the workhorse),
-request, callback
+The voice model passing the conversation to the voice coordinator and waiting for its answer.
+It carries what the user last said or, with nothing said, the voice model's own words, which are never a request.
+_Avoid_: delegation (that is the coordinator giving work to the workhorse), request, callback
 
 **Spoken answer**:
-What the voice coordinator gives the voice model to say to the user. It is the
-only thing the voice model reacts to. Everything else the coordinator writes
-reaches the voice model as quiet context, which it knows but never says.
+What the voice coordinator gives the voice model to say to the user, as the result of a handoff.
+Apart from a narration's steps and news that stops a narration, all else reaches the voice model as quiet context.
 _Avoid_: final, reply, response
 
 **Steer**:
-To add input to a turn that is still running, so that the turn takes it into
-account as it continues. Steering never stops the turn. Stopping it is an
-interruption.
+To add input to a turn that is still running, so that the turn takes it into account as it continues.
+Steering never stops the turn.
 _Avoid_: interrupt, inject, cancel
 
 **Workhorse stop**:
-A request to stop the workhorse of one checkout and its sub-agents, and clear
-its pending requests, or to stop every workhorse of a tab session. The workbench
-Stop control stops the workhorse of the shown conversation, and a spoken stop
-stops every running workhorse of the tab session. Accepting the request does
-not prove that its work stopped.
+A request to interrupt the running turn of the workhorse of one checkout, or of every workhorse of a tab session.
+A sent interrupt does not prove that work stopped: only workhorse news that its turn ended proves it.
 _Avoid_: steer, pause, end voice
 
 **Shown conversation**:
-The workhorse conversation that the agent dock of every pane of a tab shows:
-the one of the checkout that the user last activated. Focusing a pane, opening
-a board, drilling down and picking a workhorse from the dock's list activate a
-checkout. Until the first activation it is the checkout of the pane that was
-focused when the server first read the tab. Nothing that an agent does to a
-pane changes it, so it never changes while somebody types. A typed message, New
-conversation, the Stop control and approvals all act on it. A coordinator turn
-shows in the conversations of the workhorses that it gave work to, and a turn
-that gave none in the conversation that was shown when it started.
+The workhorse conversation that the agent dock of every pane of a tab shows: the one of the checkout that the user last activated.
+Nothing that an agent does to a pane changes it (ADR 0050).
 _Avoid_: active thread, current conversation, selected thread
 
 **Workhorse news**:
-What the voice coordinator is told about the workhorses of its tab session while
-voice is live: a turn that ended or waits on the user, and a message a
-workhorse sent it. Each piece names the checkout of its workhorse. The
-coordinator gets it as it happens, in the turn it is running or in a new one.
-It decides what the voice model says and what it only knows.
+What the voice coordinator hears about the workhorses of its tab session while voice is live: a turn that ended or waits on the user, and a message that a workhorse sent it.
 _Avoid_: callback, notification, outcome report
 
-**Doing**:
-The one line an agent says about a board as it writes to it, shown on the
-canvas while the write lands. A claim's reason is the campaign an agent has the
-board for; a doing is one step of it, and a write that says none is refused.
-_Avoid_: description, why, message, comment, log, reason (that is the claim's)
+**Pane report**:
+What a pane says about what it shows: the exact capture of its vault, model, selected identities, reading intent and observed revisions.
+_Avoid_: screenshot, pane snapshot
 
-**Proposal**:
-A draft variant that states a change nobody has built yet, branched from the
-variant it would change.
-_Avoid_: plan, design, RFC
+**Agent navigation**:
+An agent moving a pane to an addressed reading, which the browser then renders locally.
+It never activates another conversation.
+_Avoid_: remote render
 
-**Implementation brief**:
-A concise handoff from Archboard to the user's own coding agent, describing
-the intended change and how to retrieve its architecture context.
-_Avoid_: implementation, proposal, delegation
+**Explanation**:
+Temporary text that a local agent returns for one captured reading.
+It stays tied to that reading and authors no architecture.
+_Avoid_: annotation, note
+
+### Legacy formats
+
+**Legacy board**:
+A document of the format that the model replaced: one description of one subject with its own level, views, drill-downs, variants and version.
+It is not part of the live model, and the runtime decodes it only for migration and exact retained history.
+_Avoid_: board (for anything live), note
+
+**Original state**:
+One state of a legacy board, retained exactly and opened with its own coverage only.
+It is not part of the live model, and it never borrows present-day modules around it.
+_Avoid_: variant, historical state (that is a state of the model)
+
+**Bookmark**:
+A named reading that migration keeps from a legacy view, which owns no architecture.
+It is not part of the live model, and basic navigation never depends on one.
+_Avoid_: view, named view
+
+**Legacy address**:
+An exact address from a legacy board that the captured aliases of a migration still resolve to one original state.
+It is not part of the live model, and an unknown or ambiguous address refuses.
+_Avoid_: board address, alias
+
+### Migration
+
+**Legacy authority**:
+The standing of a vault that still holds legacy boards, so ordinary live operations refuse it with `LEGACY_AUTHORITY`.
+Only an explicit migration changes it.
+_Avoid_: unmigrated model, compatibility mode
+
+**Inventory**:
+The record of every original identity and the exact fingerprint of its source, taken before any mapping.
+_Avoid_: scan, import
+
+**Mapping plan**:
+The owner's explicit identity decisions and reasons for a migration (ADR 0066).
+The runtime never infers a mapping from a name or a binding.
+_Avoid_: automatic mapping, migration configuration
+
+**Preview**:
+The composed reading of a mapping plan, which rewrites no original file and changes no live authority.
+_Avoid_: dry run, candidate (that is evidence that the code check matched by name)
+
+**Migration**:
+The explicit, authorized installation of a mapped model, which retains the originals first and replaces legacy authority.
+_Avoid_: upgrade, automatic rewrite

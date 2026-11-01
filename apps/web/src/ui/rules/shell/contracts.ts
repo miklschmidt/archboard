@@ -3,14 +3,14 @@
 // `ShellActions`. The shell keeps only presentation state of its own.
 
 import type { ReactNode } from "react";
+import type { z } from "zod";
+import type { Model } from "@archboard/board/content";
+import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { OutlineNode } from "#ui/rules/board-catalog/outline.ts";
 import type {
 	AgentActivityEntry,
-	BoardListing,
-	CatalogBoard,
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
@@ -18,15 +18,8 @@ import type {
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
 
-/** Where the take-back operation for one pane's board stands. */
-type TakeBackState =
-	| { kind: "idle" }
-	| { kind: "pending" }
-	| {
-			kind: "failed";
-			/** Plain words for why the board could not be taken back. */
-			message: string;
-	  };
+/** What a pane opens of a model, when it opens more than its roots. */
+type PaneOpening = Omit<z.input<typeof ArchitecturePaneReadingSchema>, "model" | "beat">;
 
 /** One pane: what it reports about itself, who holds its board, and its mounted stage. */
 interface ShellPane {
@@ -35,9 +28,6 @@ interface ShellPane {
 	stage: ReactNode;
 	/** The board's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
-	takeBack: TakeBackState;
-	/** The name the vault lists the pane's board under, or null when it lists none. */
-	boardName: string | null;
 }
 
 /** A recovery action a notice offers, reported back by id when chosen. */
@@ -84,13 +74,12 @@ type ShellPresentation = LivePresentation | RecoveryPresentation;
 /** The settings surfaces the header's menu reaches. */
 type SettingsSurface = "opener";
 
-/** One repository as the navigator lists it, with the boards of its chosen checkout (ADR 0050). */
+/** One repository and the canonical model of its chosen checkout (ADR 0050). */
 interface ShellRepository {
+	readonly migrationRequired?: boolean | undefined;
+	readonly model?: Pick<Model["manifest"], "id" | "name"> | undefined;
 	readonly repository: RepositoryEntry;
-	readonly boards: BoardListing;
-	/** Its boards as the navigator places them, built once by the caller. */
-	readonly outline: readonly OutlineNode<CatalogBoard>[];
-	/** Why its boards could not be read, or null. */
+	/** Why its model could not be read, or null. */
 	readonly error: string | null;
 	/** Its vault has not answered yet and nothing of it is in hand. */
 	readonly loading: boolean;
@@ -110,6 +99,8 @@ interface ShellView {
 	boardsError: string | null;
 	/** The repositories have not answered yet and nothing of them is in hand. */
 	boardsLoading: boolean;
+	/** The page starts on the chooser, so the chooser takes the keys. */
+	choosing: boolean;
 	selectedBoardKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
@@ -120,6 +111,20 @@ interface ShellView {
 
 /** Everything a person can do from the shell. */
 interface ShellActions {
+	/**
+	 * Open a repository model and activate that checkout's conversation.
+	 * @param model The stable model identity, or null for a repository with no model to read.
+	 * @param repository Its registered repository identity.
+	 * @param paneId The addressed pane, or the active pane when absent.
+	 * @param reading What the pane opens, when it opens more than the model's roots.
+	 * @returns Whether the server accepted the destination.
+	 */
+	openModel(
+		model: string | null,
+		repository: string,
+		paneId?: string,
+		reading?: PaneOpening,
+	): Promise<boolean>;
 	setTheme(theme: ThemeChoice): void;
 	/**
 	 * Show a board in one pane.
@@ -137,10 +142,11 @@ interface ShellActions {
 	/**
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
-	 * @param key The board key.
+	 * @param key The board key, or null for a repository with no model to read.
 	 * @param repository The repository the board is in.
+	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 */
-	openBeside(key: string, repository: string): void;
+	openBeside(key: string | null, repository: string, reading?: PaneOpening): void;
 	/**
 	 * Choose which checkout of a repository this machine reads, for every tab
 	 * and every agent (ADR 0050).
@@ -154,7 +160,6 @@ interface ShellActions {
 	closePane(paneId: string): void;
 	/** Present one pane fullscreen, or null to return to the workspace. */
 	present(presentation: ShellPresentation | null): void;
-	takeBackControl(paneId: string): void;
 	openSettings(surface: SettingsSurface): void;
 	selectNoticeAction(noticeId: string, actionId: string): void;
 	dismissNotice(noticeId: string): void;
@@ -162,7 +167,7 @@ interface ShellActions {
 
 export type {
 	ThemeChoice,
-	TakeBackState,
+	PaneOpening,
 	ShellPane,
 	SelectableNoticeAction,
 	ShellNoticeAction,

@@ -1,0 +1,59 @@
+{
+  "order": 3000,
+  "name": "Fetch semantic reads",
+  "kind": "function",
+  "responsibility": "Decode the listing, a board, a render, the vault check, the code findings and a board's locality",
+  "description": "Plain fetch to the semantic read routes; refused, unreachable or invalid replies become explicit viewer failures carrying the server's code. There is no write call.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#tmwUm8BL",
+  "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "outgoing": [
+    {
+      "order": 33000,
+      "kind": "http",
+      "label": "what the last code pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "mountCodeCheckRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+    },
+    {
+      "order": 5000,
+      "kind": "http",
+      "label": "board documents, listing, policy",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/yejBBUFY#pqG9kqlF",
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
+      "order": 48000,
+      "kind": "call",
+      "label": "names the pane's vault on each read",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "symbol": "inVault"
+      },
+      "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
+      "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    }
+  ]
+}

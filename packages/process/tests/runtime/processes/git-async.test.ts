@@ -14,12 +14,10 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { GIT_MS } from "@archboard/timing";
-import { readProcessObservation } from "#runtime/processes/observation.ts";
+import { listProcessObservations, readProcessObservation } from "#runtime/processes/observation.ts";
 import {
 	captureDetachedProcessGroup,
 	processGroupExists,
-	processIdentity,
-	processIdentityExists,
 	signalOwnedProcessGroup,
 } from "#runtime/processes/group.ts";
 import { git } from "#runtime/processes/git-command.ts";
@@ -33,7 +31,7 @@ const TEST_GIT_FIXTURE_START_MS = 5000;
  */
 const TEST_GIT_LIFECYCLE_CASE_TIMEOUT_MS = 30_000;
 
-const GIT_PROCESS_OWNER = fileURLToPath(import.meta.resolve("@archboard/process/git-owner"));
+const GIT_COMMAND = fileURLToPath(import.meta.resolve("#runtime/processes/git-command.ts"));
 
 const FAKE_GIT = `#!/bin/sh
 mode="$1"
@@ -167,104 +165,56 @@ function withStalledFirstReader<T>(work: () => Promise<T>): {
 	}
 }
 
-test.each(["release", "disconnect"] as const)(
-	"Git process owner exits after one result and %s",
-	async (completion) => {
-		let finishResult!: (value: unknown) => void;
-		const result = new Promise<unknown>((resolve) => {
-			finishResult = resolve;
-		});
-		const messages: unknown[] = [];
-		const owner = Bun.spawn([process.execPath, GIT_PROCESS_OWNER, process.execPath, "-e", ""], {
-			detached: true,
-			ipc: (message) => {
-				messages.push(message);
-				finishResult(message);
-			},
-			stdin: "ignore",
-			stdout: "pipe",
-			stderr: "pipe",
-		});
-		try {
-			owner.send({ kind: "start" });
-			// Real IPC and process exit need wall-clock bounds so failure reaches cleanup.
-			const reported = await Promise.race([
-				result.then((value) => ({ kind: "result" as const, value })),
-				Bun.sleep(3_000).then(() => ({ kind: "deadline" as const })),
-			]);
-			expect(reported).toEqual({ kind: "result", value: { kind: "result", exitCode: 0 } });
-			expect(owner.exitCode).toBeNull();
-			if (completion === "release") {
-				owner.send({ kind: "release" });
-			} else {
-				// A parent that dies closes the channel without ever sending release.
-				owner.disconnect();
-			}
-			const exited = await Promise.race([
-				owner.exited.then((exitCode) => ({ kind: "exit" as const, exitCode })),
-				Bun.sleep(3_000).then(() => ({ kind: "deadline" as const })),
-			]);
-			expect(exited.kind).toBe("exit");
-			if (completion === "release") {
-				expect(exited).toEqual({ kind: "exit", exitCode: 0 });
-			}
-			await expectGroupAbsent(owner.pid);
-			expect(messages).toHaveLength(1);
-		} finally {
-			if (owner.exitCode === null) {
-				owner.kill("SIGKILL");
-			}
-			await owner.exited;
-			await Promise.all([
-				new Response(owner.stdout).arrayBuffer(),
-				new Response(owner.stderr).arrayBuffer(),
-			]);
+test("the death of the parent ends every Git in flight and its guard", async () => {
+	const root = mkdtempSync(join(tmpdir(), "archboard-git-orphan-"));
+	const executable = join(root, "git");
+	writeFileSync(executable, FAKE_GIT);
+	chmodSync(executable, 0o700);
+	const markers = [join(root, "one"), join(root, "two")];
+	// A finished command comes first, so that the guard also drops a group.
+	const script = `
+		const { git } = await import(${JSON.stringify(GIT_COMMAND)});
+		const executable = ${JSON.stringify(executable)};
+		await git("/", ["exit", ${JSON.stringify(join(root, "done"))}], { executable }).catch(() => {});
+		for (const marker of ${JSON.stringify(markers)}) {
+			void git("/", ["wait", marker], { executable, timeoutMs: null });
 		}
-	},
-);
-
-test.each(["before start", "during command"] as const)(
-	"Git process owner ends its group when disconnected %s",
-	async (stage) => {
-		const root = mkdtempSync(join(tmpdir(), "archboard-git-orphan-"));
-		const marker = join(root, "child");
-		const owner = Bun.spawn(
-			[
-				process.execPath,
-				GIT_PROCESS_OWNER,
-				"/bin/sh",
-				"-c",
-				'echo "$$" > "$1"; exec sleep 60',
-				"git-fixture",
-				marker,
-			],
-			{ detached: true, ipc: () => {}, stdin: "ignore", stdout: "ignore", stderr: "ignore" },
+		setInterval(() => {}, 1000);
+	`;
+	const parent = Bun.spawn([process.execPath, "-e", script], {
+		stdout: "ignore",
+		stderr: "ignore",
+	});
+	try {
+		await Promise.all(markers.map((marker) => waitForFile(`${marker}.leader`)));
+		const leaders = markers.map((marker) => recordedPid(`${marker}.leader`));
+		const guard = listProcessObservations().find(
+			({ pid, parentPid }) => parentPid === parent.pid && !leaders.includes(pid),
 		);
-		const group = captureDetachedProcessGroup(owner.pid);
-		let child: ReturnType<typeof processIdentity> | undefined;
-		try {
-			if (stage === "during command") {
-				owner.send({ kind: "start" });
-				await waitForFile(marker);
-				child = processIdentity(recordedPid(marker));
-				expect(readProcessObservation(child.pid)?.pgid).toBe(group.group);
-			}
-			owner.disconnect();
-			await expectPidAbsent(owner.pid);
-			await expectGroupAbsent(group.group);
-		} finally {
-			if (owner.exitCode === null) {
-				signalOwnedProcessGroup(group, "SIGKILL");
-			}
-			// Stop the recorded child if a broken owner exited without ending its group.
-			if (child !== undefined && processIdentityExists(child)) {
-				process.kill(child.pid, "SIGKILL");
-			}
-			await owner.exited;
-			rmSync(root, { recursive: true, force: true });
-		}
-	},
-);
+		if (guard === undefined) throw new Error("The parent runs no guard.");
+		parent.kill("SIGKILL");
+		await parent.exited;
+		await Promise.all(leaders.map((leader) => expectGroupAbsent(leader)));
+		await expectPidAbsent(guard.pid);
+	} finally {
+		parent.kill("SIGKILL");
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("a group whose leader pid names another process is never signalled", async () => {
+	const child = Bun.spawn(["/bin/sh", "-c", "exec sleep 60"], { detached: true });
+	try {
+		const group = captureDetachedProcessGroup(child.pid);
+		const recycled = { ...group, leader: { ...group.leader, startTime: "another-process" } };
+		expect(() => signalOwnedProcessGroup(recycled, "SIGKILL")).toThrow();
+		expect(child.exitCode).toBeNull();
+		expect(readProcessObservation(child.pid)?.state).toBe("live");
+	} finally {
+		child.kill("SIGKILL");
+		await child.exited;
+	}
+});
 
 test("real detached Git commands settle for success and nonzero exit", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-git-real-"));
@@ -273,6 +223,19 @@ test("real detached Git commands settle for success and nonzero exit", async () 
 		expect(await git(root, ["rev-parse", "--show-toplevel"])).toBe(realpathSync(root));
 		await expect(git(root, ["cat-file", "-e", "missing^{commit}"])).rejects.toMatchObject({
 			failure: "exit",
+		});
+		const source = "\uFEFF  exact model input Ω\n";
+		const object = await git(root, ["hash-object", "-w", "--stdin"], {
+			input: Buffer.from(source),
+		});
+		if (object === undefined) throw new Error("Git did not retain its input object.");
+		expect(await git(root, ["cat-file", "blob", object], { trimOutput: false })).toBe(source);
+		const invalid = await git(root, ["hash-object", "-w", "--stdin"], {
+			input: Buffer.from([0xff]),
+		});
+		if (invalid === undefined) throw new Error("Git did not retain its invalid UTF-8 object.");
+		await expect(git(root, ["cat-file", "blob", invalid])).rejects.toMatchObject({
+			failure: "output",
 		});
 	} finally {
 		rmSync(root, { recursive: true, force: true });

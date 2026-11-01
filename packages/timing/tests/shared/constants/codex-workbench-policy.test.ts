@@ -12,6 +12,8 @@ const REVIEWED_GROUPS = {
 		composedShutdown: 10_000,
 	},
 	CODEX_SESSION_MS: {
+		explanationTurnStart: 15_000,
+		explanationText: 150,
 		requestSettlement: 30_000,
 		waitTargetPoll: 250,
 		queueRereadFloor: 1000,

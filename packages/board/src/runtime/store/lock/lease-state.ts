@@ -164,6 +164,17 @@ function boardLockState(vault: string, board: string): LockHolder | null {
 }
 
 /**
+ * Identify visible lease changes without treating renewal as new ownership.
+ * @param holder The visible board holder, or absence.
+ * @returns The visible ownership fingerprint.
+ */
+function lockFingerprint(holder: LockHolder | null): string {
+	return holder
+		? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ""}|${holder.claimed ? "claim" : "write"}`
+		: "";
+}
+
+/**
  * Tell the panes who has a board, unless they have already been told this.
  *
  * Renewal changes `until` but not whether a pane may draw, so expiry is absent
@@ -175,9 +186,9 @@ function boardLockState(vault: string, board: string): LockHolder | null {
  * @param holder Who has it, or null when it is free.
  */
 function announce(vault: string, board: string, holder: LockHolder | null): void {
-	const announced = holder
-		? `${holder.id}|${holder.kind}|${holder.since}|${holder.reason ?? ""}|${holder.claimed ? "claim" : "write"}`
-		: "";
+	// Reserved internal locks are not boards. Their public operation owns its news.
+	if (board.startsWith("@")) return;
+	const announced = lockFingerprint(holder);
 	const key = boardMemoryKey(vault, board);
 	if (processAnnounced.get(key) === announced) {
 		return;

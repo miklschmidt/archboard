@@ -15,6 +15,8 @@ use crate::scene::{
 
 /// The farthest a card's shadow reaches below its foot.
 pub const SHADOW_REACH: f64 = 12.0;
+/// How far a shadow spills past a block's sides, per unit of its reach below.
+const SPILL: f64 = 0.5;
 /// Shared gradient samples.
 const FALLOFF: [f64; 5] = [1.0, 0.82, 0.52, 0.16, 0.0];
 
@@ -29,7 +31,6 @@ fn shadow_ink(palette: &Palette, share: f64) -> Colour {
 /// How many layers the shadow of a shape that is not a box is stacked of.
 const LAYERS: usize = 8;
 const SPREAD_GROW: f64 = 0.35;
-const SPREAD_X: f64 = 0.15;
 const SPREAD_Y: f64 = 0.75;
 
 /// How strong the shadow of a box is at a place along its fall.
@@ -70,7 +71,7 @@ pub(super) fn polygon_shadow(
             let distance = (band as f64 + 1.0) * step;
             let grown = inset(polygon, -distance * SPREAD_GROW);
             let away = Point {
-                x: distance * SPREAD_X,
+                x: 0.0,
                 y: distance * SPREAD_Y,
             };
             shape(
@@ -87,11 +88,14 @@ pub(super) fn polygon_shadow(
 }
 
 /// Nine adjoining patches of one rounded shadow, with matching values at every seam.
+/// The light falls straight down: the shadow falls below its block and spills a
+/// little to either side, and none of it shows above.
 pub(super) fn smooth_shadow(rect: Rect, radius: f64, reach: f64) -> Items {
-    let x = rect.x - 0.5;
-    let y = rect.y - 0.5;
-    let width = rect.width + reach + 0.5;
-    let height = rect.height + reach + 0.5;
+    let spill = reach * SPILL;
+    let x = rect.x - spill;
+    let y = rect.y + spill;
+    let width = rect.width + 2.0 * spill;
+    let height = rect.height + reach - spill;
     let r = js::min([radius + reach, width / 2.0, height / 2.0]);
     let xs = [x, x + r, x + width - r];
     let ys = [y, y + r, y + height - r];

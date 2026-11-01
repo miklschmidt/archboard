@@ -1,0 +1,20 @@
+{
+  "order": 11004,
+  "name": "Archboard server",
+  "kind": "service",
+  "responsibility": "Hosts the local HTTP and socket service for architecture and local agents",
+  "description": "One server app serves canonical model operations, code evidence, exports, retained playback, repository selection, and pane routing. Its route and lifecycle children own those details. Reader and rendering roles do not create separate copies of this app.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/server"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

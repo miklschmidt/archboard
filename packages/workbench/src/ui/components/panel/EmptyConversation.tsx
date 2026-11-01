@@ -3,36 +3,31 @@
 
 import { useCallback, type JSX } from "react";
 
-import type { AgentView } from "#ui/state/surfaces/contracts.ts";
-
-/** Things worth asking about the board in view. */
+/** Questions about the reading in view. */
 const SUGGESTIONS = [
-	"Explain this board",
+	"Explain this reading",
 	"What does this architecture get wrong?",
-	"Check the board against the code",
+	"Check this architecture against the code",
 ] as const;
 
 /** Inputs for the empty state. */
 interface EmptyConversationProps {
-	readonly view: AgentView;
 	readonly suggest: (text: string) => void;
 }
 
 /**
  * A conversation with nothing in it yet.
- * @param props The view and the suggestion handler.
+ * @param props The suggestion handler.
  * @returns The empty state.
  */
 function EmptyConversation(props: EmptyConversationProps): JSX.Element {
-	const { board } = props.view.context;
 	return (
 		<section data-slot="conversation-empty" className="my-auto flex flex-col gap-4 px-1 py-8">
 			<div className="flex flex-col gap-1">
-				<h3 className="text-title">{board === null ? "Ask the agent" : `Ask about ${board}`}</h3>
+				<h3 className="text-title">Ask the agent</h3>
 				<p className="text-body text-muted-foreground">
-					The agent reads the board in the focused pane, and what you picked out on it. It can
-					explain the architecture, check it against the code, or propose a change as a new state of
-					the board.
+					Ask about the focused reading and your selection. The agent can explain the architecture,
+					inspect its code evidence, or propose a change.
 				</p>
 			</div>
 			<ul className="flex flex-col gap-1">

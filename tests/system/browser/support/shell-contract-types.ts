@@ -42,11 +42,11 @@ type ThemeSnapshot = {
 	inkContrast: number;
 	flatSurfaces: boolean;
 	visibleFocus: boolean;
-	boardIdentity: string;
+	modelIdentity: string;
 	/** The name of the variant the header says is shown. */
-	variant: string;
+	stateName: string;
 	/** The board the navigator marks as the one being read. */
-	selectedBoard: string | null;
+	selectedRepository: string | null;
 	focusedPaneCount: number;
 	/** Visible connection warnings in the pane header; none while the socket is up. */
 	connectionTrouble: number;
@@ -56,7 +56,6 @@ type ThemeSnapshot = {
 	fontResources: string[];
 	humanLabels: Array<{ family: string; transform: string; weight: number }>;
 	/** A section heading in the pane's sidebar: the body size, semibold, never uppercase. */
-	sectionHeading: { family: string; transform: string; weight: number; size: number };
 	titleType: ShellMetrics;
 	bodyType: ShellMetrics;
 	stateType: ShellMetrics;

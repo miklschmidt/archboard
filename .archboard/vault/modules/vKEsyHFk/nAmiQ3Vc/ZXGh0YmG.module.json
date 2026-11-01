@@ -1,0 +1,33 @@
+{
+  "order": 5000,
+  "name": "Interruptible run",
+  "kind": "function",
+  "responsibility": "Forwards SIGINT and SIGTERM as an abort, then re-raises the signal once cleanup ends",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/invocation/session.ts",
+    "symbol": "runInterruptibleCommand"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#ZXGh0YmG",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+  "outgoing": [
+    {
+      "order": 5000,
+      "kind": "call",
+      "label": "contract + signal",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/session.ts",
+        "symbol": "runCommand"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#MFROOcqh",
+      "to": "vKEsyHFk/nAmiQ3Vc#MmMnif7e"
+    }
+  ]
+}

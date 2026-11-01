@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
@@ -156,25 +157,10 @@ describe.serial("actual production Codex composition", () => {
 				reason: "Browser audio is unavailable for this socket.",
 			});
 
-			const seeded = await request<{ board: { version: number } }>("/api/semantic-boards/create", {
-				method: "POST",
-				doing: "seeding the production semantic proof",
-				body: {
-					board: "scratch",
-					create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-				},
-			});
-			expect(seeded.status).toBe(200);
-			// Somebody else's write to the board this thread is bound to: the news
-			// a thread has to hear, because what it was told has stopped being true.
-			const elsewhere = async (node: string, version: number) =>
-				request<{ version: number }>(`/api/semantic-boards/edit?expectVersion=${version}`, {
-					method: "POST",
-					doing: `adding ${node} from somewhere else`,
-					body: { board: "scratch", edit: { nodes: [{ name: node, kind: "service" }] } },
-				});
-			const changed = await elsewhere("Orders", seeded.body.board.version);
-			expect(changed.status).toBe(200);
+			seedCanonicalFixture(fixture.vault, "scratch", [
+				{ name: "Gateway", kind: "service" },
+				{ name: "Orders", kind: "service" },
+			]);
 
 			const startLease = await current.request("claimLease");
 			const started = await current.request("command", {

@@ -221,8 +221,8 @@ pub struct SequenceFlow {
     pub frame: Rect,
     /// Where the frame's name and summary go.
     pub header: Rect,
-    /// The header slab the name and summary stand on, its front edge included.
-    pub slab: Rect,
+    /// The tab the name and summary stand in, at its widest.
+    pub tab: Rect,
     /// The height where the lifelines stop.
     pub lifeline_bottom: f64,
     /// Its participants, in the order the flow states them.

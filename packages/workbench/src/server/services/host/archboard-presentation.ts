@@ -27,10 +27,10 @@ export const ARCHBOARD_VOICE_PRESENTATION: VoiceNarrativeAdapter =
 		 * @param browserId The browser that owns the presentation.
 		 * @returns The captured narration as JSON.
 		 */
-		prepare: (input, browserId) => {
+		prepare: async (input, browserId) => {
 			const presentation = ArchboardVoicePresentationSchema.parse(input);
 			const captured = JsonValueSchema.parse(
-				narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
+				await narrationFor(browserId, presentation.walkthrough, presentation.recording ?? null),
 			);
 			if (captured === null) throw new Error("The Archboard presentation is empty.");
 			return captured;

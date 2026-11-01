@@ -63,7 +63,7 @@ function useRecordedViews(
 	workbench: Workbench,
 	usual: Omit<RecordedViews, "recording">,
 ): RecordedViews {
-	const step = useWalkthroughRecording(recorder, {
+	const view = useWalkthroughRecording(recorder, {
 		setup: workbench.setup,
 		voice: workbench.voice,
 	});
@@ -72,8 +72,8 @@ function useRecordedViews(
 		() =>
 			recorder === null
 				? { narration, overlay, recording: null }
-				: { narration: null, overlay, recording: { step, onReading: recorder.reading } },
-		[recorder, step, narration, overlay],
+				: { narration: null, overlay, recording: { ...view, onReading: recorder.reading } },
+		[recorder, view, narration, overlay],
 	);
 }
 

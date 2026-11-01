@@ -25,7 +25,6 @@ import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 /** The room a container keeps around what it holds, and between it and a container it stands over. */
-const CONTAINER_INSET = 20;
 /** The straight run an arrowhead sits on after a line's last bend. */
 const APPROACH = 12;
 /** The sideways room a line's two fixed 8 px bends need to step aside and on. */
@@ -308,22 +307,6 @@ test("a run of lanes takes the free column that crosses fewest other lines", asy
 	expect(crossingsOf(drawing.svg)).toBe(0);
 });
 
-/**
- * Every frame's and group region's drawn box.
- * @param svg The drawing.
- * @returns The boxes.
- */
-function containerBoxes(svg: string): { x: number; y: number; width: number; height: number }[] {
-	const opens =
-		/<g data-semantic-kind="(?:region"[^>]*data-depiction="container|group-region)"[^>]*>\s*(?:<rect class="ab-halo"[^>]*>\s*)?<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/gu;
-	return [...svg.matchAll(opens)].map(([, x, y, width, height]) => ({
-		x: Number(x),
-		y: Number(y),
-		width: Number(width),
-		height: Number(height),
-	}));
-}
-
 // Shaped like a real ingress board, names replaced: two gateways each take a
 // labelled line in on top and send one out at the bottom, and where Graphviz
 // stood each label put the line in and the line out 10 px apart.
@@ -368,25 +351,6 @@ test("a run of lanes a label blocked moves onto its end's column once the label 
 			.map(({ y }) => y);
 		expect(new Set(levels).size, id).toBeLessThanOrEqual(2);
 	}
-});
-
-// The heading fixture again: its Drawing region ended one band above a frame
-// that opened under it, and the channel between kept 12 px, not an inset.
-test("a container standing over another keeps a container's inset from it", async () => {
-	const drawing = await renderArchitecture({
-		content: orderedFixture(headingCrossing),
-		theme: "light",
-		layout: "track",
-		policy,
-	});
-	const boxes = containerBoxes(drawing.svg);
-	expect(boxes.length).toBeGreaterThan(1);
-	for (const upper of boxes)
-		for (const lower of boxes) {
-			const across = upper.x < lower.x + lower.width && lower.x < upper.x + upper.width;
-			const gap = lower.y - (upper.y + upper.height);
-			if (across && gap >= 0) expect(gap).toBeGreaterThanOrEqual(CONTAINER_INSET);
-		}
 });
 
 test.each([

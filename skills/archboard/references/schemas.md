@@ -1,84 +1,25 @@
-# Schemas and setup references
+# Canonical schemas
 
-The files under `generated/` beside this document are derived from the
-archboard build that installed this skill. They are regenerated on every
-install and every skill sync, so the copy you are reading matches the CLI you
-are running. Do not edit them.
+The installed skill derives its schemas from the runtime that supplies the CLI.
+Every installation regenerates them under `generated/`.
+Do not edit those files.
 
-- [`generated/semantic-create-input.schema.json`](generated/semantic-create-input.schema.json):
-  The JSON you give `archboard semantic new`: `level`, then `nodes`, `edges`,
-  `flows`, `views`, `walkthroughs`, using authoring names and same-write
-  handles.
-- [`generated/semantic-edit-input.schema.json`](generated/semantic-edit-input.schema.json):
-  The JSON you give `archboard semantic edit`: one batch of restated subjects
-  and `remove...` lists against one `variant`.
-- [`generated/semantic-correct-input.schema.json`](generated/semantic-correct-input.schema.json):
-  The JSON you give `archboard semantic correct`: a `reason`, one immutable
-  commit per repository in `revisions`, and one `edit` batch. `--variant`
-  names the historical variant.
-- [`generated/semantic-board.schema.json`](generated/semantic-board.schema.json):
-  One persisted board family as `archboard semantic show` prints it and the
-  vault stores it: variants, lifecycle, ancestry, ids.
-- [`generated/vault-config.schema.json`](generated/vault-config.schema.json):
-  `<vault>/.archboard/config.yaml`: levels, node kinds with icons and colors,
-  relationship kinds with the evidence each accepts, groups.
-- [`generated/INSTALL.md`](generated/INSTALL.md): The installation and vault
-  setup manual, copied from the active checkout that supplies the installed CLI;
-  links into that checkout are absolute.
+- `model-manifest.schema.json` describes the model identity and current state.
+- `module.schema.json` describes one canonical module and its outgoing relationships.
+- `flows.schema.json` describes one independent flow collection.
+- `model-initialize.schema.json` describes the request for an empty planning model.
+- `model-edit.schema.json` describes one complete authoring intent.
+- `model-import.schema.json` describes explicit portable installation.
+- `model-migrate.schema.json` describes explicit legacy cutover.
+- `vault-config.schema.json` describes shared kinds, relationship evidence, and groups.
+- `INSTALL.md` records installation from the active source checkout.
 
-## Authoring payloads are not the persisted document
+Read the [canonical model reference](canonical-models.md) for operation examples.
+A valid JSON shape does not establish valid architecture.
+The runtime also resolves names, protects stable identities, enforces claims, and compares the complete input revision.
+It installs one durable intent through the existing signed journal.
+An incomplete transaction refuses ordinary reads until explicit recovery completes.
 
-`semantic new` and `semantic edit` take the two authoring schemas. They differ
-from the persisted document on purpose:
-
-- A reference is a **name, an id, or a same-write handle** (`as`). The write
-  boundary resolves it; the document holds only ids.
-- A **new subject leaves `id` out**, a stated `id` names one already on the
-  variant, and a restated subject **replaces its previous definition whole**
-  ([References](../SKILL.md#essentials)).
-- Everything the family owns — `schemaVersion`, `kind`, `id`, `version`,
-  timestamps, variant ids, `lifecycle`, `parent`, `current`, `adoptions`,
-  `reconciliation` — is an outcome of a write, never something you author.
-
-Read the persisted schema to interpret what `semantic show` returns and to
-compare variants; write against the authoring schemas.
-
-## What JSON Schema cannot express
-
-Each generated schema carries an `x-archboard.runtimeObligations` list. A
-payload that validates against the schema can still be refused by the CLI when
-it breaks one of them. The ones that matter while authoring:
-
-- Every authored reference (edge ends, flow participants, step ends, a newly
-  stated view selection, beat subjects) must resolve against the variant being
-  changed, and a name that matches two nodes is ambiguous rather than picked. A
-  board-owned view can later select an id another variant does not hold;
-  inherited ids carry the view across the variants where that subject exists.
-- Within one variant, nodes, relationships, flows, steps, walkthroughs and beats
-  share one id namespace; inherited ids repeat across variants on purpose, so a
-  proposal stays comparable with its parent. Board, variant and board-owned view
-  ids must not collide with those subject ids.
-- Node containment and variant ancestry must both resolve and be acyclic.
-- Variant ids and names and board-owned view ids and names are unique. The
-  schema version must be supported, exactly one variant is marked current, and
-  the board's `current` designation must name it. Reconciliation references must
-  agree with the variant's parent and a real board version.
-- Flow participants and step ends, walkthrough beats and their subjects/views,
-  nonempty view selections, self steps and canonical persisted group ordering
-  are checked across fields after the document has matched the schema shape.
-- `level`, `kind` and `groups` must be keys the vault configuration defines
-  while that configuration is valid; a definition removed later keeps existing
-  references readable with a warning.
-- `groups` is a set: duplicates and order do not matter on input, and the
-  document stores it sorted with no duplicates, or omits it when empty.
-
-## Vault setup
-
-The configuration file is authoritative for a vault's vocabulary. Validate an
-edit against `generated/vault-config.schema.json`; it requires unique levels,
-listed coarsest first (the navigator nests a board under the closest coarser
-board that drills into it), nonempty node and relationship kind maps, and a
-palette `color` on every group, and its `icon` enum is the exact
-set of RemixIcon names the installed build accepts. For where the vault lives,
-how a command finds it, and how the skill is installed and a repository set up,
-follow [`generated/INSTALL.md`](generated/INSTALL.md).
+Legacy levels remain decodable for explicit migration and exact retained history.
+Canonical modules use containment without fixed levels.
+New authoring never writes a board family or a level.

@@ -72,7 +72,7 @@ function pinAway(
  * @returns The variant's parts.
  */
 async function nodesAtOwnRef(
-	board: SemanticBoard,
+	board: Pick<SemanticBoard, "variants">,
 	variant: SemanticVariant,
 	rootOf: (repo: string) => string | undefined,
 	options: GitRunOptions,

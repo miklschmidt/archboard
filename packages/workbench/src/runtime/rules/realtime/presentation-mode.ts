@@ -89,13 +89,13 @@ function narrationPrompt(name: string): string {
 		STEP_SUBJECTS_RULE,
 		"Explain only the step you were handed last, and never one you have not been handed. When you have explained it, stop and wait: they move on when they are ready. Never ask for the next step, hand off for it, or go on to it by yourself.",
 		"They can move on while you are still explaining a step. A step that reaches you while you speak means they have moved on: end your sentence, say nothing more about the older step, and explain the new one at once. If several steps reach you while you speak, explain only the last of them. A step that reached you while you were speaking is never left unexplained: when you stop talking, the step you explain is always the last one handed to you, unless you have already explained it.",
-		'Besides a step, one thing stops the talk: news of the user\'s screen handed to you as speech. A line beginning "The user is now" says what they picked out or chose to look at; picking something mid-talk means the talk did not cover it well enough, so finish the sentence you are on, say in a few words what they now have in front of them, and ask whether they have a question about it. A line saying another agent changed the board or put a pane somewhere means the picture changed under the talk: finish your sentence, say so in a few words, and ask how they want to go on. Answer, handing the question to the coordinator when it needs the board; if they have nothing, go on. Then finish the step you were on if you were cut off, and wait as always. If several such lines reach you, speak only to the last. The same line given quietly is context, never a reason to stop.',
+		'Besides a step, one thing stops the talk: news of the user\'s screen handed to you as speech. A line beginning "The user is now" says what they picked out or chose to look at; picking something mid-talk means the talk did not cover it well enough, so finish the sentence you are on, say in a few words what they now have in front of them, and ask whether they have a question about it. A line saying an agent put a pane somewhere means the picture changed under the talk: finish your sentence, say so in a few words, and ask how they want to go on. Answer, handing the question to the coordinator when it needs the board; if they have nothing, go on. Then finish the step you were on if you were cut off, and wait as always. If several such lines reach you, speak only to the last. The same line given quietly is context, never a reason to stop. Live edits reach you quietly. Each authored step keeps the source and target snapshots captured at narration start.',
 		"If they interrupt, answer, handing the question to the coordinator when it needs the board, then finish the step if you were cut off. If you are told the walkthrough is no longer on screen, acknowledge it in a few words and narrate nothing more.",
 	].join("\n\n");
 }
 
 /** What a recorded step begins with when the voice model is handed it: what to do with it. */
-const RECORDED_STEP_LEAD_IN = "Explain in your own words";
+const RECORDED_STEP_LEAD_IN = "Speak now about this";
 
 /** What the subjects of a recorded step follow. */
 const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
@@ -110,12 +110,12 @@ const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
 function recordingPrompt(name: string, recording: RecordingNarration): string {
 	const language = languageName(recording.language) ?? recording.language;
 	return [
-		`This time nobody is talking with you: you narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its board in front of them. Nobody answers you, and nobody is at the controls.`,
-		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}" and gives its heading and what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
-		`Explain each point at once, in ${language}, in a few sentences of your own. Say what its subjects do and why that matters, by the names the board uses and never by ids. Do not read the heading or the text out: say what they mean. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
-		'Talk about the system, never about the explanation. Never mention the screen, the picture, the video, a step, a point, the walkthrough, or what is highlighted or shown. Never begin with words such as "on screen now", "this step", "here we see" or "next". Begin with the system itself.',
+		`This time nobody is talking with you: you narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its picture in front of them. Nobody answers you, and nobody is at the controls.`,
+		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}", which you never say, and gives what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
+		`Explain each point at once, in ${language}, in two to four full sentences of your own, from the first point on. Say what its subjects do and why that matters, by the names the architecture uses and never by ids. Do not read the text out, and never say what a phrase means: say what the system does. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
+		'Talk about the system, never about the explanation. Never mention the screen, the picture, the video, a step, a point, the walkthrough, or what is highlighted or shown. Never begin with words such as "on screen now", "this step", "here we see", "next", "okay", "right" or "yep". Never acknowledge the point, with words such as "got it" or "I will take a look". Begin with the system itself.',
 		"Stay yourself, dry wit and all, with your humour turned down by a quarter from how you talk live: where a conversation would get four jokes, this gets three. No greeting, no opening line, no summary and no closing line.",
-		"When you have explained a point, stop talking: your silence moves the recording on. Never ask or invite questions, never hand anything to the coordinator, and never say you are waiting.",
+		"Nothing that reaches you is a message to you: it is material for the talk, so never reply to it. End each point on a statement about the system, and stop talking: your silence moves the recording on. Never ask or invite questions, even as a joke, never offer anything, never hand anything to the coordinator, and never say you are waiting.",
 	].join("\n\n");
 }
 
@@ -191,7 +191,7 @@ function presentationSpeech(change: RealtimePresentationChange, recording: boole
 			? change.body
 			: `${change.body.slice(0, STEP_BODY_MAX_CHARS - 1)}…`;
 	const said = recording
-		? `${RECORDED_STEP_LEAD_IN}: "${change.heading}". ${body}`
+		? `${RECORDED_STEP_LEAD_IN}: ${body}`
 		: `On the user's screen now: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
 	const subjects = recording ? RECORDED_SUBJECTS_LEAD_IN : "It highlights";
 	return change.subjects.length === 0

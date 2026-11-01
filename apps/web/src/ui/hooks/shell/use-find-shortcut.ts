@@ -1,7 +1,7 @@
-// The keys that take a person to the navigator's filter from anywhere in the
-// shell: `/` while nothing takes text, and the platform's command key with K.
+// The keys that bring up Find from anywhere in the shell: `/` while nothing takes
+// text, and the platform's command key with K.
 
-import { useEffect, type RefObject } from "react";
+import { useEffect } from "react";
 
 /**
  * Whether a key event started where a person is typing.
@@ -15,37 +15,36 @@ function typingIn(event: KeyboardEvent): boolean {
 }
 
 /**
- * Whether a key event asks for the filter.
+ * Whether a key event asks for Find.
  * @param event The key event.
  * @returns True for `/` outside a field, or Ctrl/Cmd+K anywhere.
  */
-function asksForFilter(event: KeyboardEvent): boolean {
+function asksForFind(event: KeyboardEvent): boolean {
 	if (event.altKey || event.shiftKey) return false;
 	const command = event.metaKey || event.ctrlKey;
 	return command ? event.key.toLowerCase() === "k" : event.key === "/" && !typingIn(event);
 }
 
 /**
- * Focus the filter when a person asks for it from anywhere in the shell.
- * @param input The filter field.
+ * Bring up Find when a person asks for it from anywhere in the shell.
+ * @param onFind Bring it up.
  */
-function useFindShortcut(input: RefObject<HTMLInputElement | null>): void {
+function useFindShortcut(onFind: () => void): void {
 	useEffect(() => {
 		/**
-		 * Take the key when it asks for the filter.
+		 * Take the key when it asks for Find.
 		 * @param event The key event.
 		 */
 		const onKeyDown = (event: KeyboardEvent): void => {
-			// A presented pane keeps its keys: the filter is not on screen.
+			// A presented pane keeps its keys.
 			if (document.fullscreenElement !== null) return;
-			if (event.defaultPrevented || !asksForFilter(event)) return;
+			if (event.defaultPrevented || !asksForFind(event)) return;
 			event.preventDefault();
-			input.current?.focus();
-			input.current?.select();
+			onFind();
 		};
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
-	}, [input]);
+	}, [onFind]);
 }
 
 export { useFindShortcut };

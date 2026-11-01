@@ -12,6 +12,11 @@ TASK-402. The reading fixes of the same request are TASK-403.
 [ADR 0042](0042-the-picture-answers-the-hand-and-a-card-opens-by-flight.md)
 records two of them in its amendment of 2026-10-06.
 
+Superseded in part (2026-10-31, TASK-559.16): a group shows on its cards as a
+bright tag. No frame is drawn round a group, and a card's face stays neutral. A
+container's header is a tab raised on the well's top edge, in place of a slab
+inside its walls.
+
 ## Context
 
 Until this change the picture was flat. A card was one filled rectangle with a
@@ -406,3 +411,48 @@ already stands round it and says the group. A part that a view draws as a card,
 with none of its children inside it, is a card and keeps its group's color.
 Grouping tests own the rule: a container's header face is the page's color, a
 nested one's is the floor around it, and no group's hue reaches it.
+
+## Amendment of 2026-10-31: a frame is a well with an edge tab, and a group is a tag
+
+TASK-559.14, TASK-559.16 and TASK-559.17 change what this record says about
+containers and groups. [ADR 0070](0070-doors-are-buttons-and-every-relationship-has-a-line.md)
+holds the edge tab and its reasons. The slabs of cards, chips and labels, the
+ports, the arrowheads, the lines and the APCA levels stand. These passages no
+longer hold:
+
+- **Rule 3.** A frame has no walls. It is a well with one inner shadow from the
+  whole of its top edge, a 2-unit lit lip along its foot, and one thin line
+  round the tab and the well. It still casts no shadow, and a nested well still
+  sinks a step deeper.
+- **Rule 4 and the amendment of 2026-10-15.** No frame holds a header slab. Its
+  name stands on an edge tab, a lighter piece raised on the top edge of the
+  well. The tab hugs its words with 12 units on either side, and its left side
+  is the well's left side.
+- **Rules 6 and 7.** No reading draws a group's region, and no group tints a
+  card. A card's face and front edge stay neutral. A group shows on its cards as
+  a bright tag.
+- **Rule 9.** A sequence frame is a well with a tab, as a container is.
+- **Rule 10.** On a container, the change mark runs round the face of its tab,
+  and a removed container is a ghost of the whole outline of the tab and the
+  well.
+- **Rule 14.** The tones of a group's region are gone. `--tray-tab` colors the
+  tab, and `--bright-<name>` colors a group's tag and a door.
+- **What stays.** A group's tag says the group, in place of the card.
+
+The `lib/svg` paths in this record name files that moved. The painter now lives
+in `crates/archboard-scene/src/paint`.
+
+## Amendment of 2026-11-01: the light picture is warm
+
+The light picture's own neutrals move from near hue 255 to the shell's warm chalk, near hue 85. This replaces the cool
+neutrals, the navy shadow and the navy words that the earlier amendments on this page describe. The owner found the
+blue backgrounds wrong for the product: Archboard stays on the neutral or warm side of grey. The dark theme does not
+change. The left column's well shares `--tray-sink` with the picture, so it warms with it.
+
+The light has been straight top down on every surface since the owner set it when the slab design began. The shadow
+never matched that rule, and point 2 above said it fell to the right. A shadow now falls down and spills a little to the
+right and the left, and nothing casts to one side. A card gets a warm grey face on the light theme, so it stands
+apart from both the ground and a well's floor, and a stronger top highlight in both themes. A well gets back the depth
+of a slab: walls and a lip round its floor, under the edge tab of 2026-10-31. The line round the well replaces the crease. On the
+light theme a door and a tag stand at one deeper lightness and carry white ink tinted with their hue. A mixed line is a
+double line, two rails with a clear core, which has no dash to drift out of step.

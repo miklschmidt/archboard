@@ -178,19 +178,28 @@ function finding(passage: string) {
 }
 
 test("a finding's passage is resolved against the run's own skill, and one the skill never held is the grader's", () => {
-	const [first, second, third] = scenario.expectedFeatures;
+	const features = ["candidate-passage", "missing-passage", "shared-passage"].map((feature) => ({
+		feature,
+		requirement: "Resolves the cited passage against the installed skill.",
+		skill: ["SKILL.md#archboard"],
+	}));
+	const [first, second, third] = features;
 	if (first === undefined || second === undefined || third === undefined)
-		throw new Error("the scenario has fewer than three features");
+		throw new Error("Missing citation fixture");
+	const citationSuite = {
+		...loaded,
+		suite: { ...loaded.suite, evals: [{ ...scenario, expectedFeatures: features }] },
+	};
 	const verdict = (run: string) => ({
 		run,
 		features: [
-			// Only the candidate carries references/read.md; the frozen baseline never had it.
+			// Only the candidate carries references/canonical-models.md; the frozen baseline never had it.
 			{
 				feature: first.feature,
 				verdict: "missing",
 				evidence: "e",
 				reason: "r",
-				finding: finding("references/read.md#answer-a-question-from-a-saved-board"),
+				finding: finding("references/canonical-models.md#work-with-a-canonical-model"),
 			},
 			// A heading neither skill holds is a citation the grader invented.
 			{
@@ -200,13 +209,13 @@ test("a finding's passage is resolved against the run's own skill, and one the s
 				reason: "r",
 				finding: finding("SKILL.md#no-such-heading"),
 			},
-			// Both skills carry Essentials.
+			// Both skills carry their product heading.
 			{
 				feature: third.feature,
 				verdict: "missing",
 				evidence: "e",
 				reason: "r",
-				finding: finding("SKILL.md#essentials"),
+				finding: finding("SKILL.md#archboard"),
 			},
 		],
 		semanticCorrectness: 5,
@@ -226,7 +235,7 @@ test("a finding's passage is resolved against the run's own skill, and one the s
 			);
 			const [read] = readManifests(batchRoot);
 			if (read === undefined) throw new Error("no manifest was read");
-			const record = recordOf(batchRoot, loaded, read, "claude");
+			const record = recordOf(batchRoot, citationSuite, read, "claude");
 			expect(record.uncited).toEqual([second.feature]);
 			expect(record.conformanceUnseen).toEqual(arm === "baseline" ? [first.feature] : []);
 		} finally {

@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useRef, useState, type JSX, type RefObject } from "react";
 
 import type { OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Button, Dialog, Separator, Technical } from "@archboard/ui-kit/components";
+import { Button, Dialog, Separator } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -37,7 +37,11 @@ function EffectiveOpener(props: EffectiveOpenerProps): JSX.Element {
 	return (
 		<p className="text-muted-foreground text-body">
 			Saved opener:{" "}
-			{effectiveCommand ? <Technical>{formatCommand(effectiveCommand)}</Technical> : "none"}
+			{effectiveCommand ? (
+				<Dialog.Technical>{formatCommand(effectiveCommand)}</Dialog.Technical>
+			) : (
+				"none"
+			)}
 		</p>
 	);
 }
@@ -214,7 +218,7 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
 				<Dialog.Header>
 					<Dialog.Title>Opener settings</Dialog.Title>
 					<Dialog.Description>
-						Which editor a code-bound element opens on this machine. Test it before you save.
+						Which editor opens a module's code on this machine. Test it before you save.
 					</Dialog.Description>
 				</Dialog.Header>
 				{settings ? (

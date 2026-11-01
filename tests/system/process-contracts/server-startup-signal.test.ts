@@ -1,7 +1,6 @@
 import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
 import { expect, test } from "bun:test";
 import { spawn } from "node:child_process";
-import { createServer } from "node:net";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve as resolvePath } from "node:path";
@@ -30,32 +29,17 @@ import {
 	processIdentity,
 	type ProcessIdentity,
 } from "../support/process-census.ts";
+import { freeLoopbackPort } from "../support/loopback-port.ts";
 
 const repoRoot = resolvePath(import.meta.dir, "../../..");
 const fixtureSource = join(repoRoot, "tests/system/server-state/fixtures/fake-codex-production.ts");
-
-async function freePort(): Promise<number> {
-	const server = createServer();
-	await new Promise<void>((resolve, reject) => {
-		server.once("error", reject);
-		server.listen({ host: "127.0.0.1", port: 0, exclusive: true }, resolve);
-	});
-	const address = server.address();
-	if (address === null || typeof address === "string") {
-		throw new Error("No loopback port.");
-	}
-	await new Promise<void>((resolve, reject) =>
-		server.close((error) => (error ? reject(error) : resolve())),
-	);
-	return address.port;
-}
 
 test("SIGTERM before readiness reaps Codex and permits a fresh application start", async () => {
 	const resources = new AsyncDisposableStack();
 	try {
 		const fixture = prepareProductionFixture(resources, fixtureSource);
 		writeFileSync(fixture.controlPath, JSON.stringify({ exit: false, holdInitialize: true }));
-		const port = await freePort();
+		const port = await freeLoopbackPort();
 		const paths = {
 			home: join(fixture.root, "first-home"),
 			xdgConfig: join(fixture.root, "first-xdg-config"),
@@ -152,7 +136,7 @@ test("public cleanup-error takeover reaps the exact terminal group and outer ser
 	const root = mkdtempSync(join(tmpdir(), "archboard-public-terminal-"));
 	const marker = join(root, "processes.json");
 	const executable = join(root, "codex");
-	const port = await freePort();
+	const port = await freeLoopbackPort();
 	const base = `http://127.0.0.1:${port}`;
 	const environment = publicStartEnvironment(root, base, executable);
 	environment["ARCHBOARD_TEST_PUBLIC_SHUTDOWN_FAILURE"] = "always";

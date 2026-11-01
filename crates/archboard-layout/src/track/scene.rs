@@ -193,8 +193,8 @@ fn title_row(node: &PlacedNode) -> Option<(Item, f64, Vec<TitleStep>, f64)> {
         },
         NO_BAND,
     );
-    item.face_top = frame.above + crate::constants::HEADER_SLAB_INSET;
-    item.inset = Some(inset + crate::constants::HEADER_SLAB_INSET);
+    item.face_top = frame.above;
+    item.inset = Some(inset);
     let steps = frame
         .steps
         .as_ref()

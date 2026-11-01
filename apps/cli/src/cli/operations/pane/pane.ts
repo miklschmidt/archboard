@@ -1,3 +1,5 @@
+import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { statedJson } from "#cli/operations/model/input.ts";
 import { z } from "zod";
 import {
 	closePane,
@@ -8,14 +10,10 @@ import {
 } from "#cli/clients/server/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
-import {
-	CliUsageError,
-	defineCommand,
-	type TokenParameter,
-} from "#cli/protocol/contract/contract.ts";
+import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { PaneRefSchema } from "#cli/protocol/contract/schemas.ts";
 import { serverBrowserRefusals } from "#cli/protocol/contract/refusals.ts";
-import { parseStage, stagedFlags, stagedTokens } from "#cli/rules/staged-tokens/staged-tokens.ts";
+import { stagedTokens } from "#cli/rules/staged-tokens/staged-tokens.ts";
 
 const usage = "browser needs a subcommand: panes, open, close, or show.";
 const tokens = z.array(z.string()).default([]);
@@ -43,7 +41,7 @@ const browserContract = defineCommand({
 	path: ["browser"],
 	shared: ["url"],
 	summary: "Inspect or control the connected browser session",
-	description: "Routes live browser inspection and control commands; none writes a board.",
+	description: "Routes live browser inspection and control commands; none writes architecture.",
 	examples: ["archboard browser panes"],
 	parameters: [
 		{
@@ -94,7 +92,7 @@ const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	shared: ["url"],
 	summary: "Open a second browser pane",
-	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
+	description: "Splits the connected browser canvas; the new pane inherits the displayed reading.",
 	examples: ["archboard browser open"],
 	parameters: [stagedTokens("open-token")],
 	input: {
@@ -144,7 +142,7 @@ const paneOpenContract = defineCommand({
 		const result = await openPane();
 		const place = result.pane?.place;
 		const where = place ? paneWords(place) : "a new pane";
-		const diagnostic = `Opened ${where}. It inherited the displayed board. Show another with \`browser show <board> --pane ${place ?? "<spec>"}\`.`;
+		const diagnostic = `Opened ${where}. It inherited the displayed reading. Show another with \`browser show <model> --pane ${place ?? "<spec>"}\`.`;
 		return { result: PaneOpenResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
@@ -175,7 +173,7 @@ const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
 	shared: ["url"],
 	summary: "Close one browser pane",
-	description: "Takes one board off screen without changing the board itself.",
+	description: "Takes one reading off screen without changing the architecture.",
 	examples: ["archboard browser close right"],
 	parameters: [
 		{
@@ -243,7 +241,7 @@ const paneCloseContract = defineCommand({
 		return {
 			result: PaneCloseResultSchema.parse(result),
 			diagnostics: [
-				`Closed ${paneWords(result.closed?.place ?? request.spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the Archboard server, with whatever was drawn on it.`,
+				`Closed ${paneWords(result.closed?.place ?? request.spec)}. Its reading is off the screen and the architecture is unchanged on the Archboard server.`,
 			],
 		};
 	},
@@ -377,67 +375,20 @@ function choiceLine(result: Pick<ShowBoardResponse, "chose">): string[] {
 	];
 }
 
-const ShowInputSchema = z.object({ tokens });
+const ShowInputSchema = ArchitecturePaneReadingSchema.extend({
+	pane: z.string().optional(),
+	input: z.string().optional(),
+});
 type ShowInput = z.infer<typeof ShowInputSchema>;
-/**
- * What a show accepts, declared once for help and for the stage. The tokens
- * carry the board and `--pane` rather than the parser taking them, because a
- * staged command passes everything after its first word through: what a show
- * is allowed to say is decided after the server has answered, so the refusal
- * can name what is actually on screen.
- */
-const SHOW_PARAMETERS: readonly TokenParameter[] = [
-	{
-		kind: "positional",
-		key: "board",
-		name: "board",
-		placeholder: "board[@variant]",
-		required: true,
-		route: "staged",
-		description:
-			"The board to show, optionally at one variant; refused when the vault has no such board",
-	},
-	{
-		kind: "option",
-		key: "pane",
-		spellings: ["--pane"],
-		value: "required",
-		placeholder: "spec",
-		route: "staged",
-		requiredWhen: "once two panes are open",
-		description: "Which pane: left, right, top, bottom, focused, primary, a position or a pane id",
-	},
-	stagedTokens("show-token"),
-];
-const ShowStageSchema = z
-	.array(z.string())
-	.transform((values, context) => parseStage(values, stagedFlags(SHOW_PARAMETERS), context))
-	.transform((stage, context) => {
-		const board = stage.positionals[0];
-		if (board === undefined || board === "") {
-			context.addIssue({
-				code: "custom",
-				message:
-					"browser show needs a board: `browser show pipeline --pane right`. Run `archboard browser panes` to see what is on screen.",
-			});
-			return z.NEVER;
-		}
-		const pane = stage.flags["pane"];
-		return { board, pane: typeof pane === "string" ? pane : undefined };
-	});
-type ShowStage = z.infer<typeof ShowStageSchema>;
+const ShowStageSchema = ShowInputSchema;
+type ShowStage = ShowInput;
 const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
-	board: z.string(),
-	identity: z.looseObject({ board: z.string(), variant: z.string() }),
-	/** The repository the board is in, or null when no registered directory holds its vault. */
+	model: z.string(),
+	reading: ArchitecturePaneReadingSchema,
+	revision: z.unknown(),
 	repository: z.string().nullable(),
-	/** The checkout that holds the board's vault. */
 	checkout: z.string(),
-	/**
-	 * Present only when the show made this checkout the chosen one of its
-	 * repository; `replaced` is the checkout chosen before, or null when none was.
-	 */
 	chose: z
 		.object({ repository: z.string(), checkout: z.string(), replaced: z.string().nullable() })
 		.optional(),
@@ -447,32 +398,84 @@ type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
 	shared: ["url", "directory", "as-session"],
-	summary: "Show a board in one pane",
+	summary: "Show a canonical reading in one pane",
 	description:
-		"Points one pane at one board. No board is written: a board is shown, not created, and a " +
-		"name the vault does not hold is refused rather than made. From a checkout that is not the " +
-		"chosen one of its repository, the show makes it the chosen one for the whole machine first, " +
-		"so every pane of that repository reads this checkout, and the answer's chose names the " +
-		"checkout it replaced.",
+		"Resolves the exact model, module, state, flow, or walkthrough before moving the existing pane. An agent show preserves the browser's shown conversation.",
 	examples: [
-		"archboard browser show pipeline --pane left",
-		"archboard browser show pipeline@proposed --pane right",
+		"archboard browser show --pane A --module Gateway",
+		"archboard browser show Shop --pane B --grammar sequence --flow Request",
 	],
-	parameters: SHOW_PARAMETERS,
+	parameters: [
+		{
+			kind: "positional",
+			key: "model",
+			name: "model",
+			description: "The optional model identity or name",
+		},
+		...(
+			[
+				"pane",
+				"module",
+				"scope",
+				"state",
+				"checkpoint",
+				"flow",
+				"walkthrough",
+				"preview",
+				"bookmark",
+				"legacyAddress",
+				"input",
+			] as const
+		).map((key) => ({
+			kind: "option" as const,
+			key,
+			spellings: [key === "legacyAddress" ? "--legacy-address" : `--${key}`] as const,
+			value: "required" as const,
+			placeholder: "value",
+			description: `The explicit ${key} selector`,
+		})),
+		{
+			kind: "option",
+			key: "against",
+			spellings: ["--against"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Compare against one explicit state or complete checkpoint identity",
+		},
+		{
+			kind: "option",
+			key: "grammar",
+			spellings: ["--grammar"],
+			value: "required",
+			choices: ["architecture", "sequence", "flowchart"],
+			description: "The diagram grammar",
+		},
+		{
+			kind: "option",
+			key: "beat",
+			spellings: ["--beat"],
+			value: "required",
+			placeholder: "index",
+			description: "The zero-based walkthrough beat",
+		},
+		...(
+			[
+				["focus", "--focus"],
+				["hideKinds", "--hide-kind"],
+				["expand", "--expand"],
+			] as const
+		).map(([key, spelling]) => ({
+			kind: "option" as const,
+			key,
+			spellings: [spelling] as const,
+			value: "required" as const,
+			occurrences: "append" as const,
+			placeholder: "id",
+			description: `The ${key} identities`,
+		})),
+	],
 	input: {
-		ingress: ShowInputSchema,
-		stages: [
-			{
-				name: "show-arguments",
-				when: "after-server",
-				description: "The board to show",
-				rules: [
-					"Name one board, optionally with @<variant>",
-					"Refuse a board the vault does not hold rather than creating it",
-				],
-				schema: ShowStageSchema,
-			},
-		],
+		ingress: ShowInputSchema.extend({ beat: z.coerce.number().int().nonnegative().optional() }),
 	},
 	result: ShowResultSchema,
 	output: {
@@ -499,24 +502,25 @@ const browserShowContract = defineCommand({
 			method: "POST",
 			path: "/api/panes/show",
 			cardinality: "one",
-			description: "Point the pane at the board",
+			description: "Point the existing pane at a canonical reading",
 		},
 	],
 	/**
-	 * Point one pane at one board.
-	 * @param input - The ingress input holding the staged tokens and the pane.
-	 * @param context - The command context.
-	 * @returns What the pane is showing, with a diagnostic naming it.
+	 * Show a resolved canonical reading in the named pane.
+	 * @param input The complete reading and pane selector.
+	 * @param context The invocation capabilities.
+	 * @returns The navigation receipt.
 	 */
 	async handler(input, context) {
-		await context.require("server", "Showing a board");
-		const request = context.parse(ShowStageSchema, input.tokens);
-		await context.require("browser", "Showing a board");
-		const result = await showBoardInPane(request.board, request.pane);
-		return {
-			result: ShowResultSchema.parse(result),
-			diagnostics: [`Pane ${result.paneId} is showing "${result.board}".`, ...choiceLine(result)],
-		};
+		await context.require("server", "Show architecture");
+		const { pane, input: file, ...flags } = input;
+		const reading =
+			file === undefined
+				? flags
+				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
+		await context.require("browser", "Show architecture");
+		const result = await showBoardInPane(reading, pane);
+		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
 	},
 });
 

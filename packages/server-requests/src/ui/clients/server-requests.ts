@@ -8,56 +8,20 @@
 /** A JSON body as far as the browser can see before trusting its shape. */
 type JsonRecord = Readonly<Record<string, unknown>>;
 
-/**
- * The vault a page opens in (ADR 0049), learned once before the page draws
- * anything. A pane opens in it until somebody shows it a board of another
- * repository; it is one opaque string here, what the server calls the vault,
- * and nothing the page shows or keeps in an address.
- */
-let served: string | null = null;
+/** A server refusal whose optional code remains available to the reader. */
+class RequestFailure extends Error {
+	readonly code: string | undefined;
 
-/** What the page says when the server knows no repository with a vault to open. */
-const NO_OPENING_VAULT =
-	"This machine knows no repository with a vault yet. Run an archboard command in a checkout that has a .archboard/vault, or add one with archboard repo add <directory>, and then reload this page.";
-
-/**
- * Ask the server which vault a page opens in.
- * @returns When the vault is known.
- * @throws {Error} When the server does not say, or knows no vault to open.
- */
-async function learnServedVault(): Promise<void> {
-	const response = await fetch("/api/served-vault");
-	const body: unknown = await response.json().catch(() => null);
-	served = openingVaultIn(response.ok ? body : null);
-}
-
-/**
- * The vault an answer of `/api/served-vault` names.
- * @param body The answer, or null when the server refused.
- * @returns The vault.
- * @throws {Error} When the answer names no vault, or names none to open.
- */
-function openingVaultIn(body: unknown): string {
-	const vault = isRecord(body) ? body["vault"] : undefined;
-	if (vault === null) {
-		throw new Error(NO_OPENING_VAULT);
+	/**
+	 * Preserve a server refusal without inventing an endpoint contract.
+	 * @param message The server message or HTTP fallback.
+	 * @param code The machine-readable refusal code, when supplied.
+	 */
+	constructor(message: string, code?: string) {
+		super(message);
+		this.name = "RequestFailure";
+		this.code = code;
 	}
-	if (typeof vault !== "string" || vault === "") {
-		throw new Error("The Archboard server did not say which vault a page opens in.");
-	}
-	return vault;
-}
-
-/**
- * The vault a page opens in, where a pane opens by default.
- * @returns The vault.
- * @throws {Error} Before the page has learned it, which page start does first.
- */
-function servedVault(): string {
-	if (served === null) {
-		throw new Error("The page asked for the served vault before it learned it.");
-	}
-	return served;
 }
 
 /**
@@ -116,7 +80,7 @@ async function readBody(response: Response): Promise<unknown> {
  * @param method The request method.
  * @param url The request URL.
  * @param status The HTTP status.
- * @returns A plain error.
+ * @returns The refusal with its optional server code.
  */
 function plainFailure(
 	record: JsonRecord | null,
@@ -125,7 +89,11 @@ function plainFailure(
 	status: number,
 ): Error {
 	const message = record?.["error"];
-	return new Error(typeof message === "string" ? message : `${method} ${url} failed (${status})`);
+	const code = record?.["code"];
+	return new RequestFailure(
+		typeof message === "string" ? message : `${method} ${url} failed (${status})`,
+		typeof code === "string" ? code : undefined,
+	);
 }
 
 /** One JSON request: GET unless it names a method, with a JSON body when it carries a payload. */
@@ -142,7 +110,7 @@ interface JsonRequest {
  * @param asked The request.
  * @returns The fetch options.
  */
-function fetchOptions(asked: JsonRequest): RequestInit {
+function fetchOptions(asked: JsonRequest = {}): RequestInit {
 	return {
 		...(asked.method === undefined ? {} : { method: asked.method }),
 		...(asked.payload === undefined
@@ -164,21 +132,29 @@ function fetchOptions(asked: JsonRequest): RequestInit {
 async function requestJson<T>(url: string, asked: JsonRequest = {}): Promise<T> {
 	const response = await fetch(url, fetchOptions(asked));
 	const body = await readBody(response);
-	const record = isRecord(body) ? body : null;
-	if (refused(response, record)) {
-		throw plainFailure(record, asked.method ?? "GET", url, response.status);
-	}
+	const failure = replyFailure(response, body, asked.method ?? "GET", url);
+	if (failure) throw failure;
 	return trustReply<T>(body);
 }
 
 /**
- * Whether a reply is a refusal: a non-2xx, or a body that says so itself.
+ * Preserve a non-2xx refusal, or a body that reports its own failure.
  * @param response The fetch response.
- * @param record Its decoded body, when it decoded to an object.
- * @returns True when the server refused.
+ * @param body Its decoded body.
+ * @param method The request method.
+ * @param url The request URL.
+ * @returns The refusal, or undefined for a successful reply.
  */
-function refused(response: Response, record: JsonRecord | null): boolean {
-	return !response.ok || record?.["success"] === false;
+function replyFailure(
+	response: Response,
+	body: unknown,
+	method: string,
+	url: string,
+): Error | undefined {
+	const record = isRecord(body) ? body : null;
+	if (!response.ok || record?.["success"] === false)
+		return plainFailure(record, method, url, response.status);
+	return undefined;
 }
 
 /** A Zod-shaped parser for one reply schema. */
@@ -204,13 +180,14 @@ async function strictReply<T, F>(
 	invalid: (error?: unknown) => F,
 ): Promise<T | F> {
 	try {
-		const response = await fetch(url, asked === undefined ? undefined : fetchOptions(asked));
+		const response = await fetch(url, fetchOptions(asked));
 		const body: unknown = await response.json();
 		const parsed = response.ok ? successSchema.safeParse(body) : failureSchema.safeParse(body);
-		return parsed.success ? parsed.data : invalid();
+		if (parsed.success) return parsed.data;
+		return invalid(replyFailure(response, body, asked?.method ?? "GET", url));
 	} catch (error) {
 		return invalid(error);
 	}
 }
 
-export { inVault, learnServedVault, requestJson, servedVault, strictReply, type ReplySchema };
+export { inVault, requestJson, strictReply, RequestFailure, type ReplySchema };

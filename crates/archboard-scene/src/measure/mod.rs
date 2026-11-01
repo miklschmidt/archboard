@@ -13,13 +13,18 @@ use crate::js;
 
 mod cards;
 mod far;
+mod flow_frame;
 mod labels;
 
+#[cfg(test)]
+pub(crate) use cards::TAB_NEAR;
 pub use cards::{CardWords, measure_node};
-pub use far::{FarBox, FarSubject, far_size_for};
-pub use labels::{measure_caption, measure_label, message_lines, note_lines};
+pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top, tags_width};
+pub use far::{FarCard, FarWords, far_scale_for, far_words};
+pub use flow_frame::measure_flow_frame;
+pub use labels::{measure_label, message_lines, note_lines};
 
-/// The face a font names: Onest or DM Mono, at 400 or at 500. A weight that
+/// The face a font names: Onest or Maple Mono NL, at 400 or at 500. A weight that
 /// is not 500 is the regular face, the only other weight the files hold.
 pub fn face(font: DiagramFont) -> Face {
     match (font.family, font.weight) {
@@ -73,6 +78,30 @@ pub fn truncate(text: &str, font: DiagramFont, size: f64, room: f64) -> String {
     }
     let head: String = characters[..kept].iter().collect();
     format!("{}{ELLIPSIS}", js::trim_end(&head))
+}
+
+/// A path, or as much of its tail as fits the room after an ellipsis. The tail
+/// says what the path names, so it is what stays, from a folder's start when one fits.
+pub fn keep_tail(path: &str, font: DiagramFont, size: f64, room: f64) -> String {
+    if width(path, font, size) <= room {
+        return path.to_owned();
+    }
+    let characters: Vec<char> = path.chars().collect();
+    let budget = room - width(ELLIPSIS, font, size);
+    let mut used = 0.0;
+    let mut kept = 0;
+    for character in characters.iter().rev() {
+        let next = used + width(&character.to_string(), font, size);
+        if next > budget {
+            break;
+        }
+        used = next;
+        kept += 1;
+    }
+    let tail = &characters[characters.len() - kept..];
+    let folder = tail.iter().position(|character| *character == '/');
+    let from = folder.unwrap_or(0);
+    format!("{ELLIPSIS}{}", tail[from..].iter().collect::<String>())
 }
 
 /// The size a title is set at: the largest step, at or below the size it

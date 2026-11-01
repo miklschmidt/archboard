@@ -1,0 +1,29 @@
+{
+  "order": 26000,
+  "name": "Picture traffic",
+  "kind": "function",
+  "responsibility": "Runs a picture's traffic as Web Animations, so no SMIL runs in the page",
+  "description": "The renderer draws traffic as SMIL so an exported file moves on its own. Before markup reaches the page, each SMIL element is taken out and kept as markup in an attribute of the element it animated, and its motion runs from there as a Web Animation that carries the picture clock's id. A copy of the picture keeps the attribute, so a ghost or a borrowed group runs its traffic again. A form it does not read stays SMIL.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-traffic.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#n5No6FUy",
+  "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "outgoing": [
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "the picture clock's id",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-traffic.ts",
+        "symbol": "PICTURE_CLOCK"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#nmkLjKkz",
+      "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
+    }
+  ]
+}

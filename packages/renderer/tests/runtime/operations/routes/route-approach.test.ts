@@ -14,7 +14,6 @@ import {
 	routePoints,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
@@ -134,7 +133,7 @@ test.each(LayoutEngineSchema.options)(
 			layout,
 		});
 		const points = routePoints(drawing.svg).get("g1zvz5QO")!;
-		expectSquare(points.at(-1)!, tangent(points, "last"), headerCards(drawing).get("j6TdeSth")!);
+		expectSquare(points.at(-1)!, tangent(points, "last"), drawing.atlas.nodes["j6TdeSth"]!);
 		const group = drawing.svg.match(
 			/<g data-semantic-kind="edge" data-semantic-id="g1zvz5QO"[^>]*>([\s\S]*?)<\/g>/,
 		)![1]!;

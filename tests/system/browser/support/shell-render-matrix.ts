@@ -6,7 +6,6 @@ import { browserTestRoots, type AgentBrowserSession } from "./agent-browser.ts";
 import type { ThemeSnapshot } from "./shell-contract-types.ts";
 import {
 	AGENT_DOCK,
-	BOARD_BREADCRUMB,
 	BRAND_BAR,
 	NAVIGATOR,
 	NAVIGATOR_COLUMN,
@@ -202,8 +201,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// face counts when its load gives back loaded faces: one still loading
 		// is waited for, and one that fails, or that nothing declares, is false.
 		const fontChecks = await Promise.all(['400 14px "Archboard Onest"', '500 14px "Archboard Onest"',
-			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard DM Mono"',
-			'500 10px "Archboard DM Mono"'].map(font => document.fonts.load(font).then(
+			'600 14px "Archboard Onest"', '700 14px "Archboard Onest"', '400 10px "Archboard Maple Mono"',
+			'500 10px "Archboard Maple Mono"'].map(font => document.fonts.load(font).then(
 				faces => faces.length > 0 && faces.every(face => face.status === 'loaded'), () => false)));
 		const shell = document.getElementById('root')?.firstElementChild;
 		// The navigator's top row: the brand and the application's own controls.
@@ -220,42 +219,32 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		// The pane's own top row, level with the brand bar: where the board sits,
 		// the ways to read it and the pane's controls.
 		const paneHeader = pane?.querySelector('${PANE_HEADER}');
-		const breadcrumb = document.querySelector('${BOARD_BREADCRUMB}');
-		const board = breadcrumb?.querySelector('[data-slot="pane-board-name"]');
+		const board = paneHeader?.querySelector('[data-slot="model-breadcrumbs"] button');
 		// Which variant is on screen, named after the board: the fact that
 		// changes while somebody watches (ADR 0023).
-		const variant = breadcrumb?.querySelector('[data-slot="board-state"] > span:last-child');
+		const variant = paneHeader?.querySelector('[data-slot="model-reading-selector"]');
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
-		const filter = nav?.querySelector('input');
-		// A technical token in the mono face: the key that finds a board.
-		const technical = nav?.querySelector('kbd');
+		// A technical token in the mono face: the count on a tab of the left column.
+		const technical = nav?.querySelector('[data-slot="destination-count"]');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
-		// The navigator selects what the focused pane reads — the board, or its
-		// state when the board's states are listed; the board's name is a human
-		// label beside the header's.
-		const selectedKey = nav?.querySelector('[role="treeitem"][aria-selected="true"] [data-board-key]')?.getAttribute('data-board-key') ?? null;
-		// A board's row is named within its repository: \`repository:<name>|board:<key>\`.
-		const readRow = selectedKey === null ? null : \`[role="treeitem"][data-row-id$="|board:\${CSS.escape(selectedKey.split('@')[0].toLowerCase())}"]\`;
-		const selectedBoard = readRow === null ? null : nav?.querySelector(\`\${readRow} [data-board-key]\`);
-		// Body type: a row label that is neither selected nor the board being read.
-		const rowLabel = [...(nav?.querySelectorAll('[role="treeitem"][aria-selected="false"]') ?? [])]
-			.find(node => node.querySelector('[data-board-key]') !== null && (readRow === null || !node.matches(readRow)))?.querySelector('[data-board-key]');
-		// A section heading in the pane's sidebar.
-		const sectionHeading = pane?.querySelector('[data-slot] > h2');
+		// The switcher names the repository of the focused pane, a human label beside the header's.
+		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
+		const rowLabel = nav?.querySelector('[data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
-		const picture = pane?.querySelector('[data-slot="semantic-board-viewport"]');
+		const picture = pane?.querySelector('[data-slot="model-diagram"]');
+		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
-			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
-			!sectionHeading || !picture) {
+			!present || !column || !nav || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
+			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
-				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel, sectionHeading: !!sectionHeading,
-				picture: !!picture }));
+				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
+				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
+				picture: !!picture, panel: !!panel }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
 		const rect = node => {
@@ -277,7 +266,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = [shell, header, paneHeader, nav, filter, stages, bar, pane];
+		const flat = [shell, header, paneHeader, nav, stages, bar, pane];
 		const humanLabels = [selectedBoard, board];
 		control.focus();
 		const focusStyle = getComputedStyle(control);
@@ -297,7 +286,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			throw new Error('shell matrix probe found no header controls');
 		}
 		const touchTargets = [...shell.querySelectorAll('button')]
-			.filter(node => rect(node).width > 0 && rect(node).height > 0)
+			.filter(node => node.checkVisibility() && rect(node).width > 0 && rect(node).height > 0)
 			.map(node => ({ label: node.getAttribute('aria-label') || node.textContent.trim().slice(0, 48),
 				width: rect(node).width, height: rect(node).height }));
 		const motion = { controlDuration: focusStyle.transitionDuration,
@@ -344,7 +333,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				rootChildCount: document.getElementById('root')?.childElementCount ?? 0 },
 			geometry: { shell: rect(shell), header: rect(header), paneHeader: rect(paneHeader), column: rect(column),
 				nav: rect(nav), stages: rect(stages), bar: rect(bar), pane: rect(pane), picture: rect(picture),
-				board: rect(board), control: rect(control) },
+				panel: rect(panel), board: rect(board), control: rect(control) },
 			themeSnapshot: {
 				theme: document.documentElement.dataset.theme, wordmark: wordmark.textContent.trim(),
 				wordmarkSize: rect(wordmark),
@@ -353,18 +342,17 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				inkContrast: (Math.max(foreground, backdrop) + 0.05) / (Math.min(foreground, backdrop) + 0.05),
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
-				boardIdentity: board.textContent.trim(), variant: variant.textContent.trim(),
-				selectedBoard: selectedBoard.getAttribute('data-board-key'),
+				modelIdentity: board.textContent.trim(), stateName: variant.textContent.trim(),
+				selectedRepository: selectedBoard.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
 				headerSectionsAligned: boardRect.right < presentRect.left &&
 					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
-					.filter(name => /(?:Onest-wght|DMMono-(?:Regular|Medium)).*[.]ttf/.test(name)),
+					.filter(name => /(?:Onest-wght|MapleMonoNL-(?:Regular|Medium)).*[.]ttf/.test(name)),
 				humanLabels: humanLabels.map(node => { const value = getComputedStyle(node); return {
 					family: value.fontFamily.toLowerCase(), transform: value.textTransform, weight: parseFloat(value.fontWeight) }; }),
-				sectionHeading: { ...metrics(sectionHeading), transform: getComputedStyle(sectionHeading).textTransform },
 				titleType: metrics(board), bodyType: metrics(rowLabel), stateType: metrics(variant),
 				technicalType: metrics(technical), controlType: metrics(control),
 				actionTargets: actionTargets.map(({ width, height }) => ({ width, height })),

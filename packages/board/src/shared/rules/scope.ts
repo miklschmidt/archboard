@@ -91,12 +91,143 @@ function scopedContent(content: VariantContent, scope: ReadingScope): VariantCon
 	};
 }
 
+/**
+ * What a line that joins relationships of several kinds wears. No vocabulary name holds a
+ * space, so no vault can define this kind, and the core draws it in its neutral mixed style.
+ */
+const MIXED_KIND = "mixed kinds";
+
+/** The most parts inside a card that a joined line names. */
+const NAMED_PARTS = 2;
+
+/** Relationships that one line joins, in board order. */
+type JoinedEdges = [SemanticEdge, ...SemanticEdge[]];
+
+/** A drawn line. It says two-way when it holds relationships in both directions. */
+type DrawnEdge = SemanticEdge & { readonly twoWay?: true };
+
+/** The drawn parts at a line's two ends, and whether it runs both ways. */
+interface LineEnds {
+	readonly from: string;
+	readonly to: string;
+	readonly twoWay: boolean;
+}
+
+/** Names the parts inside a drawn card that some relationships reach, in the order a line names them. */
+type PartsReached = (card: string, edges: readonly SemanticEdge[]) => readonly string[];
+
+/**
+ * The first of some names, with a count of the rest.
+ * @param names The names, or labels, in the order to show them.
+ * @param most How many to show.
+ * @returns The first names and `+N` for the others.
+ */
+function fewNames(names: readonly string[], most: number): string {
+	const rest = names.length - most;
+	return `${names.slice(0, most).join(", ")}${rest > 0 ? ` +${rest}` : ""}`;
+}
+
+/**
+ * The parts that a line names.
+ * @param word How the parts stand to the line.
+ * @param parts Their names, in the order to show them.
+ * @returns The words, or nothing without a part.
+ */
+function namedParts(word: string, parts: readonly string[]): string | undefined {
+	return parts.length === 0 ? undefined : `${word} ${fewNames(parts, NAMED_PARTS)}`;
+}
+
+/**
+ * The words that name what a line reaches inside its cards: the target's parts, then the source's.
+ * A two-way line has no target, so it names the card with more parts, and the far end on a tie.
+ * @param edges The relationships on the line.
+ * @param ends The line's drawn ends.
+ * @param reached Names the parts inside a card.
+ * @returns The words, or nothing when no relationship reaches inside a card.
+ */
+function wordsOfParts(
+	edges: readonly SemanticEdge[],
+	ends: LineEnds,
+	reached: PartsReached,
+): string | undefined {
+	const target = reached(ends.to, edges);
+	const source = reached(ends.from, edges);
+	if (ends.twoWay) return namedParts("with", source.length > target.length ? source : target);
+	return target.length > 0 ? namedParts("to", target) : namedParts("from", source);
+}
+
+/**
+ * The one answer to what a joined line says (reader redesign, rule 4). A shared label stands for
+ * all of them. Otherwise a reader asks what one card uses of the other, and the names inside
+ * the cards answer that where a label list could not fit. Failing those, the first label and the
+ * count of the others. A count alone tells a reader nothing (ADR 0052), so a line with neither a
+ * label nor an inner part wears no words.
+ * @param edges The relationships on the line.
+ * @param ends The line's drawn ends.
+ * @param reached Names the parts inside a card.
+ * @returns The line's words.
+ */
+function wordsOnJoinedLine(
+	edges: readonly SemanticEdge[],
+	ends: LineEnds,
+	reached: PartsReached,
+): string | undefined {
+	const labels = [...new Set(edges.flatMap(({ label }) => label ?? []))];
+	if (labels.length === 1 && edges.every(({ label }) => label !== undefined)) return labels[0];
+	return (
+		wordsOfParts(edges, ends, reached) ?? (labels.length === 0 ? undefined : fewNames(labels, 1))
+	);
+}
+
+/**
+ * The direct part of a drawn card that holds a relationship's end.
+ * @param end The relationship's end.
+ * @param card The drawn card.
+ * @param parentOf Each module's parent.
+ * @returns The part, or nothing when the end is the card itself or lies outside it.
+ */
+function partHolding(
+	end: string,
+	card: string,
+	parentOf: ReadonlyMap<string, string | undefined>,
+): string | undefined {
+	let at = end;
+	for (let up = parentOf.get(at); up !== undefined && up !== card; up = parentOf.get(at)) at = up;
+	return parentOf.get(at) === card ? at : undefined;
+}
+
+/**
+ * How a reading names the parts that a line reaches inside a card: the part that the most
+ * relationships reach first, then model order. A name comes from the content, so an end that the
+ * content no longer holds names nothing.
+ * @param content The content the reading draws from.
+ * @param endsOf Where a relationship's line starts and ends.
+ * @returns The reader of parts.
+ */
+function partsReachedIn(
+	content: VariantContent,
+	endsOf: (edge: SemanticEdge) => readonly [string, string],
+): PartsReached {
+	const parentOf = new Map(content.nodes.map((node) => [node.id, node.parent]));
+	return (card, edges) => {
+		const reached = new Map<string, number>();
+		for (const edge of edges) {
+			const part = partHolding(endsOf(edge)[1] === card ? edge.to : edge.from, card, parentOf);
+			if (part !== undefined) reached.set(part, (reached.get(part) ?? 0) + 1);
+		}
+		return content.nodes
+			.filter(({ id }) => reached.has(id))
+			.toSorted((one, other) => (reached.get(other.id) ?? 0) - (reached.get(one.id) ?? 0))
+			.map(({ name }) => name);
+	};
+}
+
 /** One line of the overview, and the relationships it stands for. */
 interface OverviewLine {
 	/** What the overview draws. */
-	readonly line: SemanticEdge;
+	readonly line: DrawnEdge;
 	/** The relationships it joins, in board order, as the variant states them. */
-	readonly joins: readonly [SemanticEdge, ...SemanticEdge[]];
+	readonly joins: Readonly<JoinedEdges>;
 }
 
 /**
@@ -119,29 +250,63 @@ function overviewContent(content: VariantContent): VariantContent {
 }
 
 /**
- * The lines the overview draws. All relationships from one drawn part to
- * another are one line: a reader of the overview asks which parts work
- * together, and what each relationship does is the views' question. A
+ * The lines the overview draws. All relationships between two drawn parts are
+ * one line, whichever way each runs: a reader of the overview asks which parts
+ * work together, and what each relationship does is the views' question. A
  * relationship inside one closed card, or between a container and a part it
  * holds, is the card's own business and is not drawn (ADR 0052).
  * @param content The variant's whole content.
+ * @param openSelf The open containers whose authored self-connections stay visible.
+ * @param endsOf Where a relationship's line starts and ends; the root parts that hold it by default.
  * @returns Each line, with what it joins.
  */
-function overviewLines(content: VariantContent): OverviewLine[] {
-	const drawnAs = rootOf(content);
-	const joined = new Map<string, [SemanticEdge, ...SemanticEdge[]]>();
+function overviewLines(
+	content: VariantContent,
+	openSelf: ReadonlySet<string> = new Set(),
+	endsOf: (edge: SemanticEdge) => readonly [string, string] = rootEnds(content),
+): OverviewLine[] {
+	const joined = new Map<string, { ends: readonly [string, string]; joins: JoinedEdges }>();
 	for (const edge of content.edges) {
-		const [from, to] = [drawnAs(edge.from), drawnAs(edge.to)];
-		if (from === to) continue;
-		const key = `${from}\u0000${to}`;
-		const joins = joined.get(key);
-		if (joins === undefined) joined.set(key, [edge]);
-		else joins.push(edge);
+		const ends = endsOf(edge);
+		const [from, to] = ends;
+		if (!drawsConnection(edge, from, to, openSelf)) continue;
+		const key = [from, to].toSorted().join("\u0000");
+		const line = joined.get(key);
+		if (line === undefined) joined.set(key, { ends, joins: [edge] });
+		else line.joins.push(edge);
 	}
-	return [...joined.values()].map((joins) => ({
-		line: oneLine(joins, drawnAs(joins[0].from), drawnAs(joins[0].to)),
-		joins,
-	}));
+	const reached = partsReachedIn(content, endsOf);
+	return [...joined.values()].map(({ ends: [from, to], joins }) => {
+		const twoWay = from !== to && joins.some((edge) => endsOf(edge)[0] === to);
+		return { line: oneLine(joins, { from, to, twoWay }, reached), joins };
+	});
+}
+
+/**
+ * Where a relationship's line runs when every container is closed.
+ * @param content The variant's whole content.
+ * @returns The root parts at its two ends.
+ */
+function rootEnds(content: VariantContent): (edge: SemanticEdge) => readonly [string, string] {
+	const drawnAs = rootOf(content);
+	return (edge) => [drawnAs(edge.from), drawnAs(edge.to)];
+}
+
+/**
+ * Keep authored open-module self-connections without inventing loops from hidden internals.
+ * @param edge The original authored relationship.
+ * @param from Its visible source.
+ * @param to Its visible target.
+ * @param open The open modules in this reading.
+ * @returns Whether the relationship has a visible connection.
+ */
+function drawsConnection(
+	edge: SemanticEdge,
+	from: string,
+	to: string,
+	open: ReadonlySet<string>,
+): boolean {
+	return from !== to || (open.has(from) && edge.from === from && edge.to === to);
 }
 
 /**
@@ -160,43 +325,36 @@ function rootOf(content: VariantContent): (id: string) => string {
 }
 
 /**
- * Relationships from one drawn part to another, as one line.
+ * Relationships between two drawn parts, as one line.
  *
  * A lone relationship is drawn as stated. A joined line keeps the identity of
- * the first relationship in board order, so a comparison marks it, and it
- * takes the kind most of them have. Its label stacks their labels, each once,
- * one to a line of the text, because no one of them speaks for all of them; a
- * relationship with no label adds none. What only one of them says, its
- * description, emphasis, traffic and anchor, is not said of the line.
+ * the first relationship in board order, so a comparison marks it, and it runs
+ * the way that relationship runs. It wears the kind they share, or the neutral
+ * mixed kind when they differ, because a majority kind would be a false mark.
+ * What only one of them says, its description, emphasis, traffic and anchor,
+ * is not said of the line, and {@link wordsOnJoinedLine} decides its words.
  * @param edges The relationships, in board order.
- * @param from The drawn part the line starts at.
- * @param to The drawn part the line ends at.
+ * @param ends The line's drawn ends.
+ * @param reached Names the parts inside a card.
  * @returns The line.
  */
-function oneLine(
-	edges: readonly [SemanticEdge, ...SemanticEdge[]],
-	from: string,
-	to: string,
-): SemanticEdge {
+function oneLine(edges: Readonly<JoinedEdges>, ends: LineEnds, reached: PartsReached): DrawnEdge {
 	const [first] = edges;
+	const { from, to, twoWay } = ends;
 	if (edges.length === 1) {
 		return { ...first, from, to };
 	}
-	const counts = new Map<string, number>();
-	for (const edge of edges) {
-		counts.set(edge.kind, (counts.get(edge.kind) ?? 0) + 1);
-	}
-	// Map order is board order, so the first kind to reach the most wins a tie.
-	const kind = [...counts].reduce((best, next) => (next[1] > best[1] ? next : best))[0];
-	const labels = [...new Set(edges.flatMap(({ label }) => (label === undefined ? [] : [label])))];
+	const kinds = new Set(edges.map(({ kind }) => kind));
+	const label = wordsOnJoinedLine(edges, ends, reached);
 	return {
 		id: first.id,
 		order: first.order,
 		from,
 		to,
-		kind,
-		...(labels.length === 0 ? {} : { label: labels.join("\n") }),
+		kind: kinds.size === 1 ? first.kind : MIXED_KIND,
+		...(label === undefined ? {} : { label }),
 		emphasis: "normal",
+		...(twoWay ? { twoWay } : {}),
 	};
 }
 
@@ -280,11 +438,14 @@ function findView(board: Pick<SemanticBoard, "views">, asked: string): SemanticV
 
 export {
 	EVERYTHING_VIEW,
+	MIXED_KIND,
 	RESERVED_VIEW_NAMES,
+	containersOf,
 	findView,
 	overviewContent,
 	overviewLines,
 	scopedContent,
+	type DrawnEdge,
 	type OverviewLine,
 	type ReadingScope,
 };

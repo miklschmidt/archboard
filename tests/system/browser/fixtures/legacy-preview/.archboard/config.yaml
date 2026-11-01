@@ -1,0 +1,48 @@
+{
+  levels: [system, service, module],
+  nodeKinds:
+    {
+      system: { name: System, icon: RiApps2Line, color: sky },
+      service: { name: Service, icon: RiServerLine, color: blue },
+      app: { name: Application, icon: RiWindowLine, color: indigo },
+      module: { name: Module, icon: RiBox3Line, color: teal },
+      function: { name: Function, icon: RiCodeLine, color: cyan },
+      route: { name: Route, icon: RiRouteLine, color: violet },
+      job: { name: Job, icon: RiTimerLine, color: amber },
+      queue: { name: Queue, icon: RiStackLine, color: orange },
+      datastore: { name: Data store, icon: RiDatabase2Line, color: emerald },
+      cache: { name: Cache, icon: RiFlashlightLine, color: yellow },
+      external: { name: External, icon: RiExternalLinkLine },
+      ui: { name: User interface, icon: RiLayoutLine, color: pink },
+      config: { name: Configuration, icon: RiSettings3Line, color: lime },
+      test: { name: Test, icon: RiFlaskLine, color: purple },
+      package: { name: Package, icon: RiArchiveLine, color: fuchsia },
+      other: { name: Other, icon: RiPuzzleLine },
+    },
+  relationshipKinds:
+    {
+      call: { name: Call, dash: solid, arrowhead: filled, evidence: [call] },
+      http:
+        {
+          name: HTTP,
+          color: sky,
+          dash: solid,
+          arrowhead: filled,
+          evidence: &evidence [call, configured-path],
+        },
+      rpc: { name: RPC, color: blue, dash: solid, arrowhead: filled, evidence: *evidence },
+      event: { name: Event, color: amber, dash: dashed, arrowhead: open, evidence: *evidence },
+      queue: { name: Queue, color: orange, dash: dashed, arrowhead: open, evidence: *evidence },
+      data: { name: Data, color: emerald, dash: solid, arrowhead: filled, evidence: *evidence },
+      dependency:
+        {
+          name: Dependency,
+          dash: dotted,
+          arrowhead: open,
+          evidence: [call, configured-path, import, build-dependency],
+        },
+      render: { name: Render, color: pink, dash: solid, arrowhead: filled, evidence: [call] },
+      other: { name: Other, dash: solid, arrowhead: filled },
+    },
+  groups: { product: { name: Product, color: blue } },
+}

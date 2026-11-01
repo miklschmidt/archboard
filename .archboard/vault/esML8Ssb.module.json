@@ -1,0 +1,28 @@
+{
+  "order": 68001,
+  "name": "Thread tool settlements",
+  "kind": "module",
+  "responsibility": "Retains mutation outcomes, quarantine state, and waits within the dispatcher lifetime",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/services/dynamic-tools"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#esML8Ssb",
+  "parent": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+  "outgoing": [
+    {
+      "order": 12000,
+      "kind": "call",
+      "label": "register and release a wait edge",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/services/dynamic-tools/wait.ts",
+        "symbol": "addEdgeSet"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#CHkvrU1f",
+      "to": "vKEsyHFk/SJ2JMVyz#abHx4peq"
+    }
+  ]
+}

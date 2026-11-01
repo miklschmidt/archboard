@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { PRODUCERS } from "../../../scripts/readme-assets/assets.ts";
+import { requireSmellRow } from "../../../scripts/readme-assets/design-smells.ts";
 import { holding } from "../../../scripts/readme-assets/holding.ts";
 import {
 	SourceHasher,
@@ -18,6 +19,28 @@ import {
 import { disagreements } from "../../../scripts/readme-assets/producer.ts";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+
+test("design-smells refuses missing measures and modules that no longer demonstrate a beat", () => {
+	const counts = { unjoined: 2, entryPoints: 13, hiddenParts: 0, passThrough: 1 };
+	const row = { id: "module", counts };
+	for (const beat of ["unjoined", "shallow", "passThrough"] as const) {
+		expect(requireSmellRow(beat, row).counts).toEqual(counts);
+		expect(() => requireSmellRow(beat, null)).toThrow(Error);
+	}
+	for (const [beat, changed] of [
+		["unjoined", { unjoined: 0 }],
+		["unjoined", { unjoined: undefined }],
+		["shallow", { entryPoints: 1 }],
+		["shallow", { hiddenParts: 1 }],
+		["shallow", { hiddenParts: undefined }],
+		["passThrough", { passThrough: 0 }],
+		["passThrough", { passThrough: 14 }],
+	] as const) {
+		expect(() => requireSmellRow(beat, { ...row, counts: { ...counts, ...changed } })).toThrow(
+			Error,
+		);
+	}
+});
 
 function git(root: string, args: string[]): void {
 	const result = Bun.spawnSync(["git", ...args], { cwd: root, stdout: "pipe", stderr: "pipe" });

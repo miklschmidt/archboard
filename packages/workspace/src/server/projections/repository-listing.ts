@@ -148,18 +148,8 @@ function repositoryOfVault(vault: string): string | null {
 	return placeOfVault(vault).repository;
 }
 
-/**
- * The vault a page opens in when its address names no repository: that of the first ready
- * repository the navigator lists, by name.
- * @returns The vault, or null when no repository with a vault is known.
- */
-function openingVault(): string | null {
-	return listRepositories().find((each) => each.state === "ready")?.vault ?? null;
-}
-
 export {
 	listRepositories,
-	openingVault,
 	placeOfVault,
 	repositoryOfVault,
 	vaultIn,

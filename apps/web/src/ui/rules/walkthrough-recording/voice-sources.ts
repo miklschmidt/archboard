@@ -3,7 +3,7 @@
 // said. Everything is read from the owners the server already has; nothing
 // here holds state of its own.
 
-import type { AgentPhase, AgentSetup } from "@archboard/workbench/agent";
+import type { AgentSetup, AgentSetupSnapshot } from "@archboard/workbench/agent";
 import type {
 	VoiceSession,
 	VoiceSessionStatus,
@@ -62,7 +62,9 @@ const NOT_SIGNED_IN: AgentReadiness = Object.freeze({
 });
 
 /** Whether voice can be started, for every phase but the one that says why it cannot. */
-const READINESS: Readonly<Record<Exclude<AgentPhase["kind"], "unavailable">, AgentReadiness>> = {
+const READINESS: Readonly<
+	Record<Exclude<AgentSetupSnapshot["phase"]["kind"], "unavailable">, AgentReadiness>
+> = {
 	ready: Object.freeze({ kind: "ready" }),
 	connecting: Object.freeze({ kind: "waiting" }),
 	starting: Object.freeze({ kind: "waiting" }),

@@ -1,0 +1,31 @@
+{
+  "order": 14000,
+  "name": "Claude grader",
+  "kind": "module",
+  "responsibility": "The other grader runner: a resumed session, read-only tools, pictures opened from the workspace",
+  "groups": [
+    "grading"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/clients/claude-grader.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#bgEcePXZ",
+  "parent": "vKEsyHFk/IbGtfJE2#RrIatpuG",
+  "outgoing": [
+    {
+      "order": 19000,
+      "kind": "call",
+      "label": "resume the grading session",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/skills/src/runtime/clients/claude-grader.ts",
+        "symbol": "claudeGraderArgv"
+      },
+      "id": "vKEsyHFk/IbGtfJE2#2X7jYiVB",
+      "to": "vKEsyHFk/IbGtfJE2#9TIT63Qz"
+    }
+  ]
+}

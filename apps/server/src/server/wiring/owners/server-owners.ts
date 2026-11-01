@@ -1,3 +1,5 @@
+import { createAgentActivity } from "#server/state/agent-activity/agent-activity.ts";
+import { broadcastEverywhere } from "#server/state/pane-vaults/pane-vaults.ts";
 import { SERVER_LIFECYCLE_MS } from "@archboard/timing";
 import {
 	createServerMutationAdmission,
@@ -17,4 +19,7 @@ const admittedMutations = new WeakMap<Request, ServerMutationLease>();
 /** Owns machine-local checkout snapshots so shutdown can quiesce them. */
 const checkoutWork = createCheckoutWorkOwner();
 
-export { admittedMutations, checkoutWork, mutationAdmission };
+/** Owns canonical activity subscriptions, snapshots, and idle timers. */
+const agentActivity = createAgentActivity(broadcastEverywhere);
+
+export { admittedMutations, checkoutWork, mutationAdmission, agentActivity };

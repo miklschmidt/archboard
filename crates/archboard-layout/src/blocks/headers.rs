@@ -118,10 +118,8 @@ pub(crate) fn header_within(header: &Header, room: &Room<'_>) -> Taken {
 /// The visible slab's horizontal reach for lines naming the parent itself.
 pub(crate) fn header_reach(block: &super::tree::Block, laid: &super::laid::Laid) -> (f64, f64) {
     let at = laid.boxes[super::tree::header_of(block).as_str()];
-    let inset = crate::constants::HEADER_SLAB_INSET;
     let (low, high) = crate::track::channels::port_reach(&crate::geometry::Rect {
-        x: at.x + inset,
-        width: (at.width - 2.0 * inset).max(0.0),
+        width: (at.width - crate::constants::TAB_SHOULDER).max(0.0),
         ..at
     });
     (
@@ -162,9 +160,7 @@ pub(crate) fn place_header_entries(
         })
         .collect();
     let xs = crate::track::channels::spread_along(reach, &wanted);
-    let y = at.y
-        + block.lone.as_ref().map_or(0.0, super::lone::band_of)
-        + crate::constants::HEADER_SLAB_INSET;
+    let y = at.y + block.lone.as_ref().map_or(0.0, super::lone::band_of);
     for (port, x) in ports.into_iter().zip(xs) {
         let size = super::leaves::PORT;
         laid.boxes.insert(

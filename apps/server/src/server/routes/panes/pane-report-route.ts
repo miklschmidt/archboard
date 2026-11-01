@@ -1,3 +1,4 @@
+import { tabSessionOf } from "@archboard/workbench/server";
 // What every pane on screen is showing and reading: the answer `browser panes`
 // is read from, every turn, so it is built from what the panes reported and the
 // registry, and never reads a board.
@@ -29,14 +30,10 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
  */
 function readingAboutBoard(clientId: string): SemanticPaneContext | null {
 	const context = semanticPaneContextFor(clientId);
-	if (context === null) {
-		return null;
-	}
+	if (context === null) return null;
+	if (context.architecture != null) return context;
 	const pane = panes.get(clientId);
 	const showing = pane === undefined ? null : boardForPane(pane);
-	if (showing === null) {
-		return null;
-	}
 	return context.board?.key === showing ? context : null;
 }
 
@@ -73,18 +70,34 @@ function getPanesRoute(req: Request, res: Response): void {
 			return {
 				variant: context.variant,
 				view: context.view,
-				selection: context.selection.map((subject) => ({
-					id: subject.id,
-					...(subject.kind === undefined ? {} : { kind: subject.kind }),
-					...(subject.name === undefined ? {} : { name: subject.name }),
-				})),
+				selection:
+					context.architecture == null
+						? context.selection.map((subject) => ({
+								id: subject.id,
+								...(subject.kind === undefined ? {} : { kind: subject.kind }),
+								...(subject.name === undefined ? {} : { name: subject.name }),
+							}))
+						: context.architecture.subjects.map((id) => ({ id })),
 				version: context.version,
 				at: context.at,
 			};
 		},
+		/**
+		 * The model reading one pane last reported.
+		 * @param clientId The pane's client id.
+		 * @returns The reading, or null when the pane has reported none.
+		 */
+		architecture: (clientId) => semanticPaneContextFor(clientId)?.architecture ?? null,
 		serverUrl: serverUrl(),
 	});
-	res.json({ success: true, ...report });
+	res.json({
+		success: true,
+		...report,
+		panes: report.panes.map((pane) => ({
+			...pane,
+			tabSessionId: tabSessionOf(pane.clientId),
+		})),
+	});
 }
 
 export { getPanesRoute };

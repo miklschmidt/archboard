@@ -7,6 +7,9 @@
 // Pure: every horizontal length the navigator lays out comes from here, in
 // pixels, and every x is measured from the navigator's left edge.
 
+/** A row of one line, and how far an open row sticks below the one that holds it. */
+const ROW_HEIGHT = 28;
+
 /** The disclosure column: a chevron, or the space one would take. */
 const DISCLOSURE_WIDTH = 16;
 
@@ -15,6 +18,9 @@ const TREE_STEP = DISCLOSURE_WIDTH;
 
 /** From the navigator's left edge to the disclosure column of depth zero. */
 const TREE_INSET = 8;
+
+/** From the navigator's left edge to the words of a flat row, under the tabs' words. */
+const FLAT_INSET = 13;
 
 /** The marker column: what kind of row it is, and an agent at work. */
 const MARKER_WIDTH = 16;
@@ -74,9 +80,11 @@ export {
 	DISCLOSURE_WIDTH,
 	FACTS_GAP,
 	FACTS_INSET,
+	FLAT_INSET,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,
+	ROW_HEIGHT,
 	TARGET_SIZE,
 	TREE_STEP,
 	disclosureX,

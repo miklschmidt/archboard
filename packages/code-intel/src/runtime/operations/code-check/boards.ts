@@ -1,163 +1,161 @@
-// Which boards the code check reads, and at which variant (ADR 0046).
-//
-// It reads every board at its current variant. `--variant <name>` names a
-// draft: a board that has a draft of that name is read at that draft, and
-// every other board at its current variant, so one name reads the vault as it
-// will stand once every proposal of a task is adopted. A board with no current
-// variant, and no draft of the named variant, has nothing built to read, and
-// is skipped (ADR 0031). A historical or a shelved variant is never read: it
-// is a record, and a finding on it would push somebody to rewrite a record.
-// Each board carries the vault's relationship kinds, which say the evidence
-// kinds each kind accepts (TASK-367.07).
-//
-// `--every-draft` reads every draft of every board instead, each as a named
-// draft, and nothing else: a stack of pull requests is all drafts, and a
-// board may have no current variant (TASK-488).
-
-import { listSemanticBoards, readSemanticBoardAt } from "@archboard/board/store-read";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
-import {
-	currentVariant,
-	variantNamed,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
+import { readArchitectureModel } from "@archboard/board/store-read";
+import { modelContent } from "@archboard/board/content";
+import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
 import type { SemanticPolicy } from "@archboard/board/policy";
+import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 
-/** One board the check reads, the variant it reads, and the file it lives in. */
+type Model = Extract<ArchitectureModelRead, { success: true }>;
+/** Semantic evidence accepted by the existing code-inspection engine. */
 interface BoardToCheck {
-	readonly board: SemanticBoard;
-	readonly file: string;
+	readonly board: Pick<SemanticBoard, "id" | "name" | "variants" | "current">;
 	readonly variant: SemanticVariant;
-	/** True when the variant is the named draft: then a bound path must be in its checkout too. */
+	readonly file: string;
 	readonly named: boolean;
-	/**
-	 * The vault's relationship kinds, which say the evidence kinds each one
-	 * accepts; the bundled defaults where the configuration is invalid, as
-	 * everywhere else.
-	 */
 	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
+	readonly model?: Model;
 }
-
-/** The boards one pass reads, and the boards it skips with the reason. */
 interface BoardsToCheck {
 	readonly ok: true;
 	readonly boards: readonly BoardToCheck[];
 	readonly skipped: readonly CodeCheckSkip[];
 }
-
-/** No board has a draft of the named variant, and the drafts that exist. */
-interface NoSuchDraft {
-	readonly ok: false;
-	readonly variant: string;
-	readonly drafts: readonly string[];
-}
-
+type NoSuchDraft = Extract<ArchitectureModelRead, { success: false }>;
 /**
- * The draft of a name on one board.
- * @param board The board.
- * @param name The variant's name.
- * @returns The draft, or undefined when the board has no draft of that name.
+ * Supply complete canonical meaning to the existing semantic evidence engine.
+ * @param model The coherent canonical state.
+ * @param predecessor Its exact comparison base, when available.
+ * @returns The engine reading without a board document, level, or authored view.
  */
-function draftNamed(board: SemanticBoard, name: string): SemanticVariant | undefined {
-	const found = variantNamed(board, name);
-	return found?.lifecycle === "draft" ? found : undefined;
+function codeReading(model: Model, predecessor?: Model): BoardToCheck {
+	const variant: SemanticVariant = {
+		...stateMetadata(model),
+		content: modelContent(model),
+		documents: stateDocuments(model),
+		...parentOf(predecessor),
+	};
+	const previous = predecessor === undefined ? [] : [codeReading(predecessor).variant];
+	return {
+		board: {
+			id: model.manifest.id,
+			name: model.manifest.name,
+			current: model.manifest.current?.id,
+			variants: [...previous, variant],
+		},
+		variant,
+		file: "model.json",
+		named: variant.lifecycle === "draft",
+		relationshipKinds: model.policy.relationshipKinds,
+		model,
+	};
 }
-
-/** What reading every board finds before the named draft is known to exist. */
-interface Reading {
-	readonly boards: BoardToCheck[];
-	readonly skipped: CodeCheckSkip[];
-	readonly drafts: Set<string>;
-	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
-}
-
 /**
- * Read one board at the variant the check reads, or skip it with the reason.
- * @param vault The vault directory the board is in.
- * @param location Where the board is.
- * @param variant The draft `--variant` names, if any.
- * @param reading What the pass has read so far, which this adds to.
+ * Supply exact state metadata or the real empty planning identity.
+ * @param model The coherent reading.
+ * @returns The semantic analyzer's state metadata.
  */
-function readOne(
+function stateMetadata(model: Model): Pick<SemanticVariant, "id" | "name" | "lifecycle"> {
+	const state = model.selectedState;
+	if (state === null)
+		return { id: model.manifest.id, name: model.manifest.name, lifecycle: "draft" };
+	return { id: state.id, name: state.name, lifecycle: state.lifecycle };
+}
+/**
+ * Gather actual state and module document references for inspection.
+ * @param model The coherent reading.
+ * @returns Its authored document references.
+ */
+function stateDocuments(model: Model) {
+	return [
+		...(model.selectedState?.documents ?? []),
+		...model.modules.flatMap((module) => module.documents ?? []),
+	];
+}
+/**
+ * Preserve the exact comparison predecessor for inherited-part inspection.
+ * @param model The optional comparison source.
+ * @returns The predecessor identity, when selected.
+ */
+function parentOf(model: Model | undefined): Pick<SemanticVariant, "parent"> {
+	const state = model?.selectedState;
+	if (state == null) return {};
+	return { parent: state.id };
+}
+/**
+ * Read and guard the exact comparison source supplied by the canonical reader.
+ * @param vault The addressed vault.
+ * @param model The selected coherent architecture.
+ * @returns Its predecessor, absence, or a structured refusal.
+ */
+async function readPredecessor(vault: string, model: Model) {
+	const comparison = model.comparison;
+	if (comparison?.against == null) return undefined;
+	const predecessor = await readArchitectureModel(vault, undefined, undefined, {
+		state: comparison.checkpoint === undefined ? comparison.against.id : undefined,
+		checkpoint: comparison.checkpoint,
+		compare: false,
+	});
+	if (!predecessor.success) return predecessor;
+	if (predecessor.revision.digest !== comparison.revision.digest)
+		return {
+			success: false as const,
+			code: "STALE_REVISION" as const,
+			error: "The comparison source changed.",
+			diagnostics: [
+				{
+					code: "STALE_REVISION",
+					file: "model.json",
+					message: "The comparison source changed during code inspection.",
+					recovery: "Read the selected state again and retry the code inspection.",
+				},
+			],
+		};
+	return predecessor;
+}
+/**
+ * Read one selected canonical state through the shared runtime.
+ * @param vault The addressed vault.
+ * @param state The optional state selector.
+ * @param selections The exact checkpoint and comparison selectors.
+ * @param selections.checkpoint The retained checkpoint.
+ * @param selections.against The comparison source.
+ * @returns Complete evidence or its structured refusal.
+ */
+async function readBoardsToCheck(
 	vault: string,
-	location: ReturnType<typeof listSemanticBoards>[number],
-	variant: string | undefined,
-	reading: Reading,
-): void {
-	const read = readSemanticBoardAt(vault, location);
-	if (!read.ok) {
-		reading.skipped.push({
-			reason: "board-unreadable",
-			board: location.name,
-			detail: read.problem,
-		});
-		return;
-	}
-	const { board } = read;
-	for (const each of board.variants.filter((one) => one.lifecycle === "draft")) {
-		reading.drafts.add(each.name);
-	}
-	const draft = variant === undefined ? undefined : draftNamed(board, variant);
-	const chosen = draft ?? currentVariant(board);
-	if (chosen === undefined)
-		reading.skipped.push({ reason: "no-current-variant", board: board.name });
-	else
-		reading.boards.push({
-			board,
-			file: location.file,
-			variant: chosen,
-			named: draft !== undefined,
-			relationshipKinds: reading.relationshipKinds,
-		});
+	state?: string,
+	selections: { checkpoint?: string | undefined; against?: string | undefined } = {},
+): Promise<BoardsToCheck | NoSuchDraft> {
+	const model = await readArchitectureModel(vault, undefined, undefined, {
+		checkpoint: selections.checkpoint,
+		against: selections.against,
+		state,
+		compare: true,
+	});
+	if (!model.success) return model;
+	const predecessor = await readPredecessor(vault, model);
+	if (predecessor?.success === false) return predecessor;
+	return { ok: true, boards: [codeReading(model, predecessor)], skipped: [] };
 }
-
 /**
- * Read every draft of every board of the vault, each as a named draft.
- * @param vault The vault directory.
- * @returns The drafts, and the boards that could not be read.
+ * Read every independent active proposal without combining equal names.
+ * @param vault The addressed vault.
+ * @returns Their exact canonical evidence or a structured refusal.
  */
-function readEveryDraftToCheck(vault: string): BoardsToCheck {
-	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
-	const boards: BoardToCheck[] = [];
-	const skipped: CodeCheckSkip[] = [];
-	for (const location of listSemanticBoards(vault)) {
-		const read = readSemanticBoardAt(vault, location);
-		if (!read.ok) {
-			skipped.push({ reason: "board-unreadable", board: location.name, detail: read.problem });
-			continue;
-		}
-		for (const variant of read.board.variants.filter((one) => one.lifecycle === "draft")) {
-			boards.push({
-				board: read.board,
-				file: location.file,
-				variant,
-				named: true,
-				relationshipKinds,
-			});
-		}
-	}
-	return { ok: true, boards, skipped };
+async function readEveryDraftToCheck(vault: string): Promise<BoardsToCheck | NoSuchDraft> {
+	const current = readArchitectureModel(vault);
+	if (!current.success) return current;
+	const readings = await Promise.all(
+		current.proposals.map((proposal) => readBoardsToCheck(vault, proposal.id)),
+	);
+	const failure = readings.find((reading) => !("ok" in reading));
+	if (failure !== undefined) return failure;
+	return {
+		ok: true,
+		boards: readings.flatMap((reading) => ("ok" in reading ? reading.boards : [])),
+		skipped: [],
+	};
 }
-
-/**
- * Read every board of the vault at the variant the check reads.
- * @param vault The vault directory.
- * @param variant The draft `--variant` names, if any.
- * @returns The boards and the skipped ones, or the drafts that exist when no
- * board has a draft of that name.
- */
-function readBoardsToCheck(vault: string, variant?: string): BoardsToCheck | NoSuchDraft {
-	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
-	const reading: Reading = { boards: [], skipped: [], drafts: new Set(), relationshipKinds };
-	for (const location of listSemanticBoards(vault)) readOne(vault, location, variant, reading);
-	if (variant !== undefined && !reading.boards.some((board) => board.named)) {
-		return { ok: false, variant, drafts: [...reading.drafts].toSorted() };
-	}
-	return { ok: true, boards: reading.boards, skipped: reading.skipped };
-}
-
 export {
 	type BoardToCheck,
 	type BoardsToCheck,

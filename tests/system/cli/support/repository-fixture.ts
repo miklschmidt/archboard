@@ -38,6 +38,8 @@ function createRepositoryFixture(): RepositoryFixture {
 		...process.env,
 		...clearedEnvironment,
 		HOME: home,
+		// Git reads the caller's configuration here when HOME alone moves.
+		XDG_CONFIG_HOME: join(home, ".config"),
 		XDG_STATE_HOME: state,
 		LOG_FILE_PATH: log,
 		ARCHBOARD_REPOS: registry,

@@ -25,6 +25,48 @@ impl Side {
     }
 }
 
+/// Which coordinate of the page something runs along.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Axis {
+    /// Across the page: x changes.
+    X,
+    /// Down the page: y changes.
+    Y,
+}
+
+impl Axis {
+    /// Of a thing's x and y, the one on this axis.
+    pub(crate) fn pick<T>(self, x: T, y: T) -> T {
+        match self {
+            Axis::X => x,
+            Axis::Y => y,
+        }
+    }
+
+    /// The other axis.
+    pub(crate) fn across(self) -> Axis {
+        self.pick(Axis::Y, Axis::X)
+    }
+
+    /// A point's coordinate on this axis.
+    pub(crate) fn of(self, point: Point) -> f64 {
+        self.pick(point.x, point.y)
+    }
+
+    /// A point with its coordinate on this axis replaced.
+    pub(crate) fn with(self, point: Point, value: f64) -> Point {
+        match self {
+            Axis::X => Point { x: value, ..point },
+            Axis::Y => Point { y: value, ..point },
+        }
+    }
+
+    /// A box's low and high ends on this axis.
+    pub(crate) fn span(self, at: Rect) -> (f64, f64) {
+        self.pick((at.x, at.x + at.width), (at.y, at.y + at.height))
+    }
+}
+
 /// The x of a polyline where it crosses a height, or nothing when it never reaches it.
 pub(crate) fn polyline_x(points: &[Point], y: f64) -> Option<f64> {
     for pair in points.windows(2) {

@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { CODEX_PROTOCOL_BINARY_VERSION } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 import {
@@ -20,7 +21,7 @@ import {
 	prepareProductionFixture,
 	type FixtureSetupFailure,
 } from "./support/codex-production.ts";
-import { createRequester } from "./support/http.ts";
+import { createRequester, onlyVault } from "./support/http.ts";
 import {
 	serverChildPids,
 	loggedRequestFailure,
@@ -158,12 +159,8 @@ describe.serial("production Codex setup cleanup", () => {
 				logged: true,
 			});
 			socket = await openApplicationSocket(base, "signed-out-client");
-			const served = (await (await fetch(`${base}/api/served-vault`)).json()) as { vault: string };
-			const request = createRequester({
-				base,
-				assertRunning: async () => undefined,
-				vault: served.vault,
-			});
+			const vault = await onlyVault(base);
+			const request = createRequester({ base, assertRunning: async () => undefined, vault });
 			expect(
 				(
 					await request("/api/panes", {
@@ -193,24 +190,13 @@ describe.serial("production Codex setup cleanup", () => {
 			expect(action.value).not.toMatchObject({ outcome: "delivered" });
 			// A board write and a pane move, so the census below is taken after the
 			// server has actually done work rather than only after it started.
-			expect(
-				(
-					await request("/api/semantic-boards/create", {
-						method: "POST",
-						doing: "persisting the census proof",
-						body: {
-							board: "scratch",
-							create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-						},
-					})
-				).status,
-			).toBe(200);
+			seedCanonicalFixture(vault, "scratch", [{ name: "Gateway", kind: "service" }]);
 			expect(
 				(
 					await request("/api/panes/show", {
 						method: "POST",
 						doing: false,
-						body: { board: "scratch", pane: "signed-out-client" },
+						body: { reading: { model: "Fixture" }, pane: "signed-out-client" },
 					})
 				).status,
 			).toBe(200);

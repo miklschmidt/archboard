@@ -13,7 +13,7 @@ use crate::track::score::{Weighed, crossings_of, score_of, scores_better};
 use crate::track::spacing::channel_height;
 
 use super::laid::{Band, Insets, Laid};
-use super::tree::{Block, BlockId, BlockTree, Kind, Line, Piece, Route};
+use super::tree::{Block, BlockId, BlockTree, Kind, Line, Piece, Route, header_of};
 
 /// The narrowest gutter between two columns.
 pub(crate) const MIN_GUTTER: f64 = 48.0;
@@ -68,7 +68,8 @@ pub(crate) struct FoldPlan {
 
 /// The columns a block of cards would better fold into, if any: the cut of
 /// its ranks into runs that scores best, when that beats the block unfolded
-/// by a clear margin. Only the board and a container folds.
+/// by a clear margin. Only the board and a container folds, and neither folds
+/// when a line must cross every column.
 pub(crate) fn fold_plan(
     block: &Block,
     laid: &Laid,
@@ -80,7 +81,7 @@ pub(crate) fn fold_plan(
         .iter()
         .filter(|band| !band.items.is_empty())
         .collect();
-    if !matches!(block.kind, Kind::Root | Kind::Frame) || bands.len() < 3 {
+    if !matches!(block.kind, Kind::Root | Kind::Frame) || bands.len() < 3 || header_drops(block) {
         return None;
     }
     let (runs, _) = best_runs(block, laid, &bands, insets, unfolded)?;
@@ -94,6 +95,18 @@ pub(crate) fn fold_plan(
             })
             .collect(),
     })
+}
+
+/// Whether a line joins the header to a port on the block's bottom. No column
+/// holds either end, so a fold would drop it straight through the first column.
+fn header_drops(block: &Block) -> bool {
+    let header = header_of(block);
+    let joins =
+        |one: &str, other: &str| one == header && block.ports.get(other) == Some(&Side::Bottom);
+    block
+        .lines
+        .values()
+        .any(|line| joins(&line.from, &line.to) || joins(&line.to, &line.from))
 }
 
 /// The run of bands each item and each container drawn inline stands in: a

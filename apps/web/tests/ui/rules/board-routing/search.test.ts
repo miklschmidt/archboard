@@ -123,6 +123,29 @@ test("the view a pane reads a semantic board through survives the address bar", 
 	]);
 });
 
+test("an empty focus or filter is left out, so it never reads back as one empty identity", () => {
+	const search = searchFromAddress({
+		panes: [
+			{
+				paneId: "A",
+				boardKey: null,
+				repository: null,
+				view: null,
+				model: {
+					id: "model",
+					scope: null,
+					checkpoint: null,
+					focus: [],
+					hideKinds: [],
+					expand: [],
+				},
+			},
+		],
+		activePaneId: "A",
+	});
+	expect(search).toEqual({ modelA: "model" });
+});
+
 test("the whole variant is the absence of a view, not a view called nothing", () => {
 	expect(
 		searchFromAddress({

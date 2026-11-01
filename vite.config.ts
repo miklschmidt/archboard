@@ -192,6 +192,27 @@ const capacityTests = [
 	"packages/codex-app-server/tests/shared/constants/app-server-capacity.test.ts",
 ];
 
+// A contended machine changes what these real programs answer: Chromium's exact bytes, and
+// whether rust-analyzer answers at all. They run after the parallel lanes, alone.
+const soloTests = [
+	"packages/renderer/tests/runtime/services/rasterizer/rasterizer.test.ts",
+	"packages/code-intel/tests/runtime/processes/language-servers/rust-server.test.ts",
+];
+
+// These prove the test harness, not the product, so the normal gate leaves them out.
+const harnessTests = [
+	"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
+	"tests/system/process-contracts/resource-cleanup.test.ts",
+	"tests/system/cli/resource-cleanup.test.ts",
+];
+
+const topologyTests = ["tests/system/process-contracts/cross-process-model-claims.test.ts"];
+
+// Twelve is every stage of `check:first`, so no stage waits for a slot.
+const stageOptions = "--concurrency-limit 12 --log labeled";
+// `vp` requires a command of a task that only gathers others.
+const stageGroup = { command: "true", cache: false };
+
 export default defineConfig({
 	// Both the page and its workers refuse a core from another source build.
 	define: { ARCHBOARD_CORE_SOURCE_HASH: JSON.stringify(coreSourceHash()) },
@@ -243,16 +264,19 @@ export default defineConfig({
 				},
 			},
 			"lint:tests": {
+				dependsOn: ["contracts", "core"],
 				command:
 					"bun scripts/lint.ts --disable-nested-config --config .oxlintrc.tests.jsonc tests packages/*/tests apps/*/tests",
 				cache: analysisCache,
 			},
 			"lint:policy": {
+				dependsOn: ["contracts", "core"],
 				command:
 					"bun scripts/lint.ts --type-aware --threads 1 --deny-warnings --max-warnings 0 --report-unused-disable-directives-severity error --config .oxlintrc.jsonc packages apps scripts tools vite.config.ts",
 				cache: analysisCache,
 			},
 			"lint:css": {
+				dependsOn: ["contracts", "core"],
 				command: "bun scripts/lint-css.ts",
 				cache: analysisCache,
 			},
@@ -276,15 +300,8 @@ export default defineConfig({
 				cache: coreCache,
 			},
 			"lint:all": {
-				dependsOn: ["contracts", "core"],
-				command: [
-					"vp run lint:tests",
-					"vp run lint:policy",
-					"vp run lint:css",
-					"vp run lint:core",
-					"vp run lint:core-docs",
-				],
-				cache: false,
+				dependsOn: ["lint:tests", "lint:policy", "lint:css", "lint:core", "lint:core-docs"],
+				...stageGroup,
 			},
 			"fix:all": {
 				dependsOn: ["contracts", "core"],
@@ -299,43 +316,55 @@ export default defineConfig({
 				],
 				cache: false,
 			},
+			// The stages that wait on no shared timing: `vp` runs them at once, and the first
+			// failure ends the run. Each test lane fills the machine, so those run after them,
+			// one at a time, and the browser lane shares the machine with nothing (TASK-097).
+			"test:first": {
+				dependsOn: ["types", "frontend", "workbench-example", "test:core", "test:repository"],
+				...stageGroup,
+			},
+			"check:first": {
+				dependsOn: ["lint:all", "format:check", "format:core", "test:first"],
+				...stageGroup,
+			},
 			"test:all": {
 				command: [
-					"vp run types",
-					"vp run frontend",
-					"vp run workbench-example",
-					"vp run test:core",
+					`vp run ${stageOptions} test:first`,
 					"vp run test:modules",
 					"vp run test:system",
-					"vp run test:repository",
+					"vp run test:solo",
 					"vp run test:serial-browser",
 				],
 				cache: false,
 			},
 			"check:all": {
 				command: [
-					"vp run lint:all",
-					"vp run format:check",
-					"vp run format:core",
-					"vp run test:all",
+					`vp run ${stageOptions} check:first`,
+					"vp run test:modules",
+					"vp run test:system",
+					"vp run test:solo",
+					"vp run test:serial-browser",
 				],
 				cache: false,
 			},
 			"test:modules": {
 				command: [
-					"bun test --isolate",
-					...[...capacityTests, ...benchmarkTests].map((file) => `--path-ignore-patterns ${file}`),
+					"bun test --parallel",
+					...[...capacityTests, ...benchmarkTests, ...soloTests].map(
+						(file) => `--path-ignore-patterns ${file}`,
+					),
 					"packages apps",
 				].join(" "),
 				cache: testCache,
 			},
+			"test:solo": {
+				command: ["bun test --isolate --max-concurrency=1", ...soloTests].join(" "),
+				cache: testCache,
+			},
 			"test:system": {
 				command: [
-					"bun test --isolate --max-concurrency=1",
-					"--path-ignore-patterns",
-					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
-					"--path-ignore-patterns",
-					"tests/system/process-contracts/cross-process-lock.test.ts",
+					"bun test --parallel",
+					...[...harnessTests, ...topologyTests].map((file) => `--path-ignore-patterns ${file}`),
 					"tests/system/cli",
 					"tests/system/server-state",
 					"tests/system/process-contracts",
@@ -348,7 +377,7 @@ export default defineConfig({
 				command:
 					"ARCHBOARD_TEST_TRACKED_INPUTS=" +
 					trackedInputsFingerprint +
-					" bun test --isolate tests/system/repository-policy",
+					" bun test --parallel tests/system/repository-policy",
 				cache: { ...testCache, env: [...testCache.env, "GIT_INDEX_FILE"] },
 			},
 			"test:serial-browser": {
@@ -366,13 +395,14 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
 					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
-					"packages/board/tests/runtime/store/policy.test.ts",
-					"packages/board/tests/runtime/operations/rename/renaming.test.ts",
+					"packages/board/tests/runtime/operations/read/model-read.test.ts",
+					"packages/board/tests/runtime/operations/model-edit/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
 					"packages/workbench/tests/server/services/owner/production-initialization.test.ts",
-					"packages/workbench/tests/server/services/actions/approval-sessions.test.ts",
+					"packages/workbench/tests/server/services/actions/dynamic-approval-sessions.test.ts",
 					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
-					"tests/system/semantic-boards/lifecycle.test.ts",
+					"tests/system/semantic-boards/model-proposals.test.ts",
+					"tests/system/semantic-boards/model-corrections.test.ts",
 					"tests/system/process-contracts/codex-workbench-storage.test.ts",
 				].join(" "),
 				cache: testCache,
@@ -389,23 +419,24 @@ export default defineConfig({
 				command: [
 					"bun test --isolate --max-concurrency=1",
 					"tests/system/support",
-					"tests/system/process-contracts/git-opener-sequence-watchdog.test.ts",
+					...harnessTests,
 					"tests/system/browser/browser-toolchain.test.ts",
 				].join(" "),
 				cache: browserTestCache,
 			},
 			"test:opt-in:topology": {
-				command:
-					"bun test --isolate --max-concurrency=1 tests/system/process-contracts/cross-process-lock.test.ts",
+				command: ["bun test --isolate --max-concurrency=1", ...topologyTests].join(" "),
 				cache: testCache,
 			},
 		},
 	},
-	// Board files retain their store serializer. Agent and generated files retain their owners.
+	// Architecture inputs retain their store serializer and exact portable fingerprints.
 	fmt: {
 		ignorePatterns: [
-			".archboard/vault/**/*.semantic.json",
+			".archboard/vault/**",
 			"examples/**/*.semantic.json",
+			"examples/web-shop/**/*.json",
+			"examples/web-shop/.archboard/config.yaml",
 			// Third-party agent skills keep their upstream formatting, so they diff cleanly
 			// against a later upstream version: those in .agents/skills here, and those in
 			// .claude/skills through .claude/**. The skills this repository distributes are
@@ -438,6 +469,36 @@ export default defineConfig({
 		// The server serves SOURCE_CHECKOUT/dist/frontend. It lies outside the root, so it is emptied on purpose.
 		outDir: join(repositoryRoot, "dist", "frontend"),
 		emptyOutDir: true,
+		rolldownOptions: {
+			output: {
+				// Application edits preserve cached framework, controls, and agent code.
+				// Entry-aware groups retain the renderer and replay's lazy boundaries.
+				codeSplitting: {
+					groups: [
+						{
+							name: "react-platform",
+							test: /node_modules[\\/](react(?:-dom)?|scheduler|@tanstack)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "controls",
+							test: /(?:node_modules[\\/](?:@base-ui|@floating-ui|@remixicon)|packages[\\/](?:ui-kit|cn))[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "conversation-runtime",
+							test: /node_modules[\\/](?:@assistant-ui|assistant-stream)[\\/]/,
+							entriesAware: true,
+						},
+						{
+							name: "agent",
+							test: /packages[\\/](?:workbench|codex-realtime-voice)[\\/]/,
+							entriesAware: true,
+						},
+					],
+				},
+			},
+		},
 	},
 	server: {
 		fs: {

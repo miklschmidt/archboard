@@ -31,16 +31,42 @@ function sharedSpelling(key: (typeof SHARED_OPTION_KEYS)[number]): string {
 }
 
 /**
+ * Every shared option key that a route or one of its descendants reads.
+ * @param table - The routes to walk.
+ * @param read - Where the keys are collected.
+ */
+function collectSharedKeys(table: CommandRoutes, read: Set<string>): void {
+	for (const route of Object.values(table)) {
+		for (const key of route.owner.contract.shared) read.add(key);
+		collectSharedKeys(route.children ?? {}, read);
+	}
+}
+
+/**
+ * The shared options some command reads. One that no command reads is refused
+ * everywhere, so the root help does not offer it.
+ * @param routes - The command table.
+ * @returns The keys, in the shared order.
+ */
+function readSharedKeys(routes: CommandRoutes): (typeof SHARED_OPTION_KEYS)[number][] {
+	const read = new Set<string>();
+	collectSharedKeys(routes, read);
+	return SHARED_OPTION_KEYS.filter((key) => read.has(key));
+}
+
+/**
  * What the root help says after the command list: the options every command
  * may share, where the Archboard server is, and the exit codes.
+ * @param routes - The command table.
  * @returns The text.
  */
-function conventions(): string {
-	const width = Math.max(...SHARED_OPTION_KEYS.map((key) => sharedSpelling(key).length));
+function conventions(routes: CommandRoutes): string {
+	const keys = readSharedKeys(routes);
+	const width = Math.max(...keys.map((key) => sharedSpelling(key).length));
 	return [
 		"",
 		heading("Shared options (each command's help lists the ones it reads; any other is refused):"),
-		...SHARED_OPTION_KEYS.map(
+		...keys.map(
 			(key) => `  ${sharedSpelling(key).padEnd(width)}  ${SHARED_OPTIONS[key].description}`,
 		),
 		"",
@@ -48,8 +74,9 @@ function conventions(): string {
 		"ARCHBOARD_NO_AUTOSTART=1. Results are JSON on stdout unless a command's help says",
 		"otherwise; diagnostics go to stderr.",
 		"",
-		"Exit codes: 0 ok, 1 error, 2 usage, 3 server unreachable, 4 browser pane required,",
-		"5 board write refused (held, claim revoked, or version moved).",
+		"Exit codes: 0 ok, 1 error, 2 usage or a refused operation (a claim held, revoked or",
+		"missing, or a revision that moved: read the model again), 3 server unreachable,",
+		"4 browser pane required.",
 		"`check` exits 1 while a check still has a diagnostic or a warning.",
 		"",
 		`Inside the archboard checkout, \`./bin/archboard <command>\` runs the CLI from source.`,
@@ -160,14 +187,14 @@ function commanderTree(routes: CommandRoutes, version: string): HelpTree {
 	const after = new Map<Command, string>();
 	const root = new Command(PROGRAM)
 		.description(
-			"Agent-authored architecture boards: an agent states what an architecture is, " +
+			"Agent-authored architecture models: an agent states what an architecture is, " +
 				"the canvas draws it, and a user reads, compares and presents it.",
 		)
 		.version(version, "-v, --version", "Print the version")
 		.helpOption("-h, --help", "Show this help")
 		.helpCommand("help [command]", "Show help for one command")
 		.configureHelp(HELP_STYLE);
-	after.set(root, conventions());
+	after.set(root, conventions(routes));
 	for (const [name, route] of Object.entries(routes)) {
 		root.addCommand(commandFor(name, route, [name], after));
 	}

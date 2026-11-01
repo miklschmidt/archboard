@@ -180,7 +180,10 @@ test("a broken binding and anchor on a branch that is not checked out are report
 test("a ref the checkout cannot resolve is skipped and names the ref, and no other ref is", async () => {
 	const outcome = await pass();
 	const refs = outcome.skipped.filter((skip) => skip.reason === "ref-not-checked-out");
-	expect(refs.map((skip) => [skip.subject?.id, skip.ref?.named])).toEqual([["e6", "feat/gone"]]);
+	expect(refs.map((skip) => [skip.subject?.id, skip.ref?.named])).toEqual([
+		["pGone", "feat/gone"],
+		["e6", "feat/gone"],
+	]);
 });
 
 test("a language server is not run on a ref read from Git, and the pass says so once", async () => {

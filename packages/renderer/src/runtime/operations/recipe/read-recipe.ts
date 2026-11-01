@@ -3,7 +3,7 @@
 
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { embedRecipeInPng, pngRecipeText } from "#runtime/operations/recipe/png-recipe.ts";
-import { RenderRecipeSchema, type RenderRecipe } from "#runtime/operations/recipe/schema.ts";
+import { AnyRenderRecipeSchema, type AnyRenderRecipe } from "#runtime/operations/recipe/schema.ts";
 import { replaceRecipeInSvg, svgRecipeText } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**
@@ -12,8 +12,8 @@ import { replaceRecipeInSvg, svgRecipeText } from "#runtime/operations/recipe/sv
  * recipe is no embed; one whose recipe is unreadable is an embed nobody can
  * draw again, which a check has to say.
  */
-type RenderRecipeRead =
-	| { readonly kind: "recipe"; readonly recipe: RenderRecipe }
+type AnyRenderRecipeRead =
+	| { readonly kind: "recipe"; readonly recipe: AnyRenderRecipe }
 	| { readonly kind: "absent" }
 	| { readonly kind: "unreadable"; readonly problem: string };
 
@@ -55,7 +55,7 @@ function recipeText(bytes: Uint8Array): string | undefined {
  * @param bytes The file's bytes.
  * @returns The recipe, its absence, or why it cannot be read.
  */
-function readRenderRecipe(bytes: Uint8Array): RenderRecipeRead {
+function readRenderRecipe(bytes: Uint8Array): AnyRenderRecipeRead {
 	let text: string | undefined;
 	try {
 		text = recipeText(bytes);
@@ -69,7 +69,7 @@ function readRenderRecipe(bytes: Uint8Array): RenderRecipeRead {
 	} catch (error) {
 		return { kind: "unreadable", problem: `The recipe is not JSON: ${errorMessage(error)}` };
 	}
-	const parsed = RenderRecipeSchema.safeParse(json);
+	const parsed = AnyRenderRecipeSchema.safeParse(json);
 	return parsed.success
 		? { kind: "recipe", recipe: parsed.data }
 		: { kind: "unreadable", problem: parsed.error.issues.map(issueLine).join("; ") };
@@ -100,9 +100,9 @@ function issueLine(issue: {
  * @returns The file's new bytes.
  * @throws {Error} When an SVG carries no recipe element or the bytes are no PNG or SVG.
  */
-function replaceRenderRecipe(bytes: Uint8Array, recipe: RenderRecipe): Uint8Array {
+function replaceRenderRecipe(bytes: Uint8Array, recipe: AnyRenderRecipe): Uint8Array {
 	if (isPng(bytes)) return embedRecipeInPng(bytes, recipe);
 	return Buffer.from(replaceRecipeInSvg(Buffer.from(bytes).toString("utf8"), recipe), "utf8");
 }
 
-export { readRenderRecipe, replaceRenderRecipe, type RenderRecipeRead };
+export { readRenderRecipe, replaceRenderRecipe, type AnyRenderRecipeRead };

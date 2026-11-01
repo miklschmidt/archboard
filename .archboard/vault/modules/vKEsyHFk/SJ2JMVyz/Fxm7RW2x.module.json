@@ -1,0 +1,34 @@
+{
+  "order": 7000,
+  "name": "Thread tools",
+  "kind": "module",
+  "responsibility": "The archboard_app manifest a workhorse is started with, pinned by its digest",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/workbench/src/runtime/protocol/thread-tools"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": [
+    {
+      "order": 26000,
+      "kind": "call",
+      "label": "prove the workhorse instructions canonical",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/runtime/protocol/thread-tools/binding.ts",
+        "symbol": "assertCanonicalInstructionBytes"
+      },
+      "id": "vKEsyHFk/SJ2JMVyz#7I026qcA",
+      "to": "vKEsyHFk/SJ2JMVyz#624ETIsk"
+    }
+  ]
+}

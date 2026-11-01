@@ -1,11 +1,12 @@
-// What a picked container offers the parts outside it: its entry points, how
-// many of its parts are hidden, and who calls it (ADR 0044).
+// What a picked container offers the parts outside it: its entry points, which
+// of its parts are hidden, and who calls it (ADR 0044).
 //
 // Nothing here is stored or worked out a second time. The shared model's
 // `inspectContainer` derives the interface from the content of the variant on
 // screen, the same function `semantic inspect` answers with, so the pane and
 // the CLI cannot disagree about a container. A pass-through entry point is said
-// in words on its row; the picture draws no mark for it.
+// in words on its row, with the part that its one call goes to; the picture
+// draws no mark for it.
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
@@ -74,17 +75,12 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 								slot="semantic-inspector-entry-point"
 								look={look}
 								onPick={onPick}
-								note={passesThrough(inspection, entry.id) ? "passes one call on" : undefined}
+								note={passedOn(inspection, content, entry.id)}
 							/>
 						))}
 					</SidebarChoices>
 				)}
 			</Measure>
-			<Measure
-				title="Hidden parts"
-				count={measures.hiddenParts}
-				slot="semantic-inspector-hidden-parts"
-			/>
 			<Measure title="Callers" count={measures.callers} slot="semantic-inspector-callers">
 				{measures.callers === 0 ? (
 					<p className="text-muted-foreground text-body">No part on this board calls it.</p>
@@ -98,6 +94,26 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 								look={look}
 								onPick={onPick}
 								note={whatItReaches(caller, inspection)}
+							/>
+						))}
+					</SidebarChoices>
+				)}
+			</Measure>
+			<Measure
+				title="Implementation: hidden parts"
+				count={measures.hiddenParts}
+				slot="semantic-inspector-hidden-parts"
+			>
+				{measures.hiddenParts > 0 && (
+					<SidebarChoices label="Hidden parts" slot="semantic-inspector-hidden-part-list">
+						{inspection.hiddenParts.map((part) => (
+							<PartRow
+								key={part.id}
+								part={part}
+								slot="semantic-inspector-hidden-part"
+								look={look}
+								onPick={onPick}
+								note={undefined}
 							/>
 						))}
 					</SidebarChoices>
@@ -183,13 +199,18 @@ function PartRow(props: PartRowProps): JSX.Element {
 }
 
 /**
- * Whether an entry point only passes one call on.
+ * What an entry point says of itself when it only passes one call on: where that call goes, so the
+ * reader can test whether the entry earns its place without opening the part.
  * @param inspection The interface.
+ * @param content The variant that holds the relationship.
  * @param id The entry point.
- * @returns True when the derivation names it a pass-through.
+ * @returns The words, or nothing when it is no pass-through.
  */
-function passesThrough(inspection: Derived, id: string): boolean {
-	return inspection.passThrough.some((node) => node.id === id);
+function passedOn(inspection: Derived, content: VariantContent, id: string): string | undefined {
+	if (!inspection.passThrough.some((node) => node.id === id)) return undefined;
+	const target = content.edges.find((edge) => edge.from === id)?.to;
+	const name = content.nodes.find((node) => node.id === target)?.name ?? target;
+	return name === undefined ? "passes one call on" : `passes one call on → ${name}`;
 }
 
 /**

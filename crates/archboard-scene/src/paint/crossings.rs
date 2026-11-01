@@ -8,11 +8,11 @@ use crate::drawing::{DrawingBridge, Edge};
 use crate::geometry::{Curve, Point, Rect, Segment, curve_bounds, inflate, round_coord};
 use crate::js;
 use crate::paint::build::route;
-use crate::paint::design::PILL_RADIUS;
+use crate::paint::design::{PILL_RADIUS, RAILS};
 use crate::paint::junctions::mark_radius;
 use crate::paint::shared_ink::shared_ink;
 use crate::paint::slab::boxed;
-use crate::paint::styles::stroke_width;
+use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, stroke_width};
 use crate::scene::traffic::pulse_breadth;
 use crate::scene::{Cap, Colour, Definition, Mask, MaskId, Purpose, Shape, Stroke};
 
@@ -27,8 +27,21 @@ pub(super) struct Cutout {
     pub shape: Shape,
 }
 
+/// How wide a route is drawn: a double line by its rails.
+fn drawn_width(routed: &Edge, double: &impl Fn(&Edge) -> bool) -> f64 {
+    if double(routed) {
+        RAILS
+    } else {
+        stroke_width(routed.edge.emphasis)
+    }
+}
+
 /// Lower ink cleared narrowly beneath each hop that crosses over it.
-pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec<Cutout> {
+pub(super) fn crossing_cutouts(
+    edges: &[Edge],
+    bridges: &[DrawingBridge],
+    double: &impl Fn(&Edge) -> bool,
+) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for bridge in bridges {
         let Some(upper) = edges
@@ -38,7 +51,7 @@ pub(super) fn crossing_cutouts(edges: &[Edge], bridges: &[DrawingBridge]) -> Vec
         else {
             continue;
         };
-        let width = stroke_width(upper.edge.emphasis);
+        let width = drawn_width(upper, double);
         let stroke = if bridge.join == Some(true) {
             (mark_radius(width) + CUT_GAP) * 2.0
         } else {
@@ -88,11 +101,11 @@ fn past_end(piece: &Curve, end: Point, past: f64) -> Curve {
 }
 
 /// Every stretch of a route's ink another route of its trunk draws, hidden.
-pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
+pub(super) fn trunk_cutouts(routes: &[Edge], double: &impl Fn(&Edge) -> bool) -> Vec<Cutout> {
     let mut cutouts = Vec::new();
     for (index, pieces) in shared_ink(routes) {
         let routed = &routes[index];
-        let width = stroke_width(routed.edge.emphasis);
+        let width = drawn_width(routed, double);
         let end = routed.curve.end();
         for piece in pieces {
             let breadth = round_coord(pulse_breadth(width) + BRIDGE_INK_GAP * 2.0);
@@ -108,6 +121,60 @@ pub(super) fn trunk_cutouts(routes: &[Edge]) -> Vec<Cutout> {
         }
     }
     cutouts
+}
+
+/// A route short of each end by a distance, where that end is a straight run.
+fn short_of_ends(curve: &Curve, start: f64, end: f64) -> Curve {
+    let toward = |from: Point, to: Point, by: f64| {
+        let length = js::hypot(to.x - from.x, to.y - from.y);
+        let share = if length > by { by / length } else { 0.0 };
+        Point {
+            x: from.x + (to.x - from.x) * share,
+            y: from.y + (to.y - from.y) * share,
+        }
+    };
+    let mut segments = curve.segments.clone();
+    let from = match segments.first() {
+        Some(Segment::Line { to }) => toward(curve.from, *to, start),
+        _ => curve.from,
+    };
+    let count = segments.len();
+    if let (Some(Segment::Line { to }), true) = (segments.last().copied(), count > 0) {
+        let before = if count >= 2 {
+            segments[count - 2].to()
+        } else {
+            from
+        };
+        segments[count - 1] = Segment::Line {
+            to: toward(to, before, end),
+        };
+    }
+    Curve { from, segments }
+}
+
+/// The gap down the middle of every double line: its rails are one stroke with its
+/// core cut out, so a line shows what it crosses over, and its heads stay whole.
+pub(super) fn rail_cutouts(routes: &[Edge], double: &impl Fn(&Edge) -> bool) -> Vec<Cutout> {
+    routes
+        .iter()
+        .filter(|routed| double(routed))
+        .map(|routed| {
+            let start = if routed.edge.two_way {
+                HEAD_LENGTH
+            } else {
+                0.0
+            };
+            Cutout {
+                edge_id: routed.edge.id.clone(),
+                shape: Shape::path(
+                    Purpose::Cutout,
+                    route(&short_of_ends(&routed.curve, start, HEAD_LENGTH)),
+                )
+                .unfilled()
+                .stroked(Stroke::new(Colour::Black, RAIL_GAP).capped(Cap::Butt)),
+            }
+        })
+        .collect()
 }
 
 /// Whether two boxes share area.
@@ -187,4 +254,22 @@ pub(super) fn crossing_masks(edges: &[Edge], cutouts: Vec<Cutout>) -> Masks {
         }
     }
     Masks { definitions, masks }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_double_line_keeps_its_rails_whole_under_its_heads() {
+        let curve = Curve {
+            from: Point { x: 0.0, y: 0.0 },
+            segments: vec![Segment::Line {
+                to: Point { x: 100.0, y: 0.0 },
+            }],
+        };
+        let short = short_of_ends(&curve, HEAD_LENGTH, HEAD_LENGTH);
+        assert_eq!(short.from.x, HEAD_LENGTH);
+        assert_eq!(short.segments[0].to().x, 100.0 - HEAD_LENGTH);
+    }
 }

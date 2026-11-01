@@ -1,0 +1,12 @@
+{
+  "order": 2000,
+  "name": "Checkout API",
+  "kind": "service",
+  "responsibility": "Takes an order, charges it and confirms it",
+  "schemaVersion": 1,
+  "id": "Shop/MKhTEYqf#lwmpnaVU",
+  "formerNames": [
+    "Shop app"
+  ],
+  "outgoing": []
+}

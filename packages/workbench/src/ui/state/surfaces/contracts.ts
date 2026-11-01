@@ -56,14 +56,6 @@ interface VoiceLevel {
 	readonly subscribe: (listener: () => void) => () => void;
 }
 
-/** The board the agent sees with the next message. */
-interface AgentContext {
-	/** The board's name, or null before a pane shows one. */
-	readonly board: string | null;
-	/** The state shown, when it is not the one the board's name opens. */
-	readonly state: string | null;
-}
-
 /** Everything the agent surfaces show. */
 interface AgentView {
 	/** Where the agent stands and what the person's held work waits on. */
@@ -72,7 +64,6 @@ interface AgentView {
 	readonly snapshot: BrowserSnapshot | null;
 	readonly conversation: Conversation;
 	readonly voice: AgentVoiceView;
-	readonly context: AgentContext;
 	/** Keys of approvals whose decision is on the wire. */
 	readonly busyApprovals: readonly string[];
 	/** Why a decision was refused, by approval key. */
@@ -130,4 +121,4 @@ interface AgentActions {
 	readonly showConversation: (checkout: string) => void;
 }
 
-export type { AgentActions, AgentContext, AgentView, AgentVoiceView, VoiceLevel, VoiceStage };
+export type { AgentActions, AgentView, AgentVoiceView, VoiceLevel, VoiceStage };

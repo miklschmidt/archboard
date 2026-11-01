@@ -50,7 +50,10 @@ fn choose_port(
     if !source && super::points::pointed(model, endpoint) && side != Side::Top {
         return None;
     }
-    let at = shape.endpoints[&endpoint];
+    if !model.endpoints[endpoint].walls.contains(&side) {
+        return None;
+    }
+    let at = shape.wall(endpoint, side);
     let kinds = kinds_of(model, incidents);
     if !room(at, side, kinds.len(), source) {
         return None;
@@ -91,7 +94,7 @@ fn separate_roles(
         model.ends[other].1
     };
     let toward = center(shape.endpoints[&peer]);
-    let at = shape.endpoints[&endpoint];
+    let at = shape.wall(endpoint, side);
     let margin = if primary_source { 12.0 } else { 20.0 };
     let primary = on_wall(
         at,
@@ -167,15 +170,17 @@ pub(super) fn center(at: Rect) -> Point {
     }
 }
 
+/// A place along a wall, a margin in from each end. On a wall shorter than twice
+/// the margin both ends meet at its middle, and rounding must not cross them.
+fn along(value: f64, start: f64, length: f64, margin: f64) -> f64 {
+    let inset = length.min(2.0 * margin) / 2.0;
+    let low = start + inset;
+    value.clamp(low, (start + length - inset).max(low))
+}
+
 pub(super) fn on_wall(at: Rect, side: Side, toward: Point, margin: f64) -> Port {
-    let x = toward.x.clamp(
-        at.x + at.width.min(2.0 * margin) / 2.0,
-        at.x + at.width - at.width.min(2.0 * margin) / 2.0,
-    );
-    let y = toward.y.clamp(
-        at.y + at.height.min(2.0 * margin) / 2.0,
-        at.y + at.height - at.height.min(2.0 * margin) / 2.0,
-    );
+    let x = along(toward.x, at.x, at.width, margin);
+    let y = along(toward.y, at.y, at.height, margin);
     let (attachment, by) = match side {
         Side::Top => (Point { x, y: at.y }, Point { x: 0.0, y: -CLEAR }),
         Side::Right => (
@@ -232,4 +237,18 @@ fn room(at: Rect, side: Side, count: usize, source: bool) -> bool {
     };
     let (margin, spacing) = if source { (12.0, 8.0) } else { (20.0, LANE) };
     count <= 1 || (span - 2.0 * margin) / ((count - 1) as f64) >= spacing
+}
+
+#[cfg(test)]
+mod tests {
+    use super::along;
+
+    #[test]
+    fn a_wall_shorter_than_its_margins_holds_a_place_at_its_middle() {
+        // Rounding once stood the two ends of this wall the wrong way round, and `clamp` panics then.
+        let (start, length) = (0.1, 0.1 + 0.2);
+        assert!((along(50.0, start, length, 8.0) - (start + length / 2.0)).abs() < 1e-9);
+        assert_eq!(along(50.0, 0.0, 100.0, 8.0), 50.0);
+        assert_eq!(along(99.0, 0.0, 100.0, 8.0), 92.0);
+    }
 }

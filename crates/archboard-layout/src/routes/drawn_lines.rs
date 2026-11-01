@@ -13,47 +13,13 @@ use archboard_scene::geometry::{Curve, EPSILON, Point, Segment, segment_start};
 
 use crate::constants::APPROACH_STRAIGHT;
 use crate::ecma::{js_max, js_min, min, sign};
+pub(super) use crate::geometry::Axis;
 
 /// Two straight pieces closer than this across their axis draw as one line.
 const SHARED_INK: f64 = 2.0;
 
 /// The routes of a drawing, as this pass reads them.
 pub(super) type Edges = [DrawingEdge<EdgeFacts>];
-
-/// Which coordinate a straight piece runs along.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Axis {
-    /// Across the page: x changes.
-    X,
-    /// Down the page: y changes.
-    Y,
-}
-
-impl Axis {
-    /// The other axis.
-    pub(super) fn across(self) -> Axis {
-        match self {
-            Axis::X => Axis::Y,
-            Axis::Y => Axis::X,
-        }
-    }
-
-    /// A point's coordinate on this axis.
-    pub(super) fn of(self, point: Point) -> f64 {
-        match self {
-            Axis::X => point.x,
-            Axis::Y => point.y,
-        }
-    }
-
-    /// A point with its coordinate on this axis replaced.
-    pub(super) fn with(self, point: Point, value: f64) -> Point {
-        match self {
-            Axis::X => Point { x: value, ..point },
-            Axis::Y => Point { y: value, ..point },
-        }
-    }
-}
 
 /// How much each emphasis weighs.
 pub(super) fn weight(emphasis: Emphasis) -> f64 {

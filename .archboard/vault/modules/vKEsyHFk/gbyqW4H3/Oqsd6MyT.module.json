@@ -1,0 +1,15 @@
+{
+  "order": 21000,
+  "name": "Card ports",
+  "kind": "function",
+  "responsibility": "Cuts foot slots in cards and extends lines and traffic into their holes",
+  "description": "ports_of finds lines ending at a card foot. port_plan gives the first painted line the shared well and every card its box-relative clip. port_inside draws each line at its own width, and ride_into extends the pulse path to the lid. A port remains drawn in the near and far readings.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/ports.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#Oqsd6MyT",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": []
+}

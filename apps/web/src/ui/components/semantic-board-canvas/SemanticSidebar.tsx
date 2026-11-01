@@ -1,6 +1,5 @@
-// The one column on the right of a semantic diagram: the search for a part at
-// its top, level with the navigator's search for a board, then the board, and
-// whatever is selected on it. Docked, it takes its width beside the picture;
+// The one column on the right of a semantic diagram: the board, and whatever is
+// selected on it. Docked, it takes its width beside the picture;
 // floating, its panel is laid over the picture's edge; away, it is nowhere, and
 // the control in the pane's header brings it back (use-sidebar.ts says when each
 // holds, and where it comes back to).
@@ -34,10 +33,6 @@ import {
 import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { SIDEBAR_MS } from "@archboard/timing";
 import { cn, IconButton, Tabs } from "@archboard/ui-kit/components";
-import {
-	SearchRequestContext,
-	useSearchRequest,
-} from "#ui/hooks/semantic-board-canvas/use-search-request.ts";
 import type { Sidebar, SidebarTab } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import {
 	useSidebarSlide,
@@ -53,8 +48,10 @@ interface SemanticSidebarProps {
 	readonly children: ReactNode;
 	/** Let go of the selection, offered on the selection tab while there is one; null otherwise. */
 	readonly onClearSelection: (() => void) | null;
-	/** The search over every board's parts, at the top: what it finds is explained below it. */
-	readonly search?: ReactNode;
+	/** The name of the complete reading, while retained legacy panes keep Board. */
+	readonly overviewLabel?: string;
+	/** Reading controls shared by both tabs. */
+	readonly controls?: ReactNode;
 }
 
 /**
@@ -103,6 +100,7 @@ const TABS: readonly { readonly tab: SidebarTab; readonly label: string }[] = [
 
 /** Inputs for the row above the open sidebar. */
 interface SidebarTabsProps {
+	readonly overviewLabel?: string | undefined;
 	readonly sidebar: Sidebar;
 	readonly onClearSelection: (() => void) | null;
 }
@@ -141,7 +139,7 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 						data-tab={entry.tab}
 						className="text-control px-2"
 					>
-						{entry.label}
+						{entry.tab === "board" ? (props.overviewLabel ?? entry.label) : entry.label}
 					</Tabs.Trigger>
 				))}
 			</Tabs.List>
@@ -256,7 +254,7 @@ function Column(props: ColumnProps): JSX.Element {
 	const leaving = slide.leaving ? "" : undefined;
 	return (
 		<aside
-			aria-label="Board sidebar"
+			aria-label="Diagram sidebar"
 			data-slot="semantic-sidebar"
 			data-tab={sidebar.tab}
 			data-place={slide.shownAs}
@@ -298,7 +296,6 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element | null {
 	const { sidebar } = props;
 	const place = placeOf(sidebar);
 	const slide = useSidebarSlide(place);
-	const request = useSearchRequest(sidebar);
 	const { open } = sidebar;
 	const choose = useCallback(
 		(value: unknown): void => {
@@ -313,9 +310,13 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element | null {
 	}
 	return (
 		<Column slide={slide} place={place} sidebar={sidebar}>
-			<SearchRequestContext.Provider value={request}>{props.search}</SearchRequestContext.Provider>
 			<Tabs value={sidebar.tab} onValueChange={choose} className="min-h-0 flex-1 gap-0">
-				<SidebarTabs sidebar={sidebar} onClearSelection={props.onClearSelection} />
+				<SidebarTabs
+					sidebar={sidebar}
+					onClearSelection={props.onClearSelection}
+					overviewLabel={props.overviewLabel}
+				/>
+				{props.controls}
 				{props.children}
 			</Tabs>
 		</Column>

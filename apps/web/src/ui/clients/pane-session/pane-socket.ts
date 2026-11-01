@@ -50,11 +50,13 @@ interface PaneSocketConnector {
  * on the socket (ADR 0050), so a socket that comes back names the vault the pane was last put in.
  * @param clientId The pane's identity to the server.
  * @param vault The vault the pane is in.
+ * @param canonical Whether the pane reads an explicit canonical address.
  * @returns The URL.
  */
-function socketUrl(clientId: string, vault: string): string {
+function socketUrl(clientId: string, vault: string, canonical: boolean): string {
 	const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
 	const query = new URLSearchParams({ clientId, tabSession: tabSessionId(), vault });
+	if (canonical) query.set("reading", "canonical");
 	return `${protocol}//${window.location.host}/?${query.toString()}`;
 }
 
@@ -93,12 +95,14 @@ function isLive(socket: WebSocket | null): boolean {
  * @param clientId The pane's identity to the server.
  * @param vault The vault the pane is in, read at each connect.
  * @param listener What the pane hears.
+ * @param canonical Whether each connection must leave legacy boards unopened.
  * @returns The connector.
  */
 function createPaneSocketConnector(
 	clientId: string,
 	vault: () => string,
 	listener: PaneSocketListener,
+	canonical: () => boolean = () => false,
 ): PaneSocketConnector {
 	let current: PaneSocketGeneration | null = null;
 	let registration: PaneRegistrationLatch | null = null;
@@ -157,7 +161,7 @@ function createPaneSocketConnector(
 		if (closed || isLive(current?.socket ?? null)) {
 			return;
 		}
-		const socket = new WebSocket(socketUrl(clientId, vault()));
+		const socket = new WebSocket(socketUrl(clientId, vault(), canonical()));
 		const generation = ++generationCounter;
 		const next: PaneSocketGeneration = {
 			socket,

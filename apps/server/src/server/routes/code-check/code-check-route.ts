@@ -4,7 +4,7 @@
 //
 // `archboard check code` and `archboard check all` ask it. It reads code and
 // Git, which takes seconds, so it runs only on a request and never inside
-// `/api/vault/check`, which every open canvas polls every 5 seconds. It runs as
+// `/api/vault/check`, which every open canvas reads. It runs as
 // checkout work, the admission the code opener uses: a caller that hangs up
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
@@ -72,7 +72,7 @@ function callerGone(request: Request, response: Response): boolean {
  * @returns Its `variant`, or undefined when it is absent or blank.
  */
 function variantOf(request: Request): string | undefined {
-	const asked = queryString(request, "variant")?.trim();
+	const asked = queryString(request, "state")?.trim();
 	return asked === "" ? undefined : asked;
 }
 

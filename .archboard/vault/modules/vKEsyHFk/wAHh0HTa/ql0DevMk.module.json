@@ -1,0 +1,20 @@
+{
+  "order": 9002,
+  "name": "Codex transport",
+  "kind": "module",
+  "responsibility": "The wire under the session: one newline-framed JSON object at a time, each way",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-app-server/src/runtime/clients"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/wAHh0HTa#ql0DevMk",
+  "parent": "vKEsyHFk/vKEsyHFk#vEVm326r",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

@@ -60,6 +60,15 @@ pub(super) fn halo(
     )
 }
 
+/// Where a participant's chip stands, from the top of its card.
+pub(super) fn sequence_chip_top(has_note: bool, height: f64) -> f64 {
+    if has_note {
+        CARD_PADDING_X
+    } else {
+        (height - ICON_CHIP_SIZE) / 2.0
+    }
+}
+
 /// One participant's card in a sequence.
 pub(super) fn paint_card(
     ctx: &Ctx<'_>,
@@ -102,11 +111,7 @@ pub(super) fn paint_card(
             })
             .collect(),
     );
-    let chip_y = if has_note {
-        rect.y + CARD_PADDING_X
-    } else {
-        rect.y + (rect.height - ICON_CHIP_SIZE) / 2.0
-    };
+    let chip_y = rect.y + sequence_chip_top(has_note, rect.height);
     let part = Part {
         kind: SubjectKind::Node,
         node: &placed.node,
@@ -126,6 +131,8 @@ pub(super) fn paint_card(
                 size: title_size,
             },
         },
+        lines: 1,
+        tag_top: 0.0,
     };
     paint_slab_card(ctx, &part, palette, None, near)
 }
@@ -152,13 +159,7 @@ pub(super) fn paint_slab_card(
                     Items::new()
                 },
                 halo(rect, SLAB_RADIUS, &Styles::of(palette), standing),
-                slab(
-                    rect,
-                    &card_look(part.appearance.body_color, palette),
-                    palette,
-                    standing,
-                    cut,
-                ),
+                slab(rect, &card_look(palette), palette, standing, cut),
                 paint_card_views(ctx, part, palette, near),
                 standing_pin(rect, standing, palette),
                 warning_badge(rect, part.unsettled, palette),
@@ -168,7 +169,7 @@ pub(super) fn paint_slab_card(
     )
 }
 
-/// A flow's title block, printed on its frame's header slab.
+/// A flow's title block, on its frame's tab.
 pub(super) fn paint_header(
     header: Rect,
     name: &str,
@@ -190,6 +191,21 @@ pub(super) fn paint_header(
             )),
         },
     ])
+}
+
+/// How wide a flow's title block stands.
+pub(super) fn header_width(header: Rect, name: &str, responsibility: Option<&str>) -> f64 {
+    let wide = |text: &str, font, size| {
+        measure::width(
+            &measure::truncate(text, font, size, header.width),
+            font,
+            size,
+        )
+    };
+    let named = wide(name, CARD_TITLE_FONT, PART_TITLE_SIZE);
+    responsibility.map_or(named, |note| {
+        crate::js::js_max(named, wide(note, CARD_NOTE_FONT, PART_NOTE_SIZE))
+    })
 }
 
 /// Where a flow's title block starts: the left end of its name's baseline.

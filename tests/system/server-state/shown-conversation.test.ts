@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { expect, test } from "bun:test";
 import { realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -84,16 +85,7 @@ test("the page's activation changes the conversation every pane of a tab shows, 
 		const payments = realpathSync(fixture.root);
 		const shop = realpathSync(join(fixture.root, "shop"));
 		for (const vault of [fixture.vault, shopVault]) {
-			const created = await request("/api/semantic-boards/create", {
-				method: "POST",
-				vault,
-				doing: "starting scratch",
-				body: {
-					board: "scratch",
-					create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-				},
-			});
-			expect(created.status).toBe(200);
+			seedCanonicalFixture(vault);
 		}
 		// One tab: pane A in the payments checkout, pane B in the shop checkout.
 		const a = await openApplicationSocket(server.base, "client-a", { tabSession: "tab-one" });

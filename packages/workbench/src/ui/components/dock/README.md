@@ -37,7 +37,7 @@ shared component. Put both on a plain `className` string, or put the role on an 
 
 ## Roots
 
-- `state/surfaces/contracts.ts`: `AgentView`, `AgentActions`, `AgentContext`, `AgentVoiceView`, `VoiceStage`,
+- `state/surfaces/contracts.ts`: `AgentView`, `AgentActions`, `AgentVoiceView`, `VoiceStage`,
   `VoiceLevel`, `ApprovalChoice`, `DynamicApprovalVerdict` and `WorkbenchQueueActions`.
 - `rules/dock/approval-projection.ts`: a pure projection of approvals into cards, owned by
   its tests.

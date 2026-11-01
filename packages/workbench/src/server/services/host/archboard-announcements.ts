@@ -33,21 +33,6 @@ interface TabCanvas {
 }
 
 /**
- * Whether pane news stops the narration under way: news that stops a talk, of the narrated board
- * or of no board in particular.
- * @param news The pane news.
- * @param canvas What the canvas holds.
- * @returns True when the voice answers it now.
- */
-function stopsNarration(news: CoordinatorPaneNews, canvas: CoordinatorCallbackCanvas): boolean {
-	return (
-		news.stops &&
-		canvas.narrated !== null &&
-		(news.board === null || news.board === canvas.narrated)
-	);
-}
-
-/**
  * What the coordinator and the voice are told of one event. The voice is told every piece of news
  * of a board on screen, and the coordinator what an agent outside the session did, since neither
  * model asked for it.
@@ -64,8 +49,8 @@ function heard(
 		return { voice: { withheld: "not_shown" } };
 	}
 	return {
-		...(news.by === "agent" ? { coordinator: { text: news.sentence } } : {}),
-		voice: { text: news.sentence, speech: stopsNarration(news, canvas) },
+		...(news.by !== "user" ? { coordinator: { text: news.sentence } } : {}),
+		voice: { text: news.sentence, speech: news.stops && canvas.narrated !== null },
 	};
 }
 

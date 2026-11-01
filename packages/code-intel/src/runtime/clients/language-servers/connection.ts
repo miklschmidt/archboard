@@ -13,22 +13,35 @@
 import { z } from "zod";
 
 /**
+ * ContentModified and ServerCancelled. A server answers these while it reloads
+ * its project, such as when rust-analyzer's build scripts finish, and the
+ * protocol leaves the question to the client to ask again.
+ */
+const OUTDATED_CODES: ReadonlySet<number> = new Set([-32_801, -32_802]);
+/** How many times one question is asked again before its refusal stands. */
+const OUTDATED_RETRIES = 4;
+
+/**
  * Why a request got no answer: the server answered with an error, its
  * process ended, or the pass was cancelled. Only an
  * error answer leaves the server fit to ask again.
  */
 class RequestFailure extends Error {
+	/** The server gave up because what it read changed, so the same question can still be answered. */
+	readonly outdated: boolean;
 	readonly kind: "answered" | "ended" | "cancelled";
 
 	/**
 	 * Name why a request got no answer.
 	 * @param kind What happened.
 	 * @param message What the server did, as the end of a sentence about it.
+	 * @param outdated Whether the same question can still be answered.
 	 */
-	constructor(kind: RequestFailure["kind"], message: string) {
+	constructor(kind: RequestFailure["kind"], message: string, outdated = false) {
 		super(message);
 		this.name = "RequestFailure";
 		this.kind = kind;
+		this.outdated = outdated;
 	}
 }
 
@@ -45,10 +58,36 @@ const IncomingSchema = z.object({
 		.optional()
 		.catch(undefined),
 	result: z.unknown().optional(),
-	error: z.object({ message: z.string().optional() }).loose().optional(),
+	error: z
+		.object({ code: z.number().optional(), message: z.string().optional() })
+		.loose()
+		.optional(),
 });
 
 type Incoming = z.infer<typeof IncomingSchema>;
+
+/**
+ * The failure of a request that the server answered with an error.
+ * @param error The error it answered.
+ * @returns The failure.
+ */
+function refusal(error: NonNullable<Incoming["error"]>): RequestFailure {
+	const outdated = error.code !== undefined && OUTDATED_CODES.has(error.code);
+	return new RequestFailure("answered", `answered ${error.message ?? "an error"}`, outdated);
+}
+
+/**
+ * Ask a question, and ask again while the server says its content changed.
+ * @param ask Asks once.
+ * @param retries How many more times to ask.
+ * @returns The answer.
+ */
+function askingAgain(ask: () => Promise<unknown>, retries = OUTDATED_RETRIES): Promise<unknown> {
+	return ask().catch((error: unknown) => {
+		if (retries === 0 || !(error instanceof RequestFailure && error.outdated)) throw error;
+		return askingAgain(ask, retries - 1);
+	});
+}
 
 /** A request that waits for its answer. */
 interface Pending {
@@ -225,10 +264,7 @@ class PendingRequests {
 		const waiting = typeof message.id === "number" ? this.#waiting.get(message.id) : undefined;
 		if (waiting === undefined) return;
 		if (message.error === undefined) waiting.resolve(message.result ?? null);
-		else
-			waiting.reject(
-				new RequestFailure("answered", `answered ${message.error.message ?? "an error"}`),
-			);
+		else waiting.reject(refusal(message.error));
 	}
 
 	/**
@@ -349,12 +385,13 @@ function connect(
 		 * @param bounds How long to wait, and the signal that ends the wait.
 		 * @returns The answer.
 		 */
-		request: (method, params, bounds) => {
-			if (ended !== undefined) return Promise.reject(new RequestFailure("ended", ended));
-			const { id, answer } = pending.open(bounds);
-			write(params === undefined ? { id, method } : { id, method, params });
-			return answer;
-		},
+		request: (method, params, bounds) =>
+			askingAgain(() => {
+				if (ended !== undefined) return Promise.reject(new RequestFailure("ended", ended));
+				const { id, answer } = pending.open(bounds);
+				write(params === undefined ? { id, method } : { id, method, params });
+				return answer;
+			}),
 		/**
 		 * Tell the server something that needs no answer.
 		 * @param method The method.

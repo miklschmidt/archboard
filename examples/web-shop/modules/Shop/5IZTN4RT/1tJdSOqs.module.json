@@ -1,0 +1,10 @@
+{
+  "order": 3000,
+  "name": "Stock API",
+  "kind": "module",
+  "responsibility": "The HTTP routes other services call",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#1tJdSOqs",
+  "parent": "Shop/MKhTEYqf#HYDbL5fE",
+  "outgoing": []
+}

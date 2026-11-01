@@ -3,9 +3,30 @@
 // display intent and never board authority (ADR 0015, ADR 0020): it records
 // what is on screen and asks for what should be, and the note still decides.
 
+/** A canonical reading requested in one pane, including an unavailable reading. */
+interface ModelAddress {
+	readonly id: string;
+	readonly scope: string | null;
+	readonly checkpoint: string | null;
+	readonly state?: string | undefined;
+	readonly preview?: string | undefined;
+	readonly bookmark?: string | undefined;
+	readonly legacyAddress?: string | undefined;
+	readonly against?: string | undefined;
+	readonly subject?: string | undefined;
+	readonly grammar?: string | undefined;
+	readonly flow?: string | undefined;
+	readonly focus?: readonly string[] | undefined;
+	readonly hideKinds?: readonly string[] | undefined;
+	/** The modules opened beside the scope in the same picture. */
+	readonly expand?: readonly string[] | undefined;
+	/** Set when the reader asked for every line, with any value. */
+}
+
 /** One pane in an address: which pane, the board it shows, and how it reads it. */
 interface AddressedPane {
 	readonly paneId: string;
+	readonly model?: ModelAddress | undefined;
 	/** The board key, or null while the pane has not said what it holds. */
 	readonly boardKey: string | null;
 	/**
@@ -34,7 +55,8 @@ interface WorkspaceAddress {
 /** One pane whose board must change to reach a wanted address. */
 interface AddressOpen {
 	readonly paneId: string;
-	readonly boardKey: string;
+	readonly boardKey: string | null;
+	readonly model?: ModelAddress;
 	/** The repository the board is in, or null for the one the pane is in. */
 	readonly repository: string | null;
 }
@@ -44,6 +66,37 @@ interface AddressRead {
 	readonly paneId: string;
 	/** The view to read it through, or null for the whole variant. */
 	readonly view: string | null;
+}
+
+/**
+ * The move a pane that names a model needs.
+ * @param displayed What is on screen.
+ * @param pane The wanted pane.
+ * @param model The model it names.
+ * @returns The move, when the pane is in another repository.
+ */
+function modelOpen(
+	displayed: WorkspaceAddress,
+	pane: AddressedPane,
+	model: NonNullable<AddressedPane["model"]>,
+): AddressOpen[] {
+	const { paneId, repository } = pane;
+	return repository !== null && repository !== repositoryIn(displayed, paneId)
+		? [{ paneId, boardKey: null, model, repository }]
+		: [];
+}
+
+/**
+ * The move a pane that names a board, or only a repository, needs.
+ * @param displayed What is on screen.
+ * @param pane The wanted pane.
+ * @returns The move, when the pane has to be pointed there.
+ */
+function placeOpen(displayed: WorkspaceAddress, pane: AddressedPane): AddressOpen[] {
+	const { paneId, boardKey, repository } = pane;
+	return (boardKey ?? repository) !== null && elsewhere(displayed, pane)
+		? [{ paneId, boardKey, repository }]
+		: [];
 }
 
 /**
@@ -135,10 +188,78 @@ function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 				against?.paneId === pane.paneId &&
 				against.boardKey === pane.boardKey &&
 				against.repository === pane.repository &&
-				against.view === pane.view
+				against.view === pane.view &&
+				sameModelAddress(against.model, pane.model)
 			);
 		})
 	);
+}
+
+/**
+ * Compare exact canonical reading intent without inspecting model content.
+ * @param one One requested reading.
+ * @param other The other requested reading.
+ * @returns Whether both identify the same reading.
+ */
+function sameModelAddress(one: ModelAddress | undefined, other: ModelAddress | undefined): boolean {
+	if (one === other) return true;
+	if (one === undefined || other === undefined) return false;
+	return (
+		(
+			[
+				"id",
+				"scope",
+				"checkpoint",
+				"state",
+				"preview",
+				"bookmark",
+				"legacyAddress",
+				"against",
+				"subject",
+				"grammar",
+				"flow",
+			] as const
+		).every((field) => one[field] === other[field]) &&
+		(["focus", "hideKinds", "expand"] as const).every((field) =>
+			sameSubjects(one[field], other[field]),
+		)
+	);
+}
+
+/**
+ * Compare ordered focus identities without relying on array reference identity.
+ * @param one One focused reading.
+ * @param other The other focused reading.
+ * @returns Whether both carry the same explicit focus.
+ */
+function sameSubjects(one: ModelAddress["focus"], other: ModelAddress["focus"]): boolean {
+	return one?.join(",") === other?.join(",");
+}
+
+/**
+ * Canonical readers consume the router directly, including explicit missing states.
+ * @param displayed Actual open panes and their server-owned legacy boards.
+ * @param requested Canonical reading intent from the router.
+ * @returns Actual panes with their requested canonical locations preserved.
+ */
+function withModelAddresses(
+	displayed: WorkspaceAddress,
+	requested: WorkspaceAddress,
+): WorkspaceAddress {
+	return {
+		...displayed,
+		panes: displayed.panes.map((pane) => {
+			const wanted = requested.panes.find((entry) => entry.paneId === pane.paneId);
+			if (wanted?.model === undefined) return pane;
+			return {
+				...pane,
+				boardKey: null,
+				view: null,
+				model: wanted.model,
+				repository: wanted.repository ?? pane.repository,
+			};
+		}),
+	};
 }
 
 /**
@@ -199,9 +320,7 @@ function planFor(
 		.map((pane) => pane.paneId);
 	const wantedOpen = asked.panes.filter((pane) => hasAddressedPane(displayed, pane.paneId));
 	const opens = wantedOpen.flatMap((pane) =>
-		pane.boardKey !== null && elsewhere(displayed, pane)
-			? [{ paneId: pane.paneId, boardKey: pane.boardKey, repository: pane.repository }]
-			: [],
+		pane.model === undefined ? placeOpen(displayed, pane) : modelOpen(displayed, pane, pane.model),
 	);
 	// A pane the address is about to point at another board is not read here as
 	// well: the view it should end up on is a view of the board it is going to,
@@ -239,6 +358,7 @@ function planIsEmpty(plan: AddressPlan): boolean {
 
 export {
 	EMPTY_ADDRESS,
+	withModelAddresses,
 	boardIn,
 	repositoryIn,
 	viewIn,
@@ -251,5 +371,6 @@ export {
 	type AddressRead,
 	type AddressPlan,
 	type AddressedPane,
+	type ModelAddress,
 	type WorkspaceAddress,
 };

@@ -1,0 +1,14 @@
+{
+  "order": 49001,
+  "name": "Retained reads",
+  "kind": "module",
+  "responsibility": "Reads exact captured documents and reports their displayed subjects",
+  "description": "The original diagram viewer receives immutable content through the retained read provider. It has no live board authoring or fallback route. Shared diagnostics remain reusable by canonical readers.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#kr46TVLf",
+  "parent": "vKEsyHFk/yejBBUFY#dtYjWvlf",
+  "formerNames": [
+    "Stage and reads"
+  ],
+  "outgoing": []
+}

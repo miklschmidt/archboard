@@ -1,3 +1,7 @@
+import {
+	ExplanationRequestSchema,
+	ReadingSelectionSchema,
+} from "#shared/schemas/model-explanation.ts";
 // What one pane is looking at, in the board's own words.
 //
 // ADR 0023 leaves the browser owning presentation and nothing else: the camera,
@@ -158,6 +162,21 @@ type SemanticPanePart = z.infer<typeof SemanticPanePartSchema>;
  */
 const SemanticPaneContextSchema = z
 	.object({
+		architecture: ExplanationRequestSchema.omit({ actionId: true, action: true, question: true })
+			.extend({
+				vault: z.string().min(1),
+				selection: ReadingSelectionSchema.optional(),
+				/** Labels of the accepted reading, independent of its machine selectors. */
+				display: z
+					.strictObject({
+						model: z.string().min(1),
+						state: z.string().min(1).optional(),
+						comparison: z.string().min(1),
+					})
+					.optional(),
+			})
+			.nullable()
+			.optional(),
 		paneId: z.string().min(1).max(128),
 		/** The socket this pane speaks over, so a dropped tab retires its report. */
 		clientId: z.string().min(1).max(128),

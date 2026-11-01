@@ -61,7 +61,19 @@ pub fn lay_out_board(graph: &str, host: &mut dyn Graphviz) -> Result<String, Str
     Ok(answer(&graph, placed.width, placed.height, told))
 }
 
+/// A door's lines share a trunk, which their words would hold apart, so they are drawn
+/// without them first, and each then wears them on its own branch.
 fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+    let Some(quiet) = super::planned::without_trunk_words(graph) else {
+        return solved(graph, host);
+    };
+    super::planned::dress(graph, solved(&quiet, host)?).or_else(|_| solved(graph, host))
+}
+
+fn solved(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Placed, String> {
+    if let Some(drawing) = super::planned::dense_drawing(graph) {
+        return Ok(drawing);
+    }
     let mut failure = super::planned::Refused::from("No guarded Blocks drawing");
     let mut room = Vec::new();
     let mut complete_room = Vec::new();
@@ -73,6 +85,8 @@ fn hybrid(graph: &Node, host: &mut dyn Graphviz) -> Result<super::assembly::Plac
         (64.0, false),
         (32.0, true),
         (64.0, true),
+        (128.0, true),
+        (256.0, true),
     ] {
         let endpoints = if complete { &complete_room } else { &room };
         match try_placements(graph, host, endpoints, extra, complete)? {
@@ -105,8 +119,8 @@ fn try_placements(
     extra: f64,
     complete: bool,
 ) -> Result<Result<super::assembly::Placed, super::planned::Refused>, String> {
-    Ok(super::planned::route_candidates(
+    super::planned::route_candidates(
         graph,
         super::legacy::candidates(graph, host, room, extra, complete)?,
-    ))
+    )
 }

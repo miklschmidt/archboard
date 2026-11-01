@@ -1,13 +1,9 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // Checks about the family rather than one variant's content: identity kept
 // across the run, versions, variants and their lifecycle, comparison against
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
-import {
-	currentVariant,
-	findVariant,
-	type SemanticBoard,
-	type SemanticVariant,
-} from "@archboard/board/document";
+import { currentVariant, findVariant, type SemanticVariant } from "@archboard/board/document";
 import { messagesOf, type SemanticFlow } from "@archboard/board/flow";
 import type { SemanticView } from "@archboard/board/views";
 import type { SemanticNode, VariantContent } from "@archboard/board/content";
@@ -172,30 +168,6 @@ const edgeIdsRetained: Check = (check, reading) =>
 				: `relationship ids lost: ${lost.join(", ")}`,
 		);
 	});
-
-/**
- * How far the board's version moved during the run.
- * @param check The board and the maximum.
- * @param reading The reading.
- * @returns The finding.
- */
-const versionAdvancedBy: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const moved = board.version - (namedValue(reading.snapshot, check.board)?.version ?? 0);
-		const allowed = check.max ?? 0;
-		return finding(moved <= allowed, `version moved by ${moved} (allowed ≤ ${allowed})`);
-	});
-
-/**
- * Whether the board has the stated level.
- * @param check The board and the level.
- * @param reading The reading.
- * @returns The finding.
- */
-const boardLevel: Check = (check, reading) =>
-	onBoard(check, reading, (board) =>
-		finding(board.level === check.level, `"${check.board}" is at level ${board.level}`),
-	);
 
 /**
  * Whether the vault holds exactly the stated number of boards.
@@ -462,8 +434,6 @@ const OWNERS: Partial<Record<OutcomeCheck["check"], Check>> = {
 	"node-id-retained": nodeIdRetained,
 	"node-field-retained": nodeFieldRetained,
 	"edge-ids-retained": edgeIdsRetained,
-	"version-advanced-by": versionAdvancedBy,
-	"board-level": boardLevel,
 	"board-count": boardCount,
 	"variant-exists": variantExists,
 	"current-variant": currentIs,

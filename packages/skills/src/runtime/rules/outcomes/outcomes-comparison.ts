@@ -1,3 +1,4 @@
+import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
 // The comparison of a proposal against the variant its picture is drawn
 // against and `semantic compare` reads it against by default — the board's
 // current one, or on a board with none its direct predecessor — as a check
@@ -7,7 +8,7 @@
 // proposal, and a check may state either.
 
 import { comparedWith, compareVariants } from "@archboard/board/comparison";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import type { SemanticVariant } from "@archboard/board/document";
 import {
 	finding,
 	located,

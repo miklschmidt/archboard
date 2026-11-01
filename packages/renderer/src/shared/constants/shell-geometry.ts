@@ -27,8 +27,14 @@ interface Size {
 /** The one viewport the shell supports: desktop only, 1920 by 1080. */
 const SHELL_VIEWPORT: Size = { width: 1920, height: 1080 };
 
-/** The navigator column: the brand bar at its top, the boards, and the agent dock at its foot. */
-const NAVIGATOR_WIDTH = 320;
+/**
+ * The navigator column: the brand bar at its top, the destinations, and the agent dock at its foot.
+ * The width comes from what it holds. Five tabs with three-digit counts need 445 px on one row, and
+ * the `Measures` table needs 184 px for a name beside its seven count columns. A name of that width
+ * fits 99 percent of the names of this repository's model. The core keeps the same number
+ * (`NAVIGATOR_WIDTH` in `crates/archboard-scene/src/paint/design.rs`).
+ */
+const NAVIGATOR_WIDTH = 448;
 
 /**
  * The line between the navigator and the panes: the handle that drags the
@@ -76,7 +82,11 @@ const STAGE: Size = {
  */
 const LAYOUT_ASPECT = 1.4;
 
-/** A lone pane's picture beside its docked sidebar, less the fit margin on either side. */
+/**
+ * A lone pane's picture beside a docked sidebar, less the fit margin on either side. The canonical
+ * reader's picture is narrower, because its right column stands beside it. The fit numbers keep this
+ * width, and a landing uses the reader's own room (`LANDING_ROOM` in the core).
+ */
 const REFERENCE_WIDTH = STAGE.width - SIDEBAR_WIDTH - 2 * FIT_MARGIN;
 
 /**

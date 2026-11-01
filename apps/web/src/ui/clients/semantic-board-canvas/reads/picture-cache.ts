@@ -16,11 +16,16 @@
 // A key carries its stamp, so forgetting stale pictures reads keys and never a
 // picture.
 //
-// The browser's storage can be missing, full or refuse outright (a private
-// window, cleared site data), so every read and write here survives that and
-// simply draws again.
+// The browser's storage can be missing, full, refuse outright (a private
+// window, cleared site data) or never answer, so every read and write here
+// survives that and simply draws again.
 
+import { PICTURE_MS } from "@archboard/timing";
+import { frameClock } from "@archboard/ui-kit/frame-clock";
 import { createStore, del, get, keys, set } from "idb-keyval";
+import { z } from "zod";
+import { ArchitectureRenderResultSchema } from "@archboard/board/model";
+import type { prepareContentHere } from "@archboard/renderer/browser";
 
 import {
 	DEFAULT_LAYOUT_ENGINE,
@@ -49,6 +54,106 @@ interface PictureStorage {
 	readonly set: (key: string, value: unknown) => Promise<void>;
 	readonly del: (key: string) => Promise<void>;
 	readonly keys: () => Promise<readonly IDBValidKey[]>;
+}
+
+type ModelDrawing = Awaited<ReturnType<ReturnType<typeof prepareContentHere>["draw"]>>;
+const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
+	.pick({ svg: true, width: true, height: true, atlas: true, placed: true })
+	.extend({
+		appearances: SemanticRenderReplySchema.options[0].shape.appearances,
+		legend: SemanticRenderReplySchema.options[0].shape.legend,
+		readingDirection: z
+			.literal("down" satisfies NonNullable<ModelDrawing["readingDirection"]>)
+			.optional(),
+	});
+
+/** The first field of a canonical drawing's key, which no board picture's key starts with. */
+const CANONICAL_KEY = "canonical";
+
+/** How many canonical drawings one browser keeps. Each holds one picture and its atlas. */
+const KEPT_DRAWINGS = 64;
+
+/**
+ * The key one canonical drawing is kept under.
+ * @param build The renderer build.
+ * @param model The canonical model identity.
+ * @param digest The digest of the exact render request.
+ * @returns The key.
+ */
+function modelDrawingKey(build: string, model: string, digest: string): string {
+	return JSON.stringify([CANONICAL_KEY, build, model, digest]);
+}
+
+/**
+ * Bound what the canonical reader keeps: another build's drawings never match again, and past the
+ * limit a redraw is the whole cost of losing one.
+ * @param storage The picture store.
+ * @param kept The drawing that was just stored.
+ */
+async function forgetOldDrawings(storage: PictureStorage, kept: string): Promise<void> {
+	const build = keyParts(kept)[1];
+	const drawings = (await storage.keys()).flatMap((key) =>
+		typeof key === "string" && keyParts(key)[0] === CANONICAL_KEY ? [key] : [],
+	);
+	const stale = drawings.filter((key) => keyParts(key)[1] !== build);
+	const others = drawings.filter((key) => keyParts(key)[1] === build && key !== kept);
+	await Promise.all([...stale, ...others.slice(KEPT_DRAWINGS - 1)].map((key) => storage.del(key)));
+}
+
+/**
+ * Give the store as long as a picture can wait for it.
+ * @param work What the store was asked.
+ * @returns Its answer, or nothing once the wait is over.
+ */
+function withinStoreWait<T>(work: Promise<T>): Promise<T | undefined> {
+	return new Promise((resolve, reject) => {
+		const clock = frameClock();
+		const timer = clock.after(PICTURE_MS.storeWait, () => resolve(undefined));
+		void work.then(resolve, reject).finally(() => clock.cancelAfter(timer));
+	});
+}
+
+/**
+ * Keep a drawing, and bound what the store keeps.
+ * @param storage The picture store.
+ * @param key The drawing's key.
+ * @param drawing The drawing.
+ */
+async function keepDrawing(
+	storage: PictureStorage,
+	key: string,
+	drawing: ModelDrawing,
+): Promise<void> {
+	await storage.set(key, drawing);
+	await forgetOldDrawings(storage, key);
+}
+
+/**
+ * Reuse a local scene only when its complete render input and renderer build match.
+ * @param storage The existing picture store, when available.
+ * @param key The renderer build and exact prepared scene identity.
+ * @param draw The local layout operation on a cache miss.
+ * @returns The stored scene or a fresh scene when storage is unavailable.
+ */
+async function cachedModelDrawing(
+	storage: PictureStorage | undefined,
+	key: string,
+	draw: () => Promise<ModelDrawing>,
+): Promise<ModelDrawing> {
+	if (storage === undefined) return draw();
+	try {
+		const cached = ModelDrawingSchema.safeParse(await withinStoreWait(storage.get(key)));
+		if (cached.success) return cached.data;
+	} catch {
+		// Refused storage leaves local rendering available.
+	}
+	const drawing = await draw();
+	try {
+		await withinStoreWait(keepDrawing(storage, key, drawing));
+	} catch {
+		// A full or closed store does not prevent the scene from appearing.
+	}
+	return drawing;
 }
 
 /**
@@ -173,8 +278,7 @@ async function forgetStalePictures(
 	renderer: string,
 ): Promise<void> {
 	try {
-		const stale = (await storage.keys()).filter((key): key is string => {
-			if (typeof key !== "string") return false;
+		const stale = (await storage.keys()).filter(isBoardPicture).filter((key) => {
 			const parts = keyParts(key);
 			if (parts.length !== KEY_FIELDS) return true;
 			const [ofVault, board, , , , , version, , drawnBy] = parts;
@@ -193,6 +297,15 @@ async function forgetStalePictures(
 }
 
 /**
+ * Whether a kept key names a board's picture, which a canonical drawing's key does not.
+ * @param key A stored key.
+ * @returns True for a board picture's key, or for a key of an older page.
+ */
+function isBoardPicture(key: IDBValidKey): key is string {
+	return typeof key === "string" && keyParts(key)[0] !== CANONICAL_KEY;
+}
+
+/**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
  * @returns Vault, board, variant, view, comparison, engine, version, fingerprint, renderer.
@@ -208,6 +321,8 @@ function keyParts(key: string): unknown[] {
 
 export {
 	browserPictureStorage,
+	cachedModelDrawing,
+	modelDrawingKey,
 	forgetStalePictures,
 	readCachedPicture,
 	writeCachedPicture,

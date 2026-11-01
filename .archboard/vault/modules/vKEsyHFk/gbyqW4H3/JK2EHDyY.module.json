@@ -1,0 +1,11 @@
+{
+  "order": 28001,
+  "name": "Render entry",
+  "kind": "module",
+  "responsibility": "Draws projected canonical architecture and flow content in any host through the shared layout and SVG core.",
+  "description": "Canonical readers project models and flows through @archboard/board/content before drawing. The renderer receives content, grammar, policy and host inputs; it does not resolve model identity or navigation.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "parent": "vKEsyHFk/vKEsyHFk#OHywsFXm",
+  "outgoing": []
+}

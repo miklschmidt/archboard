@@ -97,12 +97,12 @@ function createSemanticPolicySchema(icon: z.ZodType<string> = NodePolicySchema.s
 		.object({
 			levels: z
 				.array(VocabularyNameSchema)
-				.min(1)
+				.default([])
 				.refine((values) => new Set(values).size === values.length, "Levels must be unique")
 				.meta({
 					uniqueItems: true,
 					description:
-						"The vault's levels, coarsest first: the order decides which board a drill link places above another.",
+						"Original legacy levels retained for migration and exact historical readings. Canonical navigation uses module containment.",
 				}),
 			nodeKinds: z
 				.record(VocabularyNameSchema, NodePolicySchema.extend({ icon }))
@@ -196,7 +196,7 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
  * ends and its label.
  */
 const DiagnosticSubjectSchema = z.object({
-	kind: z.enum(["node", "edge", "step"]),
+	kind: z.enum(["node", "edge", "flow", "step"]),
 	id: z.string(),
 	name: z.string(),
 });
@@ -240,7 +240,7 @@ type DiagnosticOfAnySeverity = Omit<VaultDiagnostic, "severity"> & {
 	severity: VaultDiagnostic["severity"] | "information";
 };
 /** Each subject kind in the words of a person. */
-const SUBJECT_WORD = { node: "node", edge: "relationship", step: "step" } as const;
+const SUBJECT_WORD = { node: "module", edge: "relationship", flow: "flow", step: "step" } as const;
 /**
  * A subject as a line of text names it.
  * @param subject The diagnostic's subject.

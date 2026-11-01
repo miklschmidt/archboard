@@ -1,0 +1,27 @@
+{
+  "order": 9000,
+  "name": "Warehouse sync",
+  "kind": "job",
+  "responsibility": "Every 5 minutes, sets each count to what the warehouse reports",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#NDahviBw",
+  "parent": "Shop/MKhTEYqf#HYDbL5fE",
+  "outgoing": [
+    {
+      "order": 8000,
+      "kind": "http",
+      "label": "read the counts",
+      "emphasis": "muted",
+      "id": "Shop/5IZTN4RT#UNcs0Yyy",
+      "to": "Shop/5IZTN4RT#Klj9foM9"
+    },
+    {
+      "order": 9000,
+      "kind": "data",
+      "label": "set the counts",
+      "emphasis": "muted",
+      "id": "Shop/5IZTN4RT#VjA5N4Nd",
+      "to": "Shop/5IZTN4RT#mmSzZdKG"
+    }
+  ]
+}

@@ -37,8 +37,8 @@ const PULSE_CLASS = "ab-pulse";
 const PORT_CLASS = "ab-port";
 
 /**
- * The attribute a mark lists its members in, space-separated: a group's region
- * lists its cards, and a junction mark the relationships that meet at it.
+ * The attribute a mark lists its members in, space-separated: a junction mark
+ * lists the relationships that meet at it, and a row mark its step.
  * Neither is a subject of its own: the veil lights each with its members.
  */
 const MEMBERS_ATTRIBUTE = "data-members";
@@ -111,6 +111,15 @@ function subjectAt(target: EventTarget | null, atlas: SemanticAtlas): string | n
 }
 
 /**
+ * Whether a press landed on the control that a door or a frame's tab wears.
+ * @param target Where the pointer went down, as the event reported it.
+ * @returns True on the control.
+ */
+function controlAt(target: EventTarget | null): boolean {
+	return target instanceof Element && target.closest("[data-toggle]") !== null;
+}
+
+/**
  * Draw the marks on the picture.
  *
  * One class, toggled on the group rather than re-rendered into the markup: the
@@ -131,7 +140,7 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 
 /**
  * The groups a selection draws over everything else: a card, a line, a step.
- * Never a container, a group's region, a flow or a participant's lifeline,
+ * Never a container, a flow or a participant's lifeline,
  * each of which runs under what it holds or crosses.
  */
 const RAISED = `[data-semantic-kind='edge'],[data-semantic-kind='step'],[data-depiction='card'],[${TRAFFIC_ATTRIBUTE}]`;
@@ -209,8 +218,8 @@ const LIT_CLASS = "is-lit";
  * The surface carries the class that lets everything else recede
  * ({@link surfaceMarks}), so a picture with no step presented is drawn exactly
  * as it was: the veil's rules all hang under it.
- * A group's region and a junction mark stand with their members: lit while
- * one of them is, and receding with everything else while none is.
+ * A junction mark stands with its members: lit while one of them is, and
+ * receding with everything else while none is.
  * @param surface The element the picture was put into.
  * @param lit The subjects the step is about; null for no veil.
  */
@@ -382,6 +391,7 @@ export {
 	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
 	TRAFFIC_ATTRIBUTE,
+	controlAt,
 	isSubject,
 	keepingMarks,
 	markReach,

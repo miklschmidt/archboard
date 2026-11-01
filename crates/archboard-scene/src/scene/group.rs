@@ -10,6 +10,7 @@
 use serde::Serialize;
 use ts_rs::TS;
 
+use crate::drawing::Toggle;
 use crate::request::{DrillDirection, LegendLayout, LineAppearance, NodeAppearance, Standing};
 use crate::scene::Item;
 use crate::scene::definition::MaskId;
@@ -28,8 +29,6 @@ pub enum SubjectKind {
     Region,
     Flow,
     Step,
-    /// A group's region, named by the group's id.
-    GroupRegion,
 }
 
 /// The subject a group draws: which sort it is, its id, and how it stands.
@@ -37,7 +36,7 @@ pub enum SubjectKind {
 pub struct Subject {
     /// Which sort of subject it is.
     pub kind: SubjectKind,
-    /// The subject's id: the group's id for a group region.
+    /// The subject's id.
     pub id: String,
     /// How the subject stands against the variant it came from, when the picture is a comparison.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,8 +136,6 @@ pub enum Role {
     Fragment,
     /// A flowchart's shape.
     Shape,
-    /// A group's region, its frame and caption.
-    Region,
     /// The shadow a block casts, laid under every line and block.
     Shadow(Option<ShadowOf>),
     /// A part's type chip, which its near and far views share: it stands at
@@ -159,6 +156,10 @@ pub enum Role {
     },
     /// The mark of a board a part opens, and which way that board lies.
     DrillMark(DrillDirection),
+    /// The arrow of a door.
+    DoorArrow,
+    /// The control of a door or a frame's tab, which a live reader presses.
+    Toggle(Toggle),
     /// A standing's pin on a corner.
     Pin,
     /// The warning on a subject nobody has decided yet.
@@ -218,6 +219,11 @@ pub struct Group {
     pub pointer: Option<Pointer>,
     /// The subjects it stands with, which a viewer lights and recedes it with.
     pub members: Vec<String>,
+    /// What a reader of the picture's file can read about the group's subject,
+    /// which the picture draws nowhere.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub title: Option<String>,
     /// What it holds, in the order it is drawn.
     pub items: Vec<Item>,
 }
@@ -233,8 +239,16 @@ impl Group {
             mask: None,
             pointer: None,
             members: Vec::new(),
+            title: None,
             items,
         }
+    }
+
+    /// The group with words for a reader of the picture's file.
+    #[must_use]
+    pub fn titled(mut self, title: Option<String>) -> Self {
+        self.title = title;
+        self
     }
 
     /// The group drawing a subject.

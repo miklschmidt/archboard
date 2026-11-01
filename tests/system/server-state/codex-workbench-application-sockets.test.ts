@@ -1,3 +1,4 @@
+import { seedCanonicalFixture } from "../support/canonical-fixture.ts";
 import { describe, expect, test } from "bun:test";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -6,7 +7,7 @@ import { WebSocket } from "ws";
 
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
-import { createRequester, waitFor } from "./support/http.ts";
+import { createRequester, onlyVault, waitFor } from "./support/http.ts";
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -38,12 +39,9 @@ interface ApplicationSocket {
 
 async function openApplicationSocket(base: string, clientId: string): Promise<ApplicationSocket> {
 	const endpoint = new URL(base);
-	const served = (await (await fetch(new URL("/api/served-vault", base))).json()) as {
-		vault: string;
-	};
 	endpoint.protocol = "ws:";
 	endpoint.searchParams.set("clientId", clientId);
-	endpoint.searchParams.set("vault", served.vault);
+	endpoint.searchParams.set("vault", await onlyVault(base));
 	endpoint.searchParams.set("tabSession", "system-tab");
 	const socket = new WebSocket(endpoint);
 	const pending = new Map<string, (value: WorkbenchResult) => void>();
@@ -102,18 +100,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 		let first: ApplicationSocket | null = null;
 		let replacement: ApplicationSocket | null = null;
 		try {
-			expect(
-				(
-					await request("/api/semantic-boards/create", {
-						method: "POST",
-						doing: "starting the board this pane shows",
-						body: {
-							board: "scratch",
-							create: { level: "system", nodes: [{ name: "Gateway", kind: "service" }] },
-						},
-					})
-				).status,
-			).toBe(200);
+			seedCanonicalFixture(server.vault, "scratch", [{ name: "Gateway", kind: "service" }]);
 			first = await openApplicationSocket(server.base, clientId);
 			await request("/api/panes", {
 				method: "POST",
@@ -192,13 +179,9 @@ describe.serial("production server Codex WebSocket ownership", () => {
 			);
 			expect(reports.status).toBe(200);
 			expect(reports.body.panes.some((report) => report.clientId === clientId)).toBeFalse();
-			// And the board is free: nothing the retired transport did holds it.
-			const claimed = await request<{ claim?: { holder?: { claimed?: boolean } } }>(
-				"/api/semantic-boards/claim?board=scratch",
-				{ method: "POST", doing: false, body: { reason: "checking the board is free" } },
-			);
-			expect(claimed.status).toBe(200);
-			expect(claimed.body.claim?.holder?.claimed).toBeTrue();
+			const claims = await request<{ claims: unknown[] }>("/api/architecture/claims");
+			expect(claims.status).toBe(200);
+			expect(claims.body.claims).toEqual([]);
 		} finally {
 			await first?.close();
 			await replacement?.close();

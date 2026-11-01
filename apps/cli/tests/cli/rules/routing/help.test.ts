@@ -11,8 +11,11 @@
 // the live registry and the Commander model built from it, so adding, renaming
 // or redescribing a command changes nothing here.
 
-import { afterEach, beforeEach, expect, spyOn, test } from "bun:test";
+import { afterAll, afterEach, beforeEach, expect, spyOn, test } from "bun:test";
 import type { Command } from "commander";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { cliContractRegistry, runCli } from "#cli/operations/invocation/run.ts";
 import { commanderTree } from "#cli/rules/routing/help.ts";
 import { type CommandRoute } from "#cli/protocol/routing/route.ts";
@@ -31,11 +34,19 @@ let exitCode: typeof process.exitCode;
 const handlers = registry.map((entry) => spyOn(entry.contract, "handler"));
 // Help shows emphasis where the environment asks for colour, as CI's FORCE_COLOR does;
 // these owners read the plain text.
-const colour = { NO_COLOR: process.env["NO_COLOR"], FORCE_COLOR: process.env["FORCE_COLOR"] };
+const ambient = {
+	NO_COLOR: process.env["NO_COLOR"],
+	FORCE_COLOR: process.env["FORCE_COLOR"],
+	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
+};
+// A command that runs here registers this checkout, so it gets a registry of its own and the
+// person's stays as it is.
+const repos = mkdtempSync(join(tmpdir(), "archboard-help-repos-"));
 
 beforeEach(() => {
 	process.env["NO_COLOR"] = "1";
 	delete process.env["FORCE_COLOR"];
+	process.env["ARCHBOARD_REPOS"] = join(repos, "repos.json");
 	exitCode = process.exitCode;
 	process.exitCode = 0;
 	stdout = spyOn(process.stdout, "write").mockImplementation(() => true);
@@ -43,7 +54,7 @@ beforeEach(() => {
 	for (const handler of handlers) handler.mockClear();
 });
 afterEach(() => {
-	for (const [key, value] of Object.entries(colour)) {
+	for (const [key, value] of Object.entries(ambient)) {
 		if (value === undefined) delete process.env[key];
 		else process.env[key] = value;
 	}
@@ -51,6 +62,7 @@ afterEach(() => {
 	stderr.mockRestore();
 	process.exitCode = exitCode ?? 0;
 });
+afterAll(() => rmSync(repos, { recursive: true, force: true }));
 
 /**
  * Everything one invocation printed to stdout.
@@ -190,41 +202,69 @@ test("the root help lists every top-level command and the shared options", async
 	for (const name of Object.keys(routes)) {
 		expect(text).toContain(name);
 	}
-	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS)) {
+	const read = (key: (typeof SHARED_OPTION_KEYS)[number]) =>
+		registry.some((entry) => entry.contract.shared.includes(key));
+	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter(read))) {
 		expect(text).toContain(option.spellings[0]);
+	}
+	// An option that no command reads is refused everywhere, so the root help must not offer it.
+	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter((key) => !read(key)))) {
+		expect(text).not.toContain(option.spellings[0]);
 	}
 	expect(process.exitCode).toBe(0);
 });
 
 test("help routing skips shared option values without mistaking them for commands", async () => {
-	for (const [argv, path] of [
-		[
-			["semantic", "--doing", "describing", "new", "--help"],
-			["semantic", "new"],
-		],
-		[["semantic", "--board", "render", "--help"], ["semantic"]],
-	] as const) {
-		stdout.mockClear();
-		await runCli([...argv]);
-		const model = modelled(path);
-		expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
+	for (const entry of registry) {
+		const child = registry.find((candidate) => candidate.parent === entry.name);
+		if (child === undefined) continue;
+		for (const option of sharedOptionsFor(SHARED_OPTION_KEYS)) {
+			if (option.value === "none") continue;
+			for (const [argv, path] of [
+				[
+					[
+						...entry.contract.path,
+						option.spellings[0],
+						"describing",
+						child.contract.path.at(-1)!,
+						"--help",
+					],
+					child.contract.path,
+				],
+				[
+					[...entry.contract.path, option.spellings[0], child.contract.path.at(-1)!, "--help"],
+					entry.contract.path,
+				],
+			] as const) {
+				stdout.mockClear();
+				await runCli([...argv]);
+				const model = modelled(path);
+				expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
+			}
+		}
 	}
 });
 
 test("a missing --url value cannot consume the help flag during bootstrap", async () => {
 	for (const flag of ["--help", "-h"]) {
 		stdout.mockClear();
-		const argv = ["semantic", "--url", flag];
+		const path = registry.find((entry) => entry.parent === null)!.contract.path;
+		const argv = [...path, "--url", flag];
 		const environment: Record<string, string | undefined> = {};
 		const bootstrap = applyCliBootstrap(argv, environment);
 		expect(bootstrap.help).toBe(true);
 		expect(environment["ARCHBOARD_URL"]).toBeUndefined();
 		await runCli(argv, bootstrap);
-		expect(printed().split("\n")[0]).toContain("semantic");
+		const model = modelled(path);
+		expect(printed().split("\n")[0]).toBe(`Usage: ${model.createHelp().commandUsage(model)}`);
 	}
 	for (const argv of [
-		["semantic", "show", "help"],
-		["status", "--url", "help"],
+		[...registry.find((entry) => entry.parent !== null)!.contract.path, "help"],
+		[
+			...registry.find((entry) => entry.contract.shared.includes("url"))!.contract.path,
+			"--url",
+			"help",
+		],
 	]) {
 		expect(isHelpInvocation(argv), argv.join(" ")).toBe(false);
 	}

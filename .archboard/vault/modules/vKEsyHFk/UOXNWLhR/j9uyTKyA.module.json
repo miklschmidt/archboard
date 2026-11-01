@@ -1,0 +1,41 @@
+{
+  "order": 41001,
+  "name": "Vault diagnostic queries",
+  "kind": "function",
+  "responsibility": "Reads the vault check for its diagnostics panel",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#j9uyTKyA",
+  "parent": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
+  "outgoing": [
+    {
+      "order": 91000,
+      "kind": "call",
+      "description": "Reads the vault check query",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts",
+        "symbol": "vaultCheckQuery"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#YW2ffPdZ",
+      "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
+    },
+    {
+      "order": 128000,
+      "kind": "call",
+      "label": "a vault's policy changed: draw its pictures again",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/vault-diagnostics/use-vault-check.ts",
+        "symbol": "policyChanged"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#WXHpoWFo",
+      "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"
+    }
+  ]
+}

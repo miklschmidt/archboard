@@ -1,0 +1,54 @@
+{
+  "order": 12000,
+  "name": "Addressed vault",
+  "kind": "function",
+  "responsibility": "Asks for the vault a command addresses to be found and registered in one call, says on stderr what that registered or why it could not, and names the vault on every request",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
+  "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
+  "outgoing": [
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "name the found vault on every request",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+        "symbol": "stateInvocation"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#5oeVTCuJ",
+      "to": "vKEsyHFk/nAmiQ3Vc#EUV7iaLt"
+    },
+    {
+      "order": 20000,
+      "kind": "call",
+      "label": "which known vaults bind a checkout with none",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+        "symbol": "vaultsBoundTo"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#y6ueYYtZ",
+      "to": "vKEsyHFk/0T9enjhi#mYtOhgML"
+    },
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "find the vault and register what holds it",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/invocation/addressed-vault.ts",
+        "symbol": "findAndRegisterVault"
+      },
+      "id": "vKEsyHFk/nAmiQ3Vc#LIOeNd3K",
+      "to": "vKEsyHFk/nAmiQ3Vc#xK8q3UWf"
+    }
+  ]
+}

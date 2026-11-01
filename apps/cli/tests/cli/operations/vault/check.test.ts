@@ -6,11 +6,7 @@
 
 import { afterAll, expect, spyOn, test } from "bun:test";
 import { z } from "zod";
-import {
-	DEFAULT_SEMANTIC_POLICY,
-	VaultCheckSchema,
-	type SharedSymbol,
-} from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY, VaultCheckSchema } from "@archboard/board/policy";
 import { makeStandInVault } from "#tests/cli/support/stand-in-vault/stand-in-vault.ts";
 import type { describeSubject } from "@archboard/board/policy";
 
@@ -18,7 +14,9 @@ type DiagnosticSubject = Parameters<typeof describeSubject>[0];
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 const ledger: DiagnosticSubject = { kind: "node", id: "AbCd", name: "Ledger" };
-const sharedSymbol: SharedSymbol = {
+const sharedSymbol: NonNullable<
+	z.infer<typeof VaultCheckSchema>["diagnostics"][number]["sharedSymbol"]
+> = {
 	binding: { repo: "github.com/test/orders", path: "src/ledger.ts", symbol: "post" },
 	parts: [
 		{ board: "Orders", id: "AbCd", name: "Ledger", variants: ["v1"] },

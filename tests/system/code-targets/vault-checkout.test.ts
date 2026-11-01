@@ -46,7 +46,7 @@ test("opens the file of the worktree whose vault holds the board, though the mai
 
 	const result = await fixture.request("/api/code-targets/open", {
 		method: "POST",
-		body: jsonBody({ board: board.key, element: board.node }),
+		body: jsonBody({ model: board.key, subject: board.node }),
 	});
 	expect(result.status).toBe(200);
 	expect(await invocation.waitForCapture()).toMatchObject({

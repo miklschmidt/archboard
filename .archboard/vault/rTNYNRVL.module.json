@@ -1,0 +1,42 @@
+{
+  "order": 68000,
+  "name": "Model inspect",
+  "kind": "module",
+  "responsibility": "States one module's interface or a group's boundary: entry points with what reaches them, hidden parts, callers, outgoing relationships and pass-through entry points",
+  "description": "The command answers over the existing model read, with no route of its own, for the current state, a named state or a checkpoint.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/cli/src/cli/operations/model/inspect.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#rTNYNRVL",
+  "parent": "vKEsyHFk/XppR9owz#bLpk2XKU",
+  "outgoing": [
+    {
+      "order": 1002000,
+      "kind": "http",
+      "label": "read the state it inspects",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/model/inspect.ts",
+        "symbol": "readArchitectureModelOnServer"
+      },
+      "to": "vKEsyHFk/XppR9owz#TsCise1I",
+      "id": "vKEsyHFk#azJqVDzi"
+    },
+    {
+      "order": 1003000,
+      "kind": "call",
+      "label": "derive the interface and its counts",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/rules/model/inspection.ts",
+        "symbol": "inspectContainer"
+      },
+      "to": "vKEsyHFk#DKzh4lMo",
+      "id": "vKEsyHFk#ImS2FjJd"
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "order": 8000,
+  "name": "Theme palette",
+  "kind": "function",
+  "responsibility": "Names every drawn colour as a token of the page's theme, or a mix of tokens",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/palette.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#u1OXg3Yy",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 6000,
+      "kind": "data",
+      "label": "each role's colour, as page tokens",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/mod.rs",
+        "symbol": "of_page"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#I1lGjMES",
+      "to": "vKEsyHFk/gbyqW4H3#J7mPrUeP"
+    }
+  ]
+}

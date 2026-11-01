@@ -15,7 +15,7 @@ use crate::scene::definition::GradientId;
 pub enum Token {
     /// The page behind everything.
     Background,
-    /// A card's top face, before its group tints it.
+    /// A card's top face.
     SlabFace,
     /// A card's front edge, the thickness that shows along its foot.
     SlabEdge,
@@ -33,6 +33,10 @@ pub enum Token {
     TraySink,
     /// The lit lip along the bottom of a container.
     TrayLip,
+    /// The raised tab that stands on a container's edge.
+    TrayTab,
+    /// The thin line along the edge of a control, a card or a container.
+    Border,
     /// A port's inside by its rim.
     PortWall,
     /// A port's inside at its deepest.
@@ -89,6 +93,11 @@ pub enum Colour {
         /// Which colour.
         color: PaletteColor,
     },
+    /// One of the policy's named colours at its bright value, on either theme.
+    Bright {
+        /// Which colour.
+        color: PaletteColor,
+    },
     /// Black, which a mask hides through.
     Black,
     /// White, which a mask shows through.
@@ -121,6 +130,15 @@ pub enum Colour {
         /// The most of the ink's chroma that counts.
         cap: f64,
         /// The share of that chroma the tone keeps.
+        chroma: f64,
+    },
+    /// An ink moved in OKLCH: `oklch(L + lightness, C + chroma, H)`.
+    Shifted {
+        /// The ink.
+        ink: Box<Colour>,
+        /// What it adds to the ink's lightness.
+        lightness: f64,
+        /// What it adds to the ink's chroma.
         chroma: f64,
     },
     /// An ink with its OKLCH lightness held between two bounds.

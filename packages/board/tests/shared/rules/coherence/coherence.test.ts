@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { FlowStepInputSchema, SemanticEdgeInputSchema } from "#shared/protocol/board-input.ts";
+import { NewStepSchema } from "#shared/schemas/model-flows.ts";
+import { SemanticEdgeSchema } from "#shared/schemas/content.ts";
 import { FlowStepSchema } from "#shared/schemas/views.ts";
 import { parseSemanticBoard } from "#shared/rules/coherence/parse-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
@@ -216,21 +217,25 @@ describe("what an agent may write, against what a board may hold", () => {
 	test("a step label the document would refuse is refused where it is written", () => {
 		// Otherwise ingress accepts a payload the write then refuses as invalid
 		// content, and the caller learns about it one round trip too late.
-		expect(FlowStepInputSchema.safeParse({ from: "a", to: "b", label: TOO_LONG }).success).toBe(
-			false,
-		);
+		expect(NewStepSchema.safeParse({ from: "a", to: "b", label: TOO_LONG }).success).toBe(false);
 		expect(
 			FlowStepSchema.safeParse({ id: "s1", from: "a", to: "b", label: TOO_LONG }).success,
 		).toBe(false);
-		expect(
-			FlowStepInputSchema.safeParse({ from: "a", to: "b", label: "x".repeat(60) }).success,
-		).toBe(true);
+		expect(NewStepSchema.safeParse({ from: "a", to: "b", label: "x".repeat(60) }).success).toBe(
+			true,
+		);
 	});
 
 	test("a relationship label is held to the same length in both spellings", () => {
 		expect(
-			SemanticEdgeInputSchema.safeParse({ from: "a", to: "b", kind: "call", label: TOO_LONG })
-				.success,
+			SemanticEdgeSchema.safeParse({
+				id: "e1",
+				order: 1000,
+				from: "a",
+				to: "b",
+				kind: "call",
+				label: TOO_LONG,
+			}).success,
 		).toBe(false);
 	});
 });

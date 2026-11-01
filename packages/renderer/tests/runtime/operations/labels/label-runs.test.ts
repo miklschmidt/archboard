@@ -10,6 +10,7 @@ import oneCommandPath from "#tests/runtime/support/fixtures/one-command-path.jso
 import { covering, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { labelsOffRuns } from "#tests/runtime/support/drawn-ink.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import {
 	corridorPoints,
 	distanceToRoute,
@@ -25,8 +26,11 @@ const LABEL_CARD_CLEARANCE = 16;
 /** The room one line's words keep from another's: archboard_layout::constants::LABEL_LABEL_CLEARANCE. */
 const LABEL_LABEL_CLEARANCE = 24;
 
+/** The room a line's words keep from a card in a planned drawing: planned/label_space.rs. */
+const PLANNED_LABEL_CARD_CLEARANCE = 12;
+
 /** The room a badge keeps from a card and from the ends of its run. */
-const AIR = LABEL_CARD_CLEARANCE;
+const AIR = { blocks: PLANNED_LABEL_CARD_CLEARANCE, track: LABEL_CARD_CLEARANCE };
 /** The room a badge keeps from another badge. */
 const LABEL_AIR = LABEL_LABEL_CLEARANCE;
 
@@ -80,7 +84,7 @@ test.each(
 			}
 			const others = [...labels].filter(([id]) => id !== labelId).map(([, box]) => box);
 			for (const [box, air] of [
-				...cards.map((card) => [card, AIR] as const),
+				...cards.map((card) => [card, AIR[layout]] as const),
 				...others.map((other) => [other, LABEL_AIR] as const),
 			]) {
 				const xGap = Math.max(box.x - label.x - label.width, label.x - box.x - box.width);
@@ -210,3 +214,32 @@ test("a response from a child keeps its label on the return route", async () => 
 	});
 	expect(labelsOffRuns(drawing)).toEqual([]);
 });
+
+// Reduced from Diagram presentation components: a driver into the child
+// makes Graphviz rank the response label beyond both ends of the return route.
+test.each(LayoutEngineSchema.options)(
+	"a driven child's response reserves a label run between its endpoints (%s)",
+	async (layout) => {
+		const content = orderedFixture({
+			nodes: [
+				{ id: "client", name: "Client", kind: "module" },
+				{ id: "frame", name: "Container", kind: "module" },
+				{ id: "child", name: "Child", kind: "module", parent: "frame" },
+				{ id: "driver", name: "Driver", kind: "module" },
+			],
+			edges: [
+				{ id: "response", from: "child", to: "client", kind: "call", label: "response" },
+				{ id: "request", from: "client", to: "frame", kind: "call", label: "request" },
+				{ id: "drive", from: "driver", to: "child", kind: "call", label: "drive" },
+			],
+		});
+		const drawing = await renderArchitecture({
+			content,
+			policy: DEFAULT_SEMANTIC_POLICY,
+			theme: "light",
+			layout,
+		});
+		expect(routeLabels(drawing.svg).size).toBe(content.edges.length);
+		expectDrawingIntact(drawing, content, layout);
+	},
+);

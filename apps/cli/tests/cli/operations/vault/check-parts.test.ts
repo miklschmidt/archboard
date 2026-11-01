@@ -4,7 +4,7 @@
 // `check semantics`, `check code` and `check embeds` run one each, the answer
 // holds a part for each check that ran, and only a diagnostic or a warning
 // fails it. Behind is information (ADR 0045), so a board many commits behind
-// never does. `--variant`, `--every-draft` and `--plan` name what the code
+// never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
 // Only the Archboard server is a stand-in.
 
@@ -91,6 +91,7 @@ let service = "";
 let plain = clean;
 let answered = codeCheck;
 let refuseDraft = false;
+let refuseState = false;
 const asked: string[] = [];
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -100,6 +101,24 @@ const server = Bun.serve({
 		const { pathname } = asking;
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
 		asked.push(vault.unnamed(asking));
+		if (pathname === "/api/vault/check" && refuseState) {
+			return Response.json(
+				{
+					success: false,
+					code: "PREDECESSOR_CHANGED",
+					error: "The architecture operation cannot complete.",
+					diagnostics: [
+						{
+							code: "PREDECESSOR_CHANGED",
+							file: "p.proposal.json",
+							message: "Moved.",
+							recovery: "Reconcile.",
+						},
+					],
+				},
+				{ status: 409 },
+			);
+		}
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
@@ -196,7 +215,7 @@ const readsFix = (entry: CliRegistryEntry): boolean =>
 /** The check commands that read the code check's options, as the registry declares them. */
 const readsCodeOptions = (entry: CliRegistryEntry): boolean =>
 	entry.contract.parameters.some(
-		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--variant"),
+		(parameter) => parameter.kind === "option" && parameter.spellings.includes("--state"),
 	);
 const checkRoutes = () =>
 	cliContractRegistry().filter(
@@ -352,12 +371,14 @@ test("a finding prints with its subject and evidence, fails the code check on a 
 	}
 });
 
-test("--variant, --every-draft and --plan reach the code check of check, check all and check code", async () => {
+test("--state, --every-draft and --plan reach the code check of check, check all and check code", async () => {
 	plain = clean;
 	for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
 		asked.length = 0;
-		expect((await run([...argv, "--variant", "TASK-1"])).exited).toBe(0);
-		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?variant=TASK-1`);
+		expect((await run([...argv, "--state", "TASK-1"])).exited).toBe(0);
+		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?state=TASK-1`);
+		// The semantics check reads that draft too, where the command runs it.
+		expect(asked.includes(`${SEMANTICS_ROUTE}?state=TASK-1`)).toBe(argv.at(-1) !== "code");
 		asked.length = 0;
 		expect((await run([...argv, "--every-draft"])).exited).toBe(0);
 		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?every-draft=true`);
@@ -370,20 +391,32 @@ test("--variant, --every-draft and --plan reach the code check of check, check a
 	}
 });
 
-test("a draft no board has is refused, and --every-draft beside --variant is refused before the server", async () => {
+test("a draft no board has is refused, and --every-draft beside --state is refused before the server", async () => {
 	plain = clean;
 	refuseDraft = true;
 	try {
 		for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
-			expect((await run([...argv, "--variant", "TASK-0"])).exited).toBe(2);
+			expect((await run([...argv, "--state", "TASK-0"])).exited).toBe(2);
 		}
 	} finally {
 		refuseDraft = false;
 	}
 	for (const argv of [["check"], ["check", "all"], ["check", "code"]]) {
 		asked.length = 0;
-		expect((await run([...argv, "--every-draft", "--variant", "TASK-1"])).exited).toBe(2);
+		expect((await run([...argv, "--every-draft", "--state", "TASK-1"])).exited).toBe(2);
 		expect(asked).toEqual([]);
+	}
+});
+
+test("a refused draft read prints the code and the recovery the server gave", async () => {
+	refuseState = true;
+	try {
+		const refused = await run(["check", "all", "--state", "TASK-1"]);
+		expect(refused.exited).not.toBe(0);
+		expect(refused.stderr).toContain("PREDECESSOR_CHANGED");
+		expect(refused.stderr).toContain("Reconcile.");
+	} finally {
+		refuseState = false;
 	}
 });
 
@@ -394,7 +427,7 @@ test("every other check subcommand refuses the code check's options before askin
 	expect(others.map((entry) => entry.name)).toContain("check semantics");
 	for (const entry of others) {
 		for (const option of [
-			["--variant", "TASK-1"],
+			["--state", "TASK-1"],
 			["--every-draft"],
 			["--plan", "infra/plan.json"],
 		]) {

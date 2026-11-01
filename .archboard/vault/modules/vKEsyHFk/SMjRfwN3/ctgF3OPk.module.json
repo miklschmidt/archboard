@@ -1,0 +1,17 @@
+{
+  "order": 8000,
+  "name": "PNG header",
+  "kind": "function",
+  "responsibility": "The two numbers from the IHDR of the answered image",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/rasterizer/png.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#ctgF3OPk",
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+  "outgoing": []
+}

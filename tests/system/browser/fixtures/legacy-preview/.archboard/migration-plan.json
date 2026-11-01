@@ -1,0 +1,104 @@
+{
+	"schemaVersion": 1,
+	"origin": "Shop",
+	"sourceDigest": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d",
+	"mappings": [
+		{
+			"legacy": "Shop/Other#Shop",
+			"canonical": "Shop/System#Shop",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Api",
+			"canonical": "Shop/System#Api",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Db",
+			"canonical": "Shop/System#Db",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Save",
+			"canonical": "Shop/System#Save",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Buy",
+			"canonical": "Shop/System#Buy",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Ask",
+			"canonical": "Shop/System#Ask",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Choice",
+			"canonical": "Shop/System#Choice",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Back",
+			"canonical": "Shop/System#Back",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Retry",
+			"canonical": "Shop/System#Retry",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Other#Again",
+			"canonical": "Shop/System#Again",
+			"reason": "The owner identifies one subject across the two readings"
+		},
+		{
+			"legacy": "Shop/Future#Draft",
+			"canonical": "Shop/Future#Draft",
+			"reason": "Retain the future state as an independent proposal"
+		}
+	],
+	"choices": [
+		{
+			"conflict": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d:definition:[[\"Details.semantic.json\",\"Now\",\"Shop/Other#Api\",\"variants.Now.content.nodes.Api\"],[\"Shop.semantic.json\",\"Now\",\"Shop/System#Api\",\"variants.Now.content.nodes.Api\"]]",
+			"reason": "Keep the public definition and detail sibling order",
+			"resolution": {
+				"kind": "select",
+				"option": 1
+			}
+		},
+		{
+			"conflict": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d:order:[[\"Details.semantic.json\",\"Now\",\"Shop/Other#Db\",\"variants.Now.content.nodes.Db\"],[\"Shop.semantic.json\",\"Now\",\"Shop/System#Api\",\"variants.Now.content.nodes.Api\"]]",
+			"reason": "Keep the public definition and detail sibling order",
+			"resolution": {
+				"kind": "select",
+				"option": 0
+			}
+		},
+		{
+			"conflict": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d:relationship-owner:[[\"Details.semantic.json\",\"Now\",\"Shop/Other#Save\",\"variants.Now.content.edges.Save\"],[\"Shop.semantic.json\",\"Now\",\"Shop/System#Save\",\"variants.Now.content.edges.Save\"]]",
+			"reason": "Keep the public definition and detail sibling order",
+			"resolution": {
+				"kind": "select",
+				"option": 1
+			}
+		},
+		{
+			"conflict": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d:definition:[[\"Details.semantic.json\",\"Now\",\"Shop/Other#Save\",\"variants.Now.content.edges.Save\"],[\"Shop.semantic.json\",\"Now\",\"Shop/System#Save\",\"variants.Now.content.edges.Save\"]]",
+			"reason": "Keep the public definition and detail sibling order",
+			"resolution": {
+				"kind": "select",
+				"option": 1
+			}
+		},
+		{
+			"conflict": "762cea47e6066748e45f09ca15c57511c6566cf6e7f237595cd353442766864d:definition:[[\"Details.semantic.json\",\"Now\",\"Shop/Other#Buy\",\"variants.Now.content.flows.Buy\"],[\"Shop.semantic.json\",\"Now\",\"Shop/System#Buy\",\"variants.Now.content.flows.Buy\"]]",
+			"reason": "Keep the public definition and detail sibling order",
+			"resolution": {
+				"kind": "select",
+				"option": 1
+			}
+		}
+	]
+}

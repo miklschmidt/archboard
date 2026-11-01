@@ -46,6 +46,13 @@ pub(crate) struct Title {
     pub band: Rect,
 }
 
+impl Title {
+    /// Whether this is the title of the container with this box: they share a top left corner.
+    pub(crate) fn stands_in(&self, container: Rect) -> bool {
+        self.band.x == container.x && self.band.y == container.y
+    }
+}
+
 /// The whole drawing's geometry.
 #[derive(Clone, Debug)]
 pub(crate) struct Placed {
@@ -56,6 +63,9 @@ pub(crate) struct Placed {
     pub regions: Vec<PlacedArea>,
     pub edges: Vec<PlacedLine>,
     pub titles: Vec<Title>,
+    /// The drawing as routed, before contraction closed its empty space: a planned drawing
+    /// keeps it for the words that its lines take back. It is never serialized.
+    pub routed: Option<std::rc::Rc<Placed>>,
 }
 
 /// A box as the drawing spells it.
@@ -531,6 +541,7 @@ impl<'a> Assembly<'a> {
             regions,
             titles: self.titles(),
             edges,
+            routed: None,
         }
     }
 

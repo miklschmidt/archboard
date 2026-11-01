@@ -1,13 +1,10 @@
 // What one variant claims about code, as the code check judges it (ADR 0046).
 //
-// Two kinds of claim come from a board. A binding with a symbol claims that the
-// bound file or directory defines that symbol, and on a named draft every
-// binding claims that its path is in the checkout, because to name a draft is
-// to say its code is built now. An anchor on a relationship or a flow step
+// Two kinds of claim come from selected architecture. Every binding claims
+// that its path is in the checkout. A binding with a symbol also claims that
+// the bound file or directory defines that symbol. An anchor on a relationship or a flow step
 // claims that its file holds its symbol, and that where the symbol is defined
 // in the checkout, the bound code of an end or of a part inside one holds it.
-// A binding with no symbol on the current variant claims only its path, which
-// the semantics check tests.
 
 import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
@@ -28,13 +25,11 @@ type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & 
 	readonly subject: DiagnosticSubject;
 };
 
-/** A part's binding: its symbol, and on a named draft its path too. */
+/** A part's binding: its path and optional symbol. */
 interface BindingClaim {
 	readonly kind: "binding";
 	readonly site: ClaimSite;
 	readonly binding: CodeBinding;
-	/** True on a named draft, where the path must be in the checkout too. */
-	readonly path: boolean;
 }
 
 /** An anchor of a relationship or a flow step, and the parts at its ends. */
@@ -135,17 +130,16 @@ function anchorClaim(
 }
 
 /**
- * The claims of the parts: a binding with a symbol, and on a named draft every binding.
+ * The path and optional symbol claims of every bound part.
  * @param variant The variant read.
  * @returns The claims.
  */
 function bindingClaims(variant: ReadVariant): BindingClaim[] {
-	const { named } = variant.read;
 	return variant.read.variant.content.nodes.flatMap((node) => {
 		const binding = node.binding;
-		if (binding === undefined || (binding.symbol === undefined && !named)) return [];
+		if (binding === undefined) return [];
 		const site = siteOf(variant, `nodes.${node.id}.binding`, nodeSubject(node));
-		return [{ kind: "binding" as const, site, binding, path: named }];
+		return [{ kind: "binding" as const, site, binding }];
 	});
 }
 

@@ -197,10 +197,17 @@ fn paired(
         }
     };
     let (a, b) = (flip(a), flip(b));
+    // Each line's reach answers every pair on it without another lookup.
+    let across: Vec<_> = ends
+        .iter()
+        .map(|&y| obstacles.reach(transpose, y, b.x))
+        .collect();
     for &x in starts {
-        for &y in ends {
-            let inner = [Point { x, y: a.y }, Point { x, y }, Point { x: b.x, y }].map(flip);
-            if obstacles.clear(&inner) {
+        let (low, high) = obstacles.reach(!transpose, x, a.y);
+        for (&y, &(left, right)) in ends.iter().zip(&across) {
+            let down = if y < a.y { y >= low } else { y <= high };
+            if down && (if x < b.x { x >= left } else { x <= right }) {
+                let inner = [Point { x, y: a.y }, Point { x, y }, Point { x: b.x, y }].map(flip);
                 visit(&[flip(a), inner[0], inner[1], inner[2], flip(b)]);
             }
         }

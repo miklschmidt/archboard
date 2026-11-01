@@ -24,7 +24,8 @@ const server = Bun.serve({
 	port: 0,
 	fetch(request) {
 		const { pathname } = new URL(request.url);
-		asked.push(pathname);
+		// A port scanner on the machine can knock on `/`. No command of this repository reads the page.
+		if (pathname !== "/") asked.push(pathname);
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
 		return Response.json({ success: false, error: `unexpected ${pathname}` }, { status: 404 });
 	},

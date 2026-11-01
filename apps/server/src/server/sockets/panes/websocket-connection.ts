@@ -1,10 +1,11 @@
+import { agentActivity } from "#server/wiring/owners/server-owners.ts";
 import type { IncomingMessage } from "http";
 import path from "path";
 import { WebSocket, WebSocketServer } from "ws";
 import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { parseBoardKey } from "@archboard/board/address";
 import {
 	createServerCodexBrowserSocketSend,
@@ -13,10 +14,12 @@ import {
 	type TabSessionId,
 } from "@archboard/codex-realtime-voice/server";
 import { codexWiring, forgetTabSession, noteTabSession } from "@archboard/workbench/server";
+
 import {
-	agentActivity,
-	tellPaneAboutLock,
-} from "#server/projections/board-announcements/board-announcements.ts";
+	isArchitectureFeed,
+	serveArchitectureFeed,
+} from "#server/sockets/architecture/architecture-feed.ts";
+import { frameText } from "#server/sockets/frame-text.ts";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
@@ -31,14 +34,9 @@ import {
 	paneVaults,
 	panes,
 	socketVaults,
-	syncLockWatch,
 } from "@archboard/workbench/panes";
 import { isRecord, namedVault, VAULT_PARAMETER, type NamedVault } from "@archboard/workbench/host";
-import {
-	openingVault,
-	placeOfVault,
-	repositoryOfVault,
-} from "@archboard/workspace/repository-listing";
+import { placeOfVault, repositoryOfVault } from "@archboard/workspace/repository-listing";
 
 /**
  * Retire the client-id keyed state of a socket that owned its pane identity:
@@ -67,7 +65,6 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 	const closingCodexInstance = codexSocketInstances.get(ws);
 	codexSocketInstances.delete(ws);
 	if (closingId === undefined) {
-		syncLockWatch();
 		logger.info("WebSocket connection closed");
 		return;
 	}
@@ -80,12 +77,10 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
 			.catch((error) => logger.error("Codex browser cleanup failed:", error));
 	}
 	if (currentSocketsByClient.get(closingId) !== ws) {
-		syncLockWatch();
 		logger.info(`Replaced WebSocket connection closed (client ${closingId})`);
 		return;
 	}
 	retirePaneOwner(closingId);
-	syncLockWatch();
 	logger.info("WebSocket connection closed");
 }
 
@@ -205,19 +200,6 @@ function codexRefusal(message: Record<string, unknown>, error: string): Record<s
 }
 
 /**
- * One socket frame as text. ws hands a frame over as a buffer, an array
- * buffer, or the buffers a fragmented message arrived in.
- * @param raw The frame.
- * @returns Its text.
- */
-function frameText(raw: RawData): string {
-	if (Array.isArray(raw)) {
-		return Buffer.concat(raw).toString("utf8");
-	}
-	return Buffer.from(raw instanceof ArrayBuffer ? new Uint8Array(raw) : raw).toString("utf8");
-}
-
-/**
  * Parse one socket frame as a Codex workbench request, ignoring everything else.
  * @param raw The frame.
  * @returns The request, or null when the frame is not one.
@@ -286,23 +268,6 @@ function listenForCodexRequests(ws: WebSocket, socket: RegisteredSocket): void {
  * @param clientId The pane's client id, or null for an anonymous socket.
  * @param startingKey The board the pane starts on, or null when it starts on none.
  */
-function announceToNewPane(
-	ws: WebSocket,
-	clientId: string | null,
-	startingKey: string | null,
-): void {
-	// Where its lock stands. A broadcast only reaches panes that were already
-	// connected, so a tab that has just arrived — or come back from a dropped
-	// socket — is told outright rather than left assuming the board is free.
-	if (clientId !== null && startingKey !== null) {
-		tellPaneAboutLock(clientId, startingKey);
-	}
-	// And which boards an agent has right now, in every vault (ADR 0022): the
-	// same reasoning, for the navigator rather than the pane.
-	for (const snapshot of agentActivity.snapshots()) {
-		ws.send(JSON.stringify(snapshot));
-	}
-}
 
 /** What one accepted socket is registered as, before it is presented anything. */
 interface RegisteredSocket {
@@ -397,19 +362,36 @@ async function acceptWebSocketConnection(
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = socket.clientId === null ? null : boardForNewPane(socket.clientId, vault);
+	const startingKey = startingBoard(req, socket.clientId, vault);
 	await sendStartingBoard(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
+	ws.once("close", agentActivity.hold(vault));
+	for (const snapshot of agentActivity.snapshots()) ws.send(JSON.stringify(snapshot));
 	// There is a screen again, so the lock files of what is on it are worth
 	// reading (ADR 0016).
-	syncLockWatch();
 	logger.info(
 		`New WebSocket connection established${socket.clientId === null ? "" : ` (client ${socket.clientId})`}`,
 	);
-	announceToNewPane(ws, socket.clientId, startingKey);
 	listenForCodexRequests(ws, socket);
+}
+
+/**
+ * Canonical panes keep their own reading instead of inheriting a legacy board.
+ * @param req The socket address and explicit reading mode.
+ * @param clientId The admitted pane identity.
+ * @param vault The pane's source vault.
+ * @returns The legacy starting key, or no legacy reading.
+ */
+function startingBoard(
+	req: IncomingMessage,
+	clientId: string | null,
+	vault: string,
+): string | null {
+	const canonical =
+		new URL(req.url ?? "/", "http://localhost").searchParams.get("reading") === "canonical";
+	return clientId === null || canonical ? null : boardForNewPane(clientId, vault);
 }
 
 /**
@@ -443,10 +425,10 @@ const upgradeVaults = new WeakMap<IncomingMessage, string>();
  * A socket names the vault its pane was in, and that vault can be gone, as a
  * removed worktree is, when the pane comes back. An upgrade is where the server
  * places a pane, and the server is the one that moves a pane between vaults
- * (ADR 0050), so such a pane is put in a vault the server can read: that of
- * its repository's chosen checkout while the registry still knows the
- * checkout, else the vault a page opens in. Its first message says where it
- * is. Only with neither is the upgrade refused, as one that names no vault is.
+ * (ADR 0050), so such a pane is put in the vault of its repository's chosen
+ * checkout while the registry still knows the checkout. Its first message says
+ * where it is. Otherwise the upgrade is refused, as one that names no vault is:
+ * no other repository takes the pane in, and a reload offers the chooser.
  * @param req The upgrade request.
  * @returns The canonical vault, or the refusal.
  */
@@ -465,8 +447,8 @@ function vaultOfUpgrade(req: IncomingMessage): NamedVault {
  * @returns The vault it is put in, or null when there is none to put it in.
  */
 function placeInstead(raw: string): NamedVault | null {
-	const candidates = [placeOfVault(path.resolve(raw)).home, openingVault()];
-	return candidates.map((each) => namedVault(each)).find((each) => each.ok) ?? null;
+	const home = namedVault(placeOfVault(path.resolve(raw)).home);
+	return home.ok ? home : null;
 }
 
 /**
@@ -496,6 +478,10 @@ function startWebSocketServer(): void {
 				done(false, 403, result.code);
 				return;
 			}
+			if (isArchitectureFeed(info.req)) {
+				done(true);
+				return;
+			}
 			// A pane belongs to one vault from its first message (ADR 0049), so a socket
 			// that names none is turned away before it can own a pane.
 			const vault = vaultOfUpgrade(info.req);
@@ -510,6 +496,10 @@ function startWebSocketServer(): void {
 	owner.on("connection", (socket, request) => {
 		acceptedSockets.add(socket);
 		socket.once("close", () => acceptedSockets.delete(socket));
+		if (isArchitectureFeed(request)) {
+			serveArchitectureFeed(socket);
+			return;
+		}
 		const vault = upgradeVaults.get(request);
 		if (vault === undefined) {
 			socket.terminate();

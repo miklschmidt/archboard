@@ -1,0 +1,139 @@
+{
+	"schemaVersion": "2.4.0",
+	"kind": "semantic-board",
+	"id": "System",
+	"name": "Shop",
+	"formerNames": ["Store"],
+	"level": "system",
+	"version": 1,
+	"createdAt": "2026-01-01T00:00:00.000Z",
+	"updatedAt": "2026-01-01T00:00:00.000Z",
+	"current": "Now",
+	"views": [],
+	"variants": [
+		{
+			"id": "Now",
+			"name": "Implemented",
+			"lifecycle": "current",
+			"summary": "Shop architecture",
+			"documents": [
+				{
+					"repo": "github.com/acme/shop",
+					"path": "docs/design.md"
+				}
+			],
+			"content": {
+				"nodes": [
+					{
+						"id": "Shop",
+						"name": "Shop",
+						"kind": "system",
+						"responsibility": "Serves shoppers",
+						"order": 10
+					},
+					{
+						"id": "Api",
+						"name": "API",
+						"kind": "module",
+						"responsibility": "Accepts requests",
+						"description": "Public entry",
+						"parent": "Shop",
+						"groups": ["product"],
+						"order": 20,
+						"binding": {
+							"repo": "github.com/acme/shop",
+							"path": "src/api.ts"
+						}
+					},
+					{
+						"id": "Db",
+						"name": "Database",
+						"kind": "module",
+						"responsibility": "Stores purchases",
+						"parent": "Shop",
+						"order": 30
+					}
+				],
+				"edges": [
+					{
+						"id": "Save",
+						"from": "Api",
+						"to": "Db",
+						"kind": "call",
+						"label": "Stores purchases",
+						"description": "Durable write",
+						"emphasis": "hero",
+						"traffic": {
+							"speed": 90,
+							"volume": 2
+						},
+						"order": 50,
+						"anchor": {
+							"repo": "github.com/acme/shop",
+							"path": "src/api.ts",
+							"symbol": "save"
+						}
+					}
+				],
+				"flows": [
+					{
+						"id": "Buy",
+						"name": "Purchase",
+						"summary": "Save a purchase",
+						"participants": ["Api", "Db"],
+						"steps": [
+							{
+								"id": "Ask",
+								"kind": "sync",
+								"from": "Api",
+								"to": "Db",
+								"label": "save",
+								"note": "Keep the receipt",
+								"repeat": 2
+							},
+							{
+								"id": "Choice",
+								"kind": "decision",
+								"question": "Saved?",
+								"alternatives": [
+									{
+										"label": "Yes",
+										"steps": [
+											{
+												"id": "Back",
+												"kind": "return",
+												"from": "Db",
+												"to": "Api",
+												"label": "receipt"
+											}
+										]
+									},
+									{
+										"label": "No",
+										"steps": [
+											{
+												"id": "Retry",
+												"kind": "loop",
+												"condition": "Until saved",
+												"steps": [
+													{
+														"id": "Again",
+														"kind": "sync",
+														"from": "Api",
+														"to": "Db",
+														"label": "retry"
+													}
+												]
+											}
+										]
+									}
+								]
+							}
+						]
+					}
+				],
+				"walkthroughs": []
+			}
+		}
+	]
+}

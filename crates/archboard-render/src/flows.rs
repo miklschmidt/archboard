@@ -32,7 +32,11 @@ pub(crate) fn sequence<H: Host>(request: &RenderRequest, host: &H) -> Result<Out
         })
         .collect();
     let parts: Vec<&Node> = participants.iter().collect();
-    let appearances = node_appearances(&parts, &request.policy, request.level.as_deref());
+    let mut appearances = node_appearances(&parts, &request.policy, request.level.as_deref());
+    // A participant's card is a column head that a tag does not fit.
+    for appearance in appearances.values_mut() {
+        appearance.tags.clear();
+    }
     if let Some(missing) = content
         .flows
         .iter()
@@ -110,7 +114,6 @@ pub(crate) async fn flowchart<H: Host>(
         flows: told.flows.clone(),
         parts: told.nodes.clone(),
         node_kinds: policy.node_kinds.clone(),
-        groups: policy.group_colours(),
         page: page_request(request),
         document,
         icons: icons_of(host, &icons)?,

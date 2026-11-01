@@ -1,0 +1,20 @@
+{
+  "order": 28000,
+  "name": "code-binding",
+  "kind": "package",
+  "responsibility": "A node's code binding and where its path lives in a checkout",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/code-binding"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/vKEsyHFk#w9zvoSFD",
+  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

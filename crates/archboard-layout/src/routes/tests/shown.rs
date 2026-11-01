@@ -69,10 +69,13 @@ fn lines_keep_their_lanes_where_a_card_that_is_not_drawn_held_them_apart() {
         points(&[(100.0, 50.0), (40.0, 50.0), (40.0, 0.0), (0.0, 0.0)]),
     ]);
     let node = NodeFacts {
+        door: None,
+        toggle: None,
         id: "gone".to_owned(),
         order: 1000.0,
         name: "Gone".to_owned(),
         responsibility: None,
+        code_path: None,
     };
     folded.cards.push(DrawingNode {
         measured: MeasuredNode {

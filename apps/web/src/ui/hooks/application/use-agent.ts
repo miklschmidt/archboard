@@ -12,7 +12,6 @@ import type { ApprovalDecisions } from "#ui/state/application/workbench-owners.t
 import type { SnapshotStore } from "#ui/state/application/snapshot-cache.ts";
 import {
 	type AgentActions,
-	type AgentContext,
 	type AgentView,
 	type DraftStore,
 	useConversation,
@@ -23,7 +22,6 @@ import type { AgentVoiceView } from "@archboard/workbench/voice";
 interface AgentInputs {
 	readonly workbench: Workbench;
 	readonly draft: DraftStore;
-	readonly context: AgentContext;
 	readonly openPanel: () => void;
 	readonly showConversation: (checkout: string) => void;
 }
@@ -75,15 +73,12 @@ function useStore<T>(store: SnapshotStore<T>): T {
  * the progress clock, all of which change while the agent works. Called where
  * they are drawn, never at the application's root, which would draw the whole
  * shell again for every piece of a reply (TASK-385.03).
- * @param inputs The workbench and the context.
+ * @param inputs The workbench.
  * @param voice The voice, as the agent dock shows it.
  * @returns The view.
  */
-function useAgentView(
-	inputs: Pick<AgentInputs, "workbench" | "context">,
-	voice: AgentVoiceView,
-): AgentView {
-	const { workbench, context } = inputs;
+function useAgentView(inputs: Pick<AgentInputs, "workbench">, voice: AgentVoiceView): AgentView {
+	const { workbench } = inputs;
 	const { setup, owners } = workbench;
 	const setupSnapshot = useSyncExternalStore(setup.subscribe, setup.snapshot, setup.snapshot);
 	const stores = owners ?? NO_OWNER_STORES;
@@ -97,12 +92,11 @@ function useAgentView(
 			snapshot,
 			conversation,
 			voice,
-			context,
 			busyApprovals: decisions.busy,
 			approvalErrors: decisions.errors,
 			lastProgressAtMs,
 		}),
-		[setupSnapshot, snapshot, conversation, voice, context, decisions, lastProgressAtMs],
+		[setupSnapshot, snapshot, conversation, voice, decisions, lastProgressAtMs],
 	);
 }
 
@@ -112,7 +106,7 @@ function useAgentView(
  * @param inputs The workbench, the draft and the panel.
  * @returns The voice and the actions.
  */
-function useAgent(inputs: Omit<AgentInputs, "context">): {
+function useAgent(inputs: AgentInputs): {
 	readonly voice: AgentVoiceView;
 	readonly actions: AgentActions;
 } {

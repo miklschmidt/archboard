@@ -7,7 +7,7 @@
 // be seen selected.
 
 import { groupsUsed, isMemberOf } from "@archboard/board/content";
-import type { SemanticVariant } from "@archboard/board/document";
+import type { VariantContent } from "@archboard/board/content";
 import type { SemanticPolicy } from "@archboard/board/policy";
 
 /** What the vault calls each group, and its colour, by id. */
@@ -49,15 +49,15 @@ function groupLabel(id: string, names: GroupNames): string {
  * An id the vault no longer defines is offered too: the board says it, and a
  * reader has to be able to find what carries it, which is how a removed
  * definition is found and repaired.
- * @param variant The variant on screen, or null while there is none.
+ * @param content The complete reading, or null while unavailable.
  * @param names What the vault calls each group.
  * @returns The choices, in canonical id order.
  */
-function groupChoices(variant: SemanticVariant | null, names: GroupNames): GroupChoice[] {
-	if (variant === null) {
+function groupChoices(content: VariantContent | null, names: GroupNames): GroupChoice[] {
+	if (content === null) {
 		return [];
 	}
-	return groupsUsed(variant.content).map((id) => {
+	return groupsUsed(content).map((id) => {
 		const configured = Object.hasOwn(names, id);
 		return {
 			id,
@@ -70,14 +70,12 @@ function groupChoices(variant: SemanticVariant | null, names: GroupNames): Group
 
 /**
  * What choosing a group selects.
- * @param variant The variant on screen.
+ * @param content The complete reading.
  * @param group The group's id.
  * @returns The group and its members.
  */
-function groupSelection(variant: SemanticVariant, group: string): GroupSelection {
-	const members = variant.content.nodes
-		.filter((node) => isMemberOf(node, group))
-		.map((node) => node.id);
+function groupSelection(content: VariantContent, group: string): GroupSelection {
+	const members = content.nodes.filter((node) => isMemberOf(node, group)).map((node) => node.id);
 	return { group, members };
 }
 

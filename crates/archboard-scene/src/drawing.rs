@@ -42,6 +42,10 @@ pub enum TextRole {
     Note,
     /// A relationship's or a message's words, set in the ink of the label's plate.
     Label,
+    /// The folders of a card's code path, or a count of paths: dimmed.
+    Folder,
+    /// The file a card's code path ends in: bright.
+    File,
 }
 
 /// One measured line, positioned relative to its card or label box.
@@ -103,18 +107,6 @@ pub struct MeasuredLabel {
     pub height: f64,
     /// The measured lines of its words.
     pub runs: Vec<TextRun>,
-    /// The chips the label stands on, from the top of its box: one for a
-    /// label, and one for each relationship a joined line stacks (ADR 0052).
-    pub chips: Vec<Chip>,
-}
-
-/// One chip of a label, by its offset from the top of the label's box.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
-pub struct Chip {
-    /// Where the chip begins, from the top of the label's box.
-    pub y: f64,
-    /// How tall the chip is.
-    pub height: f64,
 }
 
 /// One card or containing frame, in the final drawing coordinate space.
@@ -139,39 +131,6 @@ pub struct PlacedLabel {
     pub bounds: Rect,
     /// The label's measured words.
     pub measured: MeasuredLabel,
-}
-
-impl PlacedLabel {
-    /// Each chip's box, where the picture puts it.
-    pub fn chips(&self) -> impl Iterator<Item = Rect> + '_ {
-        self.measured.chips.iter().map(|chip| Rect {
-            y: self.bounds.y + chip.y,
-            height: chip.height,
-            ..self.bounds
-        })
-    }
-}
-
-/// A group's region: the cards one group places inside one container, gathered and captioned.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
-pub struct DrawingRegion {
-    /// The id of the group.
-    pub group: String,
-    /// The container the region sits in; absent on the board itself.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub parent: Option<String>,
-    /// The cards and containers the board places in this group inside that
-    /// container, which a viewer lights the region for.
-    pub members: Vec<String>,
-    /// The region's box.
-    #[serde(rename = "box")]
-    #[ts(rename = "box")]
-    pub bounds: Rect,
-    /// Where its caption sits, and its words.
-    pub caption: PlacedLabel,
-    /// How deeply the region nests: 0 at the top level. Regions are painted shallowest first.
-    pub depth: f64,
 }
 
 /// A final route and its optional measured label in the same coordinates.
@@ -213,10 +172,6 @@ pub struct ArchitectureDrawing<N, E> {
     pub containers: Vec<DrawingNode<N>>,
     /// The routes, one for each relationship drawn.
     pub edges: Vec<DrawingEdge<E>>,
-    /// Group regions, when the engine gathers groups (TASK-347).
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub regions: Option<Vec<DrawingRegion>>,
 }
 
 /// A raised arc where one route crosses others, on the route that carries it.
@@ -274,6 +229,40 @@ pub struct NodeFacts {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub responsibility: Option<String>,
+    /// Where its code lives, when a reading says.
+    #[serde(rename = "codePath", skip_serializing_if = "Option::is_none")]
+    #[ts(rename = "codePath", optional)]
+    pub code_path: Option<String>,
+    /// Which way it lies from the open frame, when it stands outside it as a door.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub door: Option<DoorWay>,
+    /// The control it wears for a live reader, when a reading says.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub toggle: Option<Toggle>,
+}
+
+/// The control a door or a frame wears for a live reader.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum Toggle {
+    /// It brings its module into the picture.
+    Expand,
+    /// It takes its module back out of the picture.
+    Collapse,
+}
+
+/// Where a door lies in the tree from the open module.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
+pub enum DoorWay {
+    /// It lies at a higher level.
+    Up,
+    /// It lies at the same level.
+    Across,
+    /// It lies deeper.
+    Down,
 }
 
 /// How loudly a line speaks.
@@ -314,6 +303,10 @@ pub struct EdgeFacts {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub traffic: Option<Traffic>,
+    /// Whether it joins relationships in both directions, so a head stands at each end.
+    #[serde(default, rename = "twoWay")]
+    #[ts(rename = "twoWay")]
+    pub two_way: bool,
 }
 
 /// The architecture drawing as the painter reads it.

@@ -77,6 +77,22 @@ test("independent foundations share a row despite different incoming label owner
 				layoutOptions: { "archboard.header.size": "80" },
 				children: [card("b"), card("c")],
 			},
+			// A nested frame keeps the board on its ranks: flat frames take the grid.
+			{
+				id: "q",
+				width: 320,
+				height: 80,
+				layoutOptions: { "archboard.header.size": "80" },
+				children: [
+					{
+						id: "r",
+						width: 320,
+						height: 80,
+						layoutOptions: { "archboard.header.size": "80" },
+						children: [card("e")],
+					},
+				],
+			},
 		],
 		edges: [
 			["ab", "a", "b"],

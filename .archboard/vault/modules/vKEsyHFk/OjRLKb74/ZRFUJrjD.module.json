@@ -1,0 +1,15 @@
+{
+  "order": 7000,
+  "name": "Compound graph",
+  "kind": "function",
+  "responsibility": "States containment, measured sizes, authored order, relationship kinds and comparison standing as one graph",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-layout/src/architecture/graph.rs",
+    "symbol": "compound_graph"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#ZRFUJrjD",
+  "parent": "vKEsyHFk/OjRLKb74#e10t6gst",
+  "outgoing": []
+}

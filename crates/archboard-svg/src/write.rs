@@ -13,7 +13,7 @@ use crate::groups::group_attributes;
 use crate::path::Spelling;
 use crate::pulse::write_traffic;
 use crate::shapes::write_shape;
-use crate::xml::{Attributes, close, open};
+use crate::xml::{Attributes, close, escape_xml, open};
 
 /// What a scene's items are written with: the ids of its definitions and
 /// the host's icons.
@@ -36,6 +36,11 @@ impl Writer<'_> {
         match item {
             Item::Group(group) => {
                 open("g", &group_attributes(group, self.names), out);
+                if let Some(title) = &group.title {
+                    out.push_str("<title>");
+                    escape_xml(title, out);
+                    out.push_str("</title>");
+                }
                 self.items(&group.items, out);
                 close("g", out);
             }

@@ -88,7 +88,7 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
         },
         frame: layout.frame,
         header: layout.header,
-        slab: layout.slab,
+        tab: layout.tab,
         lifeline_bottom: layout.lifeline_bottom,
         columns: layout
             .columns
@@ -100,6 +100,9 @@ fn flow_of(layout: &FlowLayout<'_>) -> SequenceFlow {
                         order: column.card.node.order,
                         name: column.card.node.name.clone(),
                         responsibility: column.card.node.responsibility.clone(),
+                        code_path: None,
+                        door: None,
+                        toggle: None,
                     },
                     bounds: column.card.bounds,
                     title_size: column.card.title_size,

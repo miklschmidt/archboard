@@ -162,7 +162,7 @@ its own. Its own interface answers for them.
 A pass-through entry point has no mark of its own in the picture. Every visual
 channel is taken (ADR 0025), and the picture already shows the shape: an entry
 point with one line onward. It shows in words wherever the interface is listed:
-in the answer of `semantic inspect`, beside the measures of competing proposals
+in the answer of `model inspect`, beside the measures of competing proposals
 and in the pane inspector. It is reported as information, never as a warning.
 
 ### The interface measures
@@ -492,3 +492,113 @@ a default value in a fact or quotes one in a finding.
 A compose file and a plain Kubernetes manifest declare no interface that
 this rule can read. A container bound to one, or to its directory, still
 gets `exposure-unknown`. This is a skip, not a claim that it exposes no names.
+
+## Amendment of 2026-10-31: the canonical commands carry the answer
+
+TASK-559.27 restores what PR 19 removed with the board commands. Everything else
+stands, and the rules above keep the word variant where the canonical model says
+state.
+
+`model inspect` answers for one module or, with `--group`, for one group. The
+canonical read carries `interfaceChanges` and `interfaceMeasures` in its
+`comparison`, so the CLI and the reader state one derivation. `model compare`
+says them first, and `--beside` adds a competing state to the measures. These
+two sections are required parts of a comparison, so a forced adoption must copy
+them from a fresh read with no `--beside`.
+
+## Amendment of 2026-10-31: an author prefers the part that makes or answers a call
+
+TASK-559.28 sharpens the guidance above. The owner decided that a module cannot
+point at anything when the view is only that module. Its entry points can, and
+they need a card. A relationship to a container stays allowed, and it stays no
+warning, but an author now prefers the part. The end is not only for a
+whole-module dependency: it is acceptable for any call that no part stands for.
+
+The derivation does not change. A relationship that ends on the container
+itself still makes a caller and no entry point. What changes is what an author
+does with one. Measured on this repository before the repair, 70 of 114
+containers held such an end, and 9 read as no entry points although callers
+reached them.
+
+The author reads the source and moves the end to a part that already makes or
+answers the call, at the deepest level that the model states. If two parts make
+the same kind of call, the model states two relationships. The author adds a
+part only for an interface that a caller would name and that an architect wants
+to see as a card. Everything else stays on the frame. The interface line says
+`to module`, and the frame line stays drawn.
+
+`archboard check code` reports `RELATIONSHIP_ON_CONTAINER` as information on a
+relationship with an end on a container and neither end inside the other. The
+store cannot tell a whole-module dependency from a call that belongs on a
+child, so the finding is a signal and no write refuses it. It is information
+and not a warning, because many frame ends stay by design, and a warning for
+each one in the bell would hide real warnings.
+
+A first repair gave every file that makes a call a part. The owner rejected it.
+Measured on every reading, it took the lines drawn from 1,694 to 2,605, the
+total area from 148.5 M to 243.5 M, and the readings that pass the fit gate from
+107 to 94 of 115. `Canonical checkpoint operations` went from 3 parts and 23
+lines to 13 parts and 90 lines, and most of those lines were file imports named
+after symbols. A part that binds a file makes the code check ask for every call
+of that file, so the rule drew an import map, in which an architect cannot see a
+smell.
+
+The accepted repair moved 202 ends to existing parts, added 15 parts and 5
+relationships, and removed 28 relationships that repeated a kept statement. It
+took the lines drawn from 1,694 to 1,765, the total area from 148.5 M to 156.0 M,
+and the readings that pass the fit gate from 107 to 109 of 115. No module with
+parts reads as no entry points although callers reach it. Of the 1,074
+relationships, 339 keep a frame end.
+
+## Amendment of 2026-10-31: the reader states the measures
+
+TASK-559.22 and TASK-559.29 settle where a reader finds these facts. Where the
+rules above say the pane inspector or the sidebar, the canonical reader has the
+interface line of the right panel, the Interface section of About and the
+`Measures` list. The line writes entry points as `entries`. It also counts the
+distinct callers that reach the module itself as `to module`. That count is a
+fact beside the five measures, not a sixth measure. `Measures` sorts every
+module by one count at a time, and nothing combines the counts.
+
+The derivation now lives in
+`packages/board/src/shared/rules/inspect/container-interface.ts`.
+
+## Amendment of 2026-10-31: no relationship ends on a module with parts
+
+TASK-559.33 replaces the amendment above that prefers the part. The owner
+decided that a connection that reaches a container header is always a bug or
+badly authored data. The rules above that allow an end on a container no longer
+hold, and neither does a frame end for a call that no part stands for. A
+relationship ends on the part that owns it. The only exception joins a module
+to a part that it holds, and `CONTAINER_LINE_TO_OWN_PART` warns on that shape.
+
+`archboard check` fails on such an end with `RELATIONSHIP_ON_CONTAINER`. The
+finding left the code check, because a code finding cannot be an error, and the
+rule reads only the model. It judges current architecture, like the other
+semantic errors. So a draft that inherits a frame end from its retained
+predecessor passes until a reconciliation settles it. No write refuses the end.
+
+The derivation does not change. A relationship that names a module with parts
+still makes a caller and no entry point, because a retained reading or a draft
+can hold one. The reader keeps its `to module` count for that reason.
+
+The author reads the code that the anchor names and moves the end to the part
+that owns that code. The relationship keeps its identity and is not copied. Two
+relationships merge only when they have the same kind, the same ends and the
+same meaning. If no part owns the code, the author adds one part for what the
+module does at that seam, and names it for that responsibility.
+
+A group needed one change. A relationship now reaches a part of a member, so
+`model inspect --group` counts it at that member. Before this change, the group
+lost every such call from its boundary. A relationship between two parts of one
+member crosses nothing.
+
+The repair moved 335 ends on 69 containers, of which 62 relationships had both
+ends on containers. It added 39 parts and removed 3 modules that had no job of
+their own. It removed 33 relationships that repeated a kept statement and added
+29 that the new parts need. Relationships went from 1,091 to 1,087, and modules
+from 544 to 580. Modules with parts that read as no entry points stayed at 0.
+Measured on every reading, the lines drawn went from 1,794 to 1,807 and the total
+area from 187.8 M to 173.7 M. Readings below 0.4 went from 3 to 0. The readings
+that pass the fit gate went from 107 of 115 to 104 of 112. The same 8 readings
+miss, and the 3 readings that left passed the gate.

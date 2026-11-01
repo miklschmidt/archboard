@@ -1,0 +1,17 @@
+{
+  "order": 10000,
+  "name": "Thread tool calls",
+  "kind": "module",
+  "responsibility": "Answers the shared thread tools through one generation-owned dispatcher",
+  "description": "The dispatcher runs reads, writes, and waits through the same request cache and quarantine boundary. Its private services retain mutation settlements and waiting state. One generation owns its lifetime.",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
+  "parent": "vKEsyHFk/vKEsyHFk#sw4oFps0",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

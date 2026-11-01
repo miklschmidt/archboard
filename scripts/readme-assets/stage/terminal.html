@@ -17,13 +17,13 @@
 				font-weight: 100 900;
 			}
 			@font-face {
-				font-family: "Archboard DM Mono";
-				src: url("../../../packages/renderer/assets/fonts/DMMono-Regular-v1.000.ttf");
+				font-family: "Archboard Maple Mono";
+				src: url("../../../packages/renderer/assets/fonts/MapleMonoNL-Regular-Subset-v7.9.ttf");
 				font-weight: 400;
 			}
 			@font-face {
-				font-family: "Archboard DM Mono";
-				src: url("../../../packages/renderer/assets/fonts/DMMono-Medium-v1.000.ttf");
+				font-family: "Archboard Maple Mono";
+				src: url("../../../packages/renderer/assets/fonts/MapleMonoNL-Medium-Subset-v7.9.ttf");
 				font-weight: 500;
 			}
 			* {
@@ -55,7 +55,7 @@
 				padding: 0 22px;
 				border-bottom: 1px solid var(--border);
 				font:
-					500 13px/1 "Archboard DM Mono",
+					500 13px/1 "Archboard Maple Mono",
 					ui-monospace,
 					monospace;
 				color: var(--muted-foreground);
@@ -80,7 +80,7 @@
 			.line {
 				flex: none;
 				font:
-					400 15px/1.5 "Archboard DM Mono",
+					400 15px/1.5 "Archboard Maple Mono",
 					ui-monospace,
 					monospace;
 				white-space: pre-wrap;
@@ -108,7 +108,7 @@
 				display: block;
 				margin-bottom: 8px;
 				font:
-					500 12px/1 "Archboard DM Mono",
+					500 12px/1 "Archboard Maple Mono",
 					ui-monospace,
 					monospace;
 				color: var(--primary-text);
@@ -180,7 +180,8 @@
 	<body>
 		<main>
 			<header>
-				<span class="lamp"></span><span>coding agent</span><span class="path">~/web-shop</span>
+				<span class="lamp"></span><span>coding agent</span
+				><span class="path" id="path">~/web-shop</span>
 			</header>
 			<div id="log"></div>
 		</main>
@@ -188,6 +189,7 @@
 			const query = new URLSearchParams(location.search);
 			document.documentElement.dataset.theme = query.get("theme") || "dark";
 			const log = document.getElementById("log");
+			document.getElementById("path").textContent = query.get("path") || "~/web-shop";
 			let last = null;
 
 			/** Keep the newest lines, dropping the oldest, as a terminal scrolls. */

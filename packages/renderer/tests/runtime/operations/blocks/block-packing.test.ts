@@ -6,7 +6,6 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
-import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
 /** The vocabulary of the fixtures, in the dogfood vault's order. */
 const policy = SemanticPolicySchema.parse({
@@ -53,13 +52,6 @@ test("blocks read forward across a row or down the page", async () => {
 	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	const [source, target] = [atlas.nodes["LHBPlItu"]!, atlas.nodes["5uPyMgoI"]!];
 	expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
-});
-
-test("a block moves up beside an earlier one only to fill real room", async () => {
-	const content = orderedFixture(workingWithAnAgent);
-	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const [pane, voice] = [atlas.nodes["xsn0RvSi"]!, atlas.nodes["0SRnYXnC"]!];
-	expect(voice.y).toBeGreaterThan(pane.y + pane.height);
 });
 
 // Reduced from a board of a work vault, letters replaced: a chain of cards

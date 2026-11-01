@@ -25,6 +25,9 @@ import {
 	planFor,
 	planIsEmpty,
 	type AddressPlan,
+	type AddressOpen,
+	type ModelAddress,
+	repositoryIn,
 	type WorkspaceAddress,
 } from "#ui/rules/board-routing/address.ts";
 import type { AskedBoard, WorkspacePort } from "#ui/rules/board-routing/contracts.ts";
@@ -33,12 +36,7 @@ import type { AskedBoard, WorkspacePort } from "#ui/rules/board-routing/contract
 type RestoreStep =
 	| { readonly kind: "close"; readonly paneId: string }
 	| { readonly kind: "add" }
-	| {
-			readonly kind: "open";
-			readonly paneId: string;
-			readonly boardKey: string;
-			readonly repository: string | null;
-	  }
+	| ({ readonly kind: "open" } & AddressOpen)
 	| { readonly kind: "read"; readonly paneId: string; readonly view: string | null }
 	| { readonly kind: "focus"; readonly paneId: string };
 
@@ -147,12 +145,22 @@ function stepKey(step: RestoreStep, displayed: WorkspaceAddress): string {
 		case "add":
 			return `add:${displayed.panes.length}`;
 		case "open":
-			return `open:${step.paneId}:${String(step.repository)}:${step.boardKey}`;
+			return openStepKey(step);
 		case "read":
 			return `read:${step.paneId}:${step.view ?? ""}`;
 		default:
 			return `focus:${step.paneId}`;
 	}
+}
+
+/**
+ * Keep each complete canonical destination distinct while retaining legacy address keys.
+ * @param step The addressed open operation.
+ * @returns Its stable restoration identity.
+ */
+function openStepKey(step: Extract<RestoreStep, { kind: "open" }>): string {
+	const reading = step.model === undefined ? "" : `:${JSON.stringify(step.model)}`;
+	return `open:${step.paneId}:${String(step.repository)}:${step.boardKey}${reading}`;
 }
 
 /**
@@ -218,7 +226,14 @@ function restoreOutcome(
 	displayed: WorkspaceAddress,
 	port: WorkspacePort,
 ): RestoreOutcome {
-	const plan = planFor(displayed, restore.wanted, port.paneIds);
+	const actual = {
+		...displayed,
+		panes: displayed.panes.map((pane) => ({
+			...pane,
+			repository: repositoryIn(port.displayed, pane.paneId),
+		})),
+	};
+	const plan = planFor(actual, restore.wanted, port.paneIds);
 	if (planIsEmpty(plan)) {
 		return { kind: "done" };
 	}
@@ -246,7 +261,12 @@ interface RestoreCommands {
 	 */
 	readonly apply: (step: RestoreStep) => boolean;
 	/** Take the command slot and point a pane at a board of a repository, or of its own. */
-	readonly open: (paneId: string, boardKey: string, repository: string | null) => void;
+	readonly open: (
+		paneId: string,
+		boardKey: string | null,
+		repository: string | null,
+		model?: ModelAddress,
+	) => void;
 }
 
 /** Where a restore got to, and whether anything more can be done right now. */
@@ -287,7 +307,12 @@ function advanceRestore(
 		}
 		current = { ...current, attempted: new Set(current.attempted).add(outcome.key) };
 		if (outcome.step.kind === "open") {
-			commands.open(outcome.step.paneId, outcome.step.boardKey, outcome.step.repository);
+			commands.open(
+				outcome.step.paneId,
+				outcome.step.boardKey,
+				outcome.step.repository,
+				outcome.step.model,
+			);
 			return { restore: current, waiting: true };
 		}
 		if (commands.apply(outcome.step)) {

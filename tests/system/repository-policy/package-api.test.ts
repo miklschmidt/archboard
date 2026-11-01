@@ -11,12 +11,10 @@ const packagesRoot = path.join(repoRoot, "packages");
 // An `api/` folder is a package's interface over private implementation (docs/agents/boundaries.md,
 // "Packages"). A package that adopts it points the `exports` of an area only into that area's
 // `api/`, and nothing private reaches back up into it. Each package lists the areas it adopts it
-// for. An `executables` entry names an export that is a file to run, not a module to import, with
-// the reason: it keeps pointing at its file.
+// for.
 const ADOPTERS: {
 	name: string;
 	areas: string[];
-	executables?: Record<string, string>;
 }[] = [
 	{ name: "board", areas: ["shared", "runtime"] },
 	{ name: "codex-app-server", areas: ["shared", "runtime"] },
@@ -29,28 +27,16 @@ const ADOPTERS: {
 	{ name: "code-opener", areas: ["shared", "server", "ui"] },
 	{ name: "walkthrough", areas: ["shared", "runtime"] },
 	{ name: "skills", areas: ["runtime"] },
-	{ name: "server-lifecycle", areas: ["runtime"] },
+	{ name: "server-lifecycle", areas: ["shared", "runtime"] },
 	{ name: "workbench", areas: ["shared", "runtime", "server", "ui"] },
 	{ name: "codex-realtime-voice", areas: ["shared", "runtime", "server", "ui"] },
-	{
-		name: "process",
-		areas: ["runtime"],
-		executables: {
-			"./git-owner": "a Git command runs it as a child process, found with import.meta.resolve",
-		},
-	},
+	{ name: "process", areas: ["runtime"] },
 ];
 
-function exportsOutsideApi(
-	exports: Record<string, string>,
-	area: string,
-	executables: readonly string[] = [],
-): string[] {
+function exportsOutsideApi(exports: Record<string, string>, area: string): string[] {
 	const prefix = `./src/${area}/`;
 	return Object.entries(exports).flatMap(([subpath, target]) =>
-		target.startsWith(prefix) &&
-		!executables.includes(subpath) &&
-		!new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
+		target.startsWith(prefix) && !new RegExp(`^\\./src/${area}/api/[^/]+\\.ts$`).test(target)
 			? [`${subpath} -> ${target}`]
 			: [],
 	);
@@ -120,16 +106,14 @@ function productionFiles(name: string): Record<string, string> {
 	);
 }
 
-describe.each(ADOPTERS)("the api folder of $name", ({ name, areas, executables = {} }) => {
+describe.each(ADOPTERS)("the api folder of $name", ({ name, areas }) => {
 	const manifest = JSON.parse(
 		fs.readFileSync(path.join(packagesRoot, name, "package.json"), "utf8"),
 	) as { exports: Record<string, string> };
 	const files = productionFiles(name);
 
 	test.each(areas)("every export into src/%s points into its api folder", (area) => {
-		const exempt = Object.keys(executables);
-		expect(exempt.filter((subpath) => !(subpath in manifest.exports))).toEqual([]);
-		expect(exportsOutsideApi(manifest.exports, area, exempt)).toEqual([]);
+		expect(exportsOutsideApi(manifest.exports, area)).toEqual([]);
 	});
 
 	test("no private production file imports an api file", () => {
@@ -162,11 +146,7 @@ const SKIPPED_TREES = new Set(["node_modules", "dist", "generated", ".git"]);
 const CODE_FILE = /\.(?:[cm]?[jt]sx?)$/;
 
 /** The line numbers of string literals that name a private path of one of the packages. */
-function privatePackagePathLines(
-	text: string,
-	packageNames: readonly string[],
-	executableTargets: readonly string[],
-): number[] {
+function privatePackagePathLines(text: string, packageNames: readonly string[]): number[] {
 	const pattern = new RegExp(
 		`(?:^|/)packages/(${packageNames.join("|")})/src/([^"'\`\\s);]*)`,
 		"g",
@@ -174,10 +154,7 @@ function privatePackagePathLines(
 	return [
 		...new Set(
 			sourceOf(text).strings.flatMap(({ text: literal, line }) =>
-				[...literal.matchAll(pattern)].some(
-					([, name, rest = ""]) =>
-						/\.[cm]?[jt]sx?$/.test(rest) && !executableTargets.includes(`${name}:./src/${rest}`),
-				)
+				[...literal.matchAll(pattern)].some(([, , rest = ""]) => /\.[cm]?[jt]sx?$/.test(rest))
 					? [line]
 					: [],
 			),
@@ -206,12 +183,6 @@ function codeFilesOutsidePackages(): string[] {
 
 describe("no code outside the packages names a private package path", () => {
 	const packageNames = fs.readdirSync(packagesRoot);
-	const executableTargets = ADOPTERS.flatMap(({ name, executables = {} }) => {
-		const { exports } = JSON.parse(
-			fs.readFileSync(path.join(packagesRoot, name, "package.json"), "utf8"),
-		) as { exports: Record<string, string> };
-		return Object.keys(executables).map((subpath) => `${name}:${exports[subpath]}`);
-	});
 
 	test("tests, scripts and src load a package through its public name", () => {
 		const violations = codeFilesOutsidePackages().flatMap((file) =>
@@ -220,7 +191,6 @@ describe("no code outside the packages names a private package path", () => {
 				: privatePackagePathLines(
 						fs.readFileSync(path.join(repoRoot, file), "utf8"),
 						packageNames,
-						executableTargets,
 					).map((line) => `${file}:${line}`),
 		);
 		expect(violations).toEqual([]);
@@ -252,18 +222,11 @@ describe("no code outside the packages names a private package path", () => {
 			`mock.module("../../packages/board/src/runtime/store/doing.ts", () => ({}));`, // 1: private
 			`const p = join(root, \`packages/board/src/shared/ids/ids.ts\`);`, // 2: private
 			`import x from "../../packages/board/src/shared/api/ids.ts";`, // 3: a public file still needs its exported name
-			`const e = "packages/process/src/runtime/processes/git-owner.ts";`, // 4: executable
-			`const f = "packages/alpha/src/shared/x.ts";`, // 5: not a package here
-			`/** Mirrors \`packages/board/src/runtime/store/doing.ts\`. */`, // 6: comment
-			`// "packages/board/src/runtime/store/doing.ts"`, // 7: comment
+			`const f = "packages/alpha/src/shared/x.ts";`, // 4: not a package here
+			`/** Mirrors \`packages/board/src/runtime/store/doing.ts\`. */`, // 5: comment
+			`// "packages/board/src/runtime/store/doing.ts"`, // 6: comment
 		].join("\n");
-		expect(
-			privatePackagePathLines(
-				text,
-				["board", "process"],
-				["process:./src/runtime/processes/git-owner.ts"],
-			),
-		).toEqual([1, 2, 3]);
+		expect(privatePackagePathLines(text, ["board", "process"])).toEqual([1, 2, 3]);
 	});
 });
 
@@ -286,12 +249,10 @@ describe("the api checks", () => {
 		expect(
 			exportsOutsideApi(
 				{
-					"./owner": "./src/runtime/processes/owner.ts",
 					"./group": "./src/runtime/processes/group.ts",
 					"./api": "./src/runtime/api/group.ts",
 				},
 				"runtime",
-				["./owner"],
 			),
 		).toEqual(["./group -> ./src/runtime/processes/group.ts"]);
 		expect(

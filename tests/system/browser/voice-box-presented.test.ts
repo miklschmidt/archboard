@@ -1,6 +1,5 @@
 import { expect, test } from "bun:test";
 
-import { createJsonRequester } from "../support/http.ts";
 import {
 	createAgentBrowser,
 	pollUntil,
@@ -10,13 +9,13 @@ import type { ProductionFixture } from "../server-state/support/codex-production
 import { askToSpeak, lineSaid, voiceStarts } from "./support/codex-live-voice.ts";
 import { roleAction } from "./support/opener-settings-interaction.ts";
 import { stepBrowserMotion } from "./support/motion-clock.ts";
-import { press } from "./support/drilling.ts";
 import {
-	A_SMALL_PIPELINE,
-	addressShowing,
-	seedSemanticBoard,
-	stageState,
-} from "./support/semantic-page.ts";
+	startModelWalkthrough,
+	SMALL_PIPELINE,
+	modelAddress,
+	seedCanonicalModel,
+	modelDrawn,
+} from "./support/canonical-page.ts";
 import {
 	WAIT,
 	WATCH,
@@ -60,7 +59,7 @@ interface Presented {
 /** What the page says of the walkthrough's box. */
 const PRESENTED = `(() => {
 	const box = document.querySelector('[data-slot="semantic-presentation"]');
-	const voice = document.querySelector('[data-slot="voice-box"]');
+	const voice = [...document.querySelectorAll('[data-slot="voice-box"]')].find(element => element.checkVisibility());
 	const holder = document.querySelector('[data-slot="voice-orb-holder"]');
 	const narrate = box?.querySelector('[data-slot="semantic-presentation-narrate"]');
 	const key = document.querySelector('[data-slot="presentation-bar"] [data-voice-key]');
@@ -85,7 +84,7 @@ const presentedNow = (browser: AgentBrowserSession): Promise<Presented> =>
 
 /** A board with a walkthrough of two steps, for the tests of the box a presented one has. */
 const TOUR = {
-	...A_SMALL_PIPELINE,
+	...SMALL_PIPELINE,
 	walkthroughs: [
 		{
 			name: "The feed",
@@ -138,14 +137,14 @@ async function wordsStay(
 test("a presented walkthrough carries the voice at the foot of its box, in the pane and in fullscreen", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { server, fixture } = await startVoiceServer(resources, "voice-foot-vault");
-	await seedSemanticBoard(createJsonRequester(server), "pipeline", TOUR);
+	const model = await seedCanonicalModel(server.vault, "pipeline", TOUR);
 
 	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
-	await openForVoice(browser, addressShowing(server.base, "pipeline"));
+	await openForVoice(browser, modelAddress(server.base, model));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
+		() => modelDrawn(browser.eval.bind(browser)),
+		Boolean,
 		"the board to be drawn before a walkthrough is presented",
 		WAIT,
 	);
@@ -159,7 +158,7 @@ test("a presented walkthrough carries the voice at the foot of its box, in the p
 	);
 
 	// Presenting while the voice box floats over the picture: the orb flies into the foot of the box.
-	await press(browser, "[data-slot='semantic-walkthrough-choice']");
+	await startModelWalkthrough(browser, model.walkthroughs[0]!.id);
 	const inFoot = await pollUntil(
 		() => presentedNow(browser),
 		(now) => now.place === "foot" && now.orbInBox,

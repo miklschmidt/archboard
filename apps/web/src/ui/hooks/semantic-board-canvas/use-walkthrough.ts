@@ -213,7 +213,7 @@ function byHand(current: Standing, place: NarrativePlace | null): Standing {
  */
 function useWalkthrough(
 	source: WalkthroughSource,
-	reading: VariantReading | null,
+	reading: Pick<VariantReading, "walkthroughs" | "nameOf"> | null,
 	driven?: DrivenPlace | null,
 ): WalkthroughReading {
 	const { board } = source;

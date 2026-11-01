@@ -59,7 +59,12 @@ afterAll(() => {
 
 test("a set ARCHBOARD_VAULT refuses the command, and the refusal names the working directory, -C and the layout", () => {
 	const other = join(root, "elsewhere");
-	for (const args of [["semantic"], ["repo", "list"], ["semantic", "-C", vault], ["status"]]) {
+	for (const args of [
+		["model", "read"],
+		["repo", "list"],
+		["model", "read", "-C", vault],
+		["status"],
+	]) {
 		const refused = archboard(args, { ARCHBOARD_VAULT: other });
 		expect(refused.status, refused.failure).toBe(2);
 		expect(refused.stdout, refused.failure).toBe("");
@@ -77,19 +82,19 @@ test("a set ARCHBOARD_VAULT is refused when it comes from a .env file, and an em
 	const dotenv = join(root, "dotenv");
 	mkdirSync(join(dotenv, ".archboard", "vault"), { recursive: true });
 	writeFileSync(join(dotenv, ".env"), `ARCHBOARD_VAULT=${join(root, "elsewhere")}\n`);
-	const refused = archboard(["semantic"], {}, dotenv);
+	const refused = archboard(["model", "read"], {}, dotenv);
 	expect(refused.status, refused.failure).toBe(2);
 	expect(refused.stdout, refused.failure).toBe("");
 
-	const emptied = archboard(["semantic"], { ARCHBOARD_VAULT: "" });
+	const emptied = archboard(["model", "read"], { ARCHBOARD_VAULT: "" });
 	expect(emptied.status, emptied.failure).toBe(2);
 });
 
 test("the removed server URL name is refused the same way, and help is never refused", () => {
-	const renamed = archboard(["semantic"], { EXPRESS_SERVER_URL: "http://127.0.0.1:9" });
+	const renamed = archboard(["model", "read"], { EXPRESS_SERVER_URL: "http://127.0.0.1:9" });
 	expect(renamed.status, renamed.failure).toBe(2);
 	expect(renamed.stderr, renamed.failure).toContain("ARCHBOARD_URL");
 
-	const help = archboard(["semantic", "--help"], { ARCHBOARD_VAULT: join(root, "elsewhere") });
+	const help = archboard(["model", "--help"], { ARCHBOARD_VAULT: join(root, "elsewhere") });
 	expect(help.status, help.failure).toBe(0);
 });

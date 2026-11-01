@@ -1,0 +1,965 @@
+{
+  "id": "wyzlP1Nf",
+  "name": "Queued fulfilment",
+  "summary": "Answer the shopper once the payment has started; stock and the receipt move to a queue-fed worker",
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-01T03:54:15.200Z",
+  "predecessor": "dAg7XGx2",
+  "predecessorRevision": "b2e1b74d865541cafce67160d5725d594d5332c6d62813de8f3e4f059b01f2a7",
+  "baseline": "78567d34c3cf5bd9149ea14c5d20d657709b12c2",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#ys6hWCoY"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#VONp3yKV"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#C2JNdx5s"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#dkNRueI0"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#vMHQ5pQb"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#L5E53LtJ"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#awUQqUri"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#pCnCU5hG"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#tYvFPbbC"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#UMnxeM5M"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#3uClgO14"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#LyUokBCR"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#TqpOt2sN"
+    },
+    {
+      "type": "remove",
+      "subject": "Shop/MKhTEYqf#dkc8ZMX3"
+    },
+    {
+      "type": "add",
+      "subject": "Shop#KnGZDCrj",
+      "kind": "relationship",
+      "value": {
+        "order": 34000,
+        "kind": "event",
+        "label": "payment succeeded",
+        "emphasis": "hero",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop#KnGZDCrj",
+        "to": "Shop#rgSpkJC0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#KnGZDCrj",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#ZaOafnWt"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#kZjjfq1m",
+      "field": "responsibility",
+      "value": "POST /orders: saves the order as pending and starts the payment, then answers"
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#6EKtMmuD",
+      "field": "label",
+      "value": "write the order as pending"
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#tLHGTzaf",
+      "field": "label",
+      "value": "start the payment"
+    },
+    {
+      "type": "add",
+      "subject": "Shop#rgSpkJC0",
+      "kind": "module",
+      "value": {
+        "order": 12000,
+        "name": "Payment webhook",
+        "kind": "route",
+        "responsibility": "POST /payments/webhook: records the outcome the payment provider reports",
+        "groups": [
+          "payments"
+        ],
+        "schemaVersion": 1,
+        "id": "Shop#rgSpkJC0"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#rgSpkJC0",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#lwmpnaVU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#mYpaWsYD",
+      "kind": "relationship",
+      "value": {
+        "order": 35000,
+        "kind": "data",
+        "label": "mark the order paid",
+        "emphasis": "normal",
+        "id": "Shop#mYpaWsYD",
+        "to": "Shop/MKhTEYqf#wlyh3hT6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#mYpaWsYD",
+      "placement": {
+        "holder": "Shop#rgSpkJC0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#Nhf1yleL",
+      "kind": "relationship",
+      "value": {
+        "order": 36000,
+        "kind": "queue",
+        "label": "publish order paid",
+        "emphasis": "hero",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop#Nhf1yleL",
+        "to": "Shop#iGJ1cXkG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#Nhf1yleL",
+      "placement": {
+        "holder": "Shop#rgSpkJC0"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#iGJ1cXkG",
+      "kind": "module",
+      "value": {
+        "order": 13000,
+        "name": "Order events",
+        "kind": "queue",
+        "responsibility": "Carries each paid order to the work that follows it",
+        "groups": [
+          "fulfilment"
+        ],
+        "schemaVersion": 1,
+        "id": "Shop#iGJ1cXkG"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#iGJ1cXkG",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#eAov3TgE",
+      "kind": "relationship",
+      "value": {
+        "order": 37000,
+        "kind": "queue",
+        "label": "deliver order paid",
+        "emphasis": "normal",
+        "traffic": {
+          "speed": 80,
+          "volume": 1
+        },
+        "id": "Shop#eAov3TgE",
+        "to": "Shop#hBnH2Vg6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#eAov3TgE",
+      "placement": {
+        "holder": "Shop#iGJ1cXkG"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#hBnH2Vg6",
+      "kind": "module",
+      "value": {
+        "order": 14000,
+        "name": "Fulfilment worker",
+        "kind": "job",
+        "responsibility": "Reserves the stock and sends the receipt for each paid order, retrying on its own",
+        "groups": [
+          "fulfilment"
+        ],
+        "schemaVersion": 1,
+        "id": "Shop#hBnH2Vg6"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#hBnH2Vg6",
+      "placement": {
+        "holder": "Shop"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#mOCWkDAa",
+      "field": "label",
+      "value": "send the receipt"
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#mOCWkDAa",
+      "field": "description",
+      "value": "Retried with backoff until the email provider accepts it; the shopper already has their confirmation page."
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#mOCWkDAa",
+      "placement": {
+        "holder": "Shop#hBnH2Vg6"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#YeYYgWtm",
+      "field": "label",
+      "value": "reserve stock"
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#YeYYgWtm",
+      "placement": {
+        "holder": "Shop#hBnH2Vg6"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#Hhw0puAk",
+      "kind": "walkthrough",
+      "value": {
+        "schemaVersion": 1,
+        "id": "Shop#Hhw0puAk",
+        "name": "Why checkout stops waiting",
+        "target": {
+          "state": "wyzlP1Nf"
+        }
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#8d2tNlJ6",
+      "kind": "beat",
+      "value": {
+        "id": "Shop#8d2tNlJ6",
+        "title": "Shoppers should not wait for stock and email",
+        "narrative": "Today checkout keeps the shopper on a spinner while stock, the card and the receipt email all answer, and cancels the order after 10 seconds. This change answers the shopper as soon as the payment has started and does the rest from a queue.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "Shop/MKhTEYqf#cgbB3aQp",
+              "Shop/MKhTEYqf#lwmpnaVU",
+              "Shop/MKhTEYqf#wlyh3hT6",
+              "Shop/MKhTEYqf#ZaOafnWt",
+              "Shop/MKhTEYqf#lXgq75bO",
+              "Shop/MKhTEYqf#kZjjfq1m",
+              "Shop/MKhTEYqf#4M4pdgk0",
+              "Shop/MKhTEYqf#Q2XClLOC",
+              "Shop/MKhTEYqf#HYDbL5fE",
+              "Shop#rgSpkJC0",
+              "Shop#iGJ1cXkG",
+              "Shop#hBnH2Vg6"
+            ],
+            "relationships": [
+              "Shop/MKhTEYqf#LrbGsGwG",
+              "Shop/MKhTEYqf#6EKtMmuD",
+              "Shop/MKhTEYqf#tLHGTzaf",
+              "Shop/MKhTEYqf#mOCWkDAa",
+              "Shop/MKhTEYqf#YeYYgWtm",
+              "Shop/MKhTEYqf#3PN9WBRn",
+              "Shop/MKhTEYqf#AdNRbD8D",
+              "Shop/MKhTEYqf#ywGKHoBq",
+              "Shop#KnGZDCrj",
+              "Shop#mYpaWsYD",
+              "Shop#Nhf1yleL",
+              "Shop#eAov3TgE"
+            ],
+            "flows": [
+              "Shop/MKhTEYqf#yRuuRooQ",
+              "Shop#diXgI23Q"
+            ]
+          },
+          "selection": [],
+          "focus": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE",
+            "Shop#rgSpkJC0",
+            "Shop#iGJ1cXkG",
+            "Shop#hBnH2Vg6"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#8d2tNlJ6",
+      "placement": {
+        "holder": "Shop#Hhw0puAk",
+        "before": "Shop#gJ2kFvig"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#gJ2kFvig",
+      "kind": "beat",
+      "value": {
+        "id": "Shop#gJ2kFvig",
+        "title": "Place order answers once the payment has started",
+        "narrative": "Place order now saves the order as pending, starts the payment and answers. Timeout guard and its 10 second limit are removed, because nothing slow is left inside the request.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "Shop/MKhTEYqf#cgbB3aQp",
+              "Shop/MKhTEYqf#lwmpnaVU",
+              "Shop/MKhTEYqf#wlyh3hT6",
+              "Shop/MKhTEYqf#ZaOafnWt",
+              "Shop/MKhTEYqf#lXgq75bO",
+              "Shop/MKhTEYqf#kZjjfq1m",
+              "Shop/MKhTEYqf#4M4pdgk0",
+              "Shop/MKhTEYqf#Q2XClLOC",
+              "Shop/MKhTEYqf#HYDbL5fE",
+              "Shop#rgSpkJC0",
+              "Shop#iGJ1cXkG",
+              "Shop#hBnH2Vg6"
+            ],
+            "relationships": [
+              "Shop/MKhTEYqf#LrbGsGwG",
+              "Shop/MKhTEYqf#6EKtMmuD",
+              "Shop/MKhTEYqf#tLHGTzaf",
+              "Shop/MKhTEYqf#mOCWkDAa",
+              "Shop/MKhTEYqf#YeYYgWtm",
+              "Shop/MKhTEYqf#3PN9WBRn",
+              "Shop/MKhTEYqf#AdNRbD8D",
+              "Shop/MKhTEYqf#ywGKHoBq",
+              "Shop#KnGZDCrj",
+              "Shop#mYpaWsYD",
+              "Shop#Nhf1yleL",
+              "Shop#eAov3TgE"
+            ],
+            "flows": [
+              "Shop/MKhTEYqf#yRuuRooQ",
+              "Shop#diXgI23Q"
+            ]
+          },
+          "selection": [
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#tLHGTzaf",
+            "Shop/MKhTEYqf#6EKtMmuD"
+          ],
+          "focus": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE",
+            "Shop#rgSpkJC0",
+            "Shop#iGJ1cXkG",
+            "Shop#hBnH2Vg6"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#gJ2kFvig",
+      "placement": {
+        "holder": "Shop#Hhw0puAk",
+        "before": "Shop#ZcpGEh5X"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#ZcpGEh5X",
+      "kind": "beat",
+      "value": {
+        "id": "Shop#ZcpGEh5X",
+        "title": "The payment provider reports the outcome to a webhook",
+        "narrative": "When the payment succeeds, Payment provider calls the new Payment webhook, and the webhook marks the order paid in Orders DB.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "Shop/MKhTEYqf#cgbB3aQp",
+              "Shop/MKhTEYqf#lwmpnaVU",
+              "Shop/MKhTEYqf#wlyh3hT6",
+              "Shop/MKhTEYqf#ZaOafnWt",
+              "Shop/MKhTEYqf#lXgq75bO",
+              "Shop/MKhTEYqf#kZjjfq1m",
+              "Shop/MKhTEYqf#4M4pdgk0",
+              "Shop/MKhTEYqf#Q2XClLOC",
+              "Shop/MKhTEYqf#HYDbL5fE",
+              "Shop#rgSpkJC0",
+              "Shop#iGJ1cXkG",
+              "Shop#hBnH2Vg6"
+            ],
+            "relationships": [
+              "Shop/MKhTEYqf#LrbGsGwG",
+              "Shop/MKhTEYqf#6EKtMmuD",
+              "Shop/MKhTEYqf#tLHGTzaf",
+              "Shop/MKhTEYqf#mOCWkDAa",
+              "Shop/MKhTEYqf#YeYYgWtm",
+              "Shop/MKhTEYqf#3PN9WBRn",
+              "Shop/MKhTEYqf#AdNRbD8D",
+              "Shop/MKhTEYqf#ywGKHoBq",
+              "Shop#KnGZDCrj",
+              "Shop#mYpaWsYD",
+              "Shop#Nhf1yleL",
+              "Shop#eAov3TgE"
+            ],
+            "flows": [
+              "Shop/MKhTEYqf#yRuuRooQ",
+              "Shop#diXgI23Q"
+            ]
+          },
+          "selection": [
+            "Shop#rgSpkJC0",
+            "Shop#KnGZDCrj",
+            "Shop#mYpaWsYD"
+          ],
+          "focus": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE",
+            "Shop#rgSpkJC0",
+            "Shop#iGJ1cXkG",
+            "Shop#hBnH2Vg6"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#ZcpGEh5X",
+      "placement": {
+        "holder": "Shop#Hhw0puAk",
+        "before": "Shop#FL9Sgryx"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#FL9Sgryx",
+      "kind": "beat",
+      "value": {
+        "id": "Shop#FL9Sgryx",
+        "title": "Stock and the receipt move to a worker behind a queue",
+        "narrative": "The webhook publishes order paid to Order events, and Fulfilment worker reserves the items and sends the receipt. Both calls used to run inside Place order; a failed email is now retried by the worker, not by the shopper's request.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "Shop/MKhTEYqf#lwmpnaVU",
+              "Shop/MKhTEYqf#wlyh3hT6",
+              "Shop/MKhTEYqf#ZaOafnWt",
+              "Shop/MKhTEYqf#lXgq75bO",
+              "Shop/MKhTEYqf#HYDbL5fE",
+              "Shop#rgSpkJC0",
+              "Shop#iGJ1cXkG",
+              "Shop#hBnH2Vg6"
+            ],
+            "relationships": [
+              "Shop/MKhTEYqf#mOCWkDAa",
+              "Shop/MKhTEYqf#YeYYgWtm",
+              "Shop#KnGZDCrj",
+              "Shop#mYpaWsYD",
+              "Shop#Nhf1yleL",
+              "Shop#eAov3TgE"
+            ],
+            "flows": [
+              "Shop#diXgI23Q"
+            ]
+          },
+          "selection": [
+            "Shop#0bGz3CcN",
+            "Shop#e8cpKxeF",
+            "Shop#6HcLfXj4"
+          ],
+          "focus": [
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#HYDbL5fE",
+            "Shop#rgSpkJC0",
+            "Shop#iGJ1cXkG",
+            "Shop#hBnH2Vg6"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "sequence",
+          "flow": "Shop#diXgI23Q"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#FL9Sgryx",
+      "placement": {
+        "holder": "Shop#Hhw0puAk",
+        "before": "Shop#F5QYhOyC"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#F5QYhOyC",
+      "kind": "beat",
+      "value": {
+        "id": "Shop#F5QYhOyC",
+        "title": "Look closely at duplicate webhooks",
+        "narrative": "Payment providers can deliver the same event twice. Check that Payment webhook marks an order paid once and publishes order paid once, or the worker reserves the stock twice.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "Shop/MKhTEYqf#cgbB3aQp",
+              "Shop/MKhTEYqf#lwmpnaVU",
+              "Shop/MKhTEYqf#wlyh3hT6",
+              "Shop/MKhTEYqf#ZaOafnWt",
+              "Shop/MKhTEYqf#lXgq75bO",
+              "Shop/MKhTEYqf#kZjjfq1m",
+              "Shop/MKhTEYqf#4M4pdgk0",
+              "Shop/MKhTEYqf#Q2XClLOC",
+              "Shop/MKhTEYqf#HYDbL5fE",
+              "Shop#rgSpkJC0",
+              "Shop#iGJ1cXkG",
+              "Shop#hBnH2Vg6"
+            ],
+            "relationships": [
+              "Shop/MKhTEYqf#LrbGsGwG",
+              "Shop/MKhTEYqf#6EKtMmuD",
+              "Shop/MKhTEYqf#tLHGTzaf",
+              "Shop/MKhTEYqf#mOCWkDAa",
+              "Shop/MKhTEYqf#YeYYgWtm",
+              "Shop/MKhTEYqf#3PN9WBRn",
+              "Shop/MKhTEYqf#AdNRbD8D",
+              "Shop/MKhTEYqf#ywGKHoBq",
+              "Shop#KnGZDCrj",
+              "Shop#mYpaWsYD",
+              "Shop#Nhf1yleL",
+              "Shop#eAov3TgE"
+            ],
+            "flows": [
+              "Shop/MKhTEYqf#yRuuRooQ",
+              "Shop#diXgI23Q"
+            ]
+          },
+          "selection": [
+            "Shop#rgSpkJC0",
+            "Shop#mYpaWsYD",
+            "Shop#Nhf1yleL"
+          ],
+          "focus": [
+            "Shop/MKhTEYqf#cgbB3aQp",
+            "Shop/MKhTEYqf#lwmpnaVU",
+            "Shop/MKhTEYqf#wlyh3hT6",
+            "Shop/MKhTEYqf#ZaOafnWt",
+            "Shop/MKhTEYqf#lXgq75bO",
+            "Shop/MKhTEYqf#kZjjfq1m",
+            "Shop/MKhTEYqf#4M4pdgk0",
+            "Shop/MKhTEYqf#Q2XClLOC",
+            "Shop/MKhTEYqf#HYDbL5fE",
+            "Shop#rgSpkJC0",
+            "Shop#iGJ1cXkG",
+            "Shop#hBnH2Vg6"
+          ],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#F5QYhOyC",
+      "placement": {
+        "holder": "Shop#Hhw0puAk"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#yRuuRooQ",
+      "field": "summary",
+      "value": "One press of Pay, from the basket to the order-received page."
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#yRuuRooQ",
+      "field": "participants",
+      "value": [
+        "Shop/MKhTEYqf#cgbB3aQp",
+        "Shop/MKhTEYqf#kZjjfq1m",
+        "Shop/MKhTEYqf#wlyh3hT6",
+        "Shop/MKhTEYqf#ZaOafnWt"
+      ]
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#yRuuRooQ",
+      "placement": {
+        "holder": "Shop#MKhTEYqf",
+        "before": "Shop#diXgI23Q"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#6L1FfAc1",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#yRuuRooQ",
+        "before": "Shop/MKhTEYqf#ituqu60p"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#ituqu60p",
+      "field": "label",
+      "value": "write the order as pending"
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#ituqu60p",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#yRuuRooQ",
+        "before": "Shop/MKhTEYqf#eEjCrF7z"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#eEjCrF7z",
+      "field": "label",
+      "value": "start the payment"
+    },
+    {
+      "type": "clear",
+      "subject": "Shop/MKhTEYqf#eEjCrF7z",
+      "field": "note"
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#Ilu0YGrP",
+      "field": "label",
+      "value": "payment started"
+    },
+    {
+      "type": "place",
+      "subject": "Shop/MKhTEYqf#Ilu0YGrP",
+      "placement": {
+        "holder": "Shop/MKhTEYqf#yRuuRooQ",
+        "before": "Shop/MKhTEYqf#9L3Vfmq7"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "Shop/MKhTEYqf#9L3Vfmq7",
+      "field": "label",
+      "value": "order received"
+    },
+    {
+      "type": "add",
+      "subject": "Shop#diXgI23Q",
+      "kind": "flow",
+      "value": {
+        "id": "Shop#diXgI23Q",
+        "name": "Fulfil a paid order",
+        "summary": "What happens once the card is paid, off the shopper's clock.",
+        "participants": [
+          "Shop/MKhTEYqf#ZaOafnWt",
+          "Shop#rgSpkJC0",
+          "Shop/MKhTEYqf#wlyh3hT6",
+          "Shop#iGJ1cXkG",
+          "Shop#hBnH2Vg6",
+          "Shop/MKhTEYqf#HYDbL5fE",
+          "Shop/MKhTEYqf#lXgq75bO"
+        ]
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#diXgI23Q",
+      "placement": {
+        "holder": "Shop#MKhTEYqf"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#h7CFVkSY",
+      "kind": "step",
+      "value": {
+        "id": "Shop#h7CFVkSY",
+        "from": "Shop/MKhTEYqf#ZaOafnWt",
+        "to": "Shop#rgSpkJC0",
+        "label": "payment succeeded",
+        "kind": "async",
+        "note": "the provider may deliver the same event more than once"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#h7CFVkSY",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#SkvoXxtl"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#SkvoXxtl",
+      "kind": "step",
+      "value": {
+        "id": "Shop#SkvoXxtl",
+        "from": "Shop#rgSpkJC0",
+        "to": "Shop/MKhTEYqf#wlyh3hT6",
+        "label": "mark the order paid",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#SkvoXxtl",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#0bGz3CcN"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#0bGz3CcN",
+      "kind": "step",
+      "value": {
+        "id": "Shop#0bGz3CcN",
+        "from": "Shop#rgSpkJC0",
+        "to": "Shop#iGJ1cXkG",
+        "label": "publish order paid",
+        "kind": "async"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#0bGz3CcN",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#0w5irA6r"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#0w5irA6r",
+      "kind": "step",
+      "value": {
+        "id": "Shop#0w5irA6r",
+        "from": "Shop#rgSpkJC0",
+        "to": "Shop/MKhTEYqf#ZaOafnWt",
+        "label": "200 OK",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#0w5irA6r",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#7Bvc71Yq"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#7Bvc71Yq",
+      "kind": "step",
+      "value": {
+        "id": "Shop#7Bvc71Yq",
+        "from": "Shop#iGJ1cXkG",
+        "to": "Shop#hBnH2Vg6",
+        "label": "order paid",
+        "kind": "async"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#7Bvc71Yq",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#e8cpKxeF"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#e8cpKxeF",
+      "kind": "step",
+      "value": {
+        "id": "Shop#e8cpKxeF",
+        "from": "Shop#hBnH2Vg6",
+        "to": "Shop/MKhTEYqf#HYDbL5fE",
+        "label": "reserve the items",
+        "kind": "sync"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#e8cpKxeF",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#bSgMAyuO"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#bSgMAyuO",
+      "kind": "step",
+      "value": {
+        "id": "Shop#bSgMAyuO",
+        "from": "Shop/MKhTEYqf#HYDbL5fE",
+        "to": "Shop#hBnH2Vg6",
+        "label": "reserved",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#bSgMAyuO",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#6HcLfXj4"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#6HcLfXj4",
+      "kind": "step",
+      "value": {
+        "id": "Shop#6HcLfXj4",
+        "from": "Shop#hBnH2Vg6",
+        "to": "Shop/MKhTEYqf#lXgq75bO",
+        "label": "send the receipt",
+        "kind": "sync",
+        "note": "retried with backoff until accepted; the shopper already has their page"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#6HcLfXj4",
+      "placement": {
+        "holder": "Shop#diXgI23Q",
+        "before": "Shop#N0gePu1j"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "Shop#N0gePu1j",
+      "kind": "step",
+      "value": {
+        "id": "Shop#N0gePu1j",
+        "from": "Shop/MKhTEYqf#lXgq75bO",
+        "to": "Shop#hBnH2Vg6",
+        "label": "accepted",
+        "kind": "return"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "Shop#N0gePu1j",
+      "placement": {
+        "holder": "Shop#diXgI23Q"
+      }
+    }
+  ],
+  "retiredIds": [
+    "Shop/MKhTEYqf#ys6hWCoY",
+    "Shop/MKhTEYqf#C2JNdx5s",
+    "Shop/MKhTEYqf#dkNRueI0",
+    "Shop/MKhTEYqf#VONp3yKV",
+    "Shop/MKhTEYqf#UMnxeM5M",
+    "Shop/MKhTEYqf#3uClgO14",
+    "Shop/MKhTEYqf#LyUokBCR",
+    "Shop/MKhTEYqf#TqpOt2sN",
+    "Shop/MKhTEYqf#dkc8ZMX3",
+    "Shop/MKhTEYqf#vMHQ5pQb",
+    "Shop/MKhTEYqf#L5E53LtJ",
+    "Shop/MKhTEYqf#awUQqUri",
+    "Shop/MKhTEYqf#pCnCU5hG",
+    "Shop/MKhTEYqf#tYvFPbbC"
+  ]
+}

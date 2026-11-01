@@ -2,7 +2,7 @@
 //! board's own JSON (`@archboard/board/content`): what a layout places, and
 //! what the painter is told about each of them.
 
-use archboard_scene::drawing::{EdgeFacts, Emphasis, NodeFacts, Traffic};
+use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};
 use serde::{Deserialize, Deserializer, Serialize};
 
 /// One part of a board: a card, or a container of other parts.
@@ -21,6 +21,9 @@ pub struct Node {
     /// What it is responsible for, when the board says.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub responsibility: Option<String>,
+    /// Where its code lives, as a reading words it; never stored on a board.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code_path: Option<String>,
     /// The container it stands in; absent on the board itself.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent: Option<String>,
@@ -34,6 +37,12 @@ pub struct Node {
         deserialize_with = "present"
     )]
     pub drills: bool,
+    /// Which way it lies from the open frame, when it stands outside it as a door.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub door: Option<DoorWay>,
+    /// The control it wears for a live reader, as a reading words it; never stored on a board.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub toggle: Option<Toggle>,
 }
 
 /// Whether a field is there, whatever it holds.
@@ -42,11 +51,6 @@ fn present<'de, D: Deserializer<'de>>(deserializer: D) -> Result<bool, D::Error>
 }
 
 impl Node {
-    /// Whether it says it is in a group.
-    pub fn is_member_of(&self, group: &str) -> bool {
-        self.groups.iter().any(|held| held == group)
-    }
-
     /// What the painter reads of it.
     pub fn facts(&self) -> NodeFacts {
         NodeFacts {
@@ -54,6 +58,9 @@ impl Node {
             order: self.order,
             name: self.name.clone(),
             responsibility: self.responsibility.clone(),
+            code_path: self.code_path.clone(),
+            door: self.door,
+            toggle: self.toggle,
         }
     }
 }
@@ -85,6 +92,10 @@ pub struct Edge {
     /// The traffic it illustrates, when it has any.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub traffic: Option<Traffic>,
+    /// Whether a joined line holds relationships in both directions, as a reading words it;
+    /// never stored on a board.
+    #[serde(default, rename = "twoWay", skip_serializing_if = "std::ops::Not::not")]
+    pub two_way: bool,
 }
 
 impl Edge {
@@ -97,6 +108,7 @@ impl Edge {
             kind: self.kind.clone(),
             emphasis: self.emphasis,
             traffic: self.traffic,
+            two_way: self.two_way,
         }
     }
 }

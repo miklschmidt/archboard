@@ -143,16 +143,17 @@ export const WHERE = `(() => {
 	const [hx, hy] = holder ? centre(holder) : [Number.NaN, Number.NaN];
 	const [sx, sy] = socket ? centre(socket) : [Number.NaN, Number.NaN];
 	const key = document.querySelector('[data-slot="voice-circle"]');
-	const words = document.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles"]');
-	const control = document.querySelector('[data-slot="voice-box"] [data-slot="voice-subtitles-toggle"]');
+	const voice = [...document.querySelectorAll('[data-slot="voice-box"]')].find(element => element.checkVisibility());
+	const words = voice?.querySelector('[data-slot="voice-subtitles"]');
+	const control = voice?.querySelector('[data-slot="voice-subtitles-toggle"]');
 	const under = (element) => {
 		const [x, y] = centre(element);
 		return document.elementFromPoint(x, y);
 	};
-	const seat = document.querySelector('[data-slot="voice-box"] [data-slot="voice-orb-socket"]');
+	const seat = voice?.querySelector('[data-slot="voice-orb-socket"]');
 	const seatStyle = seat ? getComputedStyle(seat) : null;
 	return {
-		box: document.querySelector('[data-slot="voice-box"]') !== null,
+		box: voice !== undefined,
 		home: socket?.getAttribute('data-home') ?? null,
 		off: socket ? Math.round(Math.hypot(hx - sx, hy - sy) * 10) / 10 : -1,
 		form: key?.getAttribute('data-form') ?? null,
@@ -227,6 +228,6 @@ export const voiceWhere = (browser: AgentBrowserSession): Promise<VoiceWhere> =>
  */
 export const clickSubtitles = (browser: AgentBrowserSession, surface: "voice-box" | "agent-dock") =>
 	browser.eval<boolean>(
-		`(() => { const button = document.querySelector('[data-slot="${surface}"] [data-slot="voice-subtitles-toggle"]');` +
+		`(() => { const button = [...document.querySelectorAll('[data-slot="${surface}"] [data-slot="voice-subtitles-toggle"]')].find(element => element.checkVisibility());` +
 			` if (!button) return false; button.click(); return true; })()`,
 	);

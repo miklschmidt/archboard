@@ -1,0 +1,16 @@
+{
+  "order": 25002,
+  "name": "Tools and work",
+  "kind": "module",
+  "responsibility": "What the coordinator may ask for: the frozen tool contract, the tool calls it runs once each, a spoken approval, and where each turn that gave work is shown",
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/qKGcB6vZ#CjiN3z5a",
+  "parent": "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

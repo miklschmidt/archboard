@@ -38,6 +38,23 @@ impl Clearance {
             before == 0 || spans[before - 1].1 <= a.min(b)
         })
     }
+
+    /// How far a run on one line can reach each way from `from`: any end
+    /// within the answer leaves the run clear, and no end beyond it does.
+    pub(super) fn reach(&self, vertical: bool, at: f64, from: f64) -> (f64, f64) {
+        let mut axes = self.axes.borrow_mut();
+        let spans = axes
+            .entry((vertical, at.to_bits()))
+            .or_insert_with(|| self.spans(vertical, at));
+        let before = spans.partition_point(|&(lo, _)| lo < from);
+        let low = before
+            .checked_sub(1)
+            .map_or(f64::NEG_INFINITY, |last| spans[last].1);
+        // The running end rises with each span, so the first to pass `from` is the nearest.
+        let after = spans.partition_point(|&(_, end)| end <= from);
+        let high = spans.get(after).map_or(f64::INFINITY, |&(lo, _)| lo);
+        (low, high)
+    }
     fn spans(&self, vertical: bool, at: f64) -> Vec<(f64, f64)> {
         let mut spans: Vec<_> = self
             .boxes
@@ -104,6 +121,36 @@ mod tests {
                     }
                 }
             }
+        }
+    }
+
+    #[test]
+    fn reach_answers_as_clear_does_for_every_end_of_a_run() {
+        let index = Clearance::new(vec![
+            Rect {
+                x: 0.0,
+                y: 0.0,
+                width: 20.0,
+                height: 30.0,
+            },
+            Rect {
+                x: 10.0,
+                y: 40.0,
+                width: 20.0,
+                height: 10.0,
+            },
+        ]);
+        let points = [-1.0, 0.0, 5.0, 15.0, 30.0, 40.0, 45.0, 50.0, 51.0];
+        let runs = points.iter().flat_map(|&at| {
+            points
+                .iter()
+                .flat_map(move |&from| points.map(|to| (at, from, to)))
+        });
+        for (at, from, to) in runs {
+            let (low, high) = index.reach(true, at, from);
+            let reached = if to < from { to >= low } else { to <= high };
+            let run = [Point { x: at, y: from }, Point { x: at, y: to }];
+            assert_eq!(reached, index.clear(&run));
         }
     }
 }

@@ -1,10 +1,9 @@
 import { expect, test } from "bun:test";
 
-import { createJsonRequester } from "../support/http.ts";
 import { createAgentBrowser, pollUntil } from "./support/agent-browser.ts";
 import { askToSpeak } from "./support/codex-live-voice.ts";
 import { stepBrowserMotion } from "./support/motion-clock.ts";
-import { addressShowing, seedSemanticBoard, stageState } from "./support/semantic-page.ts";
+import { seedCanonicalModel, modelAddress, modelDrawn } from "./support/canonical-page.ts";
 import {
 	SUBTITLES_IN_BOX,
 	WAIT,
@@ -36,14 +35,14 @@ import {
 test("the voice is in the box while subtitles are on, and the one orb flies between the box and the dock", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { server, fixture } = await startVoiceServer(resources, "voice-box-vault");
-	await seedSemanticBoard(createJsonRequester(server), "pipeline");
+	const model = await seedCanonicalModel(server.vault, "pipeline");
 
 	const browser = await stepBrowserMotion(resources.use(await createAgentBrowser()));
-	await openForVoice(browser, addressShowing(server.base, "pipeline"));
+	await openForVoice(browser, modelAddress(server.base, model));
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => stageState(browser.eval.bind(browser)),
-		(state) => state === "drawn",
+		() => modelDrawn(browser.eval.bind(browser)),
+		Boolean,
 		"the board to be drawn before the voice is looked at",
 		WAIT,
 	);

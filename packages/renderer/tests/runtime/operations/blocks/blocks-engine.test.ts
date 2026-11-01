@@ -1,4 +1,4 @@
-// The blocks engine lays every container and group region out as a block of its own and
+// The blocks engine lays every container out as a block of its own and
 // joins the lines between blocks through ports on their edges. What this catches: room a
 // block keeps for trunks that do not use it, lines between blocks that turn back on
 // themselves or run along a border, and lines that join on the way to a card and part again.
@@ -6,7 +6,6 @@ import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
-	bodyShift,
 	corridorPoints,
 	routeCrosses,
 	routeEnds,
@@ -17,7 +16,6 @@ import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts
 import { headerCards, endsOffCards } from "#tests/runtime/support/drawn-parents.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import agentWorkbench from "#tests/runtime/support/fixtures/agent-workbench.json";
-import oneBrowserTwoUses from "#tests/runtime/support/fixtures/one-browser-two-uses.json";
 import oneCommand from "#tests/runtime/support/fixtures/one-command.json";
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
 import owningTheChild from "#tests/runtime/support/fixtures/owning-the-child.json";
@@ -63,49 +61,6 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-/**
- * A group region's band, read from the drawn document.
- * @param svg The document.
- * @param group The group.
- * @returns Its box.
- */
-function regionBox(
-	svg: string,
-	group: string,
-): { x: number; y: number; width: number; height: number } {
-	const markup = new RegExp(
-		`<g data-semantic-kind="group-region" data-group="${group}"[^>]*>([\\s\\S]*?)</g>`,
-		"u",
-	).exec(svg)![1]!;
-	const [x, y, width, height] = ["x", "y", "width", "height"].map((name) =>
-		Number(new RegExp(`<rect[^>]* ${name}="([^"]+)"`, "u").exec(markup)![1]),
-	);
-	const shift = bodyShift(svg);
-	return { x: x! + shift.x, y: y! + shift.y, width: width!, height: height! };
-}
-
-test("a container of blocks keeps as much room under its title as a container of cards", async () => {
-	const content = orderedFixture({
-		nodes: [
-			{ id: "grouped", name: "Board server", kind: "service" },
-			{ id: "store", name: "Board store", kind: "module", parent: "grouped", groups: ["state"] },
-			{ id: "lease", name: "Board lease", kind: "module", parent: "grouped", groups: ["state"] },
-			{ id: "plain", name: "Board worker", kind: "service" },
-			{ id: "queue", name: "Work queue", kind: "module", parent: "plain" },
-			{ id: "runner", name: "Work runner", kind: "module", parent: "plain" },
-		],
-		edges: [
-			{ id: "e1", from: "store", to: "lease", kind: "call" },
-			{ id: "e2", from: "queue", to: "runner", kind: "call" },
-		],
-	});
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const { nodes } = drawn.atlas;
-	const packed = regionBox(drawn.svg, "state").y - nodes["grouped"]!.y;
-	const carded = nodes["queue"]!.y - nodes["plain"]!.y;
-	expect(carded).toBe(packed);
-});
-
 test("a container a line leaves by its bottom keeps its inset under its lowest card", async () => {
 	const content = orderedFixture({
 		nodes: [
@@ -138,12 +93,6 @@ test("a container's cards stand under its title, not beside it", async () => {
 	const { nodes } = drawn.atlas;
 	const header = headerCards(drawn).get("pool")!;
 	expect(nodes["pipe"]!.y).toBeGreaterThanOrEqual(header.y + header.height);
-	expectDrawingIntact(drawn, content, "blocks");
-});
-
-test("a group region exports its relationships through clear owned channels", async () => {
-	const content = orderedFixture(agentWorkbench);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expectDrawingIntact(drawn, content, "blocks");
 });
 
@@ -311,12 +260,6 @@ test("a nested write boundary keeps its complete reserved channels", async () =>
 	const content = orderedFixture(durableWriteBoundary);
 	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expectDrawingIntact(drawn, content, "blocks");
-});
-
-test("lines from different cards leave a region by their own ports, not along its wall", async () => {
-	const content = orderedFixture(oneBrowserTwoUses);
-	const drawn = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	expect(alongWalls(routePoints(drawn.svg), regionBox(drawn.svg, "drawing"))).toEqual([]);
 });
 
 test("lines that join on the way to a card stay joined, without running along a border", async () => {

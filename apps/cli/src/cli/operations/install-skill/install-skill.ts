@@ -203,10 +203,10 @@ function installSkillFiles(
  * @param context - The command context.
  * @returns The source report or the install receipt.
  */
-function executeInstallSkill(
+async function executeInstallSkill(
 	input: InstallSkillInput,
 	context: CommandContext,
-): InstallSkillResult {
+): Promise<InstallSkillResult> {
 	if (input.printSource) {
 		return {
 			success: true,
@@ -221,7 +221,7 @@ function executeInstallSkill(
 	const skills = installSkillFiles(destination.root, context);
 	const setup = request.noSetup
 		? undefined
-		: setUpRepository({
+		: await setUpRepository({
 				...(request.repo === undefined ? {} : { repoSpec: request.repo }),
 				context,
 			});
@@ -240,9 +240,9 @@ const installSkillContract = defineCommand({
 	summary: "Install the bundled agent skills and set this repository up",
 	description:
 		"Copies the bundled skills into a skills root (~/.agents/skills by default), then makes the " +
-		"repository's vault, <repo>/.archboard/vault, when it has none. A command run in the " +
-		"repository finds that vault without any setting, so nothing is written into CLAUDE.md or " +
-		"AGENTS.md. A block that an earlier version wrote there is removed, and nothing else in the " +
+		"repository's vault, <repo>/.archboard/vault, when it has none, and registers the repository " +
+		"so that a browser lists it. A command run in the repository finds that vault without any " +
+		"setting, so nothing is written into CLAUDE.md or AGENTS.md. A block that an earlier version wrote there is removed, and nothing else in the " +
 		"file changes.",
 	examples: ["archboard install-skill", "archboard install-skill --print-source"],
 	parameters: [
@@ -349,7 +349,7 @@ const installSkillContract = defineCommand({
 	 * @returns The install result.
 	 */
 	async handler(input, context) {
-		return { result: executeInstallSkill(input, context) };
+		return { result: await executeInstallSkill(input, context) };
 	},
 });
 

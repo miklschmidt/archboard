@@ -106,9 +106,11 @@ const MODIFIERS = { alt: 1, ctrl: 2, meta: 4, shift: 8 } as const;
  */
 function atRestExpression(nth: number): string {
 	return `(() => {
-		const stage = document.querySelectorAll("[data-slot='semantic-board-stage']")[${nth}];
-		if (!stage || stage.getAttribute("data-state") !== "drawn") return false;
-		const surface = stage.querySelector("[data-slot='semantic-board-surface']");
+		const stage = document.querySelectorAll("[data-slot='architecture-model-stage']")[${nth}];
+		if (!stage || stage.getAttribute("data-state") !== "ready") return false;
+		const diagram = stage.querySelector("[data-slot='model-diagram']");
+		if (!diagram || diagram.getAttribute("aria-busy") === "true") return false;
+		const surface = diagram.querySelector("[data-slot='semantic-board-surface']");
 		return !!surface && !!surface.querySelector("svg") && !surface.hasAttribute("data-picture-motion") && !surface.hasAttribute("data-camera-motion");
 	})()`;
 }
@@ -175,7 +177,7 @@ class Page {
 	 * @param nth Which stage, counted from nought.
 	 */
 	async atRest(nth = 0): Promise<void> {
-		await this.waitFor(atRestExpression(nth), `board stage ${nth} at rest`);
+		await this.waitFor(atRestExpression(nth), `model stage ${nth} at rest`);
 		await this.evaluate(
 			"document.fonts.ready.then(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))))",
 		);

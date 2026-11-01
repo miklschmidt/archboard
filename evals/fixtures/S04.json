@@ -1,91 +1,9 @@
 {
-	"$comment": "A service board naming the sans-IO core as one module, and the detail board of that core with a draft already on it.",
 	"registerRepo": true,
-	"steps": [
-		{
-			"op": "new",
-			"board": "Flask application",
-			"input": {
-				"level": "service",
-				"nodes": [
-					{
-						"name": "Flask app",
-						"kind": "app",
-						"responsibility": "The WSGI application: Flask(App)",
-						"binding": { "repo": "$FLASK", "path": "src/flask/app.py" }
-					},
-					{
-						"name": "Sansio core",
-						"kind": "module",
-						"responsibility": "App, Scaffold and Blueprint without I/O",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/app.py" }
-					}
-				],
-				"edges": [
-					{ "from": "Flask app", "to": "Sansio core", "kind": "dependency", "label": "extends App" }
-				]
-			}
-		},
-		{
-			"op": "new",
-			"board": "Flask sansio",
-			"input": {
-				"level": "module",
-				"nodes": [
-					{
-						"name": "App",
-						"kind": "module",
-						"responsibility": "URL rules, blueprints and configuration without I/O",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/app.py" }
-					},
-					{
-						"name": "Scaffold",
-						"kind": "module",
-						"responsibility": "What App and Blueprint share",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/scaffold.py" }
-					},
-					{
-						"name": "Blueprint",
-						"kind": "module",
-						"responsibility": "A deferred set of rules registered on an app",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/blueprints.py" }
-					}
-				],
-				"edges": [
-					{ "from": "App", "to": "Scaffold", "kind": "dependency", "label": "extends" },
-					{ "from": "Blueprint", "to": "Scaffold", "kind": "dependency", "label": "extends" }
-				]
-			}
-		},
-		{
-			"op": "branch",
-			"board": "Flask sansio",
-			"as": "Blueprint registration",
-			"summary": "Show how a blueprint's deferred functions land on the app"
-		},
-		{
-			"op": "edit",
-			"board": "Flask sansio",
-			"input": {
-				"variant": "Blueprint registration",
-				"nodes": [
-					{
-						"name": "register_blueprint",
-						"kind": "function",
-						"parent": "App",
-						"responsibility": "Hands the app to the blueprint so its deferred functions run against it",
-						"binding": { "repo": "$FLASK", "path": "src/flask/sansio/app.py" }
-					}
-				],
-				"edges": [
-					{
-						"from": "register_blueprint",
-						"to": "Blueprint",
-						"kind": "call",
-						"label": "register(self, options)"
-					}
-				]
-			}
-		}
-	]
+	"steps": [],
+	"inputs": {
+		"model.json": "{\"schemaVersion\":1,\"id\":\"Flask\",\"name\":\"Flask\",\"current\":{\"id\":\"Now\",\"name\":\"Current\"}}",
+		"app.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#App\",\"name\":\"Application\",\"kind\":\"service\",\"order\":0,\"responsibility\":\"Routes HTTP requests through Flask\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/app.py\"},\"outgoing\":[{\"id\":\"Flask#Context\",\"to\":\"Flask#Ctx\",\"kind\":\"dependency\",\"order\":0}]}",
+		"context.module.json": "{\"schemaVersion\":1,\"id\":\"Flask#Ctx\",\"name\":\"Request context\",\"kind\":\"module\",\"order\":0,\"parent\":\"Flask#App\",\"binding\":{\"repo\":\"$FLASK\",\"path\":\"src/flask/ctx.py\"},\"outgoing\":[]}"
+	}
 }

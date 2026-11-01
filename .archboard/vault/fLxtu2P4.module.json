@@ -1,0 +1,28 @@
+{
+  "order": 960090,
+  "name": "Workspace port",
+  "kind": "function",
+  "responsibility": "Restores what the address says each pane shows, repository by repository, and writes it back",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/clients/application/workspace-port.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk#fLxtu2P4",
+  "parent": "vKEsyHFk/yejBBUFY#HggZR41l",
+  "outgoing": [
+    {
+      "order": 13000,
+      "kind": "call",
+      "label": "opening address; write what panes show and where",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-workspace-addressing.ts",
+        "symbol": "useWorkspaceAddress"
+      },
+      "id": "vKEsyHFk/yejBBUFY#vo87NlJg",
+      "to": "vKEsyHFk#gaC5nahN"
+    }
+  ]
+}

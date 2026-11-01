@@ -4,6 +4,10 @@ status: accepted
 
 # A board opens on its overview, and relationships and calls are drawn apart
 
+Recursive module scope supersedes the board overview and named-view navigation below. Direct context and aggregated relationship inspection retain their semantic rules.
+[ADR 0068](0068-one-live-canonical-model-and-consumer-path.md) records this replacement and remains proposed pending TASK-549.24 parent acceptance.
+The original decision below remains historical evidence.
+
 Amended by the owner on 2026-10-24 (TASK-513, TASK-514). A line that joins
 several relationships stacks their labels, one chip for each distinct label in
 board order, as a lone label stands on one, with the ground between two chips.
@@ -16,6 +20,31 @@ the person picked every one of them. On Device Trust Library a line of five
 calls had no label, and its tip and inspector named only its first call. A
 count label ("5 relationships") was tried first and told a reader too little.
 Everything else stands.
+
+Amended by the owner on 2026-10-30 (TASK-559.12). The stacked labels of the
+amendment above give way to one combined label. The median joined line holds
+three labels of 32 characters, so a stack cannot fit, and a count still tells a
+reader too little. A line with one shared label wears that label. Otherwise it
+names the parts inside the target card that its relationships reach, at most
+two with `+N` for the others, such as `to Thread tools, Board catalogue +2`.
+If the target shows no part, the line names the source card with `from`. If
+neither card shows a part, it wears its first label and `+N`. If it has neither
+a label nor a part, it wears no words. A pair with relationships in both
+directions now draws one line with an arrow at each end, and its words say
+`with` in place of `to`. The tip over the line and the inspector still name
+every relationship with its own ends. Rules 2 and 4 of
+[the reader redesign](../design/reader-redesign.md) hold the exact order.
+
+Amended by the owner on 2026-10-31 (TASK-559.24). No reading draws a line
+between the open module and a part that it holds, at any depth and in either
+direction, in a comparison too. A line from a module to itself stays, and so
+does the line of a door that holds the open module. The last paragraphs of the
+decision below said that a view that opens a container still draws such a line.
+That gives way. The owner saw a line leave the corner of the
+Agent CLI tab, cross the frame and end on Clipboard owner, and could not tell
+what it meant. The relationship stays in the panel and in About, a write still
+stores one, and `archboard check` still warns on it with
+`CONTAINER_LINE_TO_OWN_PART`.
 
 Decided with the owner on 2026-10-15. This decision supersedes one clause of
 [ADR 0023](0023-semantic-boards-own-meaning-renderers-own-presentation.md):

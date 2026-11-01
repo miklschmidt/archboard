@@ -1,3 +1,6 @@
+import { semanticPaneContextFor, onSemanticPaneContext } from "#server/services/panes/context.ts";
+import { createExplanationActions } from "#server/services/explanations/actions.ts";
+import { installExplanationActions } from "#server/services/explanations/dispatch.ts";
 import { basename } from "node:path";
 import type {
 	CodexWorkbenchDomainScope as CodexWorkbenchComponents,
@@ -53,6 +56,7 @@ import {
 	openPaneOf,
 	operationPane,
 	pinnedCheckoutOf,
+	panesOfTabSession,
 	presentingPaneOf,
 	requireWorkhorse,
 	semanticOwners,
@@ -300,6 +304,18 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			coordinatorContextFor: (tabSessionId) =>
 				createArchboardCoordinatorContextSource({
 					/**
+					 * Read this tab's explicit canonical readings without consulting its legacy board.
+					 * @returns The tab identity and current canonical pane reports.
+					 */
+					canonical: () => ({
+						tabSessionId,
+						panes: panesOfTabSession(tabSessionId).map((pane) => ({
+							paneId: pane.paneId,
+							focused: pane.focused,
+							architecture: semanticPaneContextFor(pane.clientId)?.architecture ?? null,
+						})),
+					}),
+					/**
 					 * Read the vault of the pane that presents this session.
 					 * @returns The presenting vault, or null with no open pane.
 					 */
@@ -315,6 +331,9 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 					subscribe: (listener) => {
 						const publisher = announcements.publisherFor(tabSessionId);
 						const stops = [
+							onSemanticPaneContext((clientId) => {
+								if (tabSessionOf(clientId) === tabSessionId) listener();
+							}),
 							publisher.subscribePaneFocus(listener),
 							publisher.subscribePaneSelection(listener),
 						];
@@ -393,6 +412,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 		 */
 		installLifecycleSignals: (components) => {
 			active = components;
+			const explanations = createExplanationActions(components);
+			const stopExplanations = installExplanationActions(explanations);
 			/** Give every tab session of the graph its publisher, and dispose of the rest. */
 			const reconcile = (): void => {
 				const ids = components.sessions.list().map(({ id }) => id);
@@ -435,6 +456,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			};
 			return () => {
 				stopReconciling();
+				stopExplanations();
+				explanations.dispose();
 				announcements.dispose();
 				if (active === components) {
 					active = null;

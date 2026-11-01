@@ -116,6 +116,11 @@ function createPaneArrival(
 		const otherVault = adoptPlace(place);
 		if (named(key)) {
 			arrive(key, identity, otherVault);
+		} else if (otherVault) {
+			// Canonical arrivals carry no legacy board key. The server still drops
+			// the former vault's capture, even if this picture stays visible until
+			// the destination draws. Its next report must not be deduplicated.
+			parts.forgetBoard();
 		}
 		parts.publish();
 		// Immediately, not on the debounce: `browser panes` is read every turn.

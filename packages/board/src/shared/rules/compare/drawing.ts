@@ -22,6 +22,11 @@
 // subject can exist only on the other side; narrowing the variant first loses
 // that selection and makes a whole removed flow disappear.
 
+import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
+import {
+	defaultComparisonReference,
+	type ComparisonReference,
+} from "#shared/rules/compare/default-reference.ts";
 import {
 	currentVariant,
 	type SemanticBoard,
@@ -54,22 +59,99 @@ interface DrawnProposal {
 }
 
 /**
- * The variant another is read against: the board's current variant, or, on a
- * board with none, the one it came from.
- * @param board The board.
- * @param variant The variant being read.
- * @returns The variant to read it against, or undefined for the current
- * variant itself and for a draft that came from nothing on a board with no
- * current variant.
+ * Resolve a canonical reading's default reference, or a retained legacy variant's base.
+ * @param selected The selected canonical architecture.
+ * @param current The working reading or refusal.
+ * @returns Its default state or checkpoint reference. A retained legacy reading returns its base variant.
  */
-function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticVariant | undefined {
+function comparedWith(
+	selected: ArchitectureModel,
+	current: ArchitectureModelRead,
+): ComparisonReference | undefined;
+function comparedWith(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	variant: SemanticVariant,
+): SemanticVariant | undefined;
+function comparedWith(
+	selected: ArchitectureModel | Pick<SemanticBoard, "name" | "current" | "variants">,
+	reading: ArchitectureModelRead | SemanticVariant,
+): ComparisonReference | SemanticVariant | undefined {
+	if ("success" in selected && "success" in reading)
+		return defaultComparisonReference(selected, reading);
+	if ("variants" in selected && "content" in reading) return legacyReference(selected, reading);
+	throw new TypeError(
+		"Select a model and its current reading, or a retained board and its variant.",
+	);
+}
+
+/**
+ * Resolve the comparison of a retained legacy variant.
+ * @param board The retained board.
+ * @param variant The selected variant.
+ * @returns Its current variant or retained parent.
+ */
+function legacyReference(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	variant: SemanticVariant,
+): SemanticVariant | undefined {
 	const current = currentVariant(board);
-	if (current !== undefined) {
-		return current.id === variant.id ? undefined : current;
-	}
+	if (current !== undefined) return current.id === variant.id ? undefined : current;
 	return variant.parent === undefined
 		? undefined
 		: board.variants.find((one) => one.id === variant.parent);
+}
+
+/** A complete comparison picture, independent of legacy board ownership. */
+interface ComparedContent {
+	readonly content: VariantContent;
+	readonly standing: DrawnChanges["standing"];
+}
+
+/**
+ * Restore removed definitions through the existing comparison owner before projection.
+ * @param content The complete selected content.
+ * @param base The coherent comparison base.
+ * @param scope The reading applied after comparison.
+ * @returns A temporary depiction and its semantic standing, without authored copies.
+ */
+function drawingOf(
+	content: VariantContent,
+	base: VariantContent,
+	scope?: ReadingScope,
+): ComparedContent;
+function drawingOf(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	variant: SemanticVariant,
+	scope?: ReadingScope,
+	named?: SemanticVariant,
+): DrawnProposal;
+function drawingOf(
+	source: Pick<SemanticBoard, "name" | "current" | "variants"> | VariantContent,
+	reading: SemanticVariant | VariantContent,
+	scope: ReadingScope = { kind: "all" },
+	named?: SemanticVariant,
+): ComparedContent | DrawnProposal {
+	if ("nodes" in source && "nodes" in reading) return comparedContent(reading, source, scope);
+	if ("variants" in source && "content" in reading)
+		return boardDrawing(source, reading, scope, named);
+	throw new TypeError("Compare two complete contents, or a board and its variant.");
+}
+
+/**
+ * One comparison mechanism restores content for both legacy and canonical readers.
+ * @param base Complete reference meaning.
+ * @param selected Complete selected meaning.
+ * @param scope The reading applied after removed definitions return.
+ * @returns Only the temporary depiction and its semantic standing.
+ */
+function comparedContent(
+	base: VariantContent,
+	selected: VariantContent,
+	scope: ReadingScope,
+): ComparedContent {
+	const comparison = compareVariants(base, selected);
+	const content = scopedContent(withRemoved(base, selected, comparison), scope);
+	return { content, standing: standingOfDrawn(comparison, content) };
 }
 
 /**
@@ -87,8 +169,8 @@ function comparedWith(board: SemanticBoard, variant: SemanticVariant): SemanticV
  * `comparedWith`.
  * @returns The content to draw and the changes to mark on it.
  */
-function drawingOf(
-	board: SemanticBoard,
+function boardDrawing(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,
@@ -99,8 +181,7 @@ function drawingOf(
 	}
 	// Compared whole, before any view narrowed it: a view that hides a node is a
 	// narrower reading of the variant, never a variant that lost one.
-	const comparison = compareVariants(base.content, variant.content);
-	const content = scopedContent(withRemoved(base.content, variant.content, comparison), scope);
+	const { content, standing } = comparedContent(base.content, variant.content, scope);
 	return {
 		content,
 		// Read off the picture rather than off the comparison, so what the answer
@@ -109,7 +190,7 @@ function drawingOf(
 		// picture had no context for is in neither.
 		changes: {
 			against: { id: base.id, name: base.name, lifecycle: base.lifecycle },
-			standing: standingOfDrawn(comparison, content),
+			standing,
 		},
 	};
 }

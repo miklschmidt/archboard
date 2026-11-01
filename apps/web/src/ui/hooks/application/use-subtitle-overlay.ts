@@ -11,6 +11,8 @@ import { heardOver } from "#ui/rules/application/subtitled-transcript.ts";
 /** What the subtitles over a pane are drawn from. */
 interface SubtitleOverlaySources {
 	readonly workbench: Workbench;
+	/** The pane that receives voice while its transport starts. */
+	readonly activePaneId: string;
 	readonly reducedMotion: boolean;
 	/** Whether the page is a recording. */
 	readonly recording: boolean;
@@ -27,20 +29,19 @@ interface SubtitleOverlaySources {
  * @returns The overlay and the pane it belongs over, or null.
  */
 function useSubtitleOverlay(sources: SubtitleOverlaySources): PaneOverlay | null {
-	const { workbench, reducedMotion, recording, presentedPaneId } = sources;
+	const { workbench, activePaneId, reducedMotion, recording, presentedPaneId } = sources;
 	const { voice } = workbench;
 	return useMemo(() => {
-		if (voice === null) return null;
 		return {
-			paneId: presentedPaneId ?? voice.paneId,
+			paneId: presentedPaneId ?? voice?.paneId ?? activePaneId,
 			element: createElement(PaneSubtitles, {
-				feed: heardOver(voice.transport),
+				feed: heardOver(voice?.transport ?? null),
 				reducedMotion,
 				recording,
 				dockless: presentedPaneId !== null,
 			}),
 		};
-	}, [voice, reducedMotion, recording, presentedPaneId]);
+	}, [voice, activePaneId, reducedMotion, recording, presentedPaneId]);
 }
 
 export { useSubtitleOverlay, type SubtitleOverlaySources };

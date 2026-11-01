@@ -67,7 +67,7 @@ function hasTravelled(started: Drag, x: number, y: number): boolean {
 }
 
 /**
- * Take the pointer once a press has become a pan, and say whether it is held.
+ * Take the pointer once a press becomes a drag, and say whether it is held.
  *
  * A pan should keep tracking after the pointer leaves the pane, which is what
  * capture is for. A press must not be captured at all: while an element holds
@@ -78,7 +78,7 @@ function hasTravelled(started: Drag, x: number, y: number): boolean {
  * @param panned Whether this has become a pan.
  * @returns Whether the viewport now holds the pointer.
  */
-function takePointerToPan(
+function takePointerToDrag(
 	event: PointerEvent<HTMLElement>,
 	started: Drag,
 	panned: boolean,
@@ -89,4 +89,4 @@ function takePointerToPan(
 	return started.captured || panned;
 }
 
-export { capturePointer, hasTravelled, takePointerToPan, type Drag };
+export { capturePointer, hasTravelled, takePointerToDrag, type Drag };

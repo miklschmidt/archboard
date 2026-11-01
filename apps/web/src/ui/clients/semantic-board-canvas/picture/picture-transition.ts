@@ -62,6 +62,16 @@ interface PictureTransition {
 	readonly finish: () => void;
 }
 
+/**
+ * What moving one picture into the next reads of a picture. A semantic board's
+ * drawing is one, and so is a canonical reading's scene: `board` names what the
+ * picture is of, and `view` how that is read.
+ */
+type MovingPicture = Pick<SemanticDrawing, "svg" | "atlas" | "width" | "height"> & {
+	readonly board: string;
+	readonly view: { readonly id: string } | null;
+};
+
 /** How much a card leaving shrinks to. */
 const LEAVE_SCALE = 0.96;
 
@@ -87,7 +97,7 @@ const NO_SHIFT: Shift = { x: 0, y: 0 };
  * @param after The next.
  * @returns The shift, or none when the pictures share no card.
  */
-function sharedShift(before: SemanticDrawing, after: SemanticDrawing): Shift {
+function sharedShift(before: MovingPicture, after: MovingPicture): Shift {
 	let x = 0;
 	let y = 0;
 	let shared = 0;
@@ -106,7 +116,7 @@ function sharedShift(before: SemanticDrawing, after: SemanticDrawing): Shift {
  * @param drawing The picture.
  * @returns The view's id, or null.
  */
-function viewOf(drawing: SemanticDrawing): string | null {
+function viewOf(drawing: MovingPicture): string | null {
 	return drawing.view?.id ?? null;
 }
 
@@ -121,7 +131,7 @@ function viewOf(drawing: SemanticDrawing): string | null {
  * @param after The picture that arrived.
  * @returns True when the subjects of one are the subjects of the other.
  */
-function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): boolean {
+function continuousPictures(before: MovingPicture, after: MovingPicture): boolean {
 	return before.board === after.board && viewOf(before) === viewOf(after);
 }
 
@@ -139,11 +149,12 @@ function continuousPictures(before: SemanticDrawing, after: SemanticDrawing): bo
  * stopped, since it would run on with nothing to move.
  * @param surface The element the picture is put into.
  * @param svg The picture.
+ * @param at The traffic position to preserve, in seconds.
  */
-function stagePicture(surface: HTMLElement, svg: string): void {
+function stagePicture(surface: HTMLElement, svg: string, at = 0): void {
 	const made = surface.ownerDocument.createElement("div");
 	made.innerHTML = svg;
-	runTraffic(made, 0);
+	runTraffic(made, at);
 	stopTraffic(surface);
 	surface.replaceChildren(...made.childNodes);
 }
@@ -359,8 +370,8 @@ function parkJunctions(root: Element): void {
  */
 function transitionPicture(
 	surface: HTMLElement,
-	before: SemanticDrawing,
-	after: SemanticDrawing,
+	before: MovingPicture,
+	after: MovingPicture,
 	shift: Shift = NO_SHIFT,
 ): PictureTransition {
 	/** Land on the new picture exactly as the server drew it, keeping the viewer's marks on it. */
@@ -425,6 +436,7 @@ export {
 	sharedShift,
 	stagePicture,
 	transitionPicture,
+	type MovingPicture,
 	type PictureTransition,
 	type Shift,
 };

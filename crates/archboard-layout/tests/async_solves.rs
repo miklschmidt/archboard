@@ -7,8 +7,8 @@ use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll, Waker};
 
-use archboard_layout::{Content, Engine, Measured, MeasuredGroups, Solver, Unsolved, draw};
-use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
+use archboard_layout::{Content, Engine, Measured, Solver, Unsolved, draw};
+use archboard_scene::drawing::{MeasuredNode, Painted};
 use serde_json::{Value, json};
 
 /// One solve held by the test host until it is answered explicitly.
@@ -80,8 +80,8 @@ impl Host {
 }
 
 /// A card, optionally placed in a multi-member group that Track packs as a block.
-fn board(grouped: bool) -> (Content, Measured) {
-    let mut content: Content = serde_json::from_value(json!({
+fn board() -> (Content, Measured) {
+    let content: Content = serde_json::from_value(json!({
         "nodes": [{ "id": "card", "name": "Card", "kind": "service" }],
     }))
     .expect("the fixture is board content");
@@ -98,31 +98,6 @@ fn board(grouped: bool) -> (Content, Measured) {
             pointed: None,
         },
     );
-    if grouped {
-        let mut peer = content.nodes[0].clone();
-        "peer".clone_into(&mut peer.id);
-        let mut size = measured.nodes["card"].clone();
-        size.node = peer.facts();
-        measured.nodes.insert(peer.id.clone(), size);
-        content.nodes.push(peer);
-        measured.groups = Some(MeasuredGroups {
-            placing: content
-                .nodes
-                .iter()
-                .map(|node| (node.id.clone(), "group".to_owned()))
-                .collect(),
-            captions: std::iter::once((
-                "group".to_owned(),
-                MeasuredLabel {
-                    width: 50.0,
-                    height: 20.0,
-                    runs: Vec::new(),
-                    chips: Vec::new(),
-                },
-            ))
-            .collect(),
-        });
-    }
     (content, measured)
 }
 
@@ -245,26 +220,24 @@ fn a_graph_with_containers_asks_one_whole_solve() {
 
 #[test]
 fn nesting_is_fixed_before_the_only_solve() {
-    for (grouped, nesting) in [(false, "inline"), (true, "groups")] {
-        let host = Host::default();
-        let (content, measured) = board(grouped);
-        let mut layout = Box::pin(drawing(&host, &content, &measured));
-        waits(layout.as_mut());
-        let asked = host.0.borrow();
-        assert_eq!(asked.len(), 1);
-        assert_eq!(
-            asked[0].graph["layoutOptions"]["archboard.blocks.nesting"],
-            nesting
-        );
-        drop(asked);
-        host.answer(0, Err(Unsolved::Failed("host failure".to_owned())));
-        host.fails(
-            layout
-                .as_mut()
-                .poll(&mut Context::from_waker(Waker::noop())),
-            "host failure",
-        );
-    }
+    let host = Host::default();
+    let (content, measured) = board();
+    let mut layout = Box::pin(drawing(&host, &content, &measured));
+    waits(layout.as_mut());
+    let asked = host.0.borrow();
+    assert_eq!(asked.len(), 1);
+    assert_eq!(
+        asked[0].graph["layoutOptions"]["archboard.blocks.nesting"],
+        "inline"
+    );
+    drop(asked);
+    host.answer(0, Err(Unsolved::Failed("host failure".to_owned())));
+    host.fails(
+        layout
+            .as_mut()
+            .poll(&mut Context::from_waker(Waker::noop())),
+        "host failure",
+    );
 }
 
 #[test]
@@ -285,7 +258,7 @@ fn a_solve_failure_reaches_the_caller_without_another_reply() {
 #[test]
 fn independent_graphs_keep_their_answers_when_the_host_replies_in_reverse_order() {
     let host = Host::default();
-    let (plain, plain_size) = board(false);
+    let (plain, plain_size) = board();
     let (contained, contained_size) = stacking_board();
     let mut first = Box::pin(drawing(&host, &plain, &plain_size));
     let mut second = Box::pin(drawing(&host, &contained, &contained_size));
@@ -314,7 +287,7 @@ fn dropping_a_layout_drops_its_solve_and_late_replies_do_not_answer_a_new_layout
     waits(first.as_mut());
     drop(first);
     assert!(host.0.borrow()[0].dropped);
-    let (plain, sizes) = board(false);
+    let (plain, sizes) = board();
     let mut next = Box::pin(drawing(&host, &plain, &sizes));
     waits(next.as_mut());
     host.answer(0, Ok(whole(200.0)));

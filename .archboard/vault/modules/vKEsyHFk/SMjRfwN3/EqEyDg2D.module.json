@@ -1,0 +1,17 @@
+{
+  "order": 9000,
+  "name": "Receipt",
+  "kind": "function",
+  "responsibility": "What was drawn, at what scale, and from which SVG",
+  "groups": [
+    "drawing"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/renderer/src/runtime/operations/rasterizer/receipt.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/SMjRfwN3#EqEyDg2D",
+  "parent": "vKEsyHFk/SMjRfwN3#Z6KpYhw6",
+  "outgoing": []
+}

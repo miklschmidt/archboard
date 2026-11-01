@@ -1,0 +1,24 @@
+{
+  "order": 23000,
+  "name": "Workhorse start",
+  "kind": "module",
+  "responsibility": "Opens the thread one workhorse's link will name, with its instructions and both tool manifests, under a staged epoch operation",
+  "description": "thread/start on gpt-6-astra at medium effort in the workhorse's checkout, which is the thread's working directory and workspace root, so it reads that repository's agent instructions and skills. It carries the workhorse developer instructions and the host's own tools (archboard_app in Archboard) and the coordinator namespace the host names (archboard_coordinator in Archboard); the manifest digest it records covers both.",
+  "groups": [
+    "workhorse"
+  ],
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/codex-realtime-voice/src/runtime/services/workhorse-start"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/9ncuT5DP#6Jjha6LN",
+  "parent": "vKEsyHFk/9ncuT5DP#Fvl3uDPi",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
+    }
+  ],
+  "outgoing": []
+}

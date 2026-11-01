@@ -1,0 +1,128 @@
+{
+  "order": 1000,
+  "name": "Core render",
+  "kind": "module",
+  "responsibility": "Selects the diagram grammar, then measures, lays out and paints one reading and writes its document",
+  "description": "Renderer::render picks architecture, sequence or flowchart. An architecture has its flow steps turned into lines, its words measured and its layout solved. The last 64 layouts are remembered by board, engine and comparison, so a repeated render lays out nothing. The host runs the solves and holds the icons. Nothing here reads a clock, a random number or a file, so one host draws one request to the same bytes. Every variant is laid out fresh (ADR 0032).",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-render/src"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/OjRLKb74#nmyK8UOO",
+  "parent": "vKEsyHFk/gbyqW4H3#JK2EHDyY",
+  "formerNames": [
+    "Render driver",
+    "View dispatcher",
+    "Architecture rendering"
+  ],
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "measure every word",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/architecture.rs",
+        "symbol": "measure_node"
+      },
+      "id": "vKEsyHFk/OjRLKb74#TPRWw9F4",
+      "to": "vKEsyHFk/gbyqW4H3#J3yMo4ag"
+    },
+    {
+      "order": 13000,
+      "kind": "render",
+      "label": "paint the settled drawing",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/lib.rs",
+        "symbol": "paint"
+      },
+      "id": "vKEsyHFk/OjRLKb74#oYEzQ4k5",
+      "to": "vKEsyHFk#8oId5pfI"
+    },
+    {
+      "order": 14000,
+      "kind": "call",
+      "label": "content and measured sizes",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/architecture.rs",
+        "symbol": "draw"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#eJO5yog2",
+      "to": "vKEsyHFk#iK24tmVF"
+    },
+    {
+      "order": 16000,
+      "kind": "call",
+      "label": "lay out every flow",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/flows.rs",
+        "symbol": "sequence"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#NSEpn12D",
+      "to": "vKEsyHFk/gbyqW4H3#wLF1X11D"
+    },
+    {
+      "order": 17000,
+      "kind": "call",
+      "label": "write the scene as one document",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/lib.rs",
+        "symbol": "document"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#rZknAbkb",
+      "to": "vKEsyHFk/gbyqW4H3#eECDrhMc"
+    },
+    {
+      "order": 55000,
+      "kind": "call",
+      "label": "draw a flow's logic",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/flows.rs",
+        "symbol": "flowchart"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#RSHH7EN4",
+      "to": "vKEsyHFk/gbyqW4H3#0idmUHd2"
+    },
+    {
+      "order": 60400,
+      "kind": "call",
+      "label": "what the picture's key lists",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-render/src/lib.rs",
+        "symbol": "appearances"
+      },
+      "id": "vKEsyHFk#fR8ub6zC",
+      "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
+    }
+  ]
+}

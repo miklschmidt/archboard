@@ -8,7 +8,6 @@ export {
 	nothingBuilt,
 	resolveVariant,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardLevelSchema,
 	SemanticBoardSchema,
 	variantNamed,
 } from "#shared/schemas/board-document.ts";

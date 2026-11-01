@@ -2,15 +2,8 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import {
-	corridorPoints,
-	routeLabels,
-	routePoints,
-	routesCross,
-} from "#tests/runtime/support/drawn-routes.ts";
-import underPort from "#tests/runtime/support/fixtures/under-port.json";
-import grading from "#tests/runtime/support/fixtures/grading.json";
-import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
+import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
+import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json";
 
 /**
@@ -23,6 +16,31 @@ import wrappedBlocker from "#tests/runtime/support/fixtures/wrapped-blocker.json
 function centre({ x, width }: { x: number; width: number }): number {
 	return x + width / 2;
 }
+
+// Reduced from the canonical root: parallel labeled relationships keep their
+// own ports, whose pitch compressed when their card face ran out of room.
+test("independent requests keep a full lane between their ports", async () => {
+	const content = orderedFixture({
+		nodes: ["client", "server"].map((id) => ({ id, name: id, kind: "service" })),
+		edges: Array.from({ length: 16 }, (_, index) => ({
+			id: `r${index}`,
+			from: "client",
+			to: "server",
+			kind: "call",
+			label: `request ${index}`,
+		})),
+	});
+	const drawing = await renderArchitecture({
+		content,
+		policy: DEFAULT_SEMANTIC_POLICY,
+		theme: "light",
+		layout: "track",
+	});
+	expectDrawingIntact(drawing, content, "track");
+	const routes = [...routePoints(drawing.svg).values()];
+	for (const end of [0, -1])
+		expect(new Set(routes.map((points) => points.at(end)!.x)).size).toBe(content.edges.length);
+});
 
 // Reduced from a real hosting board, names replaced: two mirrored pairs of
 // servers, each pair feeding one database through labelled lines. Graphviz
@@ -106,20 +124,6 @@ test("a wrapped card stands aside from a line that drops straight past it", asyn
 	expect(dropsStraight(drawing.svg, "e6")).toBe(true);
 });
 
-// Reduced from a board of this repository, names replaced: two cards below a
-// group region, each with one line from inside it, were wrapped under
-// unrelated cards, and both lines stepped across to them.
-test("a wrapped card whose one line leaves a region stands under it", async () => {
-	const content = orderedFixture(underPort);
-	const drawing = await renderArchitecture({
-		content,
-		theme: "light",
-		policy: wrapPolicy,
-		layout: "track",
-	});
-	for (const id of ["e3", "e6"]) expect(dropsStraight(drawing.svg, id), id).toBe(true);
-});
-
 // Two chained cards in a container, both with a labelled line to a card below
 // it: the first line's label stood beside the container on the second card's
 // rank, and the card below followed it out past the container's wall.
@@ -158,68 +162,4 @@ test("a line leaving a container stands its label below the container", async ()
 	const frame = drawing.atlas.nodes["lib"]!;
 	const label = routeLabels(drawing.svg).get("ax")!;
 	expect(label.y).toBeGreaterThanOrEqual(frame.y + frame.height);
-});
-
-/** The vocabulary of the Browser application board's fixtures. */
-const browserPolicy = SemanticPolicySchema.parse({
-	levels: ["system", "service", "module"],
-	nodeKinds: Object.fromEntries(
-		["system", "service", "module", "ui"].map((kind) => [kind, { name: kind, icon: "RiBox3Line" }]),
-	),
-	relationshipKinds: {
-		call: { name: "Call", dash: "solid", arrowhead: "filled" },
-		http: { name: "HTTP", color: "sky", dash: "solid", arrowhead: "filled" },
-		event: { name: "Event", color: "fuchsia", dash: "dashed", arrowhead: "open" },
-		data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
-		render: { name: "Render", color: "pink", dash: "solid", arrowhead: "filled" },
-	},
-	groups: {
-		drawing: { name: "Drawing", color: "violet" },
-		panes: { name: "Live panes", color: "teal" },
-		walkthrough: { name: "Walkthroughs", color: "cyan" },
-		voice: { name: "Voice", color: "yellow" },
-		agent: { name: "Agent", color: "fuchsia" },
-	},
-});
-
-test("a board stays as Graphviz ranks its containers where stacking them crosses more", async () => {
-	const content = orderedFixture(workingWithAnAgent);
-	const drawing = await renderArchitecture({
-		content,
-		theme: "light",
-		policy: browserPolicy,
-		layout: "track",
-	});
-	const routes = corridorPoints(drawing.svg);
-	expect(routesCross(routes.get("PuILGsjg")!, routes.get("kZtsu0nq")!)).toBe(false);
-});
-
-// Taken from a board of this repository: a group region packed as a block of
-// its own is routed again from where its parent settled its ports, and those
-// ports were held there, so three lines out of it through its bottom wall
-// stepped aside where each could run straight down from its card.
-test("a group region routed again slides its settled ports onto their lines", async () => {
-	const content = orderedFixture(grading);
-	const drawing = await renderArchitecture({
-		content,
-		theme: "light",
-		policy: SemanticPolicySchema.parse({
-			levels: ["service"],
-			nodeKinds: Object.fromEntries(
-				["module", "external"].map((kind) => [kind, { name: kind, icon: "RiBox3Line" }]),
-			),
-			relationshipKinds: {
-				call: { name: "Call", dash: "solid", arrowhead: "filled" },
-				data: { name: "Data", color: "teal", dash: "solid", arrowhead: "filled" },
-			},
-			groups: { grading: { name: "Grading", color: "purple" } },
-		}),
-		layout: "track",
-	});
-	const members = new Set(
-		content.nodes.filter(({ groups }) => groups?.includes("grading")).map(({ id }) => id),
-	);
-	const leaving = content.edges.filter(({ from, to }) => members.has(from) && !members.has(to));
-	expect(leaving.length).toBeGreaterThan(0);
-	for (const { id } of leaving) expect(dropsStraight(drawing.svg, id), id).toBe(true);
 });

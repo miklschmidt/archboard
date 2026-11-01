@@ -1,0 +1,93 @@
+{
+  "order": 15000,
+  "name": "Sequence painter",
+  "kind": "function",
+  "responsibility": "Paints the sequence grammar: frame, columns, messages and pulses",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/sequence.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#CtoOMxca",
+  "parent": "vKEsyHFk/gbyqW4H3#m6HOX0lf",
+  "outgoing": [
+    {
+      "order": 31000,
+      "kind": "call",
+      "label": "where every subject landed",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence.rs",
+        "symbol": "atlas_boxes"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#KgeoU8Mf",
+      "to": "vKEsyHFk/gbyqW4H3#y8vuJJKu"
+    },
+    {
+      "order": 32000,
+      "kind": "call",
+      "label": "round a self-call's turns",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence_messages.rs",
+        "symbol": "curve_through"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#FQBxwNeT",
+      "to": "vKEsyHFk/gbyqW4H3#L51bfquE"
+    },
+    {
+      "order": 37000,
+      "kind": "call",
+      "label": "selection seats and removed ghosts; helper slabs",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "slab_seat"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#HDZqKmN4",
+      "to": "vKEsyHFk/gbyqW4H3#Ga3k1AaP"
+    },
+    {
+      "order": 41000,
+      "kind": "call",
+      "label": "the neutral well and edge tab of a flow's frame",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "tab_view"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#qtD8CVTd",
+      "to": "vKEsyHFk/gbyqW4H3#zPI3vU4A"
+    },
+    {
+      "order": 46000,
+      "kind": "call",
+      "label": "flow heading, and participant content through cards",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "paint_heading_views"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#t5CUCz5T",
+      "to": "vKEsyHFk/gbyqW4H3#8jYL9wH6"
+    },
+    {
+      "order": 72000,
+      "kind": "call",
+      "label": "mark the subject and its standing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-scene/src/paint/sequence_frames.rs",
+        "symbol": "subject"
+      },
+      "id": "vKEsyHFk/gbyqW4H3#XVvCNvvX",
+      "to": "vKEsyHFk/gbyqW4H3#vbRNGERE"
+    }
+  ]
+}

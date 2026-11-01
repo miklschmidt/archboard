@@ -164,18 +164,36 @@ test("a camera the stage moves itself leaves the traffic running", async () => {
 	}
 });
 
+/**
+ * A card that reaches under the panel, with room to its left to move.
+ * @returns Where it stands.
+ */
+function reachesUnderThePanel(): DOMRect {
+	return new DOMRect(600, 0, 200, 100);
+}
+
 test("a pick that a panel laid over the picture would cover moves the picture clear and leaves the traffic running", async () => {
 	// Two panes share the centre, so a pick lays the sidebar's panel over the
-	// picture's edge, and in this DOM every part reaches under it.
+	// picture's edge. This DOM lays nothing out, so the card says where it stands.
 	const traffic = await mountWithTraffic({
 		live: true,
-		chrome: { letter: null, controls: null, notice: null, shared: true, active: true },
+		chrome: {
+			letter: null,
+			controls: null,
+			notice: null,
+			shared: true,
+			active: true,
+			column: null,
+			openBeside: null,
+		},
 	});
 	const frames = takeFrames();
 	try {
 		const before = cameraNow().x;
+		const card = inPicture("card");
+		Object.assign(card.parentElement ?? card, { getBoundingClientRect: reachesUnderThePanel });
 		act(() => {
-			fireEvent.click(inPicture("card"));
+			fireEvent.click(card);
 		});
 		// The pick opens the sidebar, whose inspector reads the board. Let that read
 		// land inside this test: answered after it, it renders outside act and

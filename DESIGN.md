@@ -8,6 +8,9 @@ colors:
   chrome-chalk: "oklch(0.973 0.004 88)"
   tray-chalk: "oklch(0.986 0.003 88)"
   reading-tone: "oklch(0.935 0.006 85)"
+  well-floor: "oklch(0.95 0.005 255)"
+  tab-piece: "oklch(1 0 0)"
+  slab-face: "oklch(0.915 0.005 85)"
   card-white: "oklch(1 0 0)"
   rule: "oklch(0.905 0.005 85)"
   field-rule: "oklch(0.88 0.006 85)"
@@ -70,7 +73,7 @@ typography:
     fontWeight: 500
     lineHeight: "28px"
   technical:
-    fontFamily: "Archboard DM Mono, ui-monospace, monospace"
+    fontFamily: "Archboard Maple Mono, ui-monospace, monospace"
     fontSize: "11px"
     fontWeight: 400
     lineHeight: "14px"
@@ -102,10 +105,19 @@ components:
     height: "32px"
     padding: "4px 10px"
   nav-row-chosen:
-    backgroundColor: "{colors.reading-tone}"
+    backgroundColor: "{colors.tab-piece}"
     textColor: "{colors.ink-graphite}"
     rounded: "{rounded.control}"
-    height: "36px"
+    height: "28px"
+  column-well:
+    backgroundColor: "{colors.well-floor}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.panel}"
+  count-badge:
+    backgroundColor: "{colors.slab-face}"
+    textColor: "{colors.ink-graphite}"
+    rounded: "{rounded.chip}"
+    height: "16px"
   page-card:
     backgroundColor: "{colors.card-white}"
     textColor: "{colors.ink-graphite}"
@@ -168,7 +180,10 @@ every role and changes the values. The file theme.css holds both themes.
 - **Ground Chalk** (oklch(0.99 0.0025 90), dark oklch(0.2 0.006 75)): the ground of the picture, and of the About page that lies over it.
 - **Chrome Chalk** (oklch(0.973 0.004 88), dark oklch(0.165 0.005 75)): the navigator, the pane header and the sidebar.
 - **Tray Chalk** (oklch(0.986 0.003 88), dark oklch(0.205 0.007 75)): a tray at the foot of a column, raised over the chrome. The agent dock and the foot of the selection tab use it.
-- **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list, raised as a plate.
+- **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on a page or in the right panel, raised as a plate.
+- **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of a field sunk into the column. It is the floor of a nested container on the picture, so the column and the picture are one material.
+- **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece raised on the edge of a well: the open tab of the left column, and its chosen row.
+- **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
 - **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and raised controls.
 - **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.72 0.01 80)): text.
 - **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane.
@@ -192,7 +207,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 **Body Font:** Onest (served as Archboard Onest).
 
-**Label/Mono Font:** DM Mono (served as Archboard DM Mono).
+**Label/Mono Font:** Maple Mono NL (served as Archboard Maple Mono), the one mono face of the shell and of every picture.
 
 **Character:** Tall condensed capitals name the thing that a region is about.
 A plain, round sans carries every other word. A quiet mono sets identifiers,
@@ -217,18 +232,18 @@ paths, versions, counts and times.
 
 ## Layout
 
-The shell puts columns around the picture. The navigator (320px) is on the left,
-and the agent dock is at its foot. The panes are in the centre, one or two side
-by side. The conversation opens between the navigator and the panes: it slides
+The shell puts columns around the picture. The left column (448px) lists where to
+go, and the agent dock is at its foot. Its width comes from what it holds: five tabs with
+three-digit counts need 445px on one row, and the table of `Measures` needs 184px for a
+name, which fits 99 percent of the names of this repository's model, beside seven count
+columns of 30px. The panes are in the centre, one or two side
+by side. The conversation opens between the column and the panes: it slides
 in and out, and a handle on its edge, a grip on a line that takes the gold while
 it is dragged, resizes it between 320px and 720px, or drags it shut below that.
-Each pane has a sidebar (280px) on the right, shown and hidden by one control at
-the end of the pane's header. Beside a lone pane the sidebar is docked and takes
-its width from the picture. With two panes it is away until somebody asks for
-it, and its panel then floats over the edge of the picture until it is pinned. A
-sidebar that is away is nowhere: it leaves no strip, no icons and no empty
-column behind. Every column starts with a chrome row (40px) and then a band
-(36px) for the find fields and the tabs of the sidebar. A pane's header stands
+Every Diagram reading of the canonical reader has a right panel beside its picture
+(360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
+that it leaves. A selection never refits the picture. A retained board recording keeps a sidebar (280px). Every
+column starts with a chrome row (40px), and the left column has Find and the repository switcher, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
 cap height, so its parts sit on one line at any display scale. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or
@@ -253,6 +268,8 @@ The file app.css holds the values for both themes and gives each one a
 ### Shadow Vocabulary
 
 - **well** (`--elevation-well`, an inner shadow of 1px offset and 2px blur): a field sunk into a surface, such as an input or the composer.
+- **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
+- **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
 - **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. Each is a 1px contact shadow and a soft shadow. The soft shadow has an 8px offset on chalk and 10px to 12px on graphite. A tray casts edge-up over the list that scrolls under it.
 - **raised** (`--elevation-raised`, a white highlight on top and a 1px seat): a control, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, an inner shadow): a raised control while somebody presses it.
@@ -266,28 +283,35 @@ The file app.css holds the values for both themes and gives each one a
 The picture has a depth vocabulary of its own, and the renderer draws it. Its
 light falls from above. A card is a slab: a lit top face, a front edge along
 its foot and a soft shadow below it. A container is a neutral well cut into
-the page, its floor only just darker than the page, with its top wall in
-shade, two quieter side walls as thick as it and a lit lip along its bottom.
-Its header is a slab friction fit in the well, a 2-unit gap inside the walls
-and as far from the outer edge on the top as on either side. It rises to the
-level of what the well is cut into and is made of it: its face is the color of
-the page, or of the floor of the container around it, and its front edge is
-that color in shade. So it reads as the head of the well and not as one more
-card. The first row of cards stands as far under it as from the sides and the
-bottom of the well. No group tints the header: the region of the group that
-places the container says the group, and the container's kind shows on its
-icon chip alone.
-The region of a group has no fill: a thin frame in a faded tone of the
-group's color, thick corner brackets and a caption tab in its full color. Each
+the page, its floor only just darker than the page. One inner shadow falls from
+the whole of its top edge, and a lit lip runs along its bottom. Its name stands
+on a tab, a lighter piece raised on that edge. The tab's left side is the well's
+left side, its top corners have the well's radius, and it meets the edge on the
+right in one crisp concave curve. The well's top edge runs on under the tab, so
+a line parts the tab from the floor. The tab hugs its words with 12 units on
+either side, and one outline runs round the tab and the well. The first row of
+cards stands as far under the edge as from the sides and the bottom of the well.
+In a live reader, a door that holds parts ends with a plus behind a thin rule, and
+the tab of an expanded module ends with a minus in the same place. The piece keeps its
+look, and only the control takes a plate under the pointer. An export and a presented
+step draw neither control.
+No group tints a container, and it wears no tag: its kind shows on its icon chip
+alone.
+A group shows on each of its cards as a tag at the top right, the same bright
+piece as in the Legend, and the cards of a group stand together. No frame is
+drawn round a group. A card's face and front edge stay neutral in every group.
+A door is a bright button with the finish of a primary action, in the color of
+its group, or of its kind when it has no group, in both themes. Its arrow
+points up, sideways or down by where its module lies in the tree.
+The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
+folders dimmed and its file bright, as far from the foot as the name stands from
+the top. Below a scale of 0.857 a picture draws its far view: one fixed type scale
+of 18 units for a name, on every picture, with the padding, the chip and the build
+of a near card, as much of its responsibility as its box holds, a flat spot in a
+group's color for its tag, and the doors and the tab still readable.
+Each
 shadow uses eight adjoining rectangles with shared gradients, with no filter, blur or mask. The colors
-come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A
-group region's frame, corners and tab and a grouped card's face are tones of
-the group's own color, set in OKLCH at one lightness for every color. On chalk
-the corners and the tab are the named color itself at a lightness of its own,
-0.635 to 0.685, the lightest at which the words on the tab, a very light tint of
-the color, reach APCA Lc 60 for every color, and the faded frame is a light tone
-of the color that keeps its hue. A yellow group's tab is the flat gold with Gold
-Ink on it. A comparison marks a part by its outline: a
+come from the `--slab-*` and `--tray-*` tokens in theme.css, in both themes. A comparison marks a part by its outline: a
 1.8-unit border in the comparison's green or Changed Orange along the inside edge of its
 top face, solid for added and dashed for changed, and a removed part's dashed
 red border round its footprint. The face and the front edge keep their colors.
@@ -305,20 +329,15 @@ The shell touches none of it, and the Untouched Picture Rule still holds.
 records the construction.
 
 On chalk the picture is crisp and vivid, never pastel or dusty. Its own
-neutrals are cool and clean, near hue 255, not the shell's warm ones: a card
-face a soft off-white, never pure white (oklch(0.96 0.004 255), lit to 0.97 at
-its top), a tray floor a step under the ground (oklch(0.974 0.003 255)) and a
-navy shadow. Under a card's foot that shadow is lighter than the front edge,
-so the edge ends where the card ends. It falls only down and to the right,
+neutrals are the shell's warm chalk, near hue 85, and never blue: a card
+face a warm grey that stands apart from the ground and a well's floor
+(oklch(0.915 0.005 85), lit at its top), a tray floor a step under the ground (oklch(0.974 0.003 88)) and a
+warm shadow. Under a card's foot that shadow is lighter than the front edge,
+so the edge ends where the card ends. The light falls straight down on every surface, so a shadow falls down and spills a little to the right and the left,
 with a faint ring round the card. A label's face is the card's. A front edge
 is the face in shade, never a lighter strip: the neutral face's own neutral at
 lightness 0.815
-(oklch(0.815 0.003 255)). A grouped card is a clearly colored card in a clean
-tone of its group's hue, an orange face a peach: at lightness 0.89 to 0.92 with
-nine tenths of the chroma its hue holds there (0.049 to 0.07), and its front
-edge is that hue in shade (lightness 0.78, chroma 0.096). On graphite a grouped
-face is a deep jewel tone (lightness 0.31, chroma 0.048), and its edge is a step
-under it at lightness 0.212, as a neutral one is. A chip is a light
+(oklch(0.815 0.003 255)). A chip is a light
 tone of its type's color, with the glyph in the color itself. The words are
 **Diagram Ink** (`--diagram-text`, oklch(0.2 0.02 265)) and **Diagram Slate**
 (`--diagram-text-muted`, oklch(0.45 0.028 262)). On graphite they are the
@@ -342,9 +361,9 @@ along the line on both grounds.
 
 ### Named Rules
 
-**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
+**The Still Shadow Rule.** A shadow over the picture is a static box-shadow, and a panel's shadow never changes while the panel moves. Nothing over the picture viewport uses backdrop-filter, filter or blur, and nothing there loops except the voice orb in the voice box, which is drawn on a canvas of its own and only while voice is on, and the warm wash the box takes from the orb's light, which is a layer of the box and never of the picture. A tip, a menu, the floating sidebar, the walkthrough box or the voice box may ease its own layer's transform and opacity, once, and each word of a subtitle may ease its own opacity, once. A select or a menu takes 160ms to arrive and 110ms to leave. The floating sidebar takes at most 160ms, the walkthrough box 220ms to arrive and 520ms to hand one step to the next, with the wake on its rail settling by about 700ms, and the voice box 360ms to arrive and 240ms to leave. A box that is wanted again while it leaves turns round from where it is. The orb itself crosses the page when subtitles are turned on or off, in a layer of its own, over 680ms.
 
-**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part is picked out or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede under an opacity filter. The shell lays no layer, blur or halo over the picture to do it.
+**The Picture Answers Rule.** The light belongs to the picture, not to the shell. When a part or several parts are picked out, or the pointer rests on one, the viewer marks what stays as drawn, and the picture's own subjects recede far under an opacity filter, so that what stays is plainly on top. Several picks keep only themselves and the lines between them. The shell lays no layer, blur or halo over the picture to do it.
 
 **The Card Is a Window Rule.** A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.
 
@@ -385,21 +404,122 @@ the Rule tone.
 - **Style:** a Field Rule edge and `shadow-well`, with no fill of its own, so it takes the tone of the surface it sits in. The dark theme fills it with the Field Rule at 30%.
 - **Size:** 32px high, with 10px of room at each side, as a button is.
 - **Focus:** the edge changes to the ring colour.
+- **In the left column:** Find and the field of the repository list stand on the Well Floor, so they read as cut into the chrome.
+
+### Selects and menus
+
+Every dropdown of the shell is one popover from the ui-kit. A select's trigger is a raised key: Card White, a Field Rule edge, `shadow-raised` and 3px corners. It sinks into `shadow-pressed` while its popover is open, and its chevron turns over. The popover stands under its trigger, never over it, in Card White with a Rule edge, 4px corners and `shadow-float`. It fades in and grows from 97 percent, once, from the side of the control that opened it, and it leaves faster than it came. A menu moves the same way. With reduced motion both are there and gone at once. The durations are `popoverIn` and `popoverOut` of `COLUMN_MS`.
+
+A row of a popover is at least 28px high. A tone of the ink marks the row under the pointer or the keys, and a check in Gold Mark marks the chosen one. A group has a heading in Body at weight 500, in sentence case. A choice can carry one line in Body in muted ink under its name, which says what it is for. `Select.Item` takes it as `description`.
+
+### Number badges
+
+A count of the left column stands on a low slab: `Badge` with the `count` variant and the `technical` size. It is 16px high on a front edge 2px thick, with 2px corners and the number in mono, because a small part of the picture is built the same way. The counts of the tabs, the steps of a walkthrough, the checkouts of a repository and the sorted count of a `Measures` row all use it. A number that reads as part of a table, such as the other counts of a `Measures` row, stays bare in its column.
 
 ### Navigation
 
-- **Style:** a tree on Chrome Chalk. A board or folder row is 36px and a variant or Earlier row 30px, for one line of name. Rails and elbows draw its levels, and the line from the root to the chosen row is lit in Gold Mark. The chosen row is a plate in Reading Tone with `shadow-raised`. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. Tabs have an underline of Gold Mark. A link is ink with an underline of Gold Mark.
+- **Style:** the list lies in a well cut into the chrome, as a container is cut into the picture: the Well Floor, one thin line round it, an inner shadow from the whole of its top edge and a lit lip along its foot. The `column-well` utility holds the recipe. Nothing in the column is divided by a rule. A row is 28px at least, and a board or folder row 36px. Rails and elbows draw its levels. The chosen row is a plate in the Tab Piece tone with `shadow-raised`, and the row of what is open has a front edge in Gold Mark along its foot. It has no bar on its left edge. A repository's row carries the repository mark, or GitHub's mark for a repository on GitHub, which then shows only its owner and name. Every other label that names a repository does the same, and the whole identity shows on hover. A sentence, such as a notice, keeps the whole identity. A link is ink with an underline of Gold Mark.
+
+The left column's tabs stand on the top edge of the well, as a container's name stands on the picture. They are 32px high, in Control and muted ink. The open tab is the Tab Piece raised on that edge, in full ink, with an underline of Gold Mark under its words. Its corners are 5px, and it meets the edge in a concave curve of 8px. The well's top edge runs on under it, so a line parts the tab from the floor. A tab at the well's left end keeps the well's left side, so it has no curve there. On a proposal, `Changes` and the walk share a second row. A pane's own tabs keep their underline of Gold Mark.
+
+`Measures` is a table of every module, the most of one measure first, on the floor of the well. A row is one line of 28px: the name, then seven count columns of 30px, in the order of the sort control. So each count stands in one place on every row, and a row never wraps. The numbers are mono in Technical, right aligned.
+
+A shelf stands over the table while it scrolls, on Tray Chalk with `shadow-edge-down`. It holds the `Sort by` select, one line that says what the chosen measure counts and what it shows, and the head of each column. A head is turned on its side, as the dimension of a drawing is, because seven names do not fit seven narrow columns. The head of the sorted column is in full ink and semibold, with a piece of Gold Mark under it. Its numbers stand on number badges, so the sorted measure and its numbers read as one column.
+
+A bar under the name draws the sorted count of a row, on the scale of the most in the list. It is a slab in the colour of the module's kind, so that the list reads in colour and says what each row is. So the shape of the whole list shows at a glance: one module that stands far out, or a long even run. It draws one count and adds nothing up.
+
+A count of none is in a quieter ink, so what is there stands out. An empty cell is a module with no such measure: a module with no parts has no interface, and a count of none would say something else. Before the history arrives, its two cells stay empty. A module the read skipped takes one dash in each history cell, whose tooltip says why, and a row says all of it to assistive technology. A foot stands under the table on Tray Chalk with `shadow-edge-up`. It says once what the counts cover and why modules were not read, with `Refresh` at its end, or why there are no counts. No count takes a color, nothing combines the counts, and no row carries a rank.
+
+### Right panel
+
+The right panel is a permanent column beside the picture on every Diagram reading, on
+Chrome Chalk with a rule down its inner edge and `shadow-edge-side`. With nothing
+selected, it says the open module's name and description, or at the roots the model's
+name and the summary of its state. A flow reading says the flow. With a selection, it
+explains the selected thing, and a click on a card lights the card and fills the panel at
+once. A new subject opens at the top of the panel and arrives with a 120ms fade. A row
+answers the pointer with a change of tone and nothing else, and a row of a subject on the
+picture also lights it. Its actions stand over the legend, so a selection never moves a tag.
+Long lists and evidence live on About, which lies over the panel, so the panel keeps its
+room and the picture keeps its camera. A pane presented fullscreen has no panel.
+
+With a module expanded into the picture, the panel stays with the module that the reading
+opened. An `Expanded` section under `Interface` lists each expanded module, with its count.
+A row selects that frame, and a minus at the end of the row collapses it. A line under the
+rows says how many modules of the address cannot open here. With a door or an expanded
+module selected, an outlined action at the foot expands or collapses it.
+
+Under what it says, the panel lists the flows and the walkthroughs that touch the
+selection, or else the open module. At the roots with nothing selected it lists neither.
+Each list has a count, four rows and a line that says how many more. A flow's row ends
+with its collection and a walkthrough's with its steps, and the flow on screen takes the
+tone of a chosen row.
+
+For a module with parts, open or selected, an `Interface` section under its head holds
+one quiet line: entries, hidden, callers, `to module` when callers reach the module itself,
+and pass-through. Each count selects what it counts on the module's picture, and a count
+of none is disabled. `Open in About`, a 24px outlined control in the heading, opens the
+Interface section of About. Each count of a module open in the picture selects on this
+picture. No count takes a warning color, nothing combines the counts,
+and the picture gains no permanent mark. With one module selected, the head of
+`Sends to` and the head of `Receives from` each hold a 24px outlined toggle, `Trace onward`
+and `Trace back`, with the number of cards it reaches in the mono face. A pressed toggle
+takes the primary mark, and the picture grades what it reached, each further hop fainter.
+
+The legend is a tray at the foot of the panel (Tray Chalk and `shadow-edge-up`), and it needs
+no click. A long subject and its lists scroll above it, and the whole legend stays on screen.
+Only the engine row stands under it, so a selection never moves it. A heading row holds `Legend` and, at the start of the
+second column, the key `Filter`. Under it stand the kinds in two columns, a thin rule, the line
+types in two columns, a thin rule, and the groups. A row is 24px high, and every mark stands in
+a box 22px wide, so the names start on one line. A section with nothing to show is absent.
+
+The rows come from the whole reading, not from what the picture draws now, and each list keeps
+the order of the policy. So hiding a kind moves no row, and the legend keeps its height. A line
+type that a reader hid stays, dimmed. So does a part kind, a mixed line or a line's mark that
+left the picture with it. A chip that the picture does not draw takes the icon that the policy
+names. `Filter` is an outline key with a funnel and the count of hidden kinds in mono, and it
+grows into the free room of its column. While the switches show it is pressed in, with a gold
+mark under its words, as the dock's conversation key is. `Show all` stands at the end of the
+row while a kind is hidden. A line type keeps the room of its switch at all times, and a mixed
+line has no switch, because it is no kind of relationship.
+
+Under the legend on a structural reading, one row holds `Layout engine` and a switch between
+Blocks and Tracks.
+
+A group is a tag with its name inside, and the tags wrap. A tag is one bright piece in
+both themes, cut from the dark value of its palette color (`--bright-<name>`): a gradient
+from L+.02 C+.02 to L-.06 C+.03, a 1px edge at L-.26 C-.02, ink at oklch(0.2 0.03 H), an
+inset top highlight, weight 600 and 5px corners. The `group-tag` utility holds the one
+recipe. Its stops stay in OKLCH, because a mix toward a dark color in sRGB turns orange
+brown. A tag is a button. It selects what the picture draws of its group, doors included,
+through the ordinary selection, and a second press clears it. While the selection is exactly
+those parts the tag is on: its gradient turns over, its shadow moves inside and a 2px piece of
+Gold Mark stands under it. Under the pointer the tag lights a step. A group whose parts a
+filter took off the picture keeps its tag, dimmed and held.
+
+### Change list
+
+A proposal read against its base adds `Changes` to the left column. Its interface changes
+stand first, over a thin rule, because an interface change costs every caller. Each module
+reads once, as one row: its name, one line for each thing that moved, such as `Callers gained`
+with the parts it names, then the counts that differ as before and after, with the numbers in
+the mono face. A line names four parts and `+N`, and shows them all on hover. A click selects
+the module on the picture that holds it and lights the row, and from About it brings the
+picture back. A module that the state lacks says `Not in this state`, and its row selects it
+on the drawing of the comparison. These rows wear no standing mark, score or warning color.
+With no interface change, one quiet line in place of the rows says so. The change list follows
+under the rule, with a section for each owner. `N` and `P` walk only that list.
 
 ### Pane sidebar
 
-The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
+A retained board recording keeps this sidebar. The sidebar is one panel, 280px wide and held at the pane's edge, on Chrome Chalk
 with a rule down its inner edge. It has two tabs and one control, in the pane's
 header, that shows and hides it. The control is filled while the sidebar is shown,
 its tooltip says what it will do, and it is there in every state of the pane.
 Showing the sidebar puts it back where the person had it. A floating panel has a
 pin at the end of its tab row, which docks it, and Escape inside it puts it away
-and gives the keyboard back to the control. The search for a part sits above the
-tabs, and its shortcut shows an away sidebar and takes focus in the field.
+and gives the keyboard back to the control. Find sits in the left column, and
+Ctrl K takes focus in its field.
 
 The sidebar eases in and out, as the conversation does. A docked column takes its
 width over 220ms while the panel, held at its own width, is uncovered under the
@@ -411,8 +531,8 @@ arrives with a 120ms fade. A row answers the pointer with a change of tone and
 nothing else. With reduced motion the sidebar appears and goes at once.
 
 A presented walkthrough steps the sidebar aside, as it does the rest of the pane's
-chrome. While it lasts the control is held and says so, and nothing, the search
-shortcut included, shows or hides the sidebar. A pick made on the About page lays
+chrome. While it lasts the control is held and says so, and nothing shows or hides
+the sidebar. A pick made on the About page lays
 no panel over the page, where it would cover the page's controls. Its panel comes
 with the diagram.
 
@@ -425,8 +545,9 @@ its tooltip says why.
 ### About page
 
 The pane's header has two tabs, Diagram and About, and the mark of the open tab is
-Gold Mark. The About page lies over the picture on Ground Chalk and scrolls, and the
-sidebar stays beside it. Its column is 1320px wide at most and centred. The column
+Gold Mark. The About page lies over the picture on Ground Chalk and scrolls. A band at
+its top names what it describes, the open scope or the selected subject, and leads to
+the other one. Its column is 1320px wide at most and centred. The column
 keeps 40px of room inside each side, or 24px on a page narrower than 1040px.
 
 The head of the page names the board in the Figure role, in capitals. Under the

@@ -9,7 +9,6 @@ import { CodeWarnings } from "#ui/components/semantic-board-canvas/CodeWarnings.
 import {
 	PaneHeader,
 	type BoardPlace,
-	type BoardTab,
 	type PaneHeaderProps,
 } from "#ui/components/semantic-board-canvas/PaneHeader.tsx";
 import type { DrillNavigation } from "#ui/hooks/semantic-board-canvas/use-drill-down.ts";
@@ -38,10 +37,6 @@ interface StageHeaderView {
 	 * @returns The boards above it.
 	 */
 	readonly placeOf?: ((board: string) => readonly BoardPlace[]) | undefined;
-	/** The tab that is open. */
-	readonly tab: BoardTab;
-	/** Open a tab. */
-	readonly onTab: (tab: BoardTab) => void;
 	/** The sidebar, which a control in the header shows and hides. */
 	readonly sidebar: Sidebar;
 }
@@ -68,7 +63,7 @@ function headerFacts(
 }
 
 /**
- * The pane's header: where the board on screen sits, and the tabs.
+ * The pane's header: where the board on screen sits.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
  * @returns The header.
@@ -82,11 +77,9 @@ function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 			{...facts}
 			name={view.render.data?.board ?? view.drill.board}
 			{...crumbs}
-			tab={view.tab}
-			onTab={view.onTab}
 			sidebar={view.sidebar}
 		>
-			<CodeWarnings drawing={view.render.data} onDiagram={view.onTab} onShow={view.onShow} />
+			<CodeWarnings drawing={view.render.data} onShow={view.onShow} />
 		</PaneHeader>
 	);
 }

@@ -6,13 +6,14 @@ use crate::drawing::Emphasis;
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::appearance::{chip_tile, semantic_ink};
 use crate::paint::build::{Items, grouped, lines, point, shape};
+use crate::paint::design::RAILS;
 use crate::paint::design::{CHIP_THICKNESS, ICON_CHIP_SIZE};
 use crate::paint::edge_line::arrowhead;
 use crate::paint::icons::centred_on;
 use crate::paint::legend_entries::{Applied, Drawn, Entry, Keys};
 use crate::paint::palette::Palette;
 use crate::paint::standing::standing_pin_at;
-use crate::paint::styles::{HEAD_LENGTH, dash_array, drawn_ink, head_of, stroke_width};
+use crate::paint::styles::{HEAD_LENGTH, RAIL_GAP, dash_array, drawn_ink, head_of, stroke_width};
 use crate::paint::traffic::pulse_look;
 use crate::request::{Arrowhead, Dash};
 use crate::scene::traffic::pulse_breadth;
@@ -76,17 +77,24 @@ fn relationship_symbol(applied: &Applied, palette: &Palette, x: f64, y: f64) -> 
     let tip = x + GLYPH - 1.0;
     let shown = head_of(ends);
     let sample = Stroke::new(&ink, stroke_width(Emphasis::Normal)).dashed(dash_array(dash));
+    let stop = if shown == Some(Head::Filled) {
+        1.0 + head / 2.0
+    } else {
+        1.0
+    };
+    let rail = (RAILS - RAIL_GAP) / 2.0;
+    let run = if dash == Dash::Mixed {
+        let beside = f64::midpoint(RAIL_GAP, rail);
+        let stroke = Stroke::new(&ink, rail);
+        lines(vec![
+            line_at(x, y - beside, stroke.clone(), stop),
+            line_at(x, y + beside, stroke, stop),
+        ])
+    } else {
+        line_at(x, y, sample, stop)
+    };
     lines(vec![
-        line_at(
-            x,
-            y,
-            sample,
-            if shown == Some(Head::Filled) {
-                1.0 + head / 2.0
-            } else {
-                1.0
-            },
-        ),
+        run,
         match shown {
             None => Items::new(),
             Some(shown) => vec![Item::Viewport(Viewport {

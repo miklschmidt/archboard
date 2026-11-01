@@ -10,7 +10,7 @@ mod colour;
 mod definitions;
 mod glyphs;
 mod groups;
-mod key;
+mod legend;
 mod legs;
 mod path;
 mod pulse;
@@ -23,8 +23,9 @@ mod tests;
 
 use std::collections::{BTreeMap, BTreeSet};
 
-pub use key::{AppliedAppearance, PictureKey, appearances};
+pub use legend::{AppliedAppearance, PictureLegend, appearances};
 
+use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
 use archboard_scene::request::{DocumentRequest, StandaloneTheme};
 use archboard_scene::scene::{Colour, Item, Scene, Token};
 use colour::css;
@@ -50,6 +51,8 @@ impl std::fmt::Display for DocumentError {
 }
 
 const FAR_VIEW_CLASS: &str = "is-far";
+/// What selects a relationship's group of lines.
+const LINE_GROUP: &str = "[data-line-dash]";
 /// How every part of a swap between the near and the far view moves.
 const SWAP_EASE: &str = "cubic-bezier(.4,0,.2,1)";
 /// How a picture swaps its cards' near and far views (TASK-428).
@@ -61,7 +64,18 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         format!("opacity:0;visibility:hidden;transition:{fade},visibility 0s linear {ms}ms");
     let movement = format!("transition:transform {ms}ms {SWAP_EASE}");
     let far = format!(".{FAR_VIEW_CLASS}");
-    vec![
+    let mut rules: Vec<String> = [LINE_WIDTH, HERO_LINE_WIDTH, RAILS]
+        .iter()
+        .map(|width| {
+            let near = archboard_scene::js::number(*width);
+            let wide = archboard_scene::js::number(width * FAR_SCALE);
+            format!("{far} {LINE_GROUP}>path[stroke-width=\"{near}\"]{{stroke-width:{wide}px}}")
+        })
+        .collect();
+    rules.push(format!(
+        "{LINE_GROUP}>path{{transition:stroke-width {ms}ms {SWAP_EASE}}}"
+    ));
+    rules.extend([
         format!(".{FAR_CLASS}{{display:inline;{hidden}}}"),
         format!(".{NEAR_CLASS}{{{shown}}}"),
         format!("{far} .{FAR_CLASS}{{{shown}}}"),
@@ -74,9 +88,10 @@ fn far_view_rules(swap_ms: f64) -> Vec<String> {
         ),
         format!("{far} .{FAR_CLASS}>.{WORDS_CLASS}{{transform:none}}"),
         format!(
-            "@media(prefers-reduced-motion:reduce){{.{FAR_CLASS},.{NEAR_CLASS},{far} .{FAR_CLASS},{far} .{NEAR_CLASS},.{CHIP_CLASS},.{WORDS_CLASS}{{transition:none}}}}"
+            "@media(prefers-reduced-motion:reduce){{.{FAR_CLASS},.{NEAR_CLASS},{far} .{FAR_CLASS},{far} .{NEAR_CLASS},.{CHIP_CLASS},.{WORDS_CLASS},{LINE_GROUP}>path{{transition:none}}}}"
         ),
-    ]
+    ]);
+    rules
 }
 
 /// The document's stylesheet: the cursor, the selection ring, the far view,

@@ -42,9 +42,6 @@ pub(crate) struct Edge {
 /// A relationship's measured label.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct Label {
-    /// Separate label plates stacked from top to bottom.
-    #[serde(default)]
-    pub stacked: bool,
     #[serde(default)]
     pub width: Option<f64>,
     #[serde(default)]
@@ -118,6 +115,8 @@ pub(crate) fn semantic_order(options: Option<&Options>) -> f64 {
 
 /// The layout option naming the group a node is placed with.
 pub(crate) const PLACING_GROUP: &str = "archboard.group";
+/// The option naming the groups a part is in, space-joined: what keeps them together.
+pub(crate) const GROUPS: &str = "archboard.groups";
 /// The root option carrying each placing group's caption size.
 pub(crate) const GROUP_CAPTIONS: &str = "archboard.group.captions";
 /// The option marking a child an entry point of its container.

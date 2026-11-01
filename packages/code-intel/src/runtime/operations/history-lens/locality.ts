@@ -16,7 +16,9 @@
 // The answer is kept in memory, keyed on everything it derives from: the
 // vault, the board and its version, the variant, the start of the period, and
 // each checkout with its HEAD. A request that arrives while it is made waits for
-// that work. Nothing is written anywhere.
+// that work. The walk behind it derives only from HEAD, the period and what the
+// parts bind, so it is kept apart: a model edit that moves no binding needs a
+// new answer and no new walk. Nothing is written anywhere.
 
 import { snapshotCheckoutAccess, type CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import {
@@ -24,7 +26,10 @@ import {
 	type AttributedCommits,
 } from "#runtime/operations/history-lens/attribution.ts";
 import { answerCommit, isoTime } from "#runtime/operations/history-lens/answer-commit.ts";
-import { createAnswerMemory } from "#runtime/services/history-lens/answer-memory.ts";
+import {
+	createAnswerMemory,
+	type AnswerMemory,
+} from "#runtime/services/history-lens/answer-memory.ts";
 import {
 	isLargeCommit,
 	walkCommits,
@@ -45,6 +50,9 @@ import { LOCALITY_DEFAULT_PERIOD_MS } from "@archboard/timing";
 
 /** How many answers the server keeps: the boards that somebody selects parts on. */
 const KEPT_ANSWERS = 32;
+
+/** How many walks the server keeps. A walk holds every file of a year of commits. */
+const KEPT_WALKS = 4;
 
 /** The parts the lens reads in one repository, and the HEAD it reads them at. */
 interface RepositoryToRead {
@@ -124,6 +132,24 @@ async function walkPeriod(
 		commits: new Map(walked.map((commit) => [commit.commit, commit])),
 		byPart: await attributeCommits(root, head, walked, parts, options),
 	};
+}
+
+/**
+ * What a walk derives from: the parts stand in it with what they bind, and
+ * nothing else of the model.
+ * @param repo The repository's identity.
+ * @param repository What to read there.
+ * @param since The start the caller named, or undefined for the year before HEAD.
+ * @returns The key.
+ */
+function walkKey(repo: string, repository: RepositoryToRead, since: Date | undefined): string {
+	return JSON.stringify({
+		repo,
+		root: repository.root,
+		head: repository.head,
+		since: since?.toISOString() ?? null,
+		parts: repository.parts.map(({ node, path }) => [node.id, path, node.binding?.symbol]),
+	});
 }
 
 /** What one part's commits are, split at the size filter. */
@@ -215,35 +241,40 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	};
 }
 
+type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
 /**
  * Read locality: every part the lens reads, ranked by the commits of the
  * period that changed its bound files, and the pairs those commits couple.
- * @param board The board.
  * @param variant The variant to read.
  * @param snapshot The registered checkouts and what each has out.
  * @param since The start of the period, or undefined for the year before each HEAD.
+ * @param walks The memory of the walks.
  * @param options The caller's signal.
  * @returns The answer.
  */
 async function readLocality(
-	board: SemanticBoard,
 	variant: SemanticVariant,
 	snapshot: CheckoutSnapshot,
 	since: Date | undefined,
+	walks: AnswerMemory<WalkedPeriod>,
 	options: GitRunOptions,
-): Promise<LocalityAnswer> {
+): Promise<LocalityEvidence> {
 	const reading = partReading(variant.content, snapshot);
 	const { repositories, skipped } = repositoriesOf(reading.read, snapshot);
-	const walks = new Map(
+	const walked = new Map(
 		await Promise.all(
 			[...repositories].map(async ([repo, repository]): Promise<[string, WalkedPeriod]> => [
 				repo,
-				await walkPeriod(repo, repository, since, options),
+				await walks.answer(
+					walkKey(repo, repository, since),
+					(stop) => walkPeriod(repo, repository, since, { signal: stop }),
+					options.signal,
+				),
 			]),
 		),
 	);
 	const split = reading.read.flatMap((part) => {
-		const walk = walks.get(part.repo);
+		const walk = walked.get(part.repo);
 		if (walk === undefined) return [];
 		const commits = commitsOfPart(part, walk);
 		const attributed = walk.byPart.get(part.node.id);
@@ -261,10 +292,7 @@ async function readLocality(
 	});
 	const ranking = rank(split);
 	return {
-		board: board.name,
-		version: board.version,
-		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
-		periods: [...walks.values()].map((walk) => walk.period),
+		periods: [...walked.values()].map((walk) => walk.period),
 		commits: ranking.commits,
 		hotspots: ranking.hotspots,
 		coupling: couplePairs(split, variant.content),
@@ -299,19 +327,26 @@ interface VariantLocality {
  * period, and each checkout with its HEAD.
  * @returns The reading.
  */
-function createVariantLocality(): VariantLocality {
-	const memory = createAnswerMemory<LocalityAnswer>(KEPT_ANSWERS);
+function createLocalityEvidence() {
+	const memory = createAnswerMemory<LocalityEvidence>(KEPT_ANSWERS);
+	const walks = createAnswerMemory<WalkedPeriod>(KEPT_WALKS);
 	return {
 		/**
 		 * Read, or answer from memory.
 		 * @param vault The vault directory.
-		 * @param board The board.
+		 * @param architecture The exact architecture identity and revision.
 		 * @param variant The variant.
 		 * @param since The start of the period.
 		 * @param signal Cancels the reading.
 		 * @returns The answer.
 		 */
-		async read(vault, board, variant, since, signal) {
+		async read(
+			vault: string,
+			architecture: string,
+			variant: SemanticVariant,
+			since: Date | undefined,
+			signal?: AbortSignal,
+		) {
 			const bindings = variant.content.nodes.flatMap((node) =>
 				node.binding === undefined ? [] : [node.binding],
 			);
@@ -327,19 +362,50 @@ function createVariantLocality(): VariantLocality {
 			// worktrees of one repository hold copies that can each have moved on.
 			const key = JSON.stringify({
 				vault,
-				board: board.id,
-				version: board.version,
+				architecture,
 				variant: variant.id,
 				since: since?.toISOString() ?? null,
 				checkouts: repos.map((repo) => [repo, snapshot.inspection(repo) ?? null]),
 			});
 			return await memory.answer(
 				key,
-				(stop) => readLocality(board, variant, snapshot, since, { signal: stop }),
+				(stop) => readLocality(variant, snapshot, since, walks, { signal: stop }),
 				signal,
 			);
 		},
 	};
 }
 
-export { type VariantLocality, createVariantLocality };
+/**
+ * Read immutable legacy analysis inputs through the shared evidence engine.
+ * @returns The retained semantic analysis adapter.
+ */
+function createVariantLocality(): VariantLocality {
+	const evidence = createLocalityEvidence();
+	return {
+		/**
+		 * Read retained evidence.
+		 * @param vault The vault.
+		 * @param board The retained document.
+		 * @param variant The selected state.
+		 * @param since The period start.
+		 * @param signal Cancellation.
+		 * @returns The original semantic receipt.
+		 */
+		async read(vault, board, variant, since, signal) {
+			return {
+				board: board.name,
+				version: board.version,
+				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+				...(await evidence.read(
+					vault,
+					JSON.stringify([board.id, board.version]),
+					variant,
+					since,
+					signal,
+				)),
+			};
+		},
+	};
+}
+export { type VariantLocality, createVariantLocality, createLocalityEvidence };

@@ -2,12 +2,11 @@ import type { BrowserConnectionInstance } from "#runtime/protocol/voice/extensio
 import type { BrowserLeaseLedger } from "#runtime/protocol/voice/extension.ts";
 import { WebSocket } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
-import type { WebSocketMessage } from "@archboard/server-lifecycle/panes";
+import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { listSemanticBoards, readBoardVariant } from "@archboard/board/store-read";
-import { aggregateOf, paneAddress } from "#server/rules/pane/board-key.ts";
-import { watchBoardLocks, type WatchedBoard } from "@archboard/board/lock";
+import { readArchitectureModel } from "@archboard/board/store-read";
+import { aggregateOf } from "#server/rules/pane/board-key.ts";
 import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
@@ -205,33 +204,6 @@ function sendBoardlessToPane(clientId: string, message: WebSocketMessage): boole
  * vault its pane belongs to.
  * @returns Their vaults and keys.
  */
-function watchedBoards(): WatchedBoard[] {
-	return [...paneBoards].flatMap(([clientId, key]) => {
-		const vault = paneVaults.get(clientId);
-		const board = aggregateOf(key);
-		return vault === undefined || board === null ? [] : [{ vault, board }];
-	});
-}
-
-/**
- * Watch the lock files of the boards on screen, while there is a screen.
- *
- * The lock broadcast reaches the panes of this server. A second server over
- * the same vault cannot be told anything, because the lock is a file, so its
- * panes would learn about a claim at the write rather than before the touch —
- * for a claim that runs minutes, that is minutes of a pane letting somebody
- * draw into a board an agent has (ADR 0016). Reading the files is how a pane
- * hears news nobody sent it.
- *
- * Only while a tab is connected: a pane exists while something renders it, and
- * with nothing rendering there is nobody to be wrong. Called on every
- * connection and every close, so the cost is paid by a server somebody is
- * looking at and by no other.
- */
-function syncLockWatch(): void {
-	watchBoardLocks(clients.size > 0 ? { boards: watchedBoards } : null);
-}
-
 /**
  * The pane a new pane copies: the primary one, else the focused one, else any,
  * of its own vault.
@@ -267,8 +239,7 @@ function boardForNewPane(clientId: string, vault: string): string | null {
 	// Nothing to copy: the vault's first board, so a tab opened on an empty
 	// address shows an architecture rather than an empty frame. A vault with no
 	// board at all leaves the pane on none, and the navigator says so.
-	const first = listSemanticBoards(vault)[0];
-	return first === undefined ? null : first.key;
+	return null;
 }
 
 /**
@@ -282,19 +253,11 @@ function boardForNewPane(clientId: string, vault: string): string | null {
  * the current variant of the first board in the vault: not what it was looking
  * at, and quietly so.
  * @param vault The vault the board lives in.
- * @param key The pane's board key.
+ * @param _key The opaque presentation key.
  * @returns True when that board is still there and has the variant the key states.
  */
-function stillThere(vault: string, key: string): boolean {
-	const identity = paneAddress(key);
-	if (identity === null) {
-		return false;
-	}
-	const opened = readBoardVariant(vault, identity.board, identity.variant);
-	// A bare key names the board, whatever it opens: on a board nobody has built
-	// that is its draft, or a refusal the pane draws naming the drafts to choose
-	// from. Either is the board it was on, said on screen, never another board.
-	return opened.ok || opened.code === "VARIANT_UNCHOSEN";
+function stillThere(vault: string, _key: string): boolean {
+	return readArchitectureModel(vault).success;
 }
 
 /**
@@ -555,7 +518,6 @@ export {
 	settleAfterLayout,
 	socketVaults,
 	socketsFor,
-	syncLockWatch,
 };
 export type { PendingPaneClose, PendingPaneOpen };
 

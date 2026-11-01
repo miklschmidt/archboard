@@ -1,0 +1,37 @@
+{
+	"schemaVersion": "2.2.0",
+	"kind": "semantic-board",
+	"id": "Public",
+	"name": "System",
+	"level": "system",
+	"version": 1,
+	"createdAt": "2026-10-01T00:00:00.000Z",
+	"updatedAt": "2026-10-01T00:00:00.000Z",
+	"current": "Now",
+	"views": [],
+	"variants": [
+		{
+			"id": "Now",
+			"name": "Original",
+			"lifecycle": "current",
+			"content": {
+				"nodes": [
+					{
+						"id": "API",
+						"name": "API",
+						"kind": "module",
+						"responsibility": "Accepts requests",
+						"order": 0,
+						"binding": {
+							"repo": "github.com/acme/shop",
+							"path": "src/api.ts"
+						}
+					}
+				],
+				"edges": [],
+				"flows": [],
+				"walkthroughs": []
+			}
+		}
+	]
+}

@@ -13,11 +13,14 @@
 // the first frame the box is shown.
 
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
-import { useMemo, useSyncExternalStore, type JSX } from "react";
+import { useCallback, useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { Talk } from "@archboard/walkthrough/talk";
 import { Tooltip } from "@archboard/ui-kit/components";
 import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
+import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
+import { readingOf } from "#ui/rules/application/pane-reading.ts";
+import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
 import { useOverlayPlace } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
 import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
@@ -47,7 +50,7 @@ interface ReplayStageProps {
 	 * Told what the pane is reading, whenever that changes.
 	 * @param reading The reading.
 	 */
-	readonly onReading: (reading: SemanticPaneReading) => void;
+	readonly onReading: (reading: PaneReading | null) => void;
 }
 
 /**
@@ -125,6 +128,11 @@ function ReplayOrb(props: { readonly voice: AgentVoiceView }): JSX.Element {
 function ReplayStage(props: ReplayStageProps): JSX.Element {
 	const { talk, playback } = props;
 	const { level } = playback;
+	const { onReading } = props;
+	const reportLegacy = useCallback(
+		(reading: SemanticPaneReading) => onReading(readingOf(reading, null)),
+		[onReading],
+	);
 	const moment = useSyncExternalStore(playback.subscribe, playback.moment);
 	const voice = useMemo(() => talkVoice(level), [level]);
 	const overlay = useMemo(
@@ -138,16 +146,28 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 					<RecordingStage>
 						<div data-slot="pane-stage" className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 							<PaneVaultContext value={TALK_VAULT}>
-								<SemanticBoardStage
-									board={talk.board.name}
-									variant={talk.board.variant ?? undefined}
-									selection={null}
-									onSelect={ignore}
-									onReading={props.onReading}
-									driven={moment.step}
-									reducedMotion={false}
-									overlay={overlay}
-								/>
+								{talk.architecture === undefined ? (
+									<SemanticBoardStage
+										board={talk.board.name}
+										variant={talk.board.variant ?? undefined}
+										selection={null}
+										onSelect={ignore}
+										onReading={reportLegacy}
+										driven={moment.step}
+										reducedMotion={false}
+										overlay={overlay}
+									/>
+								) : (
+									<ModelWalkthrough
+										vault={TALK_VAULT}
+										model={talk.architecture}
+										reducedMotion={false}
+										onLeave={ignore}
+										driven={moment.step}
+										onReading={onReading}
+										overlay={overlay}
+									/>
+								)}
 							</PaneVaultContext>
 						</div>
 					</RecordingStage>

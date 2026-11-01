@@ -20,36 +20,22 @@
 // server has pointed at no board keeps the same row: it says so, and keeps the
 // shell's letter, controls and notice.
 
-import {
-	RiArrowRightSLine,
-	RiFileTextLine,
-	RiFlowChart,
-	RiMoreLine,
-	type RemixiconComponentType,
-} from "@remixicon/react";
-import { useCallback, type JSX, type ReactNode } from "react";
+import { RiArrowRightSLine, RiMoreLine } from "@remixicon/react";
+import { type JSX, type ReactNode } from "react";
 
-import { cn, DropdownMenu, RepositoryName, Tabs } from "@archboard/ui-kit/components";
+import { cn, DropdownMenu, RepositoryName } from "@archboard/ui-kit/components";
 import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import {
+	PaneHeaderRow as HeaderRow,
+	PaneHeaderStart as HeaderStart,
+	PaneHeaderEnd as HeaderEnd,
+} from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
 import { LevelMark } from "#ui/components/semantic-board-canvas/LevelMark.tsx";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
 import { SidebarToggle } from "#ui/components/semantic-board-canvas/SidebarToggle.tsx";
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { OfferedVariant } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
-
-/** What the pane is read as: the picture, or the About page. */
-type BoardTab = "diagram" | "about";
-
-/** What each tab is called and drawn with. */
-const TABS: readonly {
-	readonly tab: BoardTab;
-	readonly label: string;
-	readonly icon: RemixiconComponentType;
-}[] = [
-	{ tab: "diagram", label: "Diagram", icon: RiFlowChart },
-	{ tab: "about", label: "About", icon: RiFileTextLine },
-];
 
 /** A board above the one on screen, as the navigator places it or as the reader came down from it. */
 interface BoardPlace {
@@ -103,13 +89,6 @@ interface PaneHeaderProps {
 	readonly variant: OfferedVariant | null;
 	/** Nothing the board describes is built: it has no current variant. */
 	readonly unbuilt: boolean;
-	/** The tab that is open. */
-	readonly tab: BoardTab;
-	/**
-	 * The person chose a tab.
-	 * @param tab The tab.
-	 */
-	readonly onTab: (tab: BoardTab) => void;
 	/** The pane's sidebar, which the first of the controls at the end shows and hides. */
 	readonly sidebar: Sidebar;
 }
@@ -271,122 +250,8 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 }
 
 /**
- * The tabs: what the area under the row shows.
- * @param props The open tab and the choice.
- * @returns The tab list.
- */
-function PageTabs(props: Pick<PaneHeaderProps, "tab" | "onTab">): JSX.Element {
-	const { onTab } = props;
-	const choose = useCallback(
-		(value: unknown): void => {
-			const entry = TABS.find((one) => one.tab === value);
-			if (entry !== undefined) onTab(entry.tab);
-		},
-		[onTab],
-	);
-	return (
-		<Tabs value={props.tab} onValueChange={choose} className="h-full shrink-0 gap-0">
-			<Tabs.List
-				variant="underline"
-				aria-label="Ways to read this board"
-				className="h-full! border-b-0"
-			>
-				{TABS.map((entry) => (
-					<PageTab key={entry.tab} entry={entry} open={props.tab === entry.tab} />
-				))}
-			</Tabs.List>
-		</Tabs>
-	);
-}
-
-/**
- * One tab: its mark and its name. While the header is narrow, a tab that is
- * not open keeps only its mark, named by its tooltip and to assistive
- * technology, so the breadcrumb keeps the board's name whole.
- *
- * The open tab's line lies on the header's rule, which is the header's own last
- * row, so it ends at the header's edge. A line that hung below the edge, as one
- * on a tab list's rule does, would lie under the sidebar's column, which starts
- * at that edge and is drawn after the header (TASK-476).
- * @param props The tab, and whether it is open.
- * @param props.entry The tab.
- * @param props.open Whether it is the one open.
- * @returns The tab.
- */
-function PageTab(props: {
-	readonly entry: (typeof TABS)[number];
-	readonly open: boolean;
-}): JSX.Element {
-	const { entry, open } = props;
-	const Icon = entry.icon;
-	return (
-		<Tabs.Trigger
-			value={entry.tab}
-			data-slot="board-tab"
-			data-tab={entry.tab}
-			title={entry.label}
-			className="text-control data-active:[&_svg]:text-primary-mark gap-1.5 px-2 group-data-[variant=underline]/tabs-list:after:bottom-0!"
-		>
-			<Icon aria-hidden="true" className="size-4" />
-			<span className={open ? "" : "sr-only @min-[880px]/pane-header:not-sr-only"}>
-				{entry.label}
-			</span>
-		</Tabs.Trigger>
-	);
-}
-
-/** The parts of a header row. */
-interface HeaderPartProps {
-	readonly children: ReactNode;
-}
-
-/**
- * The row every pane's header is, and under it what the shell says about the pane.
- * @param props The row's start and end.
- * @returns The header row.
- */
-function HeaderRow(props: HeaderPartProps): JSX.Element {
-	const { notice } = usePaneChrome();
-	return (
-		<>
-			<header
-				data-slot="pane-header"
-				className="bg-sidebar h-chrome shadow-edge-down after:bg-border @container/pane-header relative z-30 flex shrink-0 items-center pr-2 pl-4 after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px in-data-presenting:hidden"
-			>
-				{props.children}
-			</header>
-			{notice}
-		</>
-	);
-}
-
-/**
- * The start of the row: the shell's letter, then where the pane is.
- * @param props Where the pane is.
- * @returns The start.
- */
-function HeaderStart(props: HeaderPartProps): JSX.Element {
-	const { letter } = usePaneChrome();
-	return (
-		<div className="mr-5 flex min-w-0 shrink items-center gap-3">
-			{letter}
-			{props.children}
-		</div>
-	);
-}
-
-/**
- * The end of the row: what can be done, the shell's controls included.
- * @param props What can be done.
- * @returns The end.
- */
-function HeaderEnd(props: HeaderPartProps): JSX.Element {
-	return <div className="ml-auto flex h-full shrink-0 items-center gap-2">{props.children}</div>;
-}
-
-/**
  * The header of one pane, and under it what the shell says about the pane.
- * @param props The board, where the reader came from and the tabs.
+ * @param props The board and where the reader came from.
  * @returns The header row.
  */
 function PaneHeader(props: PaneHeaderProps): JSX.Element {
@@ -398,8 +263,6 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 			</HeaderStart>
 			<HeaderEnd>
 				{props.children}
-				<PageTabs tab={props.tab} onTab={props.onTab} />
-				<span aria-hidden="true" className="bg-border h-4 w-px shrink-0" />
 				<span className="flex shrink-0 items-center gap-1">
 					<SidebarToggle sidebar={props.sidebar} />
 					{controls}
@@ -428,4 +291,4 @@ function NoBoardHeader(): JSX.Element {
 	);
 }
 
-export { NoBoardHeader, PaneHeader, TABS, type BoardPlace, type BoardTab, type PaneHeaderProps };
+export { NoBoardHeader, PaneHeader, type BoardPlace, type PaneHeaderProps };

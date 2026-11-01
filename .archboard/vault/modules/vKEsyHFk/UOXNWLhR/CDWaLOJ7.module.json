@@ -1,0 +1,42 @@
+{
+  "order": 33000,
+  "name": "Reveal a pick",
+  "kind": "function",
+  "responsibility": "Glides the camera, once, just far enough to bring a part picked from elsewhere than the picture into view",
+  "description": "A row of the list, the part search or an agent can pick a part that is out of the pane. The part the reader was on comes along when the two are wired together and fit. A part already in view moves nothing, and a presented walkthrough or a panel over the picture keeps the camera.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/UOXNWLhR#CDWaLOJ7",
+  "parent": "vKEsyHFk/UOXNWLhR#ZSU6h9hV",
+  "outgoing": [
+    {
+      "order": 56000,
+      "kind": "call",
+      "label": "glide to show the part",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+        "symbol": "glide"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#sQKwKrth",
+      "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi"
+    },
+    {
+      "order": 57000,
+      "kind": "call",
+      "label": "where the part is",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+        "symbol": "subjectBox"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#iIrpYDWg",
+      "to": "vKEsyHFk/UOXNWLhR#UDkL7Tn6"
+    }
+  ]
+}

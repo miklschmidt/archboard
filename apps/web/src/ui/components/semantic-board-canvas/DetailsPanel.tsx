@@ -17,7 +17,6 @@ import type { VariantContent } from "@archboard/board/content";
 import { KindIcon, RelationshipChip } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import { ContainerInterface } from "#ui/components/semantic-board-canvas/ContainerInterface.tsx";
 import { GoDeeper } from "#ui/components/semantic-board-canvas/GoDeeper.tsx";
-import { PartHistory } from "#ui/components/semantic-board-canvas/PartHistory.tsx";
 import {
 	Account,
 	Membership,
@@ -33,8 +32,9 @@ import {
 	SidebarMeta,
 	SidebarRegion,
 } from "#ui/components/semantic-board-canvas/SemanticSidebarParts.tsx";
+import { TraceToggle } from "#ui/components/semantic-board-canvas/TraceToggle.tsx";
 import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
-import { usePeekControl, usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
+import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import type { NodeSubject } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
 import { connectionsOf, type Link } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
@@ -64,66 +64,6 @@ function PartTitle(props: PartTitleProps): JSX.Element {
 				<Membership key={group} group={group} controls={groups} />
 			))}
 		</SubjectTitle>
-	);
-}
-
-/** Inputs for the control that traces what a part reaches. */
-interface TraceToggleProps {
-	/** The part. */
-	readonly part: string;
-	/** What the part is called, which the control's name says. */
-	readonly name: string;
-	/** Which way along the relationships the trace goes. */
-	readonly way: Way;
-	/** How many parts the trace reaches. */
-	readonly parts: number;
-}
-
-/**
- * What the control traces and how much that is, said in words.
- * @param props The part, the direction and how many parts it reaches.
- * @returns The control's accessible name.
- */
-function traceName(props: TraceToggleProps): string {
-	const { name, way, parts } = props;
-	const what =
-		way === "onward" ? `everything ${name} sends to` : `everything that sends to ${name}`;
-	return `Trace ${what}, directly or through other parts: ${parts} ${parts === 1 ? "part" : "parts"}`;
-}
-
-/**
- * The control that asks the picture to trace what a part reaches, directly or
- * through other parts, in one direction. It says how many parts that is, and it
- * is pressed while the picture shows the trace.
- * @param props The part, the direction and how many parts it reaches.
- * @returns The control, or nothing when there is nothing to reach.
- */
-function TraceToggle(props: TraceToggleProps): JSX.Element | null {
-	const { part, way, parts } = props;
-	const { trace } = usePeeked();
-	const control = usePeekControl();
-	const on = trace?.part === part && trace.way === way;
-	const toggle = useCallback((): void => {
-		control.trace(on ? null : { part, way });
-	}, [control, on, part, way]);
-	if (parts === 0) {
-		return null;
-	}
-	return (
-		<button
-			type="button"
-			aria-pressed={on}
-			aria-label={traceName(props)}
-			data-slot="semantic-inspector-trace"
-			data-way={way}
-			onClick={toggle}
-			className="text-body border-border hover:bg-sidebar-accent/50 aria-pressed:border-primary-mark aria-pressed:bg-primary-subtle rounded-control flex h-6 shrink-0 items-center gap-1.5 border px-2 transition-colors"
-		>
-			{way === "onward" ? "Trace onward" : "Trace back"}
-			<span aria-hidden="true" className="text-technical text-muted-foreground font-mono">
-				{parts}
-			</span>
-		</button>
 	);
 }
 
@@ -325,16 +265,6 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 						onPick={props.onPick}
 					/>
 				</SidebarRegion>
-				{props.on !== null && (
-					<PartHistory
-						board={props.on.board}
-						version={props.on.version}
-						variant={props.held}
-						node={node}
-						look={props.look}
-						onPick={props.onPick}
-					/>
-				)}
 			</div>
 			<GoDeeper
 				target={node.drillDown}

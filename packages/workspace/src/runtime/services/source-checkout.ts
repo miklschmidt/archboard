@@ -17,7 +17,7 @@
 // `archboard` is the server's own (ADR 0050), so a workhorse in an archboard
 // worktree still reaches the server that started it.
 
-import { spawn } from "child_process";
+import { spawn, type ChildProcess } from "child_process";
 import { createHash } from "crypto";
 import fs from "fs";
 import path from "path";
@@ -208,17 +208,20 @@ async function handOff(argv: readonly string[]): Promise<number | null> {
  * @returns Its exit status.
  */
 async function runInstead(target: string, argv: readonly string[]): Promise<number> {
-	const child = spawn(target, argv, { stdio: "inherit" });
+	let running: ChildProcess | undefined;
 	/**
 	 * Pass a signal on to the command that runs instead.
 	 * @param signal The signal this process got.
 	 */
 	const forward = (signal: NodeJS.Signals): void => {
-		child.kill(signal);
+		running?.kill(signal);
 	};
+	// Before the spawn: a signal in between would end this process and leave the command running.
 	for (const signal of FORWARDED_SIGNALS) {
 		process.on(signal, forward);
 	}
+	const child = spawn(target, argv, { stdio: "inherit" });
+	running = child;
 	const ended = await new Promise<Error | { code: number | null; signal: NodeJS.Signals | null }>(
 		(resolve) => {
 			child.once("error", resolve);

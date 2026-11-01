@@ -1,0 +1,15 @@
+{
+  "order": 9500,
+  "name": "Command classifier",
+  "kind": "function",
+  "responsibility": "Classes each command the author ran, and flags a read of what the run is measured against: the inputs, the harness, a skill package, another run",
+  "description": "The run's vault sits in the checkout the author works in: a read of a board is not a read of the code, and a vault spelled relative to the checkout (.archboard/vault) still names the vault.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/skills/src/runtime/rules/audit/classify.ts"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/IbGtfJE2#TJmrdpKj",
+  "parent": "vKEsyHFk/IbGtfJE2#hu0RfGwG",
+  "outgoing": []
+}

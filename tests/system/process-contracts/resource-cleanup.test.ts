@@ -17,7 +17,7 @@ import {
 	registerResourceSet,
 } from "./fixtures/process-resource-owner.ts";
 import { runOwnedPeerToExit, startOwnedPeer } from "./support/owned-peer-process.ts";
-import { availablePort, portIsReusable, sanitizedEnvironment } from "./support/process-http.ts";
+import { freeLoopbackPort, portIsReusable, sanitizedEnvironment } from "./support/process-http.ts";
 import { plantStaticProbes } from "./support/static-probes.ts";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
@@ -30,8 +30,8 @@ test("direct assertion cleanup reaps every registered resource", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-direct-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const upstreamPort = await availablePort();
-	const proxyPort = await availablePort();
+	const upstreamPort = await freeLoopbackPort();
+	const proxyPort = await freeLoopbackPort();
 	let lockFile: string | undefined;
 	try {
 		try {
@@ -64,8 +64,8 @@ test("later acquisition failure disposes earlier listener and lease before readi
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-failure-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const upstreamPort = await availablePort();
-	const proxyPort = await availablePort();
+	const upstreamPort = await freeLoopbackPort();
+	const proxyPort = await freeLoopbackPort();
 	try {
 		let failure: unknown;
 		try {
@@ -95,8 +95,8 @@ test("outer SIGTERM serializes setup and cleans its retained resources", async (
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-outer-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const upstreamPort = await availablePort();
-	const proxyPort = await availablePort();
+	const upstreamPort = await freeLoopbackPort();
+	const proxyPort = await freeLoopbackPort();
 	try {
 		const owner = await startOwnedPeer({
 			argv: [process.execPath, fixture],
@@ -127,8 +127,8 @@ test("outer pre-readiness failure and peer startup failure retain diagnostics an
 	const root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-preready-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
 	const vault = join(root, "vault");
-	const upstreamPort = await availablePort();
-	const proxyPort = await availablePort();
+	const upstreamPort = await freeLoopbackPort();
+	const proxyPort = await freeLoopbackPort();
 	try {
 		const failed = await runOwnedPeerToExit({
 			argv: [process.execPath, fixture],
@@ -229,10 +229,13 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		root = mkdtempSync(join(tmpdir(), "archboard-process-cleanup-stubborn-"));
 		resources.defer(() => rmSync(root, { recursive: true, force: true }));
 		const vault = join(root, "vault");
-		port = await availablePort();
+		port = await freeLoopbackPort();
 		const env = sanitizedEnvironment(root);
 		const stubborn = await startOwnedPeer({
-			argv: [process.execPath, fixture],
+			argv: [
+				process.execPath,
+				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",
@@ -261,7 +264,10 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		writeFileSync(stubborn.ready.lockFile, JSON.stringify(staleLock));
 
 		const recovery = await startOwnedPeer({
-			argv: [process.execPath, fixture],
+			argv: [
+				process.execPath,
+				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+			],
 			env: {
 				...env,
 				ARCHBOARD_TEST_RESOURCE_MODE: "lock",

@@ -1,7 +1,8 @@
 // The keys a presented walkthrough answers to, wherever focus is in the pane.
 //
-// A presentation is stepped the way slides are: arrows, Space and Page keys
-// move a step, Home and End go to the ends, Escape leaves. They are heard on
+// A presentation is stepped the way slides are: arrows, Space, Page keys and the
+// reader's `[` and `]` move a step, Home and End go to the ends, and Escape or the
+// reader's Backspace leaves. They are heard on
 // the window, before the diagram's own keys, because a presentation is the one
 // thing the pane is doing while it lasts and Escape must leave it rather than
 // clear a selection underneath. A key typed into a field is left alone, and so is
@@ -21,10 +22,15 @@ const STEP_KEYS: Readonly<Record<string, number>> = {
 	ArrowDown: 1,
 	PageDown: 1,
 	" ": 1,
+	"]": 1,
 	ArrowLeft: -1,
 	ArrowUp: -1,
 	PageUp: -1,
+	"[": -1,
 };
+
+/** The keys that leave. */
+const LEAVING_KEYS: ReadonlySet<string> = new Set(["Escape", "Backspace"]);
 
 /** What the keys do. */
 interface PresentationKeys {
@@ -161,7 +167,7 @@ function usePresentationKeys(keys: PresentationKeys, open: boolean): void {
 			if (!holdsTheKeys(claim.current) || notOurs(event)) {
 				return;
 			}
-			if (event.key === "Escape") {
+			if (LEAVING_KEYS.has(event.key)) {
 				event.preventDefault();
 				event.stopPropagation();
 				leave();

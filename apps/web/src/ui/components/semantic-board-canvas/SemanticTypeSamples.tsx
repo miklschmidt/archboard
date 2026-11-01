@@ -18,6 +18,7 @@ import {
 	type SubjectStanding,
 } from "@archboard/renderer/picture";
 import { cn } from "@archboard/ui-kit/components";
+import { uncoloured } from "#ui/components/semantic-board-canvas/KindMarks.tsx";
 import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { paletteInk } from "#ui/rules/semantic-board-canvas/board/palette.ts";
 
@@ -26,6 +27,9 @@ const LINE_BOX = { height: 20, middle: 10 } as const;
 
 /** A line the way the picture draws one its author gave no emphasis. */
 const PLAIN_WIDTH = lineWidth("normal");
+/** A rail of a mixed line, and how far each stands from the line's middle. */
+const RAIL_WIDTH = 1.2;
+const RAIL_STEP = 1.2;
 
 /**
  * A line sample's frame: a box as wide as asked, coloured by `color`.
@@ -56,6 +60,47 @@ function LineFrame(props: {
 }
 
 /**
+ * A sample's line up to where its head starts: two rails for a mixed line, as the
+ * picture draws it, and otherwise one line in its dash.
+ * @param props Where it ends and its dash.
+ * @param props.end Where the line stops.
+ * @param props.dash The line's dash.
+ * @returns The line.
+ */
+function SampleRun(props: {
+	readonly end: number;
+	readonly dash: AppliedAppearance["dash"];
+}): JSX.Element {
+	/**
+	 * One line of the sample.
+	 * @param row How far down the sample it stands.
+	 * @param width How thick it is.
+	 * @param dash How it is broken, if it is.
+	 * @returns The line.
+	 */
+	const run = (row: number, width: number, dash?: string): JSX.Element => (
+		<path
+			key={row}
+			d={`M1 ${row}H${props.end}`}
+			fill="none"
+			stroke="currentColor"
+			strokeWidth={width}
+			strokeDasharray={dash}
+		/>
+	);
+	if (props.dash === "mixed") {
+		return (
+			<>
+				{run(LINE_BOX.middle - RAIL_STEP, RAIL_WIDTH)}
+				{run(LINE_BOX.middle + RAIL_STEP, RAIL_WIDTH)}
+			</>
+		);
+	}
+	const dash = props.dash === "dotted" ? "1 4" : props.dash === "dashed" ? "6 4" : undefined;
+	return run(LINE_BOX.middle, PLAIN_WIDTH, dash);
+}
+
+/**
  * Show the configured relationship color, dash and arrowhead.
  * @param props One applied relationship, and how long to draw it.
  * @param props.appearance The line appearance.
@@ -71,21 +116,13 @@ function RelationshipSample(props: {
 	// Drawn in the picture's own expression for it: a coloured line at its line
 	// strength over the page, the neutral line as it is.
 	const ink = lineInk(appearance.lineColor);
-	const dash =
-		appearance.dash === "dotted" ? "1 4" : appearance.dash === "dashed" ? "6 4" : undefined;
 	const tip = width - 1;
 	const filled = appearance.arrowhead === "filled";
 	// A filled head covers the end of its line. An open head's arms meet where its line ends.
 	const end = filled ? tip - HEAD_LENGTH / 2 : tip;
 	return (
 		<LineFrame width={width} color={ink}>
-			<path
-				d={`M1 ${LINE_BOX.middle}H${end}`}
-				fill="none"
-				stroke="currentColor"
-				strokeWidth={PLAIN_WIDTH}
-				strokeDasharray={dash}
-			/>
+			<SampleRun end={end} dash={appearance.dash} />
 			{appearance.arrowhead !== "none" && <ArrowHead filled={filled} tip={tip} />}
 		</LineFrame>
 	);
@@ -229,13 +266,14 @@ function TypeSample(props: {
 	readonly className?: string;
 }): JSX.Element {
 	const { appearance } = props;
-	const markup = useMemo(() => ({ __html: appearance.iconSvg }), [appearance.iconSvg]);
+	// A door draws its icon in a door's dark ink. A chip draws it in its kind's colour, as a card does.
+	const markup = useMemo(() => ({ __html: uncoloured(appearance.iconSvg) }), [appearance.iconSvg]);
 	const style = useMemo(() => chipPaint(paletteInk(appearance.typeColor)), [appearance.typeColor]);
 	return (
 		<span
 			aria-hidden="true"
 			className={cn(
-				"shadow-raised flex size-6 shrink-0 items-center justify-center rounded-[21%] border-b-[1.5px]",
+				"shadow-raised flex size-6 shrink-0 items-center justify-center rounded-[21%] border-b-[1.5px] [&>svg]:fill-current",
 				props.className,
 			)}
 			style={style}
@@ -270,12 +308,13 @@ function tinted(base: string, ink: string, share: Share): string {
 }
 
 /**
- * How a chip of one kind's colour is painted: its face, the light on it and its front edge.
+ * How a chip of one kind's colour is painted: its icon, its face, the light on it and its front edge.
  * @param ink The kind's colour.
  * @returns The chip's style.
  */
 function chipPaint(ink: string): CSSProperties {
 	return {
+		color: ink,
 		backgroundColor: tinted("var(--slab-face)", ink, CHIP_FACE),
 		backgroundImage: "linear-gradient(var(--slab-sheen), transparent)",
 		borderBottomColor: tinted("var(--slab-edge)", ink, CHIP_EDGE),

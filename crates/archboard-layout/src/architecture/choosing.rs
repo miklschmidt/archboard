@@ -2,7 +2,6 @@
 
 use super::graph::Graph;
 use super::solving::{Solver, Unsolved};
-use crate::blocks::choosing::has_regions;
 use crate::blocks::place::{BLOCKS_NESTING, BLOCKS_PLACED, BLOCKS_PLANNED};
 use archboard_scene::geometry::{Point, Rect};
 use indexmap::IndexMap;
@@ -28,18 +27,6 @@ pub(crate) struct PlacedFrame {
     pub(crate) header: Option<usize>,
 }
 
-/// One group region's place and its caption's.
-#[derive(Clone, Debug, Deserialize)]
-pub(crate) struct PlacedRegion {
-    pub(crate) group: String,
-    #[serde(default)]
-    pub(crate) parent: Option<String>,
-    #[serde(rename = "box")]
-    pub(crate) bounds: Rect,
-    pub(crate) caption: Rect,
-    pub(crate) depth: f64,
-}
-
 /// One relationship's route and its label's place.
 #[derive(Clone, Debug, Deserialize)]
 pub(crate) struct PlacedEdge {
@@ -58,7 +45,6 @@ pub(crate) struct Placed {
     pub(crate) height: f64,
     pub(crate) cards: Vec<PlacedCard>,
     pub(crate) frames: Vec<PlacedFrame>,
-    pub(crate) regions: Vec<PlacedRegion>,
     pub(crate) edges: Vec<PlacedEdge>,
 }
 
@@ -75,13 +61,7 @@ pub(crate) async fn placed_blocks<S: Solver>(
     graph: &Graph,
     inline: bool,
 ) -> Result<Placed, String> {
-    let nesting = if !inline {
-        "blocks"
-    } else if has_regions(&graph.with_options(&[]))? {
-        "groups"
-    } else {
-        "inline"
-    };
+    let nesting = if inline { "inline" } else { "blocks" };
     let reply = solver
         .solve(graph.with_options(&[(BLOCKS_NESTING, nesting.to_owned())]))
         .await

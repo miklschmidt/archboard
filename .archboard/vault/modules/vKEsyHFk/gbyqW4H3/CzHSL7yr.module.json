@@ -1,0 +1,18 @@
+{
+  "order": 27003,
+  "name": "Diagram legend",
+  "kind": "module",
+  "responsibility": "Shows the meaning of marks in the rendered picture",
+  "description": "The page's legend, the type samples and the subject tips read each subject's applied appearance from the drawn picture through the renderer's picture key, the reader an exported legend uses too.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticLegend.tsx"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
+  "formerNames": [
+    "Board viewer"
+  ],
+  "outgoing": []
+}

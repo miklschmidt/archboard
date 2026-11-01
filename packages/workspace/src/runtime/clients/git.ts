@@ -296,7 +296,7 @@ function ownGitDirectory(root: string): string | undefined {
 
 /**
  * The git directory that a checkout shares with every worktree of its
- * repository, when the checkout reads no config but that directory's. A linked
+ * repository, when the checkout has no worktree-specific config. A linked
  * worktree's own git directory names the shared one in `commondir`. A checkout
  * with a `config.worktree`, which `extensions.worktreeConfig` turns on and
  * which can name another `origin`, root or `core.bare`, has none.
@@ -323,8 +323,28 @@ function commonGitDirectory(root: string): string | undefined {
 }
 
 /**
+ * Find shared configuration that cannot vary with a worktree's path or branch.
+ * @param root The declaring checkout.
+ * @param options Cancellation and the command deadline.
+ * @returns Its common Git directory, or undefined when each worktree needs inspection.
+ */
+async function shareableGitDirectory(
+	root: string,
+	options: InspectOptions,
+): Promise<string | undefined> {
+	const common = commonGitDirectory(root);
+	if (common === undefined) return undefined;
+	const conditional = await optionalGit(
+		root,
+		["config", "--includes", "--name-only", "--get-regexp", "^includeif\\."],
+		options,
+	);
+	return conditional === undefined ? common : undefined;
+}
+
+/**
  * One worktree that Git listed for a checkout. It has the checkout's identity
- * and its listed root when it shares the checkout's git directory and config,
+ * and its listed root when it shares the checkout's git directory and effective config,
  * and Git inspects it otherwise.
  * @param root The worktree's listed root.
  * @param common The checkout's shared git directory, when it reads no config of its own.
@@ -352,13 +372,15 @@ async function listedWorktree(
  * in Git's own words, so all three are left out.
  *
  * One `git worktree list` names every worktree. A worktree that shares its git
- * directory with the checkout, where neither keeps a config of its own, reads
+ * directory with the checkout, where neither keeps a config of its own and no
+ * conditional includes apply, reads
  * the repository's config as the checkout does, so it has the checkout's
  * identity and its listed root (`commonGitDirectory`). Git inspects any other
  * worktree, one at a time: a config of its own can give it another `origin`
  * or another root, and a `.git` that names the git directory of another
- * repository makes it a checkout of that one. So a checkout with many
- * worktrees runs one Git command for all of them, never several in each.
+ * repository makes it a checkout of that one. One bounded config probe detects
+ * conditional includes before any identity is shared. Ordinary worktree families
+ * need no per-worktree Git commands.
  * @param checkout The checkout.
  * @param options Cancellation.
  * @returns Each worktree's real root and identity; none when Git cannot list them.
@@ -372,7 +394,8 @@ async function worktreesOf(
 		const root = entry.bare || entry.prunable ? undefined : realDirectory(entry.path);
 		return root === undefined || root === checkout.root || isGitDirectory(root) ? [] : [root];
 	});
-	const common = commonGitDirectory(checkout.root);
+	const common =
+		roots.length === 0 ? undefined : await shareableGitDirectory(checkout.root, options);
 	const worktrees: CheckoutOfIdentity[] = [];
 	for (const root of roots) {
 		// oxlint-disable-next-line no-await-in-loop -- one worktree at a time, so many worktrees that Git must inspect never run Git at once

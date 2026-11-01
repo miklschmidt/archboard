@@ -20,8 +20,6 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
-	aggregateOf,
-	boardForPane,
 	boardsOnScreen,
 	currentSocketsByClient,
 	notePaneOpened,
@@ -32,13 +30,12 @@ import {
 	pendingPaneCloses,
 	pendingPaneOpens,
 	primaryPane,
+	semanticPaneContextFor,
 	sendBoardlessToPane,
 	settleAfterLayout,
 	type PendingPaneClose,
 	type PendingPaneOpen,
 } from "@archboard/workbench/panes";
-import { tellPaneAboutLock } from "#server/projections/board-announcements/board-announcements.ts";
-import { noteBoardShown } from "#server/watchers/semantic-boards/semantic-disk-watch.ts";
 import { showPaneRoute } from "#server/routes/panes/pane-show-route.ts";
 import { shownConversationRoute } from "#server/routes/panes/shown-conversation-route.ts";
 import { SHOWN_CONVERSATION_ROUTE } from "@archboard/workbench/browser-contract";
@@ -198,19 +195,30 @@ function postPaneRoute(req: Request, res: Response): void {
 // the browser boundary.
 
 /**
+ * The model a pane shows, for a refusal to say.
+ * @param pane The pane.
+ * @returns The phrase.
+ */
+function shownBy(pane: PaneRegistration): string {
+	const context = semanticPaneContextFor(pane.clientId);
+	if (context?.architecture == null) return "nothing yet";
+	return context.architecture.display?.model ?? context.architecture.model;
+}
+
+/**
  * The refusal when the screen already shows as many panes as it can.
  * @returns The refusal body.
  */
 function tooManyPanesBody(): Record<string, unknown> {
 	const onScreen = addressablePanes([...panes.values()]);
 	const showing = panesInOrder(onScreen)
-		.map((entry) => `${entry.place} (${boardForPane(entry.pane)})`)
+		.map((entry) => `${entry.place} (${shownBy(entry.pane)})`)
 		.join(", ");
 	return {
 		success: false,
 		error:
 			`The canvas is already showing ${onScreen.length} panes: ${showing}. ` +
-			"Point one of them at another board with `browser show <name> --pane <spec>`, " +
+			"Point one of them at another reading with `browser show <name> --pane <spec>`, " +
 			"or close one first with `browser close <spec>`.",
 	};
 }
@@ -295,21 +303,21 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 function closeTarget(
 	registrations: PaneRegistration[],
 	spec: string,
-): { target: PaneRegistration; place: string } {
+): { target: PaneRegistration; place: string; position: number } {
 	if (!spec) {
 		throw new Error(
 			"Say which pane to close. " +
 				panesInOrder(registrations)
-					.map((entry) => `\`browser close ${entry.place}\` drops ${entry.pane.board}`)
+					.map((entry) => `\`browser close ${entry.place}\` drops ${shownBy(entry.pane)}`)
 					.join(", ") +
 				".",
 		);
 	}
 	const target = resolvePane(registrations, spec);
-	const place =
-		panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)?.place ??
-		spec;
-	return { target, place };
+	const placed = panesInOrder(registrations).find(
+		(entry) => entry.pane.clientId === target.clientId,
+	);
+	return { target, place: placed?.place ?? spec, position: placed?.position ?? 0 };
 }
 
 /**
@@ -360,7 +368,7 @@ function refuseUnclosable(res: Response, count: number): boolean {
 			success: false,
 			error:
 				"That is the only pane on screen, and closing it would leave the canvas showing nothing " +
-				"with no way back except reloading the browser. Its board is unaffected either way — " +
+				"with no way back except reloading the browser. The architecture is unaffected either way — " +
 				"point the pane somewhere else with `browser show <name> --pane <spec>` instead.",
 		});
 		return true;
@@ -386,8 +394,9 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	let target: PaneRegistration;
 	let place: string;
+	let position: number;
 	try {
-		({ target, place } = closeTarget(registrations, spec));
+		({ target, place, position } = closeTarget(registrations, spec));
 	} catch (error) {
 		res.status(400).json({ success: false, error: messageOf(error) });
 		return;
@@ -413,7 +422,13 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 		logger.info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
 		res.json({
 			success: true,
-			closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
+			closed: {
+				paneId: target.paneId,
+				clientId: target.clientId,
+				place,
+				position,
+				board: target.board,
+			},
 			paneCount: onScreen,
 			onScreen: boardsOnScreen(),
 		});
@@ -429,7 +444,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes", requireVault, postPaneRoute);
 	app.get("/api/panes", getPanesRoute);
-	app.post("/api/panes/show", requireVault, showPaneRoute);
+	app.post(["/api/panes/show", "/api/browser/show"], requireVault, showPaneRoute);
 	// The person's own act in the page, so only the page reaches it (ADR 0050).
 	app.post(
 		SHOWN_CONVERSATION_ROUTE,
@@ -533,12 +548,4 @@ function focusChange(
  */
 function arrivedOnBoard(clientId: string, board: string): void {
 	paneBoards.set(clientId, board);
-	// What the board's file is right now, which is what this pane is about to
-	// read. Anything that replaces it after this is a change the pane has to
-	// hear about, and taking the baseline any later would let one slip past.
-	const vault = paneVaults.get(clientId);
-	if (vault !== undefined) {
-		noteBoardShown(vault, aggregateOf(board) ?? board);
-	}
-	tellPaneAboutLock(clientId, board);
 }

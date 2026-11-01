@@ -30,7 +30,9 @@ import { useRouter, useRouterState } from "@tanstack/react-router";
 import {
 	sameAddress,
 	settledAddress,
+	withModelAddresses,
 	type WorkspaceAddress,
+	type ModelAddress,
 } from "#ui/rules/board-routing/address.ts";
 import {
 	createDeliberateNavigation,
@@ -38,6 +40,8 @@ import {
 	type NavigationIntent,
 } from "#ui/state/board-routing/intent.ts";
 import {
+	matchesModelArrival,
+	canonicalDestination,
 	operationAnswered,
 	operationMovedPane,
 	operationSettled,
@@ -61,6 +65,7 @@ import {
 	validateWorkspaceSearch,
 } from "#ui/rules/board-routing/search.ts";
 import type { OpenedBoard, WorkspacePort } from "#ui/rules/board-routing/contracts.ts";
+import type { modelReading } from "#ui/rules/board-routing/model-address.ts";
 
 /** What a user's own board open reports back when it is over. */
 interface NavigationClaim {
@@ -69,7 +74,7 @@ interface NavigationClaim {
 	 * pane in are the server's own answer, and are what says whether the pane
 	 * has anything to move to.
 	 */
-	readonly done: (openedKey: string, repository: string | null) => void;
+	readonly done: (openedKey: string | null, repository: string | null) => void;
 	/** The command did not finish, so nothing moved. */
 	readonly failed: () => void;
 }
@@ -79,6 +84,12 @@ type NavigationPermission = { readonly kind: "granted"; readonly move: Navigatio
 
 /** What the shell tells the address bar about the user's own gestures. */
 interface WorkspaceAddressing {
+	/** Consume the matching user open when its canonical socket arrival reaches the router. */
+	readonly modelArriving: (
+		paneId: string,
+		reading: ReturnType<typeof modelReading>,
+		repository: string | null,
+	) => "push" | "replace" | "keep";
 	/**
 	 * A user changed the workspace themselves, without asking the server: they
 	 * opened or closed a pane. The change pushes a history entry.
@@ -127,7 +138,10 @@ interface Reconciliation {
  * @returns True when the whole workspace is known.
  */
 function isSettled(address: WorkspaceAddress): boolean {
-	return address.panes.length > 0 && address.panes.every((pane) => pane.boardKey !== null);
+	return (
+		address.panes.length > 0 &&
+		address.panes.every((pane) => pane.boardKey !== null || pane.model !== undefined)
+	);
 }
 
 /**
@@ -176,13 +190,29 @@ function answerOperation(
  * @param operation The operation that finished.
  */
 function finishOperation(state: Reconciliation, operation: Operation): void {
-	const { operator, intent, answer } = operation;
+	const { operator } = operation;
 	if (operator.kind === "restore") {
 		state.restore = restoreAnswered(state.restore, operator.target, operation);
 		return;
 	}
+	finishUserOperation(state, operation);
+}
+
+/**
+ * Record only legacy user moves that did not already navigate through the canonical router.
+ * @param state The workspace navigation owner.
+ * @param operation The completed operation.
+ */
+function finishUserOperation(state: Reconciliation, operation: Operation): void {
+	const { intent, answer } = operation;
+	if (canonicalDestination(operation) !== undefined) return;
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
-		state.deliberate.expect(intent);
+		// The visible origin can be canonical while the server remembers a legacy board.
+		state.deliberate.expect(
+			intent.kind === "board"
+				? { ...intent, from: operation.from, repository: operation.fromRepository }
+				: intent,
+		);
 	}
 }
 
@@ -226,7 +256,7 @@ function grantSlot(state: Reconciliation): void {
 			 * @param openedKey The board the server says it opened.
 			 * @param repository The repository the server says the pane is in now.
 			 */
-			done: (openedKey: string, repository: string | null): void => {
+			done: (openedKey: string | null, repository: string | null): void => {
 				if (operation === null) {
 					reconcile(state);
 					return;
@@ -270,20 +300,26 @@ function commandsOver(state: Reconciliation) {
 			return step.kind === "focus" ? state.port.selectPane(step.paneId) : false;
 		},
 		/**
-		 * Take the slot and point a pane at a board.
+		 * Take the slot and point a pane at its requested architecture.
 		 * @param paneId The pane.
 		 * @param boardKey The board.
 		 * @param repository The repository the board is in, or null for the pane's own.
+		 * @param model The complete canonical reading, when this address names one.
 		 */
-		open: (paneId: string, boardKey: string, repository: string | null): void => {
+		open: (
+			paneId: string,
+			boardKey: string | null,
+			repository: string | null,
+			model?: ModelAddress,
+		): void => {
 			const operation = startOperation(
 				{ kind: "restore", target: state.restore.target },
 				paneId,
-				{ boardKey, repository },
+				{ boardKey, repository, ...(model === undefined ? {} : { model }) },
 				state.displayed,
 			);
 			state.operation = operation;
-			void state.port.open(paneId, boardKey, repository).then((outcome) => {
+			void state.port.open(paneId, boardKey, repository, model).then((outcome) => {
 				if (outcome.kind === "opened") {
 					answerOperation(state, operation, "opened", outcome);
 				} else {
@@ -308,10 +344,11 @@ function commandsOver(state: Reconciliation) {
 function reconcile(state: Reconciliation): void {
 	const running = state.operation;
 	if (running !== null) {
-		if (!operationSettled(running, state.displayed, state.port.ready)) {
+		if (!operationSettled(running, state.port.displayed, state.port.ready)) {
 			return;
 		}
 		state.operation = null;
+		if (running.answer === "opened") revealOpenedPane(state, running.paneId);
 		finishOperation(state, running);
 	}
 	if (state.queue.length > 0) {
@@ -322,6 +359,25 @@ function reconcile(state: Reconciliation): void {
 		return;
 	}
 	publishAddress(state);
+}
+
+/**
+ * A completed legacy open replaces only that pane's canonical reading intent.
+ * @param state The existing routing operation owner.
+ * @param paneId The pane whose open succeeded.
+ */
+function revealOpenedPane(state: Reconciliation, paneId: string): void {
+	const actual = state.port.displayed.panes.find((pane) => pane.paneId === paneId);
+	if (actual === undefined) return;
+	state.displayed = {
+		...state.displayed,
+		panes: state.displayed.panes.map((pane) => {
+			if (pane.paneId !== paneId) return pane;
+			return actual.boardKey === null && pane.model !== undefined
+				? { ...actual, model: pane.model }
+				: actual;
+		}),
+	};
 }
 
 /**
@@ -354,8 +410,11 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 		 */
 		select: (state) => state.location.search,
 	});
-	const displayed = useMemo(() => settledAddress(port.displayed), [port.displayed]);
 	const wanted = useMemo(() => addressFromSearch(validateWorkspaceSearch(search)), [search]);
+	const displayed = useMemo(
+		() => withModelAddresses(settledAddress(port.displayed), wanted),
+		[port.displayed, wanted],
+	);
 	const [deliberate] = useState(createDeliberateNavigation);
 	// The reconciliation is made from the first render, which is before anything
 	// has been published, so the address it restores is the one the tab opened on.
@@ -400,6 +459,26 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 
 	return useMemo(
 		() => ({
+			/**
+			 * Match the socket arrival against the existing user operation once.
+			 * @param paneId The addressed pane.
+			 * @param reading The complete resolved reading.
+			 * @param repository The resolved repository.
+			 * @returns How this acknowledgement affects the current reader location.
+			 */
+			modelArriving: (paneId, reading, repository) => {
+				const current = state.current;
+				const operation = current.operation;
+				if (!matchesModelArrival(operation, paneId, reading, repository)) return "replace";
+				// Keep the command object that its pending HTTP completion captured.
+				operation.modelArrived = true;
+				if (operation.operator.kind !== "restore") return "push";
+				// The router already displays this restore. A later acknowledgement
+				// must preserve any selection or navigation the reader made meanwhile.
+				current.restore = retargetRestore(current.restore, current.wanted);
+				reconcile(current);
+				return "keep";
+			},
 			/**
 			 * A user changed the workspace themselves.
 			 * @param intent What they asked for.

@@ -4,7 +4,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Badge, Field, RadioGroup, Technical } from "@archboard/ui-kit/components";
+import { Badge, Dialog, Field, RadioGroup } from "@archboard/ui-kit/components";
 import { choiceOfSelection, presetChoice } from "#ui/rules/custom-command.ts";
 import { formatCommand } from "#ui/rules/format-command.ts";
 import type { OpenerChoice } from "#ui/state/opener-settings-contracts.ts";
@@ -33,6 +33,7 @@ function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 					value="platform"
 					label="Platform default"
 					command={settings.platformDefault}
+					empty="No opener is known for this platform."
 					availability={availabilityFor(settings, "platform")}
 					disabled={settings.platformDefault === null}
 				/>
@@ -42,6 +43,7 @@ function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 						value={presetChoice(entry.preset)}
 						label={PRESET_LABELS[entry.preset]}
 						command={entry.command}
+						empty="This opener has no command."
 						availability={availabilityFor(settings, presetChoice(entry.preset))}
 						disabled={false}
 					/>
@@ -50,6 +52,7 @@ function OpenerChoiceGroup(props: OpenerChoiceGroupProps): JSX.Element {
 					value="custom"
 					label="Custom command"
 					command={settings.selection.kind === "custom" ? settings.selection : null}
+					empty="A program and arguments that you name."
 					availability={availabilityFor(settings, "custom")}
 					disabled={false}
 				/>
@@ -64,6 +67,8 @@ interface OpenerOptionProps {
 	label: string;
 	/** The command this option runs, or null when the platform has none. */
 	command: OpenerCommand | null;
+	/** What the option says in place of a command, when it has none. */
+	empty: string;
 	/** The saved selection's availability, shown on the option it names. */
 	availability: OpenerSettingsReply["availability"] | null;
 	disabled: boolean;
@@ -87,9 +92,9 @@ function OpenerOption(props: OpenerOptionProps): JSX.Element {
 				</Field.Label>
 				<Field.Description>
 					{props.command ? (
-						<Technical>{formatCommand(props.command)}</Technical>
+						<Dialog.Technical>{formatCommand(props.command)}</Dialog.Technical>
 					) : (
-						"No opener is known for this platform."
+						props.empty
 					)}
 				</Field.Description>
 			</Field.Content>

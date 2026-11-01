@@ -4,7 +4,7 @@
 import { useCallback, useId, type JSX, type ReactNode } from "react";
 
 import type { OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Badge, Field, RepositoryName, Select, Technical } from "@archboard/ui-kit/components";
+import { Badge, Dialog, Field, RepositoryName, Select } from "@archboard/ui-kit/components";
 
 type CheckoutChoice = OpenerSettingsReply["repositories"][number];
 
@@ -44,7 +44,7 @@ function RepositoryField(props: RepositoryFieldProps): JSX.Element {
 			</Select>
 			<Field.Description>
 				{chosen ? (
-					<Technical>{chosen.root}</Technical>
+					<Dialog.Technical>{chosen.root}</Dialog.Technical>
 				) : (
 					"A test opens a checkout's root with the chosen opener."
 				)}

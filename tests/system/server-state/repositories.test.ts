@@ -1,3 +1,4 @@
+import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // The repositories the navigator lists, and choosing a checkout from the page
 // (ADR 0050, TASK-472.05). One owned server with a registry of its own knows a
 // repository with two checkouts, each with a vault. A pane shows a board of the
@@ -5,10 +6,11 @@
 // a show of another vault's board moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { WebSocket, type RawData } from "ws";
+import { readArchitectureModel } from "@archboard/board/store-read";
 
 import {
 	createRepositoryFixture,
@@ -100,25 +102,43 @@ afterAll(async () => {
 });
 
 describe.serial("the repositories of the navigator", () => {
+	test("a reader's open moves a pane into a repository with no model, and an agent's is refused", async () => {
+		await using resources = new AsyncDisposableStack();
+		const vault = vaultOf(main);
+		mkdirSync(vault, { recursive: true });
+		seedCanonicalFixture(fixture.vault, "notes", []);
+		const pane = await openPaneSession(server.base, createRequester(server), {
+			clientId: "pane-unread",
+			board: "notes",
+		});
+		resources.defer(() => pane.close());
+		const inMain = createRequester({ ...server, vault });
+		const body = { reading: {}, pane: pane.clientId };
+		const agent = await inMain("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { ...body, agent: true },
+		});
+		expect(agent.status).toBe(404);
+		const mark = pane.mark();
+		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
+		expect(reader.status).toBe(200);
+		const moved = await pane.waitFor("pane_board", mark);
+		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
+	});
+
 	test("choosing a checkout moves the panes that showed the old one, and a show moves a named pane", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
 		const worktreeVault = vaultOf(worktree);
 		const inMain = createRequester({ ...server, vault: mainVault });
-		const inWorktree = createRequester({ ...server, vault: worktreeVault });
 		const inServed = createRequester(server);
-		for (const [request, board] of [
-			[inMain, "payments"],
-			[inWorktree, "ledger"],
-			[inServed, "notes"],
-		] as const) {
-			const made = await request("/api/semantic-boards/create", {
-				method: "POST",
-				doing: "starting a board",
-				body: { board, create: { level: "system", nodes: [] } },
-			});
-			expect(made.status).toBe(200);
-		}
+		for (const [vault, name] of [
+			[mainVault, "payments"],
+			[worktreeVault, "ledger"],
+			[fixture.vault, "notes"],
+		] as const)
+			seedCanonicalFixture(vault, name, []);
 
 		// The repository is listed once, read from its chosen main checkout, beside the
 		// untracked vault, which is in no checkout.
@@ -154,10 +174,6 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 		const moved = await pane.waitFor("pane_board", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
-		// The pane reads who holds its board as news of the vault it is in, so it
-		// comes after the move that put it there.
-		const told = await pane.waitFor("board_lock", mark);
-		expect(pane.events.indexOf(told!)).toBeGreaterThan(pane.events.indexOf(moved!));
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
@@ -168,11 +184,11 @@ describe.serial("the repositories of the navigator", () => {
 		const shown = await inServed<{ board: string; repository: string | null }>("/api/panes/show", {
 			method: "POST",
 			doing: false,
-			body: { board: "notes", pane: pane.clientId },
+			body: { reading: { model: "Fixture" }, pane: pane.clientId },
 		});
 		expect(shown.status).toBe(200);
-		const arrived = await pane.waitFor("pane_board", beforeShow);
-		expect(arrived).toMatchObject({ board: "notes", vault: realpathSync(fixture.vault) });
+		const arrived = await pane.waitFor("pane_model", beforeShow);
+		expect(arrived).toMatchObject({ model: "Fixture", vault: realpathSync(fixture.vault) });
 		// The answer and the pane name the repository the navigator lists the vault under.
 		const servedName = (await listed()).find(
 			(each) => each.vault === realpathSync(fixture.vault),
@@ -192,14 +208,8 @@ describe.serial("the repositories of the navigator", () => {
 	test("a pane whose socket was down when its checkout was chosen comes back in the chosen checkout", async () => {
 		await using resources = new AsyncDisposableStack();
 		const mainVault = vaultOf(main);
-		const inMain = createRequester({ ...server, vault: mainVault });
 		const inWorktree = createRequester({ ...server, vault: vaultOf(worktree) });
-		const made = await inMain("/api/semantic-boards/create", {
-			method: "POST",
-			doing: "starting a board",
-			body: { board: "ledger", create: { level: "system", nodes: [] } },
-		});
-		expect(made.status).toBe(200);
+		seedCanonicalFixture(mainVault, "ledger", []);
 		const away = await openPaneSession(server.base, inWorktree, {
 			clientId: "pane-away",
 			board: "ledger",
@@ -280,8 +290,8 @@ describe.serial("the repositories of the navigator", () => {
 		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
 	});
 
-	test("a vault that a link leads out of the layout is not listed, and no page opens in it", async () => {
-		// Every call naming it is refused (TASK-472.09). It sorts first, so a page would open there.
+	test("a vault that a link leads out of the layout is not listed", async () => {
+		// Every call naming it is refused (TASK-472.09), so no page may open there.
 		const holder = join(fixture.root, "aaa-linked-out");
 		const elsewhere = join(fixture.root, "boards-kept-elsewhere");
 		mkdirSync(join(holder, ".archboard"), { recursive: true });
@@ -289,10 +299,70 @@ describe.serial("the repositories of the navigator", () => {
 		symlinkSync(elsewhere, join(holder, ".archboard", "vault"));
 		cli("repo", "add", holder);
 		expect((await listed()).map((each) => each.name)).not.toContain("aaa-linked-out");
-		const opening = (await (await fetch(`${server.base}/api/served-vault`)).json()) as {
-			vault: string | null;
+	});
+
+	test("choosing a checkout preserves the captured canonical reading and its filters", async () => {
+		await using resources = new AsyncDisposableStack();
+		const mainVault = vaultOf(main);
+		const worktreeVault = vaultOf(worktree);
+		for (const vault of [mainVault, worktreeVault]) {
+			cpSync(join(repoRoot, "examples/canonical-model/.archboard/vault"), vault, {
+				recursive: true,
+			});
+		}
+		const model = readArchitectureModel(mainVault);
+		if (!model.success) throw new Error(JSON.stringify(model));
+		expect((await choose(main)).status).toBe(200);
+		const inMain = createRequester({ ...server, vault: mainVault });
+		const pane = await openPaneSession(server.base, inMain, { clientId: "canonical-checkout" });
+		resources.defer(() => pane.close());
+		const reading = {
+			model: "Shop",
+			grammar: "architecture",
+			state: "Current",
+			scope: "Shop#Gateway",
+			focus: ["Shop#Gateway"],
+			hideKinds: ["call"],
 		};
-		expect(opening.vault).not.toBe(realpathSync.native(elsewhere));
+		const shown = await inMain("/api/panes/show", {
+			method: "POST",
+			doing: false,
+			body: { pane: pane.clientId, reading },
+		});
+		expect(shown.status).toBe(200);
+		const capture = canonicalCapture(mainVault, model, ["Shop#Gateway"]);
+		const reported = await inMain("/api/panes/semantic-context", {
+			method: "POST",
+			doing: false,
+			body: {
+				clientId: pane.clientId,
+				paneId: pane.clientId,
+				board: null,
+				variant: null,
+				view: null,
+				selection: [],
+				version: null,
+				at: new Date().toISOString(),
+				sequence: 1,
+				architecture: {
+					...capture,
+					reading: {
+						...capture.reading,
+						scope: reading.scope,
+						relationshipKinds: [],
+					},
+				},
+			},
+		});
+		expect(reported.status).toBe(200);
+		const mark = pane.mark();
+		expect((await choose(worktree)).status).toBe(200);
+		expect(await pane.waitFor("pane_model", mark)).toMatchObject({
+			model: "Shop",
+			vault: worktreeVault,
+			repository: ORDERS,
+			reading,
+		});
 	});
 });
 

@@ -1,0 +1,10 @@
+{
+  "order": 8000,
+  "name": "Stock DB",
+  "kind": "datastore",
+  "responsibility": "Each product's count and its reservations",
+  "schemaVersion": 1,
+  "id": "Shop/5IZTN4RT#mmSzZdKG",
+  "parent": "Shop/MKhTEYqf#HYDbL5fE",
+  "outgoing": []
+}

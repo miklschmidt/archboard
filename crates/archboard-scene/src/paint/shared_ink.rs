@@ -1,13 +1,15 @@
 //! The ink of a route that another route of its trunk draws. Routes of one
 //! kind that lie on one line are a trunk: one drawn line, whose ink the
 //! heaviest of them draws (then the earliest painted), so a trunk shows one
-//! stroke, one dash pattern and one arrowhead.
+//! stroke, one dash pattern and one arrowhead. A two-way line keeps the ink at
+//! its start, because a trunk draws no head there.
 
 use std::collections::BTreeMap;
 
 use crate::drawing::{Edge, Emphasis};
 use crate::geometry::{Curve, EPSILON, Point, Segment, segment_start};
 use crate::js;
+use crate::paint::styles::HEAD_LENGTH;
 
 /// Two straight pieces closer than this across their axis draw as one line.
 const SHARED_INK: f64 = 2.0;
@@ -108,9 +110,14 @@ fn on_line(a: &Run, b: &Run) -> bool {
         && (fixed_of(a) - fixed_of(b)).abs() <= SHARED_INK
 }
 
-/// Whether two runs are one drawn line: on one line, and relationships of one kind.
+/// Whether two routes can share their ink: relationships of one kind.
+fn one_ink(a: &Edge, b: &Edge) -> bool {
+    a.edge.kind == b.edge.kind
+}
+
+/// Whether two runs are one drawn line: on one line, and routes that can share their ink.
 fn same_ink(edges: &[Edge], a: &Run, b: &Run) -> bool {
-    on_line(a, b) && edges[a.edge_index].edge.kind == edges[b.edge_index].edge.kind
+    on_line(a, b) && one_ink(&edges[a.edge_index], &edges[b.edge_index])
 }
 
 /// Whether one route draws the ink it shares with another: the heavier, then the earlier.
@@ -139,6 +146,22 @@ fn with_axis(point: Point, axis: Axis, value: f64) -> Point {
     }
 }
 
+/// A stretch of a run less the end of a two-way route that wears its head, or none
+/// when nothing is left of it.
+fn clear_of_start(edge: &Edge, run: &Run, (from, to): (f64, f64)) -> Option<(f64, f64)> {
+    let start = get(edge.curve.from, run.axis);
+    let on_run = (fixed_of(run) - get(edge.curve.from, across(run.axis))).abs() <= SHARED_INK;
+    if !edge.edge.two_way || !on_run || start < from - EPSILON || start > to + EPSILON {
+        return Some((from, to));
+    }
+    let (from, to) = if to - start > start - from {
+        (start + HEAD_LENGTH, to)
+    } else {
+        (from, start - HEAD_LENGTH)
+    };
+    (to - from > SHARED_INK).then_some((from, to))
+}
+
 /// The stretches of one run another route of its trunk draws.
 fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
     let (low, high) = extent_of(run);
@@ -157,6 +180,7 @@ fn drawn_for_run(edges: &[Edge], runs: &[Run], run: &Run) -> Vec<Curve> {
     stretches.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
     merged_stretches(&stretches)
         .into_iter()
+        .filter_map(|stretch| clear_of_start(&edges[run.edge_index], run, stretch))
         .map(|(from, to)| Curve {
             from: with_axis(run.from, run.axis, from),
             segments: vec![Segment::Line {
@@ -212,7 +236,7 @@ pub(super) fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
                     *index == edge_index
                         && turns.iter().any(|(other_index, other)| {
                             *other_index != edge_index
-                                && edges[*other_index].edge.kind == edges[edge_index].edge.kind
+                                && one_ink(&edges[*other_index], &edges[edge_index])
                                 && outranks(edges, *other_index, edge_index)
                                 && same_turn(turn, other)
                         })
@@ -224,4 +248,52 @@ pub(super) fn shared_ink(edges: &[Edge]) -> BTreeMap<usize, Vec<Curve>> {
         }
     }
     shared
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A straight route along a row, from one x to another.
+    fn line(id: &str, from: f64, to: f64, two_way: bool) -> Edge {
+        Edge {
+            edge: crate::drawing::EdgeFacts {
+                id: id.to_owned(),
+                from: "a".to_owned(),
+                to: "b".to_owned(),
+                kind: "mixed".to_owned(),
+                emphasis: Emphasis::Normal,
+                traffic: None,
+                two_way,
+            },
+            curve: Curve {
+                from: Point { x: from, y: 0.0 },
+                segments: vec![Segment::Line {
+                    to: Point { x: to, y: 0.0 },
+                }],
+            },
+            label: None,
+        }
+    }
+
+    fn cut_from(curve: &Curve) -> (f64, f64) {
+        (curve.from.x, curve.segments[0].to().x)
+    }
+
+    #[test]
+    fn a_two_way_line_shares_a_trunk_and_keeps_the_ink_at_its_start() {
+        let edges = [
+            line("trunk", 0.0, 100.0, false),
+            line("both", 200.0, 0.0, true),
+        ];
+        let shared = shared_ink(&edges);
+        assert_eq!(cut_from(&shared[&1][0]), (0.0, 100.0));
+
+        let edges = [
+            line("trunk", 0.0, 100.0, false),
+            line("both", 0.0, 200.0, true),
+        ];
+        let shared = shared_ink(&edges);
+        assert_eq!(cut_from(&shared[&1][0]), (HEAD_LENGTH, 100.0));
+    }
 }

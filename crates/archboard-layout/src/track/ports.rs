@@ -4,8 +4,8 @@
 
 use crate::ecma::{abs, js_max, max, min, or, sorted_by};
 use crate::geometry::Rect;
-use crate::track::chains::{Kind, Track};
-use crate::track::channels::{End, NetId, TrunkId, port_reach, spread_along};
+use crate::track::chains::{Kind, LANE, Track};
+use crate::track::channels::{End, NetId, PORT_MARGIN, TrunkId, port_reach, spread_along};
 use crate::track::scene::{ItemId, Map, Set, card_face};
 
 /// One port a face must give: a trunk's, or a lone net's end.
@@ -82,6 +82,32 @@ impl Track<'_> {
             }
         }
         faces
+    }
+
+    /// The width each crowded face needs for its independent ports. A trunk
+    /// takes one port, and a port its line fixes keeps its own place. A face
+    /// that fits stays out of the answer.
+    pub(crate) fn required_port_widths(&self, nets: &[NetId]) -> Map<ItemId, f64> {
+        let mut widths = Map::default();
+        for (item, requests) in self.port_requests(nets) {
+            if self.one_point(Some(item)) {
+                continue;
+            }
+            let free = |side: End| {
+                let fixed = |request: &&PortRequest| {
+                    let station = self.station(self.net(request.nets[0]).at(side));
+                    request.side == side && station.at.is_none()
+                };
+                requests.iter().filter(fixed).count()
+            };
+            let count = free(End::Top).max(free(End::Bottom));
+            let width = 2.0 * PORT_MARGIN + (count as f64 - 1.0) * LANE;
+            let found = self.scene.item(item);
+            if width > card_face(found).width {
+                widths.insert(item, width + 2.0 * found.inset.unwrap_or(0.0));
+            }
+        }
+        widths
     }
 
     /// The port one end of a net asks for: its trunk's, the first time the trunk is met, or its own.

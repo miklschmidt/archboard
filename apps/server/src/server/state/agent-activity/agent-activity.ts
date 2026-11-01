@@ -1,211 +1,222 @@
-// Which boards an agent is editing right now, for every pane at once (ADR 0022).
-//
-// A claimed board is read-only to people, and an agent may edit any board
-// whether or not somebody is looking at it. What every pane owes the person in
-// return is real-time visibility: which board an agent holds and what it said
-// it is doing, including boards no pane has open. The lock and the `doing`
-// line are already broadcast, but board-scoped, so a pane only hears about
-// the board it is showing. This is the boardless account of the same two
-// facts, kept as one snapshot so the navigator can mark every board at once.
-//
-// An entry exists while a claim stands, and for CLAIM_MS.activityLinger after an
-// unclaimed agent write, so a lone write is on screen long enough to be seen.
-// Human holds are not activity: a person's own hold is what their pane is
-// doing, and it is nobody else's business.
-//
-// One list per vault (ADR 0049): a board of one name in two vaults is two
-// boards. Every pane is told every vault's list, each naming its vault,
-// because the navigator marks the boards of every repository it lists.
-
-import { boardMemoryKey } from "@archboard/board/address";
-import type { AgentActivityMessage } from "@archboard/server-lifecycle/panes";
+// One replaceable activity snapshot per vault, shared by every pane.
+// Canonical claims permit several writers on separate subjects of one model.
+// Only the ordinary model feed can supply claims and durable doing attribution.
+import { watchArchitectureModel } from "@archboard/board/store-read";
+import type { ArchitectureEvent, ArchitectureClaim } from "@archboard/board/model";
+import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { CLAIM_MS } from "@archboard/timing";
-import type { boardLockState } from "@archboard/board/lock";
-import type { recentDoing } from "@archboard/board/doing";
 
-/** What one board's agent is doing, as a pane is told it. */
 type AgentActivity = AgentActivityMessage["activity"][number];
-type DoingEntry = ReturnType<typeof recentDoing>[number];
-type LockHolder = NonNullable<ReturnType<typeof boardLockState>>;
 
 interface Entry {
-	vault: string;
-	board: string;
-	claim: LockHolder | null;
-	doing: DoingEntry | null;
+	activity: AgentActivity;
 	linger: ReturnType<typeof setTimeout> | null;
 }
 
-interface AgentActivityTracker {
-	/** A board's lock announced: a claim taken, changed or gone. Anything else is not activity. */
-	lockChanged(vault: string, board: string, holder: Readonly<LockHolder> | null): void;
-	/** An agent's write landed and said what it was doing. */
-	doingLanded(vault: string, board: string, entry: Readonly<DoingEntry>): void;
-	/** Every vault's list where an agent is at work, for a client that has just connected. */
-	snapshots(): AgentActivityMessage[];
-}
-
 /**
- * Stop an entry's linger timer, if one is running.
- * @param entry The entry.
+ * Own activity snapshots, canonical subscriptions, and idle cleanup for one server.
+ * @param send Sends a complete vault snapshot to every pane.
+ * @returns The server-owned tracker.
  */
-function clearLinger(entry: Entry): void {
-	if (entry.linger) {
-		clearTimeout(entry.linger);
+function createAgentActivity(send: (message: AgentActivityMessage) => void) {
+	const entries = new Map<string, Entry>();
+	const watched = new Map<string, () => void>();
+	/** The vaults open in connected panes, each with how many panes hold it. */
+	const held = new Map<string, number>();
+	/** The vaults a recent write named, which can be open in no pane and in no registry. */
+	const written = new Set<string>();
+	let registered: readonly string[] = [];
+	let stopped = false;
+
+	/**
+	 * Replace one vault's public snapshot, including an empty cleanup message.
+	 * @param vault The explicitly addressed vault.
+	 */
+	function publish(vault: string): void {
+		const entry = entries.get(vault);
+		const message: AgentActivityMessage = {
+			type: "agent_activity",
+			vault,
+			activity: entry === undefined ? [] : [entry.activity],
+		};
+		send(message);
+	}
+	/**
+	 * Cancel the idle timer before replacing or removing an entry.
+	 * @param entry The owned entry.
+	 */
+	function clearLinger(entry: Entry): void {
+		if (entry.linger !== null) clearTimeout(entry.linger);
 		entry.linger = null;
 	}
-}
-
-/**
- * The tracker of which boards an agent is editing right now, which publishes
- * one snapshot to every pane whenever that changes.
- * @param options How to reach the panes and how to name a board to them.
- * @param options.send Sends one vault's snapshot to every client.
- * @param options.displayKey The board key as panes know it.
- * @returns The tracker.
- */
-function createAgentActivity(options: {
-	/** Sends one vault's snapshot to every client. */
-	send: (message: AgentActivityMessage) => void;
-	/** The board key as panes know it, for a key the lock module normalized. */
-	displayKey: (board: string) => string;
-}): AgentActivityTracker {
-	const entries = new Map<string, Entry>();
-	const snapshots = new Map<string, AgentActivityMessage>();
-
 	/**
-	 * Rebuild one vault's snapshot and send it to every pane. A vault with no
-	 * agent at work is sent once as empty and then forgotten.
-	 * @param vault The vault whose list changed.
+	 * Remove idle activity or replace a previous model identity.
+	 * @param vault The explicitly addressed vault.
 	 */
-	const publish = (vault: string): void => {
-		const activity: AgentActivity[] = [...entries.values()]
-			.filter((entry) => entry.vault === vault)
-			.map(({ board, claim, doing }) => ({ board, claim, doing }));
-		const current: AgentActivityMessage = { type: "agent_activity", vault, activity };
-		if (activity.length === 0) {
-			snapshots.delete(vault);
-		} else {
-			snapshots.set(vault, current);
-		}
-		options.send(current);
-	};
-
-	// Each write restarts the linger, so continuous unclaimed work is one
-	// visit. When it fires under a claim taken meanwhile, the claim keeps the
-	// entry and the timer simply ends.
-	/**
-	 * Keep an unclaimed board's entry on screen for a moment, then drop it.
-	 * @param key The normalized board key.
-	 * @param entry Its entry.
-	 */
-	const lingerThenDrop = (key: string, entry: Entry): void => {
+	function forget(vault: string): void {
+		const entry = entries.get(vault);
+		if (entry === undefined) return;
 		clearLinger(entry);
-		const timer = setTimeout(() => {
-			entry.linger = null;
-			if (entry.claim || entries.get(key) !== entry) {
+		entries.delete(vault);
+		publish(vault);
+	}
+	/**
+	 * Keep the last durable line visible briefly after all claims end.
+	 * @param vault The explicitly addressed vault.
+	 * @param entry The idle entry.
+	 */
+	function linger(vault: string, entry: Entry): void {
+		entry.linger = setTimeout(() => forget(vault), CLAIM_MS.activityLinger);
+		entry.linger.unref();
+	}
+	/**
+	 * Read or create a snapshot for this exact canonical model.
+	 * @param vault The explicitly addressed vault.
+	 * @param model The stable model identity.
+	 * @returns The entry.
+	 */
+	function entryFor(vault: string, model: string): Entry {
+		const previous = entries.get(vault);
+		if (previous?.activity.model === model) return previous;
+		forget(vault);
+		const entry: Entry = {
+			activity: { board: `model:${model}`, model, claims: [], doing: null },
+			linger: null,
+		};
+		entries.set(vault, entry);
+		return entry;
+	}
+	/**
+	 * Publish current work or begin idle cleanup after its last claim ends.
+	 * @param vault The explicitly addressed vault.
+	 * @param entry The latest activity.
+	 */
+	function updated(vault: string, entry: Entry): void {
+		clearLinger(entry);
+		if (entry.activity.claims.length === 0) {
+			if (entry.activity.doing === null) {
+				forget(vault);
 				return;
 			}
-			entries.delete(key);
-			publish(entry.vault);
-		}, CLAIM_MS.activityLinger);
-		timer.unref();
-		entry.linger = timer;
-	};
-
-	/**
-	 * Record that an agent has claimed this board.
-	 * @param vault The vault the board lives in.
-	 * @param board The board as the lock spelled it.
-	 * @param key Its memory key.
-	 * @param claim The claim.
-	 */
-	const claimTaken = (vault: string, board: string, key: string, claim: LockHolder): void => {
-		const entry = entries.get(key);
-		if (entry) {
-			clearLinger(entry);
-			entry.claim = claim;
-		} else {
-			entries.set(key, {
-				vault,
-				board: options.displayKey(board),
-				claim,
-				doing: null,
-				linger: null,
-			});
+			linger(vault, entry);
 		}
 		publish(vault);
-	};
-
+	}
 	/**
-	 * Record that a claim this list was showing has ended, keeping the entry on
-	 * screen for a moment when the agent had said what it was doing.
-	 * @param key The board's memory key.
+	 * Preserve each live subject claim without inventing exclusive model ownership.
+	 * @param vault The explicitly addressed vault.
+	 * @param claims The ordinary runtime's complete live claim list.
 	 */
-	const claimEnded = (key: string): void => {
-		const entry = entries.get(key);
-		// A human hold, a per-write agent hold or a free board: only news when
-		// it ends a claim this list was showing.
-		if (!entry?.claim) {
-			return;
+	function claimsChanged(vault: string, claims: ArchitectureClaim[]): void {
+		const model = claims[0]?.target.model ?? entries.get(vault)?.activity.model;
+		if (model === undefined) return;
+		const entry = entryFor(vault, model);
+		entry.activity = { ...entry.activity, claims };
+		updated(vault, entry);
+	}
+	/**
+	 * Attribute a line only after the runtime announces durable completion.
+	 * @param event The ordinary model change.
+	 */
+	function doingLanded(event: Extract<ArchitectureEvent, { type: "architecture_changed" }>): void {
+		if (event.operation === undefined) return;
+		const entry = entryFor(event.vault, event.model);
+		const { request, createdAt } = event.operation.checkpoint;
+		entry.activity = {
+			...entry.activity,
+			doing: { writer: request.writer, doing: request.doing, at: createdAt },
+		};
+		updated(event.vault, entry);
+	}
+	/**
+	 * Consume canonical claims and durable operations. Temporary read failures end neither.
+	 * @param event The runtime event.
+	 */
+	function receive(event: ArchitectureEvent): void {
+		switch (event.type) {
+			case "architecture_snapshot":
+			case "architecture_claims":
+				if (event.claims.success) claimsChanged(event.vault, event.claims.claims);
+				break;
+			case "architecture_changed":
+				doingLanded(event);
+				break;
+			case "architecture_status":
+				break;
 		}
-		entry.claim = null;
-		if (entry.doing) {
-			lingerThenDrop(key, entry);
-		} else {
-			entries.delete(key);
+	}
+	/**
+	 * The vaults that a connected pane can show.
+	 * @returns Each vault once, and none while no pane is connected.
+	 */
+	function wantedVaults(): Set<string> {
+		return new Set(held.size === 0 ? [] : [...registered, ...held.keys(), ...written]);
+	}
+	/**
+	 * Watch what a connected pane can show, and nothing while no pane is connected. A snapshot
+	 * outlives its watcher then, so a pane that replaces the last one still reads what landed.
+	 */
+	function followWanted(): void {
+		const wanted = wantedVaults();
+		for (const [vault, stop] of watched) {
+			if (wanted.has(vault)) continue;
+			stop();
+			watched.delete(vault);
+			if (held.size > 0) forget(vault);
 		}
-		publish(entry.vault);
-	};
-
+		for (const vault of wanted)
+			if (!watched.has(vault)) watched.set(vault, watchArchitectureModel(vault, receive));
+	}
 	return {
 		/**
-		 * A board's lock announced: a claim taken, changed or gone.
-		 * @param vault The vault the board lives in.
-		 * @param board The board as the lock spelled it.
-		 * @param holder Who holds it now, or null when it is free.
+		 * Replace the vaults that every connected pane hears about.
+		 * @param vaults The readable vaults of the repository registry.
 		 */
-		lockChanged(vault, board, holder) {
-			const key = boardMemoryKey(vault, board);
-			const claim = holder?.kind === "agent" && holder.claimed ? holder : null;
-			if (claim) {
-				claimTaken(vault, board, key, claim);
-				return;
-			}
-			claimEnded(key);
+		register(vaults: readonly string[]): void {
+			registered = vaults;
+			if (!stopped) followWanted();
 		},
 		/**
-		 * An agent's write landed and said what it was doing.
-		 * @param vault The vault the board lives in.
-		 * @param board The board it wrote.
-		 * @param doing What it said.
+		 * Show off-screen work: a write can name a vault that no pane or registry names.
+		 * @param vault The vault the write named.
 		 */
-		doingLanded(vault, board, doing) {
-			if (doing.kind !== "agent") {
-				return;
-			}
-			const key = boardMemoryKey(vault, board);
-			const entry = entries.get(key);
-			if (entry) {
-				entry.doing = doing;
-				if (!entry.claim) {
-					lingerThenDrop(key, entry);
-				}
-			} else {
-				const made: Entry = { vault, board, claim: null, doing, linger: null };
-				entries.set(key, made);
-				lingerThenDrop(key, made);
-			}
-			publish(vault);
+		addressed(vault: string): void {
+			written.add(vault);
+			if (!stopped) followWanted();
 		},
 		/**
-		 * Every vault's list where an agent is at work, for a client that has just connected.
-		 * @returns The snapshots, one per vault.
+		 * Keep the vaults a pane can show followed for as long as the pane is connected.
+		 * @param vault The pane's own vault, which the registry can omit.
+		 * @returns The function that lets go, which ends every watcher with the last pane.
 		 */
-		snapshots() {
-			return [...snapshots.values()];
+		hold(vault: string): () => void {
+			held.set(vault, (held.get(vault) ?? 0) + 1);
+			if (!stopped) followWanted();
+			return () => {
+				const count = held.get(vault)! - 1;
+				if (count === 0) held.delete(vault);
+				else held.set(vault, count);
+				if (!stopped) followWanted();
+			};
+		},
+		/**
+		 * Fresh complete activity for a newly admitted or returning pane.
+		 * @returns Every active vault snapshot.
+		 */
+		snapshots: (): AgentActivityMessage[] =>
+			[...entries].map(([vault, entry]) => ({
+				type: "agent_activity",
+				vault,
+				activity: [entry.activity],
+			})),
+		/** Stop every owned subscription and timer when the server stops. */
+		dispose(): void {
+			stopped = true;
+			for (const stop of watched.values()) stop();
+			for (const entry of entries.values()) clearLinger(entry);
+			watched.clear();
+			entries.clear();
 		},
 	};
 }
-
-export { createAgentActivity, type AgentActivityTracker };
+export { createAgentActivity };

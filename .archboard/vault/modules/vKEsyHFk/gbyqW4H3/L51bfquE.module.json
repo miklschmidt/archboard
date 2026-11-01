@@ -1,0 +1,15 @@
+{
+  "order": 5000,
+  "name": "Edge geometry",
+  "kind": "function",
+  "responsibility": "Rounds a routed polyline into a curve",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/geometry.rs",
+    "symbol": "curve_through"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#L51bfquE",
+  "parent": "vKEsyHFk/gbyqW4H3#ld6jjHND",
+  "outgoing": []
+}

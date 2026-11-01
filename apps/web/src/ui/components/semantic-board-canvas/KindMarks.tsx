@@ -96,4 +96,4 @@ function RelationshipChip(props: RelationshipChipProps): JSX.Element {
 	);
 }
 
-export { KindIcon, RelationshipChip };
+export { KindIcon, RelationshipChip, uncoloured };

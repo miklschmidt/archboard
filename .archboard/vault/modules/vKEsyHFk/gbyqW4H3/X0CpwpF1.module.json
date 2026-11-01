@@ -1,0 +1,18 @@
+{
+  "order": 26000,
+  "name": "Legend entries",
+  "kind": "function",
+  "responsibility": "Reads from a drawn scene what its legend lists, for the page's legend and an exported one alike",
+  "description": "entries_of keeps one sample of each node and relationship kind in drawing order, and mark_counts counts a comparison's marks on the subjects a drawing placed. archboard-svg spells each applied appearance as the document writes it. One reader, so the page's legend and an exported legend cannot list different things.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "crates/archboard-scene/src/paint/legend_entries.rs"
+  },
+  "schemaVersion": 1,
+  "id": "vKEsyHFk/gbyqW4H3#X0CpwpF1",
+  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
+  "outgoing": [],
+  "formerNames": [
+    "Picture key"
+  ]
+}

@@ -5,16 +5,12 @@
 // `board-refresh.ts`'s to decide.
 
 import { queryOptions } from "@tanstack/react-query";
+import { z } from "zod";
 
 import { BOARD_CACHE_MS } from "@archboard/timing";
-import {
-	fetchSemanticBoards,
-	type SemanticRenderRequest,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import type { ReadingOnScreen } from "#ui/hooks/semantic-board-canvas/use-code-findings.ts";
+import { type SemanticRenderRequest } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
 	sameBoardAsked,
-	sameVaultAsked,
 	semanticBoardKeys,
 } from "#ui/clients/semantic-board-canvas/reads/board-keys.ts";
 import { boardsListed } from "#ui/clients/semantic-board-canvas/reads/board-refresh.ts";
@@ -41,7 +37,7 @@ function semanticBoardListQuery(vault: string) {
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
-			const listing = await fetchSemanticBoards(vault, context.signal);
+			const listing = await boardReads().listing(vault, context.signal);
 			boardsListed(context.client, vault, listing.boards);
 			pictureSource().listed?.(vault, listing.boards, context.client);
 			return listing;
@@ -145,9 +141,9 @@ function semanticBoardDocumentQuery(vault: string, board: string) {
  *
  * Owned here rather than beside the diagnostics bell because a picture is
  * drawn under this policy and a pane names groups out of it: the policy is one
- * resource with two readers, and one cache entry serves both. It is re-read on
- * a timer, because the file it comes from is edited on disk by a person and
- * nothing announces that.
+ * resource with two readers, and one cache entry serves both. The architecture
+ * feed marks it stale when the vault changes, and a return to the tab reads it
+ * again, because a person can edit a file that no feed follows.
  * @param vault The vault.
  * @returns The query options.
  */
@@ -161,7 +157,6 @@ function vaultCheckQuery(vault: string) {
 		 */
 		queryFn: (context) => boardReads().vaultCheck(vault, context.signal),
 		staleTime: BOARD_CACHE_MS.vaultCheck,
-		refetchInterval: BOARD_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,
@@ -201,60 +196,37 @@ function codeFindingsQuery(vault: string) {
 	});
 }
 
+/** One icon's path data, as the Archboard server serves it. */
+const IconSchema = z.object({ paths: z.array(z.string()) });
+
 /**
- * Where change concentrates in one variant of one board (ADR 0045): asked when
- * somebody picks a part out, and never on a timer.
- *
- * The selection tab is drawn again for each pick, so each pick subscribes
- * anew, and an answer is stale at once: every pick asks the server, which
- * answers from its memory unless a checkout's HEAD moved, so a pick after a
- * commit reads the new history. Nothing else asks again: no interval, no
- * return to the tab and no reconnect, because each of those is a request
- * nobody made. A failed read is not tried again by itself; the region offers
- * that to the person.
- *
- * The read is not cancelled when the person picks another part. The old pick's
- * subscription goes before the new one comes, so a read that a pick cancelled
- * would be asked again by the next, and the server would start its walk of Git
- * again for each pick. Instead a pick made while the read runs waits for it,
- * and a series of picks asks once (ADR 0045: a request that arrives during the
- * walk waits for it).
- *
- * A new version of the board is a new key, so the part on screen is read again
- * as the board now stands, which is what says whether a relationship joins two
- * parts. Its last answer stays on screen while that read runs, so a write by an
- * agent does not empty the region. An answer about another vault does not stay.
- * @param on The board, the variant by id and the version on screen.
+ * One icon's path data, fetched once by name.
+ * @param name The Remix Icon's export name.
  * @returns The query options.
  */
-function localityQuery(on: ReadingOnScreen) {
+function iconQuery(name: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.locality(on),
+		queryKey: ["diagram-icon", name],
 		/**
-		 * Ask the server for the board's locality.
-		 * @returns The answer.
+		 * Fetch the icon's paths.
+		 * @param context The query context, carrying this read's cancellation.
+		 * @returns The paths.
 		 */
-		queryFn: () => boardReads().locality(on.vault, on.board, on.variant),
-		/**
-		 * The last answer, while this one is on its way, when it was of this
-		 * vault: another checkout's history is not this one's.
-		 * @param previous What the last query held, if anything.
-		 * @param previousQuery The query that held it.
-		 * @returns That, when it was of this vault.
-		 */
-		placeholderData: (previous, previousQuery) =>
-			sameVaultAsked(previousQuery?.queryKey, on.vault) ? previous : undefined,
-		staleTime: 0,
-		refetchOnMount: true,
-		refetchOnWindowFocus: false,
-		refetchOnReconnect: false,
+		queryFn: async (context): Promise<readonly string[]> => {
+			const response = await fetch(`/assets/diagram-icons/${encodeURIComponent(name)}.json`, {
+				signal: context.signal,
+			});
+			if (!response.ok) throw new Error(`No icon called ${name}`);
+			return IconSchema.parse(await response.json()).paths;
+		},
+		staleTime: Infinity,
 		retry: false,
 	});
 }
 
 export {
 	codeFindingsQuery,
-	localityQuery,
+	iconQuery,
 	semanticBoardDocumentQuery,
 	semanticBoardListQuery,
 	semanticRenderQuery,

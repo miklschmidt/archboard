@@ -1,7 +1,7 @@
 //! Depth by thickness. Every part of the picture is a block lit from above: a
 //! flat top face with a fine highlight along its top edge and light that falls
-//! off down it, a front edge along its foot, and a soft shadow it casts down
-//! and to the right. A proposal's standing takes over the outline of the face.
+//! off down it, a front edge along its foot, and a soft shadow it casts straight
+//! down. A proposal's standing takes over the outline of the face.
 //! A removed block is a flat, see-through ghost in the dashed border of a
 //! removal. A part opens with its seat, its box unpainted, which takes the
 //! pointer.
@@ -16,7 +16,7 @@ use crate::paint::shadow::{SHADOW_REACH, shadow_definitions, smooth_shadow};
 use crate::paint::standing::{OUTLINE_WIDTH, ink_of, outline_dash};
 use crate::request::Standing;
 use crate::scene::{
-    ClipId, Colour, Definition, Geometry, Gradient, GradientForm, GradientId, Group, Paint,
+    ClipId, Colour, Definition, Gradient, GradientForm, GradientId, Group, Paint, PathStep,
     Pointer, Purpose, Role, ShadowOf, Shape, Stop, Stroke,
 };
 
@@ -25,8 +25,8 @@ use crate::scene::{
 pub(super) struct SlabLook {
     /// Its top face.
     pub face: Paint,
-    /// Whether its face is one a group may tint.
-    pub tintable: bool,
+    /// Whether the light on its face is the soft one of a card.
+    pub soft: bool,
     /// The colour its highlight is mixed from: its face's own colour, unless its face is a gradient.
     pub lit: Colour,
     /// Its front edge.
@@ -44,24 +44,22 @@ const GLINT_WIDTH: f64 = 1.0;
 
 /// How far the highlight mixes a face toward the glint, on each ground.
 const GLINT: Share = Share {
-    light: 0.45,
-    dark: 0.09,
+    light: 0.8,
+    dark: 0.26,
 };
 
 /// The fine highlight along the top edge of a face.
-fn glint_of(face: &Colour, palette: &Palette) -> Colour {
+pub(super) fn glint_of(face: &Colour, palette: &Palette) -> Colour {
     tinted(face, Some(&palette.slab_glint), GLINT)
 }
 
-const SOFT_SHEEN: f64 = 0.2;
+const SOFT_SHEEN: f64 = 0.55;
 
 /// Which sort of block casts a shadow.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Lift {
-    /// A card or a header slab, which casts the full shadow.
+    /// A card, which casts the full shadow.
     Card,
-    /// A container's tray, which casts none.
-    Tray,
     /// A type chip, which casts a short shadow.
     Chip,
 }
@@ -71,7 +69,6 @@ impl Lift {
     fn reach(self) -> f64 {
         match self {
             Lift::Card => SHADOW_REACH,
-            Lift::Tray => 0.0,
             Lift::Chip => 2.0,
         }
     }
@@ -95,24 +92,54 @@ pub(super) fn plate(rect: Rect, radius: f64) -> Shape {
     Shape::rect(Purpose::Plate, boxed(rect), Some(round_coord(radius))).pointer(Pointer::None)
 }
 
-/// A line across a box at one height, which takes no pointer.
-pub(super) fn across(rect: Rect, y: f64, stroke: Stroke) -> Items {
+/// Which edge of a rounded box catches a band of light or shade.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Rim {
+    Top,
+    Foot,
+}
+
+/// A band along one edge of a rounded box, as an inset box shadow draws it: the
+/// box less itself moved in by the band's depth. The band thins round each corner
+/// and is gone at the corner's side, so it merges with the curve.
+pub(super) fn rim_band(rect: Rect, radius: f64, depth: f64, rim: Rim, ink: &Colour) -> Items {
+    let (left, right) = (rect.x, rect.x + rect.width);
+    let (edge, way, turn) = match rim {
+        Rim::Top => (rect.y, 1.0, true),
+        Rim::Foot => (rect.y + rect.height, -1.0, false),
+    };
+    let at = |x: f64, y: f64| Point {
+        x: round_coord(x),
+        y: round_coord(y),
+    };
+    let arc = |to: Point, clockwise: bool| PathStep::Arc {
+        radius: at(radius, radius),
+        clockwise,
+        to,
+    };
+    let steps = vec![
+        PathStep::Move {
+            to: at(left, edge + way * radius),
+        },
+        arc(at(left + radius, edge), turn),
+        PathStep::Across {
+            x: round_coord(right - radius),
+        },
+        arc(at(right, edge + way * radius), turn),
+        PathStep::Down {
+            y: round_coord(edge + way * (radius + depth)),
+        },
+        arc(at(right - radius, edge + way * depth), !turn),
+        PathStep::Across {
+            x: round_coord(left + radius),
+        },
+        arc(at(left, edge + way * (radius + depth)), !turn),
+        PathStep::Close,
+    ];
     shape(
-        Shape::new(
-            Purpose::Rule,
-            Geometry::Line {
-                from: Point {
-                    x: round_coord(rect.x),
-                    y: round_coord(y),
-                },
-                to: Point {
-                    x: round_coord(rect.x + rect.width),
-                    y: round_coord(y),
-                },
-            },
-        )
-        .pointer(Pointer::None)
-        .stroked(stroke),
+        Shape::path(Purpose::Solid, steps)
+            .pointer(Pointer::None)
+            .filled(ink),
     )
 }
 
@@ -126,6 +153,14 @@ fn seat(shape: Shape) -> Shape {
     shape.unfilled().pointer(Pointer::All)
 }
 
+/// A plate that stays unseen until the reader's stylesheet lights it under the pointer.
+pub(super) fn ghost_light(shape: Shape, ink: &Colour) -> Shape {
+    Shape {
+        fill_opacity: Some(0.0),
+        ..shape.filled(ink)
+    }
+}
+
 /// A shape painted as a ghost's see-through face.
 pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
     Shape {
@@ -135,7 +170,7 @@ pub(super) fn ghost_face(shape: Shape, palette: &Palette) -> Shape {
 }
 
 /// The border a standing draws round a face, inside its edge.
-fn standing_border(
+pub(super) fn standing_border(
     face: Rect,
     radius: f64,
     standing: Option<Standing>,
@@ -181,11 +216,7 @@ pub(super) fn slab_shadow(
     if standing == Some(Standing::Removed) {
         return ghost(rect, radius, palette);
     }
-    if lift == Lift::Tray {
-        Items::new()
-    } else {
-        smooth_shadow(rect, radius, lift.reach())
-    }
+    smooth_shadow(rect, radius, lift.reach())
 }
 
 /// A shadow in a group of its own, laid under every block and every line.
@@ -219,7 +250,7 @@ pub(super) fn shadow_under(
 
 /// The light that falls off down a face.
 fn sheen_of(look: &SlabLook) -> GradientId {
-    if look.tintable {
+    if look.soft {
         GradientId::SoftSheen
     } else {
         GradientId::Sheen
@@ -385,7 +416,7 @@ impl SlabLook {
     pub(super) fn plain(face: Colour, edge: Colour, thickness: f64, radius: f64) -> Self {
         SlabLook {
             face: Paint::from(&face),
-            tintable: false,
+            soft: false,
             lit: face,
             edge,
             thickness,

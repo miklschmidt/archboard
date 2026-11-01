@@ -210,4 +210,16 @@ mod tests {
             .collect();
         assert_eq!(moved, vec![vec![vec![2, 0, 1]], vec![vec![0, 1, 2]]]);
     }
+
+    #[test]
+    fn moving_an_item_up_must_save_area_before_it_is_laid_out() {
+        let moved = Packing::of(true, vec![vec![0, 2], vec![1]]);
+        for (width, kept) in [(910.0, false), (890.0, true)] {
+            let candidates = packings_of(&[0, 1, 2], |packing| Size {
+                width: if *packing == moved { width } else { 1000.0 },
+                height: 1000.0,
+            });
+            assert_eq!(candidates.contains(&moved), kept);
+        }
+    }
 }

@@ -33,6 +33,8 @@ pub enum Purpose {
     Ring,
     /// A stroked or filled line or mark: a route, a glyph, a cutout, a bracket.
     Line,
+    /// The two rails of a double line: one wide stroke, with its core masked out.
+    Rail,
     /// A swipe laid under a line that stands for something.
     Swipe,
     /// A shape that is not a box, with straight sides and rounded corners: a
@@ -250,6 +252,10 @@ pub struct Shape {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub marker: Option<MarkerId>,
+    /// The arrowhead at the start of its path, turned to point back along it.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub start_marker: Option<MarkerId>,
     /// The subjects it stands with, which a viewer lights and recedes it with.
     pub members: Vec<String>,
 }
@@ -266,6 +272,7 @@ impl Shape {
             pointer: None,
             clip: None,
             marker: None,
+            start_marker: None,
             members: Vec::new(),
         }
     }

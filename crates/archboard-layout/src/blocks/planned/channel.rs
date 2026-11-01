@@ -10,7 +10,7 @@ use crate::geometry::{Point, Rect, inflate};
 use super::geometry::{contains, intersection, length};
 use super::model::Model;
 use super::ports::{center, port};
-use super::shape::Shape;
+use super::shape::{LINE_CLEAR, Shape};
 use super::topology::Topology;
 
 pub(super) fn feasible(
@@ -63,17 +63,10 @@ impl<'a, 'g> Probe<'a, 'g> {
                 .entry(index)
                 .or_insert_with(|| {
                     let (from, to) = model.ends[index];
-                    let route = &topology.routes[index];
                     let cards = shape
                         .endpoints
-                        .iter()
-                        .map(|(&id, &r)| {
-                            if id == from || id == to {
-                                r
-                            } else {
-                                inflate(r, 16.0)
-                            }
-                        })
+                        .keys()
+                        .map(|&id| shape.clearance((from, to), model.endpoints[id].foot, id))
                         .collect();
                     let captions = shape
                         .drawing
@@ -84,12 +77,8 @@ impl<'a, 'g> Probe<'a, 'g> {
                     let foreign = shape
                         .scopes
                         .iter()
-                        .filter(|(scope, _)| {
-                            !route.outward.contains(scope)
-                                && !route.inward.contains(scope)
-                                && !ancestor(model, route.scope, **scope)
-                        })
-                        .map(|(_, placed)| inflate(placed.bounds, 16.0))
+                        .filter(|(scope, _)| foreign(model, topology, index, **scope))
+                        .map(|(_, placed)| inflate(placed.bounds, LINE_CLEAR))
                         .collect();
                     Rc::new(FixedGeometry {
                         cards: super::clearance::Clearance::new(cards),
@@ -141,6 +130,15 @@ impl<'a, 'g> Probe<'a, 'g> {
         {
             return Some("label run");
         }
+        // Most candidates fall here, so test them before the box indexes.
+        let bounds = super::junctions::Envelope::new(points);
+        if !self
+            .junctions
+            .as_ref()
+            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
+        {
+            return Some("junction");
+        }
         if !self.fixed.cards.clear(points) {
             return Some("card");
         }
@@ -158,14 +156,6 @@ impl<'a, 'g> Probe<'a, 'g> {
         }
         if !super::portals::follows(&topology.routes[index], shape, points) {
             return Some("portal");
-        }
-        let bounds = super::junctions::Envelope::new(points);
-        if !self
-            .junctions
-            .as_ref()
-            .is_some_and(|pairs| pairs.iter().all(|pair| pair.clear(points, bounds)))
-        {
-            return Some("junction");
         }
         None
     }
@@ -262,6 +252,18 @@ pub(super) fn shared_fragment(
 pub(super) fn approaches(points: &[Point]) -> bool {
     let required = APPROACH_STRAIGHT + if points.len() > 2 { BEND_RADIUS } else { 0.0 };
     length(&points[..2]) >= required && length(&points[points.len() - 2..]) >= required
+}
+
+/// Whether a line keeps off a scope: it crosses no wall of it and ends on no frame of it.
+pub(super) fn foreign(model: &Model<'_>, topology: &Topology, edge: usize, scope: usize) -> bool {
+    let route = &topology.routes[edge];
+    let (from, to) = model.ends[edge];
+    let frame = model.scopes[scope].header;
+    !route.outward.contains(&scope)
+        && !route.inward.contains(&scope)
+        && !ancestor(model, route.scope, scope)
+        && frame != Some(from)
+        && frame != Some(to)
 }
 
 /// Source approaches depend on the endpoint geometry and declared flow points.
