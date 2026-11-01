@@ -10,7 +10,7 @@ use archboard_scene::scene::traffic::{
     PULSE_FRONT as FRONT, PULSE_HEAD as HEAD, PULSE_MASK_ROOM as MASK_ROOM, PULSE_TAIL as TAIL,
     pulse_breadth,
 };
-use archboard_scene::scene::{Colour, Motion, PulseLook, TrafficMark};
+use archboard_scene::scene::{Colour, Item, Motion, PulseLook, TrafficMark};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use peniko::{Color, ColorStop, Extend, Gradient, InterpolationAlphaSpace};
 
@@ -248,6 +248,16 @@ fn slide_at(leg: &Leg, speed: f64, cycle: f64, start: f64, time: f64) -> Option<
     let from = moment_of(-span - 1.0).max(0.0);
     let to = moment_of(leg.length + 1.0).min(cycle);
     (moment >= from && moment <= to).then_some((moment - start) * speed - leg.along + FRONT - span)
+}
+
+/// Whether any traffic runs among some items.
+pub(crate) fn holds_traffic(items: &[Item]) -> bool {
+    items.iter().any(|item| match item {
+        Item::Traffic(_) => true,
+        Item::Group(group) => holds_traffic(&group.items),
+        Item::Viewport(viewport) => holds_traffic(&viewport.items),
+        _ => false,
+    })
 }
 
 /// A line's traffic at a moment of the traffic's clock.

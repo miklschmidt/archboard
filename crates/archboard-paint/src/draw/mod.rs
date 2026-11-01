@@ -14,7 +14,9 @@ use crate::outlines::Outlines;
 use crate::palette::Palette;
 use crate::path::{end_of, outline_of, path_of, placed, rect_of, stroke_of};
 use crate::presentation::Presentation;
-use crate::traffic::draw_traffic;
+use crate::raise::drawn_in_order;
+use crate::sweep::{holds_lines, is_part, only_moves};
+use crate::traffic::{draw_traffic, holds_traffic};
 
 /// The side of the square an icon is drawn in, in its own units.
 const ICON_VIEW: f64 = 24.0;
@@ -22,19 +24,30 @@ const ICON_VIEW: f64 = 24.0;
 /// How finely a straight-edged box stands in as a path.
 const BOX_TOLERANCE: f64 = 0.1;
 
+#[cfg(test)]
+mod tests;
+mod viewer;
+
 /// A scene with its definitions found.
 #[derive(Clone, Debug)]
 pub struct Picture {
     /// What is drawn.
     pub scene: Scene,
     pub(crate) definitions: Definitions,
+    /// Whether any traffic runs on the picture.
+    pub(crate) traffic: bool,
 }
 
 impl Picture {
     /// A scene, ready to draw.
     pub fn new(scene: Scene) -> Picture {
         let definitions = Definitions::of(&scene);
-        Picture { scene, definitions }
+        let traffic = holds_traffic(&scene.body);
+        Picture {
+            scene,
+            definitions,
+            traffic,
+        }
     }
 }
 
@@ -63,6 +76,11 @@ struct Inside {
     line: bool,
     /// A flow head held at the top of the view shows its shade.
     stuck: bool,
+    /// The control of the hovered subject is lit under the pointer.
+    hovered: bool,
+    /// The items stand where the picture's lines stand, or in a group that only
+    /// moves them.
+    top: bool,
 }
 
 /// One frame's walk.
@@ -106,6 +124,8 @@ pub fn draw<C: Canvas>(
         lit: false,
         line: false,
         stuck: false,
+        hovered: false,
+        top: true,
     };
     walk.items(&picture.scene.body, inside);
 }
@@ -142,22 +162,41 @@ fn cuts_a_trunk(shape: &Shape) -> bool {
 }
 
 impl<C: Canvas> Walk<'_, C> {
-    /// Draw some items.
+    /// Draw some items, the raised ones last. Where the lines stand, the
+    /// lines that are drawn on as they light go between the lines and the
+    /// first part, and a line with no words wears its warning after the rest.
     fn items(&mut self, items: &[Item], inside: Inside) {
-        for item in items {
-            match item {
-                Item::Group(group) => self.group(group, inside),
-                Item::Shape(shape) => self.shape(shape, inside),
-                Item::Text(text) => self.text(text, inside),
-                Item::Icon(icon) => self.icon(icon, inside),
-                Item::Viewport(viewport) => self.viewport(viewport, inside),
-                Item::Traffic(mark) => {
-                    if let Some(seconds) = self.presentation.traffic {
-                        draw_traffic(self.canvas, self.palette, inside.transform, mark, seconds);
-                    }
-                }
-                Item::Definitions { .. } | Item::Break => {}
+        let home = inside.top && self.presentation.sweep.is_some() && holds_lines(items);
+        let mut swept = !home;
+        for item in drawn_in_order(items, self.presentation) {
+            if !swept && is_part(item) {
+                self.sweep(inside);
+                swept = true;
             }
+            self.item(item, inside);
+        }
+        if !swept {
+            self.sweep(inside);
+        }
+        if self.presentation.warnings.has_bare() {
+            self.bare_marks(items, inside);
+        }
+    }
+
+    /// Draw one item.
+    fn item(&mut self, item: &Item, inside: Inside) {
+        match item {
+            Item::Group(group) => self.group(group, inside),
+            Item::Shape(shape) => self.shape(shape, inside),
+            Item::Text(text) => self.text(text, inside),
+            Item::Icon(icon) => self.icon(icon, inside),
+            Item::Viewport(viewport) => self.viewport(viewport, inside),
+            Item::Traffic(mark) => {
+                if let Some(seconds) = self.presentation.traffic {
+                    draw_traffic(self.canvas, self.palette, inside.transform, mark, seconds);
+                }
+            }
+            Item::Definitions { .. } | Item::Break => {}
         }
     }
 
@@ -247,19 +286,36 @@ impl<C: Canvas> Walk<'_, C> {
             _ => inside.view,
         };
         let place = self.place_of(group, inside.view);
+        let drop = self.drop_of(group);
+        let lowered = inside.transform * Affine::translate((0.0, drop));
         Inside {
-            transform: place.map_or(inside.transform, |place| {
-                inside.transform * placed(place.x, place.y, place.scale)
+            transform: place.map_or(lowered, |place| {
+                lowered * placed(place.x, place.y, place.scale)
             }),
             view,
             selected: inside.selected || selected,
             lit,
             line: matches!(group.role, Role::Line(Some(_))),
-            stuck: match &group.role {
-                Role::FlowHead(id) => self.presentation.stuck.contains(id),
-                _ => inside.stuck,
-            },
+            stuck: inside.stuck || drop > 0.0,
+            hovered: self.hovers(group, inside),
+            top: inside.top && only_moves(&group.role),
         }
+    }
+
+    /// How far a flow's head is held down from where the picture drew it.
+    fn drop_of(&self, group: &Group) -> f64 {
+        match &group.role {
+            Role::FlowHead(flow) => self.presentation.drop_of(flow),
+            _ => 0.0,
+        }
+    }
+
+    /// Whether a group is inside the subject whose control the pointer rests on.
+    fn hovers(&self, group: &Group, inside: Inside) -> bool {
+        let hovered = self.presentation.hovered_toggle.as_deref();
+        group.subject.as_ref().map_or(inside.hovered, |subject| {
+            Some(subject.id.as_str()) == hovered
+        })
     }
 
     /// Draw a group's items, on a layer of their own when it is see-through.
@@ -267,10 +323,22 @@ impl<C: Canvas> Walk<'_, C> {
         if opacity < 1.0 {
             self.canvas.set_transform(held.transform);
             self.canvas.push(None, opacity_of(opacity));
-            self.items(&group.items, held);
+            self.inner(group, held);
             self.canvas.pop();
         } else {
+            self.inner(group, held);
+        }
+    }
+
+    /// Draw what a group holds, and the warnings that stand in it.
+    fn inner(&mut self, group: &Group, held: Inside) {
+        if held.hovered && matches!(group.role, Role::Toggle(_)) {
+            self.lit_control(group, held);
+        } else {
             self.items(&group.items, held);
+        }
+        if !self.presentation.warnings.is_empty() {
+            self.marks(group, held);
         }
     }
 
@@ -280,7 +348,7 @@ impl<C: Canvas> Walk<'_, C> {
         self.canvas.set_transform(held.transform);
         self.canvas
             .push(Some((&bounds, false)), opacity_of(opacity));
-        self.items(&group.items, held);
+        self.inner(group, held);
         self.canvas.set_transform(held.transform);
         self.canvas.push_cut();
         let black = Ink::Solid(peniko::Color::BLACK);

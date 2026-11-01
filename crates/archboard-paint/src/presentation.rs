@@ -6,6 +6,9 @@ use std::collections::{HashMap, HashSet};
 
 use serde::Deserialize;
 
+use crate::sweep::Sweep;
+use crate::warnings::Warnings;
+
 /// Where the picture lies on the canvas, in canvas pixels.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -60,12 +63,26 @@ pub struct Presentation {
     pub selected: HashSet<String>,
     /// The relationships lit along their whole route, shared stretches too.
     pub whole: HashSet<String>,
-    /// The flow heads held at the top of the view.
-    pub stuck: HashSet<String>,
+    /// How far each flow's head is held down from where the picture drew it,
+    /// in the picture's units, by flow. A head with no drop stays where it is.
+    pub heads: HashMap<String, f64>,
     /// How the picture recedes behind what is lit.
     pub recede: Recede,
     /// The traffic's clock in seconds, or nothing when it is not shown.
     pub traffic: Option<f64>,
+    /// The subject whose control the pointer rests on.
+    pub hovered_toggle: Option<String>,
+    /// The lines that are being drawn on as they light.
+    pub sweep: Option<Sweep>,
+    /// The marks of the code check's warnings.
+    pub warnings: Warnings,
+}
+
+impl Presentation {
+    /// How far a flow's head is held down.
+    pub fn drop_of(&self, flow: &str) -> f64 {
+        self.heads.get(flow).copied().unwrap_or(0.0)
+    }
 }
 
 /// How one lit subject stands in the light.
@@ -91,13 +108,12 @@ pub struct Light {
     pub duration: f64,
 }
 
-/// What a page marks on a picture, whole, each time any of it changes.
+/// What a page marks on a picture, whole, each time any of it changes. The
+/// flow heads are not among them, because they move with the camera.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
 pub struct Marks {
     /// The subjects drawn with their selection ring.
     pub selected: HashSet<String>,
     /// The relationships lit along their whole route.
     pub whole: HashSet<String>,
-    /// The flow heads held at the top of the view.
-    pub stuck: HashSet<String>,
 }

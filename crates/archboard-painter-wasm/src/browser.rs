@@ -1,5 +1,7 @@
 //! The painter a page holds: one stage, and the surface its frames land on.
 
+use std::collections::{HashMap, HashSet};
+
 use archboard_paint::cpu::CpuCanvas;
 use archboard_paint::palette::Theme;
 use archboard_paint::presentation::{Camera, Light, Marks};
@@ -133,6 +135,103 @@ impl Painter {
         let marks: Marks = serde_json::from_str(marks).map_err(unread)?;
         self.stage.set_marks(marks);
         Ok(())
+    }
+
+    /// Hold the flow heads down from where the picture drew them, as JSON: an
+    /// object of drops in the picture's units, by flow id. A flow the object
+    /// does not name stays where the picture drew it.
+    ///
+    /// # Errors
+    ///
+    /// The heads do not read as an object of numbers.
+    #[wasm_bindgen(js_name = setHeads)]
+    pub fn set_heads(&mut self, heads: &str) -> Result<(), JsError> {
+        let heads: HashMap<String, f64> = serde_json::from_str(heads).map_err(unread)?;
+        self.stage.set_heads(heads);
+        Ok(())
+    }
+
+    /// Name the subject whose control the pointer rests on, or none.
+    #[wasm_bindgen(js_name = setHoveredToggle)]
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "wasm-bindgen takes an optional string by value, and not by reference"
+    )]
+    pub fn set_hovered_toggle(&mut self, subject: Option<String>) {
+        self.stage.set_hovered_toggle(subject.as_deref());
+    }
+
+    /// Say which subjects the code check warns about, as JSON: an array of ids.
+    ///
+    /// # Errors
+    ///
+    /// The warnings do not read as an array of ids.
+    #[wasm_bindgen(js_name = setWarnings)]
+    pub fn set_warnings(&mut self, warned: &str) -> Result<(), JsError> {
+        let warned: HashSet<String> = serde_json::from_str(warned).map_err(unread)?;
+        self.stage.set_warnings(warned);
+        Ok(())
+    }
+
+    /// Show the traffic, or hide it for a person who asked for no motion.
+    #[wasm_bindgen(js_name = setTrafficShown)]
+    pub fn set_traffic_shown(&mut self, shown: bool) {
+        self.stage.set_traffic_shown(shown);
+    }
+
+    /// Stand the traffic still, and keep it so until it is resumed.
+    #[wasm_bindgen(js_name = holdTraffic)]
+    pub fn hold_traffic(&mut self) {
+        self.stage.hold_traffic();
+    }
+
+    /// Bring the held traffic back to its speed over a time in milliseconds.
+    #[wasm_bindgen(js_name = resumeTraffic)]
+    pub fn resume_traffic(&mut self, ms: f64, now: f64) {
+        self.stage.resume_traffic(ms, now);
+    }
+
+    /// Let the held traffic go at its speed at once.
+    #[wasm_bindgen(js_name = releaseTraffic)]
+    pub fn release_traffic(&mut self) {
+        self.stage.release_traffic();
+    }
+
+    /// Stand the traffic's clock at a time in seconds.
+    #[wasm_bindgen(js_name = setPictureTime)]
+    pub fn set_picture_time(&mut self, seconds: f64) {
+        self.stage.set_picture_time(seconds);
+    }
+
+    /// Where the traffic's clock stands, in seconds.
+    #[wasm_bindgen(js_name = pictureTime)]
+    pub fn picture_time(&self) -> f64 {
+        self.stage.picture_time()
+    }
+
+    /// Draw on the lines of the relationships that light, as JSON: an object of
+    /// delays in milliseconds, by relationship id. A line takes its length over
+    /// a speed, between the shortest and the longest time in milliseconds.
+    ///
+    /// # Errors
+    ///
+    /// The delays do not read as an object of numbers.
+    pub fn sweep(
+        &mut self,
+        delays: &str,
+        shortest: f64,
+        longest: f64,
+        now: f64,
+    ) -> Result<(), JsError> {
+        let delays: HashMap<String, f64> = serde_json::from_str(delays).map_err(unread)?;
+        self.stage.sweep(&delays, shortest, longest, now);
+        Ok(())
+    }
+
+    /// Take the sweep away.
+    #[wasm_bindgen(js_name = clearSweep)]
+    pub fn clear_sweep(&mut self) {
+        self.stage.clear_sweep();
     }
 
     /// Light the picture, as JSON.

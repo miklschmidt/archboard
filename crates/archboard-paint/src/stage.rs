@@ -3,18 +3,21 @@
 //! for frames. Everything that changes over time here is worked out from the
 //! clock the host gives, so a stepped clock records it frame by frame.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
 use crate::canvas::Canvas;
+use crate::clock::TrafficClock;
 use crate::draw::{Picture, draw};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::pick::Targets;
 use crate::presentation::{Camera, Light, Marks, Presentation};
+use crate::sweep::{Sweep, Timing};
 use crate::timing::{EASE_OUT, Fade, SWAP};
+use crate::warnings::Warnings;
 
 /// The camera, on its way to where it was told to go.
 #[derive(Clone, Copy, Debug)]
@@ -68,6 +71,9 @@ pub struct Stage {
     glide: Glide,
     far: Fade,
     lighting: Lighting,
+    clock: TrafficClock,
+    /// The subjects the code check warns about.
+    warned: HashSet<String>,
     /// The last moment a frame or a change named.
     now: f64,
 }
@@ -88,6 +94,8 @@ impl Stage {
             },
             far: Fade::still(0.0),
             lighting: Lighting::default(),
+            clock: TrafficClock::default(),
+            warned: HashSet::new(),
             now: 0.0,
         }
     }
@@ -100,11 +108,15 @@ impl Stage {
             near: None,
             far: None,
         });
+        self.presentation.sweep = None;
+        self.find_warnings();
     }
 
     /// Take the picture off the stage.
     pub fn clear(&mut self) {
         self.shown = None;
+        self.presentation.sweep = None;
+        self.find_warnings();
     }
 
     /// Change the theme.
@@ -141,7 +153,96 @@ impl Stage {
     pub fn set_marks(&mut self, marks: Marks) {
         self.presentation.selected = marks.selected;
         self.presentation.whole = marks.whole;
-        self.presentation.stuck = marks.stuck;
+    }
+
+    /// Hold the flow heads down from where the picture drew them, each by a
+    /// drop in the picture's units. A head the table does not name stays where
+    /// the picture drew it. The heads follow the camera, so a page says them
+    /// apart from the marks.
+    pub fn set_heads(&mut self, heads: HashMap<String, f64>) {
+        self.presentation.heads = heads;
+    }
+
+    /// Name the subject whose control the pointer rests on, or none.
+    pub fn set_hovered_toggle(&mut self, subject: Option<&str>) {
+        self.presentation.hovered_toggle = subject.map(str::to_owned);
+    }
+
+    /// Say which subjects the code check warns about.
+    pub fn set_warnings(&mut self, warned: HashSet<String>) {
+        self.warned = warned;
+        self.find_warnings();
+    }
+
+    /// Find where the warnings stand in the picture on the stage.
+    fn find_warnings(&mut self) {
+        self.presentation.warnings = match &self.shown {
+            Some(shown) if !self.warned.is_empty() => {
+                Warnings::find(&shown.picture.scene, &self.warned)
+            }
+            _ => Warnings::default(),
+        };
+    }
+
+    /// Show the traffic, or hide it for a person who asked for no motion.
+    pub fn set_traffic_shown(&mut self, shown: bool) {
+        self.clock.show(shown);
+    }
+
+    /// Stand the traffic still, and keep it so until it is resumed.
+    pub fn hold_traffic(&mut self) {
+        self.clock.hold();
+    }
+
+    /// Bring the held traffic back to its speed over a time in milliseconds,
+    /// from standing still, easing in and out. Traffic that is not held keeps
+    /// its pace.
+    pub fn resume_traffic(&mut self, ms: f64, now: f64) {
+        self.now = now;
+        self.clock.resume(ms, now);
+    }
+
+    /// Let the held traffic go at its speed at once.
+    pub fn release_traffic(&mut self) {
+        self.clock.release();
+    }
+
+    /// Stand the traffic's clock at a time in seconds, so that the traffic of a
+    /// picture that replaces another runs on from where the other's was.
+    pub fn set_picture_time(&mut self, seconds: f64) {
+        self.clock.set_seconds(seconds);
+    }
+
+    /// Where the traffic's clock stands, in seconds.
+    pub fn picture_time(&self) -> f64 {
+        self.clock.seconds()
+    }
+
+    /// Draw on the lines of the relationships that light, each after its delay
+    /// in milliseconds. A line takes its length over a speed, between the
+    /// shortest and the longest time. It replaces any sweep that runs.
+    pub fn sweep(
+        &mut self,
+        delays: &HashMap<String, f64>,
+        shortest_ms: f64,
+        longest_ms: f64,
+        now: f64,
+    ) {
+        self.now = now;
+        let timing = Timing {
+            shortest: shortest_ms,
+            longest: longest_ms,
+            now,
+        };
+        self.presentation.sweep = self
+            .shown
+            .as_ref()
+            .and_then(|shown| Sweep::of(&shown.picture.scene, delays, timing));
+    }
+
+    /// Take the sweep away.
+    pub fn clear_sweep(&mut self) {
+        self.presentation.sweep = None;
     }
 
     /// Light the picture.
@@ -181,6 +282,16 @@ impl Stage {
             scale: self.glide.scale.at(now),
         };
         self.presentation.far = self.far.at(now);
+        self.clock.advance(now);
+        self.presentation.traffic = self.clock.shown_seconds();
+        self.presentation.sweep = self
+            .presentation
+            .sweep
+            .take()
+            .filter(|sweep| !sweep.over(now));
+        if let Some(sweep) = &mut self.presentation.sweep {
+            sweep.advance(now);
+        }
         let lighting = &mut self.lighting;
         lighting
             .subjects
@@ -195,13 +306,24 @@ impl Stage {
             .collect();
     }
 
+    /// Whether traffic runs on the picture, so that every frame differs.
+    fn moving_traffic(&self) -> bool {
+        self.clock.runs()
+            && self
+                .shown
+                .as_ref()
+                .is_some_and(|shown| shown.picture.traffic)
+    }
+
     /// Whether a value is still changing at a moment.
     fn changing(&self, now: f64) -> bool {
         let lighting = &self.lighting;
-        ![self.glide.x, self.glide.y, self.glide.scale, self.far]
-            .iter()
-            .chain([&lighting.rest, &lighting.labels])
-            .all(|fade| fade.done(now))
+        self.moving_traffic()
+            || self.presentation.sweep.is_some()
+            || ![self.glide.x, self.glide.y, self.glide.scale, self.far]
+                .iter()
+                .chain([&lighting.rest, &lighting.labels])
+                .all(|fade| fade.done(now))
             || lighting
                 .subjects
                 .values()
