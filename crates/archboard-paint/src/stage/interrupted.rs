@@ -125,3 +125,17 @@ fn a_departure_still_answers_while_sparks_run_after_the_cards_land() {
     assert_ne!(visible, gone);
     assert_eq!(gone, raster(&mut empty, 130.0));
 }
+
+#[test]
+fn an_edit_during_an_entrance_keeps_the_visible_frame_including_late_sparks() {
+    for now in [10.0, 40.0, 100.0, 150.0] {
+        let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
+        stage.set_phases(PHASES);
+        stage.enter(painting(board()), None, 100.0, (0.0, 0.0), 0.0);
+        raster(&mut stage, 0.0);
+        let before = raster(&mut stage, now);
+        stage.carry(painting(board()), (0.0, 0.0), 100.0);
+        let after = raster(&mut stage, now);
+        assert!(before == after, "progress {}", now / 100.0);
+    }
+}

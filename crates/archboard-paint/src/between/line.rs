@@ -51,6 +51,8 @@ struct Paths<'a> {
     stroke: Option<(usize, &'a Shape)>,
     /// An inked shape drawn before it.
     swipe: Option<(usize, &'a Shape)>,
+    /// Temporary light between the swipe and stroke, kept through an interruption.
+    extras: Vec<&'a Shape>,
 }
 
 /// Whether a shape is a halo, drawn only when the line is lit.
@@ -77,6 +79,12 @@ fn paths(group: &Group) -> Paths<'_> {
     Paths {
         halos,
         stroke: inked.last().copied(),
+        extras: inked
+            .iter()
+            .skip(1)
+            .take(inked.len().saturating_sub(2))
+            .map(|(_, shape)| *shape)
+            .collect(),
         swipe: if inked.len() > 1 {
             inked.first().copied()
         } else {
@@ -436,6 +444,11 @@ impl LineCarry {
         };
         carrying.halos();
         carrying.job(next.swipe, old.swipe);
+        if let Some((child, stroke)) = next.stroke {
+            for shape in &old.extras {
+                carrying.borrow(child, shape, route(Some(stroke)));
+            }
+        }
         carrying.job(next.stroke, old.stroke);
         let Carrying { slides, ghosts, .. } = carrying;
         if slides.is_empty() && ghosts.is_empty() {

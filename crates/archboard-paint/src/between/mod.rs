@@ -382,6 +382,23 @@ fn depth_of(body: &[Item], kind: SubjectKind) -> usize {
     first.unwrap_or(body.len())
 }
 
+/// Temporary shapes left over a picture, such as rims, fade where they stood.
+fn stopping_shapes<'a>(
+    last: &'a Scene,
+    next: &'a Scene,
+    end: f64,
+) -> impl Iterator<Item = (usize, Mover)> + 'a {
+    last.body.iter().filter_map(move |item| {
+        let leaving = matches!(item, Item::Shape(_)) && !next.body.contains(item);
+        leaving.then(|| {
+            (
+                next.body.len(),
+                Mover::Leave(Leave::plain(item.clone(), end)),
+            )
+        })
+    })
+}
+
 impl Between {
     /// Prepare the move from `from` to `to`.
     ///
@@ -474,6 +491,7 @@ impl Between {
                 (depth_of(&next.body, old[a].subject.kind), leave)
             })
             .chain(stopping)
+            .chain(stopping_shapes(&last, &next, phases.exit_end))
             .collect();
         leavers.sort_by_key(|&(place, _)| place);
         for (inserted, (place, mover)) in leavers.into_iter().enumerate() {
