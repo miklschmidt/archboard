@@ -253,15 +253,13 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 
 	// One ink from end to end. The band behind the line was already coloured;
-	// what a reader could not see is that the line, its arrowhead and its dots
-	// belonged to it rather than being grey scenery over the top.
+	// what a reader could not see is that the line belonged to it rather than
+	// being grey scenery over the top.
 	const added = await edgeInks(browser, SURFACE, ids["added"] ?? "");
-	expect(added.head).toBe(added.line);
 	expect(sameHue(added.line, added.band)).toBe(true);
 	// A relationship the proposal dropped is still drawn, in its own ink.
 	const gone = await edgeInks(browser, SURFACE, ids["gone"] ?? "");
 	expect(sameHue(gone.line, gone.band)).toBe(true);
-	expect(gone.head).toBe(gone.line);
 	expect(gone.line).not.toBe(added.line);
 
 	// Configured types keep distinct chips even when the nodes share a group.
@@ -344,7 +342,6 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	expect(await unresolvedPaints(browser, SURFACE)).toEqual([]);
 	const darkAdded = await edgeInks(browser, SURFACE, ids["added"] ?? "");
 	expect(sameHue(darkAdded.line, darkAdded.band)).toBe(true);
-	expect(darkAdded.head).toBe(darkAdded.line);
 	expect(darkAdded.line).not.toBe(added.line);
 	const darkWritePath = await iconInk(browser, "Gateway");
 	expect(await iconInk(browser, "Queue")).not.toBe(darkWritePath);

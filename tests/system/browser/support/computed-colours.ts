@@ -17,22 +17,23 @@ const OPAQUE_SRGB =
 	` return "rgb(" + r + ", " + g + ", " + b + ")"; };`;
 
 /**
- * What the browser actually paints one relationship with: the ink of the line,
- * of the band behind it, of the arrowhead it references, and of its dots.
+ * What the browser resolves one relationship's inks to: the line and the band
+ * behind it.
  *
- * Computed styles and a resolved marker, not attributes, because the question
- * is what a person sees — an attribute a stylesheet overrode would pass a
- * reading of the markup and fail the reader — each spelt as opaque sRGB.
+ * Computed styles, not attributes, because an attribute a stylesheet overrode
+ * would pass a reading of the markup and fail the reader. Each is spelt as
+ * opaque sRGB. A painted page holds no markers, so the renderer's own tests and
+ * the parity corpus own the arrowhead's ink.
  * @param browser The page.
  * @param surface The selector of the element the picture is in.
  * @param id The relationship's semantic id.
- * @returns The three inks, each as the browser resolves it.
+ * @returns The two inks, each as the browser resolves it.
  */
 const edgeInks = (
 	browser: AgentBrowserSession,
 	surface: string,
 	id: string,
-): Promise<{ line: string; band: string; head: string }> =>
+): Promise<{ line: string; band: string }> =>
 	browser.eval(
 		`(() => {` +
 			OPAQUE_SRGB +
@@ -40,13 +41,9 @@ const edgeInks = (
 			` const paths = [...group.querySelectorAll(":scope > path")];` +
 			` const line = paths.find((path) => path.getAttribute("marker-end") !== null);` +
 			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo"));` +
-			` const marker = "#" + line.getAttribute("marker-end").slice(5, -1);` +
-			` const head = document.querySelector(marker + " path");` +
 			` return {` +
 			`  line: opaque(getComputedStyle(line).stroke),` +
 			`  band: opaque(getComputedStyle(band).stroke),` +
-			`  head: opaque(getComputedStyle(head).fill === "none"` +
-			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill),` +
 			` }; })()`,
 	);
 
