@@ -2,7 +2,8 @@
 //! the frames in a row or a stack, and the cards outside them round that whole,
 //! each near what it joins. Inside a frame compactness comes before fewer bends.
 //! The planner routes this placement as it routes any other, so every guard
-//! still holds.
+//! still holds. The grid is only where routing starts: contraction then brings the
+//! cards of each row and column as near as what runs between them lets them stand.
 
 mod grid;
 mod ring;

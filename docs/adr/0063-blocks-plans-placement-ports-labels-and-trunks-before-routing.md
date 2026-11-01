@@ -26,7 +26,8 @@ Local conflict repair and grid windows have explicit work limits.
 A failed candidate can request bounded extra room from the legacy placer.
 No unchecked route reaches the painter.
 
-After selecting routes, the planner contracts empty coordinate bands while preserving card sizes, route topology, and clearance around bends and boundaries.
+After selecting routes, the planner closes the space that nothing uses while preserving card sizes, route topology, and clearance around bends and boundaries.
+TASK-559.37 replaced the bands, which had to stand empty across the whole page, with a contraction in which each piece moves on its own and keeps its order against what shares its slab.
 It places labels again on those shorter runs and applies the same complete geometry guard.
 A rejected contraction retains the original geometry through that guard.
 

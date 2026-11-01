@@ -10,7 +10,8 @@ The remaining sections preserve the investigation and its earlier checkpoints.
 
 A dense placement goes first, in `planned/dense`.
 It takes a reading of one open frame that holds only cards, and a root of 18 or more lines with no frame.
-It sets the parts on a shared grid below the edge tab, and it stands the doors round the frame, each near what it joins.
+It sets the parts on a grid below the edge tab, and it stands the doors round the frame, each near what it joins.
+The grid is where routing starts. Contraction then closes the space that nothing uses, so the finished picture need not keep it.
 Inside a frame, compactness comes before fewer bends.
 The planner routes each dense placement, tightest first, and the first room that lands whole wins.
 A reading that the dense placement does not take, or cannot route, falls to the legacy placer.
@@ -51,15 +52,26 @@ The compact alternative retains every relationship and every measured card.
 Final routing still receives all original label measurements and must pass the complete geometry guard.
 The existing candidates remain available when the compact placement leaves insufficient room for labels.
 
-After route selection, the planner contracts empty bands in both coordinate directions.
-A band is a horizontal or vertical strip.
-Cards, measured edge tabs, labels, bends, and frame boundaries protect their occupied intervals plus the existing routing clearance.
-Only straight runs cross the remaining gaps.
-The contraction translates cards without resizing them and shortens frames and routes together.
-Each shift removes whole coordinate units, so SVG rounding retains the original subpixel alignment at attachments.
-It preserves the order of every coordinate, so crossings and shared-route membership do not change.
+After route selection, the planner contracts the drawing in `planned/compact`, one axis at a time, first horizontally and then vertically, in two passes.
+Each card, frame wall, word plate and run of a line moves on its own.
+Two pieces keep their order and their room only if they share a slab of the page, which means that they overlap across the axis, or stand within two clearances of that.
+A gap therefore shrinks to what runs in it at that height. A busy row no longer holds apart the cards of the rows around it, and a line to a neighbor takes only the room of its label.
+Every piece takes the least position that keeps these rules, which is a longest path through a graph of difference constraints (each rule says that one piece stands at least so far past another).
+The current picture satisfies every rule, so a solution always exists, and the page never grows past what the rules need.
+The room that a rule keeps is 32 between two cards, 21 between a card and a line, and two clearances for the rest, or the room that the pair has now if that is less.
+A frame keeps its inset, and it closes round what it holds.
+A run that joins two cards in a straight line moves with the first card and slides along the wall of the second.
+The picture keeps alignment where it costs little: cards that stood on one station stay on one unless that holds them more than 40 units from where they could stand.
+A door or a bend that this leaves short of the runs it joins then moves back, so a line does not grow for nothing.
+The contraction translates cards without resizing them.
+Each shift is a whole number of units, so SVG rounding retains the original subpixel alignment at attachments.
+No run crosses a piece it did not cross, so crossings, bends and shared-route membership do not change, and no second route is needed.
 The planner places labels on the shorter runs and applies the complete geometry guard before emission.
-If that attempt fails, it finishes the original geometry through the same guard.
+A plate that fills its room exactly keeps its place when the label search finds no spot.
+If the guard refuses, the contraction tries a wider clearance, and then it finishes the original geometry through the same guard.
+Long detours and crowded approaches rank a drawing as it was routed, because contraction moves a card nearer what a route already reached.
+A crowded approach costs the rank two crossings, so it does not outweigh a page twice as large.
+A drawing that lands at a scale of 0.6 or more ranks before one that does not, because below that scale its words do not read.
 
 The planner compares complete guarded drawings by crossings close to card attachments, then by route cost.
 A crossing within two lanes of an attachment counts as a crowded approach.

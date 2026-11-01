@@ -7,7 +7,7 @@ use super::{
     topology::Topology,
 };
 use crate::{
-    blocks::assembly::{Placed, PlacedArea, PlacedLine, Title},
+    blocks::assembly::{Placed, PlacedArea, PlacedLine},
     geometry::{Point, Rect, inflate},
     graph::Node,
 };
@@ -27,16 +27,13 @@ pub(super) fn route(
     let candidates = candidates(&model, &topology, &mut shape, &previous)?;
     shape.routes = super::selection::greedy(&model, &topology, &shape, &candidates, orders)
         .map_err(|edges| blocked(&model, &edges))?;
-    let routed = Placed {
-        edges: shape.routes.clone(),
-        ..(*shape.drawing).clone()
-    };
+    let routed = shape.routed();
     let mut drawing = settled(&model, &topology, &mut shape)?;
     drawing.routed = Some(std::rc::Rc::new(routed));
     Ok(drawing)
 }
 
-/// Take a routed shape's empty bands and guard what is left.
+/// Close the space that a routed shape leaves, and guard what is left.
 pub(super) fn settled(
     model: &Model<'_>,
     topology: &Topology,
@@ -115,8 +112,8 @@ fn blocked(model: &Model<'_>, edges: &[usize]) -> super::Refused {
 
 /// The band a frame's title takes across its top: its tab, in a dense drawing.
 fn title_band(drawing: &Placed, frame: Rect, width: f64) -> Rect {
-    let held = |title: &&Title| title.band.x == frame.x && title.band.y == frame.y;
-    drawing.titles.iter().find(held).map_or(
+    let held = drawing.titles.iter().find(|title| title.stands_in(frame));
+    held.map_or(
         Rect {
             width,
             height: 0.0,

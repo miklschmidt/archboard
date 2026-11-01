@@ -691,9 +691,9 @@ Blocks is the default, and Tracks is the alternative, which the switch in the Ri
 _Avoid_: renderer core, layout mode, Track (`track` is only the value of a flag or a field)
 
 **Dense placement**:
-What Blocks tries first on a reading of one open frame of cards, or of a root with 18 or more lines: the parts on a shared grid, and the doors round the frame.
+What Blocks tries first on a reading of one open frame of cards, or of a root with 18 or more lines: the parts start on a grid, and the doors stand round the frame.
 A reading that it cannot route, or that holds a nested frame, keeps legacy placement.
-_Avoid_: compaction (that takes empty bands out of a routed drawing)
+_Avoid_: compaction (that closes the space nothing uses in a routed drawing, so its parts need not stay on the grid)
 
 **Scene**:
 The ordered, positioned list of what a picture is made of: shapes, glyph runs and the marks that a painter animates.

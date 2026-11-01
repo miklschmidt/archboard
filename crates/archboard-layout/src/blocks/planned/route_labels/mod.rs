@@ -546,6 +546,8 @@ fn update(
             labels.remember(edge, kept);
             continue;
         }
+        // A plate that contraction carried with its run can fill the room it has exactly, so
+        // that no search finds it, and it can stay where it stands.
         let (label, fallback) = slot_index(
             model,
             edge,
@@ -553,7 +555,11 @@ fn update(
             &shape.routes[index].points,
             strokes,
             labels,
-        )?;
+        )
+        .or_else(|| {
+            old.filter(|&at| clear(shape, edge, at, strokes, labels))
+                .map(|at| (at, true))
+        })?;
         changed |= old != Some(label);
         shape.labels.insert(edge, label);
         labels.remember(edge, label);

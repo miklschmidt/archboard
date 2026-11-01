@@ -143,6 +143,10 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
 10. A chain of modules with one part each folds, as a code host folds single-child folders. The crumbs show
     each step, and the tree shows one row.
 11. Focus draws exactly the focused subjects and their mutual lines. The rest become doors.
+12. The grid is a start and not a promise. Space between two cards exists only if something runs there at that height,
+    so a busy row or column does not hold apart its neighbors, and a short line to a neighbor takes the room of its
+    label. Cards stay on one line where that costs less than 40 units. The owner decided this on 2026-11-01, because
+    the forced grid read as mechanical, and the wish was less randomness.
 
 ## Where a reading lands
 
