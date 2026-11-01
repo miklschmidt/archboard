@@ -1,6 +1,5 @@
 // What a state is read against when nobody names a base. The reader's comparison control asks the
-// same question of the same catalogue (`hasBase` in the web app), so the answer here and there
-// must stay one.
+// same question through this shared rule, so the runtime and the control give one answer.
 
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import { followsCurrent } from "#shared/rules/compare/current-ancestry.ts";
@@ -49,6 +48,17 @@ function comparesWithCurrent(
 }
 
 /**
+ * Read a draft's explicit retained predecessor without applying it to completed states.
+ * @param reading The selected architecture.
+ * @returns Its pinned predecessor checkpoint, if it is a draft.
+ */
+function pinnedPredecessor(reading: ArchitectureModel): string | undefined {
+	const state = reading.selectedState;
+	if (state?.lifecycle !== "draft") return undefined;
+	return reading.proposals.find(({ id }) => id === state.id)?.predecessorCheckpoint;
+}
+
+/**
  * Open a proposal against the checkpoint its changes were written on, because it can hold
  * only a fragment of Current. Completed states compare with Current. A draft compares with
  * Current when it follows it, and otherwise with its retained predecessor. A draft with no
@@ -62,7 +72,8 @@ function defaultComparisonReference(
 	current: ArchitectureModelRead,
 ): ComparisonReference | undefined {
 	const state = selected.selectedState;
-	const pinned = selected.proposals.find(({ id }) => id === state?.id)?.predecessorCheckpoint;
+	if (state?.lifecycle === "current") return undefined;
+	const pinned = pinnedPredecessor(selected);
 	if (pinned !== undefined) return { selector: pinned, reason: "predecessor" };
 	if (comparesWithCurrent(state, current)) return currentReference(current);
 	return retainedPredecessor(state) ?? currentReference(current);

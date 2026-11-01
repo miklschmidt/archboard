@@ -24,7 +24,7 @@ import { comparisonOf } from "#runtime/operations/proposals/compare.ts";
 import {
 	defaultComparisonReference,
 	type ComparisonReference,
-} from "#runtime/operations/proposals/default-reference.ts";
+} from "#shared/rules/compare/default-reference.ts";
 import { retainedStates, stateCatalogue } from "#runtime/operations/history/states.ts";
 
 type Proposal = z.infer<typeof import("#shared/schemas/model-proposals.ts").ProposalSchema> & {
@@ -384,7 +384,6 @@ function comparisonReference(
 ): ComparisonReference | undefined {
 	if (selection.against !== undefined) return { selector: selection.against, reason: "explicit" };
 	if (selection.compare === false) return undefined;
-	if (selected.selectedState?.lifecycle === "current") return undefined;
 	return defaultComparisonReference(selected, current);
 }
 

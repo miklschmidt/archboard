@@ -22,6 +22,11 @@
 // subject can exist only on the other side; narrowing the variant first loses
 // that selection and makes a whole removed flow disappear.
 
+import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
+import {
+	defaultComparisonReference,
+	type ComparisonReference,
+} from "#shared/rules/compare/default-reference.ts";
 import {
 	currentVariant,
 	type SemanticBoard,
@@ -54,22 +59,43 @@ interface DrawnProposal {
 }
 
 /**
- * The variant another is read against: the board's current variant, or, on a
- * board with none, the one it came from.
- * @param board The board.
- * @param variant The variant being read.
- * @returns The variant to read it against, or undefined for the current
- * variant itself and for a draft that came from nothing on a board with no
- * current variant.
+ * Resolve a canonical reading's default reference, or a retained legacy variant's base.
+ * @param selected The selected canonical architecture.
+ * @param current The working reading or refusal.
+ * @returns Its default state or checkpoint reference. A retained legacy reading returns its base variant.
  */
 function comparedWith(
+	selected: ArchitectureModel,
+	current: ArchitectureModelRead,
+): ComparisonReference | undefined;
+function comparedWith(
+	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	variant: SemanticVariant,
+): SemanticVariant | undefined;
+function comparedWith(
+	selected: ArchitectureModel | Pick<SemanticBoard, "name" | "current" | "variants">,
+	reading: ArchitectureModelRead | SemanticVariant,
+): ComparisonReference | SemanticVariant | undefined {
+	if ("success" in selected && "success" in reading)
+		return defaultComparisonReference(selected, reading);
+	if ("variants" in selected && "content" in reading) return legacyReference(selected, reading);
+	throw new TypeError(
+		"Select a model and its current reading, or a retained board and its variant.",
+	);
+}
+
+/**
+ * Resolve the comparison of a retained legacy variant.
+ * @param board The retained board.
+ * @param variant The selected variant.
+ * @returns Its current variant or retained parent.
+ */
+function legacyReference(
 	board: Pick<SemanticBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant | undefined {
 	const current = currentVariant(board);
-	if (current !== undefined) {
-		return current.id === variant.id ? undefined : current;
-	}
+	if (current !== undefined) return current.id === variant.id ? undefined : current;
 	return variant.parent === undefined
 		? undefined
 		: board.variants.find((one) => one.id === variant.parent);

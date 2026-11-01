@@ -2,6 +2,7 @@
 // keeps its own values: `after` turns a default comparison off, and nothing at all means the
 // default. A person reads neither.
 
+import { comparedWith as defaultComparisonReference } from "@archboard/board/comparison";
 import type { Model } from "@archboard/board/content";
 import { changedCount, reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
@@ -46,56 +47,13 @@ function readsCurrent(reading: Model): boolean {
 }
 
 /**
- * The checkpoint that a draft's changes were written on.
- * @param reading The reading.
- * @returns The checkpoint, or undefined for a reading that is no pinned draft.
- */
-function pinnedBase(reading: Model): string | undefined {
-	const id = reading.selectedState?.id;
-	return reading.proposals.find((proposal) => proposal.id === id)?.predecessorCheckpoint;
-}
-
-/**
- * Whether a reading has a base of its own, as the server chooses one by default. A draft pinned to
- * a checkpoint has that, and so has a draft that does not follow Current: the retained predecessor.
+ * Whether the runtime gives this reading a retained base by default.
  * @param reading The reading.
  * @param catalogue The current catalogue.
- * @returns True when the default comparison is neither Current nor nothing.
+ * @returns True when the default comparison uses a predecessor.
  */
 function hasBase(reading: Model, catalogue: Model | undefined): boolean {
-	const state = reading.selectedState;
-	if (state === null || state.lifecycle === "current") return false;
-	return pinnedBase(reading) !== undefined || leavesCurrent(state, catalogue);
-}
-
-/**
- * Whether a draft's chain of predecessors reaches the current state, as the server asks before it
- * chooses a default base.
- * @param state The draft.
- * @param catalogue The current catalogue.
- * @returns True when the chain reaches Current.
- */
-function followsCurrent(state: NonNullable<Model["selectedState"]>, catalogue: Model): boolean {
-	const by = new Map(catalogue.proposals.map(({ id, predecessor }) => [id, predecessor]));
-	const seen = new Set<string>();
-	let at = state.predecessor;
-	while (at != null && !seen.has(at)) {
-		if (at === catalogue.manifest.current?.id) return true;
-		seen.add(at);
-		at = by.get(at);
-	}
-	return false;
-}
-
-/**
- * Whether a draft has a predecessor and is not written on Current.
- * @param state The draft.
- * @param catalogue The current catalogue.
- * @returns True when the server reads it against its predecessor.
- */
-function leavesCurrent(state: NonNullable<Model["selectedState"]>, catalogue: Model | undefined) {
-	if (catalogue === undefined || state.predecessor == null) return false;
-	return !followsCurrent(state, catalogue);
+	return defaultComparisonReference(reading, catalogue ?? reading)?.reason === "predecessor";
 }
 
 /**

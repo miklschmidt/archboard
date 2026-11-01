@@ -56,9 +56,12 @@ An exact checkpoint instead uses its retained inputs and token.
 An exact read of a previously current state reports lifecycle `historical`.
 It never changes the checkout's designation.
 
-Non-current readings compare against current by default.
-Without current, a dependent draft compares against its retained predecessor.
-A planning root has no predecessor comparison.
+A draft with a `predecessorCheckpoint` compares against that checkpoint by default.
+A draft that follows Current through its predecessor chain compares against Current.
+An independent draft compares against its retained predecessor, even when Current exists.
+A draft with no predecessor compares against Current when one exists.
+Without Current, that planning root has no default comparison.
+Completed states compare against Current when one exists.
 An explicit comparison can select two coherent named states or exact checkpoints.
 The existing semantic comparison rules report changes by subject identity.
 The response includes the comparison base revision independently of the selected revision.

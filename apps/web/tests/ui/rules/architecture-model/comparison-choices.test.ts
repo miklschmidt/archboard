@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { comparedWith as defaultComparisonReference } from "@archboard/board/comparison";
 import type { Model } from "@archboard/board/content";
 import { SHOP } from "#tests/ui/support/architecture-model/scene.ts";
 import {
@@ -204,6 +205,7 @@ test("a draft written on a planning root has that root as its base, not Current"
 			id: "Mine",
 			name: "Mine",
 			lifecycle: "draft",
+			baseline: mine.baseline,
 			predecessor,
 		};
 		const catalogue = reading({ selectedState: CURRENT, proposals: [root, mine] });
@@ -216,3 +218,18 @@ test("a draft written on a planning root has that root as its base, not Current"
 	expect(bases("Root")).toContain(":base");
 	expect(bases("Now")).not.toContain(":base");
 });
+
+// A completed pinned draft must lose the draft-only default in both consumers.
+for (const lifecycle of ["historical", "shelved"] as const) {
+	test(`${lifecycle} states offer Current instead of a draft base, even with no comparison`, () => {
+		const model = reading({ selectedState: { ...DRAFT, lifecycle, baseline: PINNED.baseline } });
+		expect(defaultComparisonReference(model, CATALOGUE)).toEqual({
+			selector: "current",
+			reason: "current",
+		});
+		for (const against of [null, "after", "current"]) {
+			expect(values(model, against)).not.toContain(":base");
+			expect(values(model, against)).toContain("current");
+		}
+	});
+}
