@@ -428,9 +428,11 @@ test("projected connections expose complete ordered relationships and module int
 	).toEqual(["Shop#Self"]);
 	await pollUntil(
 		() =>
-			browser.eval<boolean>(`document.querySelector('[data-slot="model-diagram"] svg') !== null`),
+			browser.eval<boolean>(
+				`document.querySelector('[data-slot="model-diagram"] svg') !== null && document.querySelector('[data-slot="model-diagram"] [data-picture-motion]') === null`,
+			),
 		Boolean,
-		"the scoped scene",
+		"the scoped scene at rest",
 		WAIT,
 	);
 	const revision = await browser.eval<string>(
