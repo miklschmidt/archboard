@@ -3,6 +3,7 @@ import { cpSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
+	type ArchitectureModuleEdit,
 	ArchitectureModelReadSchema,
 	ArchitectureModuleEditResultSchema,
 } from "@archboard/board/model";
@@ -370,4 +371,72 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
 	expect(JSON.parse(catalogue.stdout).states).toEqual(
 		expect.arrayContaining([expect.objectContaining({ id: "Current", lifecycle: "historical" })]),
 	);
+}, 20_000);
+
+/**
+ * Change only proposal metadata through the public writer.
+ * @param state The selected state or the current designation.
+ * @param proposal The metadata intent.
+ * @returns The retained operation receipt.
+ */
+async function metadataEdit(
+	state: string | undefined,
+	proposal: ArchitectureModuleEdit["proposal"],
+) {
+	const model = readArchitectureModel(vault);
+	if (!model.success || model.manifest.current === null) throw new Error(JSON.stringify(model));
+	const claims = readArchitectureClaims(vault);
+	if (!claims.success) throw new Error(JSON.stringify(claims));
+	for (const claim of claims.claims)
+		await releaseArchitectureClaim(vault, { claim: claim.id, writer: claim.writer });
+	const target = { model: model.manifest.id, state: state ?? model.manifest.current.id };
+	const claimed = await claimArchitectureSubjects(vault, {
+		target,
+		writer: "agent",
+		reason: "state selector contract",
+		subjects: [target.model, target.state],
+	});
+	if (!claimed.success) throw new Error(JSON.stringify(claimed));
+	const result = await editArchitectureModule(vault, {
+		target,
+		writer: "agent",
+		claim: claimed.claim.id,
+		operationId: crypto.randomUUID(),
+		doing: "Compare state name resolution",
+		expectedRevision: model.revision,
+		changes: [],
+		proposal,
+	});
+	if (!result.success) throw new Error(JSON.stringify(result));
+	return result;
+}
+
+test("CLI selectors and reader HTTP addresses prefer a state's name over another state's former name", async () => {
+	if (server === undefined) throw new Error("The server did not start");
+	const first = await metadataEdit(undefined, { type: "create", name: "Reusable" });
+	await metadataEdit(first.target.state!, { type: "edit", set: { name: "Renamed" } });
+	const former = await readArchitectureModel(vault, undefined, undefined, { state: "Reusable" });
+	expect(former).toMatchObject({
+		success: true,
+		selectedState: { id: first.target.state, formerNames: ["Reusable"] },
+	});
+	const second = await metadataEdit(undefined, { type: "create", name: "Reusable" });
+	for (const [selector, id] of [
+		["Reusable", second.target.state],
+		["Renamed", first.target.state],
+		[first.target.state!, first.target.state],
+	]) {
+		const cli = runServerCli({
+			repoRoot,
+			server,
+			args: ["model", "read", "--state", selector!],
+			input: undefined,
+		});
+		expect(cli.status, cli.stderr).toBe(0);
+		const query = new URLSearchParams({ vault, state: selector! });
+		const response = await fetch(`${server.base}/api/architecture/model?${query}`);
+		expect(response.status).toBe(200);
+		for (const answer of [JSON.parse(cli.stdout), await response.json()])
+			expect(answer).toMatchObject({ success: true, selectedState: { id } });
+	}
 }, 20_000);
