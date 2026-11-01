@@ -377,6 +377,7 @@ impl Entrance {
         };
         let mut plan = Plan::new(&scene.body, all, &wiring);
         plan.cover(rims(&groups, &times));
+        let length = plan.length();
         Entrance {
             plan,
             landed: scene.body.clone(),

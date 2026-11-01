@@ -30,6 +30,8 @@ mod phases;
 mod plan;
 mod rename;
 mod ride;
+#[cfg(test)]
+mod settling;
 mod spark;
 #[cfg(test)]
 mod testing;
@@ -476,6 +478,7 @@ impl Between {
         for (inserted, (place, mover)) in leavers.into_iter().enumerate() {
             plan.insert(place + inserted, mover);
         }
+        let length = plan.length();
         Between {
             plan,
             landed: to.body.clone(),

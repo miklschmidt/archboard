@@ -125,6 +125,11 @@ pub(super) struct Rim {
 }
 
 impl Rim {
+    /// Where the rim finishes cooling.
+    pub(super) fn end(&self) -> f64 {
+        self.start + RIM_SPAN
+    }
+
     /// The rim at a moment of the move: nothing outside its time.
     pub(super) fn at(&self, progress: f64) -> Vec<Item> {
         let lit = phase(progress, self.start, self.start + RIM_SPAN);
@@ -284,6 +289,11 @@ impl DrawOn {
             span,
             arrowhead_at,
         }
+    }
+
+    /// Where the line finishes drawing.
+    pub(super) fn end(&self) -> f64 {
+        self.span.1
     }
 
     /// The line this far through the move.

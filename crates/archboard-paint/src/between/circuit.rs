@@ -306,7 +306,10 @@ mod tests {
     #[test]
     fn a_line_from_outside_the_board_feeds_the_card_it_reaches() {
         let outside = square(-100.0, 0.0);
-        let runs = [between(FIRST, SECOND, 100.0), between(outside, FIRST, 100.0)];
+        let runs = [
+            between(FIRST, SECOND, 100.0),
+            between(outside, FIRST, 100.0),
+        ];
         let spans = run_order(&runs, &[FIRST, SECOND], 0.0);
         assert_eq!(spans, [(0.5, 1.0), (0.0, 0.5)]);
     }

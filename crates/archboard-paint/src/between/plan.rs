@@ -46,6 +46,18 @@ pub(super) enum Mover {
 }
 
 impl Mover {
+    /// Where this part finishes, including what follows the line's arrival.
+    fn end(&self) -> f64 {
+        match self {
+            Mover::Draw(draw) => draw.end(),
+            Mover::Grow(grow) => grow.end(),
+            Mover::Rim(rim) => rim.end(),
+            Mover::Frame(_, _, end) => *end,
+            Mover::Both(old, new) => old.end().max(new.end()),
+            _ => 1.0,
+        }
+    }
+
     /// The part at a moment of the move.
     fn at(&self, progress: f64) -> Vec<Item> {
         match self {
@@ -233,6 +245,11 @@ impl Plan {
             place.min(self.slots.len()),
             Slot::Mover(self.movers.len() - 1),
         );
+    }
+
+    /// Where every part of the move finishes.
+    pub(super) fn length(&self) -> f64 {
+        self.movers.iter().map(Mover::end).fold(1.0, f64::max)
     }
 
     /// The masks of the lines that move, at a moment of the move.

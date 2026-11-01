@@ -176,6 +176,11 @@ impl Grow {
         }
     }
 
+    /// Where the card finishes arriving.
+    pub(super) fn end(&self) -> f64 {
+        self.end
+    }
+
     /// The card at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Group {
         let here = phase(progress, self.start, self.end);
