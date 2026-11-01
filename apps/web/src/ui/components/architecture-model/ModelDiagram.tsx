@@ -12,7 +12,6 @@ import {
 	type KeyboardEvent,
 	type PointerEvent,
 } from "react";
-import { everyStep } from "@archboard/board/flow";
 import type { DiagramBox } from "@archboard/board/render-reply";
 import type { projectModel } from "@archboard/board/content";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
@@ -47,6 +46,7 @@ import {
 	subjectTip,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { useAreaSelection } from "#ui/hooks/architecture-model/use-area-selection.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
@@ -393,45 +393,6 @@ function ModelSubjectTip(props: {
 	return <ModelDoorTip target={target} scene={scene} said={tip} appearance={appearance} />;
 }
 
-/**
- * Select the subjects a rectangle on the viewport meets.
- * @param scene The accepted scene.
- * @param camera The pane's camera.
- * @param onSelectMany Told what the rectangle met.
- * @returns The rectangle's handler.
- */
-function useAreaSelection(
-	scene: AcceptedScene,
-	camera: BoardCamera,
-	onSelectMany: ModelDiagramProps["onSelectMany"],
-) {
-	const { projection, picture } = scene;
-	return useCallback(
-		(rectangle: DiagramBox, toggle: boolean): void => {
-			const pose = camera.view().camera;
-			const area = {
-				x: (rectangle.x - pose.x) / pose.scale,
-				y: (rectangle.y - pose.y) / pose.scale,
-				width: rectangle.width / pose.scale,
-				height: rectangle.height / pose.scale,
-			};
-			const known = new Set(
-				[
-					...projection.content.nodes,
-					...projection.content.edges,
-					...projectionSteps(projection),
-				].map((subject) => subject.id),
-			);
-			const boxes = { ...picture.atlas.regions, ...picture.atlas.nodes, ...picture.atlas.edges };
-			const ids = Object.entries(boxes)
-				.filter(([id, box]) => known.has(id) && intersects(box, area))
-				.map(([id]) => id);
-			onSelectMany(ids, toggle);
-		},
-		[camera, picture.atlas, onSelectMany, projection],
-	);
-}
-
 /** What the viewer marks on the picture of a scene. */
 interface SceneMarks {
 	selected: ReadonlySet<string>;
@@ -549,15 +510,6 @@ function projectedMarks(
 }
 
 /**
- * Only steps in the complete selected flow are selectable in its diagram.
- * @param projection The reading whose bounds the renderer returns.
- * @returns Canonical step identities, including nested control steps.
- */
-function projectionSteps(projection: ReturnType<typeof projectModel>) {
-	return projection.content.flows.flatMap((flow) => everyStep(flow.steps));
-}
-
-/**
  * Draw immediate selection feedback in viewport coordinates.
  * @param props The current pointer rectangle.
  * @param props.rectangle Its bounds in CSS pixels.
@@ -581,21 +533,6 @@ function ModelSelectionRectangle(props: { rectangle: DiagramBox }): JSX.Element 
 			className="border-primary bg-primary/10 pointer-events-none absolute border"
 			style={style}
 		/>
-	);
-}
-
-/**
- * Select only subjects whose drawn bounds meet the visible rectangle.
- * @param box The renderer-owned subject bounds.
- * @param area The selection in diagram units.
- * @returns Whether the subject intersects the selection.
- */
-function intersects(box: DiagramBox, area: DiagramBox): boolean {
-	return (
-		box.x <= area.x + area.width &&
-		box.x + box.width >= area.x &&
-		box.y <= area.y + area.height &&
-		box.y + box.height >= area.y
 	);
 }
 
