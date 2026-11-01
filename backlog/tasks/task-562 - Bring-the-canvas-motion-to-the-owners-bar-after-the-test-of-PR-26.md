@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T18:56:00Z'
+updated_date: '2026-11-01T20:12:00Z'
 labels:
   - renderer
   - motion
@@ -43,6 +43,8 @@ The owner tested PR 26 on the largest repository board and found the motion belo
 7. Correct docs/design/vello-painter.md and ADR 0071.
 
 8. Design the motion for the GPU: a lens at the blit stage, a bloom from the middle, shared subjects that fly across boards, and a door that carries its parts. Judge it against the owner's words, not against the old page.
+
+Review e25501ab2..42923cc56 against the motion contract. Repair verified interruption, reveal, and GPU faults with focused tests and signed commits. Finish with bun run check on the final commit.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -99,4 +101,6 @@ The owner asked for motion that reflects the depth of the recursive decompositio
 The final commit of this pass is 7ce152d81. `bun run check` passed on it, and parity is 0.157 percent of ink apart on average, worst case 0.78 percent. The commits after a268c576f are not pushed and did not receive the delegated review. The owner authorizes a push, and the review runs before it.
 
 Line reveal: the owner found the lines too fast and asked for lines along traced connections, or a reveal from the top left. A spark now draws each line in the order of the connections, a card it lands on takes the spark round its edge, and a line that changes its shape leaves and is drawn again. A first load finishes its lines at about 2.1 s and a door at about 1.9 s. The diagonal reveal was filmed for comparison and removed, because its order says nothing about the board. The commit is d28988f4d. bun run check passed on it, 21 of 21. Nothing after a268c576f is pushed or reviewed. Video: /tmp/vello/line-reveal.mp4. AC 5 stays open until the owner retests Hyprland, and AC 6 and AC 7 stay open until the owner judges the motion.
+
+The review covers the painter and browser scene decisions within their existing owners. It changes no architecture module, relationship, flow, or consumer contract, so the canonical model needs no proposal.
 <!-- SECTION:NOTES:END -->

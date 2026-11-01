@@ -97,9 +97,15 @@ impl Reach<'_> {
         let fed: Vec<bool> = (0..self.boxes.len())
             .map(|at| self.links.iter().any(|link| link.1 == Some(at)))
             .collect();
-        for link in &self.links {
-            if let Some(from) = link.0.filter(|&from| !fed[from]) {
+        for &(from, to, length) in &self.links {
+            if let Some(from) = from.filter(|&from| !fed[from]) {
                 self.reached[from] = Some(0.0);
+            }
+            if from.is_none()
+                && let Some(to) = to
+                && self.reached[to].is_none_or(|known| length < known)
+            {
+                self.reached[to] = Some(length);
             }
         }
         self.spread();
@@ -294,6 +300,14 @@ mod tests {
     fn a_ring_takes_the_spark_in_at_its_top_left() {
         let runs = [between(SECOND, FIRST, 100.0), between(FIRST, SECOND, 100.0)];
         let spans = run_order(&runs, &[SECOND, FIRST], 0.0);
+        assert_eq!(spans, [(0.5, 1.0), (0.0, 0.5)]);
+    }
+
+    #[test]
+    fn a_line_from_outside_the_board_feeds_the_card_it_reaches() {
+        let outside = square(-100.0, 0.0);
+        let runs = [between(FIRST, SECOND, 100.0), between(outside, FIRST, 100.0)];
+        let spans = run_order(&runs, &[FIRST, SECOND], 0.0);
         assert_eq!(spans, [(0.5, 1.0), (0.0, 0.5)]);
     }
 
