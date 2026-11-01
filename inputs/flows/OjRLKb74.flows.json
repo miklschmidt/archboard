@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/OjRLKb74#EnnH7t3r",
       "name": "Measure, settle, paint",
+      "summary": "The renderer core's path from content to picture: measure every word, settle one drawing and paint it with its subject atlas. A remembered layout skips the first two when nothing it depends on changed.",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
         "vKEsyHFk/gbyqW4H3#J3yMo4ag",
@@ -197,12 +198,12 @@
             "symbol": "paint_architecture"
           }
         }
-      ],
-      "summary": "The renderer core's path from content to picture: measure every word, settle one drawing and paint it with its subject atlas. A remembered layout skips the first two when nothing it depends on changed."
+      ]
     },
     {
       "id": "vKEsyHFk/OjRLKb74#8bDSfxwQ",
       "name": "Sizing a card",
+      "summary": "Shapes a card's name and responsibility in their faces, clamps the width between 260 and 340, and breaks the lines there. Layout then works with exact sizes, so the words fit in every picture.",
       "participants": [
         "vKEsyHFk/OjRLKb74#nmyK8UOO",
         "vKEsyHFk/gbyqW4H3#J3yMo4ag"
@@ -376,12 +377,12 @@
             "symbol": "measure_node"
           }
         }
-      ],
-      "summary": "Shapes a card's name and responsibility in their faces, clamps the width between 260 and 340, and breaks the lines there. Layout then works with exact sizes, so the words fit in every picture."
+      ]
     },
     {
       "id": "vKEsyHFk/OjRLKb74#zSKT3nqZ",
       "name": "Lay out a drawing",
+      "summary": "States containment, sizes and order as one compound graph and solves it once on a layout worker. It then cuts the page to what it draws and bridges the crossings, so a painter receives settled geometry.",
       "participants": [
         "vKEsyHFk/gbyqW4H3#Y0smyqtZ",
         "vKEsyHFk/OjRLKb74#ZRFUJrjD",
@@ -539,12 +540,12 @@
             "symbol": "draw"
           }
         }
-      ],
-      "summary": "States containment, sizes and order as one compound graph and solves it once on a layout worker. It then cuts the page to what it draws and bridges the crossings, so a painter receives settled geometry."
+      ]
     },
     {
       "id": "vKEsyHFk/OjRLKb74#KBB38tYG",
       "name": "Place the blocks",
+      "summary": "Places each block from the innermost out: rows or columns for a block of blocks, Graphviz ranks for a block of cards. If settling the ports scores worse, the earlier placement stays.",
       "participants": [
         "vKEsyHFk/OjRLKb74#qtwaBhit",
         "vKEsyHFk/OjRLKb74#Wp2usbe5",
@@ -787,8 +788,7 @@
             }
           ]
         }
-      ],
-      "summary": "Places each block from the innermost out: rows or columns for a block of blocks, Graphviz ranks for a block of cards. If settling the ports scores worse, the earlier placement stays."
+      ]
     }
   ]
 }

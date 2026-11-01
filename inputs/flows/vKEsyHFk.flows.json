@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/vKEsyHFk#C6LkFhjC",
       "name": "One recording",
+      "summary": "model record from start to video. It checks ffmpeg's encoders, narrates the walkthrough in headless Chromium and keeps talk.json with voice.wav, then replays the talk frame by frame into ffmpeg.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
@@ -291,8 +292,7 @@
             }
           ]
         }
-      ],
-      "summary": "model record from start to video. It checks ffmpeg's encoders, narrates the walkthrough in headless Chromium and keeps talk.json with voice.wav, then replays the talk frame by frame into ffmpeg."
+      ]
     }
   ]
 }

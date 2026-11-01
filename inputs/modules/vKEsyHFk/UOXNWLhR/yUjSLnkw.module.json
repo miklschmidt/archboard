@@ -26,6 +26,19 @@
       "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
     },
     {
+      "order": 54000,
+      "kind": "call",
+      "label": "move the pane into the repository a drill-down names",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
+        "symbol": "useDrillRepositories"
+      },
+      "id": "vKEsyHFk/yejBBUFY#A19ksdGe",
+      "to": "vKEsyHFk/yejBBUFY#WWPvFeLg"
+    },
+    {
       "order": 105000,
       "kind": "call",
       "label": "the target board's document, in the vault it is in",
@@ -76,19 +89,6 @@
       },
       "id": "vKEsyHFk/UOXNWLhR#X1i20uYe",
       "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
-    },
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "move the pane into the repository a drill-down names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
-        "symbol": "useDrillRepositories"
-      },
-      "id": "vKEsyHFk/yejBBUFY#A19ksdGe",
-      "to": "vKEsyHFk/yejBBUFY#WWPvFeLg"
     }
   ]
 }

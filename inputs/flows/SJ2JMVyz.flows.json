@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/SJ2JMVyz#PzwdxC3t",
       "name": "A chat sends a typed message",
+      "summary": "The gateway admits a chat's command under the tab's lease, reads the thread's status, and starts or steers a turn. A start needs an idle thread and a steer an active one, and the chat gets the outcome.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#jylkTBp7"
@@ -116,12 +117,12 @@
             "symbol": "createCommandExecutor"
           }
         }
-      ],
-      "summary": "The gateway admits a chat's command under the tab's lease, reads the thread's status, and starts or steers a turn. A start needs an idle thread and a steer an active one, and the chat gets the outcome."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#f9ntEBs4",
       "name": "A chat edits the queue",
+      "summary": "Adds, updates, deletes, reorders or starts a queued submission on the shown checkout's workhorse, and lists the queue before and after. The change counts as delivered only when the list shows it.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#kEF4DfR4",
@@ -307,12 +308,12 @@
             "symbol": "createCommandExecutor"
           }
         }
-      ],
-      "summary": "Adds, updates, deletes, reorders or starts a queued submission on the shown checkout's workhorse, and lists the queue before and after. The change counts as delivered only when the list shows it."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#LcGiwa22",
       "name": "The coordinator delegates work",
+      "summary": "Seen from the workhorse: operations run one at a time, so two effects never interleave on a thread. Each is staged in the epoch ledger, and a busy workhorse queues the work while an idle one starts it.",
       "participants": [
         "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
         "vKEsyHFk/9ncuT5DP#tlC2W839",
@@ -592,12 +593,12 @@
             "symbol": "delegate"
           }
         }
-      ],
-      "summary": "Seen from the workhorse: operations run one at a time, so two effects never interleave on a thread. Each is staged in the epoch ledger, and a busy workhorse queues the work while an idle one starts it."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#4dRHD7sM",
       "name": "The coordinator steers a turn",
+      "summary": "Adds the coordinator's direction to the running turn, but only when it is the turn that the coordinator named. The check repeats after staging, so the words never land on other work.",
       "participants": [
         "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
         "vKEsyHFk/9ncuT5DP#tlC2W839",
@@ -767,12 +768,12 @@
             }
           ]
         }
-      ],
-      "summary": "Adds the coordinator's direction to the running turn, but only when it is the turn that the coordinator named. The check repeats after staging, so the words never land on other work."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#MedLccOG",
       "name": "The coordinator stops its workhorses",
+      "summary": "Interrupts the running turn of every workhorse in the tab session and reports what each one did. It is the one stop for all of a tab's work, in whichever checkout it runs.",
       "participants": [
         "vKEsyHFk/qKGcB6vZ#5sWG4uuq",
         "vKEsyHFk/9ncuT5DP#kEF4DfR4",
@@ -863,12 +864,12 @@
             "symbol": "stopWorkhorses"
           }
         }
-      ],
-      "summary": "Interrupts the running turn of every workhorse in the tab session and reports what each one did. It is the one stop for all of a tab's work, in whichever checkout it runs."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#MTUfHdHP",
       "name": "A workhorse is started",
+      "summary": "Creates a workhorse thread with its instructions and tool manifests, and commits its ownership to the epoch ledger. A thread whose link turns out not to be executable is deleted again.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#6Jjha6LN",
@@ -1083,12 +1084,12 @@
             "symbol": "createCodexWorkhorseStart"
           }
         }
-      ],
-      "summary": "Creates a workhorse thread with its instructions and tool manifests, and commits its ownership to the epoch ledger. A thread whose link turns out not to be executable is deleted again."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#8hIMTyN6",
       "name": "A workhorse tells the coordinator",
+      "summary": "Carries a workhorse's message of up to 2048 characters through the callback queue, one at a time and in order. The workhorse gets an answer in words: delivered, unknown or not sent.",
       "participants": [
         "vKEsyHFk/SJ2JMVyz#WaIHZ8sZ",
         "vKEsyHFk/9ncuT5DP#08zJvPJq",
@@ -1250,12 +1251,12 @@
             "symbol": "answerFor"
           }
         }
-      ],
-      "summary": "Carries a workhorse's message of up to 2048 characters through the callback queue, one at a time and in order. The workhorse gets an answer in words: delivered, unknown or not sent."
+      ]
     },
     {
       "id": "vKEsyHFk/SJ2JMVyz#ta8eQUYu",
       "name": "A thread waits on other threads",
+      "summary": "Registers a wait as edges in the wait graph, and refuses one that would close a cycle instead of hanging until a timeout. The edges go on completion, cancellation, interruption and disconnect.",
       "participants": [
         "vKEsyHFk/SJ2JMVyz#ZGoXFusm",
         "vKEsyHFk/SJ2JMVyz#abHx4peq"
@@ -1383,8 +1384,7 @@
             }
           ]
         }
-      ],
-      "summary": "Registers a wait as edges in the wait graph, and refuses one that would close a cycle instead of hanging until a timeout. The edges go on completion, cancellation, interruption and disconnect."
+      ]
     }
   ]
 }
