@@ -7,6 +7,10 @@ use kurbo::{Affine, BezPath, ParamCurve as _, Shape as _, Vec2};
 /// How closely a curve stands in for a circle or a rounded corner.
 const TOLERANCE: f64 = 0.05;
 
+/// How closely the straight pieces of a dashed path follow its curves, in the
+/// picture's units.
+const DASH_TOLERANCE: f64 = 0.02;
+
 /// SVG's default miter limit, which a sharp join of a stroke keeps.
 const MITER_LIMIT: f64 = 4.0;
 
@@ -143,6 +147,15 @@ pub(crate) fn outline_of(geometry: &Geometry) -> (BezPath, kurbo::Rect) {
     };
     let bounds = bounds.unwrap_or_else(|| path.bounding_box());
     (path, bounds)
+}
+
+/// A path cut into straight pieces, ready to dash. A dash measures each curve to
+/// one part in a million, which took a quarter of a flight's frames, and a
+/// straight piece takes no measuring.
+pub(crate) fn straightened(path: &BezPath) -> BezPath {
+    let mut straight = BezPath::new();
+    kurbo::flatten(path, DASH_TOLERANCE, |element| straight.push(element));
+    straight
 }
 
 /// A stroke as a canvas takes it, its width times `scale`.

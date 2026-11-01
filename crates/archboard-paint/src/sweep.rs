@@ -11,7 +11,7 @@ use archboard_scene::scene::{
 };
 use kurbo::{BezPath, Rect, Shape as _};
 
-use crate::path::{path_of, stroke_of};
+use crate::path::{path_of, straightened, stroke_of};
 use crate::timing::{Curve, EASE_OUT};
 
 /// How much wider than its line a sweep is drawn, in the picture's units.
@@ -137,7 +137,7 @@ impl Copy {
             dash_offset: None,
             ..shape.stroke.clone()?
         };
-        let path = path_of(steps);
+        let path = straightened(&path_of(steps));
         let length = path.perimeter(ACCURACY);
         let drawing = timing.longest.min(timing.shortest.max(length / SPEED));
         Some(Copy {

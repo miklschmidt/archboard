@@ -15,7 +15,7 @@ use crate::canvas::{Canvas, Ink};
 use crate::definitions::Definitions;
 use crate::outlines::Outlines;
 use crate::palette::Palette;
-use crate::path::{end_of, outline_of, path_of, placed, rect_of, stroke_of};
+use crate::path::{end_of, outline_of, path_of, placed, rect_of, straightened, stroke_of};
 use crate::presentation::Presentation;
 use crate::raise::drawn_in_order;
 use crate::sweep::{holds_lines, is_part, only_moves};
@@ -554,7 +554,12 @@ impl<C: Canvas> Walk<'_, C> {
             return;
         };
         let grown = self.far_scale(stroke, &shape.geometry, inside);
-        self.canvas.stroke(path, &stroke_of(stroke, grown), &ink);
+        let straight = (!stroke.dashes.is_empty()).then(|| straightened(path));
+        self.canvas.stroke(
+            straight.as_ref().unwrap_or(path),
+            &stroke_of(stroke, grown),
+            &ink,
+        );
         let width = stroke.width.unwrap_or(1.0) * grown;
         let ends = [(&shape.marker, false), (&shape.start_marker, true)];
         for (marker, start) in ends {
