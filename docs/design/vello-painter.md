@@ -283,7 +283,10 @@ The lens takes no measurable frame time. A flight on the large board at 6144x172
 | New flight, no lens | 11.3 to 11.9 ms       | 18.5 to 19.1 ms | 6                 |
 | New flight, lens    | 11.7 to 13.8 ms       | 18.5 to 19.3 ms | 6                 |
 
-The same few long frames appear in all three builds, near the start of a flight. They are not new, and this pass did not find their cause.
+The same few long frames appear in all three builds, near the start of a flight. They are not new.
+The cause is the page, not the painter. When a picture arrives, the page replaces the SVG that it keeps for hit testing, and the next two reads of a size force a layout of that SVG.
+On the large board, this is one task of 74 to 116 ms. It lands before the move runs, and the time of a move starts with the first frame drawn of it, so the move loses no frames.
+This pass left that cost in place, because the code that reads the surface expects the next picture to be there at once.
 The levels of the lens take about 35 MB of GPU memory on a canvas of 13 megapixels. The page allocates them with the first frame that uses the lens.
 
 ### What this pass covered
@@ -293,4 +296,7 @@ It also filmed a flight and a first load on the light ground.
 It filmed a sidebar move and a flight with `prefers-reduced-motion`, and a sidebar move was one cut with no blur.
 
 The pass over the depth moves filmed these moves in the repository's own model and looked at the frames: a sidebar move sideways at each of two depths, a flight in and out from the sidebar, a zoom in and a zoom out with no flight, a zoom into a card with the wait for a flight set to 0, and a sideways move with `prefers-reduced-motion`, which was one cut.
+It also filmed a move to a grandchild, a move two levels up, a change of mind during a passage, a door to a shallower board, Back, and a sideways move on the light ground.
+Eight sideways moves between two large boards gave 913 frames in about 16 seconds, with 11 frames over 25 ms.
+A move that a walkthrough makes between boards was not filmed in this pass. The film of a walkthrough stayed on one board.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.
