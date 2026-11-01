@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T15:51:00Z'
+updated_date: '2026-11-01T16:27:00Z'
 labels:
   - renderer
   - motion
@@ -41,6 +41,8 @@ The owner tested PR 26 on the largest repository board and found the motion belo
 5. First scroll: reproduce at the real window size, 7680x2160 at scale 1.25, in an empty profile. The owner retests on Hyprland.
 6. Hill climb every moment with captured frames, at the real window size, judged against what the GPU painter can do, not against the old page.
 7. Correct docs/design/vello-painter.md and ADR 0071.
+
+8. Design the motion for the GPU: a lens at the blit stage, a bloom from the middle, shared subjects that fly across boards, and a door that carries its parts. Judge it against the owner's words, not against the old page.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -79,4 +81,14 @@ These repairs stay within the existing browser, renderer, and painter owners. Th
 This review does not retest Hyprland workspace switches or establish visual acceptance.
 
 Review validation: The explicit core build passed. All 106 archboard-paint tests and the three GPU lifecycle tests passed. The focused page and painter tests passed. The final `bun run check` passed on commit 29ff33d69 with all 21 tasks and 49 browser owners. The review leaves no verified finding open. The task stays In Progress because this review does not establish its remaining visual and Hyprland acceptance criteria.
+
+## The owner's second test
+
+The owner said of the climb above: "These are just the same as it were before." They also said: "I expected some polished magic here." The climb fixed real faults and kept the old choreography. This pass designs the motion for the GPU. The design note holds the table of moments.
+
+One material carries it: focus. A lens runs between Vello and the surface while a picture moves, and a frame at rest never meets it. A flight keeps the card sharp over a blurred board, a move to another board racks through a dissolve, and an entrance comes into focus from the middle. A picture blooms out of its middle, shared subjects fly across a change of board, a door carries its parts inside it, and lines are drawn on with light at their heads.
+
+A true before and after of a flight shows no new long frames, and a build with the lens switched off gives the same numbers as one with it. The design rule against blur over the picture now names shell layers, because the lens is part of the picture. That is a change to a stated rule, so the owner can reverse it.
+
+AC 6 stays open until the owner judges this pass.
 <!-- SECTION:NOTES:END -->

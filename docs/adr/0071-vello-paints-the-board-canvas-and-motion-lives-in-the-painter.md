@@ -52,6 +52,23 @@ run with no GPU and no DOM, and the Rust tests own them. The durations stay in
 An in-between is also a scene, so a picture that arrives during a flight starts from
 what shows. Nothing lands first.
 
+### A move is a rack of focus
+
+The owner tested the first painter and said: "These are just the same as it were before."
+The first climb repaired the old choreography and kept it. So motion is now designed for the GPU.
+
+A lens runs between Vello and the surface while a picture moves.
+It halves the frame six times, and it shows the frame sharp in one rounded box and out of focus around it.
+The stage says what the box is on each frame, and the same box serves every move.
+A flight holds the card, a door holds its growing frame, and an entrance holds a circle that opens from the middle.
+A frame at rest never meets the lens, so parity at rest holds and a picture at rest costs nothing more.
+The CPU painter has no lens, so a recording and a machine with no WebGPU show the same moves with no blur.
+
+A picture blooms out of its middle, and a card that the last picture also drew flies from where it stood.
+The board inside a card blooms as the camera flies in, and it gathers again on the way back.
+The parts of a door ride inside the door as it grows, so no frame travels empty.
+A subject id is one identity across boards, and this is what lets a door on one board fly to its place on the next.
+
 ### The page keeps the decisions, and the stage keeps the motion
 
 The page decides which arrival a picture gets and how far the shared cards moved.

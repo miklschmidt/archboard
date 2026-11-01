@@ -48,8 +48,6 @@ pub struct Lens {
     pub blur: f64,
     /// How far the rest has sunk into the ground, from 0 to 1.
     pub sink: f64,
-    /// The ground it sinks into.
-    pub ground: Color,
 }
 
 /// A surface that takes one frame's drawing.
@@ -82,8 +80,9 @@ pub trait Canvas {
     /// End what [`Canvas::keep`] started: keep it under a key, and draw it
     /// under a transform.
     fn kept(&mut self, _key: PartKey, _transform: Affine) {}
-    /// See this frame through a lens. A canvas with none shows the frame as drawn.
-    fn look_through(&mut self, _lens: Lens) {}
+    /// See this frame through a lens, the picture sinking into a ground. A canvas
+    /// with no lens shows the frame as drawn.
+    fn look_through(&mut self, _lens: Lens, _ground: Color) {}
 }
 
 /// A canvas that only counts, for tests of what a frame draws.

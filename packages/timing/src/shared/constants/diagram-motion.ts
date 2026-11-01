@@ -46,11 +46,12 @@ const PICTURE_MS = durations({
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
 	 * the first picture of a page, another board, another view of this one.
 	 *
-	 * The picture is built up the way it is read: frames, then cards in reading
-	 * order, then the lines between cards already there, so the eye lands on the
-	 * structure before the detail. Pulls against the wait itself: somebody who asked
-	 * for a board wants to read it, so the whole entrance is barely longer than a
-	 * transition, and a card is readable well before the last line is drawn.
+	 * The picture blooms out of its middle: frames, then cards in a wave, then the
+	 * lines between them drawn on with light at their heads, and each label as its
+	 * line reaches it. A card the last picture also drew flies from where it stood.
+	 * Pulls against the wait itself: somebody who asked for a board wants to read
+	 * it, so the whole entrance is barely longer than a transition, and a card is
+	 * readable well before the last line is drawn.
 	 */
 	entry: 760,
 	/**
@@ -168,10 +169,9 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	/** How long a line's pulses take to come in once the line is drawn. */
 	pulseSpan: 0.12,
 	/**
-	 * Every connection label only the new picture has arrives from here to the
-	 * end, all together. Timed by its own line, labels came in scattered batches
-	 * of every size and each one in a blink; together at the end they arrive as
-	 * the last layer of the picture, once the lines they name are in place.
+	 * What stands on the lines and belongs to none of them, the marks where routes
+	 * join, arrives from here to the end. A label that names a line arrives as the
+	 * line reaches it: the wave leaves the middle, so labels ring outward with it.
 	 */
 	labelsStart: 0.66,
 });

@@ -12,7 +12,7 @@ use archboard_paint::canvas::{Canvas, Ink, Lens, PartKey};
 use futures_channel::oneshot;
 use js_sys::Function;
 use kurbo::{Affine, BezPath, Rect, Shape as _};
-use peniko::{BlendMode, Brush, Compose, Fill, Mix};
+use peniko::{BlendMode, Brush, Color, Compose, Fill, Mix};
 use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
 use wasm_bindgen::{JsError, JsValue};
 use web_sys::{HtmlCanvasElement, OffscreenCanvas};
@@ -78,8 +78,8 @@ pub(crate) struct GpuCanvas {
     boxes: Vec<Option<Rect>>,
     /// Scenes to use again for see-through layers.
     spare: Vec<Scene>,
-    /// The lens this frame is seen through, if any.
-    lens: Option<Lens>,
+    /// The lens this frame is seen through and the ground it sinks into, if any.
+    lens: Option<(Lens, Color)>,
 }
 
 impl Canvas for GpuCanvas {
@@ -161,8 +161,8 @@ impl Canvas for GpuCanvas {
         true
     }
 
-    fn look_through(&mut self, lens: Lens) {
-        self.lens = Some(lens);
+    fn look_through(&mut self, lens: Lens, ground: Color) {
+        self.lens = Some((lens, ground));
     }
 
     fn kept(&mut self, key: PartKey, transform: Affine) {
@@ -421,12 +421,14 @@ fn first_frame(canvas: &mut GpuCanvas) {
     canvas.fill(&square, &ink, false);
     canvas.stroke(&square, &kurbo::Stroke::new(2.0), &ink);
     canvas.pop();
-    canvas.look_through(Lens {
-        focus: None,
-        blur: 1.0,
-        sink: 0.0,
-        ground: peniko::color::palette::css::BLACK,
-    });
+    canvas.look_through(
+        Lens {
+            focus: None,
+            blur: 1.0,
+            sink: 0.0,
+        },
+        peniko::color::palette::css::BLACK,
+    );
 }
 
 /// A surface and all that draws on it.
@@ -562,11 +564,16 @@ impl GpuTarget {
         let mut encoder = gpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        if let Some(lens) = &self.canvas.lens {
+        if let Some((lens, ground)) = &self.canvas.lens {
             let levels = self.levels.get_or_insert_with(|| {
                 LensLevels::new(&gpu.device, &self.lens, &self.view, (width, height))
             });
-            levels.draw(&self.lens, (&gpu.queue, &mut encoder), &view, lens);
+            levels.draw(
+                &self.lens,
+                (&gpu.queue, &mut encoder),
+                &view,
+                (lens, *ground),
+            );
         } else {
             self.blitter
                 .copy(&gpu.device, &mut encoder, &self.view, &view);

@@ -13,7 +13,7 @@ const RETURNS_FROM: f64 = 0.58;
 const RETURNS_BY: f64 = 0.92;
 
 /// How far through one phase a moment is: 0 before it, 1 after it.
-pub(super) fn phase(progress: f64, start: f64, end: f64) -> f64 {
+pub(crate) fn phase(progress: f64, start: f64, end: f64) -> f64 {
     if end <= start {
         return if progress >= end { 1.0 } else { 0.0 };
     }

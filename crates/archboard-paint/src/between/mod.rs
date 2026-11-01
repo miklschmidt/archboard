@@ -41,7 +41,7 @@ use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, Subject
 use arrive::{Ground, Grow, LABEL_GONE_BY, Leave, Swap};
 use card::CardCarry;
 use content::{is_parked, shell, unpark, unpark_held};
-use ease::{emphasised, phase};
+use ease::emphasised;
 use found::{Form, Found, found, holds_subject, pair};
 use line::{DrawOn, LineCarry};
 use plan::{Mover, Plan, Riding, Wiring};
@@ -49,6 +49,7 @@ use ride::{Ride, mark_of};
 use unfold::{Doors, Inside, Unfold};
 
 pub use departure::{Heading, departure, visible_at};
+pub(crate) use ease::phase;
 pub use entrance::{Entrance, Handover};
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;

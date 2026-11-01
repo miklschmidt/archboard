@@ -586,8 +586,8 @@ impl Stage {
         self.advance(now);
         if self.shown.is_some() {
             self.draw_frame(canvas, now);
-            if let Some(lens) = self.lens_at(now) {
-                canvas.look_through(lens);
+            if let Some((lens, ground)) = self.lens_at(now) {
+                canvas.look_through(lens, ground);
             }
             self.drawn = true;
         }

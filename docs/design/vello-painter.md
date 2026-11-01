@@ -235,3 +235,41 @@ A failed painter releases its resources and restores the SVG glyphs and definiti
 The stage hides the failed canvas while a replacement starts.
 If the CPU painter also fails, the surface keeps complete ink.
 React owns the canvas host, and the stage owns each canvas inside it.
+
+## The motion designed for the GPU
+
+The owner tested the climb above and said: "These are just the same as it were before." They also said: "I expected some polished magic here."
+The climb repaired faults and kept the old choreography, so its last pass does not mean that the motion is finished.
+This pass threw the old choreography away where a GPU can do better. It keeps the camera path, the durations and the identity of each subject.
+
+The thesis is one material: focus. A reader goes somewhere, and that place stays sharp while the rest falls away.
+The focal moment is a card that opens into its board. Every other move is a quieter use of the same lens.
+
+| Moment                  | Before                                                                | Now                                                                                                                |
+| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| A flight into a card    | A zoom, with a finished small picture faded in inside the card.       | The card holds focus, and the board round it blurs and sinks. The parts of the next board bloom out of the middle. |
+| The way back            | The same zoom, run backward, on an empty stage for a moment.          | The parts gather into the card, and the board above rises into focus round it.                                     |
+| A move to another board | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.   |
+| A first load            | Frames, then cards down the board, then lines, then all labels.       | A wave leaves the middle: cards, then lines with light at their heads, then each label as its line reaches it.     |
+| A door opens            | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur. |
+| A door closes           | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                 |
+
+### What the lens costs
+
+The lens takes no measurable frame time. A flight on the large board at 6144x1725 CSS pixels, DPR 1.25, gave these numbers in headless Chrome at 60 Hz.
+
+| Build               | Median submit to done | 90th percentile | Frames over 25 ms |
+| ------------------- | --------------------- | --------------- | ----------------- |
+| Old flight          | 10.1 to 10.9 ms       | 19.1 to 23 ms   | 6                 |
+| New flight, no lens | 11.3 to 11.9 ms       | 18.5 to 19.1 ms | 6                 |
+| New flight, lens    | 11.7 to 13.8 ms       | 18.5 to 19.3 ms | 6                 |
+
+The same few long frames appear in all three builds, near the start of a flight. They are not new, and this pass did not find their cause.
+The levels of the lens take about 35 MB of GPU memory on a canvas of 13 megapixels. The page allocates them with the first frame that uses the lens.
+
+### What this pass covered
+
+This pass filmed each of these on the held clock and looked at the frames: a flight in, the way back, a sidebar move into a child, a move between siblings, a first load and a door that opens.
+It also filmed a flight and a first load on the light ground.
+It filmed a sidebar move and a flight with `prefers-reduced-motion`, and a sidebar move was one cut with no blur.
+No film ran at 120 Hz. The stepped films run at 60 frames a second.

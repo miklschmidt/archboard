@@ -4,6 +4,7 @@
 
 use archboard_paint::canvas::Lens;
 use archboard_scene::geometry::Rect;
+use peniko::Color;
 use wgpu::util::{BufferInitDescriptor, DeviceExt as _};
 
 /// How many times a frame is halved: the blur of the last level is the most the
@@ -22,8 +23,7 @@ const VIEW_FLOATS: usize = 12;
     clippy::cast_possible_truncation,
     reason = "a shader's numbers are f32"
 )]
-fn view_of(lens: &Lens) -> [f32; VIEW_FLOATS] {
-    let [red, green, blue, alpha] = lens.ground.components;
+fn view_of(lens: &Lens, ground: Color) -> [f32; VIEW_FLOATS] {
     let mut view = [0.0; VIEW_FLOATS];
     if let Some(focus) = lens.focus {
         let Rect {
@@ -43,7 +43,7 @@ fn view_of(lens: &Lens) -> [f32; VIEW_FLOATS] {
     }
     view[6] = lens.blur as f32;
     view[7] = lens.sink as f32;
-    view[8..].copy_from_slice(&[red, green, blue, alpha]);
+    view[8..].copy_from_slice(&ground.components);
     view
 }
 
@@ -254,9 +254,9 @@ impl LensLevels {
         pipelines: &LensPipelines,
         (queue, encoder): (&wgpu::Queue, &mut wgpu::CommandEncoder),
         surface: &wgpu::TextureView,
-        lens: &Lens,
+        (lens, ground): (&Lens, Color),
     ) {
-        let numbers: Vec<u8> = view_of(lens)
+        let numbers: Vec<u8> = view_of(lens, ground)
             .iter()
             .flat_map(|number| number.to_ne_bytes())
             .collect();

@@ -301,7 +301,7 @@ fn an_entrance_comes_into_focus_and_ends_with_no_lens() {
     stage.show(painting(Vec::new()));
     stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 0.0);
     stage.advance(0.0);
-    let soft = stage
+    let (soft, _) = stage
         .lens_at(10.0)
         .expect("an entrance is seen through a lens");
     assert!(soft.blur > 0.0);
@@ -329,7 +329,7 @@ fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_board_fall_away() {
     );
     stage.advance(50.0);
     let camera = stage.presentation.camera;
-    let lens = stage
+    let (lens, _) = stage
         .lens_at(50.0)
         .expect("a flight is seen through a lens");
     assert!(lens.blur > 0.0 && lens.sink > 0.0);

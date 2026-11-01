@@ -158,17 +158,14 @@ impl Flight {
         }
     }
 
-    /// The box of the door that opens at a moment, when one does.
-    pub(crate) fn opening(&self, now: f64) -> Option<Rect> {
+    /// The box of the door that opens at a moment, and how far through the move
+    /// that moment is, when a door opens.
+    pub(crate) fn opening(&self, now: f64) -> Option<(Rect, f64)> {
+        let share = self.time().share(now);
         match self {
-            Flight::Carry { between, time, .. } => between.opening_at(time.share(now)),
+            Flight::Carry { between, .. } => Some((between.opening_at(share)?, share)),
             Flight::Enter { .. } => None,
         }
-    }
-
-    /// How far through the flight a moment is.
-    pub(crate) fn share(&self, now: f64) -> f64 {
-        self.time().share(now)
     }
 
     /// How far through an entrance a moment is, when the flight is one.
