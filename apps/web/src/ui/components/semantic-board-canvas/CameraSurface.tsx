@@ -102,16 +102,21 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	const { width, height } = size;
 	const canvas = useRef<HTMLCanvasElement>(null);
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
-	const detach = useRef<(() => void) | null>(null);
 	const attachSurface = useCallback(
 		(element: HTMLDivElement | null): void => {
-			detach.current?.();
-			detach.current =
-				element === null || canvas.current === null ? null : attachStage(element, canvas.current);
 			setSurface(element);
 			attach(element);
 		},
 		[attach],
+	);
+	// A stage lives as long as its surface, and it stands before the pane shows a
+	// picture: a child's layout effect runs before its parent's.
+	useLayoutEffect(
+		() =>
+			surface === null || canvas.current === null
+				? undefined
+				: attachStage(surface, canvas.current),
+		[surface],
 	);
 	const eases = cameraEases(gesture, reducedMotion, instant);
 	useLayoutEffect(() => {

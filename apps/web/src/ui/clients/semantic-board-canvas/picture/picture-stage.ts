@@ -346,6 +346,7 @@ class PictureStage {
 		if (this.#frame !== null) frameClock().cancelFrame(this.#frame);
 		this.#started?.painter.free();
 		this.#started = null;
+		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
 	}
 
 	/**
