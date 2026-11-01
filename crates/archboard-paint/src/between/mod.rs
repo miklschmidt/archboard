@@ -132,13 +132,14 @@ fn defined_in(items: &[Item], found: &mut Vec<Definition>) {
     }
 }
 
-/// The last scene's definitions, to be told from the next scene's: its masks and
-/// clips are renamed already, and its arrowheads and gradients are named by what
-/// they are, so the next scene's own stand for the same ones.
+/// Every definition of the next scene, wherever it stands, and the last scene's
+/// beside them: its masks and clips are renamed already, and its arrowheads and
+/// gradients are named by what they are, so the next scene's own stand for the
+/// same ones.
 fn borrowed_definitions(last: &Scene, next: &Scene) -> Vec<Definition> {
     let mut known = next.definitions.clone();
     defined_in(&next.body, &mut known);
-    let mut kept = next.definitions.clone();
+    let mut kept = known.clone();
     let mut theirs = last.definitions.clone();
     defined_in(&last.body, &mut theirs);
     for definition in theirs {

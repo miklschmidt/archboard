@@ -517,6 +517,23 @@ fn an_entrance_draws_the_lines_after_the_cards_and_names_them_last() {
 }
 
 #[test]
+fn a_flight_knows_what_the_next_scene_defines_inside_its_body() {
+    let clip = Definition::Clip(Clip {
+        id: ClipId { card: "a".into() },
+        outline: Vec::new(),
+    });
+    let to = scene(
+        vec![Item::Definitions {
+            definitions: vec![clip.clone()],
+        }],
+        &[],
+    );
+    let from = scene(Vec::new(), &[]);
+    let defined = Between::new(&from, &to, (0.0, 0.0), &PHASES).definitions();
+    assert_eq!(defined, vec![clip]);
+}
+
+#[test]
 fn an_in_between_draws_with_balanced_layers() {
     use crate::canvas::Count;
     use crate::draw::{Picture, draw};
