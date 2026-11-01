@@ -300,16 +300,18 @@ async function openAbout(
 	subject: "scope" | "selection" = "scope",
 	pane = "",
 ): Promise<void> {
-	await openPage(browser, "about", pane);
 	const about = `${pane} [data-slot="model-about"]`;
 	const choice = `${pane} [data-slot="model-about-subject"] [data-choice="${subject}"]`;
 	await pollUntil(
-		() =>
-			browser.eval<boolean>(`(() => {
+		// A reading that is still arriving shows its own page, so About opens again until it stays.
+		async () => {
+			await openPage(browser, "about", pane);
+			return browser.eval<boolean>(`(() => {
 				if (document.querySelector(${JSON.stringify(about)})?.getAttribute('data-subject') === ${JSON.stringify(subject)}) return true;
 				document.querySelector(${JSON.stringify(choice)})?.click();
 				return false;
-			})()`),
+			})()`);
+		},
 		Boolean,
 		`About on the ${subject}`,
 	);

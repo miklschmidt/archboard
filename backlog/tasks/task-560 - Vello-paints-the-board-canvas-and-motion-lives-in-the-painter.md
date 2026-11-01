@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T03:41:00Z'
-updated_date: '2026-11-01T04:02:00Z'
+updated_date: '2026-11-01T07:17:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -64,4 +64,16 @@ Open, owned by another agent at the owner's request: the WebGPU probe finds nvid
 Correction 2026-11-01, replaces the decision in the previous note. The owner advised against a blank-frame fallback, so the stage does not read back its first GPU frame. The rule: vello when requestAdapter gives a non-fallback adapter and a device, otherwise vello_cpu, with the reason logged and data-painter inspectable.
 Flags: RASTER_FLAGS (session.ts:60) and render-talk.ts:130 carry --disable-gpu, which gives a null adapter. That does not touch this work's painter choice for PNG export, because export still goes through the SVG, so both stay. record-walkthrough.ts has no --disable-gpu. Add it there, so that a recording takes vello_cpu by the normal rule and the page needs no override.
 Still open for the agent that owns headless GPU: the blank spike run did not use those flags. It ran google-chrome with --headless=new and window flags only. The same requestAdapter call found an adapter in the probe and returned null in the spike page, and wgpu's own request_adapter then succeeded.
+
+Phase 1 parity gate, the method: `scripts/render-corpus.ts` draws 528 readings of the corpus, near and far, in both themes. `scripts/paint-parity.ts` draws each reading with the server SVG, Vello on the GPU and Vello on the CPU in a browser with a window, and compares rasters. A pixel counts as different when no pixel of its 3x3 neighbourhood is within a tolerance of 0.1. The share counts against the pixels that hold ink.
+
+Phase 1 parity gate, the numbers: the first 332 readings hit a time limit and left no report, so the script now journals each comparison. Three of those 332 readings reached 1% of ink, all far and light on both painters, and the worst show small text antialiasing at half scale. The other 196 readings gave 784 comparisons with batch averages of 0.305%, 0.332% and 0.300%. The worst is 1.34%, `examples_web-shop_Shop_Synchronous_checkout_whole_model_blocks_light_plain`, far, on the GPU, and it looks the same by eye. Traffic on the largest board differs by 0.10%, 0.11%, 0.26% and 0.28%.
+
+Phase 1 parity gate, the look: screenshots at 1920x1080 from both servers match at a line crossing with rails, in the slab look, for a picked line with its halo, and for a tip and the recede at the fit zoom. A far dashed line looks a little dimmer, because emulation resamples the canvas. Sequence and flowchart parity rests on the corpus numbers, because the screenshot driver did not open a flow.
+
+Phase 1 parity gate, the pointer: a grid of 64 real pointer rests gives the same part on both servers at 64 of 64 points at zoom 14, 64 of 64 at zoom 28, and 61 of 64 at the fit zoom. The other 3 points lie 3.2 to 3.86 picture units from a line, under 1 px at scale 0.29, at the edge of the 3.2 halo reach.
+
+The grid found a real fault: a hidden shape with its own `pointer-events` took the pointer, so lines did not light. The CSS now turns the pointer off for every shape of a painted surface.
+
+Stage life: `attachSurface` ran again on one element, which disposed the stage and left a new stage with nothing held while `data-painter` still hid the ink. The stage now lives as long as the surface in a layout effect, and `dispose` removes the attribute.
 <!-- SECTION:NOTES:END -->
