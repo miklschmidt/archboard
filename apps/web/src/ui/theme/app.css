@@ -318,14 +318,6 @@
 	filter: opacity(0.46);
 	transition-delay: calc(var(--reach-hop-ms, 0ms) * 3);
 }
-/* The board a flight carries inside its card is a picture of its own: what the
-   surface says about the picture under it (a part picked out, the rest receding)
-   is not said about it. */
-[data-slot="semantic-board-surface"]
-	[data-dive-inset]
-	:is([data-semantic-id], [data-traffic], [data-members]) {
-	filter: none;
-}
 @media (prefers-reduced-motion: reduce) {
 	[data-slot="semantic-board-surface"] [data-semantic-id],
 	[data-slot="semantic-board-surface"] [data-traffic],
@@ -337,10 +329,9 @@
 /* A relationship's label is never hidden (TASK-403). It is drawn at every zoom,
    seen from far as well as near. Where the rest of the picture recedes, under a
    poke or under a presented step's veil, a label that is not lit recedes less
-   than they do, so its words can still be made out. The board a flight carries inside a
-   card keeps no filter, as above. */
+   than they do, so its words can still be made out. */
 [data-slot="semantic-board-surface"]:is(.is-probing, .is-presenting.is-veiled)
-	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit, [data-dive-inset] *) {
+	[data-semantic-kind="edge"][data-semantic-part="label"]:not(.is-lit) {
 	filter: opacity(0.28);
 }
 
