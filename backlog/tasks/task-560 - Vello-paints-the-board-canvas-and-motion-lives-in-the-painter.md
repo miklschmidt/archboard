@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T03:41:00Z'
-updated_date: '2026-11-01T07:17:00Z'
+updated_date: '2026-11-01T07:26:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -76,4 +76,6 @@ Phase 1 parity gate, the pointer: a grid of 64 real pointer rests gives the same
 The grid found a real fault: a hidden shape with its own `pointer-events` took the pointer, so lines did not light. The CSS now turns the pointer off for every shape of a painted surface.
 
 Stage life: `attachSurface` ran again on one element, which disposed the stage and left a new stage with nothing held while `data-painter` still hid the ink. The stage now lives as long as the surface in a layout effect, and `dispose` removes the attribute.
+
+Phase 1 gate passed: `bun run check` exited 0 with 21 of 21 tasks and 49 of 49 browser owners on the commit after the About helper fix. Before that fix, the browser lane failed in about one run of three. The failures were intermittent, each in one owner. Logged runs caught `canonical-model-references`: a followed reference lands after the test sees the old reading's About, and the test then waited on a page that was gone. After the fix, four lane runs in a row and the full check passed. One failure stays unexplained: `canonical-model-attention` failed once with no lit line under the pointer, passed 8 of 8 alone and 5 of 5 on three cores, and did not come back in 11 later lane runs. One failure of `canonical-model-surface` at its 15 s limit came while an orphan Chrome used 90% of a core, and it did not come back.
 <!-- SECTION:NOTES:END -->
