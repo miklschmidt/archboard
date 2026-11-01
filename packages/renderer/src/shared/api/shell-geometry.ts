@@ -6,7 +6,6 @@ export {
 	fitIn,
 	fitScale,
 	NAVIGATOR_WIDTH,
-	REFERENCE_PANE,
 	SHELL_VIEWPORT,
 	SIDEBAR_WIDTH,
 	STAGE,
