@@ -15,7 +15,7 @@ bun run readme:check                      # list the stale assets; exit 1 when a
 bun run readme:assets --dry-run           # print what a run would do; start nothing
 bun run readme:assets                     # make every asset that needs no Codex sign-in
 bun run readme:assets hero plan           # make the named assets, Codex ones included
-bun run readme:assets code-evidence module-interfaces git-history # make the code and history demonstrations
+bun run readme:assets code-evidence module-interfaces git-history design-smells # make the code, history and measure demonstrations
 bun run readme:assets --codex             # make every asset
 bun run readme:assets --replay            # render the narrated videos again from their kept talks
 ```
@@ -47,6 +47,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with embedded font subsets; `architecture` keeps its exact recipe | no    |
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach        | no    |
 | `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still     | no    |
+| `design-smells`                                      | the Measures tab over this checkout's own vault and Git history, encoded to a WebP with a still     | no    |
 | `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation                 | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached             | yes   |
 | `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium                 | no    |
@@ -81,7 +82,8 @@ each server on a free port of its own. So in a worktree, it films the
 worktree's source. It never uses the server that `archboard` reaches: port
 3000 in the main checkout, or the worktree's own port.
 The hero's change is `scripts/readme-assets/hero-change.json`, written as an
-agent writes one.
+agent writes one. The hero prints how many subjects its proposal changes. The README's alt text
+for the hero names that number, so read it after each make.
 
 The three code and history demonstrations add a small checkout example to their
 copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed
@@ -89,12 +91,26 @@ Git history. The harness creates the source repository under the take's scratch
 directory. It registers that repository and authors canonical modules through the CLI.
 It leaves Archboard's source files and tracked vault unchanged.
 
-`code-evidence` runs `archboard check code` and selects its resolved missing-call
-warning in the browser. Its terminal shows the source lines behind the finding.
-`module-interfaces` opens two proposals and selects Orders in each. Their
-inspectors show three entry points versus one entry point and two hidden parts.
-`git-history` shows recent commits and two parts that change together. It then
+`code-evidence` runs `archboard check code`. The Right panel counts the warning while
+nothing is selected. Selecting it shows the finding and its source evidence under Against the
+code, and the terminal shows the source lines behind the finding.
+`module-interfaces` opens two proposals and selects Orders in each. The Interface and
+Implementation sections of their Right panels show three entries versus one entry and
+two hidden parts.
+`git-history` selects a part. The Changes with section of its Right panel lists the part that
+changes with it, and the terminal reports their shared commits through `model locality`. It then
 compares the branch with a proposal through `model footprint`.
+A reader pane narrower than 900 px hides its Right panel until something is selected. These
+clips give the shell 1440 px beside a 480 px terminal, so the panel shows from the start.
+
+`design-smells` is the one clip over real history. It starts a server over this checkout's own
+`.archboard/vault`, in place and read only, so its counts come from this repository's Git
+history and change as the history does. The take reads a year of Git once before the camera
+runs, which takes the server about 15 seconds, and the browser keeps the answer. The camera then
+films the Measures tab: sort by Unjoined, by Pass-through, and by Hidden with Fewest first over
+the modules with parts, and select the first row of each. The terminal prints the summary of
+`archboard model locality`. The take refuses a clip in which a window holds the home directory's
+path.
 
 The `history` take uses a separate copy of the canonical Shop example.
 It retains current architecture, creates a delivery-tracking proposal, and adopts that proposal through the public CLI.
@@ -172,6 +188,10 @@ Run `bun install` first. The kit builds the frontend itself before it films.
 | `ARCHBOARD_FFMPEG`            | an ffmpeg with libwebp and libx264   | ffmpeg on `PATH`, else `nixpkgs#ffmpeg-headless` through Nix |
 | `ARCHBOARD_PYFTSUBSET`        | fontTools' `pyftsubset`              | `pyftsubset` on `PATH`, else nixpkgs' fonttools through Nix  |
 
+Inside `nix develop` the system temporary directory belongs to the shell. Set
+`ARCHBOARD_README_SCRATCH` to a directory of your own to keep the attachments after it ends. The
+terminal of a take prints its paths, so name a directory that you can show.
+
 A clip is filmed in real time: Chromium sends a frame each time the page
 repaints. A busy machine drops frames, and the clip stutters. Run clips on a
 quiet machine. The command makes one asset at a time.
@@ -197,3 +217,8 @@ Keep the store serializer for these exact inputs, including the policy.
 General formatting must not change the bytes that the archive request names.
 The synthetic origin `https://example.invalid/web-shop.git` identifies local references and is never fetched.
 Takes of the repository architecture export its complete live archive through the same public interface.
+`pr-walkthrough` pins one checkpoint of that archive, the retained reading of the Queued
+fulfilment draft. When the example's drafts are rebuilt, the old checkpoint still exists and
+shows the old draft. List the checkpoints with `archboard model checkpoints` in a take, and pin
+the one of the draft whose revision equals the example's current revision and whose reading holds
+the walkthrough.

@@ -11,7 +11,6 @@ export {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	present,
 	stageUrl,

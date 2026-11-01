@@ -183,19 +183,6 @@ async function fit(page: Page): Promise<void> {
 }
 
 /**
- * Fold away every pane's sidebar that is open, so the picture has the room: fold the first one
- * still open, let it animate, and look again.
- * @param page The shell.
- */
-async function foldSidebars(page: Page): Promise<void> {
-	const open = "[data-slot='semantic-sidebar-toggle'][aria-expanded='true']";
-	if (!(await page.evaluate(`!!document.querySelector(${JSON.stringify(open)})`))) return;
-	await page.click(open);
-	await Bun.sleep(400);
-	await foldSidebars(page);
-}
-
-/**
  * The 16:9 rectangle a thumbnail is cut from: around the elements, at least a minimum width,
  * kept inside the window.
  * @param page The page.
@@ -261,13 +248,23 @@ class Terminal {
 	 * @param browser The take's browser.
 	 * @param theme Its theme, the shell's.
 	 * @param height Its height, the shell window's.
+	 * @param options What differs from the hero's terminal.
+	 * @param options.width Its width: 600 when absent. A shell narrower than 1348 px hides its Right
+	 * panel until something is selected, so a clip about that panel gives the shell the room.
+	 * @param options.path The folder its header names: `~/web-shop` when absent.
 	 * @returns The terminal.
 	 */
-	static async open(browser: Browser, theme: "light" | "dark", height: number): Promise<Terminal> {
+	static async open(
+		browser: Browser,
+		theme: "light" | "dark",
+		height: number,
+		options: { readonly width?: number; readonly path?: string } = {},
+	): Promise<Terminal> {
+		const { width = 600, path } = options;
 		const page = await browser.open({
-			url: stageUrl("terminal.html", { theme }),
+			url: stageUrl("terminal.html", { theme, ...(path === undefined ? {} : { path }) }),
 			theme,
-			width: 600,
+			width,
 			height,
 		});
 		await page.waitFor("window.ready === true", "the terminal page");
@@ -341,7 +338,6 @@ export {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	present,
 	stageUrl,

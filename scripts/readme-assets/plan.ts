@@ -4,7 +4,6 @@ import {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	attachmentFile,
 	readmeFile,
@@ -30,7 +29,7 @@ const plan: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop, and open the shell on ${MODEL} in a private headless Chromium at 1920x1080, in the light theme.`,
-		`Split the page into two panes with archboard browser open, show ${START} in both, fold the sidebars and fit.`,
+		`Split the page into two panes with archboard browser open, show ${START} in both and fit.`,
 		`Film archboard browser show putting ${LEFT} in the left pane and ${RIGHT} in the right one.`,
 		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the right pane once its proposal is drawn.`,
 	],
@@ -52,7 +51,6 @@ const plan: Producer = {
 			await showModel(server, "plan", "B", { model: MODEL, state: START, against });
 			await page.atRest(0);
 			await page.atRest(1);
-			await foldSidebars(page);
 			await fit(page);
 			await Bun.sleep(1200);
 			const take = await filmTogether("plan", [page], async () => {

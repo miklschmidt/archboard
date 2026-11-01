@@ -5,6 +5,8 @@ import { ask } from "./ask.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { banner } from "./banner.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import { designSmells } from "./design-smells.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { drillDown } from "./drill-down.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { codeEvidence, moduleInterfaces, gitHistory } from "./evidence.ts";
@@ -36,12 +38,15 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	"code-evidence": codeEvidence,
 	"module-interfaces": moduleInterfaces,
 	"git-history": gitHistory,
+	"design-smells": designSmells,
 	history,
 	"pr-walkthrough": narratedProducer({
 		name: "pr-walkthrough",
 		vault: "examples/web-shop",
-		// The portable example archive retains this exact Queued fulfilment reading.
-		checkpoint: "f4ae77d823d935570198b3c0be53dd1803db8aba",
+		// The portable example archive retains this exact reading of the rebuilt Queued fulfilment
+		// draft, which holds the walkthrough and has the revision of the tracked example. The first
+		// draft's checkpoint, f4ae77d8, is the shelved "Queued fulfilment, first draft".
+		checkpoint: "2e715ac9d554403c931b91bb8ea98e0db10f407d",
 		walkthrough: "Why checkout stops waiting",
 		thumbnail: { file: "docs/readme/idx-voice.webp", step: 1 },
 	}),

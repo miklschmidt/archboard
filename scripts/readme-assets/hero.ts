@@ -14,6 +14,7 @@ import {
 	present,
 	attachmentFile,
 	withTake,
+	type MakeContext,
 	type Producer,
 	type TakeServer,
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
@@ -157,10 +158,12 @@ const hero: Producer = {
 		"Encode the two windows as a 1280 px WebP in scratch storage for attachment.",
 	],
 	/**
-	 * Film the public authoring workflow and its resulting proposal.
+	 * Film the public authoring workflow and its resulting proposal, and say how many subjects the
+	 * proposal changes: the README's alt text for the clip names that number.
+	 * @param context What the producer is given.
 	 * @returns After the clip is encoded.
 	 */
-	make: async () =>
+	make: async (context: MakeContext) =>
 		withTake("hero", "examples/web-shop", false, async (server, browser) => {
 			const terminal = await Terminal.open(browser, "dark", PANE.height);
 			const page = await browser.open({
@@ -192,6 +195,7 @@ const hero: Producer = {
 					(subject) => subject.kind !== "unchanged",
 				).length;
 				if (changed === 0) throw new Error("The authored proposal changes no subjects.");
+				context.say(`${changed} subjects differ from current architecture.`);
 				await terminal.say(`${changed} subjects differ from current architecture.`);
 				await commands.cli(["browser", "show", MODEL, "--state", state, "--pane", "A"]);
 				await page.atRest();

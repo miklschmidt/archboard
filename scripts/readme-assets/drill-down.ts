@@ -4,7 +4,6 @@ import {
 	encodeTake,
 	filmTogether,
 	fit,
-	foldSidebars,
 	moment,
 	attachmentFile,
 	readmeFile,
@@ -26,7 +25,7 @@ const drillDown: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		`Start an Archboard server over a copy of examples/web-shop, and open the shell on ${MODEL} in a private headless Chromium at 1920x1080, in the light theme.`,
-		"Fold the sidebar and fit the picture to the pane.",
+		"Fit the picture to the pane.",
 		`Open ${PART}, open its Stock API module, then return to ${MODEL} through the module path.`,
 		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the open inventory implementation.`,
 	],
@@ -42,7 +41,6 @@ const drillDown: Producer = {
 				cursor: true,
 			});
 			await page.atRest();
-			await foldSidebars(page);
 			await fit(page);
 			await page.atRest();
 			await page.moveTo({ x: 1500, y: 900 }, 1);

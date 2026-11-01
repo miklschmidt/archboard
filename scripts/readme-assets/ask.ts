@@ -101,7 +101,8 @@ async function requireSignedIn(
 }
 
 /**
- * Await the answer and any captured action that the workhorse queues for itself.
+ * Await the answer and any captured action that the workhorse queues for itself. A captured
+ * explanation shows its answer as markdown in the body of its own section, under its header.
  * @param page The live conversation and captured explanation.
  */
 async function requireAnswer(page: Page): Promise<void> {
@@ -125,7 +126,7 @@ async function requireAnswer(page: Page): Promise<void> {
 		explanation === "completed" &&
 		!String(
 			await page.evaluate(
-				"document.querySelector(\"[data-slot='model-explanation-text']\")?.textContent.trim() ?? ''",
+				"document.querySelector(\"[data-slot='model-explanation'] > div\")?.textContent.trim() ?? ''",
 			),
 		)
 	)

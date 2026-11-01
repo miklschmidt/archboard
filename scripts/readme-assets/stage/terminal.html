@@ -180,7 +180,8 @@
 	<body>
 		<main>
 			<header>
-				<span class="lamp"></span><span>coding agent</span><span class="path">~/web-shop</span>
+				<span class="lamp"></span><span>coding agent</span
+				><span class="path" id="path">~/web-shop</span>
 			</header>
 			<div id="log"></div>
 		</main>
@@ -188,6 +189,7 @@
 			const query = new URLSearchParams(location.search);
 			document.documentElement.dataset.theme = query.get("theme") || "dark";
 			const log = document.getElementById("log");
+			document.getElementById("path").textContent = query.get("path") || "~/web-shop";
 			let last = null;
 
 			/** Keep the newest lines, dropping the oldest, as a terminal scrolls. */
