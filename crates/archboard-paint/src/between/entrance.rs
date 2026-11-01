@@ -242,3 +242,108 @@ impl Entrance {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::scene::{Group, Item, Role, Scene};
+
+    use super::super::Entrance;
+    use super::super::testing::{PHASES, card, drawing, label, line, rect, scene, shadow};
+    use super::super::tests::solid;
+
+    /// A board of three cards one under another, a line from the first to the
+    /// second, the line's label, and a shadow that belongs to no subject.
+    fn tall_board() -> Scene {
+        let body = vec![
+            shadow(),
+            card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
+            card("top", rect(10.0, 10.0, 80.0, 40.0), &["A"]),
+            card("middle", rect(10.0, 110.0, 80.0, 40.0), &["B"]),
+            line("e", &[(50.0, 50.0), (50.0, 110.0)]),
+            label("e", rect(40.0, 70.0, 30.0, 14.0), "calls"),
+        ];
+        scene(body, &[])
+    }
+
+    #[test]
+    fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
+        let cast = |owner: &str| {
+            let Item::Group(group) = shadow() else {
+                unreachable!("a shadow is a group");
+            };
+            Item::Group(group.standing_with(vec![owner.to_owned()]))
+        };
+        let board = scene(
+            vec![Item::Group(Group::new(
+                Role::Move,
+                vec![
+                    cast("bottom"),
+                    cast("e"),
+                    card("top", rect(10.0, 10.0, 80.0, 40.0), &["A"]),
+                    card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
+                    line("e", &[(50.0, 50.0), (50.0, 110.0)]),
+                ],
+            ))],
+            &[],
+        );
+        let early = Entrance::new(&board, &PHASES).at(0.1);
+        let Some(Item::Group(picture)) = early.first() else {
+            panic!("the picture is one group");
+        };
+        let shadows: Vec<&Group> = picture
+            .items
+            .iter()
+            .filter_map(|item| match item {
+                Item::Group(group) if matches!(group.role, Role::Shadow(_)) => Some(group),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(shadows.len(), 2);
+        assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
+        assert_eq!(solid(shadows[1]), 0.0, "its line's words come last");
+    }
+
+    #[test]
+    fn an_entrance_runs_down_the_board() {
+        let board = tall_board();
+        let early = Entrance::new(&board, &PHASES).at(0.2);
+        let of = |name: &str| solid(drawing(&early, name)[0]);
+        assert!(of("top") > 0.0, "the first card is on its way");
+        assert_eq!(of("middle"), 0.0);
+        assert_eq!(of("bottom"), 0.0, "the wave has not reached the last");
+        let ground = early
+            .iter()
+            .find_map(|item| match item {
+                Item::Group(group) if matches!(group.role, Role::Shadow(_)) => Some(group),
+                _ => None,
+            })
+            .expect("the shadow is drawn");
+        assert!(
+            solid(ground) > 0.0 && solid(ground) < 1.0,
+            "what belongs to no subject fades in with the frames"
+        );
+        assert_eq!(
+            Entrance::new(&board, &PHASES).at(1.0),
+            board.body,
+            "it lands on the scene itself"
+        );
+    }
+
+    #[test]
+    fn an_entrance_draws_the_lines_after_the_cards_and_names_them_last() {
+        let board = tall_board();
+        let lines = |progress: f64| {
+            let body = Entrance::new(&board, &PHASES).at(progress);
+            drawing(&body, "e")
+                .iter()
+                .map(|group| solid(group))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(lines(0.2), [0.0, 0.0], "no line before the cards");
+        let [line, label] = lines(0.5)[..] else {
+            panic!("a line and its label")
+        };
+        assert!(line > 0.0, "the line has begun");
+        assert_eq!(label, 0.0, "its label comes last, all together");
+    }
+}

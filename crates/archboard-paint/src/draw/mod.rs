@@ -3,8 +3,8 @@
 
 use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
 use archboard_scene::scene::{
-    Cap, Colour, Geometry, Group, Icon, Item, Mask, Paint, Purpose, Role, Scene, Shape, Stroke,
-    Token, Transform, Viewport,
+    Colour, Geometry, Group, Icon, Item, Paint, Purpose, Role, Scene, Shape, Stroke, Token,
+    Transform, Viewport,
 };
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 
@@ -25,6 +25,7 @@ const ICON_VIEW: f64 = 24.0;
 const BOX_TOLERANCE: f64 = 0.1;
 
 mod kept;
+mod masked;
 #[cfg(test)]
 pub(crate) mod tests;
 mod viewer;
@@ -200,24 +201,6 @@ fn awaiting(awaited: f64, role: &Role) -> f64 {
 fn stands_still(item: &Item) -> bool {
     !matches!(item, Item::Group(group) if only_moves(&group.role))
         && !holds_traffic(std::slice::from_ref(item))
-}
-
-/// A mask shape that cuts: the white ground of a mask lets everything through.
-fn cuts(shape: &Shape) -> bool {
-    !matches!(
-        &shape.fill,
-        Some(Paint::Colour {
-            colour: Colour::White
-        })
-    )
-}
-
-/// A cut for a trunk that a line shares: a lit line draws that stretch again.
-fn cuts_a_trunk(shape: &Shape) -> bool {
-    matches!(
-        shape.stroke.as_ref().and_then(|stroke| stroke.cap),
-        Some(Cap::Butt)
-    )
 }
 
 impl<C: Canvas> Walk<'_, C> {
@@ -438,37 +421,6 @@ impl<C: Canvas> Walk<'_, C> {
         if !self.presentation.warnings.is_empty() {
             self.marks(group, held);
         }
-    }
-
-    /// Draw a group through its mask: its items, then its cuts out of them.
-    fn masked(&mut self, group: &Group, mask: &Mask, opacity: f64, whole: bool, held: Inside) {
-        let bounds = rect_of(&mask.bounds).to_path(BOX_TOLERANCE);
-        self.canvas.set_transform(held.transform);
-        self.canvas
-            .push(Some((&bounds, false)), opacity_of(opacity));
-        self.inner(group, held);
-        self.canvas.set_transform(held.transform);
-        self.canvas.push_cut();
-        let black = |opacity: Option<f64>| {
-            #[expect(clippy::cast_possible_truncation, reason = "a colour's alpha is f32")]
-            let alpha = opacity.unwrap_or(1.0) as f32;
-            Ink::Solid(peniko::Color::BLACK.with_alpha(alpha))
-        };
-        for shape in mask.shapes.iter().filter(|shape| cuts(shape)) {
-            if whole && cuts_a_trunk(shape) {
-                continue;
-            }
-            let (path, _) = outline_of(&shape.geometry);
-            if shape.fill.as_ref().is_some_and(|fill| *fill != Paint::None) {
-                self.canvas.fill(&path, &black(shape.fill_opacity), false);
-            }
-            if let Some(stroke) = &shape.stroke {
-                self.canvas
-                    .stroke(&path, &stroke_of(stroke, 1.0), &black(stroke.opacity));
-            }
-        }
-        self.canvas.pop();
-        self.canvas.pop();
     }
 
     /// What a nested picture shows through its box.
