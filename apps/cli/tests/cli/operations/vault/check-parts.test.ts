@@ -91,6 +91,7 @@ let service = "";
 let plain = clean;
 let answered = codeCheck;
 let refuseDraft = false;
+let refuseState = false;
 const asked: string[] = [];
 const server = Bun.serve({
 	hostname: "127.0.0.1",
@@ -100,6 +101,24 @@ const server = Bun.serve({
 		const { pathname } = asking;
 		if (pathname === "/health") return Response.json({ service, status: "ok" });
 		asked.push(vault.unnamed(asking));
+		if (pathname === "/api/vault/check" && refuseState) {
+			return Response.json(
+				{
+					success: false,
+					code: "PREDECESSOR_CHANGED",
+					error: "The architecture operation cannot complete.",
+					diagnostics: [
+						{
+							code: "PREDECESSOR_CHANGED",
+							file: "p.proposal.json",
+							message: "Moved.",
+							recovery: "Reconcile.",
+						},
+					],
+				},
+				{ status: 409 },
+			);
+		}
 		if (pathname === "/api/vault/check") return Response.json({ success: true, ...plain });
 		if (pathname === "/api/vault/code-check" && refuseDraft) {
 			return Response.json(
@@ -358,6 +377,8 @@ test("--state, --every-draft and --plan reach the code check of check, check all
 		asked.length = 0;
 		expect((await run([...argv, "--state", "TASK-1"])).exited).toBe(0);
 		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?state=TASK-1`);
+		// The semantics check reads that draft too, where the command runs it.
+		expect(asked.includes(`${SEMANTICS_ROUTE}?state=TASK-1`)).toBe(argv.at(-1) !== "code");
 		asked.length = 0;
 		expect((await run([...argv, "--every-draft"])).exited).toBe(0);
 		expect(asked.at(-1)).toBe(`${CODE_ROUTE}?every-draft=true`);
@@ -384,6 +405,18 @@ test("a draft no board has is refused, and --every-draft beside --state is refus
 		asked.length = 0;
 		expect((await run([...argv, "--every-draft", "--state", "TASK-1"])).exited).toBe(2);
 		expect(asked).toEqual([]);
+	}
+});
+
+test("a refused draft read prints the code and the recovery the server gave", async () => {
+	refuseState = true;
+	try {
+		const refused = await run(["check", "all", "--state", "TASK-1"]);
+		expect(refused.exited).not.toBe(0);
+		expect(refused.stderr).toContain("PREDECESSOR_CHANGED");
+		expect(refused.stderr).toContain("Reconcile.");
+	} finally {
+		refuseState = false;
 	}
 });
 

@@ -143,11 +143,15 @@ type CheckAnswer = z.output<typeof CheckAnswerSchema>;
 /**
  * Run the semantics check on the Archboard server.
  * @param signal Cancels the request.
+ * @param state The draft to check, when `--state` names one.
  * @returns The vault check and its elapsed time.
  */
-async function semanticsCheckOnServer(signal: AbortSignal): Promise<SemanticsPart> {
+async function semanticsCheckOnServer(
+	signal: AbortSignal,
+	state: string | undefined,
+): Promise<SemanticsPart> {
 	const started = performance.now();
-	const result = await checkSemanticVaultOnServer(signal);
+	const result = await checkSemanticVaultOnServer(signal, state);
 	return { ...result, timings: [{ check: "board", elapsedMs: performance.now() - started }] };
 }
 
@@ -233,7 +237,7 @@ async function runChecks(
 	// In a checkout without a vault, only the embeds check runs.
 	const ran = context.checkout === null ? checks : checks.filter((check) => check === "embeds");
 	const semantics = ran.includes("semantics")
-		? await semanticsCheckOnServer(context.signal)
+		? await semanticsCheckOnServer(context.signal, reading.state)
 		: undefined;
 	const code = ran.includes("code") ? await codeCheckOnServer(reading, context.signal) : undefined;
 	const embeds = ran.includes("embeds")
@@ -348,7 +352,8 @@ const semanticsRoute = {
 	method: "GET",
 	path: "/api/vault/check",
 	cardinality: "one",
-	description: "The shared whole-vault checker, the one the panes poll",
+	description:
+		"The shared whole-vault checker, the one the panes poll. `--state` names the draft it checks",
 } as const;
 const codeRoute = {
 	method: "GET",
