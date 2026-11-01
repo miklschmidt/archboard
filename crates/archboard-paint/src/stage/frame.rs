@@ -12,6 +12,9 @@ use crate::flight::{Dive, Flight};
 use crate::path::{placed, rect_of};
 use crate::presentation::Presentation;
 
+/// How far apart the keys of two looks stand: far more than a picture has items.
+const STILL_STEP: u64 = 0x9E37_79B9_7F4A_7C15;
+
 impl Stage {
     /// Draw what stands on the stage: its ground, the picture, the board
     /// inside a card, and over them what is left of the last picture.
@@ -26,6 +29,8 @@ impl Stage {
             leaving,
             ghost,
             dive,
+            settled,
+            looks,
             ..
         } = self;
         let Some(shown) = shown else {
@@ -41,11 +46,6 @@ impl Stage {
             canvas.set_transform(Affine::IDENTITY);
             canvas.push(None, opacity_of(parent));
         }
-        let mut inks = Inks {
-            palette,
-            outlines: &mut *outlines,
-            presentation,
-        };
         let moved: Option<Vec<Item>> = match (&*flight, &*leaving) {
             (Some(flight), _) => Some(flight.items(now)),
             (None, Some(leaving)) => Some(departure(
@@ -60,6 +60,12 @@ impl Stage {
             .and_then(Flight::definitions)
             .unwrap_or(&picture.definitions);
         let items = moved.as_deref().unwrap_or(&picture.scene.body);
+        let mut inks = Inks {
+            palette,
+            outlines: &mut *outlines,
+            presentation,
+            still: (*settled && moved.is_none()).then(|| looks.wrapping_mul(STILL_STEP)),
+        };
         draw_items(canvas, items, definitions, transform, &mut inks);
         if parent < 1.0 {
             canvas.pop();
@@ -74,6 +80,7 @@ impl Stage {
             palette,
             outlines,
             presentation: &plain,
+            still: None,
         };
         if let Some((dive, fades)) = dive.as_ref().zip(fades) {
             draw_inset(canvas, dive, fades.inset, transform, &mut plain_inks);

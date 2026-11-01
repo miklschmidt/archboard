@@ -88,6 +88,13 @@ pub struct Stage {
     warned: HashSet<String>,
     /// The last moment a frame or a change named.
     now: f64,
+    /// How the picture looked in the last frame, its camera and traffic left out.
+    look: Presentation,
+    /// How many looks the stage has shown: what a canvas kept of one is no use
+    /// to the next.
+    looks: u64,
+    /// Whether this frame looks as the last one did.
+    settled: bool,
 }
 
 impl Stage {
@@ -114,6 +121,9 @@ impl Stage {
             clock: TrafficClock::default(),
             warned: HashSet::new(),
             now: 0.0,
+            look: Presentation::default(),
+            looks: 0,
+            settled: false,
         }
     }
 
@@ -134,6 +144,7 @@ impl Stage {
         self.leaving = None;
         self.dive = None;
         self.presentation.sweep = None;
+        self.looks += 1;
         self.find_warnings();
     }
 
@@ -271,6 +282,7 @@ impl Stage {
     /// Change the theme.
     pub fn set_theme(&mut self, theme: Theme) {
         self.palette = Palette::of(theme);
+        self.looks += 1;
     }
 
     /// Change the size of the canvas, in canvas pixels.
@@ -482,6 +494,21 @@ impl Stage {
             .iter()
             .map(|(id, shining)| (id.clone(), shining.fade.at(now)))
             .collect();
+        self.settle();
+    }
+
+    /// Say whether this frame looks as the last one did.
+    fn settle(&mut self) {
+        let look = Presentation {
+            camera: Camera::default(),
+            traffic: None,
+            ..self.presentation.clone()
+        };
+        self.settled = look == self.look;
+        if !self.settled {
+            self.look = look;
+            self.looks += 1;
+        }
     }
 
     /// Whether traffic runs on the picture, so that every frame differs.

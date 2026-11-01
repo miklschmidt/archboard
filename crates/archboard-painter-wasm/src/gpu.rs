@@ -1,6 +1,9 @@
 //! Vello on WebGPU. The page checks the adapter before it comes here, so a
 //! failure here is a failure to start, and the page falls back to the CPU.
 
+use std::collections::HashMap;
+use std::mem;
+
 use archboard_paint::canvas::{Canvas, Ink};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use peniko::{BlendMode, Brush, Compose, Fill, Mix};
@@ -22,10 +25,20 @@ fn brush_of(ink: &Ink) -> (Brush, Option<Affine>) {
     }
 }
 
-/// One frame's drawing, encoded for the GPU.
+/// The most bytes of path data the parts a canvas keeps can hold. Past it, the
+/// canvas starts again with none.
+const MOST_KEPT: usize = 32 << 20;
+
+/// One frame's drawing, encoded for the GPU, and the parts of it that come back
+/// from frame to frame, encoded once.
 pub(crate) struct GpuCanvas {
     scene: Scene,
     transform: Affine,
+    parts: HashMap<u64, Scene>,
+    /// The drawings that wait for the part on the canvas to end.
+    waiting: Vec<Scene>,
+    /// The bytes of path data in `parts`.
+    kept: usize,
 }
 
 impl Canvas for GpuCanvas {
@@ -79,6 +92,31 @@ impl Canvas for GpuCanvas {
 
     fn pop(&mut self) {
         self.scene.pop_layer();
+    }
+
+    fn again(&mut self, key: u64, transform: Affine) -> bool {
+        let part = self.parts.get(&key);
+        if let Some(part) = part {
+            self.scene.append(part, Some(transform));
+        }
+        part.is_some()
+    }
+
+    fn keep(&mut self) -> bool {
+        self.waiting.push(mem::take(&mut self.scene));
+        true
+    }
+
+    fn kept(&mut self, key: u64, transform: Affine) {
+        let waiting = self.waiting.pop().unwrap_or_default();
+        let part = mem::replace(&mut self.scene, waiting);
+        self.scene.append(&part, Some(transform));
+        self.kept += part.encoding().path_data.len();
+        if self.kept > MOST_KEPT {
+            self.parts.clear();
+            self.kept = 0;
+        }
+        self.parts.insert(key, part);
     }
 }
 
@@ -197,6 +235,9 @@ impl GpuTarget {
             canvas: GpuCanvas {
                 scene: Scene::new(),
                 transform: Affine::IDENTITY,
+                parts: HashMap::new(),
+                waiting: Vec::new(),
+                kept: 0,
             },
         })
     }

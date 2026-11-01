@@ -3,7 +3,11 @@
 //! `theme.css` and does the sums the page does: OKLCH to sRGB, `color-mix` in
 //! sRGB, and relative OKLCH.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::mem::discriminant;
 
 use archboard_scene::names::word;
 use archboard_scene::scene::{Colour, Stop};
@@ -130,11 +134,58 @@ fn declarations(css: &str) -> impl Iterator<Item = (&str, Oklch)> {
     })
 }
 
-/// The tokens of one theme, and what its `light-dark()` colours choose.
+/// Add a colour to a hash.
+fn feed<H: Hasher>(colour: &Colour, state: &mut H) {
+    discriminant(colour).hash(state);
+    let numbers = |values: &[f64], state: &mut H| {
+        for value in values {
+            value.to_bits().hash(state);
+        }
+    };
+    match colour {
+        Colour::Token { token } => token.hash(state),
+        Colour::Palette { color } | Colour::Bright { color } => color.hash(state),
+        Colour::Black | Colour::White | Colour::Transparent => {}
+        Colour::Mix { base, ink, share } => {
+            feed(base, state);
+            feed(ink, state);
+            numbers(&[*share], state);
+        }
+        Colour::LightDark { light, dark } => {
+            feed(light, state);
+            feed(dark, state);
+        }
+        Colour::Tone {
+            ink,
+            lightness,
+            cap,
+            chroma,
+        } => {
+            feed(ink, state);
+            numbers(&[*lightness, *cap, *chroma], state);
+        }
+        Colour::Shifted {
+            ink,
+            lightness,
+            chroma,
+        } => {
+            feed(ink, state);
+            numbers(&[*lightness, *chroma], state);
+        }
+        Colour::Held { ink, least, most } => {
+            feed(ink, state);
+            numbers(&[*least, *most], state);
+        }
+    }
+}
+
+/// The tokens of one theme, what its `light-dark()` colours choose, and each
+/// colour it has worked out, by the hash of the colour.
 #[derive(Clone, Debug)]
 pub struct Palette {
     tokens: HashMap<&'static str, Oklch>,
     dark: bool,
+    known: RefCell<HashMap<u64, Rgba>>,
 }
 
 impl Palette {
@@ -155,6 +206,7 @@ impl Palette {
         Palette {
             tokens,
             dark: theme == Theme::Dark,
+            known: RefCell::new(HashMap::new()),
         }
     }
 
@@ -230,7 +282,13 @@ impl Palette {
         reason = "a painter's channels are f32"
     )]
     pub fn colour(&self, colour: &Colour, alpha: f64) -> Color {
-        let [red, green, blue, own] = self.srgb(colour);
+        let mut key = DefaultHasher::new();
+        feed(colour, &mut key);
+        let [red, green, blue, own] = *self
+            .known
+            .borrow_mut()
+            .entry(key.finish())
+            .or_insert_with(|| self.srgb(colour));
         Color::new([red as f32, green as f32, blue as f32, (own * alpha) as f32])
     }
 

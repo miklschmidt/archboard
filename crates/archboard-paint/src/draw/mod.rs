@@ -1,6 +1,9 @@
 //! The draw walk: one scene under one presentation, onto one canvas. It reads
 //! the scene as the SVG writer does, and does what the SVG's stylesheet did.
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash as _, Hasher as _};
+
 use archboard_scene::paint::design::{FAR_SCALE, HERO_LINE_WIDTH, LINE_WIDTH, RAILS};
 use archboard_scene::scene::{
     Cap, Colour, Geometry, Group, Icon, Item, Mask, Paint, Purpose, Role, Scene, Shape, Stroke,
@@ -92,6 +95,7 @@ struct Walk<'a, C: Canvas> {
     definitions: &'a Definitions,
     outlines: &'a mut Outlines,
     presentation: &'a Presentation,
+    still: Option<u64>,
 }
 
 /// Fill a canvas of a size in canvas pixels with a picture's ground, so that
@@ -116,6 +120,8 @@ pub(crate) struct Inks<'a> {
     pub(crate) palette: &'a Palette,
     pub(crate) outlines: &'a mut Outlines,
     pub(crate) presentation: &'a Presentation,
+    /// What a picture that stands still from frame to frame is known by.
+    pub(crate) still: Option<u64>,
 }
 
 /// Draw some items under a transform, with the definitions they refer to.
@@ -132,6 +138,7 @@ pub(crate) fn draw_items<C: Canvas>(
         definitions,
         outlines: &mut *inks.outlines,
         presentation: inks.presentation,
+        still: inks.still,
     };
     let inside = Inside {
         transform,
@@ -163,6 +170,7 @@ pub fn draw<C: Canvas>(
         palette,
         outlines,
         presentation,
+        still: None,
     };
     draw_items(
         canvas,
@@ -185,6 +193,14 @@ fn between(from: Transform, to: Transform, share: f64) -> Transform {
 
 /// No move.
 const STILL: Transform = Transform::translate(0.0, 0.0);
+
+/// Whether an item at the top of a picture draws the same from frame to frame,
+/// so long as the picture's look stands: all but its traffic, and the groups
+/// that only hold what stands.
+fn stands_still(item: &Item) -> bool {
+    !matches!(item, Item::Group(group) if only_moves(&group.role))
+        && !holds_traffic(std::slice::from_ref(item))
+}
 
 /// A mask shape that cuts: the white ground of a mask lets everything through.
 fn cuts(shape: &Shape) -> bool {
@@ -211,12 +227,26 @@ impl<C: Canvas> Walk<'_, C> {
     fn items(&mut self, items: &[Item], inside: Inside) {
         let home = inside.top && self.presentation.sweep.is_some() && holds_lines(items);
         let mut swept = !home;
-        for item in drawn_in_order(items, self.presentation) {
+        for (index, item) in drawn_in_order(items, self.presentation).enumerate() {
             if !swept && is_part(item) {
                 self.sweep(inside);
                 swept = true;
             }
-            self.item(item, inside);
+            match self.still.filter(|_| inside.top && stands_still(item)) {
+                Some(still) => {
+                    let key = still.wrapping_add(index as u64);
+                    self.part(key, inside.transform, |walk, transform| {
+                        walk.item(
+                            item,
+                            Inside {
+                                transform,
+                                ..inside
+                            },
+                        );
+                    });
+                }
+                None => self.item(item, inside),
+            }
         }
         if !swept {
             self.sweep(inside);
@@ -551,8 +581,38 @@ impl<C: Canvas> Walk<'_, C> {
         }
     }
 
-    /// Draw a run of words from its glyphs.
+    /// Draw something that stands the same from frame to frame under a
+    /// transform: again, when the canvas kept it, and otherwise from scratch.
+    fn part(&mut self, key: u64, transform: Affine, draw: impl FnOnce(&mut Self, Affine)) {
+        if self.canvas.again(key, transform) {
+            return;
+        }
+        if self.canvas.keep() {
+            draw(self, Affine::IDENTITY);
+            self.canvas.kept(key, transform);
+        } else {
+            draw(self, transform);
+        }
+    }
+
+    /// Draw a run of words from its glyphs. The same words in the same face,
+    /// size and colour are the same part, wherever they stand.
     fn text(&mut self, text: &Text, inside: Inside) {
+        let mut key = DefaultHasher::new();
+        text.words.hash(&mut key);
+        text.font.hash(&mut key);
+        text.size.to_bits().hash(&mut key);
+        self.palette
+            .colour(&text.fill, 1.0)
+            .components
+            .map(f32::to_bits)
+            .hash(&mut key);
+        let at = inside.transform * Affine::translate((text.at.x, text.at.y));
+        self.part(key.finish(), at, |walk, at| walk.glyphs(text, at));
+    }
+
+    /// Draw the glyphs of a run, its baseline starting under a transform.
+    fn glyphs(&mut self, text: &Text, at: Affine) {
         let scale = text.size / f64::from(text.units_per_em);
         let ink = Ink::Solid(self.palette.colour(&text.fill, 1.0));
         for glyph in &text.glyphs {
@@ -560,10 +620,9 @@ impl<C: Canvas> Walk<'_, C> {
             if outline.elements().is_empty() {
                 continue;
             }
-            let x = text.at.x + f64::from(glyph.x) * scale;
-            let y = text.at.y + f64::from(glyph.y) * scale;
-            self.canvas
-                .set_transform(inside.transform * placed(x, y, Some(scale)));
+            let x = f64::from(glyph.x) * scale;
+            let y = f64::from(glyph.y) * scale;
+            self.canvas.set_transform(at * placed(x, y, Some(scale)));
             self.canvas.fill(&outline, &ink, false);
         }
     }

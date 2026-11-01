@@ -30,6 +30,19 @@ pub trait Canvas {
     fn push_keep(&mut self);
     /// End the last layer.
     fn pop(&mut self);
+    /// Draw again what is kept under a key, under a transform. A canvas that
+    /// holds nothing under the key answers false.
+    fn again(&mut self, _key: u64, _transform: Affine) -> bool {
+        false
+    }
+    /// Start keeping what is drawn from now on, in its own space. A canvas that
+    /// keeps nothing answers false and goes on as before.
+    fn keep(&mut self) -> bool {
+        false
+    }
+    /// End what [`Canvas::keep`] started: keep it under a key, and draw it
+    /// under a transform.
+    fn kept(&mut self, _key: u64, _transform: Affine) {}
 }
 
 /// A canvas that only counts, for tests of what a frame draws.
