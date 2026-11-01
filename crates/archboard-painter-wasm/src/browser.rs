@@ -3,10 +3,13 @@
 use std::collections::{HashMap, HashSet};
 
 use archboard_paint::cpu::CpuCanvas;
+use archboard_paint::flight::DiveWay;
 use archboard_paint::palette::Theme;
 use archboard_paint::presentation::{Camera, Light, Marks};
 use archboard_paint::stage::Stage;
+use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Painting;
+use serde::Deserialize;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::{Clamped, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
@@ -20,6 +23,14 @@ enum Target {
         canvas: Box<CpuCanvas>,
         context: CanvasRenderingContext2d,
     },
+}
+
+/// A flight between a board and the board inside its card, as a page states it.
+#[derive(Deserialize)]
+struct DiveFlight {
+    way: DiveWay,
+    card: String,
+    frame: Rect,
 }
 
 /// A theme by whether it is dark.
@@ -100,6 +111,102 @@ impl Painter {
         let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
         self.stage.show(painting);
         Ok(())
+    }
+
+    /// Say at which points of a move each of its parts happens, as JSON.
+    ///
+    /// # Errors
+    ///
+    /// The phases do not read as phases.
+    #[wasm_bindgen(js_name = setPhases)]
+    pub fn set_phases(&mut self, phases: &str) -> Result<(), JsError> {
+        self.stage
+            .set_phases(serde_json::from_str(phases).map_err(unread)?);
+        Ok(())
+    }
+
+    /// Carry the picture on the stage into the next.
+    ///
+    /// # Errors
+    ///
+    /// The painting does not read as one.
+    pub fn carry(
+        &mut self,
+        painting: &str,
+        shift_x: f64,
+        shift_y: f64,
+        ms: f64,
+        now: f64,
+    ) -> Result<(), JsError> {
+        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
+        self.stage.carry(painting, (shift_x, shift_y), ms, now);
+        Ok(())
+    }
+
+    /// Bring a picture in part by part, what is left of the last one finishing
+    /// over it, moved with its pane by a distance in canvas pixels.
+    ///
+    /// # Errors
+    ///
+    /// The painting does not read as one.
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "a page calls this with plain numbers"
+    )]
+    pub fn enter(
+        &mut self,
+        painting: &str,
+        exit: f64,
+        ms: f64,
+        moved_x: f64,
+        moved_y: f64,
+        now: f64,
+    ) -> Result<(), JsError> {
+        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
+        self.stage
+            .enter(painting, (exit, ms), (moved_x, moved_y), now);
+        Ok(())
+    }
+
+    /// Land whatever flies, at once.
+    pub fn land(&mut self) {
+        self.stage.land();
+    }
+
+    /// Send the picture on its way out, a heading in JSON.
+    ///
+    /// # Errors
+    ///
+    /// The heading does not read as one.
+    pub fn leave(&mut self, heading: &str, ms: f64, now: f64) -> Result<(), JsError> {
+        let heading = serde_json::from_str(heading).map_err(unread)?;
+        self.stage.leave(heading, ms, now);
+        Ok(())
+    }
+
+    /// Bring back a picture the reader returned to.
+    pub fn stay(&mut self) {
+        self.stage.stay();
+    }
+
+    /// Put a board inside its card and start the flight's fades. `flight` names
+    /// `{"way","card","frame"}` in JSON.
+    ///
+    /// # Errors
+    ///
+    /// The painting or the flight does not read.
+    pub fn dive(&mut self, painting: &str, flight: &str, ms: f64, now: f64) -> Result<(), JsError> {
+        let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
+        let flight: DiveFlight = serde_json::from_str(flight).map_err(unread)?;
+        self.stage
+            .dive(painting, flight.frame, (flight.way, flight.card), ms, now);
+        Ok(())
+    }
+
+    /// Take the board inside a card away.
+    #[wasm_bindgen(js_name = endDive)]
+    pub fn end_dive(&mut self) {
+        self.stage.end_dive();
     }
 
     /// Take the picture off the stage.

@@ -81,6 +81,8 @@ struct Inside {
     /// The items stand where the picture's lines stand, or in a group that only
     /// moves them.
     top: bool,
+    /// How much of what a card says shows, while a flight goes into the card.
+    words: f64,
 }
 
 /// One frame's walk.
@@ -92,8 +94,61 @@ struct Walk<'a, C: Canvas> {
     presentation: &'a Presentation,
 }
 
-/// Draw a picture on a canvas of a size in canvas pixels. The ground fills the
-/// whole canvas, so that every frame is opaque.
+/// Fill a canvas of a size in canvas pixels with a picture's ground, so that
+/// every frame is opaque.
+pub(crate) fn draw_ground<C: Canvas>(
+    canvas: &mut C,
+    scene: &Scene,
+    size: (f64, f64),
+    palette: &Palette,
+) {
+    let ground = Ink::Solid(palette.colour(&scene.background, 1.0));
+    canvas.set_transform(Affine::IDENTITY);
+    canvas.fill(
+        &Rect::new(0.0, 0.0, size.0, size.1).to_path(BOX_TOLERANCE),
+        &ground,
+        false,
+    );
+}
+
+/// What a frame draws from, besides the items it draws.
+pub(crate) struct Inks<'a> {
+    pub(crate) palette: &'a Palette,
+    pub(crate) outlines: &'a mut Outlines,
+    pub(crate) presentation: &'a Presentation,
+}
+
+/// Draw some items under a transform, with the definitions they refer to.
+pub(crate) fn draw_items<C: Canvas>(
+    canvas: &mut C,
+    items: &[Item],
+    definitions: &Definitions,
+    transform: Affine,
+    inks: &mut Inks<'_>,
+) {
+    let mut walk = Walk {
+        canvas,
+        palette: inks.palette,
+        definitions,
+        outlines: &mut *inks.outlines,
+        presentation: inks.presentation,
+    };
+    let inside = Inside {
+        transform,
+        view: View::Both,
+        selected: false,
+        lit: false,
+        line: false,
+        stuck: false,
+        hovered: false,
+        top: true,
+        words: 1.0,
+    };
+    walk.items(items, inside);
+}
+
+/// Draw a picture on a canvas of a size in canvas pixels, its ground filling
+/// the whole canvas.
 pub fn draw<C: Canvas>(
     canvas: &mut C,
     picture: &Picture,
@@ -102,32 +157,20 @@ pub fn draw<C: Canvas>(
     outlines: &mut Outlines,
     presentation: &Presentation,
 ) {
-    let ground = Ink::Solid(palette.colour(&picture.scene.background, 1.0));
-    canvas.set_transform(Affine::IDENTITY);
-    canvas.fill(
-        &Rect::new(0.0, 0.0, size.0, size.1).to_path(BOX_TOLERANCE),
-        &ground,
-        false,
-    );
+    draw_ground(canvas, &picture.scene, size, palette);
     let camera = presentation.camera;
-    let mut walk = Walk {
-        canvas,
+    let mut inks = Inks {
         palette,
-        definitions: &picture.definitions,
         outlines,
         presentation,
     };
-    let inside = Inside {
-        transform: placed(camera.x, camera.y, Some(camera.scale)),
-        view: View::Both,
-        selected: false,
-        lit: false,
-        line: false,
-        stuck: false,
-        hovered: false,
-        top: true,
-    };
-    walk.items(&picture.scene.body, inside);
+    draw_items(
+        canvas,
+        &picture.scene.body,
+        &picture.definitions,
+        placed(camera.x, camera.y, Some(camera.scale)),
+        &mut inks,
+    );
 }
 
 /// A move from one place to another, a share of the way.
@@ -264,7 +307,12 @@ impl<C: Canvas> Walk<'_, C> {
         let selected = subject.is_some_and(|id| self.presentation.selected.contains(id));
         let (recede, lit) = self.recede_of(group, inside);
         let held = self.held_by(group, inside, selected, lit);
-        let opacity = group.opacity.unwrap_or(1.0) * swap * recede;
+        let spoken = matches!(
+            group.role,
+            Role::NearView | Role::FarView | Role::Chip { .. }
+        );
+        let words = if spoken { inside.words } else { 1.0 };
+        let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words;
         let mask = group
             .mask
             .as_ref()
@@ -299,6 +347,15 @@ impl<C: Canvas> Walk<'_, C> {
             stuck: inside.stuck || drop > 0.0,
             hovered: self.hovers(group, inside),
             top: inside.top && only_moves(&group.role),
+            words: self.words_of(group, inside),
+        }
+    }
+
+    /// How much of what a group's direct views say shows.
+    fn words_of(&self, group: &Group, inside: Inside) -> f64 {
+        match (&self.presentation.fading_words, &group.subject) {
+            (Some((card, words)), Some(subject)) if inside.top && subject.id == *card => *words,
+            _ => 1.0,
         }
     }
 

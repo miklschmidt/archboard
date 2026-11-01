@@ -19,6 +19,7 @@ archboard-paint = { path = "../archboard-paint" }
 archboard-scene = { path = "../archboard-scene" }
 kurbo = "0.13"
 peniko = "0.6"
+serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 vello = { version = "0.11", default-features = false, features = ["wgpu"] }
 wasm-bindgen = "0.2.129"

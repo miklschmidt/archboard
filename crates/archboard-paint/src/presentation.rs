@@ -70,6 +70,9 @@ pub struct Presentation {
     pub recede: Recede,
     /// The traffic's clock in seconds, or nothing when it is not shown.
     pub traffic: Option<f64>,
+    /// A card whose words fade while the camera flies into it, and how much of
+    /// them shows.
+    pub fading_words: Option<(String, f64)>,
     /// The subject whose control the pointer rests on.
     pub hovered_toggle: Option<String>,
     /// The lines that are being drawn on as they light.

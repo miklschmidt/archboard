@@ -65,6 +65,7 @@ dependencies = [
  "archboard-scene",
  "kurbo",
  "peniko",
+ "serde",
  "serde_json",
  "vello",
  "wasm-bindgen",

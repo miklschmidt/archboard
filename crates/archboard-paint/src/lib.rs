@@ -8,6 +8,7 @@ mod clock;
 pub mod cpu;
 mod definitions;
 pub mod draw;
+pub mod flight;
 pub mod outlines;
 pub mod palette;
 mod path;

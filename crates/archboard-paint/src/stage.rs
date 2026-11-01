@@ -5,14 +5,18 @@
 
 use std::collections::{HashMap, HashSet};
 
-use archboard_scene::scene::Painting;
-use kurbo::{Affine, Point};
+use archboard_scene::geometry::Rect;
+use archboard_scene::scene::{Item, Painting};
+use kurbo::{Affine, Point, Shape as _};
 
+use crate::between::{Heading, Phases, departure};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
-use crate::draw::{Picture, draw};
+use crate::draw::{Inks, Picture, draw_ground, draw_items};
+use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
+use crate::path::{placed, rect_of};
 use crate::pick::Targets;
 use crate::presentation::{Camera, Light, Marks, Presentation};
 use crate::sweep::{Sweep, Timing};
@@ -68,6 +72,11 @@ pub struct Stage {
     palette: Palette,
     outlines: Outlines,
     size: (f64, f64),
+    phases: Option<Phases>,
+    flight: Option<Flight>,
+    leaving: Option<Leaving>,
+    ghost: Option<Ghost>,
+    dive: Option<Dive>,
     glide: Glide,
     far: Fade,
     lighting: Lighting,
@@ -87,6 +96,11 @@ impl Stage {
             palette: Palette::of(theme),
             outlines: Outlines::default(),
             size,
+            phases: None,
+            flight: None,
+            leaving: None,
+            ghost: None,
+            dive: None,
             glide: Glide {
                 x: Fade::still(0.0),
                 y: Fade::still(0.0),
@@ -100,16 +114,144 @@ impl Stage {
         }
     }
 
-    /// Put a picture on the stage in place of what stands there.
-    pub fn show(&mut self, painting: Painting) {
+    /// Say at which points of a move each of its parts happens.
+    pub fn set_phases(&mut self, phases: Phases) {
+        self.phases = Some(phases);
+    }
+
+    /// Stand a picture up, with nothing of the last one left moving.
+    fn stand(&mut self, painting: Painting) {
         self.outlines.learn_icons(&painting.icons);
         self.shown = Some(Shown {
             picture: Picture::new(painting.scene),
             near: None,
             far: None,
         });
+        self.flight = None;
+        self.leaving = None;
+        self.dive = None;
         self.presentation.sweep = None;
         self.find_warnings();
+    }
+
+    /// Put a picture on the stage in place of what stands there.
+    pub fn show(&mut self, painting: Painting) {
+        self.stand(painting);
+    }
+
+    /// Carry the picture on the stage into the next, over a time in
+    /// milliseconds. A stage with nothing to carry shows the next picture.
+    pub fn carry(&mut self, painting: Painting, shift: (f64, f64), ms: f64, now: f64) {
+        let last = self.shown.take();
+        let flight = last
+            .as_ref()
+            .zip(self.phases.as_ref())
+            .map(|(last, phases)| {
+                Flight::carry(
+                    &last.picture.scene,
+                    &painting.scene,
+                    shift,
+                    phases,
+                    (now, ms),
+                )
+            });
+        self.stand(painting);
+        self.flight = flight;
+        if self.flight.is_some() {
+            self.presentation.warnings = Warnings::default();
+        }
+    }
+
+    /// Bring a picture in part by part, what is left of the last one finishing
+    /// over it, where it was last seen, moved with its pane by `moved` canvas
+    /// pixels. `exit` is the whole time a picture takes to leave.
+    pub fn enter(
+        &mut self,
+        painting: Painting,
+        (exit, ms): (f64, f64),
+        moved: (f64, f64),
+        now: f64,
+    ) {
+        self.ghost = self.ghost_of_last(exit, moved, now);
+        let flight = self
+            .phases
+            .as_ref()
+            .map(|phases| Flight::enter(&painting.scene, phases, (now, ms)));
+        self.stand(painting);
+        self.flight = flight;
+        if self.flight.is_some() {
+            self.presentation.warnings = Warnings::default();
+        }
+    }
+
+    /// What is left of the picture on the stage, as a ghost.
+    fn ghost_of_last(&mut self, exit: f64, moved: (f64, f64), now: f64) -> Option<Ghost> {
+        let last = self.shown.take()?;
+        let leaving = self.leaving.take();
+        let from = leaving
+            .as_ref()
+            .map_or(0.0, |leaving| leaving.progress(now));
+        let camera = self.presentation.camera;
+        Some(Ghost {
+            picture: last.picture,
+            heading: leaving.map_or(Heading::Across, |leaving| leaving.heading),
+            camera: Camera {
+                x: camera.x - moved.0,
+                y: camera.y - moved.1,
+                ..camera
+            },
+            from,
+            start: now,
+            ms: exit * (1.0 - from),
+        })
+    }
+
+    /// Land whatever flies, at once.
+    pub fn land(&mut self) {
+        if self.flight.take().is_some() {
+            self.find_warnings();
+        }
+    }
+
+    /// Send the picture on its way out, while the next is drawn.
+    pub fn leave(&mut self, heading: Heading, ms: f64, now: f64) {
+        self.leaving = Some(Leaving {
+            heading,
+            start: now,
+            ms,
+        });
+    }
+
+    /// Bring back a picture the reader returned to before anything else arrived.
+    pub fn stay(&mut self) {
+        self.leaving = None;
+    }
+
+    /// Put a board inside its card, and start the fades of the flight between
+    /// the two. `flight` is the flight's way, and the card it flies into.
+    pub fn dive(
+        &mut self,
+        painting: Painting,
+        frame: Rect,
+        (way, card): (DiveWay, String),
+        ms: f64,
+        now: f64,
+    ) {
+        self.outlines.learn_icons(&painting.icons);
+        self.dive = Some(Dive {
+            inset: Picture::new(painting.scene),
+            frame,
+            card,
+            way,
+            start: now,
+            ms,
+        });
+    }
+
+    /// Take the board inside a card away, and the fades with it.
+    pub fn end_dive(&mut self) {
+        self.dive = None;
+        self.presentation.fading_words = None;
     }
 
     /// Take the picture off the stage.
@@ -282,6 +424,18 @@ impl Stage {
             scale: self.glide.scale.at(now),
         };
         self.presentation.far = self.far.at(now);
+        if self
+            .flight
+            .as_ref()
+            .is_some_and(|flight| flight.landed(now))
+        {
+            self.land();
+        }
+        self.ghost = self.ghost.take().filter(|ghost| !ghost.gone(now));
+        self.presentation.fading_words = self
+            .dive
+            .as_ref()
+            .map(|dive| (dive.card.clone(), dive.fades(now).words));
         self.clock.advance(now);
         self.presentation.traffic = self.clock.shown_seconds();
         self.presentation.sweep = self
@@ -319,6 +473,7 @@ impl Stage {
     fn changing(&self, now: f64) -> bool {
         let lighting = &self.lighting;
         self.moving_traffic()
+            || self.flying(now)
             || self.presentation.sweep.is_some()
             || ![self.glide.x, self.glide.y, self.glide.scale, self.far]
                 .iter()
@@ -330,21 +485,103 @@ impl Stage {
                 .any(|shining| !shining.fade.done(now))
     }
 
+    /// Whether a whole picture is on the move at a moment.
+    fn flying(&self, now: f64) -> bool {
+        self.flight.is_some()
+            || self.ghost.is_some()
+            || self
+                .leaving
+                .as_ref()
+                .is_some_and(|leaving| leaving.progress(now) < 1.0)
+            || self.dive.as_ref().is_some_and(|dive| !dive.ended(now))
+    }
+
     /// Draw the frame of a moment, in milliseconds. A stage with no picture
     /// draws nothing.
     pub fn draw<C: Canvas>(&mut self, canvas: &mut C, now: f64) -> bool {
         self.advance(now);
-        if let Some(shown) = &self.shown {
-            draw(
-                canvas,
-                &shown.picture,
-                self.size,
-                &self.palette,
-                &mut self.outlines,
-                &self.presentation,
-            );
+        if self.shown.is_some() {
+            self.draw_frame(canvas, now);
         }
         self.changing(now)
+    }
+
+    /// Draw what stands on the stage: its ground, the picture, the board
+    /// inside a card, and over them what is left of the last picture.
+    fn draw_frame<C: Canvas>(&mut self, canvas: &mut C, now: f64) {
+        let Stage {
+            shown,
+            presentation,
+            palette,
+            outlines,
+            size,
+            flight,
+            leaving,
+            ghost,
+            dive,
+            ..
+        } = self;
+        let Some(shown) = shown else {
+            return;
+        };
+        let picture = &shown.picture;
+        draw_ground(canvas, &picture.scene, *size, palette);
+        let camera = presentation.camera;
+        let transform = placed(camera.x, camera.y, Some(camera.scale));
+        let fades = dive.as_ref().map(|dive| dive.fades(now));
+        let parent = fades.map_or(1.0, |fades| fades.parent);
+        if parent < 1.0 {
+            canvas.set_transform(Affine::IDENTITY);
+            canvas.push(None, opacity_of(parent));
+        }
+        let mut inks = Inks {
+            palette,
+            outlines: &mut *outlines,
+            presentation,
+        };
+        let moved: Option<Vec<Item>> = match (&*flight, &*leaving) {
+            (Some(flight), _) => Some(flight.items(now)),
+            (None, Some(leaving)) => Some(departure(
+                &picture.scene,
+                &leaving.heading,
+                leaving.progress(now),
+            )),
+            (None, None) => None,
+        };
+        let definitions = flight
+            .as_ref()
+            .and_then(Flight::definitions)
+            .unwrap_or(&picture.definitions);
+        let items = moved.as_deref().unwrap_or(&picture.scene.body);
+        draw_items(canvas, items, definitions, transform, &mut inks);
+        if parent < 1.0 {
+            canvas.pop();
+        }
+        let plain = Presentation {
+            camera,
+            far: presentation.far,
+            traffic: presentation.traffic,
+            ..Presentation::default()
+        };
+        let mut plain_inks = Inks {
+            palette,
+            outlines,
+            presentation: &plain,
+        };
+        if let Some((dive, fades)) = dive.as_ref().zip(fades) {
+            draw_inset(canvas, dive, fades.inset, transform, &mut plain_inks);
+        }
+        if let Some(ghost) = ghost {
+            let place = placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
+            let items = ghost.items(now);
+            draw_items(
+                canvas,
+                &items,
+                &ghost.picture.definitions,
+                place,
+                &mut plain_inks,
+            );
+        }
     }
 
     /// What lies under a point of the canvas, the topmost first: each by the
@@ -362,6 +599,39 @@ impl Stage {
             (Affine::translate((camera.x, camera.y)) * Affine::scale(camera.scale)).inverse();
         targets.under(to_picture * Point::new(x, y))
     }
+}
+
+/// An opacity as a canvas takes it.
+#[expect(clippy::cast_possible_truncation, reason = "a canvas's opacity is f32")]
+fn opacity_of(opacity: f64) -> f32 {
+    opacity as f32
+}
+
+/// Draw the board inside its card: fitted to the card and clipped to it, in the
+/// parent's own coordinates, with no light on it.
+fn draw_inset<C: Canvas>(
+    canvas: &mut C,
+    dive: &Dive,
+    opacity: f64,
+    transform: Affine,
+    inks: &mut Inks<'_>,
+) {
+    let (frame, scene) = (&dive.frame, &dive.inset.scene);
+    let scale = (frame.width / scene.width).min(frame.height / scene.height);
+    let x = frame.x + (frame.width - scene.width * scale) / 2.0;
+    let y = frame.y + (frame.height - scene.height * scale) / 2.0;
+    let clip = rect_of(frame).to_path(0.1);
+    canvas.set_transform(transform);
+    canvas.push(Some((&clip, false)), opacity_of(opacity));
+    draw_ground(canvas, scene, (1e5, 1e5), inks.palette);
+    draw_items(
+        canvas,
+        &scene.body,
+        &dive.inset.definitions,
+        transform * placed(x, y, Some(scale)),
+        inks,
+    );
+    canvas.pop();
 }
 
 #[cfg(test)]

@@ -30,6 +30,13 @@ impl Definitions {
         found
     }
 
+    /// The definitions of a list.
+    pub(crate) fn listed(definitions: &[Definition]) -> Definitions {
+        let mut found = Definitions::default();
+        found.take(definitions);
+        found
+    }
+
     /// Keep some definitions. A later one of an id replaces an earlier one.
     fn take(&mut self, definitions: &[Definition]) {
         for definition in definitions {

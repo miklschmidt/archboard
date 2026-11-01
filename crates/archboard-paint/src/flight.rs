@@ -1,0 +1,243 @@
+//! What moves a whole picture: a flight from the last picture, a part-by-part
+//! entrance, a picture leaving, the ghost of one that left, and the board inside
+//! a card that the camera flies into. Each holds what it needs from its start
+//! and answers for a moment of the host's clock.
+
+use archboard_scene::geometry::Rect;
+use archboard_scene::scene::{Item, Scene};
+use serde::Deserialize;
+
+use crate::between::{Between, Entrance, Heading, Phases, departure};
+use crate::definitions::Definitions;
+use crate::draw::Picture;
+use crate::presentation::Camera;
+use crate::timing::{EASE_IN_OUT, EASE_OUT};
+
+/// How far through a stretch of time a moment is, from 0 to 1.
+fn share(now: f64, start: f64, ms: f64) -> f64 {
+    if ms <= 0.0 {
+        1.0
+    } else {
+        ((now - start) / ms).clamp(0.0, 1.0)
+    }
+}
+
+/// A picture on its way in.
+#[derive(Debug)]
+pub(crate) enum Flight {
+    /// The last picture carried into this one.
+    Carry {
+        between: Box<Between>,
+        definitions: Definitions,
+        start: f64,
+        ms: f64,
+    },
+    /// A picture coming in part by part.
+    Enter {
+        entrance: Box<Entrance>,
+        start: f64,
+        ms: f64,
+    },
+}
+
+impl Flight {
+    /// A flight from one scene into another.
+    pub(crate) fn carry(
+        from: &Scene,
+        to: &Scene,
+        shift: (f64, f64),
+        phases: &Phases,
+        (start, ms): (f64, f64),
+    ) -> Flight {
+        let between = Box::new(Between::new(from, to, shift, phases));
+        Flight::Carry {
+            definitions: Definitions::listed(&between.definitions()),
+            between,
+            start,
+            ms,
+        }
+    }
+
+    /// An entrance.
+    pub(crate) fn enter(scene: &Scene, phases: &Phases, (start, ms): (f64, f64)) -> Flight {
+        Flight::Enter {
+            entrance: Box::new(Entrance::new(scene, phases)),
+            start,
+            ms,
+        }
+    }
+
+    /// Whether the flight has landed by a moment.
+    pub(crate) fn landed(&self, now: f64) -> bool {
+        match self {
+            Flight::Carry { start, ms, .. } | Flight::Enter { start, ms, .. } => {
+                share(now, *start, *ms) >= 1.0
+            }
+        }
+    }
+
+    /// What the flight shows at a moment.
+    pub(crate) fn items(&self, now: f64) -> Vec<Item> {
+        match self {
+            Flight::Carry {
+                between, start, ms, ..
+            } => between.at(share(now, *start, *ms)),
+            Flight::Enter {
+                entrance,
+                start,
+                ms,
+            } => entrance.at(share(now, *start, *ms)),
+        }
+    }
+
+    /// The definitions that what the flight shows refers to, when they are its own.
+    pub(crate) fn definitions(&self) -> Option<&Definitions> {
+        match self {
+            Flight::Carry { definitions, .. } => Some(definitions),
+            Flight::Enter { .. } => None,
+        }
+    }
+}
+
+/// The picture on the stage on its way out, while the next is drawn.
+#[derive(Debug)]
+pub(crate) struct Leaving {
+    pub(crate) heading: Heading,
+    pub(crate) start: f64,
+    pub(crate) ms: f64,
+}
+
+impl Leaving {
+    /// How far it has gone by a moment.
+    pub(crate) fn progress(&self, now: f64) -> f64 {
+        share(now, self.start, self.ms)
+    }
+}
+
+/// What is left of the last picture, finishing on the spot where it was seen,
+/// over the picture arriving. The camera no longer moves it.
+#[derive(Debug)]
+pub(crate) struct Ghost {
+    pub(crate) picture: Picture,
+    pub(crate) heading: Heading,
+    pub(crate) camera: Camera,
+    pub(crate) from: f64,
+    pub(crate) start: f64,
+    pub(crate) ms: f64,
+}
+
+impl Ghost {
+    /// Whether the ghost is gone by a moment.
+    pub(crate) fn gone(&self, now: f64) -> bool {
+        share(now, self.start, self.ms) >= 1.0
+    }
+
+    /// What the ghost shows at a moment.
+    pub(crate) fn items(&self, now: f64) -> Vec<Item> {
+        let rest = EASE_OUT.at(share(now, self.start, self.ms));
+        let progress = self.from + (1.0 - self.from) * rest;
+        departure(&self.picture.scene, &self.heading, progress)
+    }
+}
+
+/// Which way a flight goes between a board and the board inside its card.
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DiveWay {
+    /// Into the card.
+    In,
+    /// Back out of it.
+    Out,
+}
+
+/// Opacity at points of the flight into a card, from 0 to 1, in order.
+type Stops = [(f64, f64); 4];
+
+/// What a card says goes first, so the board inside it is not read through its label.
+const WORDS: Stops = [(0.0, 1.0), (0.1, 1.0), (0.28, 0.0), (1.0, 0.0)];
+
+/// The board above stays until the board inside can be made out.
+const PARENT: Stops = [(0.0, 1.0), (0.12, 1.0), (0.55, 0.0), (1.0, 0.0)];
+
+/// The board inside comes up before the card fills the pane.
+const INSET: Stops = [(0.0, 0.0), (0.04, 0.0), (0.3, 1.0), (1.0, 1.0)];
+
+/// Where a fade stands at a point of the flight into the card. Each stretch
+/// between two stops eases on its own, as keyframes do.
+fn fade_at(stops: &Stops, progress: f64) -> f64 {
+    let (from, to) = stops
+        .windows(2)
+        .map(|pair| (pair[0], pair[1]))
+        .find(|(_, to)| progress <= to.0)
+        .unwrap_or((stops[2], stops[3]));
+    let span = (to.0 - from.0).max(f64::MIN_POSITIVE);
+    let eased = EASE_IN_OUT.at(((progress - from.0) / span).clamp(0.0, 1.0));
+    from.1 + (to.1 - from.1) * eased
+}
+
+/// The board inside a card, in the parent's own coordinates, so the camera
+/// carries it along.
+#[derive(Debug)]
+pub(crate) struct Dive {
+    pub(crate) inset: Picture,
+    pub(crate) frame: Rect,
+    pub(crate) card: String,
+    pub(crate) way: DiveWay,
+    pub(crate) start: f64,
+    pub(crate) ms: f64,
+}
+
+/// How much of each part of a dive shows at a moment.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct DiveFades {
+    pub(crate) parent: f64,
+    pub(crate) inset: f64,
+    pub(crate) words: f64,
+}
+
+impl Dive {
+    /// The fades at a moment. Going back out is the same run the other way.
+    pub(crate) fn fades(&self, now: f64) -> DiveFades {
+        let progress = share(now, self.start, self.ms);
+        let along = match self.way {
+            DiveWay::In => progress,
+            DiveWay::Out => 1.0 - progress,
+        };
+        DiveFades {
+            parent: fade_at(&PARENT, along),
+            inset: fade_at(&INSET, along),
+            words: fade_at(&WORDS, along),
+        }
+    }
+
+    /// Whether the fades have ended by a moment.
+    pub(crate) fn ended(&self, now: f64) -> bool {
+        share(now, self.start, self.ms) >= 1.0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{INSET, PARENT, WORDS, fade_at};
+
+    #[test]
+    fn what_a_card_says_goes_before_the_board_above_it() {
+        assert_eq!(fade_at(&WORDS, 0.05), 1.0);
+        assert_eq!(fade_at(&WORDS, 0.28), 0.0);
+        assert!(fade_at(&PARENT, 0.28) > 0.5);
+        assert_eq!(fade_at(&PARENT, 0.55), 0.0);
+    }
+
+    #[test]
+    fn the_board_inside_is_up_before_the_board_above_has_gone() {
+        assert_eq!(fade_at(&INSET, 0.04), 0.0);
+        assert_eq!(fade_at(&INSET, 0.3), 1.0);
+        assert!(fade_at(&PARENT, 0.3) > 0.0);
+    }
+
+    #[test]
+    fn each_fade_ends_where_its_last_stop_says() {
+        assert_eq!(fade_at(&PARENT, 1.0), 0.0);
+        assert_eq!(fade_at(&INSET, 1.0), 1.0);
+    }
+}
