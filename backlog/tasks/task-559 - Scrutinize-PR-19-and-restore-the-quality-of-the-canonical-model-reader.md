@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-10-30T15:18:00Z'
-updated_date: '2026-10-31T04:17:00Z'
+updated_date: '2026-11-01T05:40:00Z'
 labels:
   - frontend
   - review
@@ -73,4 +73,6 @@ Product intent from the owner: the whole idea of the redesign was easy identific
 The owner left the choices to the integrator on 2026-10-31: pick the best options of the audit's ranked list, leave the rest as optional follow-ups for the owner's return. Decisions under that trust: rule 6 stays deleted, so every relationship has a line. Pull request 19 stays unpushed and unmerged until the owner approves.
 
 Delegated choice, 2026-10-31, from the audit in docs/design/task-549-reader-audit.md. Chosen: rank 1, 2 and 3 on TASK-559.22; rank 5 and the CLI half of 6 and 8 on TASK-559.27; rank 4 on TASK-559.29; rank 6 in the reader on TASK-559.30. Left as optional: TASK-559.31. Relationship repair decided as full repair, TASK-559.28, because a relationship that ends on a module with parts makes a caller and no entry point, so the measures read wrong until it moves: 70 of 114 modules with parts hold such an end, and 9 read as no entry points although callers reach them.
+
+README audit of 2026-11-01: four agents ran every marketed use case against an isolated server. Fixed: render default theme and missing folder, render refusals, check --state, the default comparison of a planning draft, browser show --against, browser close, panes report, refused show reason, footprint base, unbound count in check code, help and refusal words, stale Queued fulfilment draft, restored walkthrough recipes, Measures for smells (tie break, direction, Show, Changes with, pass-through target), two panes, panel findings and evidence, Explain with nothing selected, hidden gradient ids. Left: stale repository name after a cross-repository reference, small sequence words at landing, right-click position, a same-tab navigation leaves a pane in browser panes (seen only through agent-browser).
 <!-- SECTION:NOTES:END -->
