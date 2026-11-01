@@ -3,11 +3,15 @@
 //! a card that the camera flies into. Each holds what it needs from its start
 //! and answers for a moment of the host's clock.
 
+use std::collections::HashSet;
+
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Item, Scene};
 use serde::Deserialize;
 
-use crate::between::{Between, Entrance, Heading, Phases, departure};
+use crate::between::{
+    Between, Entrance, Handover, Heading, Phases, departure, visible_at, without,
+};
 use crate::definitions::Definitions;
 use crate::draw::Picture;
 use crate::presentation::{Camera, Presentation};
@@ -80,11 +84,25 @@ impl Flight {
         }
     }
 
-    /// An entrance.
-    pub(crate) fn enter(scene: &Scene, phases: &Phases, ms: f64) -> Flight {
+    /// An entrance, taking over from what is left of the last picture.
+    pub(crate) fn enter(
+        scene: &Scene,
+        phases: &Phases,
+        ms: f64,
+        handover: Option<Handover<'_>>,
+    ) -> Flight {
         Flight::Enter {
-            entrance: Box::new(Entrance::new(scene, phases)),
+            entrance: Box::new(Entrance::new(scene, phases, handover)),
             time: Stretch::of(ms),
+        }
+    }
+
+    /// The subjects that fly over from the last picture, when the flight is an
+    /// entrance.
+    pub(crate) fn flown(&self) -> Option<&HashSet<String>> {
+        match self {
+            Flight::Enter { entrance, .. } => Some(entrance.flown()),
+            Flight::Carry { .. } => None,
         }
     }
 
@@ -179,6 +197,18 @@ pub(crate) struct Leaving {
 }
 
 impl Ghost {
+    /// Take away what flies over to the next picture.
+    pub(crate) fn hand_over(&mut self, flown: &HashSet<String>) {
+        if !flown.is_empty() {
+            self.picture.scene.body = without(&self.picture.scene.body, flown);
+        }
+    }
+
+    /// How much of the ghost shows at its start.
+    pub(crate) fn shown(&self) -> f64 {
+        visible_at(self.from)
+    }
+
     /// How far through its end a moment is, from 0 to 1.
     pub(crate) fn gone_by(&self, now: f64) -> f64 {
         self.from + (1.0 - self.from) * self.time.share(now)

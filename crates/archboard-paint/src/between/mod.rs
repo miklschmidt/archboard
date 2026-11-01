@@ -33,14 +33,14 @@ mod testing;
 mod tests;
 mod unfold;
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
 
 use arrive::{Ground, Grow, LABEL_GONE_BY, Leave, Swap};
 use card::CardCarry;
-use content::{is_parked, unpark, unpark_held};
+use content::{is_parked, shell, unpark, unpark_held};
 use ease::{emphasised, phase};
 use found::{Form, Found, found, holds_subject, pair};
 use line::{DrawOn, LineCarry};
@@ -48,11 +48,38 @@ use plan::{Mover, Plan, Riding, Wiring};
 use ride::{Ride, mark_of};
 use unfold::{Doors, Inside, Unfold};
 
-pub use departure::{Heading, departure};
-pub use entrance::Entrance;
+pub use departure::{Heading, departure, visible_at};
+pub use entrance::{Entrance, Handover};
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
+
+/// Some items without what belongs to some subjects: their groups, and the
+/// shadows they cast.
+pub(crate) fn without(items: &[Item], subjects: &HashSet<String>) -> Vec<Item> {
+    let gone = |group: &Group| {
+        group
+            .subject
+            .as_ref()
+            .is_some_and(|subject| subjects.contains(&subject.id))
+            || (matches!(group.role, Role::Shadow(_))
+                && group
+                    .members
+                    .first()
+                    .is_some_and(|owner| subjects.contains(owner)))
+    };
+    items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Group(group) if gone(group) => None,
+            Item::Group(group) if group.subject.is_none() => Some(Item::Group(Group {
+                items: without(&group.items, subjects),
+                ..shell(group)
+            })),
+            other => Some(other.clone()),
+        })
+        .collect()
+}
 
 /// The box a subject's first group is drawn in, when the scene says.
 pub(crate) fn frame_of(scene: &Scene, subject: &str) -> Option<Rect> {

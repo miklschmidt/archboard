@@ -118,6 +118,8 @@ pub(super) struct Grow {
     from: f64,
     /// How far from its place it starts.
     pull: (f64, f64),
+    /// How much of it shows at its start.
+    shown: f64,
 }
 
 impl Grow {
@@ -130,6 +132,7 @@ impl Grow {
             end,
             from: ARRIVE_SCALE,
             pull: (0.0, 0.0),
+            shown: 0.0,
         }
     }
 
@@ -148,6 +151,28 @@ impl Grow {
             end,
             from: BLOOM_SCALE,
             pull,
+            shown: 0.0,
+        }
+    }
+
+    /// Something that flies from where the last picture drew it, showing as much
+    /// as what is left of that picture does.
+    pub(super) fn flown(
+        group: Group,
+        (old, new): (Rect, Rect),
+        (start, end): (f64, f64),
+        shown: f64,
+    ) -> Grow {
+        let middle = |rect: Rect| (rect.x + rect.width / 2.0, rect.y + rect.height / 2.0);
+        let (from, to) = (middle(old), middle(new));
+        Grow {
+            group,
+            frame: Some(new),
+            start,
+            end,
+            from: (old.width / new.width).min(old.height / new.height),
+            pull: (from.0 - to.0, from.1 - to.1),
+            shown,
         }
     }
 
@@ -158,7 +183,8 @@ impl Grow {
         if here >= 1.0 {
             return group;
         }
-        group.opacity = Some(base(&group) * ease_out(phase(here, 0.0, SHOWN_BY)));
+        let shown = self.shown + (1.0 - self.shown) * ease_out(phase(here, 0.0, SHOWN_BY));
+        group.opacity = Some(base(&group) * shown);
         let placed = emphasised(here);
         scaled_about(
             &mut group,

@@ -57,6 +57,11 @@ impl Heading {
     }
 }
 
+/// How much of a picture shows at a share of its leaving.
+pub fn visible_at(progress: f64) -> f64 {
+    1.0 - LEAVE_EASING.at(progress)
+}
+
 /// The last picture on its way out, its ground not drawn.
 ///
 /// Progress is a share of the whole leaving. The picture ends invisible, and

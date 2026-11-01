@@ -15,7 +15,7 @@ use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
-use crate::between::{Entrance, Heading, Phases, frame_of};
+use crate::between::{Entrance, Handover, Heading, Phases, frame_of};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
@@ -196,11 +196,18 @@ impl Stage {
         now: f64,
     ) {
         self.now = now;
-        let ghost = self.ghost_of_last(heading, moved, now);
+        let mut ghost = self.ghost_of_last(heading, moved, now);
+        let handover = ghost.as_ref().map(|ghost| Handover {
+            last: &ghost.picture.scene,
+            shown: ghost.shown(),
+        });
         let flight = self
             .phases
             .as_ref()
-            .map(|phases| Flight::enter(&painting.scene, phases, ms));
+            .map(|phases| Flight::enter(&painting.scene, phases, ms, handover));
+        if let (Some(ghost), Some(flown)) = (&mut ghost, flight.as_ref().and_then(Flight::flown)) {
+            ghost.hand_over(flown);
+        }
         self.stand(painting);
         self.lit_afresh = true;
         self.ghost = ghost;
@@ -282,7 +289,7 @@ impl Stage {
         let bloom = self
             .phases
             .as_ref()
-            .map(|phases| Entrance::new(&painting.scene, phases));
+            .map(|phases| Entrance::new(&painting.scene, phases, None));
         self.dive = Some(Dive {
             inset: Picture::new(painting.scene),
             bloom,

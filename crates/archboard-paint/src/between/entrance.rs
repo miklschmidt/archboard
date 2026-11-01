@@ -9,11 +9,15 @@
 //! Everything is timed by where it is on the board, not by how many there are, so
 //! a board of four cards and a board of forty take the same time to arrive and
 //! read as the same gesture.
+//!
+//! A subject the last picture also drew is the same subject. It flies from where
+//! the last picture drew it to its place in this one, so the eye keeps hold of
+//! something across the change of board.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Item, Role, Scene};
+use archboard_scene::scene::{Group, Item, Role, Scene};
 
 use super::arrive::Grow;
 use super::found::{Form, Found, found, holds_subject};
@@ -23,6 +27,12 @@ use super::plan::{Mover, Plan, Wiring};
 
 /// How far a card starts from its place, as a share of its way to the middle.
 const PULL: f64 = 0.16;
+
+/// How far through an entrance a card that flies lands.
+const FLOWN_BY: f64 = 0.8;
+
+/// How much bigger or smaller a card can be in the next picture and still fly.
+const MOST_CHANGE: f64 = 2.5;
 
 /// How far through its line's drawing a label arrives.
 const LABEL_AT: f64 = 0.55;
@@ -80,14 +90,66 @@ fn spread(keys: &[Option<f64>], first: f64, last: f64) -> Vec<f64> {
 pub struct Entrance {
     plan: Plan,
     landed: Vec<Item>,
+    /// The subjects that fly over from the last picture.
+    flown: HashSet<String>,
+}
+
+/// What an entrance takes over from the picture that was there.
+#[derive(Clone, Copy, Debug)]
+pub struct Handover<'a> {
+    /// The last picture.
+    pub last: &'a Scene,
+    /// How much of it still shows, from 0 to 1.
+    pub shown: f64,
+}
+
+/// Where the cards of the next picture stood in the last one, and how much of
+/// the last one shows. Only a card that stayed about its size flies: a door that
+/// became a tile has no shape to keep.
+struct Last<'a> {
+    stood: HashMap<&'a str, Rect>,
+    shown: f64,
+}
+
+impl<'a> Last<'a> {
+    /// What an entrance can take over, of what stands in the next picture.
+    fn of(handover: Option<Handover<'a>>) -> Last<'a> {
+        let Some(handover) = handover else {
+            return Last {
+                stood: HashMap::new(),
+                shown: 0.0,
+            };
+        };
+        let stood = found(handover.last)
+            .iter()
+            .filter(|group| is_card(group) && group.ordinal == 0)
+            .filter_map(|group| Some((group.id, group.frame?)))
+            .collect();
+        Last {
+            stood,
+            shown: handover.shown,
+        }
+    }
+
+    /// The box a card stood in, when it can fly from there.
+    fn stood_for(&self, card: &Found<'_>) -> Option<(Rect, Rect)> {
+        let (old, new) = (*self.stood.get(card.id)?, card.frame?);
+        let ratio = old.width / new.width;
+        (1.0 / MOST_CHANGE..=MOST_CHANGE)
+            .contains(&ratio)
+            .then_some((old, new))
+    }
+}
+
+/// Whether a group is a card, one that blooms on its own.
+fn is_card(group: &Found<'_>) -> bool {
+    group.form() == Form::Card && !group.is_region() && !group.is_label()
 }
 
 /// When each card grows, by its place in the groups: the wave's start and end.
 fn card_times(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
-        .filter(|&at| {
-            groups[at].form() == Form::Card && !groups[at].is_region() && !groups[at].is_label()
-        })
+        .filter(|&at| is_card(&groups[at]))
         .collect();
     let keys: Vec<Option<f64>> = places
         .iter()
@@ -107,16 +169,41 @@ fn card_times(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize,
 
 /// The cards, which bloom into place in a wave. Each is placed by its place in
 /// the groups.
-fn cards(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, Mover)> {
+fn cards(
+    groups: &[Found<'_>],
+    entry: &Entry,
+    middle: Point,
+    last: &Last<'_>,
+) -> Vec<(usize, Mover)> {
     card_times(groups, entry, middle)
         .into_iter()
         .map(|(at, begin, end)| {
-            let Found { group, frame, .. } = groups[at];
-            let pull = pull_of(frame, middle);
-            let bloom = Grow::bloom(group.clone(), frame, (begin, end), pull);
-            (at, Mover::Grow(bloom))
+            let card = &groups[at];
+            (at, arriving(card.group, card, (begin, end), middle, last))
         })
         .collect()
+}
+
+/// How a card, or the shadow it casts, arrives: from where it stood, or out of
+/// the middle.
+fn arriving(
+    group: &Group,
+    card: &Found<'_>,
+    times: (f64, f64),
+    middle: Point,
+    last: &Last<'_>,
+) -> Mover {
+    Mover::Grow(last.stood_for(card).map_or_else(
+        || {
+            Grow::bloom(
+                group.clone(),
+                card.frame,
+                times,
+                pull_of(card.frame, middle),
+            )
+        },
+        |boxes| Grow::flown(group.clone(), boxes, (0.0, FLOWN_BY), last.shown),
+    ))
 }
 
 /// When each line is drawn on, by its place in the groups: the wave's start and
@@ -178,14 +265,6 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<
         .collect()
 }
 
-/// When a card arrives, and the box it arrives in.
-#[derive(Clone, Copy)]
-struct Arrival {
-    begin: f64,
-    end: f64,
-    frame: Option<Rect>,
-}
-
 /// When something that belongs to no subject fades in. A line's pulses start as
 /// it ends, and a mark on the lines comes after the lines. The rest of the page's
 /// furniture fades in with the frames, so that nothing stands on its own before
@@ -222,20 +301,22 @@ fn furniture_times(
 }
 
 /// A shadow on the card that casts it, the two moving as one.
-fn riding(item: &Item, cards: &HashMap<&str, Arrival>, middle: Point) -> Option<Mover> {
+fn riding(
+    item: &Item,
+    cards: &HashMap<&str, (usize, f64, f64)>,
+    groups: &[Found<'_>],
+    middle: Point,
+    last: &Last<'_>,
+) -> Option<Mover> {
     let Item::Group(group) = item else {
         return None;
     };
     if !matches!(group.role, Role::Shadow(_)) {
         return None;
     }
-    let card = group
-        .members
-        .first()
-        .and_then(|owner| cards.get(owner.as_str()))?;
-    let pull = pull_of(card.frame, middle);
-    let bloom = Grow::bloom(group.clone(), card.frame, (card.begin, card.end), pull);
-    Some(Mover::Grow(bloom))
+    let owner = group.members.first()?;
+    let &(at, begin, end) = cards.get(owner.as_str())?;
+    Some(arriving(group, &groups[at], (begin, end), middle, last))
 }
 
 /// What an entrance does with each subject group, and which mover has which.
@@ -243,9 +324,10 @@ fn movers(
     groups: &[Found<'_>],
     phases: &Phases,
     middle: Point,
+    last: &Last<'_>,
 ) -> (Vec<Mover>, Vec<Option<usize>>) {
     let by_place: BTreeMap<usize, Mover> = [
-        cards(groups, &phases.entry, middle),
+        cards(groups, &phases.entry, middle, last),
         lines(groups, phases, middle),
         frames_and_labels(groups, &phases.entry, middle),
     ]
@@ -262,17 +344,21 @@ fn movers(
 }
 
 impl Entrance {
-    /// Prepare the entrance of a scene.
-    pub fn new(scene: &Scene, phases: &Phases) -> Entrance {
+    /// Prepare the entrance of a scene, taking over from a last picture if there
+    /// is one.
+    pub fn new(scene: &Scene, phases: &Phases, handover: Option<Handover<'_>>) -> Entrance {
         let groups = found(scene);
         let middle = middle_of_scene(scene);
-        let (all, of_subject) = movers(&groups, phases, middle);
-        let cards: HashMap<&str, Arrival> = card_times(&groups, &phases.entry, middle)
+        let last = Last::of(handover);
+        let (all, of_subject) = movers(&groups, phases, middle, &last);
+        let cards: HashMap<&str, (usize, f64, f64)> = card_times(&groups, &phases.entry, middle)
             .into_iter()
-            .map(|(at, begin, end)| {
-                let frame = groups[at].frame;
-                (groups[at].id, Arrival { begin, end, frame })
-            })
+            .map(|(at, begin, end)| (groups[at].id, (at, begin, end)))
+            .collect();
+        let flown = groups
+            .iter()
+            .filter(|group| is_card(group) && last.stood_for(group).is_some())
+            .map(|group| group.id.to_owned())
             .collect();
         let drawn: HashMap<&str, f64> = line_times(&groups, &phases.entry, middle)
             .into_iter()
@@ -289,7 +375,7 @@ impl Entrance {
                 && !matches!(item, Item::Definitions { .. } | Item::Break)
                 && !holds_subject(item, &|_| true);
             (alone || page).then(|| {
-                riding(item, &cards, middle).unwrap_or_else(|| {
+                riding(item, &cards, &groups, middle, &last).unwrap_or_else(|| {
                     let (start, end) = furniture_times(item, &drawn, &regions, &phases.entry);
                     Mover::Frame(item.clone(), start, end)
                 })
@@ -302,7 +388,13 @@ impl Entrance {
         Entrance {
             plan: Plan::new(&scene.body, all, &wiring),
             landed: scene.body.clone(),
+            flown,
         }
+    }
+
+    /// The subjects that fly over from the last picture.
+    pub(crate) fn flown(&self) -> &HashSet<String> {
+        &self.flown
     }
 
     /// The picture at a progress from 0 to 1, as a scene body. At 1 it is the
@@ -320,9 +412,9 @@ impl Entrance {
 mod tests {
     use archboard_scene::scene::{Group, Item, Role, Scene};
 
-    use super::super::Entrance;
     use super::super::testing::{PHASES, card, drawing, label, line, rect, scene, shadow};
     use super::super::tests::solid;
+    use super::super::{Entrance, Handover};
 
     /// A board of three cards one under another, a line from the first to the
     /// second, the line's label, and a shadow that belongs to no subject.
@@ -379,7 +471,7 @@ mod tests {
 
     #[test]
     fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
-        let early = Entrance::new(&cast_board(), &PHASES).at(0.1);
+        let early = Entrance::new(&cast_board(), &PHASES, None).at(0.1);
         let shadows = shadows_of(&early);
         assert_eq!(shadows.len(), 3);
         assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
@@ -388,7 +480,7 @@ mod tests {
 
     #[test]
     fn a_card_and_its_shadow_bloom_out_as_one() {
-        let early = Entrance::new(&cast_board(), &PHASES).at(0.2);
+        let early = Entrance::new(&cast_board(), &PHASES, None).at(0.2);
         let shadow = shadows_of(&early)[2];
         let card = drawing(&early, "bottom")[0];
         assert!(solid(card) > 0.0);
@@ -399,7 +491,7 @@ mod tests {
     #[test]
     fn an_entrance_opens_from_the_middle_of_the_board() {
         let board = tall_board();
-        let early = Entrance::new(&board, &PHASES).at(0.1);
+        let early = Entrance::new(&board, &PHASES, None).at(0.1);
         let of = |name: &str| solid(drawing(&early, name)[0]);
         assert!(
             of("middle") > 0.0,
@@ -418,7 +510,7 @@ mod tests {
             "what belongs to no subject fades in with the frames"
         );
         assert_eq!(
-            Entrance::new(&board, &PHASES).at(1.0),
+            Entrance::new(&board, &PHASES, None).at(1.0),
             board.body,
             "it lands on the scene itself"
         );
@@ -426,7 +518,7 @@ mod tests {
 
     #[test]
     fn a_card_comes_out_of_the_middle_small_and_lands_where_it_is_drawn() {
-        let early = Entrance::new(&tall_board(), &PHASES).at(0.12);
+        let early = Entrance::new(&tall_board(), &PHASES, None).at(0.12);
         let moved = drawing(&early, "middle")[0].transform.expect("it is moved");
         assert!(moved.scale.is_some_and(|scale| scale < 1.0));
         let (x, _) = (50.0 * moved.scale.unwrap_or(1.0) + moved.x, 0.0);
@@ -434,10 +526,29 @@ mod tests {
     }
 
     #[test]
+    fn a_card_the_last_picture_drew_flies_from_where_it_stood() {
+        let was = rect(300.0, 200.0, 80.0, 40.0);
+        let last = scene(vec![card("middle", was, &["B"])], &[]);
+        let board = tall_board();
+        let handover = Handover {
+            last: &last,
+            shown: 0.5,
+        };
+        let entrance = Entrance::new(&board, &PHASES, Some(handover));
+        assert!(entrance.flown().contains("middle"));
+        let start = entrance.at(0.0);
+        let flying = drawing(&start, "middle")[0];
+        let moved = flying.transform.expect("it stands where it stood");
+        assert_eq!((10.0 + moved.x, 110.0 + moved.y), (was.x, was.y));
+        assert_eq!(solid(flying), 0.5, "it shows as the last picture does");
+        assert_eq!(solid(drawing(&start, "top")[0]), 0.0, "the rest bloom");
+    }
+
+    #[test]
     fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reaches_it() {
         let board = tall_board();
         let lines = |progress: f64| {
-            let body = Entrance::new(&board, &PHASES).at(progress);
+            let body = Entrance::new(&board, &PHASES, None).at(progress);
             drawing(&body, "e")
                 .iter()
                 .map(|group| solid(group))

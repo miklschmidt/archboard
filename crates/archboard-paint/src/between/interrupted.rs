@@ -83,7 +83,7 @@ fn an_interrupted_entrance_keeps_the_box_the_reader_saw() {
     let frame = rect(10.0, 10.0, 100.0, 50.0);
     let from = scene(vec![card("a", frame, &["Title"])], &[("a", frame)]);
     let seen = Scene {
-        body: Entrance::new(&from, &PHASES).at(0.2),
+        body: Entrance::new(&from, &PHASES, None).at(0.2),
         ..from
     };
     let expected = drawn_box(drawing(&seen.body, "a")[0]);
@@ -134,7 +134,7 @@ fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
     );
     for progress in [0.2, 0.75] {
         let seen = Scene {
-            body: Entrance::new(&next, &PHASES).at(progress),
+            body: Entrance::new(&next, &PHASES, None).at(progress),
             ..next.clone()
         };
         let carried = Between::new(&seen, &next, (0.0, 0.0), &PHASES).at(0.0);
