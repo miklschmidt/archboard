@@ -12,6 +12,7 @@ use archboard_scene::scene::{
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 
 use crate::canvas::{Canvas, Count, Ink};
+use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::presentation::Marks;
 use crate::stage::Stage;
@@ -314,6 +315,7 @@ fn a_carried_clock_runs_on_and_hidden_traffic_draws_nothing() {
     stage.set_picture_time(7.0);
     pulses(&mut stage, 0.0);
     pulses(&mut stage, 1000.0);
+    stage.show(painting(traffic_picture()));
     assert_eq!(stage.picture_time(), 8.0);
     stage.set_traffic_shown(false);
     assert_eq!(pulses(&mut stage, 1300.0), (0, false));
@@ -324,6 +326,28 @@ fn a_picture_with_no_traffic_never_asks_for_frames_on_its_account() {
     let mut stage = stage_of(vec![plate(1.0)]);
     assert!(!frame(&mut stage, 0.0).1);
     assert!(!frame(&mut stage, 1000.0).1);
+}
+
+/// How much a frame draws in the middle of a flight out of a card whose board
+/// has one far part, at a far blend.
+fn drawn_in_a_card(far: bool) -> usize {
+    let mut stage = stage_of(Vec::new());
+    stage.set_far(far, 0.0, 0.0);
+    let card = Rect {
+        x: 0.0,
+        y: 0.0,
+        width: 400.0,
+        height: 400.0,
+    };
+    let inside = vec![Item::Group(Group::new(Role::FarView, vec![plate(1.0)]))];
+    let way = (DiveWay::Out, "card".to_owned());
+    stage.dive(painting(inside), card, way, 100.0, 0.0);
+    frame(&mut stage, 50.0).0.len()
+}
+
+#[test]
+fn the_board_inside_a_card_stands_in_the_far_view_of_the_board_around_it() {
+    assert!(drawn_in_a_card(true) > drawn_in_a_card(false));
 }
 
 /// A line drawn through a mask with one gap at a crossing and one stretch that
