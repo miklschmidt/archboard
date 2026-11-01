@@ -4,6 +4,7 @@
 //! clock the host gives, so a stepped clock records it frame by frame.
 
 mod frame;
+mod lighting;
 #[cfg(test)]
 mod tests;
 
@@ -25,6 +26,7 @@ use crate::presentation::{Camera, Light, Marks, Presentation};
 use crate::sweep::{Sweep, Timing};
 use crate::timing::{EASE_OUT, Fade, SWAP};
 use crate::warnings::Warnings;
+use lighting::Lighting;
 
 /// The camera, on its way to where it was told to go.
 #[derive(Clone, Copy, Debug)]
@@ -32,31 +34,6 @@ struct Glide {
     x: Fade,
     y: Fade,
     scale: Fade,
-}
-
-/// One subject in the light, and whether it stays there when its fade ends.
-#[derive(Clone, Copy, Debug)]
-struct Shining {
-    fade: Fade,
-    staying: bool,
-}
-
-/// How the picture stands in the light, as time goes on.
-#[derive(Clone, Debug)]
-struct Lighting {
-    rest: Fade,
-    labels: Fade,
-    subjects: HashMap<String, Shining>,
-}
-
-impl Default for Lighting {
-    fn default() -> Self {
-        Lighting {
-            rest: Fade::still(1.0),
-            labels: Fade::still(1.0),
-            subjects: HashMap::new(),
-        }
-    }
 }
 
 /// The picture on the stage, and what takes the pointer in each of its views.
@@ -221,6 +198,7 @@ impl Stage {
             },
             from,
             time: Stretch::of(exit * (1.0 - from)),
+            look: self.look.clone(),
         })
     }
 
@@ -420,29 +398,7 @@ impl Stage {
     /// Light the picture.
     pub fn set_light(&mut self, light: &Light, now: f64) {
         self.now = now;
-        let ms = light.duration;
-        let lighting = &mut self.lighting;
-        lighting.rest = lighting.rest.toward(light.rest, now, 0.0, ms, EASE_OUT);
-        lighting.labels = lighting.labels.toward(light.labels, now, 0.0, ms, EASE_OUT);
-        for (id, shining) in &mut lighting.subjects {
-            if !light.subjects.contains_key(id) {
-                shining.fade = shining.fade.toward(light.rest, now, 0.0, ms, EASE_OUT);
-                shining.staying = false;
-            }
-        }
-        for (id, shine) in &light.subjects {
-            let from = lighting
-                .subjects
-                .get(id)
-                .map_or(lighting.rest, |shining| shining.fade);
-            lighting.subjects.insert(
-                id.clone(),
-                Shining {
-                    fade: from.toward(shine.opacity, now, shine.delay, ms, EASE_OUT),
-                    staying: true,
-                },
-            );
-        }
+        self.lighting.set(light, now);
     }
 
     /// Bring every changing value to a moment.
@@ -454,8 +410,8 @@ impl Stage {
             scale: self.glide.scale.at(now),
         };
         self.presentation.far = self.far.at(now);
-        if let Some(flight) = &mut self.flight {
-            flight.begin(now);
+        if self.flight.as_mut().is_some_and(|flight| flight.begin(now)) {
+            self.lighting.stand();
         }
         if let Some(ghost) = &mut self.ghost {
             ghost.time.begin(now);
@@ -482,18 +438,7 @@ impl Stage {
         if let Some(sweep) = &mut self.presentation.sweep {
             sweep.advance(now);
         }
-        let lighting = &mut self.lighting;
-        lighting
-            .subjects
-            .retain(|_, shining| shining.staying || !shining.fade.done(now));
-        let recede = &mut self.presentation.recede;
-        recede.rest = lighting.rest.at(now);
-        recede.labels = lighting.labels.at(now);
-        recede.subjects = lighting
-            .subjects
-            .iter()
-            .map(|(id, shining)| (id.clone(), shining.fade.at(now)))
-            .collect();
+        self.presentation.recede = self.lighting.recede_at(now);
         self.settle();
     }
 
@@ -533,17 +478,12 @@ impl Stage {
 
     /// Whether anything but traffic moves at a moment.
     fn moving(&self, now: f64) -> bool {
-        let lighting = &self.lighting;
         self.flying(now)
             || self.presentation.sweep.is_some()
+            || self.lighting.moving(now)
             || ![self.glide.x, self.glide.y, self.glide.scale, self.far]
                 .iter()
-                .chain([&lighting.rest, &lighting.labels])
                 .all(|fade| fade.done(now))
-            || lighting
-                .subjects
-                .values()
-                .any(|shining| !shining.fade.done(now))
     }
 
     /// Whether a whole picture is on the move at a moment.

@@ -16,7 +16,7 @@ use crate::between::PHASES;
 use crate::canvas::{Canvas, Count, Ink};
 use crate::flight::DiveWay;
 use crate::palette::Theme;
-use crate::presentation::{Camera, Marks};
+use crate::presentation::{Camera, Marks, Recede};
 use crate::stage::Stage;
 
 /// One thing drawn.
@@ -155,7 +155,7 @@ fn route(x: f64) -> Vec<Item> {
     vec![line(Purpose::Halo), line(Purpose::Line)]
 }
 
-fn painting(body: Vec<Item>) -> Painting {
+pub(crate) fn painting(body: Vec<Item>) -> Painting {
     Painting {
         scene: Scene {
             width: 400.0,
@@ -265,6 +265,19 @@ fn a_warned_part_wears_its_mark_in_its_top_right_corner_until_it_is_cleared() {
     assert!(marked[1..].iter().all(|op| op.at == Vec2::new(97.0, 23.0)));
     stage.set_warnings(HashSet::new());
     assert_eq!(frame(&mut stage, 2.0).0.len(), 1);
+}
+
+#[test]
+fn what_is_out_of_the_light_recedes_and_traffic_recedes_furthest() {
+    let recede = Recede {
+        rest: 0.2,
+        labels: 0.3,
+        subjects: HashMap::new(),
+    };
+    assert_eq!(super::rest_of(&recede, &Role::Shape), 0.2);
+    assert_eq!(super::rest_of(&recede, &Role::Label), 0.3);
+    let traffic = super::rest_of(&recede, &Role::Traffic("e".to_owned()));
+    assert!((traffic - 0.04).abs() < 1e-9);
 }
 
 /// A relationship "e" and a part "n", drawn after it.

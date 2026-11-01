@@ -16,7 +16,7 @@ use crate::definitions::Definitions;
 use crate::outlines::Outlines;
 use crate::palette::Palette;
 use crate::path::{end_of, outline_of, path_of, placed, rect_of, straightened, stroke_of};
-use crate::presentation::Presentation;
+use crate::presentation::{Presentation, Recede};
 use crate::raise::drawn_in_order;
 use crate::sweep::{holds_lines, is_part, only_moves};
 use crate::traffic::{draw_traffic, holds_traffic};
@@ -28,7 +28,7 @@ const ICON_VIEW: f64 = 24.0;
 const BOX_TOLERANCE: f64 = 0.1;
 
 #[cfg(test)]
-mod tests;
+pub(crate) mod tests;
 mod viewer;
 
 /// A scene with its definitions found.
@@ -194,6 +194,17 @@ fn between(from: Transform, to: Transform, share: f64) -> Transform {
 /// No move.
 const STILL: Transform = Transform::translate(0.0, 0.0);
 
+/// How far a group that the light does not name recedes. A line's traffic runs
+/// through the line's own mask, which recedes as well, so an unlit line draws
+/// no eye with its traffic.
+fn rest_of(recede: &Recede, role: &Role) -> f64 {
+    match role {
+        Role::Label => recede.labels,
+        Role::Traffic(_) => recede.rest * recede.rest,
+        _ => recede.rest,
+    }
+}
+
 /// Whether an item at the top of a picture draws the same from frame to frame,
 /// so long as the picture's look stands: all but its traffic, and the groups
 /// that only hold what stands.
@@ -314,14 +325,12 @@ impl<C: Canvas> Walk<'_, C> {
             (true, ..) => (1.0, true),
             (false, Some(value), _) => (*value, true),
             (false, None, true) => (1.0, false),
-            (false, None, false) => {
-                let rest = if matches!(group.role, Role::Label) {
-                    recede.labels
-                } else {
-                    recede.rest
-                };
-                (member().copied().unwrap_or(rest), false)
-            }
+            (false, None, false) => (
+                member()
+                    .copied()
+                    .unwrap_or_else(|| rest_of(recede, &group.role)),
+                false,
+            ),
         }
     }
 

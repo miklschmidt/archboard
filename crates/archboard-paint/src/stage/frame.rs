@@ -88,13 +88,17 @@ impl Stage {
         if let Some(ghost) = ghost {
             let place = placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
             let items = ghost.items(now);
-            draw_items(
-                canvas,
-                &items,
-                &ghost.picture.definitions,
-                place,
-                &mut plain_inks,
-            );
+            let look = Presentation {
+                camera,
+                far: plain.far,
+                traffic: plain.traffic,
+                ..ghost.look.clone()
+            };
+            let mut inks = Inks {
+                presentation: &look,
+                ..plain_inks
+            };
+            draw_items(canvas, &items, &ghost.picture.definitions, place, &mut inks);
         }
     }
 }

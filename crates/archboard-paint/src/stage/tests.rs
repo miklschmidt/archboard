@@ -1,6 +1,8 @@
 //! What the stage's values do over time, with no canvas.
 
 use super::Stage;
+use crate::between::PHASES;
+use crate::draw::tests::painting;
 use crate::palette::Theme;
 use crate::presentation::{Camera, Light, Shine};
 use std::collections::HashMap;
@@ -60,6 +62,31 @@ fn what_leaves_the_light_fades_to_the_rest_and_is_forgotten() {
     stage.advance(200.0);
     assert!(stage.presentation.recede.subjects.is_empty());
     assert!((stage.presentation.recede.rest - 1.0).abs() < 1e-6);
+}
+
+/// A step's light, with everything out of it receding to `rest`.
+fn veil(rest: f64) -> Light {
+    Light {
+        rest,
+        labels: rest,
+        subjects: HashMap::new(),
+        duration: 900.0,
+    }
+}
+
+#[test]
+fn a_picture_leaves_in_its_own_light_and_the_next_stands_in_its_own_at_once() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.set_light(&veil(0.14), 0.0);
+    stage.advance(900.0);
+    stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 900.0);
+    stage.set_light(&veil(0.3), 900.0);
+    stage.advance(901.0);
+    let left = stage.ghost.as_ref().map(|ghost| ghost.look.recede.rest);
+    assert!(left.is_some_and(|rest| (rest - 0.14).abs() < 1e-6));
+    assert!((stage.presentation.recede.rest - 0.3).abs() < 1e-6);
 }
 
 #[test]

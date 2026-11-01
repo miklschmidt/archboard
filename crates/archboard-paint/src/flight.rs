@@ -10,7 +10,7 @@ use serde::Deserialize;
 use crate::between::{Between, Entrance, Heading, Phases, departure};
 use crate::definitions::Definitions;
 use crate::draw::Picture;
-use crate::presentation::Camera;
+use crate::presentation::{Camera, Presentation};
 use crate::timing::{EASE_IN_OUT, EASE_OUT};
 
 /// How far through a stretch of time a moment is, from 0 to 1.
@@ -36,9 +36,11 @@ impl Stretch {
         Stretch { start: None, ms }
     }
 
-    /// Start at a moment, unless it has started.
-    pub(crate) fn begin(&mut self, now: f64) {
+    /// Start at a moment, unless it has started. Says whether it starts now.
+    pub(crate) fn begin(&mut self, now: f64) -> bool {
+        let first = self.start.is_none();
         self.start.get_or_insert(now);
+        first
     }
 
     /// How far through it a moment is, from 0 to 1.
@@ -95,10 +97,15 @@ impl Flight {
         }
     }
 
-    /// Start at the moment of the first frame.
-    pub(crate) fn begin(&mut self, now: f64) {
+    /// Start at the moment of the first frame. Says whether that moment brings
+    /// a picture onto the stage, with no last light on it.
+    pub(crate) fn begin(&mut self, now: f64) -> bool {
         match self {
-            Flight::Carry { time, .. } | Flight::Enter { time, .. } => time.begin(now),
+            Flight::Carry { time, .. } => {
+                time.begin(now);
+                false
+            }
+            Flight::Enter { time, .. } => time.begin(now),
         }
     }
 
@@ -149,6 +156,8 @@ pub(crate) struct Ghost {
     pub(crate) camera: Camera,
     pub(crate) from: f64,
     pub(crate) time: Stretch,
+    /// How the picture looked when it was last seen: it leaves in its own light.
+    pub(crate) look: Presentation,
 }
 
 impl Ghost {
