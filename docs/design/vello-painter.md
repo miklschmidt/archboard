@@ -158,6 +158,8 @@ Slow share is the part of the frames that took over 25 ms.
 | Toggle | 22.7 ms               | 20.2 ms       | 138 ms                   | 517 ms           | 33%                     | 14%             |
 | Wheel  | 22.9 ms               | 16.7 ms       | 67 ms                    | 373 ms           | 34%                     | 10%             |
 
+A fallback to the SVG gives a smoother idle and wheel, but it cuts between pictures, because this change deleted the DOM motion. The CPU painter keeps all motion.
+
 A failed painter releases its resources and restores the SVG glyphs and definitions.
 The stage hides the failed canvas while a replacement starts.
 If the CPU painter also fails, the surface keeps complete ink.
