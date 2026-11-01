@@ -271,7 +271,7 @@
 [data-slot="semantic-board-surface"][data-painter] svg * {
 	pointer-events: none;
 }
-[data-slot="semantic-board-surface"][data-painter]
+[data-slot="semantic-board-surface"]:is([data-painter], [data-ink-waits])
 	svg
 	:is(path, rect, circle, line, use, polygon, polyline, image) {
 	visibility: hidden;

@@ -100,6 +100,9 @@ function sizeCanvas(canvas: HTMLCanvasElement): boolean {
 /** A painter at work, as the renderer starts one. */
 type StartedPainter = Awaited<ReturnType<typeof startPainter>>;
 
+/** How a painter takes a picture. */
+type PictureHand = (painter: StartedPainter["painter"], painting: string) => void;
+
 /**
  * Keep a painter's size to its canvas.
  * @param started The painter at work.
@@ -117,6 +120,7 @@ export {
 	marksJson,
 	sizeCanvas,
 	type Held,
+	type PictureHand,
 	type StageCamera,
 	type StageDive,
 	type StageLight,

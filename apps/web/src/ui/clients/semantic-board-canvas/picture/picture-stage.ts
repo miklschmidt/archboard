@@ -11,6 +11,7 @@
 import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import { HeldInk } from "#ui/clients/semantic-board-canvas/picture/picture-ink.ts";
 import {
 	PHASES,
 	fitPainter,
@@ -22,6 +23,7 @@ import {
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type PictureHand,
 	type StageShift,
 	type StartedPainter,
 } from "#ui/clients/semantic-board-canvas/picture/picture-stage-forms.ts";
@@ -75,6 +77,7 @@ class PictureStage {
 	#frame: number | null = null;
 	#groups: readonly Element[] = [];
 	#hoveredControl: string | null = null;
+	readonly #ink: HeldInk;
 
 	/**
 	 * Start the stage of a surface.
@@ -84,6 +87,7 @@ class PictureStage {
 	constructor(surface: HTMLElement, canvas: HTMLCanvasElement) {
 		this.#surface = surface;
 		this.#canvas = canvas;
+		this.#ink = new HeldInk(surface);
 		this.#watching = new ResizeObserver(this.#invalidate);
 		this.#watching.observe(canvas);
 		this.#theme = new MutationObserver(this.#themeChanged);
@@ -143,9 +147,16 @@ class PictureStage {
 	enter(painting: string | undefined, heading: Departure | null, moved: StageShift): void {
 		const ratio = window.devicePixelRatio || 1;
 		const [x, y] = [moved.x * ratio, moved.y * ratio];
-		this.#take(painting, (painter, taken) => {
+		/**
+		 * Bring the picture in.
+		 * @param painter The painter.
+		 * @param taken The picture's painting.
+		 */
+		const arrive: PictureHand = (painter, taken) => {
 			painter.enter(taken, headingJson(heading), PICTURE_MS.entry, x, y, frameClock().now());
-		});
+		};
+		this.#take(painting, arrive);
+		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(arrive);
 	}
 
 	/** Land whatever flies, at once. */
@@ -357,6 +368,7 @@ class PictureStage {
 		this.#started?.painter.free();
 		this.#started = null;
 		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
+		this.#ink.show();
 	}
 
 	/**
@@ -374,7 +386,7 @@ class PictureStage {
 	 * @param painting The picture's painting, or nothing when it has none.
 	 * @param hand How the painter takes it, once one is at work.
 	 */
-	#take(painting: string | undefined, hand: (painter: Painter, taken: string) => void): void {
+	#take(painting: string | undefined, hand: PictureHand): void {
 		const taken = painting === "" ? undefined : painting;
 		this.#held.painting = taken;
 		if (taken === undefined) {
@@ -419,7 +431,8 @@ class PictureStage {
 		painter.setMarks(marksJson(marks));
 		if (light !== null) painter.setLight(JSON.stringify(light), now);
 		if (painting === undefined) painter.clear();
-		else painter.show(painting);
+		else if (this.#ink.arrive === null) painter.show(painting);
+		else this.#ink.arrive(painter, painting);
 	}
 
 	/**
@@ -479,6 +492,7 @@ class PictureStage {
 			return;
 		}
 		this.#name(this.#started);
+		this.#ink.show();
 	};
 
 	/** Start the painter, the first time there is something to paint. */
@@ -494,6 +508,7 @@ class PictureStage {
 		} catch (cause) {
 			// No painter at all: the SVG stays, a correct board, and says why.
 			this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, String(cause));
+			this.#ink.show();
 		} finally {
 			this.#starting = false;
 		}

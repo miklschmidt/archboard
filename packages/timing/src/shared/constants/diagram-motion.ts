@@ -70,6 +70,15 @@ const PICTURE_MS = durations({
 	 * every later open waiting, and no error says so.
 	 */
 	storeWait: 400,
+	/**
+	 * How long a first picture's ink waits for its painter before the SVG shows.
+	 *
+	 * A painter that arrives in time brings the picture in, and otherwise the page has no entrance
+	 * at all. Pulls against a blank board: a painter usually starts within 150 ms of its picture,
+	 * but a browser can take a second to give a GPU, or never give one, and a reader must see
+	 * a correct board.
+	 */
+	painterGrace: 400,
 });
 
 /**

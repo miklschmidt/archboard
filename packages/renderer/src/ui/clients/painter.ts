@@ -48,11 +48,29 @@ function loadPainter(): Promise<void> {
  * Why this browser's WebGPU does not paint.
  * @returns The reason, or null when it gave a real adapter.
  */
-async function gpuRefusal(): Promise<string | null> {
+async function askForGpu(): Promise<string | null> {
 	if (!("gpu" in navigator)) return "This browser has no WebGPU.";
 	const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
 	if (adapter === null) return "WebGPU gave no adapter.";
 	return adapter.info.isFallbackAdapter ? "WebGPU gave a software adapter." : null;
+}
+
+let gpuAnswer: Promise<string | null> | undefined;
+
+/**
+ * Why this browser's WebGPU does not paint, asked once. A browser's first answer takes it
+ * about 350 ms.
+ * @returns The reason, or null when it gave a real adapter.
+ */
+function gpuRefusal(): Promise<string | null> {
+	gpuAnswer ??= askForGpu().catch((cause: unknown) => `WebGPU did not answer: ${String(cause)}`);
+	return gpuAnswer;
+}
+
+/** Ask for what a painter needs while a picture is being drawn, so that the painter is near. */
+function warmPainter(): void {
+	void loadPainter();
+	void gpuRefusal();
 }
 
 /**
@@ -102,4 +120,4 @@ async function startPainter(
 	}
 }
 
-export { startPainter };
+export { startPainter, warmPainter };
