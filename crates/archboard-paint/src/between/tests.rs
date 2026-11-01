@@ -11,7 +11,7 @@ use super::ease::{emphasised, phase};
 use super::testing::{
     PHASES, card, drawing, label, line, plate, rect, region, route_of, scene, shadow,
 };
-use super::{Between, entrance, shared_shift};
+use super::{Between, entrance};
 
 /// Every run of words a group draws, to any depth.
 fn said(items: &[Item]) -> Vec<String> {
@@ -427,35 +427,12 @@ fn the_same_move_is_the_same_frames() {
     let from = scene(body, &nodes);
     let (body, nodes) = two_cards(rect(40.0, 30.0, 100.0, 50.0), "New");
     let to = scene(body, &nodes);
-    let one = Between::new(&from, &to, shared_shift(&from, &to), &PHASES);
-    let other = Between::new(&from, &to, shared_shift(&from, &to), &PHASES);
+    let one = Between::new(&from, &to, (0.0, 0.0), &PHASES);
+    let other = Between::new(&from, &to, (0.0, 0.0), &PHASES);
     for progress in [0.0, 0.13, 0.5, 0.77, 1.0] {
         assert_eq!(one.at(progress), other.at(progress));
         assert_eq!(one.at(progress), one.at(progress));
     }
-}
-
-#[test]
-fn the_shift_is_nothing_when_no_card_is_shared_and_the_mean_when_some_are() {
-    let apart = scene(Vec::new(), &[("a", rect(0.0, 0.0, 10.0, 10.0))]);
-    let other = scene(Vec::new(), &[("b", rect(50.0, 50.0, 10.0, 10.0))]);
-    assert_eq!(shared_shift(&apart, &other), (0.0, 0.0));
-
-    let moved = scene(
-        Vec::new(),
-        &[
-            ("a", rect(10.0, 20.0, 10.0, 10.0)),
-            ("b", rect(50.0, 50.0, 10.0, 10.0)),
-        ],
-    );
-    let was = scene(
-        Vec::new(),
-        &[
-            ("a", rect(0.0, 0.0, 10.0, 10.0)),
-            ("b", rect(50.0, 50.0, 10.0, 10.0)),
-        ],
-    );
-    assert_eq!(shared_shift(&was, &moved), (-5.0, -10.0));
 }
 
 /// A board of three cards one under another, a line from the first to the

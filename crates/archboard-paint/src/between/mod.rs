@@ -43,7 +43,6 @@ use plan::{Mover, Plan, Wiring};
 
 pub use departure::{Heading, departure};
 pub use entrance::{Entrance, entrance};
-pub use found::shared_shift;
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
@@ -163,9 +162,9 @@ impl Between {
     /// Prepare the move from `from` to `to`.
     ///
     /// `shift` is how far the camera moved to keep the shared cards still, as
-    /// [`shared_shift`] answers it. The picture starts that far back and eases
-    /// home with the cards, so at 0 it is `from` drawn translated by the
-    /// negative of `shift`.
+    /// the page worked it out. The picture starts that far back and eases home
+    /// with the cards, so at 0 it is `from` drawn translated by the negative of
+    /// `shift`.
     pub fn new(from: &Scene, to: &Scene, shift: (f64, f64), phases: &Phases) -> Between {
         let phases = phases.transition;
         let mut last = from.clone();

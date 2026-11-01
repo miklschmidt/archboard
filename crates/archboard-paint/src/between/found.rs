@@ -185,36 +185,3 @@ pub(super) fn pair(before: &[Found<'_>], after: &[Found<'_>]) -> Pairing {
     pairing.removed = (0..before.len()).filter(|&index| !kept[index]).collect();
     pairing
 }
-
-/// How far the cards two scenes share moved, taken together: the old centre of
-/// the shared cards less their new centre.
-///
-/// Another variant of a board is often laid out on a page of another size, with
-/// a lane or a card added along one edge, and every card that stayed the same
-/// then sits somewhere else on the page. A camera that stayed put carries
-/// the whole board across the pane. A camera moved by this keeps what the two
-/// scenes share where the reader was looking at it, and only what changed
-/// moves. The answer is nothing when the scenes share no card.
-pub fn shared_shift(from: &Scene, to: &Scene) -> (f64, f64) {
-    let next: HashMap<&str, _> = to
-        .atlas
-        .nodes
-        .0
-        .iter()
-        .map(|(id, own)| (id.as_str(), own))
-        .collect();
-    let (mut x, mut y, mut shared) = (0.0, 0.0, 0.0);
-    for (id, old) in &from.atlas.nodes.0 {
-        let Some(now) = next.get(id.as_str()) else {
-            continue;
-        };
-        x += old.x + old.width / 2.0 - (now.x + now.width / 2.0);
-        y += old.y + old.height / 2.0 - (now.y + now.height / 2.0);
-        shared += 1.0;
-    }
-    if shared == 0.0 {
-        (0.0, 0.0)
-    } else {
-        (x / shared, y / shared)
-    }
-}
