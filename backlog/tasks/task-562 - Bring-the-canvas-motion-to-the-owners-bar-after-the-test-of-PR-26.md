@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T20:12:00Z'
+updated_date: '2026-11-01T20:22:00Z'
 labels:
   - renderer
   - motion
@@ -103,4 +103,6 @@ The final commit of this pass is 7ce152d81. `bun run check` passed on it, and pa
 Line reveal: the owner found the lines too fast and asked for lines along traced connections, or a reveal from the top left. A spark now draws each line in the order of the connections, a card it lands on takes the spark round its edge, and a line that changes its shape leaves and is drawn again. A first load finishes its lines at about 2.1 s and a door at about 1.9 s. The diagonal reveal was filmed for comparison and removed, because its order says nothing about the board. The commit is d28988f4d. bun run check passed on it, 21 of 21. Nothing after a268c576f is pushed or reviewed. Video: /tmp/vello/line-reveal.mp4. AC 5 stays open until the owner retests Hyprland, and AC 6 and AC 7 stay open until the owner judges the motion.
 
 The review covers the painter and browser scene decisions within their existing owners. It changes no architecture module, relationship, flow, or consumer contract, so the canonical model needs no proposal.
+
+Review of e25501ab2..42923cc56: eight behavior findings and two standards findings are fixed. Off-board sources now feed the reveal order (4fc10b4a9). Small surfaces use valid lens levels and shader coordinates (121e22584). Lens uniforms use stack storage (91583dc8d). Landing waits for rims, labels, and pulse fades (721f33022). Interrupted entrances retain the visible scene, card transforms, and opacity. Edits retain passage planes, and departures also apply while sparks run (e499ba09c). The passage shutter duration lives in @archboard/timing (3f87b48d2). Dashed strokes fade and hold their arrowheads back (7e04ba0db). Edits retain every spark layer and the remaining rims (7888f771c). Focused CPU raster regressions cover early motion, progress past 1, passage edits, shared cards, and departure during sparks. Both requested Clippy commands pass. The core build and all 16 scene-rule tests pass. A headless WebGPU run drew and resized the lens at seven sizes from 1x1 to 1920x1080 with no validation errors. The complete gate runs on the final review checkpoint. No further agents ran, no commits were pushed, and no repository selection changed. Hyprland recovery and visual acceptance remain with the owner, so the open acceptance criteria and task status stay as they are.
 <!-- SECTION:NOTES:END -->
