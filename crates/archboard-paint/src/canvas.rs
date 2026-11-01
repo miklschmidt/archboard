@@ -48,6 +48,8 @@ pub struct Lens {
     pub blur: f64,
     /// How far the rest has sunk into the ground, from 0 to 1.
     pub sink: f64,
+    /// How far the frame smears across as it travels, in canvas pixels.
+    pub smear: f64,
 }
 
 /// A surface that takes one frame's drawing.

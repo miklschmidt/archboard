@@ -62,7 +62,11 @@ interface Held {
  * @returns The JSON.
  */
 function headingJson(heading: Departure | null): string {
-	return JSON.stringify(heading === null ? null : { way: heading.way, toward: heading.toward });
+	return JSON.stringify(
+		heading === null
+			? null
+			: { way: heading.way, toward: heading.toward, side: heading.side ?? null },
+	);
 }
 
 /** At which points of a move each of its parts happens, as the painter reads them. */

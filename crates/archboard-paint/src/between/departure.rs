@@ -1,28 +1,22 @@
-//! A picture leaving for another board.
+//! A picture leaving with no place to go in the module tree: for another view of
+//! its own board, or for a reading of no board. A board that stands somewhere in
+//! the tree leaves on a passage instead (`crate::passage`).
 //!
-//! Leaving starts the moment somebody asks, not when the next board arrives:
-//! a pane that sat unchanged until then feels as if the click had not been
-//! heard. Which way it leaves says where the reader went. Opening a card's
-//! board zooms on into that card as the picture fades, going back draws the
-//! picture away from the reader, and anything else simply fades. It ends
-//! invisible, so a slow draw leaves an empty pane rather than a board nobody is
-//! reading any more.
+//! Leaving starts the moment somebody asks, not when the next picture arrives: a
+//! pane that sat unchanged until then feels as if the click had not been heard.
+//! It ends invisible, so a slow draw leaves an empty pane rather than a board
+//! nobody is reading any more.
 
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Role, Scene};
 use serde::Deserialize;
 
 use super::ease::{lerp, scale_about};
+use crate::passage::Side;
 use crate::timing::Curve;
 
-/// How far the picture grows as the reader goes into a card.
-const INTO_SCALE: f64 = 1.14;
-
-/// How far it shrinks as the reader goes back out.
-const OUT_SCALE: f64 = 0.9;
-
-/// How far it shrinks as the reader goes anywhere else.
-const ACROSS_SCALE: f64 = 0.98;
+/// How far the picture shrinks as it goes.
+const LEAVING_SCALE: f64 = 0.98;
 
 /// The curve a picture leaves on: slow to start, gone quickly.
 const LEAVE_EASING: Curve = Curve(0.4, 0.0, 1.0, 1.0);
@@ -42,19 +36,12 @@ pub enum Heading {
     },
     /// Back to the board above.
     Out,
-    /// Anywhere else.
-    Across,
-}
-
-impl Heading {
-    /// How far the picture ends up scaled.
-    fn scale(self) -> f64 {
-        match self {
-            Heading::Into { .. } => INTO_SCALE,
-            Heading::Out => OUT_SCALE,
-            Heading::Across => ACROSS_SCALE,
-        }
-    }
+    /// To a board at the same depth, on the side `side` says, or anywhere else.
+    Across {
+        /// Which way the board stands, when it stands beside this one.
+        #[serde(default)]
+        side: Option<Side>,
+    },
 }
 
 /// How much of a picture shows at a share of its leaving.
@@ -67,24 +54,21 @@ pub fn visible_at(progress: f64) -> f64 {
 /// Progress is a share of the whole leaving. The picture ends invisible, and
 /// nothing is answered once it is as good as gone. The definitions it refers to
 /// are the scene's own.
-pub fn departure(scene: &Scene, heading: &Heading, progress: f64) -> Vec<Item> {
+pub fn departure(scene: &Scene, progress: f64) -> Vec<Item> {
     let eased = LEAVE_EASING.at(progress);
     let visible = 1.0 - eased;
     if visible <= VISIBLE_FLOOR {
         return Vec::new();
     }
-    let about = match heading {
-        Heading::Into { toward: Some(card) } => *card,
-        _ => Rect {
-            x: 0.0,
-            y: 0.0,
-            width: scene.width,
-            height: scene.height,
-        },
+    let page = Rect {
+        x: 0.0,
+        y: 0.0,
+        width: scene.width,
+        height: scene.height,
     };
     let mut leaving = Group::new(Role::Marks, scene.body.clone());
     leaving.opacity = Some(visible);
-    leaving.transform = Some(scale_about(about, lerp(1.0, heading.scale(), eased)));
+    leaving.transform = Some(scale_about(page, lerp(1.0, LEAVING_SCALE, eased)));
     vec![Item::Group(leaving)]
 }
 
@@ -92,39 +76,20 @@ pub fn departure(scene: &Scene, heading: &Heading, progress: f64) -> Vec<Item> {
 mod tests {
     use super::{Heading, departure};
     use crate::between::testing::{card, rect, scene};
+    use crate::passage::Side;
     use archboard_scene::scene::Item;
 
     #[test]
-    fn a_picture_leaving_ends_invisible_and_scales_about_where_the_reader_went() {
+    fn a_picture_leaving_ends_invisible_and_recedes_about_its_middle() {
         let frame = rect(10.0, 10.0, 100.0, 50.0);
         let board = scene(vec![card("a", frame, &["Title"])], &[("a", frame)]);
-        let toward = Heading::Into {
-            toward: Some(frame),
-        };
 
-        assert!(
-            departure(&board, &toward, 1.0).is_empty(),
-            "nothing is left of it"
-        );
-        let [Item::Group(leaving)] = &departure(&board, &toward, 0.5)[..] else {
+        assert!(departure(&board, 1.0).is_empty(), "nothing is left of it");
+        let [Item::Group(leaving)] = &departure(&board, 0.5)[..] else {
             panic!("the picture leaves as one group")
         };
-        let grown = leaving.transform.expect("scaled");
-        let scale = grown.scale.expect("a scale");
-        assert!(scale > 1.0, "going into a card grows the picture");
-        let (cx, cy) = (60.0, 35.0);
-        assert!(
-            (cx * scale + grown.x - cx).abs() < 1e-9 && (cy * scale + grown.y - cy).abs() < 1e-9
-        );
-
-        let [Item::Group(back)] = &departure(&board, &Heading::Out, 0.5)[..] else {
-            panic!("the picture leaves as one group")
-        };
-        assert!(
-            back.transform
-                .and_then(|transform| transform.scale)
-                .is_some_and(|scale| scale < 1.0)
-        );
+        let receded = leaving.transform.expect("scaled");
+        assert!(receded.scale.is_some_and(|scale| scale < 1.0));
     }
 
     #[test]
@@ -140,7 +105,14 @@ mod tests {
         );
         assert_eq!(
             serde_json::from_str::<Heading>(r#"{"way":"across"}"#).expect("a heading"),
-            Heading::Across
+            Heading::Across { side: None }
+        );
+        assert_eq!(
+            serde_json::from_str::<Heading>(r#"{"way":"across","side":"left"}"#)
+                .expect("a heading"),
+            Heading::Across {
+                side: Some(Side::Left)
+            }
         );
     }
 }

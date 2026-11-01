@@ -426,6 +426,7 @@ fn first_frame(canvas: &mut GpuCanvas) {
             focus: None,
             blur: 1.0,
             sink: 0.0,
+            smear: 1.0,
         },
         peniko::color::palette::css::BLACK,
     );

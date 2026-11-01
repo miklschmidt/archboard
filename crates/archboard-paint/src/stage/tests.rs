@@ -1,11 +1,12 @@
 //! What the stage's values do over time, with no canvas.
 
 use super::Stage;
-use crate::between::PHASES;
+use crate::between::{Heading, PHASES};
 use crate::cpu::CpuCanvas;
 use crate::draw::tests::painting;
 use crate::flight::DiveWay;
 use crate::palette::Theme;
+use crate::passage::{Plane, Side};
 use crate::presentation::{Camera, Light, Shine};
 use archboard_scene::geometry::Rect;
 use std::collections::HashMap;
@@ -229,7 +230,7 @@ fn a_light_cut_skips_the_delays_of_further_hops() {
 #[test]
 fn a_timed_picture_change_keeps_a_stale_frame_from_rewinding_the_camera() {
     let changes: [fn(&mut Stage); 3] = [
-        |stage| stage.leave(crate::between::Heading::Across, 100.0, 75.0),
+        |stage| stage.leave(Heading::Across { side: None }, 100.0, 75.0),
         |stage| stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 75.0),
         |stage| {
             stage.dive(
@@ -338,4 +339,61 @@ fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_board_fall_away() {
     assert_eq!(focus.place.width, frame.width * camera.scale);
     stage.advance(100.0);
     assert_eq!(stage.lens_at(100.0), None);
+}
+
+/// Where a heading to a board beside this one takes a stage.
+const BESIDE: Heading = Heading::Across {
+    side: Some(Side::Right),
+};
+
+#[test]
+fn a_passage_runs_on_from_the_click_as_one_plane_and_ends_with_no_lens() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.leave(BESIDE, 100.0, 0.0);
+    let stepped = stage
+        .leaving
+        .as_ref()
+        .and_then(|leaving| leaving.passage(50.0))
+        .expect("a passage starts at the click");
+    stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 50.0);
+    stage.advance(50.0);
+    assert!(
+        stage.flight.is_none(),
+        "a board on a passage has no entrance"
+    );
+    let (_, place) = stage
+        .ghost
+        .as_ref()
+        .and_then(|ghost| ghost.passage(50.0))
+        .expect("the passage goes on");
+    assert!(stepped.1 > 0.0 && (place - stepped.1).abs() < 1e-9);
+    let (lens, _) = stage.lens_at(100.0).expect("a moving frame has a lens");
+    assert!(lens.smear > 0.0);
+    stage.draw(&mut CpuCanvas::new(1, 1), 150.0);
+    assert!(stage.ghost.is_none());
+    assert_eq!(stage.lens_at(150.0), None);
+}
+
+#[test]
+fn a_second_arrival_takes_the_last_board_on_from_where_its_passage_left_it() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.enter(painting(Vec::new()), Some(BESIDE), 100.0, (0.0, 0.0), 0.0);
+    stage.enter(painting(Vec::new()), Some(BESIDE), 100.0, (0.0, 0.0), 30.0);
+    let held = stage.ghost.as_ref().expect("a ghost").held;
+    assert_ne!(held, Plane::STILL);
+}
+
+#[test]
+fn a_cut_runs_no_passage() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.enter(painting(Vec::new()), Some(BESIDE), 0.0, (0.0, 0.0), 0.0);
+    stage.draw(&mut CpuCanvas::new(1, 1), 0.0);
+    assert!(stage.ghost.is_none());
+    assert_eq!(stage.lens_at(0.0), None);
 }

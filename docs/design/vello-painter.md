@@ -245,14 +245,33 @@ This pass threw the old choreography away where a GPU can do better. It keeps th
 The thesis is one material: focus. A reader goes somewhere, and that place stays sharp while the rest falls away.
 The focal moment is a card that opens into its board. Every other move is a quieter use of the same lens.
 
-| Moment                  | Before                                                                | Now                                                                                                                |
-| ----------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| A flight into a card    | A zoom, with a finished small picture faded in inside the card.       | The card holds focus, and the board round it blurs and sinks. The parts of the next board bloom out of the middle. |
-| The way back            | The same zoom, run backward, on an empty stage for a moment.          | The parts gather into the card, and the board above rises into focus round it.                                     |
-| A move to another board | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.   |
-| A first load            | Frames, then cards down the board, then lines, then all labels.       | A wave leaves the middle: cards, then lines with light at their heads, then each label as its line reaches it.     |
-| A door opens            | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur. |
-| A door closes           | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                 |
+| Moment                      | Before                                                                | Now                                                                                                                      |
+| --------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| A flight into a card        | A zoom, with a finished small picture faded in inside the card.       | The card holds focus, and the board round it blurs and sinks. The parts of the next board bloom out of the middle.       |
+| The way back                | The same zoom, run backward, on an empty stage for a moment.          | The parts gather into the card, and the board above rises into focus round it.                                           |
+| A move to a deeper board    | The picture faded, and the next came in by reading order.             | The camera flies through the nearest card that holds it. With no card, or no picture yet, the two boards zoom in as one. |
+| A move to a shallower board | The picture faded, and the next came in by reading order.             | The camera flies out of the card that held this board. With no such card, the two boards zoom out as one.                |
+| A move at the same depth    | The picture faded, and the next came in by reading order.             | The two boards travel sideways together, in the order of the tree, with a smear along the way.                           |
+| A view of the same board    | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.         |
+| A first load                | Frames, then cards down the board, then lines, then all labels.       | A wave leaves the middle: cards, then lines with light at their heads, then each label as its line reaches it.           |
+| A door opens                | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur.       |
+| A door closes               | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                       |
+
+### The module tree decides the move
+
+The owner tested the rack of focus and said: "If navigating on the same depth i want to be "transported" sideways. If navigating to a deeper module, i would expect it to zoom into the target. Navigating upwards in depth should zoom out to arrive at the target etc."
+
+`departureTo` in `apps/web/src/ui/rules/architecture-model/scene.ts` compares the depth of the two scopes, and this alone gives the way. A move to a scope at the same depth gets a side from the order of the module tree, so one board always stands to the same side of another.
+
+A passage (`crates/archboard-paint/src/passage.rs`) is a move between boards with no flight. Two rigid planes run on one timeline with one number for the place on the way, so they cannot drift apart. The click starts the passage with a small first step, and the place runs on from that step when the next picture arrives.
+
+| Way      | The board left                         | The next board                                  | The lens                                   |
+| -------- | -------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
+| Sideways | Leaves past the edge of the canvas.    | Comes in from the other edge at the same speed. | A smear as long as the speed of the frame. |
+| In       | Grows about the card and fades.        | Grows out of the card, from far inside.         | The next board holds focus.                |
+| Out      | Shrinks and fades, and stays in focus. | Settles from round the reader.                  | The next board comes into focus last.      |
+
+The strip of boards is as short as the widest board lets it be. The next board is in sight before the last has gone, and no frame in the middle of the move is empty. The boards stand 8 percent further apart than the edge of the canvas needs, so the slow end of the move leaves nothing at the edge.
 
 ### What the lens costs
 
@@ -272,4 +291,6 @@ The levels of the lens take about 35 MB of GPU memory on a canvas of 13 megapixe
 This pass filmed each of these on the held clock and looked at the frames: a flight in, the way back, a sidebar move into a child, a move between siblings, a first load and a door that opens.
 It also filmed a flight and a first load on the light ground.
 It filmed a sidebar move and a flight with `prefers-reduced-motion`, and a sidebar move was one cut with no blur.
+
+The pass over the depth moves filmed these moves in the repository's own model and looked at the frames: a sidebar move sideways at each of two depths, a flight in and out from the sidebar, a zoom in and a zoom out with no flight, a zoom into a card with the wait for a flight set to 0, and a sideways move with `prefers-reduced-motion`, which was one cut.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.

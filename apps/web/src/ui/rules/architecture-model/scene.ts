@@ -4,9 +4,12 @@ import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/view
 import type { ModelDrawing } from "#ui/clients/architecture-model/drawing.ts";
 import type {
 	Departure,
+	DepartureSide,
 	DepartureWay,
 } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import type { MovingPicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
+import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import { moduleOrder } from "#ui/rules/architecture-model/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 type ReadingFilters = { readonly hideKinds: NonNullable<ModelFilters["hideKinds"]> };
@@ -174,21 +177,43 @@ function within(model: Model, inner: string | null, outer: string | null): boole
 }
 
 /**
- * Which way a move between two scopes goes.
+ * How deep a scope stands in the containment forest.
+ * @param model The modules.
+ * @param scope The scope, or null for the roots.
+ * @returns How many modules hold it, itself among them.
+ */
+function depthOf(model: Model, scope: string | null): number {
+	return scope === null ? 0 : ancestorsOf(model, scope).length + 1;
+}
+
+/**
+ * Which way a move between two scopes goes. The modules nest, so depth alone says
+ * it: a deeper scope lies in, a shallower one out, and one at the same depth beside.
  * @param model The modules.
  * @param from The scope left.
  * @param to The scope opened.
- * @param entered Whether the scene left draws the scope opened as a card.
- * @returns Out to a module that holds the scope left, into a card or a part, or across.
+ * @returns The way.
  */
-function wayBetween(
-	model: Model,
+function wayBetween(model: Model, from: string | null, to: string | null): DepartureWay {
+	const change = depthOf(model, to) - depthOf(model, from);
+	if (change === 0) return "across";
+	return change > 0 ? "into" : "out";
+}
+
+/**
+ * Which way along the tree a scope at the same depth stands.
+ * @param order Every module in the order the tree shows it.
+ * @param from The scope left.
+ * @param to The scope opened.
+ * @returns Right to a scope later in the tree, left to an earlier one.
+ */
+function sideOf(
+	order: readonly string[],
 	from: string | null,
 	to: string | null,
-	entered: boolean,
-): DepartureWay {
-	if (within(model, from, to)) return "out";
-	return entered || within(model, to, from) ? "into" : "across";
+): DepartureSide | undefined {
+	if (from === null || to === null || from === to) return undefined;
+	return order.indexOf(to) > order.indexOf(from) ? "right" : "left";
 }
 
 /**
@@ -222,8 +247,54 @@ function departureTo(from: AcceptedScene, to: SceneRequest): Departure {
 	if (from.reading.grammar !== "architecture" || to.reading.grammar !== "architecture")
 		return { way: "across", toward: null, board };
 	const { scope } = to.reading;
-	const toward = from.picture.atlas.nodes[scope ?? ""] ?? null;
-	return { way: wayBetween(to.model, from.reading.scope, scope, toward !== null), toward, board };
+	const way = wayBetween(to.model, from.reading.scope, scope);
+	const toward = way === "into" ? towardOf(from, to.model, scope) : null;
+	const side =
+		way === "across"
+			? sideOf(moduleOrder(to.projection.depicted), from.reading.scope, scope)
+			: undefined;
+	return { way, toward, side, board };
+}
+
+/**
+ * The box of the card a move goes into: the scope's own, or the nearest card
+ * that holds it on the scene left.
+ * @param from The scene on screen.
+ * @param model The modules.
+ * @param scope The scope opened.
+ * @returns The box, or null when the scene draws neither.
+ */
+function towardOf(from: AcceptedScene, model: Model, scope: string | null): SemanticBox | null {
+	const card = cardToward(from, model, scope);
+	return card === null ? null : (from.picture.atlas.nodes[card] ?? null);
+}
+
+/**
+ * The card a move goes into: the scope's own when it is drawn, or the nearest
+ * card that holds it, so that a reader goes deeper by way of what they can see.
+ * @param scene The scene on screen.
+ * @param model The modules.
+ * @param scope The scope opened.
+ * @returns The card, or null when the scene draws neither.
+ */
+function cardToward(scene: AcceptedScene, model: Model, scope: string | null): string | null {
+	if (scope === null) return null;
+	const way = [scope, ...ancestorsOf(model, scope)];
+	return way.find((module) => drawnCard(scene, module) !== null) ?? null;
+}
+
+/**
+ * The card a board stands for on a board above it: the module directly under
+ * that board on the way to this one.
+ * @param model The modules.
+ * @param scope The scope left.
+ * @param to The board above, or null for the roots.
+ * @returns The card.
+ */
+function cardAbove(model: Model, scope: string, to: string | null): string {
+	const way = [scope, ...ancestorsOf(model, scope)];
+	const below = to === null ? way.length : way.indexOf(to);
+	return way[below - 1] ?? scope;
 }
 
 /**
@@ -324,8 +395,10 @@ type Move =
 	| { readonly kind: "out"; readonly card: string };
 
 /**
- * Which flight, if any, a move to a module can make. Only the entered subject
- * justifies a flight: a card that opens, or the open module's own card above it.
+ * Which flight, if any, a move to a module can make. The camera flies when it has
+ * a card to fly through: into the nearest card that holds a deeper module, or out
+ * of the card that holds this board on a board above it. Any other move changes
+ * the picture the plain way, which the painter makes a passage of.
  * @param scene The scene on screen.
  * @param next The module, or null for the roots.
  * @returns The move.
@@ -333,9 +406,13 @@ type Move =
 function moveTo(scene: AcceptedScene | null, next: string | null): Move {
 	if (scene?.reading.grammar !== "architecture" || next === scene.reading.scope)
 		return { kind: "plain" };
+	const { model } = scene;
 	const { scope } = scene.reading;
-	if (scope !== null && within(scene.model, scope, next)) return { kind: "out", card: scope };
-	return { kind: "into", card: drawnCard(scene, next) };
+	if (scope !== null && within(model, scope, next))
+		return { kind: "out", card: cardAbove(model, scope, next) };
+	return wayBetween(model, scope, next) === "into"
+		? { kind: "into", card: cardToward(scene, model, next) }
+		: { kind: "plain" };
 }
 
 /**

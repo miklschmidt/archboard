@@ -46,9 +46,11 @@ const PICTURE_MS = durations({
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
 	 * the first picture of a page, another board, another view of this one.
 	 *
-	 * The picture blooms out of its middle: frames, then cards in a wave, then the
-	 * lines between them drawn on with light at their heads, and each label as its
-	 * line reaches it. A card the last picture also drew flies from where it stood.
+	 * A first picture or another view blooms out of its middle: frames, then cards
+	 * in a wave, then the lines between them drawn on with light at their heads, and
+	 * each label as its line reaches it. A card the last picture also drew flies from
+	 * where it stood. Another board comes in on a passage over the same time, which
+	 * takes the reader sideways, in or out along the module tree.
 	 * Pulls against the wait itself: somebody who asked for a board wants to read
 	 * it, so the whole entrance is barely longer than a transition, and a card is
 	 * readable well before the last line is drawn.
@@ -56,7 +58,8 @@ const PICTURE_MS = durations({
 	entry: 760,
 	/**
 	 * How long the picture a pane is leaving takes to go, when it goes to another
-	 * board or view rather than turning into the next picture.
+	 * board or view rather than turning into the next picture. On a passage, this
+	 * is the time of the first step that answers the click.
 	 *
 	 * Short on purpose: it is only there so the old picture is not snatched away,
 	 * and it runs underneath the next picture's entrance.

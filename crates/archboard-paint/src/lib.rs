@@ -11,6 +11,7 @@ pub mod draw;
 pub mod flight;
 pub mod outlines;
 pub mod palette;
+pub mod passage;
 mod path;
 mod pick;
 pub mod presentation;

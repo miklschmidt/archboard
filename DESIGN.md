@@ -369,6 +369,8 @@ along the line on both grounds.
 
 **The Focus Pull Rule.** A move on the canvas is a rack of focus, and the painter draws it as part of the picture. What the reader goes to stays sharp. What they leave falls out of focus and sinks into the ground. A door stays sharp while the board round it softens a little, and a picture comes into focus from its middle. A picture at rest is never soft, and a shell layer never blurs it. With reduced motion, or on the CPU painter, there is no blur.
 
+**The Depth Rule.** A move between boards shows where the next board stands in the module tree. The modules nest, so a deeper board lies inside this one and a shallower board lies round it. A move to a board at the same depth carries the reader sideways along a strip of boards, in the order of the module tree. A move to a deeper board zooms into it, and a move to a shallower board zooms out to it. The camera flies through a card when the board shows one on the way, and otherwise the two boards zoom as one. The move never depends on the route: a card, a door, a crumb, the list and Back all take the same way. A view of one board stays on that board and has no way through the tree. With reduced motion, every move is a cut.
+
 **The Planes Not Lines Rule.** Regions read as layered planes. A one-pixel rule stays only where it draws the edge of a control or a card, or where it divides regions on one plane.
 
 ## Shapes

@@ -14,6 +14,7 @@ use crate::between::{
 };
 use crate::definitions::Definitions;
 use crate::draw::Picture;
+use crate::passage::{Axis, Plane, first_step, place_at};
 use crate::presentation::{Camera, Presentation};
 use crate::timing::{EASE_IN_OUT, EASE_OUT, EMPHASISED};
 
@@ -189,6 +190,8 @@ impl Flight {
 #[derive(Debug)]
 pub(crate) struct Leaving {
     pub(crate) heading: Heading,
+    /// The line of the passage it starts, when it starts one.
+    pub(crate) axis: Option<Axis>,
     pub(crate) start: f64,
     pub(crate) ms: f64,
 }
@@ -206,6 +209,13 @@ impl Ghost {
         visible_at(self.from)
     }
 
+    /// Where the reader is on the passage at a moment, when the ghost is the
+    /// board left on one.
+    pub(crate) fn passage(&self, now: f64) -> Option<(Axis, f64)> {
+        let (axis, from) = self.axis?;
+        Some((axis, place_at(from, self.time.share(now))))
+    }
+
     /// How far through its end a moment is, from 0 to 1.
     pub(crate) fn gone_by(&self, now: f64) -> f64 {
         self.from + (1.0 - self.from) * self.time.share(now)
@@ -217,6 +227,11 @@ impl Leaving {
     pub(crate) fn progress(&self, now: f64) -> f64 {
         share(now, self.start, self.ms)
     }
+
+    /// Where the reader is on the passage at a moment, when it starts one.
+    pub(crate) fn passage(&self, now: f64) -> Option<(Axis, f64)> {
+        self.axis.map(|axis| (axis, first_step(self.progress(now))))
+    }
 }
 
 /// What is left of the last picture, finishing on the spot where it was seen,
@@ -224,10 +239,14 @@ impl Leaving {
 #[derive(Debug)]
 pub(crate) struct Ghost {
     pub(crate) picture: Picture,
-    pub(crate) heading: Heading,
     pub(crate) camera: Camera,
     pub(crate) from: f64,
     pub(crate) time: Stretch,
+    /// The line of the passage, and the place on it where the reader stood when
+    /// the next picture arrived.
+    pub(crate) axis: Option<(Axis, f64)>,
+    /// Where the board stood on the passage before this one, if one was under way.
+    pub(crate) held: Plane,
     /// How the picture looked when it was last seen: it leaves in its own light.
     pub(crate) look: Presentation,
 }
@@ -240,9 +259,12 @@ impl Ghost {
 
     /// What the ghost shows at a moment.
     pub(crate) fn items(&self, now: f64) -> Vec<Item> {
+        if self.axis.is_some() {
+            return self.picture.scene.body.clone();
+        }
         let rest = EASE_OUT.at(self.time.share(now));
         let progress = self.from + (1.0 - self.from) * rest;
-        departure(&self.picture.scene, &self.heading, progress)
+        departure(&self.picture.scene, progress)
     }
 }
 

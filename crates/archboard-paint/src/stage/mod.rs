@@ -195,6 +195,7 @@ impl Stage {
         self.now = now;
         self.leaving = Some(Leaving {
             heading,
+            axis: self.axis_of(heading, 0.0),
             start: now,
             ms,
         });

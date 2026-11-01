@@ -69,6 +69,20 @@ The board inside a card blooms as the camera flies in, and it gathers again on t
 The parts of a door ride inside the door as it grows, so no frame travels empty.
 A subject id is one identity across boards, and this is what lets a door on one board fly to its place on the next.
 
+### A move follows the module tree
+
+The owner tested the rack of focus and asked for motion that reflects the depth of the recursive decomposition.
+So the module tree now decides every move between boards.
+A move to a deeper board zooms in, and a move to a shallower board zooms out.
+A move at the same depth carries the reader sideways, to the side that the order of the tree gives.
+
+The page compares the depth of the two scopes and sends the way with the side.
+The camera flies when it has a card: the nearest card that holds a deeper module, or the card that holds this board on a board above it.
+Otherwise the painter runs a passage: two rigid planes on one timeline, which start at the click.
+A door to a board at the same depth goes sideways too, because a flight into it says the wrong thing about the tree.
+Only another view of one board and a reading of no board keep the rack of focus and the bloom.
+The way never depends on the route, so a card, a door, a crumb, the list and Back agree.
+
 ### The page keeps the decisions, and the stage keeps the motion
 
 The page decides which arrival a picture gets and how far the shared cards moved.

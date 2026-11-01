@@ -2,13 +2,18 @@
 //! reader goes to stays sharp, and what they leave falls out of focus and sinks
 //! into the ground. A picture at rest has no lens.
 
+use std::f64::consts::PI;
+
 use archboard_scene::geometry::Rect;
+use archboard_scene::scene::Scene;
 use peniko::Color;
 
 use super::Stage;
 use crate::between::phase;
 use crate::canvas::{Focus, Lens};
 use crate::flight::Dive;
+use crate::passage::Axis;
+use crate::path::rect_of;
 use crate::presentation::Camera;
 use crate::timing::{Curve, EMPHASISED};
 
@@ -40,6 +45,19 @@ const FLIGHT_SINKS: (f64, f64) = (0.04, 0.5);
 const DOOR_SOFTENS: (f64, f64) = (0.0, 0.3);
 const DOOR_RETURNS: (f64, f64) = (0.6, 1.0);
 
+/// The parts of a passage out of a board that the board arrived at falls out of
+/// focus over and comes back over.
+const OUT_FALLS: (f64, f64) = (0.0, 0.2);
+const OUT_RETURNS: (f64, f64) = (0.4, 0.98);
+
+/// How soft the two boards go at the middle of a sideways passage, as a share of
+/// the canvas's height.
+const ACROSS_BLUR: f64 = 0.003;
+
+/// How long a frame's shutter stands open, in milliseconds. A moving frame
+/// smears by as far as it goes in this time.
+const SHUTTER_MS: f64 = 8.0;
+
 /// How far the focus of an entrance opens past the picture, and how soft its
 /// edge is, as shares of the reach from the picture's middle to its corner.
 const OPENS_TO: f64 = 1.5;
@@ -60,6 +78,16 @@ const RACK: Curve = Curve(0.3, 0.0, 0.4, 1.0);
 /// The curve at a place in a part of a move.
 fn racked(place: f64, (start, end): (f64, f64)) -> f64 {
     RACK.at(phase(place, start, end))
+}
+
+/// The whole of a scene.
+fn page_of(scene: &Scene) -> Rect {
+    Rect {
+        x: 0.0,
+        y: 0.0,
+        width: scene.width,
+        height: scene.height,
+    }
 }
 
 /// A box of the picture as a camera shows it.
@@ -84,6 +112,43 @@ fn flight_lens(dive: &Dive, now: f64, camera: Camera, height: f64) -> Lens {
         }),
         blur: height * MOST_BLUR * racked(along, FLIGHT_BLURS),
         sink: MOST_SINK * racked(along, FLIGHT_SINKS),
+        smear: 0.0,
+    }
+}
+
+/// What a passage is seen through. Along the strip of boards the frame smears
+/// with its speed, and a little softness joins the two boards. Along the axis of
+/// depth the nearer board stays sharp and the board behind it falls away, so
+/// going in holds the board arrived at, and going out the board left.
+fn passage_lens((axis, place): (Axis, f64), near: Rect, speed: f64, height: f64) -> Lens {
+    let radius = height * CARD_SOFT;
+    let in_focus = Focus {
+        place: near,
+        radius,
+        soft: radius,
+    };
+    match axis {
+        Axis::Across { .. } => Lens {
+            focus: None,
+            blur: height * ACROSS_BLUR * (place * PI).sin(),
+            sink: 0.0,
+            smear: axis.sideways(speed),
+        },
+        Axis::In(_) => Lens {
+            focus: Some(in_focus),
+            blur: height * MOST_BLUR * racked(place, FLIGHT_BLURS),
+            sink: MOST_SINK * racked(place, FLIGHT_SINKS),
+            smear: 0.0,
+        },
+        Axis::Out(_) => {
+            let swell = racked(place, OUT_FALLS) * (1.0 - racked(place, OUT_RETURNS));
+            Lens {
+                focus: Some(in_focus),
+                blur: height * MOST_BLUR * swell,
+                sink: MOST_SINK * swell,
+                smear: 0.0,
+            }
+        }
     }
 }
 
@@ -99,6 +164,7 @@ fn door_lens(door: Rect, share: f64, height: f64) -> Lens {
         }),
         blur: height * DOOR_BLUR * swell,
         sink: 0.0,
+        smear: 0.0,
     }
 }
 
@@ -142,10 +208,54 @@ fn entrance_lens(
         }),
         blur: height * MOST_BLUR * soft,
         sink: 0.0,
+        smear: 0.0,
     }
 }
 
 impl Stage {
+    /// Where the reader is on a passage at a moment, if on one, and how much of
+    /// the way a shutter's time at that moment covers.
+    fn passage_at(&self, now: f64) -> Option<((Axis, f64), f64)> {
+        let at = |moment: f64| {
+            let ghost = self.ghost.as_ref().and_then(|ghost| ghost.passage(moment));
+            ghost.or_else(|| self.leaving.as_ref()?.passage(moment))
+        };
+        let passage = at(now)?;
+        let before = at(now - SHUTTER_MS).map_or(passage.1, |(_, place)| place);
+        Some((passage, passage.1 - before))
+    }
+
+    /// What a passage is seen through at a moment, if one runs. The nearer board
+    /// is the one the reader leaves on the way out, and the one they go to on the
+    /// way in.
+    fn passage_lens_at(&self, now: f64) -> Option<Lens> {
+        let ((axis, place), speed) = self.passage_at(now)?;
+        let last = self.ghost.as_ref().filter(|ghost| ghost.axis.is_some());
+        let leaves = matches!(axis, Axis::Out(_));
+        let (scene, camera, plane) = match last.filter(|_| leaves) {
+            Some(ghost) => (&ghost.picture.scene, ghost.camera, axis.left(place)),
+            None => (
+                &self.shown.as_ref()?.picture.scene,
+                self.presentation.camera,
+                if leaves {
+                    axis.left(place)
+                } else {
+                    axis.arrived(place)
+                },
+            ),
+        };
+        let seen = plane
+            .transform
+            .transform_rect_bbox(rect_of(&through(camera, page_of(scene))));
+        let near = Rect {
+            x: seen.x0,
+            y: seen.y0,
+            width: seen.width(),
+            height: seen.height(),
+        };
+        Some(passage_lens((axis, place), near, speed, self.size.1))
+    }
+
     /// What the frame of a moment is seen through, and the ground the picture
     /// sinks into, if anything. A flight comes first, then a picture's arrival,
     /// then a picture on its way out.
@@ -156,15 +266,12 @@ impl Stage {
         let flying = self.dive.as_ref().filter(|dive| !dive.ended(now));
         let entrance = self.flight.as_ref().and_then(|flight| flight.entering(now));
         let door = self.flight.as_ref().and_then(|flight| flight.opening(now));
+        let page = page_of(scene);
         let lens = if let Some(dive) = flying {
             flight_lens(dive, now, camera, height)
+        } else if let Some(lens) = self.passage_lens_at(now) {
+            lens
         } else if let Some(share) = entrance {
-            let page = Rect {
-                x: 0.0,
-                y: 0.0,
-                width: scene.width,
-                height: scene.height,
-            };
             let before = self.ghost.as_ref().map(|ghost| Before {
                 racked: RACK.at(ghost.from),
                 left: 1.0 - ghost.gone_by(now),
@@ -177,9 +284,10 @@ impl Stage {
                 focus: None,
                 blur: height * MOST_BLUR * RACK.at(self.leaving.as_ref()?.progress(now)),
                 sink: 0.0,
+                smear: 0.0,
             }
         };
-        (lens.blur > 0.0 || lens.sink > 0.0)
+        (lens.blur > 0.0 || lens.sink > 0.0 || lens.smear > 0.0)
             .then(|| (lens, self.palette.colour(&scene.background, 1.0)))
     }
 }

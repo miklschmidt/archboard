@@ -516,8 +516,12 @@ _Avoid_: impact analysis, blast radius, dependency graph
 
 **Dive**:
 How opening a module looks: the module's picture stands inside its card, and the camera flies into the card until the picture fills the pane.
-Going back out runs the flight the other way, and a flight that cannot happen becomes a plain change.
+Going back out runs the flight the other way, and a flight that cannot happen becomes a Passage.
 _Avoid_: drill-down, zoom transition, page transition, animation
+
+**Passage**:
+How a move between two boards looks when the camera has no card to fly through: the two boards travel as one, sideways to a board at the same depth, in to a deeper board and out to a shallower one.
+_Avoid_: page transition, slide, crossfade
 
 ### States and proposals
 

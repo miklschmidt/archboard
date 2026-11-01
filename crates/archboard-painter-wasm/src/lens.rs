@@ -43,7 +43,8 @@ fn view_of(lens: &Lens, ground: Color) -> [f32; VIEW_FLOATS] {
     }
     view[6] = lens.blur as f32;
     view[7] = lens.sink as f32;
-    view[8..].copy_from_slice(&ground.components);
+    view[8..11].copy_from_slice(&ground.components[..3]);
+    view[11] = lens.smear as f32;
     view
 }
 

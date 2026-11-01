@@ -4,20 +4,25 @@ import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semant
 
 /** Where the reader went, as far as the picture leaving is concerned. */
 type DepartureWay =
-	/** Into the board a card opens. */
+	/** To a deeper board. */
 	| "into"
-	/** Back to the board above. */
+	/** To a shallower board. */
 	| "out"
-	/** Anywhere else. */
+	/** To a board at the same depth, or to another view of this one. */
 	| "across";
+
+/** Which way a reader travels among the boards at one depth: left to one earlier in the tree. */
+type DepartureSide = "left" | "right";
 
 /** A picture on its way out, and where the reader went. */
 interface Departure {
 	readonly way: DepartureWay;
 	/** The card opened, when the reader went into one; its box in the picture leaving. */
 	readonly toward: SemanticBox | null;
+	/** Which way along the module tree a board at the same depth stands. */
+	readonly side?: DepartureSide | undefined;
 	/** The board being drawn next. */
 	readonly board: string;
 }
 
-export type { Departure, DepartureWay };
+export type { Departure, DepartureSide, DepartureWay };

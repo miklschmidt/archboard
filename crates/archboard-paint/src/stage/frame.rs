@@ -8,7 +8,8 @@ use super::Stage;
 use crate::between::departure;
 use crate::canvas::Canvas;
 use crate::draw::{Inks, draw_ground, draw_items};
-use crate::flight::{Dive, Flight};
+use crate::flight::{Dive, Flight, Ghost, Leaving};
+use crate::passage::Plane;
 use crate::path::{placed, rect_of};
 use crate::presentation::Presentation;
 
@@ -36,21 +37,16 @@ impl Stage {
         let picture = &shown.picture;
         draw_ground(canvas, &picture.scene, *size, palette);
         let camera = presentation.camera;
-        let transform = placed(camera.x, camera.y, Some(camera.scale));
+        let plane = plane_at(leaving.as_ref(), ghost.as_ref(), now);
+        let transform = plane.transform * placed(camera.x, camera.y, Some(camera.scale));
         let fades = dive.as_ref().map(|dive| dive.fades(now));
-        let parent = fades.map_or(1.0, |fades| fades.parent);
-        if parent < 1.0 {
-            canvas.set_transform(Affine::IDENTITY);
-            canvas.push(None, opacity_of(parent));
-        }
+        let parent = fades.map_or(1.0, |fades| fades.parent) * plane.shown;
         let moved: Option<Vec<Item>> = match (flight.as_mut(), &*leaving) {
             (Some(flight), _) => Some(flight.items(now)),
-            (None, Some(leaving)) => Some(departure(
-                &picture.scene,
-                &leaving.heading,
-                leaving.progress(now),
-            )),
-            (None, None) => None,
+            (None, Some(leaving)) if leaving.axis.is_none() => {
+                Some(departure(&picture.scene, leaving.progress(now)))
+            }
+            _ => None,
         };
         let definitions = flight
             .as_ref()
@@ -63,10 +59,9 @@ impl Stage {
             presentation,
             still: (*settled && moved.is_none()).then_some(*looks),
         };
-        draw_items(canvas, items, definitions, transform, &mut inks);
-        if parent < 1.0 {
-            canvas.pop();
-        }
+        faded(canvas, parent, |canvas| {
+            draw_items(canvas, items, definitions, transform, &mut inks);
+        });
         let plain = Presentation {
             camera,
             far: presentation.far,
@@ -91,21 +86,56 @@ impl Stage {
             );
         }
         if let Some(ghost) = ghost {
-            let place = placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
-            let items = ghost.items(now);
-            let look = Presentation {
-                camera,
-                far: plain.far,
-                traffic: plain.traffic,
-                ..ghost.look.clone()
-            };
-            let mut inks = Inks {
-                presentation: &look,
-                ..plain_inks
-            };
-            draw_items(canvas, &items, &ghost.picture.definitions, place, &mut inks);
+            draw_ghost(canvas, ghost, now, plain_inks);
         }
     }
+}
+
+/// Where the board on the stage stands at a moment: on its way out, or on its way
+/// in, when a passage carries it.
+fn plane_at(leaving: Option<&Leaving>, ghost: Option<&Ghost>, now: f64) -> Plane {
+    let left = leaving.and_then(|leaving| leaving.passage(now));
+    let arrived = ghost.and_then(|ghost| ghost.passage(now));
+    left.map(|(axis, place)| axis.left(place))
+        .or_else(|| arrived.map(|(axis, place)| axis.arrived(place)))
+        .unwrap_or(Plane::STILL)
+}
+
+/// Draw what is left of the last picture over the rest, in its own light and
+/// where its passage has taken it.
+fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: Inks<'_>) {
+    let own = ghost
+        .passage(now)
+        .map_or(Plane::STILL, |(axis, place)| axis.left(place));
+    let place = own.transform
+        * ghost.held.transform
+        * placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
+    let items = ghost.items(now);
+    let look = Presentation {
+        camera: inks.presentation.camera,
+        far: inks.presentation.far,
+        traffic: inks.presentation.traffic,
+        ..ghost.look.clone()
+    };
+    let mut inks = Inks {
+        presentation: &look,
+        ..inks
+    };
+    faded(canvas, own.shown * ghost.held.shown, |canvas| {
+        draw_items(canvas, &items, &ghost.picture.definitions, place, &mut inks);
+    });
+}
+
+/// Draw something as one layer at an opacity.
+fn faded<C: Canvas>(canvas: &mut C, opacity: f64, draw: impl FnOnce(&mut C)) {
+    if opacity >= 1.0 {
+        draw(canvas);
+        return;
+    }
+    canvas.set_transform(Affine::IDENTITY);
+    canvas.push(None, opacity_of(opacity));
+    draw(canvas);
+    canvas.pop();
 }
 
 /// The corners of the window a card opens into, in the picture's units.
