@@ -67,8 +67,6 @@ pub(crate) const CARD_THICKNESS: f64 = 4.0;
 pub(crate) const TRAY_LIP: f64 = 2.0;
 /// How thick a well shows its walls, the top wall and the two side walls alike.
 pub(crate) const TRAY_WALL: f64 = 6.0;
-/// The thin shadow line under a well's lip, at its foot.
-pub(crate) const TRAY_CREASE: f64 = 1.0;
 /// How far a container's words stand in from the outer edge of its box.
 const HEADER_SLAB_INSET: f64 = 8.0;
 /// How tall a type chip's front edge shows.

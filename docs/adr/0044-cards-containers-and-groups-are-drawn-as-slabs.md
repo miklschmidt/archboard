@@ -453,6 +453,6 @@ The light has been straight top down on every surface since the owner set it whe
 never matched that rule, and point 2 above said it fell to the right. A shadow now falls down and spills a little to the
 right and the left, and nothing casts to one side. A card gets a warm grey face on the light theme, so it stands
 apart from both the ground and a well's floor, and a stronger top highlight in both themes. A well gets back the depth
-of a slab: walls, a lip and a crease round its floor, under the edge tab of 2026-10-31. On the
+of a slab: walls and a lip round its floor, under the edge tab of 2026-10-31. The line round the well replaces the crease. On the
 light theme a door and a tag stand at one deeper lightness and carry white ink tinted with their hue. A mixed line is a
 double line, two rails with a clear core, which has no dash to drift out of step.
