@@ -7,4 +7,4 @@ export {
 } from "#runtime/rules/panes-addressing.ts";
 export { panesInOrder } from "#runtime/rules/panes-layout.ts";
 export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
-export { buildPanesReport } from "#runtime/rules/panes.ts";
+export { buildPanesReport, architectureWords } from "#runtime/rules/panes.ts";

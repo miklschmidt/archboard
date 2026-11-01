@@ -41,7 +41,7 @@ const browserContract = defineCommand({
 	path: ["browser"],
 	shared: ["url"],
 	summary: "Inspect or control the connected browser session",
-	description: "Routes live browser inspection and control commands; none writes a board.",
+	description: "Routes live browser inspection and control commands; none writes architecture.",
 	examples: ["archboard browser panes"],
 	parameters: [
 		{
@@ -92,7 +92,7 @@ const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	shared: ["url"],
 	summary: "Open a second browser pane",
-	description: "Splits the connected browser canvas; the new pane inherits the displayed board.",
+	description: "Splits the connected browser canvas; the new pane inherits the displayed reading.",
 	examples: ["archboard browser open"],
 	parameters: [stagedTokens("open-token")],
 	input: {
@@ -142,7 +142,7 @@ const paneOpenContract = defineCommand({
 		const result = await openPane();
 		const place = result.pane?.place;
 		const where = place ? paneWords(place) : "a new pane";
-		const diagnostic = `Opened ${where}. It inherited the displayed board. Show another with \`browser show <board> --pane ${place ?? "<spec>"}\`.`;
+		const diagnostic = `Opened ${where}. It inherited the displayed reading. Show another with \`browser show <model> --pane ${place ?? "<spec>"}\`.`;
 		return { result: PaneOpenResultSchema.parse(result), diagnostics: [diagnostic] };
 	},
 });
@@ -173,7 +173,7 @@ const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
 	shared: ["url"],
 	summary: "Close one browser pane",
-	description: "Takes one board off screen without changing the board itself.",
+	description: "Takes one reading off screen without changing the architecture.",
 	examples: ["archboard browser close right"],
 	parameters: [
 		{
@@ -241,7 +241,7 @@ const paneCloseContract = defineCommand({
 		return {
 			result: PaneCloseResultSchema.parse(result),
 			diagnostics: [
-				`Closed ${paneWords(result.closed?.place ?? request.spec)}. "${result.closed?.board}" is off the screen, not gone — it is still open on the Archboard server, with whatever was drawn on it.`,
+				`Closed ${paneWords(result.closed?.place ?? request.spec)}. Its reading is off the screen and the architecture is unchanged on the Archboard server.`,
 			],
 		};
 	},
@@ -434,6 +434,14 @@ const browserShowContract = defineCommand({
 			placeholder: "value",
 			description: `The explicit ${key} selector`,
 		})),
+		{
+			kind: "option",
+			key: "against",
+			spellings: ["--against"],
+			value: "required",
+			placeholder: "id|name",
+			description: "Compare against one explicit state or complete checkpoint identity",
+		},
 		{
 			kind: "option",
 			key: "grammar",

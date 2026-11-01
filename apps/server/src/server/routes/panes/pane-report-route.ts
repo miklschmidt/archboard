@@ -83,6 +83,12 @@ function getPanesRoute(req: Request, res: Response): void {
 				at: context.at,
 			};
 		},
+		/**
+		 * The model reading one pane last reported.
+		 * @param clientId The pane's client id.
+		 * @returns The reading, or null when the pane has reported none.
+		 */
+		architecture: (clientId) => semanticPaneContextFor(clientId)?.architecture ?? null,
 		serverUrl: serverUrl(),
 	});
 	res.json({
@@ -91,7 +97,6 @@ function getPanesRoute(req: Request, res: Response): void {
 		panes: report.panes.map((pane) => ({
 			...pane,
 			tabSessionId: tabSessionOf(pane.clientId),
-			architecture: semanticPaneContextFor(pane.clientId)?.architecture ?? null,
 		})),
 	});
 }

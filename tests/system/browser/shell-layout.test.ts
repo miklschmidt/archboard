@@ -361,9 +361,13 @@ test(
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		expect(twoPanes.active).toBe(1);
-		expect(
-			(await api("/api/panes/close", { method: "POST", body: { pane: "focused" } })).status,
-		).toBe(200);
+		const closing = await api<{ closed: { position: number } }>("/api/panes/close", {
+			method: "POST",
+			body: { pane: "focused" },
+		});
+		expect(closing.status).toBe(200);
+		// The command reads the closed pane as it reads an opened one: with its position.
+		expect(closing.body.closed.position).toBeGreaterThan(0);
 		await pollUntil(
 			() => api<PanesBody>("/api/panes").then((response) => response.body),
 			(state) => (state.paneCount ?? 0) === 1,

@@ -9,8 +9,8 @@
 // every turn, which it can only be if it stays small: inlining the architecture
 // "to save a round trip" would make it expensive, which would make it uncallable
 // every turn, which defeats the point. `semantic show` reports contents; this
-// reports where the panes are, which board and variant each holds, which view it
-// is read through, and what is picked in each — bounded no matter how big the
+// reports where the panes are, which model and state each holds, how it
+// is read, and what is picked in each — bounded no matter how big the
 // board is.
 //
 // A pane is known to the server only while its socket is open (see server.ts):
@@ -18,6 +18,8 @@
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
 import { paneBoardAddress, parseBoardKey } from "@archboard/board/address";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
 import {
 	type Arrangement,
 	type PaneContext,
@@ -40,20 +42,16 @@ import {
 } from "#runtime/rules/panes-addressing.ts";
 
 type BoardIdentity = ReturnType<typeof parseBoardKey>;
+type PaneArchitecture = NonNullable<z.infer<typeof SemanticPaneContextSchema>["architecture"]>;
 
 /**
  * What the read-out says beyond naming the panes: the things an agent needs
  * to know that are not visible in the list itself.
  * @param panes The panes on screen.
  * @param arrangement How they are laid out.
- * @param sameBoard Whether they all show one board.
  * @returns The lines, in the order they are read.
  */
-function advice(
-	panes: readonly PaneReport[],
-	arrangement: Arrangement,
-	sameBoard: boolean,
-): string[] {
+function advice(panes: readonly PaneReport[], arrangement: Arrangement): string[] {
 	const lines: string[] = [];
 	if (arrangement === "overlapping") {
 		// Not a split: two browsers on the same server. Saying so stops a thread
@@ -63,46 +61,26 @@ function advice(
 		);
 	}
 	if (panes.length === 1) {
-		// One pane is one board on screen, and a comparison needs two. Said here
+		// One pane is one reading on screen, and a comparison needs two. Said here
 		// because this is the report an agent reads every turn, and an agent that
 		// does not know a second pane is obtainable reuses the first one — which
 		// means overwriting whatever the human was looking at.
 		lines.push(
-			`Only one board is on screen. To put another beside it, keeping this one: ${HOW_TO_OPEN_A_PANE}`,
+			`Only one pane is on screen. To put another beside it, keeping this one: ${HOW_TO_OPEN_A_PANE}`,
 		);
 	}
-	lines.push(...boardAdvice(panes, sameBoard));
+	lines.push(...readingAdvice(panes));
 	return lines;
 }
 
 /**
- * What the read-out says about which boards the panes are on.
+ * What the read-out says about how to change what the panes show.
  * @param panes The panes on screen.
- * @param sameBoard Whether they all show one board.
  * @returns The lines.
  */
-function boardAdvice(panes: readonly PaneReport[], sameBoard: boolean): string[] {
-	if (panes.some((pane) => pane.board?.startsWith("model:"))) {
+function readingAdvice(panes: readonly PaneReport[]): string[] {
+	if (panes.some((pane) => pane.architecture != null)) {
 		return ["Each pane reports its own reading. Use `browser show --pane <pane>` to change one."];
-	}
-	if (!sameBoard) {
-		// The consequence of disagreement, said where the disagreement is visible:
-		// a caller that names no board is refused rather than guessed at (ADR 0009).
-		const first = panes[0]!;
-		const other = panes.find((p) => p.identity?.board !== first.identity?.board)!;
-		return [
-			"The panes disagree, so commands that name no board are refused until one is named — " +
-				`\`--board ${first.board ?? "none"}\`, or \`--board ${other.board ?? "none"}\`.`,
-		];
-	}
-	if (panes.length > 1) {
-		// Said once, not per pane. Two identical lines used to need explaining
-		// because the server could not do anything else; now they are a choice, and
-		// what a reader needs is how to make the other one.
-		return [
-			"These panes are all on the same board. Point one somewhere else with " +
-				"`browser show <name> --pane <left|right|…>`.",
-		];
 	}
 	return [];
 }
@@ -126,7 +104,8 @@ function emptyReport(arrangement: Arrangement, context: PaneContext): PanesRepor
 		panes: [],
 		summary,
 		text:
-			summary + "\nThe board itself is unaffected — it lives on the server, not in the browser.",
+			summary +
+			"\nThe architecture itself is unaffected — it lives on the server, not in the browser.",
 	};
 }
 
@@ -161,6 +140,7 @@ function paneReport(
 		own: pane.vault === context.caller,
 		rect: pane.rect,
 		reading: readingOf(pane, context),
+		architecture: context.architecture(pane.clientId),
 		at: pane.at,
 	};
 }
@@ -201,19 +181,15 @@ function layoutPhrase(arrangement: Arrangement, count: number): string {
 /**
  * What the panes are showing.
  *
- * Named once only when they are reading it the same way. Two panes on one board
- * at two variants are the comparison somebody set up, and a read-out that said
- * the board once would hide the thing they are looking at.
+ * Named once only when they are reading it the same way. Two panes on one model
+ * at two states are the comparison somebody set up, and a read-out that said
+ * the model once would hide the thing they are looking at.
  * @param panes The panes.
- * @param sameBoard Whether they all show one board.
  * @returns The phrase.
  */
-function showingPhrase(panes: readonly PaneReport[], sameBoard: boolean): string {
+function showingPhrase(panes: readonly PaneReport[]): string {
 	const shown = panes.map((pane) => shownPhrase(pane));
-	if (sameBoard && new Set(shown).size === 1) {
-		return `, showing ${shown[0]!}`;
-	}
-	return `, showing ${shown.join(" and ")}`;
+	return new Set(shown).size === 1 ? `, showing ${shown[0]!}` : `, showing ${shown.join(" and ")}`;
 }
 
 /**
@@ -280,44 +256,36 @@ function plural(word: string, count: number): string {
 }
 
 /**
+ * What a pane is reading, in the words of its reading: the model, then the state it opens and
+ * what it is compared with, then the diagram it draws when that is not the architecture.
+ * @param architecture What the pane reported.
+ * @returns The phrase.
+ */
+function architectureWords(architecture: PaneArchitecture): string {
+	const { state, checkpoint, against } = architecture.selection ?? {};
+	const { grammar } = architecture.reading;
+	return [
+		architecture.model,
+		state === undefined ? undefined : `state ${state}`,
+		checkpoint === undefined ? undefined : `checkpoint ${checkpoint.slice(0, 8)}`,
+		against === undefined ? undefined : `against ${against}`,
+		grammar === "architecture" ? undefined : grammar,
+	]
+		.filter(Boolean)
+		.join(", ");
+}
+
+/**
  * What one pane is showing, named the way somebody would say it out loud.
- *
- * The variant by its lasting name when the pane has drawn one, because that is
- * what a person chose to call the proposal; the address's own spelling
- * otherwise, which is all there is before anything is drawn. A read-out that
- * said `payments@WtdAURWA (WtdAURWA)` would be naming an id twice and the
- * proposal not at all.
  * @param pane The pane.
  * @returns The phrase.
  */
 function shownPhrase(pane: PaneReport): string {
-	const named = pane.reading.variant?.name;
-	if (pane.board?.startsWith("model:")) {
-		return [`model ${pane.board.slice(6)}`, named].filter(Boolean).join(" / ");
-	}
-	if (pane.identity === null || named === undefined) {
-		return boardPhrase(pane.identity);
-	}
-	return `${pane.identity.board} (${named})`;
+	return pane.architecture == null ? "nothing yet" : architectureWords(pane.architecture);
 }
 
 /**
- * A board as a report names it: its key, and what variant and level it is.
- * @param identity The board.
- * @returns The phrase.
- */
-function boardPhrase(identity: BoardIdentity | null): string {
-	if (identity === null) {
-		return "no board";
-	}
-	const name =
-		identity.variant === "current" ? identity.board : `${identity.board}@${identity.variant}`;
-	const detail = [identity.variant, identity.level].filter(Boolean).join(", ");
-	return `${name} (${detail})`;
-}
-
-/**
- * Where a pane's board is, as the read-out says it: the repository and the
+ * Where a pane's vault is, as the read-out says it: the repository and the
  * checkout, and whether that is the caller's own.
  * @param pane The pane.
  * @returns The phrase.
@@ -339,8 +307,6 @@ function paneLine(pane: PaneReport): string {
 		`${pane.position}. ${pane.place}`,
 		shownPhrase(pane),
 		repositoryPhrase(pane),
-		reading.variant === null ? "nothing drawn yet" : `variant ${reading.variant.name}`,
-		reading.view === null ? "whole variant" : `view ${reading.view.name} (${reading.view.grammar})`,
 		reading.summary,
 	];
 	if (pane.focused) {
@@ -369,16 +335,17 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	const panes: PaneReport[] = inOrder.map((entry, index) =>
 		paneReport(entry.pane, index, entry.place, context),
 	);
-	// One board, whichever variants of it are on screen. Two panes comparing a
+	// One model, whichever states of it are on screen. Two panes comparing a
 	// proposal against what is current are reading one document, and a command
 	// that names no board is not ambiguous between them — it is the comparison
 	// this tool exists for.
-	const sameBoard = new Set(panes.map((p) => p.identity?.board ?? p.board)).size === 1;
+	const sameBoard =
+		new Set(panes.map((p) => p.architecture?.model ?? p.identity?.board ?? p.board)).size === 1;
 	const focused = panes.find((p) => p.focused)?.paneId ?? null;
-	const summary = `${layoutPhrase(arrangement, panes.length)}${showingPhrase(panes, sameBoard)}.`;
+	const summary = `${layoutPhrase(arrangement, panes.length)}${showingPhrase(panes)}.`;
 	const lines = [
 		summary,
-		...advice(panes, arrangement, sameBoard),
+		...advice(panes, arrangement),
 		...panes.map((pane) => `  ${paneLine(pane)}`),
 	];
 	return {
@@ -402,6 +369,7 @@ export type {
 	Rect,
 } from "#runtime/rules/panes-layout.ts";
 export {
+	architectureWords,
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
 	addressablePanes,

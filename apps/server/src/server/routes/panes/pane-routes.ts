@@ -4,6 +4,7 @@ import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
 import {
 	addressablePanes,
+	architectureWords,
 	MAX_PANES,
 	panesInOrder,
 	resolvePane,
@@ -20,7 +21,6 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
-	boardForPane,
 	boardsOnScreen,
 	currentSocketsByClient,
 	notePaneOpened,
@@ -31,6 +31,7 @@ import {
 	pendingPaneCloses,
 	pendingPaneOpens,
 	primaryPane,
+	semanticPaneContextFor,
 	sendBoardlessToPane,
 	settleAfterLayout,
 	type PendingPaneClose,
@@ -195,19 +196,29 @@ function postPaneRoute(req: Request, res: Response): void {
 // the browser boundary.
 
 /**
+ * What a pane shows, in the words of `browser panes`.
+ * @param pane The pane.
+ * @returns The phrase.
+ */
+function shownBy(pane: PaneRegistration): string {
+	const architecture = semanticPaneContextFor(pane.clientId)?.architecture;
+	return architecture == null ? "nothing yet" : architectureWords(architecture);
+}
+
+/**
  * The refusal when the screen already shows as many panes as it can.
  * @returns The refusal body.
  */
 function tooManyPanesBody(): Record<string, unknown> {
 	const onScreen = addressablePanes([...panes.values()]);
 	const showing = panesInOrder(onScreen)
-		.map((entry) => `${entry.place} (${boardForPane(entry.pane)})`)
+		.map((entry) => `${entry.place} (${shownBy(entry.pane)})`)
 		.join(", ");
 	return {
 		success: false,
 		error:
 			`The canvas is already showing ${onScreen.length} panes: ${showing}. ` +
-			"Point one of them at another board with `browser show <name> --pane <spec>`, " +
+			"Point one of them at another reading with `browser show <name> --pane <spec>`, " +
 			"or close one first with `browser close <spec>`.",
 	};
 }
@@ -292,21 +303,21 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 function closeTarget(
 	registrations: PaneRegistration[],
 	spec: string,
-): { target: PaneRegistration; place: string } {
+): { target: PaneRegistration; place: string; position: number } {
 	if (!spec) {
 		throw new Error(
 			"Say which pane to close. " +
 				panesInOrder(registrations)
-					.map((entry) => `\`browser close ${entry.place}\` drops ${entry.pane.board}`)
+					.map((entry) => `\`browser close ${entry.place}\` drops ${shownBy(entry.pane)}`)
 					.join(", ") +
 				".",
 		);
 	}
 	const target = resolvePane(registrations, spec);
-	const place =
-		panesInOrder(registrations).find((entry) => entry.pane.clientId === target.clientId)?.place ??
-		spec;
-	return { target, place };
+	const placed = panesInOrder(registrations).find(
+		(entry) => entry.pane.clientId === target.clientId,
+	);
+	return { target, place: placed?.place ?? spec, position: placed?.position ?? 0 };
 }
 
 /**
@@ -357,7 +368,7 @@ function refuseUnclosable(res: Response, count: number): boolean {
 			success: false,
 			error:
 				"That is the only pane on screen, and closing it would leave the canvas showing nothing " +
-				"with no way back except reloading the browser. Its board is unaffected either way — " +
+				"with no way back except reloading the browser. The architecture is unaffected either way — " +
 				"point the pane somewhere else with `browser show <name> --pane <spec>` instead.",
 		});
 		return true;
@@ -383,8 +394,9 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	let target: PaneRegistration;
 	let place: string;
+	let position: number;
 	try {
-		({ target, place } = closeTarget(registrations, spec));
+		({ target, place, position } = closeTarget(registrations, spec));
 	} catch (error) {
 		res.status(400).json({ success: false, error: messageOf(error) });
 		return;
@@ -410,7 +422,13 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 		logger.info(`Pane closed on request: ${target.paneId} (${onScreen} left on screen)`);
 		res.json({
 			success: true,
-			closed: { paneId: target.paneId, clientId: target.clientId, place, board: target.board },
+			closed: {
+				paneId: target.paneId,
+				clientId: target.clientId,
+				place,
+				position,
+				board: target.board,
+			},
 			paneCount: onScreen,
 			onScreen: boardsOnScreen(),
 		});
