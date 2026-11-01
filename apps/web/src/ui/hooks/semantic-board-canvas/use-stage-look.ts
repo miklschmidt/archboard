@@ -42,7 +42,7 @@ function useStageLook(
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			const ms = awaited ? PICTURE_MS.awaitIn : PICTURE_MS.awaitOut;
-			stageOf(picture.surface)?.setAwaited(awaited && !reducedMotion, ms);
+			stageOf(picture.surface)?.setAwaited(awaited && !reducedMotion, reducedMotion ? 0 : ms);
 		}
 	}, [picture, awaited, reducedMotion]);
 	useLayoutEffect(() => {
