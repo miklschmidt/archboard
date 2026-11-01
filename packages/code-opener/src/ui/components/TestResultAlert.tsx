@@ -4,7 +4,7 @@ import { RiCheckLine, RiErrorWarningLine } from "@remixicon/react";
 import type { JSX } from "react";
 
 import type { CodeTargetOpenFailure } from "#shared/schemas/code-target-open.ts";
-import { Alert, Technical } from "@archboard/ui-kit/components";
+import { Alert, Dialog } from "@archboard/ui-kit/components";
 import type { OpenerTestResult } from "#ui/state/opener-settings-contracts.ts";
 
 /** Inputs for the test result. */
@@ -29,7 +29,7 @@ function TestResultAlert(props: TestResultAlertProps): JSX.Element | null {
 				<RiCheckLine />
 				<Alert.Title>Opener works</Alert.Title>
 				<Alert.Description>
-					Opened <Technical>{result.repository}</Technical> with the chosen opener.
+					Opened <Dialog.Technical>{result.repository}</Dialog.Technical> with the chosen opener.
 				</Alert.Description>
 			</Alert>
 		);
@@ -38,7 +38,7 @@ function TestResultAlert(props: TestResultAlertProps): JSX.Element | null {
 		<Alert variant="destructive">
 			<RiErrorWarningLine />
 			<Alert.Title>
-				Test failed · <Technical>{result.code}</Technical>
+				Test failed · <Dialog.Technical>{result.code}</Dialog.Technical>
 			</Alert.Title>
 			<Alert.Description>
 				<p>{result.error}</p>

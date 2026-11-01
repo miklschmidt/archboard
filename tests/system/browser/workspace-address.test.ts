@@ -313,7 +313,11 @@ test("a plain address waits for a choice and returns to it, and choosing a check
 	// The switcher finds the repository's checkouts; choosing the worktree moves
 	// the pane that read the main checkout, and it keeps its board.
 	await browser.run(["click", '[data-slot="repository-switcher"]']);
-	await browser.run(["fill", 'input[aria-label="Find a repository or checkout"]', worktree]);
+	await browser.run([
+		"fill",
+		'[data-slot="repository-dropdown"] input[aria-label="Find a repository or checkout"]',
+		worktree,
+	]);
 	await browser.run(["click", `[data-row-id=${JSON.stringify(`checkout:${worktree}`)}]`]);
 	await pollUntil(
 		() => paneSays(browser, "B", "Feature checkout"),

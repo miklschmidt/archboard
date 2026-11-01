@@ -1,17 +1,14 @@
 import { RiSearchLine } from "@remixicon/react";
 import {
 	useCallback,
-	useId,
 	useMemo,
-	useState,
-	type ChangeEvent,
+	useRef,
 	type JSX,
 	type KeyboardEvent,
-	type MouseEvent,
-	type RefObject,
+	type PointerEvent,
 } from "react";
 
-import { usesCommandKey } from "@archboard/ui-kit/components";
+import { Command, Dialog, IconButton, usesCommandKey } from "@archboard/ui-kit/components";
 import { useFindShortcut } from "#ui/hooks/shell/use-find-shortcut.ts";
 import { findInModel, type FindHit, type FindKind } from "#ui/rules/architecture-model/search.ts";
 
@@ -28,7 +25,8 @@ const KIND_WORDS: Readonly<Record<FindKind, string | null>> = {
 interface ModelFindProps {
 	/** The complete selected architecture, including hidden descendants. */
 	readonly model: Parameters<typeof findInModel>[0];
-	readonly input: RefObject<HTMLInputElement | null>;
+	readonly open: boolean;
+	readonly onOpenChange: (open: boolean) => void;
 	readonly query: string;
 	readonly onQuery: (query: string) => void;
 	/**
@@ -40,59 +38,27 @@ interface ModelFindProps {
 }
 
 /**
- * Keep the focus in the field while a result is pressed, so the field does not
- * lose it, and the list with it, before the press lands.
- * @param event The press.
- */
-function keepFocus(event: MouseEvent): void {
-	event.preventDefault();
-}
-
-/** Inputs for one result. */
-interface ResultProps {
-	readonly hit: FindHit;
-	/** Its place in the list, which names it for the field that points at it. */
-	readonly id: string;
-	readonly active: boolean;
-	readonly onChoose: (hit: FindHit, beside: boolean) => void;
-}
-
-/**
  * One thing found: its name, and where it is or what it is.
  * @param props The hit and what choosing it does.
+ * @param props.hit The hit.
+ * @param props.onChoose Choose it.
  * @returns The result.
  */
-function Result(props: ResultProps): JSX.Element {
+function Result(props: {
+	readonly hit: FindHit;
+	readonly onChoose: (hit: FindHit) => void;
+}): JSX.Element {
 	const { hit, onChoose } = props;
-	const choose = useCallback(
-		(event: MouseEvent): void => {
-			onChoose(hit, event.altKey);
-		},
-		[onChoose, hit],
-	);
+	const choose = useCallback((): void => onChoose(hit), [onChoose, hit]);
 	const detail = [KIND_WORDS[hit.kind], hit.detail].filter(Boolean).join(" · ");
 	return (
-		// The list is the combobox pattern's listbox, its rows the options: the ARIA
-		// Authoring Practices pattern for a field with results, which is neither a
-		// select nor a datalist, so the rule that asks for those does not apply.
-		// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
-		<div id={props.id} role="option" aria-selected={props.active}>
-			<button
-				type="button"
-				tabIndex={-1}
-				data-active={props.active ? "" : undefined}
-				data-find-kind={hit.kind}
-				data-find-id={hit.id}
-				onMouseDown={keepFocus}
-				onClick={choose}
-				className="data-active:bg-foreground/8 hover:bg-foreground/8 rounded-control relative flex w-full flex-col px-3 py-1.5 text-left"
-			>
-				{props.active && (
-					<span
-						aria-hidden="true"
-						className="bg-primary-mark absolute inset-x-1 bottom-0 h-0.5 rounded-full"
-					/>
-				)}
+		<Command.Item
+			value={`${hit.kind}:${hit.id}`}
+			data-find-kind={hit.kind}
+			data-find-id={hit.id}
+			onSelect={choose}
+		>
+			<span className="flex min-w-0 flex-1 flex-col">
 				<span className="text-control truncate" title={hit.name}>
 					{hit.name}
 				</span>
@@ -101,181 +67,99 @@ function Result(props: ResultProps): JSX.Element {
 						{detail}
 					</span>
 				)}
-			</button>
-		</div>
-	);
-}
-
-/** Inputs for the list of results. */
-interface ResultsProps {
-	readonly id: string;
-	readonly results: readonly FindHit[];
-	readonly active: number;
-	readonly onChoose: (hit: FindHit, beside: boolean) => void;
-}
-
-/**
- * The results under the field, or the word that none match.
- * @param props The results, which is active and what choosing one does.
- * @returns The list.
- */
-function Results(props: ResultsProps): JSX.Element {
-	const { results } = props;
-	return (
-		<div
-			id={props.id}
-			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's listbox
-			role="listbox"
-			aria-label="Found in this architecture"
-			className="bg-popover text-popover-foreground border-border shadow-float rounded-panel absolute top-full right-0 left-0 z-40 mt-1 max-h-[60vh] overflow-y-auto border p-1"
-		>
-			{results.map((hit, at) => (
-				<Result
-					key={`${hit.kind}:${hit.id}`}
-					hit={hit}
-					id={`${props.id}-${at}`}
-					active={at === props.active}
-					onChoose={props.onChoose}
-				/>
-			))}
-			{results.length === 0 && (
-				// The one row of a list with nothing in it, which cannot be chosen.
-				<div
-					// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA combobox pattern's option
-					role="option"
-					aria-disabled="true"
-					aria-selected="false"
-					className="text-body text-muted-foreground px-4 py-2"
-				>
-					Nothing matches.
-				</div>
-			)}
-		</div>
+			</span>
+		</Command.Item>
 	);
 }
 
 /**
- * The row a walking key points at.
- * @param key The key.
- * @param pointed The row pointed at.
- * @param last The last row.
- * @returns The row, or null for a key that does not walk.
- */
-function walkedTo(key: string, pointed: number, last: number): number | null {
-	if (key === "ArrowDown") return Math.min(pointed + 1, last);
-	return key === "ArrowUp" ? Math.max(pointed - 1, 0) : null;
-}
-
-/**
- * The result the field points at.
- * @param list The id of the list, while it is drawn.
- * @param results The results.
- * @param pointed Where the field points.
- * @returns The id of the row, or undefined with no row to point at.
- */
-function pointedRow(
-	list: string | undefined,
-	results: readonly FindHit[],
-	pointed: number,
-): string | undefined {
-	return list === undefined || results.length === 0 ? undefined : `${list}-${pointed}`;
-}
-
-/**
- * The shortcut that brings the field up, while it is not in use.
- * @returns The hint.
- */
-function FindHint(): JSX.Element {
-	return (
-		<kbd className="text-technical text-muted-foreground border-border bg-card shadow-raised dark:bg-input/30 rounded-control shrink-0 border px-1 font-mono leading-4">
-			{usesCommandKey() ? "⌘K" : "Ctrl K"}
-		</kbd>
-	);
-}
-
-/**
- * The field that finds anything a reading can open, with its results.
+ * The palette that finds anything a reading can open, and the button that brings it up.
  * @param props The architecture and what a choice does.
- * @returns The field.
+ * @returns The button and the palette.
  */
 function ModelFind(props: ModelFindProps): JSX.Element {
-	const { model, input, query, onQuery, onChoose } = props;
-	useFindShortcut(input);
-	const listId = useId();
-	const [focused, setFocused] = useState(false);
-	const [active, setActive] = useState(0);
+	const { model, open, onOpenChange, query, onQuery, onChoose } = props;
+	const bringUp = useCallback((): void => onOpenChange(true), [onOpenChange]);
+	useFindShortcut(bringUp);
+	// cmdk says only what was chosen, and Alt opens a choice in the other pane.
+	const beside = useRef(false);
+	// A choice waits for the palette to go, because the palette holds the keys until it has gone.
+	const chosen = useRef<{ readonly hit: FindHit; readonly beside: boolean } | null>(null);
+	const noteKeys = useCallback((event: KeyboardEvent | PointerEvent): void => {
+		beside.current = event.altKey;
+	}, []);
 	const results = useMemo(() => findInModel(model, query), [model, query]);
-	const open = focused && query.trim().length > 0;
-	// The results can change under a pointed-at row without a new query, as the
-	// architecture changes, so what is pointed at is kept inside the list.
-	const last = Math.max(results.length - 1, 0);
-	const pointed = Math.min(active, last);
-	const choose = useCallback(
-		(hit: FindHit | undefined, beside: boolean): void => {
-			if (hit === undefined) return;
-			onQuery("");
-			input.current?.blur();
-			onChoose(hit, beside);
-		},
-		[input, onQuery, onChoose],
-	);
 	const change = useCallback(
-		(event: ChangeEvent<HTMLInputElement>): void => {
-			onQuery(event.target.value);
-			setActive(0);
+		(next: boolean): void => {
+			if (!next) onQuery("");
+			onOpenChange(next);
 		},
-		[onQuery],
+		[onQuery, onOpenChange],
 	);
-	const focus = useCallback((): void => {
-		setFocused(true);
-	}, []);
-	const blur = useCallback((): void => {
-		setFocused(false);
-	}, []);
-	const onKeyDown = useCallback(
-		(event: KeyboardEvent<HTMLInputElement>): void => {
-			const walked = walkedTo(event.key, pointed, last);
-			if (walked !== null) {
-				event.preventDefault();
-				setActive(walked);
-			} else if (event.key === "Enter") {
-				choose(results[pointed], event.altKey);
-			} else if (event.key === "Escape") {
-				if (query === "") input.current?.blur();
-				onQuery("");
-			}
+	const choose = useCallback(
+		(hit: FindHit): void => {
+			chosen.current = { hit, beside: beside.current };
+			change(false);
 		},
-		[pointed, last, choose, query, onQuery, input, results],
+		[change],
 	);
-	const list = open ? listId : undefined;
+	const settle = useCallback(
+		(stillOpen: boolean): void => {
+			const choice = chosen.current;
+			if (stillOpen || choice === null) return;
+			chosen.current = null;
+			onChoose(choice.hit, choice.beside);
+		},
+		[onChoose],
+	);
+	const returnsFocus = useCallback((): boolean => chosen.current === null, []);
 	return (
-		<div
-			data-slot="model-find"
-			className="border-input bg-tray-sink shadow-well focus-within:border-ring rounded-control relative m-2 mb-1.5 flex h-8 shrink-0 items-center gap-2 border pr-1 pl-2.5"
-		>
-			<RiSearchLine aria-hidden="true" className="text-muted-foreground size-3.5 shrink-0" />
-			<input
-				ref={input}
-				value={query}
-				placeholder="Find"
-				aria-label="Find in this architecture"
-				aria-keyshortcuts="Control+K Meta+K /"
-				role="combobox"
-				aria-expanded={open}
-				aria-controls={list}
-				aria-activedescendant={pointedRow(list, results, pointed)}
-				aria-autocomplete="list"
-				autoComplete="off"
-				spellCheck={false}
-				onChange={change}
-				onFocus={focus}
-				onBlur={blur}
-				onKeyDown={onKeyDown}
-				className="text-control placeholder:text-muted-foreground h-full min-w-0 flex-1 bg-transparent font-normal outline-none"
-			/>
-			{!focused && <FindHint />}
-			{open && <Results id={listId} results={results} active={pointed} onChoose={choose} />}
-		</div>
+		<>
+			<IconButton
+				label="Find"
+				slot="model-find-open"
+				shortcut={usesCommandKey() ? "⌘K" : "Ctrl K"}
+				onClick={bringUp}
+			>
+				<RiSearchLine />
+			</IconButton>
+			<Dialog open={open} onOpenChange={change} onOpenChangeComplete={settle}>
+				<Dialog.Content
+					showCloseButton={false}
+					finalFocus={returnsFocus}
+					className="top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0"
+				>
+					<Dialog.Header className="sr-only">
+						<Dialog.Title>Find in this architecture</Dialog.Title>
+						<Dialog.Description>
+							Find a module, a flow, a walkthrough, a bookmark or a former address.
+						</Dialog.Description>
+					</Dialog.Header>
+					<Command
+						data-slot="model-find"
+						label="Found in this architecture"
+						shouldFilter={false}
+						onKeyDownCapture={noteKeys}
+						onPointerDownCapture={noteKeys}
+					>
+						<Command.Input
+							value={query}
+							onValueChange={onQuery}
+							placeholder="Find"
+							aria-label="Find in this architecture"
+						/>
+						{query.trim().length > 0 && (
+							<Command.List>
+								<Command.Empty>Nothing matches.</Command.Empty>
+								{results.map((hit) => (
+									<Result key={`${hit.kind}:${hit.id}`} hit={hit} onChoose={choose} />
+								))}
+							</Command.List>
+						)}
+					</Command>
+				</Dialog.Content>
+			</Dialog>
+		</>
 	);
 }
 

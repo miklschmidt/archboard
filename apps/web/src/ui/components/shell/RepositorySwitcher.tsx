@@ -1,8 +1,7 @@
 // The repository the focused pane reads, with the pane's letter, and the way to another.
-// The list opens in the column, in place of what the column lists, so it needs no surface
-// of its own, and it stays there while the pane has nothing else to list. A row opens that
-// repository, and its chevron lists the checkouts of this machine. Those can be hundreds,
-// so the field reaches them too.
+// The list opens as a dropdown under the row, and it stands in the column while the pane has
+// nothing else to list. A row opens that repository, and its chevron lists the checkouts of
+// this machine. Those can be hundreds, so the field reaches them too.
 
 import { RiArrowDownSLine, RiErrorWarningLine, RiGitRepositoryLine } from "@remixicon/react";
 import {
@@ -19,7 +18,7 @@ import {
 } from "react";
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import { Badge, cn, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
+import { Badge, cn, Popover, RepositoryName, shownRepository } from "@archboard/ui-kit/components";
 import { MarkerLamp } from "#ui/components/shell/ActivityLamp.tsx";
 import { PaneChips } from "#ui/components/shell/PaneChips.tsx";
 import { PaneLetter } from "#ui/components/shell/PaneControls.tsx";
@@ -93,12 +92,10 @@ function checkoutNote(checkout: RepositoryEntry["checkouts"][number]): string | 
 
 /** Inputs for the switcher. */
 interface RepositorySwitcherProps {
-	readonly repositories: readonly ShellRepository[];
 	/** Every pane, by its letter. */
 	readonly panes: readonly PaneMark[];
 	/** Whether the list is on screen. */
 	readonly open: boolean;
-	readonly onOpenChange: (open: boolean) => void;
 	readonly ref?: Ref<HTMLButtonElement>;
 }
 
@@ -138,22 +135,18 @@ function SwitcherName(props: { readonly name: string | null }): JSX.Element {
 
 /**
  * The row that names the focused pane's repository and opens the list.
- * @param props The repositories, the panes, and whether the list is open.
+ * @param props The panes, and whether the list is open.
  * @returns The row.
  */
 function RepositorySwitcher(props: RepositorySwitcherProps): JSX.Element {
-	const { open, onOpenChange, ref } = props;
+	const { open, ref } = props;
 	const { name, letter } = focusedLine(props.panes);
-	const toggle = useCallback(() => onOpenChange(!open), [onOpenChange, open]);
 	return (
-		<button
+		<Popover.Trigger
 			ref={ref}
-			type="button"
 			data-slot="repository-switcher"
-			aria-expanded={open}
 			title={name ?? undefined}
-			onClick={toggle}
-			className="border-input bg-card shadow-raised hover:bg-secondary aria-expanded:bg-secondary aria-expanded:shadow-pressed active:shadow-pressed focus-visible:ring-ring rounded-control text-control mx-2 mb-2 flex h-8 shrink-0 items-center gap-2 border px-2.5 text-left font-medium outline-none focus-visible:ring-2"
+			className="border-input bg-card shadow-raised hover:bg-secondary aria-expanded:bg-secondary aria-expanded:shadow-pressed active:shadow-pressed focus-visible:ring-ring rounded-control text-control m-2 flex h-8 shrink-0 items-center gap-2 border px-2.5 text-left font-medium outline-none focus-visible:ring-2"
 		>
 			{letter !== null && <PaneLetter letter={letter} active />}
 			<SwitcherName name={name} />
@@ -164,7 +157,7 @@ function RepositorySwitcher(props: RepositorySwitcherProps): JSX.Element {
 					open && "rotate-180",
 				)}
 			/>
-		</button>
+		</Popover.Trigger>
 	);
 }
 

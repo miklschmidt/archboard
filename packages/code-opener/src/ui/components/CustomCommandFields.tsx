@@ -3,7 +3,7 @@
 import { useCallback, useId, type ChangeEvent, type JSX } from "react";
 
 import { LINE_TOKEN, PATH_TOKEN } from "#shared/schemas/opener-settings.ts";
-import { Field, Input, InputGroup, Technical } from "@archboard/ui-kit/components";
+import { Dialog, Field, Input, InputGroup } from "@archboard/ui-kit/components";
 import type {
 	CustomCommandDraft,
 	CustomCommandIssues,
@@ -72,9 +72,10 @@ function CustomCommandFields(props: CustomCommandFieldsProps): JSX.Element {
 					/>
 					<InputGroup.Addon align="block-end">
 						<InputGroup.Text>
-							One argument per line. Exactly one must hold <Technical>{PATH_TOKEN}</Technical>,
-							which becomes the file to open. <Technical>{LINE_TOKEN}</Technical> becomes the line
-							where the bound symbol is defined, or 1.
+							One argument per line. Exactly one must hold{" "}
+							<Dialog.Technical>{PATH_TOKEN}</Dialog.Technical>, which becomes the file to open.{" "}
+							<Dialog.Technical>{LINE_TOKEN}</Dialog.Technical> becomes the line where the bound
+							symbol is defined, or 1.
 						</InputGroup.Text>
 					</InputGroup.Addon>
 				</InputGroup>

@@ -7,7 +7,7 @@
 import { RiErrorWarningLine } from "@remixicon/react";
 import { useCallback, useRef, useState, type JSX, type ReactNode } from "react";
 
-import { Skeleton } from "@archboard/ui-kit/components";
+import { Popover } from "@archboard/ui-kit/components";
 import { RepositoryChooser, RepositorySwitcher } from "#ui/components/shell/RepositorySwitcher.tsx";
 import { WorkingNow, type WorkingEntry } from "#ui/components/shell/WorkingNow.tsx";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
@@ -26,8 +26,6 @@ interface NavigatorProps {
 	head: ReactNode;
 	/** The column's foot: the agent dock, with its voice and the way to the conversation. */
 	foot?: ReactNode;
-	/** Where the focused pane puts Find. */
-	attachFind: (element: HTMLDivElement | null) => void;
 	/** Where the focused pane puts its destinations. */
 	attachDestinations: (element: HTMLDivElement | null) => void;
 }
@@ -103,7 +101,7 @@ function listingFailure(view: ShellView): string | null {
  * @returns The navigator column.
  */
 function Navigator(props: NavigatorProps): JSX.Element {
-	const { view, actions, attachFind, attachDestinations } = props;
+	const { view, actions, attachDestinations } = props;
 	// Unchanged repository locations preserve the row values and handlers.
 	const panes = useKept(paneMarks(view), sameData);
 	const nothingListed = view.repositories.length === 0;
@@ -145,15 +143,25 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				data-slot="navigator"
 				className="group/navigator flex min-h-0 flex-1 flex-col"
 			>
-				<div ref={attachFind} className="contents" />
 				{!nothingListed && (
-					<RepositorySwitcher
-						ref={switcher}
-						repositories={view.repositories}
-						panes={panes}
-						open={choosing}
-						onOpenChange={setChoosing}
-					/>
+					<Popover open={choosing} onOpenChange={setChoosing}>
+						<RepositorySwitcher ref={switcher} panes={panes} open={choosing} />
+						<Popover.Content
+							align="start"
+							data-slot="repository-dropdown"
+							className="max-h-[60vh] w-(--anchor-width) gap-0 p-0 pt-2"
+						>
+							<RepositoryChooser
+								repositories={view.repositories}
+								panes={panes}
+								asked
+								className="flex"
+								onOpen={open}
+								onChooseCheckout={onChooseCheckout}
+								onLeave={leave}
+							/>
+						</Popover.Content>
+					</Popover>
 				)}
 				<ListingState
 					loading={view.boardsLoading}
@@ -165,16 +173,14 @@ function Navigator(props: NavigatorProps): JSX.Element {
 				<div
 					ref={attachDestinations}
 					data-slot="navigator-destinations"
-					hidden={choosing}
 					className="peer flex min-h-0 flex-1 flex-col empty:hidden"
 				/>
 				{!nothingListed && (
 					<RepositoryChooser
-						key={String(choosing)}
 						repositories={view.repositories}
 						panes={panes}
-						asked={choosing || view.choosing}
-						className={choosing ? "flex" : "hidden peer-empty:flex"}
+						asked={view.choosing}
+						className="hidden peer-empty:flex"
 						onOpen={open}
 						onChooseCheckout={onChooseCheckout}
 						onLeave={leave}
@@ -240,7 +246,10 @@ function ListingSkeleton(): JSX.Element {
 				Reading the vault…
 			</p>
 			{["w-3/5", "w-1/2", "w-2/3", "w-2/5"].map((width) => (
-				<Skeleton key={width} className={`rounded-chip h-3 motion-reduce:animate-none ${width}`} />
+				<div
+					key={width}
+					className={`bg-muted rounded-chip h-3 animate-pulse motion-reduce:animate-none ${width}`}
+				/>
 			))}
 		</div>
 	);

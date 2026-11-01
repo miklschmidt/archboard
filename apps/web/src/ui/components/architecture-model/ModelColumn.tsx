@@ -40,10 +40,10 @@ function countOf(count: number): string {
 }
 
 /**
- * Put a reader's Find in the left column while its pane has focus.
- * @param props The field.
- * @param props.children The field.
- * @returns The field in the column, or nothing while another pane has focus.
+ * Put a reader's Find in the bar over the left column while its pane has focus.
+ * @param props Find.
+ * @param props.children Find.
+ * @returns Find in the bar, or nothing while another pane has focus.
  */
 function ColumnFind(props: { readonly children: ReactNode }): JSX.Element | null {
 	const slot = usePaneChrome().column?.find ?? null;
@@ -92,9 +92,9 @@ function ColumnDestinations(props: ColumnDestinationsProps): JSX.Element | null 
 					data-slot="model-destinations"
 					value={destination}
 					onValueChange={onDestination}
-					className="min-h-0 flex-1 gap-0 px-2 pb-2"
+					className="min-h-0 flex-1 gap-0"
 				>
-					<Tabs.List variant="edge" className="shrink-0">
+					<Tabs.List variant="edge" className="shrink-0 px-2">
 						{destinationEntries(props).map((entry) => (
 							<DestinationTab key={entry.value} entry={entry} />
 						))}

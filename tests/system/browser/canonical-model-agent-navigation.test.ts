@@ -24,7 +24,11 @@ const WAIT = { timeoutMs: 10_000 } as const;
 /** Open the switcher and name a repository in its field. */
 async function findRepository(browser: AgentBrowserSession, name: string): Promise<void> {
 	await browser.run(["click", '[data-slot="repository-switcher"]']);
-	await browser.run(["fill", 'input[aria-label="Find a repository or checkout"]', name]);
+	await browser.run([
+		"fill",
+		'[data-slot="repository-dropdown"] input[aria-label="Find a repository or checkout"]',
+		name,
+	]);
 }
 
 test("agent navigation opens the requested canonical pane without moving its neighbor", async () => {
@@ -283,7 +287,7 @@ test("repository filtering opens canonical roots by keyboard and in the other pa
 	await browser.run(["click", '[data-slot="repository-switcher"]']);
 	expect(
 		await browser.eval<string[]>(
-			`[...document.querySelectorAll('[data-row-id="repository:orders"] [data-pane-letter]')].map(node => node.getAttribute('data-pane-letter'))`,
+			`[...document.querySelectorAll('[data-slot="repository-dropdown"] [data-row-id="repository:orders"] [data-pane-letter]')].map(node => node.getAttribute('data-pane-letter'))`,
 		),
 	).toEqual(["A", "B"]);
 	expect(await browser.run(["errors"])).toBe("");

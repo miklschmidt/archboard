@@ -18,6 +18,8 @@ interface BrandBarProps {
 	diagnostics?: ReactNode;
 	theme: ThemeChoice;
 	actions: ShellActions;
+	/** Where the focused pane puts its Find. */
+	attachFind: (element: HTMLDivElement | null) => void;
 }
 
 /** Inputs for the pieces that only need the actions. */
@@ -73,7 +75,7 @@ function ThemeToggle(props: ThemeToggleProps): JSX.Element {
  * @returns The chrome row at the top of the navigator, with its one-pixel bottom rule.
  */
 function BrandBar(props: BrandBarProps): JSX.Element {
-	const { actions } = props;
+	const { actions, attachFind } = props;
 	return (
 		<header
 			data-slot="brand-bar"
@@ -81,6 +83,7 @@ function BrandBar(props: BrandBarProps): JSX.Element {
 		>
 			<Brand />
 			<span className="flex-1" />
+			<div ref={attachFind} className="contents" />
 			{props.diagnostics}
 			<SettingsButton actions={actions} />
 			<ThemeToggle theme={props.theme} actions={actions} />

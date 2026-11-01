@@ -359,6 +359,7 @@ async function listedRow(browser: AgentBrowserSession, row: string): Promise<voi
 
 /** Find something by a text and choose it, which is how a bookmark or a former address opens. */
 async function chooseFound(browser: AgentBrowserSession, text: string, id: string): Promise<void> {
+	await browser.run(["click", '[data-slot="model-find-open"]']);
 	await browser.run(["fill", '[data-slot="model-find"] input', text]);
 	const row = `[data-find-id=${JSON.stringify(id)}]`;
 	await pollUntil(
@@ -391,18 +392,22 @@ async function startModelWalkthrough(browser: AgentBrowserSession, id: string): 
 
 export { startModelWalkthrough };
 
-/** Open a repository from the switcher, which lists every repository of the machine. */
+/**
+ * Open a repository from the column of an empty pane, or else from the dropdown of the switcher.
+ * Each lists every repository of the machine.
+ */
 async function openRepository(browser: AgentBrowserSession, repository: string): Promise<void> {
 	const row = `[data-row-id=${JSON.stringify(`repository:${repository}`)}]`;
-	await pollUntil(
+	const places = [`[data-slot="navigator"] ${row}`, `[data-slot="repository-dropdown"] ${row}`];
+	const place = await pollUntil(
 		() =>
-			browser.eval<boolean>(
-				`(document.querySelector('[data-slot="repository-switcher"][aria-expanded="false"]')?.click(), document.querySelector(${JSON.stringify(row)})?.checkVisibility() === true)`,
+			browser.eval<string | null>(
+				`${JSON.stringify(places)}.find((place) => document.querySelector(place)?.checkVisibility()) ?? (document.querySelector('[data-slot="repository-switcher"][aria-expanded="false"]')?.click(), null)`,
 			),
 		Boolean,
 		`the repository ${repository}`,
 	);
-	await browser.run(["click", row]);
+	await browser.run(["click", place!]);
 }
 
 export { openRepository };

@@ -85,28 +85,26 @@ test("module search finds hidden modules without writing architecture", async ()
 	await pollUntil(
 		searching,
 		(state) => state.focused,
-		"the search shortcut to focus the field",
+		"the search shortcut to bring up the palette",
 		WAIT,
 	);
 	await browser.run(["keyboard", "type", "handler"]);
 	await pollUntil(
 		searching,
-		(state) => state.value === "handler" && state.listed && state.controls === "list",
+		(state) => state.value === "handler" && state.listed,
 		"the hidden module in search",
 		WAIT,
 	);
 	expect((await searching()).fullNames).toBe(true);
 	await browser.run(["press", "Escape"]);
+	await pollUntil(searching, (state) => !state.focused, "Escape to close the palette", WAIT);
+	await browser.run(["press", "Control+k"]);
 	await pollUntil(
 		searching,
-		(state) => state.value === "" && state.focused && !state.listed,
-		"Escape to clear the search",
+		(state) => state.focused && state.value === "",
+		"the palette to open with nothing typed",
 		WAIT,
 	);
-	await browser.run(["press", "Escape"]);
-	await pollUntil(searching, (state) => !state.focused, "Escape to leave the empty field", WAIT);
-	expect((await searching()).controls).toBeNull();
-	await browser.run(["press", "Control+k"]);
 	await browser.run(["keyboard", "type", "handler"]);
 	await pollUntil(searching, (state) => state.listed, "the matching hidden module", WAIT);
 	await browser.run(["press", "Enter"]);
@@ -119,7 +117,7 @@ test("module search finds hidden modules without writing architecture", async ()
 		"the chosen module and its containing scope",
 		WAIT,
 	);
-	expect(await searching()).toMatchObject({ listed: false, controls: null });
+	expect((await searching()).listed).toBe(false);
 	expect(
 		await pollUntil(
 			() =>

@@ -1,4 +1,4 @@
-import { Activity, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
+import { Activity, useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/board/content";
@@ -150,7 +150,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { model, location, structure, tree, branches, choices, walk } = reader;
 	const { opened, depicted } = structure;
 	const { shown } = reader.accepted;
-	const find = useRef<HTMLInputElement>(null);
+	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
 	// The reader's sort stays while the list is away: a closed tab draws nothing.
 	const [measure, setMeasure] = useState<MeasureKey>("commits");
@@ -163,7 +163,7 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 				return;
 			}
 			setQuery((current) => current + text);
-			find.current?.focus();
+			setFinding(true);
 		},
 		[reviewing, step],
 	);
@@ -174,7 +174,8 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 		<>
 			<ModelColumn.Find>
 				<ModelFind
-					input={find}
+					open={finding}
+					onOpenChange={setFinding}
 					query={query}
 					onQuery={setQuery}
 					model={model}

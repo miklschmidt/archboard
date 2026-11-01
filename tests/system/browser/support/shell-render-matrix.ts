@@ -226,9 +226,8 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const present = paneHeader?.querySelector('button[aria-label^="Present"]');
 		const column = document.querySelector('${NAVIGATOR_COLUMN}');
 		const nav = document.querySelector('${NAVIGATOR}');
-		const filter = nav?.querySelector('input');
-		// A technical token in the mono face: the key that finds a board.
-		const technical = nav?.querySelector('kbd');
+		// A technical token in the mono face: the count on a tab of the left column.
+		const technical = nav?.querySelector('[data-slot="destination-count"]');
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
@@ -238,12 +237,12 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
-			!present || !column || !nav || !filter || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
+			!present || !column || !nav || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
 			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
-				present: !!present, column: !!column, nav: !!nav, filter: !!filter, stages: !!stages, bar: !!bar,
+				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
 				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
 				picture: !!picture, panel: !!panel }));
 		}
@@ -267,7 +266,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			});
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
-		const flat = [shell, header, paneHeader, nav, filter, stages, bar, pane];
+		const flat = [shell, header, paneHeader, nav, stages, bar, pane];
 		const humanLabels = [selectedBoard, board];
 		control.focus();
 		const focusStyle = getComputedStyle(control);

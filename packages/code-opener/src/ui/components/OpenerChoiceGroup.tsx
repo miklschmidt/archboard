@@ -4,7 +4,7 @@
 import { useCallback, useId, type JSX } from "react";
 
 import type { OpenerCommand, OpenerSettingsReply } from "#shared/schemas/opener-settings.ts";
-import { Badge, Field, RadioGroup, Technical } from "@archboard/ui-kit/components";
+import { Badge, Dialog, Field, RadioGroup } from "@archboard/ui-kit/components";
 import { choiceOfSelection, presetChoice } from "#ui/rules/custom-command.ts";
 import { formatCommand } from "#ui/rules/format-command.ts";
 import type { OpenerChoice } from "#ui/state/opener-settings-contracts.ts";
@@ -87,7 +87,7 @@ function OpenerOption(props: OpenerOptionProps): JSX.Element {
 				</Field.Label>
 				<Field.Description>
 					{props.command ? (
-						<Technical>{formatCommand(props.command)}</Technical>
+						<Dialog.Technical>{formatCommand(props.command)}</Dialog.Technical>
 					) : (
 						"No opener is known for this platform."
 					)}

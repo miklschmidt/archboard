@@ -62,7 +62,14 @@ function Shell(props: ShellProps): JSX.Element {
 	const [destinations, attachDestinations] = useState<HTMLDivElement | null>(null);
 	const column = useMemo(() => ({ find, destinations }), [find, destinations]);
 	const head = useMemo(
-		() => <BrandBar theme={view.theme} actions={actions} diagnostics={props.diagnostics} />,
+		() => (
+			<BrandBar
+				theme={view.theme}
+				actions={actions}
+				diagnostics={props.diagnostics}
+				attachFind={attachFind}
+			/>
+		),
 		[view.theme, actions, props.diagnostics],
 	);
 	return (
@@ -72,7 +79,6 @@ function Shell(props: ShellProps): JSX.Element {
 				actions={actions}
 				head={head}
 				foot={props.agentDock}
-				attachFind={attachFind}
 				attachDestinations={attachDestinations}
 			/>
 			<ConversationColumns

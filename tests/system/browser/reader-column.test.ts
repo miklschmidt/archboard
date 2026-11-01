@@ -67,6 +67,21 @@ async function reads(browser: AgentBrowserSession, scope: string): Promise<void>
 }
 
 /**
+ * Click a control that the reading draws after its address changes.
+ * @param browser The page.
+ * @param selector The control.
+ */
+async function clickWhenDrawn(browser: AgentBrowserSession, selector: string): Promise<void> {
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector(${JSON.stringify(selector)}) !== null`),
+		Boolean,
+		selector,
+		WAIT,
+	);
+	await browser.run(["click", selector]);
+}
+
+/**
  * The module rows of the tree.
  * @param browser The page.
  * @returns The modules the rows open, in order.
@@ -155,14 +170,14 @@ test("every move of the left column has a keyboard route, also in a presented pa
 
 	// Flows stay listed while a flow is read, and the representation comes second.
 	await browser.run(["click", '[data-destination="flows"]']);
-	await browser.run(["click", '[data-flow-id="Shop#Request"]']);
+	await clickWhenDrawn(browser, '[data-flow-id="Shop#Request"]');
 	await pollUntil(
 		() => reading(browser),
 		(now) => now.grammar === "sequence",
 		"the sequence of the flow",
 		WAIT,
 	);
-	await browser.run(["click", '[data-slot="model-grammar-selector"] [data-choice="flowchart"]']);
+	await clickWhenDrawn(browser, '[data-slot="model-grammar-selector"] [data-choice="flowchart"]');
 	await pollUntil(
 		() => reading(browser),
 		(now) => now.grammar === "flowchart",
