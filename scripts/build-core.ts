@@ -24,6 +24,10 @@ const CRATE = "archboard-renderer-wasm";
 const TARGET = "wasm32-unknown-unknown";
 const BUILT = join(CHECKOUT, "target", TARGET, "release", "archboard_renderer_wasm.wasm");
 
+/** The painter that the browser loads beside the core (ADR 0071), and the file cargo builds from it. */
+const PAINTER_CRATE = "archboard-painter-wasm";
+const PAINTER_BUILT = join(CHECKOUT, "target", TARGET, "release", "archboard_painter_wasm.wasm");
+
 /** The file the contract's TypeScript types are written to, beside the build. */
 const TYPES = join(CORE_BUILD_DIRECTORY, "types.ts");
 /** The file the marks a pane draws beside a picture are written to, beside the build. */
@@ -90,6 +94,8 @@ function currentBuild(hash: string): boolean {
 			MARKS,
 			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm.d.ts"),
 			join(CORE_BUILD_DIRECTORY, "archboard_renderer_wasm_bg.wasm.d.ts"),
+			join(CORE_BUILD_DIRECTORY, "archboard_painter_wasm.js"),
+			join(CORE_BUILD_DIRECTORY, "archboard_painter_wasm_bg.wasm"),
 		].every(existsSync);
 	} catch (error) {
 		if (!(error instanceof CoreBuildError)) throw error;
@@ -139,9 +145,21 @@ const hash = coreSourceHash();
 if (currentBuild(hash)) {
 	console.log(`The renderer core is built from these sources (${hash}).`);
 } else {
-	run(["cargo", "build", "--release", "--locked", "--target", TARGET, "--package", CRATE], {
-		ARCHBOARD_CORE_SOURCE_HASH: hash,
-	});
+	run(
+		[
+			"cargo",
+			"build",
+			"--release",
+			"--locked",
+			"--target",
+			TARGET,
+			"--package",
+			CRATE,
+			"--package",
+			PAINTER_CRATE,
+		],
+		{ ARCHBOARD_CORE_SOURCE_HASH: hash },
+	);
 	const types = run(
 		["cargo", "run", "--quiet", "--release", "--locked", "--package", "archboard-render"],
 		{},
@@ -158,6 +176,7 @@ if (currentBuild(hash)) {
 	mkdirSync(CORE_BUILD_DIRECTORY, { recursive: true });
 	writeFileSync(TYPES, types);
 	writeFileSync(MARKS, marks);
+	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, PAINTER_BUILT]);
 	run(["wasm-bindgen", "--target", "web", "--out-dir", CORE_BUILD_DIRECTORY, BUILT]);
 	guardCoreGlue();
 	console.log(`Built the renderer core from these sources (${hash}).`);

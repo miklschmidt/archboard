@@ -137,6 +137,16 @@ pub struct Scene {
     pub placed: Vec<String>,
 }
 
+/// A scene with the outlines of the icons it names, which the scene names and
+/// does not carry: everything a painter needs to draw it.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Painting {
+    /// What is drawn.
+    pub scene: Scene,
+    /// Each icon's SVG path data, by its export name.
+    pub icons: std::collections::BTreeMap<String, Vec<String>>,
+}
+
 /// A picture written as a document: what the core answers its host.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]

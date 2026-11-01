@@ -4,6 +4,8 @@
 
 use std::collections::{HashMap, HashSet};
 
+use serde::Deserialize;
+
 /// Where the picture lies on the canvas, in canvas pixels.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Camera {
@@ -64,4 +66,38 @@ pub struct Presentation {
     pub recede: Recede,
     /// The traffic's clock in seconds, or nothing when it is not shown.
     pub traffic: Option<f64>,
+}
+
+/// How one lit subject stands in the light.
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+pub struct Shine {
+    /// Its opacity, from 0 to 1.
+    pub opacity: f64,
+    /// How long it waits before it changes, in milliseconds: a further hop of a
+    /// trace lights after a nearer one.
+    pub delay: f64,
+}
+
+/// What the light says about a whole picture.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+pub struct Light {
+    /// The opacity of a subject that is not lit.
+    pub rest: f64,
+    /// The opacity of a relationship's label that is not lit.
+    pub labels: f64,
+    /// What is lit, by id.
+    pub subjects: HashMap<String, Shine>,
+    /// How long the change takes, in milliseconds.
+    pub duration: f64,
+}
+
+/// What a page marks on a picture, whole, each time any of it changes.
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Eq)]
+pub struct Marks {
+    /// The subjects drawn with their selection ring.
+    pub selected: HashSet<String>,
+    /// The relationships lit along their whole route.
+    pub whole: HashSet<String>,
+    /// The flow heads held at the top of the view.
+    pub stuck: HashSet<String>,
 }

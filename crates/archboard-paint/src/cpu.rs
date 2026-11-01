@@ -25,6 +25,11 @@ impl CpuCanvas {
         }
     }
 
+    /// How wide the canvas is, in pixels.
+    pub fn width(&self) -> u32 {
+        u32::from(self.pixmap.width())
+    }
+
     /// Forget the last frame.
     pub fn begin(&mut self) {
         self.context.reset();

@@ -48,6 +48,10 @@ enum View {
 
 /// What a group hands down to what it holds.
 #[derive(Clone, Copy, Debug)]
+#[expect(
+    clippy::struct_excessive_bools,
+    reason = "each is one thing the stylesheet said about a group's descendants"
+)]
 struct Inside {
     transform: Affine,
     view: View,
@@ -183,28 +187,30 @@ impl<C: Canvas> Walk<'_, C> {
     /// How far a group recedes behind what is lit, and whether it is lit.
     fn recede_of(&self, group: &Group, inside: Inside) -> (f64, bool) {
         let recede = &self.presentation.recede;
-        if inside.lit {
-            return (1.0, true);
-        }
         let id = match &group.role {
             Role::Traffic(id) => Some(id.as_str()),
             _ => group.subject.as_ref().map(|subject| subject.id.as_str()),
         };
-        if let Some(value) = id.and_then(|id| recede.subjects.get(id)) {
-            return (*value, true);
+        let own = id.and_then(|id| recede.subjects.get(id));
+        let member = || {
+            group
+                .members
+                .iter()
+                .find_map(|member| recede.subjects.get(member))
+        };
+        match (inside.lit, own, id.is_none() && group.members.is_empty()) {
+            (true, ..) => (1.0, true),
+            (false, Some(value), _) => (*value, true),
+            (false, None, true) => (1.0, false),
+            (false, None, false) => {
+                let rest = if matches!(group.role, Role::Label) {
+                    recede.labels
+                } else {
+                    recede.rest
+                };
+                (member().copied().unwrap_or(rest), false)
+            }
         }
-        if let Some(value) = group
-            .members
-            .iter()
-            .find_map(|member| recede.subjects.get(member))
-        {
-            return (*value, false);
-        }
-        if id.is_none() && group.members.is_empty() {
-            return (1.0, false);
-        }
-        let label = matches!(group.role, Role::Label);
-        (if label { recede.labels } else { recede.rest }, false)
     }
 
     /// Draw a group, with its layer when it needs one.

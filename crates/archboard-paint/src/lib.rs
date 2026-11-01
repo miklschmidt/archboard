@@ -9,5 +9,8 @@ pub mod draw;
 pub mod outlines;
 pub mod palette;
 mod path;
+mod pick;
 pub mod presentation;
+pub mod stage;
+pub mod timing;
 mod traffic;

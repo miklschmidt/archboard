@@ -16,6 +16,8 @@ archboard-text = { path = "../archboard-text" }
 # The geometry and paint types that the two Vello painters share (ADR 0071).
 kurbo = "0.13"
 peniko = "0.6"
+# A page states what it marks as JSON.
+serde = { version = "1", features = ["derive"] }
 # The painter of a machine with no usable WebGPU, and of every test (ADR 0071).
 vello_cpu = { version = "0.3", default-features = false, features = ["std", "u8_pipeline"] }
 

@@ -1,0 +1,5 @@
+# Every WebAssembly build of the repository assumes SIMD, which each browser
+# that the viewer supports and Bun have. Vello on the CPU needs it to draw a
+# frame in time (ADR 0071).
+[target.wasm32-unknown-unknown]
+rustflags = ["-C", "target-feature=+simd128"]

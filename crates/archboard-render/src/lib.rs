@@ -26,7 +26,7 @@ use archboard_layout::Solver;
 use archboard_scene::paint::design::OWN_ICONS;
 use archboard_scene::paint::paint;
 use archboard_scene::request::{DocumentRequest, PageRequest, PaintRequest};
-use archboard_scene::scene::{PaintedDocument, Scene};
+use archboard_scene::scene::{PaintedDocument, Painting};
 use archboard_svg::{AppliedAppearance, PictureLegend};
 use serde::Serialize;
 use ts_rs::TS;
@@ -59,11 +59,9 @@ pub struct Drawn {
     pub appearances: Vec<AppliedAppearance>,
     /// What the picture's legend lists, or null when it draws no subject of a kind.
     pub legend: Option<PictureLegend>,
-    /// The picture as the painter described it, for a frontend that paints
-    /// it itself (ADR 0059). A host that shows the document needs none of it.
-    #[serde(skip)]
-    #[ts(skip)]
-    pub scene: Scene,
+    /// The scene and its icons as JSON, for a painter. It stays a string on its
+    /// way through the host, which never reads it (ADR 0071).
+    pub painting: String,
 }
 
 /// Why nothing was drawn: the reading holds nothing the grammar draws.
@@ -137,18 +135,28 @@ fn drawn(request: &PaintRequest) -> Result<Drawn, String> {
     let svg = archboard_svg::document(&scene, &request.document, &request.icons)
         .map_err(|error| error.0)?;
     let (appearances, legend) = archboard_svg::appearances(&scene.body, &request.icons);
+    let width = scene.width;
+    let height = scene.height;
+    let atlas = scene.atlas.clone();
+    let placed = scene.placed.clone();
+    let reading_direction = scene.reading;
+    let painting = serde_json::to_string(&Painting {
+        scene,
+        icons: request.icons.clone(),
+    })
+    .map_err(|error| error.to_string())?;
     Ok(Drawn {
         document: PaintedDocument {
             svg,
-            width: scene.width,
-            height: scene.height,
-            atlas: scene.atlas.clone(),
-            placed: scene.placed.clone(),
-            reading_direction: scene.reading,
+            width,
+            height,
+            atlas,
+            placed,
+            reading_direction,
         },
         appearances,
         legend,
-        scene,
+        painting,
     })
 }
 
