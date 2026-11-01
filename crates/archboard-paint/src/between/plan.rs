@@ -26,7 +26,7 @@ pub(super) enum Mover {
     /// A card carried between two boxes.
     Card(Box<CardCarry>, Option<Ground>),
     /// A line carried between two routes.
-    Line(LineCarry, Option<Ground>),
+    Line(Box<LineCarry>, Option<Ground>),
     /// A subject that only becomes more or less visible.
     Visible(Group, Ground),
     /// Part of the ground of a picture, faded in between two points of the move.

@@ -88,7 +88,7 @@ fn carried(
     }
     match new.form() {
         Form::Line => match LineCarry::new(old, new, masks, phases) {
-            Some(line) => Some(Mover::Line(line, ground)),
+            Some(line) => Some(Mover::Line(Box::new(line), ground)),
             None => still(None),
         },
         Form::Card => match (old.frame, new.frame) {
@@ -132,6 +132,37 @@ fn parked_in(items: &[Item]) -> Vec<Group> {
         }
     }
     found
+}
+
+/// What of the last picture stops with no subject to carry it: the pulses of a
+/// line that stops, which go where the lines stand, and what is parked for a card
+/// that does not stay. `pulses` says how deep the pulses stand, and when they end.
+fn stopping(
+    traffic: &HashMap<&str, &TrafficMark>,
+    landing: &HashMap<&str, &TrafficMark>,
+    parked: Vec<Group>,
+    moved: &HashMap<&str, (f64, f64)>,
+    pulses: (usize, f64),
+) -> Vec<(usize, Mover)> {
+    let (lines_at, gone_by) = pulses;
+    let stays = |owner: &String| moved.contains_key(owner.as_str());
+    traffic
+        .iter()
+        .filter(|(line, _)| !landing.contains_key(*line))
+        .map(|(_, mark)| {
+            let pulses = Item::Traffic((*mark).clone());
+            (lines_at, Mover::Leave(Leave::plain(pulses, gone_by)))
+        })
+        .chain(
+            parked
+                .into_iter()
+                .filter(|group| !group.members.first().is_some_and(stays))
+                .map(|group| {
+                    let item = Item::Group(group);
+                    (0, Mover::Leave(Leave::plain(item, LABEL_GONE_BY)))
+                }),
+        )
+        .collect()
 }
 
 /// Every line's pulses among some items, to any depth.
@@ -326,28 +357,14 @@ impl Between {
         traffic_in(&last.body, &mut traffic);
         let mut landing = HashMap::new();
         traffic_in(&next.body, &mut landing);
-        let stays = |owner: &str| moved.contains_key(owner);
         let lines_at = depth_of(&next.body, SubjectKind::Edge);
-        let stopping: Vec<(usize, Mover)> = traffic
-            .iter()
-            .filter(|(line, _)| !landing.contains_key(*line))
-            .map(|(_, mark)| {
-                let pulses = Item::Traffic((*mark).clone());
-                (
-                    lines_at,
-                    Mover::Leave(Leave::plain(pulses, phases.exit_end)),
-                )
-            })
-            .chain(
-                parked
-                    .into_iter()
-                    .filter(|group| group.members.first().is_none_or(|owner| !stays(owner)))
-                    .map(|group| {
-                        let item = Item::Group(group);
-                        (0, Mover::Leave(Leave::plain(item, LABEL_GONE_BY)))
-                    }),
-            )
-            .collect();
+        let stopping = stopping(
+            &traffic,
+            &landing,
+            parked,
+            &moved,
+            (lines_at, phases.exit_end),
+        );
         let known = LastPicture { moved, traffic };
         let furniture = |item: &Item, _: bool| furniture_of(item, &known, phases);
         let wiring = Wiring {
@@ -391,21 +408,38 @@ impl Between {
         let body = self.plan.at(progress);
         // The camera already moved by the shift. The picture starts that far
         // back and eases home with the cards, so the shared cards stay still.
-        let moved = emphasised(phase(
-            progress,
-            self.phases.move_start,
-            self.phases.move_end,
-        ));
-        let left = 1.0 - moved;
-        if (self.shift.0 == 0.0 && self.shift.1 == 0.0) || left <= 0.0 {
+        let back = self.back_at(progress);
+        if back == (0.0, 0.0) {
             return body;
         }
-        let mut back = Group::new(Role::Move, body);
-        back.transform = Some(Transform::translate(
-            -self.shift.0 * left,
-            -self.shift.1 * left,
-        ));
-        vec![Item::Group(back)]
+        let mut around = Group::new(Role::Move, body);
+        around.transform = Some(Transform::translate(-back.0, -back.1));
+        vec![Item::Group(around)]
+    }
+
+    /// How far back of its place the picture stands at a progress.
+    fn back_at(&self, progress: f64) -> (f64, f64) {
+        let phases = self.phases;
+        let left = 1.0 - emphasised(phase(progress, phases.move_start, phases.move_end));
+        (self.shift.0 * left, self.shift.1 * left)
+    }
+
+    /// The in-between at a progress from 0 to 1 as a scene, and how far back of
+    /// its place it stands. A picture that arrives during a move starts from it,
+    /// so that it takes over from what the reader sees.
+    pub fn seen_at(&self, progress: f64, landed: &Scene) -> (Scene, (f64, f64)) {
+        let masks = self.masks_at(progress);
+        let mut definitions = self.definitions.clone();
+        definitions.retain(|definition| {
+            !matches!(definition, Definition::Mask(mask) if masks.iter().any(|moved| moved.id == mask.id))
+        });
+        definitions.extend(masks.into_iter().map(Definition::Mask));
+        let scene = Scene {
+            definitions,
+            body: self.plan.at(progress),
+            ..landed.clone()
+        };
+        (scene, self.back_at(progress))
     }
 
     /// The masks of the lines that move, at a progress from 0 to 1. Each stands

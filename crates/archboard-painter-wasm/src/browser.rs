@@ -179,11 +179,6 @@ impl Painter {
         Ok(())
     }
 
-    /// Land whatever flies, at once.
-    pub fn land(&mut self) {
-        self.stage.land();
-    }
-
     /// Send the picture on its way out, a heading in JSON.
     ///
     /// # Errors

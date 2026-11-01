@@ -33,11 +33,8 @@ interface StagedPicture {
 	readonly root: Element;
 }
 
-/** A picture moving into place on a surface, and the way to stop waiting for it. */
-interface Flight {
-	readonly surface: HTMLElement;
-	readonly stop: () => void;
-}
+/** The way to stop waiting for a picture to move into place. */
+type Flight = () => void;
 
 /** What the surface was last given, and on which element. */
 interface Shown {
@@ -145,12 +142,11 @@ function entersAfresh(
 
 /**
  * Wait, frame by frame, for a picture to move into place.
- * @param surface The surface it moves on.
  * @param duration How long that takes.
  * @param onLanded What to do once it has.
  * @returns The flight, with the way to stop it.
  */
-function fly(surface: HTMLElement, duration: number, onLanded: () => void): Flight {
+function fly(duration: number, onLanded: () => void): Flight {
 	const clock = frameClock();
 	const landsAt = clock.now() + duration;
 	let frame = 0;
@@ -163,22 +159,9 @@ function fly(surface: HTMLElement, duration: number, onLanded: () => void): Flig
 		else onLanded();
 	}
 	frame = clock.requestFrame(tick);
-	/** Stop asking for frames. */
-	function stop(): void {
+	return () => {
 		clock.cancelFrame(frame);
-	}
-	return { surface, stop };
-}
-
-/**
- * Land a flight where it was going, at once.
- * @param flight The flight, if one is up.
- */
-function land(flight: Flight | null): void {
-	if (flight !== null) {
-		flight.stop();
-		stageOf(flight.surface)?.land();
-	}
+	};
 }
 
 /**
@@ -285,7 +268,7 @@ function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
 	if (shift !== undefined) keepStill(shift);
 	stagePicture(surface, drawing);
 	const duration = arrive(next, shift ?? NO_SHIFT);
-	return duration === null ? null : fly(surface, duration, onLanded);
+	return duration === null ? null : fly(duration, onLanded);
 }
 
 /**
@@ -342,9 +325,9 @@ function usePictureTransition(
 			if (surface !== null) shown.current = { surface, drawing };
 			return;
 		}
-		// A picture arriving mid-flight lands the flight first, so the surface
-		// is showing exactly the picture the new transition is told it is.
-		land(flight.current);
+		// A picture arriving mid-flight stops the wait for the last one. The stage
+		// carries on from what shows, so the reader sees no jump.
+		flight.current?.();
 		shown.current = { surface, drawing };
 		const next = {
 			surface,
@@ -372,7 +355,7 @@ function usePictureTransition(
 	// Leaving the surface stops waiting; what it showed does not matter any more.
 	useLayoutEffect(
 		() => (): void => {
-			flight.current?.stop();
+			flight.current?.();
 			flight.current = null;
 		},
 		[],

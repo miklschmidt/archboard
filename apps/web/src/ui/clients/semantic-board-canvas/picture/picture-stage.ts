@@ -158,13 +158,6 @@ class PictureStage {
 		if (this.#started === null && painting !== undefined && painting !== "") this.#ink.hold(arrive);
 	}
 
-	/** Land whatever flies, at once. */
-	land(): void {
-		this.#tell((painter) => {
-			painter.land();
-		});
-	}
-
 	/**
 	 * Send the picture on its way out.
 	 * @param heading Where the reader went.

@@ -155,14 +155,24 @@ impl Stage {
     }
 
     /// Carry the picture on the stage into the next, over a time in
-    /// milliseconds. A stage with nothing to carry shows the next picture.
+    /// milliseconds, from what shows now. A stage with nothing to carry shows the
+    /// next picture.
     pub fn carry(&mut self, painting: Painting, shift: (f64, f64), ms: f64) {
         let last = self.shown.take();
+        let seen = self
+            .flight
+            .as_ref()
+            .zip(last.as_ref())
+            .map(|(flight, last)| flight.seen_at(self.now, &last.picture.scene));
         let flight = last
             .as_ref()
             .zip(self.phases.as_ref())
-            .map(|(last, phases)| {
-                Flight::carry(&last.picture.scene, &painting.scene, shift, phases, ms)
+            .map(|(last, phases)| match &seen {
+                Some((scene, back)) => {
+                    let shift = (shift.0 + back.0, shift.1 + back.1);
+                    Flight::carry(scene, &painting.scene, shift, phases, ms)
+                }
+                None => Flight::carry(&last.picture.scene, &painting.scene, shift, phases, ms),
             });
         self.stand(painting);
         self.flight = flight;

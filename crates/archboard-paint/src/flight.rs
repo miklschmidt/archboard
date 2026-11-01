@@ -128,6 +128,23 @@ impl Flight {
         }
     }
 
+    /// What the flight shows at a moment as a scene, and how far back of its
+    /// place it stands. `landed` is the picture the flight lands on.
+    pub(crate) fn seen_at(&self, now: f64, landed: &Scene) -> (Scene, (f64, f64)) {
+        let share = self.time().share(now);
+        match self {
+            Flight::Carry { between, .. } => between.seen_at(share, landed),
+            Flight::Enter { entrance, .. } => {
+                let body = entrance.at(share);
+                let scene = Scene {
+                    body,
+                    ..landed.clone()
+                };
+                (scene, (0.0, 0.0))
+            }
+        }
+    }
+
     /// The definitions that what the flight shows refers to, when they are its own.
     pub(crate) fn definitions(&self) -> Option<&Definitions> {
         match self {

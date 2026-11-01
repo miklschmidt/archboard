@@ -128,6 +128,17 @@ fn a_shift_holds_the_shared_cards_still_until_they_have_moved() {
 }
 
 #[test]
+fn a_picture_that_arrives_during_a_move_starts_from_what_shows() {
+    let (first, next, between) = a_busy_move();
+    let (seen, back) = between.seen_at(0.4, &next);
+    let turned = Between::new(&seen, &first, back, &PHASES);
+    let (shown, start) = (between.at(0.4), turned.at(0.0));
+    let (card, same) = (drawing(&shown, "a")[0], drawing(&start, "a")[0]);
+    assert_eq!(plate(card), plate(same));
+    assert_ne!(plate(card), plate(drawing(&first.body, "a")[0]));
+}
+
+#[test]
 fn a_repeated_id_pairs_in_order() {
     let before = scene(
         vec![
