@@ -105,6 +105,31 @@ fn a_frames_parts_fill_a_shared_grid_from_its_first_cell_the_same_way_every_time
 }
 
 #[test]
+fn a_door_on_a_crowded_reading_keeps_its_own_size_beside_taller_cards() {
+    let cards = (0..9).map(|i| json!({"id":format!("p{i}"),"width":260,"height":130}));
+    let door = json!({"id":"door","width":120,"height":34,
+        "layoutOptions":{"archboard.door":"true"}});
+    let line = |from: String, to: String| json!({"id":format!("{from}-{to}"),"sources":[from],"targets":[to]});
+    let among = (0..9_usize)
+        .flat_map(|i| (i + 1..9.min(i + 3)).map(move |j| (format!("p{i}"), format!("p{j}"))));
+    let edges: Vec<Value> = among
+        .chain((0..4).map(|i| ("door".to_owned(), format!("p{i}"))))
+        .map(|(from, to)| line(from, to))
+        .collect();
+    let children: Vec<Value> = cards.chain([door]).collect();
+    let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
+        "children":children,"edges":edges});
+    let placed = drawing(&graph);
+    let drawn = placed["cards"].as_array().expect("the drawn cards");
+    let door = drawn
+        .iter()
+        .find(|card| card["id"] == "door")
+        .expect("the door");
+    assert_eq!(door["box"]["height"], 34.0);
+    assert_eq!(door["box"]["width"], 120.0);
+}
+
+#[test]
 fn two_frames_stand_apart_with_their_own_parts_and_a_line_between_their_parts() {
     let frame = |id: &str, parts: Vec<Value>| {
         json!({"id":id,"width":200,"height":36,

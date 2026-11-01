@@ -14,7 +14,7 @@ use crate::{
     blocks::assembly::{Placed, PlacedCard, Title},
     constants::CONTAINER_INSET,
     geometry::{Point, Rect},
-    graph::{Edge, Node, semantic_order},
+    graph::{DOOR, Edge, Node, semantic_order},
 };
 
 use grid::{Grid, Item, Join};
@@ -189,7 +189,8 @@ impl<'a> Block<'a> {
         gaps
     }
 
-    /// Size a settled grid's rows and columns and stand each part in its cell.
+    /// Size a settled grid's rows and columns and stand each part in its cell. A card takes the
+    /// whole cell. A door keeps its own size in the cell's middle.
     fn set(&self, grid: &Grid, room: f64) -> Set {
         let rows = grid.rows();
         let mut widths = vec![0.0_f64; grid.columns];
@@ -206,13 +207,18 @@ impl<'a> Block<'a> {
             .items
             .iter()
             .zip(&grid.cells)
-            .map(|(_, &cell)| {
+            .map(|(item, &cell)| {
                 let (x, y) = grid.at(cell);
-                Rect {
+                let cell = Rect {
                     x: xs[x],
                     y: ys[y],
                     width: widths[x],
                     height: heights[y],
+                };
+                if item.node.option(DOOR).is_some() {
+                    middle_of(cell, item.node)
+                } else {
+                    cell
                 }
             })
             .collect();
@@ -273,6 +279,16 @@ impl<'a> Block<'a> {
                 header: None,
             });
         }
+    }
+}
+
+/// A card at its own size in the middle of a cell.
+fn middle_of(cell: Rect, node: &Node) -> Rect {
+    Rect {
+        x: cell.x + (cell.width - node.w()) / 2.0,
+        y: cell.y + (cell.height - node.h()) / 2.0,
+        width: node.w(),
+        height: node.h(),
     }
 }
 
