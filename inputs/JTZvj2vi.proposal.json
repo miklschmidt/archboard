@@ -557,6 +557,12 @@
     },
     {
       "type": "assign",
+      "subject": "vKEsyHFk/SMjRfwN3#jQpIqcDx",
+      "field": "description",
+      "value": "Keeps the talk with the board, the vault check and, when record was given --against, the variant every picture of it is read against, so a replay draws the same comparison. It starts Chromium with --disable-gpu, so the page paints on the CPU painter."
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#UqVsXH0L",
       "field": "responsibility",
       "value": "Asks the stage to draw each relationship that newly lights on from its source to its target, once"
@@ -646,6 +652,31 @@
       "subject": "vKEsyHFk#fDFYdO1w",
       "placement": {
         "holder": "vKEsyHFk/UOXNWLhR#hc77pwzB"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KTwHgUQG",
+      "kind": "relationship",
+      "value": {
+        "order": 990100,
+        "kind": "call",
+        "label": "the warnings, for the painter to draw",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/code-marks.ts",
+          "symbol": "stageOf"
+        },
+        "id": "vKEsyHFk#KTwHgUQG",
+        "to": "vKEsyHFk#9FxduWoO"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KTwHgUQG",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#n7ZlRkbA"
       }
     },
     {
