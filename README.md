@@ -24,7 +24,7 @@
 
 **Archboard is an architecture planning tool for software and cloud architects who work with coding agents**. Your agent (Claude Code or Codex) reads the code and tells Archboard what the system _is_: its services, stores and queues, what contains what, how they talk, and in what order. Archboard's renderer draws every line. There is no box to drag, so no diagram decays into a hand-tuned layout. The agent that changes the code can update the map in the same task.
 
-Read a system that you did not write, and see where its design costs the most. Archboard shows the facts behind the smells that John Ousterhout describes in _A Philosophy of Software Design_, for every module.
+Read a system that you did not write, and see where its design costs the most. For each module, Archboard shows facts behind the design smells from John Ousterhout's _A Philosophy of Software Design_. A design smell suggests a problem that needs investigation.
 
 Plan the next step before anyone writes code. Ask for a change and see it drawn against today's architecture, weigh competing options side by side, and adopt the one that ships: the architecture it replaces becomes history, kept with the reason it changed. The Codex voice can explain the selected architecture while you explore its modules. One command can film it into a narrated video for a design review or a pull request.
 
@@ -64,26 +64,30 @@ https://github.com/user-attachments/assets/6d0fc87b-98e0-4a58-adae-0abb4c34f9f2
 
 ## Find the smells in your design
 
-John Ousterhout's _A Philosophy of Software Design_ names the signs of a design that costs more than it should: shallow modules, pass-through methods, information leakage, and change amplification. These signs are hard to see in a file tree. They are easy to see in a model of the whole system, joined to its Git history.
+John Ousterhout's _A Philosophy of Software Design_ describes signs of costly design. A shallow module hides little behavior behind its interface. A pass-through method passes a call to another method. Information leakage means that modules share one design decision. Change amplification means that changes spread across modules.
 
-Open **Measures** in the left column. It lists every module of the model and sorts by the measure that you choose. Show every module, only modules with parts, or only modules with no parts. Sort from either end.
+These signs are hard to see in a file tree. They are easy to see in a model of the whole system, joined to its Git history.
+
+Open Measures in the left column. It lists every module and sorts by the measure that you choose. Use Show to select all modules, modules with parts, or modules with no parts. Sort from either end.
 
 <img src="https://github.com/user-attachments/assets/afa5b5d5-6ef6-4f3f-81a8-faaf8119a95c" width="100%" alt="Measures lists the modules of Archboard's own model. Sorted by Unjoined, Diagram surface comes near the top, and the Right panel shows the two modules that change with it. Sorted by Entries, Retained reads has 13 entries and 0 hidden parts. Sorted by Pass-through, the About page of Command contract names the target of each entry.">
 
 <p align="center"><sub>Archboard's own model, read from its own Git history. Every count comes from the model and the commits.</sub></p>
 
-| What Ousterhout warns about                                | What to read                                                                                                                                    |
-| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| A shallow module: a wide interface over little behavior    | **Entries** beside **Hidden**. Sort Hidden with the fewest first, and the modules that hide nothing come to the top.                            |
-| A pass-through method: an entry that only passes a call on | **Pass-through**. The module's About page names the target of each one, so you can decide whether the layer earns its place.                    |
-| Change amplification: one change touches many places       | **Commits**, **Changes with** and **Callers**. Select a module, and the Right panel lists what changes with it and how many commits they share. |
-| Information leakage: two modules that share a secret       | **Unjoined**: modules that change together with no relationship between them. The strongest pair comes first.                                   |
+| What Ousterhout warns about                                | What to read                                                                                                                                         |
+| ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A shallow module: a wide interface over little behavior    | Entries beside Hidden. Sort Hidden with the fewest first. Modules that hide no parts come first.                                                     |
+| A pass-through method: an entry that only passes a call on | Pass-through. The module's About page names the target of each entry. Use this evidence to judge whether the extra call serves a purpose.            |
+| Change amplification: one change touches many places       | Commits, Changes with, and Callers. Select a module to see what changes with it in the Right panel. Each pair states its shared commits.             |
+| Information leakage: two modules that share a secret       | Unjoined counts modules that change together without an authored relationship. Sort by Unjoined to see modules with the most such connections first. |
 
-Archboard gives you no score. Each count is a fact about the model or the commits, and you judge what it means. A model does not hold behavior, so Measures never calls a module shallow. Read the code, or ask your agent to read it.
+Archboard gives you no score. Each count describes the model or its commits, and you judge what it means. The model does not measure implementation behavior, so Measures never calls a module shallow. Read the code, or ask your agent to read it.
 
-Your agent reads the same facts from the command line: `archboard model inspect <module>` for an interface, and `archboard model locality` for hotspots and coupling.
+Your agent reads the same facts through the CLI, a command-line interface. Use `archboard model inspect <module>` for an interface. Use `archboard model locality` for commit counts and modules that change together.
 
-**It fits with [mattpocock/skills](https://github.com/mattpocock/skills)**. Those skills give you and your agent a shared language for deep modules. `codebase-design` is the vocabulary: lots of behavior behind a small interface, at a clean seam. `improve-codebase-architecture` surveys a codebase for modules to deepen and interviews you about the one you pick. Archboard gives that conversation its evidence, and then its result: Measures shows where to start, the interview decides what to change, and a proposal draws the deeper module against what exists, with interface changes first.
+Archboard fits with [mattpocock/skills](https://github.com/mattpocock/skills). Those skills give you and your agent a shared language for deep modules. A deep module hides behavior behind a small interface. `codebase-design` defines that vocabulary. `improve-codebase-architecture` surveys a codebase for modules to deepen and interviews you about the one you pick.
+
+Archboard supplies evidence for that conversation and draws its result. Measures shows where to start. The interview decides what to change. A proposal draws the deeper module against what exists, with interface changes first.
 
 ```text
 Read the interfaces and the Git history of this model. Name the three modules that look most shallow
@@ -99,7 +103,7 @@ A proposal starts with a map of what exists. Archboard brings code, module bound
 
 Give each module a link to its file or a named function, class, or value. A relationship can cite the source that supports it. With `archboard check code`, your agent finds broken source links, relationships drawn backwards, and dependencies between mapped modules that the architecture leaves out.
 
-Warnings mark the affected modules and relationships in the canvas. The Right panel counts the warnings of the whole model and steps through them, so a warning on a module that the picture does not draw still reaches you. Select a warned module to read the finding and the file and line that it rests on. Each piece of source evidence says whether analysis resolved it or matched it only by name.
+Warnings mark the affected modules and relationships in the canvas. The Right panel counts the whole model's warnings and steps through them. It also reaches warnings on modules outside the picture. Select a warned module to read the finding and its source location. Each piece of source evidence says whether analysis resolved it or matched it only by name.
 
 <img src="https://github.com/user-attachments/assets/1ccde9d4-2a07-45dc-907c-0f4e40fafd99" width="100%" alt="The code check finds a resolved call from Place order to Save order that the example architecture leaves out. Selecting its warning shows the source evidence in the Right panel. The terminal shows the actual call in the source file.">
 
@@ -222,7 +226,9 @@ Modules can link to source files, functions, or classes. **Open code** follows t
 
 ## Ask your architecture
 
-Select a module or relationship, then choose **Explain with Codex** in the Right panel or right-click the selection. With nothing selected, the same control traces a flow or explains the proposal on screen. The local agent receives the exact reading and the selected subjects, and it changes nothing. The panel shows what Codex is doing, and the answer arrives under the picture and in the conversation. Press **Talk** to ask the same question aloud.
+Select a module or relationship. Choose Explain with Codex in the Right panel, or right-click the selection. With nothing selected, the same control traces a flow or explains the proposal on screen. The local agent receives the exact reading and the selected subjects, and it changes nothing.
+
+The panel shows what Codex does. The answer arrives under the picture and in the conversation. Press Talk to ask the same question aloud.
 
 <img src="https://github.com/user-attachments/assets/3f15f6aa-2c83-414b-b833-0ef5e7e6be60" width="100%" alt="The Timeout guard is selected. Explain with Codex in the Right panel asks the local agent about it. The panel shows what Codex does, and the answer arrives under the picture and in the conversation.">
 
@@ -293,7 +299,7 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 <p align="center"><sub>Archboard's model from <a href=".archboard/vault"><code>.archboard/vault</code></a>, exported with <code>model render</code>. Git tracks the artifact, and <code>archboard check embeds</code> reports whether its recipe still matches.</sub></p>
 
 1. Your agent reads source and authors modules, containment, outgoing relationships, independent flows, and walkthroughs through `archboard model` commands. The consumer skill explains the contracts.
-2. The shared runtime checks subject claims and the exact revision, retains a checkpoint, signed when Git has a signer, and installs the complete change durably. Active proposals store compact changes. Current content uses `.module.json`, `.flows.json`, and `.walkthrough.json` files under one model manifest.
+2. The shared runtime makes sure that subject claims and the exact revision permit the change. It retains a checkpoint and installs the complete change durably. If Git has a signer, the runtime signs the checkpoint. Active proposals store compact changes. Current content uses `.module.json`, `.flows.json`, and `.walkthrough.json` files under one model manifest.
 3. The local renderer draws the selected reading in the browser or as an exported artifact. Opening a module changes scope without copying content. No authored file stores box positions.
 
 ## Archboard next to the usual diagram tools
@@ -337,9 +343,11 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Git, Bun 1.4.3 or newer, Node.js, and Nix with flakes, which gives the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) lists the exact versions and the way without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video. The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
+You need Linux or macOS, Git, Bun 1.4.3 or newer, and Node.js. Nix with flakes supplies the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) lists the exact versions and the way without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
 
-**See it in a few minutes** with the example vault from this README. The first build takes the longest:
+The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
+
+Try the example vault from this README. A vault stores the authored architecture files. The first build takes the longest:
 
 ```bash
 git clone https://github.com/miklschmidt/archboard.git && cd archboard
@@ -400,7 +408,7 @@ No, and that is the point. If a picture says something wrong, fix the meaning an
 <details><summary><b>Does Archboard score my design?</b></summary>
 <br>
 
-No. Measures states facts: how many entries a module has, what it hides, what changes with it. A count can look bad for a good reason, so you and your agent read the code and judge. The model describes structure, not behavior, so it cannot prove that a module is shallow.
+No. Measures states how many entries a module has, what it hides, and what changes with it. A count can look bad for a good reason. You and your agent read the code and judge. The model does not measure implementation behavior, so it cannot prove that a module is shallow.
 </details>
 
 <details><summary><b>Which agents does it work with?</b></summary>
@@ -418,7 +426,9 @@ A narration speaks as soon as the voice starts. If your microphone is on a Bluet
 <details><summary><b>Where does the architecture live?</b></summary>
 <br>
 
-A vault at `.archboard/vault` holds one model. Each `.module.json` file owns a module and its outgoing relationships. Separate files hold flows, active proposals, and walkthroughs. Git tracks these authored inputs. An independent archive, signed when Git has a signer, retains exact history and completed decisions. Publish that archive explicitly when you share historical readings.
+A vault at `.archboard/vault` holds one model. Each `.module.json` file owns a module and its outgoing relationships. Separate files hold flows, active proposals, and walkthroughs. Git tracks these authored inputs. An independent archive retains exact history and completed decisions. If Git has a signer, the archive signs its commits.
+
+Publish that archive explicitly when you share historical readings.
 </details>
 
 <details><summary><b>Does the diagram stay in sync with the code?</b></summary>
