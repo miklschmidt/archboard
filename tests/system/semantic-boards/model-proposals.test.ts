@@ -381,7 +381,7 @@ test("CLI and HTTP preserve completed lifecycle states and forced comparison rec
  */
 async function metadataEdit(
 	state: string | undefined,
-	proposal: ArchitectureModuleEdit["proposal"],
+	proposal: Extract<ArchitectureModuleEdit, { readonly proposal: unknown }>["proposal"],
 ) {
 	const model = readArchitectureModel(vault);
 	if (!model.success || model.manifest.current === null) throw new Error(JSON.stringify(model));
