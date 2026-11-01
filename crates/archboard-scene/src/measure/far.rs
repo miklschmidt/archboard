@@ -2,8 +2,7 @@
 //! card keeps its box, its padding, its chip and the build of its near view: the
 //! name beside the chip, the path at the foot. The scale is fixed, so words stay
 //! in proportion to their card wherever a picture lands, and the room between
-//! them takes one line less of its responsibility than it could hold, so a card
-//! never reads full.
+//! them takes as many lines of its responsibility as it holds.
 
 use crate::drawing::{DiagramFont, TextRole, TextRun};
 use crate::js::{self, js_max, js_min};
@@ -267,25 +266,18 @@ fn foot_room(foot: f64) -> f64 {
     if foot > 0.0 { ROW_GAP } else { 0.0 }
 }
 
-/// The lines of a responsibility the room left under a name holds, less one, so
-/// that a far card never reads full. A last line stays where half a line of air
-/// stands round it.
+/// The lines of a responsibility the room left under a name holds.
 fn gist_in(card: &FarCard<'_>, sizes: Sizes, spare: f64) -> Vec<String> {
     let Some(gist) = card.gist else {
         return Vec::new();
     };
     let step = sizes.note * GIST_LINE;
-    let room = spare - ROW_GAP;
+    let holds = |lines: &usize| *lines as f64 * step <= spare - ROW_GAP;
     // A responsibility takes no more lines than it has words.
     let words = gist.split_whitespace().count();
-    let held = (1..=words + 1)
-        .take_while(|lines| *lines as f64 * step <= room)
-        .last()
-        .unwrap_or(0);
-    let aired = 1.5 * step <= room;
-    match held.saturating_sub(1).max(usize::from(aired)) {
-        0 => Vec::new(),
-        most => gist_lines(gist, sizes.note, sizes.room, most),
+    match (1..=words).take_while(holds).last() {
+        Some(most) => gist_lines(gist, sizes.note, sizes.room, most),
+        None => Vec::new(),
     }
 }
 

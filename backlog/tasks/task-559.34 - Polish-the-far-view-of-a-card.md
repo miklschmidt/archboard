@@ -4,7 +4,7 @@ title: Polish the far view of a card
 status: To Do
 assignee: []
 created_date: '2026-10-31T20:03:00Z'
-updated_date: '2026-10-31T23:59:00Z'
+updated_date: '2026-11-01T00:24:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-559
@@ -31,4 +31,6 @@ The owner, on 2026-10-31: the far view reads messy, crammed and busy next to the
 A far card has the build of a near card. Name at the top, path at the foot. It holds one line less of its responsibility than its box holds, and keeps a last line where half a line of air stands round it. The far scale no longer starts at a name of 20 units: it starts at 16, and it is 12 px at the landing. A group shows as a flat spot at the top right, so the path keeps its whole room. Waiting for the owner's eye.
 
 Far view redone after owner review. The far scale no longer follows where a picture lands, because that reached 2.09 times the near size on low readings. Every far card now uses one fixed scale, a name of 18 units, with its near padding on all sides. The chip stays in its near place at its near size, so only the words move between the views. At 111 of 112 readings the scale is exactly 18 units. Codex session is a hair lower because one box limits it. Workspace packages at fit 0.29 now draws names at about 5 px. Owner review of Tracks found four routing faults on Archboard server: a crossing with no bridge, a detour, a kink with two dots, and dead space in a frame. Tracks is known to have defects, so the owner dropped them.
+
+After owner review: a far card shows one line more than the previous build, which is what its box holds. Doors now count the way round a frame between them and what they join, a two-way line shares its trunk's ink, the reader panel heading uses title-name, and the light picture uses warm neutrals. Still open for the owner: a better drawing of mixed relationships and its legend sample, and whether the container grid stays.
 <!-- SECTION:NOTES:END -->
