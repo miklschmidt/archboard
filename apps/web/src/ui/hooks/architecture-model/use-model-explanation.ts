@@ -5,6 +5,8 @@ import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-read
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import type { Model } from "@archboard/board/content";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
+import { useComparisonSavedAt } from "#ui/hooks/architecture-model/use-comparison-saved-at.ts";
+import { comparedWith } from "#ui/rules/architecture-model/comparison-choices.ts";
 import { comparisonIntent } from "#ui/rules/architecture-model/comparison-intent.ts";
 
 type Action = ExplanationInvocation["request"]["action"];
@@ -51,12 +53,14 @@ function useModelExplanation(
 	);
 	const referenceSubject = subject ?? undefined;
 	const comparisonRevision = model.comparison?.revision.digest;
+	const display = useReadingDisplay(vault, model);
 	const capture = useMemo(() => {
 		const mode = DiagramGrammarSchema.safeParse(grammar);
 		if (!mode.success || model.migrationPreview !== undefined) return null;
 		return {
 			vault,
 			model: model.manifest.id,
+			display,
 			expectedRevision: model.revision.digest,
 			expectedComparisonRevision: comparisonRevision,
 			subjects: [...selected],
@@ -86,13 +90,19 @@ function useModelExplanation(
 		referenceSubject,
 		source,
 		comparisonRevision,
+		display,
 	]);
 	useModelReadingReport(capture, reporting);
 	const invoke = host?.invoke;
 	const act = useCallback(
 		(action: Action): void => {
 			if (capture === null) return;
-			const { vault: actualVault, selection: selectedReading, ...request } = capture;
+			const {
+				vault: actualVault,
+				selection: selectedReading,
+				display: _display,
+				...request
+			} = capture;
 			invoke?.(actualVault, {
 				selection: selectedReading,
 				request: { ...request, action, actionId: crypto.randomUUID() },
@@ -101,6 +111,27 @@ function useModelExplanation(
 		[capture, invoke],
 	);
 	return { act, unavailable: host === null || host.pending || capture === null };
+}
+
+/**
+ * Describe the accepted picture with the same names and comparison text as its header.
+ * @param vault The addressed vault.
+ * @param model The accepted architecture.
+ * @returns Labels for pane reports, outside the explanation request.
+ */
+function useReadingDisplay(vault: string, model: Model) {
+	const savedAt = useComparisonSavedAt(
+		vault,
+		model.migrationPreview === undefined ? model.comparison : undefined,
+	);
+	return useMemo(
+		() => ({
+			model: model.manifest.name,
+			state: model.selectedState?.name,
+			comparison: comparedWith({ reading: model, against: null, catalogue: undefined, savedAt }),
+		}),
+		[model, savedAt],
+	);
 }
 
 /**

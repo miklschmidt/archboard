@@ -200,7 +200,9 @@ function postPaneRoute(req: Request, res: Response): void {
  * @returns The phrase.
  */
 function shownBy(pane: PaneRegistration): string {
-	return semanticPaneContextFor(pane.clientId)?.architecture?.model ?? "nothing yet";
+	const context = semanticPaneContextFor(pane.clientId);
+	if (context?.architecture == null) return "nothing yet";
+	return context.architecture.display?.model ?? context.architecture.model;
 }
 
 /**

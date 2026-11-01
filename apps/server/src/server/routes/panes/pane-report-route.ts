@@ -30,14 +30,10 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
  */
 function readingAboutBoard(clientId: string): SemanticPaneContext | null {
 	const context = semanticPaneContextFor(clientId);
-	if (context === null) {
-		return null;
-	}
+	if (context === null) return null;
+	if (context.architecture != null) return context;
 	const pane = panes.get(clientId);
 	const showing = pane === undefined ? null : boardForPane(pane);
-	if (showing === null) {
-		return null;
-	}
 	return context.board?.key === showing ? context : null;
 }
 
@@ -74,11 +70,14 @@ function getPanesRoute(req: Request, res: Response): void {
 			return {
 				variant: context.variant,
 				view: context.view,
-				selection: context.selection.map((subject) => ({
-					id: subject.id,
-					...(subject.kind === undefined ? {} : { kind: subject.kind }),
-					...(subject.name === undefined ? {} : { name: subject.name }),
-				})),
+				selection:
+					context.architecture == null
+						? context.selection.map((subject) => ({
+								id: subject.id,
+								...(subject.kind === undefined ? {} : { kind: subject.kind }),
+								...(subject.name === undefined ? {} : { name: subject.name }),
+							}))
+						: context.architecture.subjects.map((id) => ({ id })),
 				version: context.version,
 				at: context.at,
 			};

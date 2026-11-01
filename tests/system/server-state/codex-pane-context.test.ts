@@ -122,7 +122,10 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		const variant = model.selectedState!;
 		const ids = [model.modules.find((module) => module.name === "Gateway")!.id];
 		const ledger = model.modules.find((module) => module.name === "Ledger")!.id;
-		const capture = canonicalCapture(fixture.vault, model, ids);
+		const capture = {
+			...canonicalCapture(fixture.vault, model, ids),
+			display: { model: model.manifest.name, state: variant.name, comparison: "No comparison" },
+		};
 		const ledgerCapture = {
 			...canonicalCapture(fixture.vault, model, []),
 			reading: { ...capture.reading, focus: [], scope: ledger },
@@ -135,10 +138,10 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "voice-client",
-						board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
-						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
+						board: null,
+						variant: null,
 						view: null,
-						selection: ids.map((id) => ({ id })),
+						selection: [],
 						version: null,
 						architecture: capture,
 						// The pane says the pick was the user's own hand.

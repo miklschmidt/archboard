@@ -1,8 +1,7 @@
 import { useCallback, type JSX } from "react";
-import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/board/content";
 import { Select } from "@archboard/ui-kit/components";
-import { architectureCheckpointsQuery } from "#ui/clients/architecture-model/queries.ts";
+import { useComparisonSavedAt } from "#ui/hooks/architecture-model/use-comparison-saved-at.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import {
 	COMPARED,
@@ -24,20 +23,6 @@ interface ModelComparisonSelectorProps {
 }
 
 /**
- * When an exact base was saved. Only the retained list knows, and only a reading compared with a
- * saved reading asks it.
- * @param vault The addressed vault.
- * @param comparison The comparison on show.
- * @returns The time, once the list has said.
- */
-function useSavedAt(vault: string, comparison: Model["comparison"]): string | undefined {
-	const exact = comparison?.reason === "explicit" ? comparison.checkpoint : undefined;
-	const rows = useQuery({ ...architectureCheckpointsQuery(vault), enabled: exact !== undefined });
-	if (rows.data?.success !== true) return undefined;
-	return rows.data.checkpoints.find(({ id }) => id === exact)?.createdAt;
-}
-
-/**
  * The one control of a comparison, in the header: it says what the picture is compared with,
  * and it is the way out. A checkpoint is compared from its row in History.
  * @param props The reading.
@@ -46,7 +31,7 @@ function useSavedAt(vault: string, comparison: Model["comparison"]): string | un
 function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Element | null {
 	const { model, catalogue, vault, paneId } = props;
 	const { against, compareAgainst } = useModelLocation(paneId);
-	const savedAt = useSavedAt(vault, model.comparison);
+	const savedAt = useComparisonSavedAt(vault, model.comparison);
 	const choose = useCallback(
 		(value: string | null, change: { readonly reason: string }): void => {
 			// The address owns the value. When a chosen row leaves the list, the select resets itself to

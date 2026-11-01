@@ -1,4 +1,6 @@
 import { expect, test } from "bun:test";
+import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { z } from "zod";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 
 // A pane that shows a canonical model reports no board key at all. What it shows is the model
@@ -28,7 +30,7 @@ const reading = {
  * @param architecture What the pane reported, if anything.
  * @returns The report.
  */
-function reportOf(architecture: typeof reading | null) {
+function reportOf(architecture: z.infer<typeof SemanticPaneContextSchema>["architecture"]) {
 	return buildPanesReport([pane], {
 		identity: () => null,
 		reading: () => null,
@@ -50,4 +52,18 @@ test("a pane that reported no reading is not given one", () => {
 	const report = reportOf(null);
 	expect(report.text).not.toContain("Shop");
 	expect(report.panes[0]?.architecture).toBeNull();
+});
+
+test("display labels describe the accepted reading while selectors keep their identities", () => {
+	const display = {
+		model: "Web shop",
+		state: "Nightly fulfillment",
+		comparison: "Compared with its base",
+	};
+	const architecture = { ...reading, selection: { state: "DraftId" }, display };
+	const report = reportOf(architecture);
+	expect(report.panes[0]?.architecture).toEqual(architecture);
+	for (const label of Object.values(display)) expect(report.text).toContain(label);
+	expect(report.text).not.toContain("state DraftId");
+	expect(report.panes[0]).toMatchObject({ position: 1, place: "the only pane" });
 });

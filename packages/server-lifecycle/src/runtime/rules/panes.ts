@@ -262,17 +262,52 @@ function plural(word: string, count: number): string {
  * @returns The phrase.
  */
 function architectureWords(architecture: PaneArchitecture): string {
-	const { state, checkpoint, against } = architecture.selection ?? {};
-	const { grammar } = architecture.reading;
+	const { display, selection, reading } = architecture;
+	const labels =
+		display === undefined
+			? intentWords(architecture)
+			: [display.model, display.state, display.comparison];
 	return [
-		architecture.model,
-		state === undefined ? undefined : `state ${state}`,
-		checkpoint === undefined ? undefined : `checkpoint ${checkpoint.slice(0, 8)}`,
-		against === undefined ? undefined : `against ${against}`,
-		grammar === "architecture" ? undefined : grammar,
+		...labels,
+		checkpointWords(selection?.checkpoint),
+		reading.grammar === "architecture" ? undefined : reading.grammar,
 	]
 		.filter(Boolean)
 		.join(", ");
+}
+
+/**
+ * Describe machine selectors when an older browser reports no labels.
+ * @param architecture The captured reading.
+ * @returns The model and explicit selection intent.
+ */
+function intentWords(architecture: PaneArchitecture) {
+	const { state, against, compare } = architecture.selection ?? {};
+	return [
+		architecture.model,
+		state === undefined ? undefined : `state ${state}`,
+		comparisonWords(against, compare),
+	];
+}
+
+/**
+ * Describe an exact selected checkpoint without printing its complete identity.
+ * @param checkpoint The selected checkpoint.
+ * @returns Its short label or absence.
+ */
+function checkpointWords(checkpoint: string | undefined) {
+	return checkpoint === undefined ? undefined : `checkpoint ${checkpoint.slice(0, 8)}`;
+}
+
+/**
+ * Describe explicit intent from a browser that reports no display labels.
+ * @param against The explicit comparison base.
+ * @param compare Whether comparison is disabled.
+ * @returns The comparison intent, without guessing the default.
+ */
+function comparisonWords(against: string | undefined, compare: boolean | undefined) {
+	if (compare === false) return "No comparison";
+	return against === undefined ? undefined : `against ${against}`;
 }
 
 /**
