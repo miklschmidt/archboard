@@ -33,6 +33,14 @@ pub(super) struct Shape {
 }
 
 impl Shape {
+    /// The drawing with the lines as they run now.
+    pub(super) fn routed(&self) -> Placed {
+        Placed {
+            edges: self.routes.clone(),
+            ..(*self.drawing).clone()
+        }
+    }
+
     /// What other lines keep clear of: a card, or a frame's tab, as a frame's body is a scope.
     pub(super) fn solid(&self, endpoint: usize) -> Rect {
         self.tabs

@@ -76,8 +76,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
-/// How a finished drawing ranks: whether it lands whole, its long detours, then the
-/// work of tracing its lines, with its crowded approaches, times the room it takes.
+/// How a finished drawing ranks: whether it lands whole, whether its words read where it
+/// lands, its long detours, then the work of tracing its lines, with its crowded approaches,
+/// times the room it takes.
 pub(super) type Order = (bool, bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -123,11 +124,12 @@ pub(super) fn drawn_rank(drawing: &crate::blocks::assembly::Placed) -> (usize, u
 }
 
 pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
-    let (crowded, cost) = drawn_rank(drawing);
+    let routed = &as_routed(drawing).edges;
+    let (crowded, cost) = rank(routed);
     (
         drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         drawing.width * NEAR_SCALE > LANDING_ROOM.0 || drawing.height * NEAR_SCALE > LANDING_ROOM.1,
-        long_detours(&as_routed(drawing).edges),
+        long_detours(routed),
         (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST) * room_taken(drawing),
     )
 }
@@ -214,4 +216,80 @@ fn fan_reading(
         }
     }
     (rows, cost)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        blocks::assembly::{Placed, PlacedCard},
+        geometry::Rect,
+    };
+
+    const CARD: f64 = 100.0;
+
+    fn card(id: &str, x: f64, y: f64) -> PlacedCard {
+        PlacedCard {
+            id: id.into(),
+            bx: Rect {
+                x,
+                y,
+                width: CARD,
+                height: CARD,
+            },
+            depth: 1,
+            header: None,
+        }
+    }
+
+    fn line(id: &str, to: Point) -> PlacedLine {
+        let from = Point { x: 0.0, y: 0.0 };
+        PlacedLine {
+            id: id.into(),
+            points: vec![from, Point { x: to.x, y: 0.0 }, to],
+            label: None,
+        }
+    }
+
+    /// A caller with two cards to call, the second this far along and this far down.
+    fn fan(second: Point, routed: Option<Placed>) -> Placed {
+        Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards: vec![card("one", 200.0, 0.0), card("two", second.x, second.y)],
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: vec![
+                line("to one", Point { x: 200.0, y: 0.0 }),
+                line("to two", second),
+            ],
+            titles: Vec::new(),
+            routed: routed.map(std::rc::Rc::new),
+        }
+    }
+
+    #[test]
+    fn a_saving_cannot_spread_a_callers_cards_as_routed() {
+        let graph: crate::graph::Node = serde_json::from_value(serde_json::json!({
+            "id": "root",
+            "edges": [
+                {"id": "to one", "sources": ["caller"], "targets": ["one"]},
+                {"id": "to two", "sources": ["caller"], "targets": ["two"]},
+            ],
+        }))
+        .unwrap();
+        let row = Point { x: 400.0, y: 0.0 };
+        let below = Point { x: 400.0, y: 150.0 };
+        let first = fan(row, Some(fan(row, None)));
+        assert!(!worth_placing(
+            &fan(below, Some(fan(below, None))),
+            &first,
+            &graph
+        ));
+        assert!(worth_placing(
+            &fan(below, Some(fan(row, None))),
+            &first,
+            &graph
+        ));
+    }
 }

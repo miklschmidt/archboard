@@ -46,6 +46,13 @@ pub(crate) struct Title {
     pub band: Rect,
 }
 
+impl Title {
+    /// Whether this is the title of the container with this box: they share a top left corner.
+    pub(crate) fn stands_in(&self, container: Rect) -> bool {
+        self.band.x == container.x && self.band.y == container.y
+    }
+}
+
 /// The whole drawing's geometry.
 #[derive(Clone, Debug)]
 pub(crate) struct Placed {

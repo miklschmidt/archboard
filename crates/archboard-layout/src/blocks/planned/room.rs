@@ -2,62 +2,51 @@
 
 use crate::{
     blocks::assembly::Placed,
-    geometry::{Point, Rect},
+    geometry::{Axis, Point, Rect},
 };
 
 use super::shape::Shape;
 
-/// Occupied intervals on one axis.
-#[derive(Default)]
-struct Axis(Vec<(f64, f64)>);
-
-impl Axis {
-    fn protect(&mut self, start: f64, size: f64) {
-        self.0.push((start, start + size));
-    }
-
-    /// The middle of each empty interval that a whole unit fits.
-    fn gaps(mut self) -> Vec<f64> {
-        self.0
-            .sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
-        let mut high = f64::NEG_INFINITY;
-        let mut gaps = Vec::new();
-        for (low, end) in self.0 {
-            if high.is_finite() && low - high >= 1.0 {
-                gaps.push(f64::midpoint(high, high + (low - high).floor()));
-            }
-            high = high.max(end);
+/// The middle of each empty interval between these spans that a whole unit fits.
+fn gaps(mut occupied: Vec<(f64, f64)>) -> Vec<f64> {
+    occupied.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
+    let mut high = f64::NEG_INFINITY;
+    let mut gaps = Vec::new();
+    for (low, end) in occupied {
+        if high.is_finite() && low - high >= 1.0 {
+            gaps.push(f64::midpoint(high, high + (low - high).floor()));
         }
-        gaps
+        high = high.max(end);
     }
+    gaps
 }
 
-/// Bands added to an axis: each coordinate past a cut moves on by its room.
-struct Room(Vec<(f64, f64)>);
+/// Bands added to an axis: each coordinate past a cut moves on by the room.
+struct Room {
+    cuts: Vec<f64>,
+    room: f64,
+}
 
 impl Room {
     fn at(&self, value: f64) -> f64 {
         value
-            + self
-                .0
-                .iter()
-                .filter(|(cut, _)| *cut < value)
-                .map(|(_, room)| room)
+            + (self.cuts.iter())
+                .filter(|cut| **cut < value)
+                .map(|_| self.room)
                 .sum::<f64>()
     }
 
-    fn across(
-        gaps: Vec<f64>,
-        room: f64,
-        crosses: impl Fn(f64, &Rect) -> bool,
-        branches: &[Rect],
-    ) -> Self {
-        Room(
-            gaps.into_iter()
-                .filter(|&cut| branches.iter().any(|branch| crosses(cut, branch)))
-                .map(|cut| (cut, room))
-                .collect(),
-        )
+    /// Room in each empty band on this axis that a branch crosses.
+    fn across(axis: Axis, occupied: &[Rect], branches: &[Rect], room: f64) -> Self {
+        let crossed = |cut: &f64| {
+            branches.iter().any(|&branch| {
+                let (low, high) = axis.span(branch);
+                low <= *cut && *cut <= high
+            })
+        };
+        let spans = occupied.iter().map(|&rect| axis.span(rect)).collect();
+        let cuts = gaps(spans).into_iter().filter(crossed).collect();
+        Room { cuts, room }
     }
 }
 
@@ -87,8 +76,7 @@ impl Bands {
     }
 
     fn drawing(&self, shape: &Shape) -> Placed {
-        let mut drawing = (*shape.drawing).clone();
-        drawing.edges.clone_from(&shape.routes);
+        let mut drawing = shape.routed();
         drawing.width = self.x.at(drawing.width);
         drawing.height = self.y.at(drawing.height);
         let fixed = drawing
@@ -125,32 +113,16 @@ impl Bands {
 /// Add room to the empty bands between cards and words that a branch crosses, along each
 /// axis. Coordinates keep their order, so no route changes.
 pub(super) fn with_room(shape: &Shape, branches: &[Rect], x: f64, y: f64) -> Placed {
-    let (mut across, mut down) = (Axis::default(), Axis::default());
     let cards = shape
         .endpoints
         .keys()
         .map(|&endpoint| shape.solid(endpoint));
     let words = shape.routes.iter().filter_map(|line| line.label);
-    for rect in cards
-        .chain(shape.drawing.titles.iter().map(|title| title.bx))
-        .chain(words)
-    {
-        across.protect(rect.x, rect.width);
-        down.protect(rect.y, rect.height);
-    }
+    let titles = shape.drawing.titles.iter().map(|title| title.bx);
+    let occupied: Vec<Rect> = cards.chain(titles).chain(words).collect();
     Bands {
-        x: Room::across(
-            across.gaps(),
-            x,
-            |cut, branch| branch.x <= cut && cut <= branch.x + branch.width,
-            branches,
-        ),
-        y: Room::across(
-            down.gaps(),
-            y,
-            |cut, branch| branch.y <= cut && cut <= branch.y + branch.height,
-            branches,
-        ),
+        x: Room::across(Axis::X, &occupied, branches, x),
+        y: Room::across(Axis::Y, &occupied, branches, y),
     }
     .drawing(shape)
 }

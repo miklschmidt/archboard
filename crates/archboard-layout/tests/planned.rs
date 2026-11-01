@@ -428,40 +428,6 @@ fn boundary_calls_choose_a_clear_order_before_saving_area() {
 }
 
 #[test]
-fn a_global_saving_keeps_a_callers_compact_fan() {
-    let graph: Value = serde_json::from_str(include_str!("fixtures/compact-fan.json")).unwrap();
-    let placed = drawing(&graph);
-    let cards = placed["cards"].as_array().unwrap();
-    let mut targets: Vec<(f64, f64)> = graph["edges"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .filter(|edge| edge["sources"][0] == "n0")
-        .map(|edge| {
-            let card = cards
-                .iter()
-                .find(|card| card["id"] == edge["targets"][0])
-                .unwrap();
-            let top = card["box"]["y"].as_f64().unwrap();
-            (top, top + card["box"]["height"].as_f64().unwrap())
-        })
-        .collect();
-    targets.sort_by(|a, b| a.0.total_cmp(&b.0));
-    // A row is a band, because contraction can part the cards of a routed row.
-    let mut rows = 0;
-    let mut bottom = f64::NEG_INFINITY;
-    for (top, foot) in targets {
-        rows += usize::from(top >= bottom);
-        bottom = if top >= bottom {
-            foot
-        } else {
-            bottom.min(foot)
-        };
-    }
-    assert!(rows <= 4);
-}
-
-#[test]
 fn provisional_routes_cannot_reassign_declared_decision_points() {
     let children: Vec<_> = std::iter::once(json!({"id":"decision","width":240,"height":100}))
         .chain((0..7).map(|index| {

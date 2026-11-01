@@ -52,7 +52,7 @@ The compact alternative retains every relationship and every measured card.
 Final routing still receives all original label measurements and must pass the complete geometry guard.
 The existing candidates remain available when the compact placement leaves insufficient room for labels.
 
-After route selection, the planner contracts the drawing in `planned/compact.rs`, one axis at a time, first horizontally and then vertically, in two passes.
+After route selection, the planner contracts the drawing in `planned/compact`, one axis at a time, first horizontally and then vertically, in two passes.
 Each card, frame wall, word plate and run of a line moves on its own.
 Two pieces keep their order and their room only if they share a slab of the page, which means that they overlap across the axis, or stand within two clearances of that.
 A gap therefore shrinks to what runs in it at that height. A busy row no longer holds apart the cards of the rows around it, and a line to a neighbor takes only the room of its label.
@@ -71,6 +71,7 @@ A plate that fills its room exactly keeps its place when the label search finds 
 If the guard refuses, the contraction tries a wider clearance, and then it finishes the original geometry through the same guard.
 Long detours and crowded approaches rank a drawing as it was routed, because contraction moves a card nearer what a route already reached.
 A crowded approach costs the rank two crossings, so it does not outweigh a page twice as large.
+A drawing that lands at a scale of 0.6 or more ranks before one that does not, because below that scale its words do not read.
 
 The planner compares complete guarded drawings by crossings close to card attachments, then by route cost.
 A crossing within two lanes of an attachment counts as a crowded approach.
