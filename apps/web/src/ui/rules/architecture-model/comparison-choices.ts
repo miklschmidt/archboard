@@ -2,6 +2,7 @@
 // keeps its own values: `after` turns a default comparison off, and nothing at all means the
 // default. A person reads neither.
 
+import { followsCurrent } from "@archboard/board/comparison";
 import type { Model } from "@archboard/board/content";
 import { changedCount, reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
@@ -57,7 +58,7 @@ function pinnedBase(reading: Model): string | undefined {
 
 /**
  * Whether a reading has a base of its own, as the server chooses one by default. A draft pinned to
- * a checkpoint has that, and a model with no Current falls back to the retained predecessor.
+ * a checkpoint has that, and so has a draft that does not follow Current: the retained predecessor.
  * @param reading The reading.
  * @param catalogue The current catalogue.
  * @returns True when the default comparison is neither Current nor nothing.
@@ -65,8 +66,18 @@ function pinnedBase(reading: Model): string | undefined {
 function hasBase(reading: Model, catalogue: Model | undefined): boolean {
 	const state = reading.selectedState;
 	if (state === null || state.lifecycle === "current") return false;
-	if (pinnedBase(reading) !== undefined) return true;
-	return catalogue?.manifest.current === null && state.predecessor != null;
+	return pinnedBase(reading) !== undefined || leavesCurrent(state, catalogue);
+}
+
+/**
+ * Whether a draft has a predecessor and is not written on Current.
+ * @param state The draft.
+ * @param catalogue The current catalogue.
+ * @returns True when the server reads it against its predecessor.
+ */
+function leavesCurrent(state: NonNullable<Model["selectedState"]>, catalogue: Model | undefined) {
+	if (catalogue === undefined || state.predecessor == null) return false;
+	return !followsCurrent(state, catalogue.proposals, catalogue.manifest.current?.id);
 }
 
 /**

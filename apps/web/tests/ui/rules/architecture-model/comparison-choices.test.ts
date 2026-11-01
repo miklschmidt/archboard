@@ -190,3 +190,24 @@ test("drafts that share a name differ by the modules they touch", () => {
 	);
 	expect(details.filter(Boolean)).toEqual(["Touches Gateway", "Touches Worker", "1 change"]);
 });
+
+test("a draft written on a planning root has that root as its base, not Current", () => {
+	const root = proposal("Root", { predecessor: null });
+	/**
+	 * The values offered to a draft written on this predecessor.
+	 * @param predecessor The state the draft follows.
+	 * @returns The values.
+	 */
+	function bases(predecessor: string): string[] {
+		const mine = proposal("Mine", { predecessor });
+		const state = { ...DRAFT, predecessor };
+		const catalogue = reading({ selectedState: CURRENT, proposals: [root, mine] });
+		return comparisonChoices({
+			reading: reading({ selectedState: state, proposals: [root, mine], comparison: BASED }),
+			against: null,
+			catalogue,
+		}).map(({ value }) => value);
+	}
+	expect(bases("Root")).toContain(":base");
+	expect(bases("Now")).not.toContain(":base");
+});

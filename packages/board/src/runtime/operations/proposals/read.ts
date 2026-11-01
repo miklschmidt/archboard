@@ -21,6 +21,10 @@ import {
 } from "#runtime/operations/proposals/subjects.ts";
 import { materializedDefinitions } from "#runtime/operations/proposals/materialize.ts";
 import { comparisonOf } from "#runtime/operations/proposals/compare.ts";
+import {
+	defaultComparisonReference,
+	type ComparisonReference,
+} from "#runtime/operations/proposals/default-reference.ts";
 import { retainedStates, stateCatalogue } from "#runtime/operations/history/states.ts";
 
 type Proposal = z.infer<typeof import("#shared/schemas/model-proposals.ts").ProposalSchema> & {
@@ -366,36 +370,6 @@ async function requestedState(
 	return resolveState(context, current, selector);
 }
 /**
- * Open a proposal against the checkpoint its changes were written on, because it can hold
- * only a fragment of Current. Otherwise choose current before the retained predecessor.
- * @param selected The complete selected state.
- * @param current The working reading or refusal.
- * @returns Its default reference, when one exists.
- */
-function defaultComparisonReference(
-	selected: ArchitectureModel,
-	current: ArchitectureModelRead,
-): ReturnType<typeof comparisonReference> {
-	const state = selected.selectedState;
-	const base = selected.proposals.find((proposal) => proposal.id === state?.id);
-	if (base?.predecessorCheckpoint !== undefined)
-		return { selector: base.predecessorCheckpoint, reason: "predecessor" };
-	if (current.success && current.manifest.current !== null)
-		return { selector: "current", reason: "current" };
-	return retainedPredecessor(state);
-}
-/**
- * The retained base of a state that follows another.
- * @param state The selected state.
- * @returns Its reference, when it has a predecessor and a baseline.
- */
-function retainedPredecessor(
-	state: ArchitectureModel["selectedState"],
-): ReturnType<typeof comparisonReference> {
-	if (state?.predecessor == null || state.baseline === undefined) return undefined;
-	return { selector: state.baseline, reason: "predecessor" };
-}
-/**
  * Choose the comparison reference without treating archive order as ancestry.
  * @param selected The selected coherent architecture.
  * @param current The current read or refusal.
@@ -406,9 +380,7 @@ function comparisonReference(
 	selected: ArchitectureModel,
 	current: ArchitectureModelRead,
 	selection: Selection,
-):
-	| { selector: string; reason: NonNullable<ArchitectureModel["comparison"]>["reason"] }
-	| undefined {
+): ComparisonReference | undefined {
 	if (selection.against !== undefined) return { selector: selection.against, reason: "explicit" };
 	if (selection.compare === false) return undefined;
 	if (selected.selectedState?.lifecycle === "current") return undefined;

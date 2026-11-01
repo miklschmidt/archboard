@@ -2,3 +2,4 @@
 export { comparedWith, drawingOf, drawnSubjects } from "#shared/rules/compare/drawing.ts";
 export { changeOf, compareVariants, standingOf } from "#shared/rules/compare/variants.ts";
 export type { ChangeKind, FieldChange } from "#shared/rules/compare/variants.ts";
+export { followsCurrent } from "#shared/rules/compare/current-ancestry.ts";
