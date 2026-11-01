@@ -272,11 +272,12 @@ async function materializeProposal(
  * @returns Stable state metadata.
  */
 function selectedMetadata(states: NonNullable<ArchitectureModel["states"]>, selector: string) {
-	const exact = states.filter((state) => state.id === selector);
 	const matches =
-		exact.length === 0
-			? states.filter((state) => state.name === selector || state.formerNames?.includes(selector))
-			: exact;
+		[
+			states.filter((state) => state.id === selector),
+			states.filter((state) => state.name === selector),
+			states.filter((state) => state.formerNames?.includes(selector)),
+		].find((found) => found.length > 0) ?? [];
 	if (matches.length !== 1)
 		throw new ArchiveError(
 			matches.length === 0 ? "STATE_NOT_FOUND" : "STATE_AMBIGUOUS",
