@@ -62,7 +62,8 @@ pub struct Entry {
 /// Every number of a move that lives in `@archboard/timing`.
 ///
 /// It reads as `{"transition": PICTURE_TRANSITION_PHASES, "entry":
-/// PICTURE_ENTRY_PHASES, "enter": PICTURE_MS.entry, "exit": PICTURE_MS.exit}`.
+/// PICTURE_ENTRY_PHASES, "enter": PICTURE_MS.entry, "exit": PICTURE_MS.exit,
+/// "shutter": PICTURE_MS.shutter}`.
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 pub struct Phases {
     /// One picture turning into the next.

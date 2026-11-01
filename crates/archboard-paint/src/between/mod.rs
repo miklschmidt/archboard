@@ -389,7 +389,9 @@ fn stopping_shapes<'a>(
     end: f64,
 ) -> impl Iterator<Item = (usize, Mover)> + 'a {
     last.body.iter().filter_map(move |item| {
-        let leaving = matches!(item, Item::Shape(_)) && !next.body.contains(item);
+        let temporary = matches!(item, Item::Shape(_))
+            || matches!(item, Item::Group(group) if group.role == Role::Marks && !holds_subject(item, &|_| true));
+        let leaving = temporary && !next.body.contains(item);
         leaving.then(|| {
             (
                 next.body.len(),

@@ -137,5 +137,12 @@ fn an_edit_during_an_entrance_keeps_the_visible_frame_including_late_sparks() {
         stage.carry(painting(board()), (0.0, 0.0), 100.0);
         let after = raster(&mut stage, now);
         assert!(before == after, "progress {}", now / 100.0);
+        let before = raster(&mut stage, now + 5.0);
+        stage.carry(painting(board()), (0.0, 0.0), 100.0);
+        assert!(
+            before == raster(&mut stage, now + 5.0),
+            "second edit at {}",
+            now / 100.0
+        );
     }
 }
