@@ -68,11 +68,32 @@ impl Door<'_> {
     }
 }
 
+/// The wall a frame shuts a point off from, in the order of `WALLS`, and what a line
+/// adds to go round the frame. A line does not pass through a frame it does not join.
+fn shut_wall(frame: &Rect, at: Point) -> Option<(usize, f64)> {
+    let (right, bottom) = (frame.x + frame.width, frame.y + frame.height);
+    let beside = (frame.x..=right).contains(&at.x);
+    let level = (frame.y..=bottom).contains(&at.y);
+    match (beside, level) {
+        (true, false) => {
+            let way = 2.0 * (at.x - frame.x).min(right - at.x);
+            Some((usize::from(bottom >= at.y), way))
+        }
+        (false, true) => {
+            let way = 2.0 * (at.y - frame.y).min(bottom - at.y);
+            Some((2 + usize::from(right >= at.x), way))
+        }
+        _ => None,
+    }
+}
+
 /// What a ring reads.
 pub(super) struct Ring<'a> {
     pub graph: &'a Node,
     /// Each frame, with the middle of its tab.
     pub frames: Vec<(&'a str, Point)>,
+    /// Where each frame stands.
+    pub boxes: Vec<Rect>,
     pub set: &'a Set,
     pub ids: Vec<&'a str>,
     pub extra: f64,
@@ -124,16 +145,28 @@ impl Ring<'_> {
             .collect()
     }
 
-    /// What each wall costs a door: the way to what it joins, and a line against the reading.
+    /// What a line from a point to each wall, in the order of `WALLS`, adds to go round
+    /// the frames between them.
+    fn round_frames(&self, at: Point) -> [f64; 4] {
+        let mut added = [0.0; 4];
+        for (wall, way) in self.boxes.iter().filter_map(|frame| shut_wall(frame, at)) {
+            added[wall] += way;
+        }
+        added
+    }
+
+    /// What each wall costs a door: the way to what it joins, the way round a frame
+    /// that stands between them, and a line against the reading.
     fn door<'n>(&self, node: &'n Node, inside: &FxHashMap<&str, Point>) -> Door<'n> {
         let size = self.set.size;
         let against = |wrong: bool| if wrong { AGAINST } else { 0.0 };
         let mut costs = [0.0; 4];
         for (at, enters) in self.partners(&node.id, inside) {
-            costs[0] += at.y + against(!enters);
-            costs[1] += size.y - at.y + against(enters);
-            costs[2] += at.x + against(!enters);
-            costs[3] += size.x - at.x + against(enters);
+            let round = self.round_frames(at);
+            costs[0] += at.y + against(!enters) + round[0];
+            costs[1] += size.y - at.y + against(enters) + round[1];
+            costs[2] += at.x + against(!enters) + round[2];
+            costs[3] += size.x - at.x + against(enters) + round[3];
         }
         let side = if self.sides {
             node.w() + RING_GAP
@@ -280,5 +313,39 @@ impl Ring<'_> {
             height: top + size.y + bottom + 2.0 * PAGE_ROOM,
             doors: placed,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_frame_between_a_part_and_a_wall_adds_the_way_round_it() {
+        let graph: Node = serde_json::from_value(serde_json::json!({"id":"root"})).expect("a node");
+        let set = Set {
+            size: Point {
+                x: 1000.0,
+                y: 1000.0,
+            },
+            parts: Vec::new(),
+        };
+        let frame = |y: f64| Rect {
+            x: 0.0,
+            y,
+            width: 1000.0,
+            height: 400.0,
+        };
+        let ring = Ring {
+            graph: &graph,
+            frames: Vec::new(),
+            boxes: vec![frame(0.0), frame(600.0)],
+            set: &set,
+            ids: Vec::new(),
+            extra: 0.0,
+            sides: true,
+        };
+        let inside_upper = Point { x: 300.0, y: 200.0 };
+        assert_eq!(ring.round_frames(inside_upper), [0.0, 600.0, 0.0, 0.0]);
     }
 }

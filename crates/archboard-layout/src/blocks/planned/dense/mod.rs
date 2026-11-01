@@ -368,6 +368,14 @@ impl<'a> Reading<'a> {
                     (block.frame.id.as_str(), tab)
                 })
                 .collect(),
+            boxes: held()
+                .map(|((_, set), at)| Rect {
+                    x: at.x,
+                    y: at.y,
+                    width: set.size.x,
+                    height: set.size.y,
+                })
+                .collect(),
             set: &whole,
             ids: self
                 .blocks
