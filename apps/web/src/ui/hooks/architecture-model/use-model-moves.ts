@@ -69,7 +69,7 @@ function useModelMoves(inputs: MoveInputs) {
 		async (id: string): Promise<void> => {
 			const expand = toggled(projection, id);
 			if (expand === null) return;
-			const filters = { ...reading.filters, expand, controls: true };
+			const filters = { ...reading.filters, expand: [...expand], controls: true };
 			const next = projectModel(model, reading.scope, reading.focus, filters, reference);
 			await client.fetchQuery(modelDrawingQuery(model, next, "architecture", layout));
 		},
