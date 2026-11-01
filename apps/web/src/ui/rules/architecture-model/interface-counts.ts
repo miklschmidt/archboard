@@ -79,7 +79,7 @@ function interfaceCounts(
 		{
 			key: "hiddenParts",
 			count: measures.hiddenParts,
-			label: "hidden",
+			label: measures.hiddenParts === 1 ? "hidden part" : "hidden parts",
 			subjects: hiddenParts.map(({ id }) => id),
 		},
 		{

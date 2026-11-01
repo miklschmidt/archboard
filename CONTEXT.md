@@ -371,7 +371,8 @@ The Legend and the engine switch close it, and long lists stay in About.
 _Avoid_: inspector
 
 **Interface line**:
-The line of the Right panel that counts the entries, hidden parts, callers and pass-through entry points of a module with parts, and `to module` when callers reach the module itself.
+The line of the Right panel that counts the entries, callers and pass-through entry points of a module with parts, and `to module` when callers reach the module itself.
+Its hidden parts stand apart under Implementation, because they are not part of the interface.
 Each count selects what it counts on the module's picture, and no score combines them.
 
 **Entries**:

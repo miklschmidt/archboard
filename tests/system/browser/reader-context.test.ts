@@ -13,7 +13,7 @@ const DOOR = `[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]`;
 const SWITCH = `[data-slot="model-engine-choice"]`;
 const CLEAR = `[data-slot="semantic-selection-clear"]`;
 const LEAVE = `[data-slot="semantic-presentation-leave"]`;
-const MEASURES = `[data-slot="model-panel-interface"]`;
+const MEASURES = `:is([data-slot="model-panel-interface"], [data-slot="model-panel-implementation"])`;
 const COUNT = (measure: string): string => `${MEASURES} [data-measure="${measure}"]`;
 
 /** Six flows across the gateway, more than the right column shows at first. */
@@ -139,9 +139,9 @@ function explained(browser: AgentBrowserSession) {
  */
 function measures(browser: AgentBrowserSession) {
 	return browser.eval<Record<string, string> | null>(`(() => {
-		const line = document.querySelector('${MEASURES}');
-		if (line === null) return null;
-		return Object.fromEntries([...line.querySelectorAll('[data-measure]')].map((one) => [one.getAttribute('data-measure'), one.getAttribute('data-count')]));
+		const counts = [...document.querySelectorAll('${MEASURES} [data-measure]')];
+		if (counts.length === 0) return null;
+		return Object.fromEntries(counts.map((one) => [one.getAttribute('data-measure'), one.getAttribute('data-count')]));
 	})()`);
 }
 

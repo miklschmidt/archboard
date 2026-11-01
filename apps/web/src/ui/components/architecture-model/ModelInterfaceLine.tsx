@@ -8,6 +8,10 @@ import { openModules } from "#ui/rules/architecture-model/expansion.ts";
 import type { Projection } from "#ui/rules/architecture-model/scene.ts";
 import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
 
+/** What a hidden part is, for a reader who points at the count. */
+const HIDDEN_MEANS =
+	"Parts that nothing outside this module reaches. They are not in its interface.";
+
 /** What the column says of a module's interface. */
 interface ModelInterfaceLineProps {
 	/** The module's interface facts. */
@@ -21,7 +25,8 @@ interface ModelInterfaceLineProps {
 }
 
 /**
- * What a module offers the rest of the model, in one line. A count selects what it counts on the
+ * What a module offers the rest of the model, in one line, and the parts it keeps to itself apart
+ * from it, because those are its implementation (ADR 0044). A count selects what it counts on the
  * module's own picture, so a reader sees the shape, and the heading holds the way to the whole of
  * it in About.
  * @param props The module and what its line does.
@@ -44,16 +49,44 @@ function ModelInterfaceLine(props: ModelInterfaceLineProps): JSX.Element | null 
 	);
 	if (inspection?.holdsParts !== true) return null;
 	const module = inspection.container.id;
+	const counts = interfaceCounts(inspection, projection.complete.nodes, openModules(projection));
+	const line = { module, onShow };
 	return (
-		<ModelPanel.Section title="Interface" slot="model-panel-interface" action={about}>
-			<li className="ml-1.5 flex flex-wrap gap-x-0.5">
-				{interfaceCounts(inspection, projection.complete.nodes, openModules(projection)).map(
-					(count) => (
-						<Count key={count.key} count={count} module={module} onShow={onShow} />
-					),
-				)}
-			</li>
-		</ModelPanel.Section>
+		<>
+			<ModelPanel.Section title="Interface" slot="model-panel-interface" action={about}>
+				<Counts {...line} counts={counts} hidden={false} />
+			</ModelPanel.Section>
+			<ModelPanel.Section title="Implementation" slot="model-panel-implementation">
+				<Counts {...line} counts={counts} hidden />
+			</ModelPanel.Section>
+		</>
+	);
+}
+
+/**
+ * The counts of one section, on one line.
+ * @param props The counts and what they do.
+ * @param props.counts Every count of the module.
+ * @param props.hidden Whether this section shows its hidden parts, or the rest.
+ * @param props.module The module they belong to.
+ * @param props.onShow Show subjects selected on the module's picture.
+ * @returns The line.
+ */
+function Counts(props: {
+	readonly counts: readonly InterfaceCount[];
+	readonly hidden: boolean;
+	readonly module: string;
+	readonly onShow: ModelInterfaceLineProps["onShow"];
+}): JSX.Element {
+	const { hidden, module, onShow } = props;
+	return (
+		<li className="ml-1.5 flex flex-wrap gap-x-0.5">
+			{props.counts
+				.filter(({ key }) => (key === "hiddenParts") === hidden)
+				.map((count) => (
+					<Count key={count.key} count={count} module={module} onShow={onShow} />
+				))}
+		</li>
 	);
 }
 
@@ -92,6 +125,7 @@ function Count(props: {
 			type="button"
 			data-measure={count.key}
 			data-count={count.count}
+			title={count.key === "hiddenParts" ? HIDDEN_MEANS : undefined}
 			disabled={count.subjects.length === 0}
 			onClick={show}
 			className="text-body text-muted-foreground enabled:hover:bg-sidebar-accent enabled:hover:text-foreground rounded-control px-0.5 py-0.5 text-left whitespace-nowrap"

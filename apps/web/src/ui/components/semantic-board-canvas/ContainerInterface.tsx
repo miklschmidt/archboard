@@ -80,26 +80,6 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 					</SidebarChoices>
 				)}
 			</Measure>
-			<Measure
-				title="Hidden parts"
-				count={measures.hiddenParts}
-				slot="semantic-inspector-hidden-parts"
-			>
-				{measures.hiddenParts > 0 && (
-					<SidebarChoices label="Hidden parts" slot="semantic-inspector-hidden-part-list">
-						{inspection.hiddenParts.map((part) => (
-							<PartRow
-								key={part.id}
-								part={part}
-								slot="semantic-inspector-hidden-part"
-								look={look}
-								onPick={onPick}
-								note={undefined}
-							/>
-						))}
-					</SidebarChoices>
-				)}
-			</Measure>
 			<Measure title="Callers" count={measures.callers} slot="semantic-inspector-callers">
 				{measures.callers === 0 ? (
 					<p className="text-muted-foreground text-body">No part on this board calls it.</p>
@@ -113,6 +93,26 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 								look={look}
 								onPick={onPick}
 								note={whatItReaches(caller, inspection)}
+							/>
+						))}
+					</SidebarChoices>
+				)}
+			</Measure>
+			<Measure
+				title="Implementation: hidden parts"
+				count={measures.hiddenParts}
+				slot="semantic-inspector-hidden-parts"
+			>
+				{measures.hiddenParts > 0 && (
+					<SidebarChoices label="Hidden parts" slot="semantic-inspector-hidden-part-list">
+						{inspection.hiddenParts.map((part) => (
+							<PartRow
+								key={part.id}
+								part={part}
+								slot="semantic-inspector-hidden-part"
+								look={look}
+								onPick={onPick}
+								note={undefined}
 							/>
 						))}
 					</SidebarChoices>

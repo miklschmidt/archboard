@@ -33,7 +33,10 @@ import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
 /** What the sort offers, by where the measure comes from. */
 const HISTORY_MEASURES = MEASURES.filter(({ key }) => isHistoryMeasure(key));
-const INTERFACE_MEASURES = MEASURES.filter(({ key }) => !isHistoryMeasure(key));
+const IMPLEMENTATION_MEASURES = MEASURES.filter(({ key }) => key === "hiddenParts");
+const INTERFACE_MEASURES = MEASURES.filter(
+	({ key }) => !isHistoryMeasure(key) && key !== "hiddenParts",
+);
 
 /** The name of each measure, as the closed sort says it. */
 const SORT_ITEMS = MEASURES.map(({ key, label }) => ({ value: key, label }));
@@ -211,6 +214,7 @@ function MeasureSort(props: MeasureSortProps): JSX.Element {
 				<Select.Content className="w-115">
 					{history && <MeasureChoices label="Code history" measures={HISTORY_MEASURES} />}
 					<MeasureChoices label="Interface" measures={INTERFACE_MEASURES} />
+					<MeasureChoices label="Implementation" measures={IMPLEMENTATION_MEASURES} />
 				</Select.Content>
 			</Select>
 		</div>
