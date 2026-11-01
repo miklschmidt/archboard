@@ -13,15 +13,13 @@ const PAINTER_WASM = new URL(
 	import.meta.url,
 );
 
-/** Which painter draws a canvas. */
-type PainterKind = "gpu" | "cpu";
-
 /** A painter at work on a canvas. */
 interface StartedPainter {
 	readonly painter: Painter;
 	/** The canvas it draws on: another than the one asked for when the GPU failed to start. */
 	readonly canvas: HTMLCanvasElement;
-	readonly kind: PainterKind;
+	/** Which painter draws it. */
+	readonly kind: "gpu" | "cpu";
 	/** Why the GPU does not paint, or null when it does. */
 	readonly reason: string | null;
 }
@@ -85,10 +83,16 @@ function freshCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
  * Start the painter of a canvas.
  * @param canvas The canvas, sized in pixels.
  * @param dark Whether the page is dark.
+ * @param failure Why the GPU painter of this canvas stopped, when it stopped at work.
  * @returns The painter, which says which it is and why.
  */
-async function startPainter(canvas: HTMLCanvasElement, dark: boolean): Promise<StartedPainter> {
+async function startPainter(
+	canvas: HTMLCanvasElement,
+	dark: boolean,
+	failure?: string,
+): Promise<StartedPainter> {
 	await loadPainter();
+	if (failure !== undefined) return startCpu(freshCanvas(canvas), dark, failure);
 	const refusal = await gpuRefusal();
 	if (refusal !== null) return startCpu(canvas, dark, refusal);
 	try {
@@ -98,15 +102,4 @@ async function startPainter(canvas: HTMLCanvasElement, dark: boolean): Promise<S
 	}
 }
 
-/**
- * Start Vello on the CPU in place of a GPU painter that failed at work.
- * @param canvas The canvas the GPU painter drew on.
- * @param dark Whether the page is dark.
- * @param reason Why the GPU painter stopped.
- * @returns The painter.
- */
-function fallBackToCpu(canvas: HTMLCanvasElement, dark: boolean, reason: string): StartedPainter {
-	return startCpu(freshCanvas(canvas), dark, reason);
-}
-
-export { fallBackToCpu, startPainter, type PainterKind, type StartedPainter };
+export { startPainter };

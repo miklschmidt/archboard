@@ -1,7 +1,7 @@
 // What a stage says to its painter, in the forms the painter reads, and what it
 // keeps for a painter that starts late.
 
-import type { StartedPainter } from "@archboard/renderer/browser";
+import type { startPainter } from "@archboard/renderer/browser";
 import { PICTURE_ENTRY_PHASES, PICTURE_MS, PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import type { DiveWay } from "#ui/clients/semantic-board-canvas/picture/picture-dive.ts";
@@ -97,6 +97,9 @@ function sizeCanvas(canvas: HTMLCanvasElement): boolean {
 	return true;
 }
 
+/** A painter at work, as the renderer starts one. */
+type StartedPainter = Awaited<ReturnType<typeof startPainter>>;
+
 /**
  * Keep a painter's size to its canvas.
  * @param started The painter at work.
@@ -119,4 +122,5 @@ export {
 	type StageLight,
 	type StageMarks,
 	type StageShift,
+	type StartedPainter,
 };

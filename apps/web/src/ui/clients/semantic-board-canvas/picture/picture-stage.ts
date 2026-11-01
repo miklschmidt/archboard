@@ -8,7 +8,6 @@
 // a correct board either way. The SVG under the canvas keeps its words and its
 // marks for search, copy, screen readers and the viewer.
 
-import type { StartedPainter } from "@archboard/renderer/browser";
 import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
@@ -24,6 +23,7 @@ import {
 	type StageLight,
 	type StageMarks,
 	type StageShift,
+	type StartedPainter,
 } from "#ui/clients/semantic-board-canvas/picture/picture-stage-forms.ts";
 
 /** The attribute on the surface that names the painter drawing it, once one has drawn. */
@@ -431,8 +431,10 @@ class PictureStage {
 		this.#started = null;
 		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
 		if (failed === null || failed.kind === "cpu") return;
-		const { fallBackToCpu } = await import("@archboard/renderer/browser");
-		if (!this.#disposed) this.#employ(fallBackToCpu(failed.canvas, pageIsDark(), String(cause)));
+		const { startPainter } = await import("@archboard/renderer/browser");
+		const next = await startPainter(failed.canvas, pageIsDark(), String(cause));
+		if (this.#disposed) next.painter.free();
+		else this.#employ(next);
 	}
 
 	/**

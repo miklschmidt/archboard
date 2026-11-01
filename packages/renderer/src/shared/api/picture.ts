@@ -3,11 +3,10 @@ export {
 	cornerWarning,
 	HEAD_LENGTH,
 	lineInk,
+	NEUTRAL_PULSE,
 	OPEN_ARM,
-	PULSE_BREADTH,
 	lineWarning,
 	lineWidth,
-	pulseInk,
 	standingMark,
 } from "#shared/rules/render/marks.ts";
 export { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";

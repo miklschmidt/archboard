@@ -3,20 +3,23 @@
 //! for frames. Everything that changes over time here is worked out from the
 //! clock the host gives, so a stepped clock records it frame by frame.
 
+mod frame;
+#[cfg(test)]
+mod tests;
+
 use std::collections::{HashMap, HashSet};
 
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{Item, Painting};
-use kurbo::{Affine, Point, Shape as _};
+use archboard_scene::scene::Painting;
+use kurbo::{Affine, Point};
 
-use crate::between::{Heading, Phases, departure};
+use crate::between::{Heading, Phases};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
-use crate::draw::{Inks, Picture, draw_ground, draw_items};
+use crate::draw::Picture;
 use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
-use crate::path::{placed, rect_of};
 use crate::pick::Targets;
 use crate::presentation::{Camera, Light, Marks, Presentation};
 use crate::sweep::{Sweep, Timing};
@@ -528,84 +531,6 @@ impl Stage {
         self.changing(now)
     }
 
-    /// Draw what stands on the stage: its ground, the picture, the board
-    /// inside a card, and over them what is left of the last picture.
-    fn draw_frame<C: Canvas>(&mut self, canvas: &mut C, now: f64) {
-        let Stage {
-            shown,
-            presentation,
-            palette,
-            outlines,
-            size,
-            flight,
-            leaving,
-            ghost,
-            dive,
-            ..
-        } = self;
-        let Some(shown) = shown else {
-            return;
-        };
-        let picture = &shown.picture;
-        draw_ground(canvas, &picture.scene, *size, palette);
-        let camera = presentation.camera;
-        let transform = placed(camera.x, camera.y, Some(camera.scale));
-        let fades = dive.as_ref().map(|dive| dive.fades(now));
-        let parent = fades.map_or(1.0, |fades| fades.parent);
-        if parent < 1.0 {
-            canvas.set_transform(Affine::IDENTITY);
-            canvas.push(None, opacity_of(parent));
-        }
-        let mut inks = Inks {
-            palette,
-            outlines: &mut *outlines,
-            presentation,
-        };
-        let moved: Option<Vec<Item>> = match (&*flight, &*leaving) {
-            (Some(flight), _) => Some(flight.items(now)),
-            (None, Some(leaving)) => Some(departure(
-                &picture.scene,
-                &leaving.heading,
-                leaving.progress(now),
-            )),
-            (None, None) => None,
-        };
-        let definitions = flight
-            .as_ref()
-            .and_then(Flight::definitions)
-            .unwrap_or(&picture.definitions);
-        let items = moved.as_deref().unwrap_or(&picture.scene.body);
-        draw_items(canvas, items, definitions, transform, &mut inks);
-        if parent < 1.0 {
-            canvas.pop();
-        }
-        let plain = Presentation {
-            camera,
-            far: presentation.far,
-            traffic: presentation.traffic,
-            ..Presentation::default()
-        };
-        let mut plain_inks = Inks {
-            palette,
-            outlines,
-            presentation: &plain,
-        };
-        if let Some((dive, fades)) = dive.as_ref().zip(fades) {
-            draw_inset(canvas, dive, fades.inset, transform, &mut plain_inks);
-        }
-        if let Some(ghost) = ghost {
-            let place = placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
-            let items = ghost.items(now);
-            draw_items(
-                canvas,
-                &items,
-                &ghost.picture.definitions,
-                place,
-                &mut plain_inks,
-            );
-        }
-    }
-
     /// What lies under a point of the canvas, the topmost first: each by the
     /// number of its marked group, or -1 for a shape that stands in none.
     pub fn pick(&mut self, x: f64, y: f64) -> Vec<i32> {
@@ -621,125 +546,5 @@ impl Stage {
         let to_picture =
             (Affine::translate((camera.x, camera.y)) * Affine::scale(camera.scale)).inverse();
         targets.under(to_picture * Point::new(x, y))
-    }
-}
-
-/// An opacity as a canvas takes it.
-#[expect(clippy::cast_possible_truncation, reason = "a canvas's opacity is f32")]
-fn opacity_of(opacity: f64) -> f32 {
-    opacity as f32
-}
-
-/// Draw the board inside its card: fitted to the card and clipped to it, in the
-/// parent's own coordinates, with no light on it.
-fn draw_inset<C: Canvas>(
-    canvas: &mut C,
-    dive: &Dive,
-    opacity: f64,
-    transform: Affine,
-    inks: &mut Inks<'_>,
-) {
-    let (frame, scene) = (&dive.frame, &dive.inset.scene);
-    let scale = (frame.width / scene.width).min(frame.height / scene.height);
-    let x = frame.x + (frame.width - scene.width * scale) / 2.0;
-    let y = frame.y + (frame.height - scene.height * scale) / 2.0;
-    let clip = rect_of(frame).to_path(0.1);
-    canvas.set_transform(transform);
-    canvas.push(Some((&clip, false)), opacity_of(opacity));
-    draw_ground(canvas, scene, (1e5, 1e5), inks.palette);
-    draw_items(
-        canvas,
-        &scene.body,
-        &dive.inset.definitions,
-        transform * placed(x, y, Some(scale)),
-        inks,
-    );
-    canvas.pop();
-}
-
-#[cfg(test)]
-mod tests {
-    use super::Stage;
-    use crate::palette::Theme;
-    use crate::presentation::{Camera, Light, Shine};
-    use std::collections::HashMap;
-
-    fn stage() -> Stage {
-        Stage::new(Theme::Light, (100.0, 100.0))
-    }
-
-    #[test]
-    fn a_glide_moves_over_its_time_and_a_cut_moves_at_once() {
-        let mut stage = stage();
-        let camera = Camera {
-            x: 100.0,
-            y: 0.0,
-            scale: 1.0,
-        };
-        stage.set_camera(camera, 100.0, 0.0);
-        stage.advance(50.0);
-        assert!(stage.presentation.camera.x > 0.0 && stage.presentation.camera.x < 100.0);
-        assert!(stage.changing(50.0));
-        stage.advance(100.0);
-        assert_eq!(stage.presentation.camera.x, 100.0);
-        assert!(!stage.changing(100.0));
-        stage.set_camera(Camera { x: 0.0, ..camera }, 0.0, 100.0);
-        stage.advance(100.0);
-        assert_eq!(stage.presentation.camera.x, 0.0);
-    }
-
-    #[test]
-    fn what_leaves_the_light_fades_to_the_rest_and_is_forgotten() {
-        let mut stage = stage();
-        let lit = Light {
-            rest: 0.14,
-            labels: 0.28,
-            subjects: HashMap::from([(
-                "a".to_owned(),
-                Shine {
-                    opacity: 1.0,
-                    delay: 0.0,
-                },
-            )]),
-            duration: 100.0,
-        };
-        stage.set_light(&lit, 0.0);
-        stage.advance(100.0);
-        assert_eq!(stage.presentation.recede.subjects["a"], 1.0);
-        assert!((stage.presentation.recede.rest - 0.14).abs() < 1e-6);
-        let out = Light {
-            rest: 1.0,
-            labels: 1.0,
-            subjects: HashMap::new(),
-            duration: 100.0,
-        };
-        stage.set_light(&out, 100.0);
-        stage.advance(150.0);
-        assert!(stage.presentation.recede.subjects.contains_key("a"));
-        stage.advance(200.0);
-        assert!(stage.presentation.recede.subjects.is_empty());
-        assert!((stage.presentation.recede.rest - 1.0).abs() < 1e-6);
-    }
-
-    #[test]
-    fn a_further_hop_lights_later() {
-        let mut stage = stage();
-        let far_hop = Light {
-            rest: 0.14,
-            labels: 0.28,
-            subjects: HashMap::from([(
-                "far".to_owned(),
-                Shine {
-                    opacity: 0.6,
-                    delay: 100.0,
-                },
-            )]),
-            duration: 100.0,
-        };
-        stage.set_light(&far_hop, 0.0);
-        stage.advance(50.0);
-        assert_eq!(stage.presentation.recede.subjects["far"], 1.0);
-        stage.advance(200.0);
-        assert!((stage.presentation.recede.subjects["far"] - 0.6).abs() < 1e-6);
     }
 }

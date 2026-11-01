@@ -63,15 +63,8 @@ function lineInk(color: string | undefined): string {
 	return LINE_INK[lineColour(color)];
 }
 
-/**
- * The ink of the body of a pulse that rides a line of some colour: the one
- * expression the picture draws it in, for a key beside it to draw the same.
- * @param color The palette colour the line's kind names, if any.
- * @returns The pulse's ink.
- */
-function pulseInk(color: string | undefined): string {
-	return PULSE_INK[lineColour(color)];
-}
+/** A pulse on the neutral line, for a key beside the picture to draw the same: its core's breadth and its body's ink. */
+const NEUTRAL_PULSE = { breadth: PULSE_BREADTH, ink: PULSE_INK[lineColour(undefined)] } as const;
 
 /**
  * How wide a page draws a line of one emphasis, in diagram units: for a key
@@ -124,12 +117,11 @@ function cornerWarning(box: {
 
 export {
 	HEAD_LENGTH,
+	NEUTRAL_PULSE,
 	OPEN_ARM,
-	PULSE_BREADTH,
 	cornerWarning,
 	lineInk,
 	lineWarning,
 	lineWidth,
-	pulseInk,
 	standingMark,
 };
