@@ -70,6 +70,8 @@ pub struct Stage {
     awaited: Fade,
     leaving: Option<Leaving>,
     ghost: Option<Ghost>,
+    /// Boards that an earlier passage has not yet taken off the canvas.
+    behind: Vec<Ghost>,
     dive: Option<Dive>,
     glide: Glide,
     far: Fade,
@@ -107,6 +109,7 @@ impl Stage {
             awaited: Fade::still(0.0),
             leaving: None,
             ghost: None,
+            behind: Vec::new(),
             dive: None,
             glide: Glide {
                 x: Fade::still(0.0),
@@ -143,6 +146,7 @@ impl Stage {
         self.flight = None;
         self.leaving = None;
         self.ghost = None;
+        self.behind.clear();
         self.dive = None;
         self.presentation.sweep = None;
         self.drawn = false;
@@ -190,13 +194,15 @@ impl Stage {
         }
     }
 
-    /// Send the picture on its way out, while the next is drawn.
+    /// Send the picture on its way out, while the next is drawn. A board that a
+    /// passage is still bringing in finishes coming in first.
     pub fn leave(&mut self, heading: Heading, ms: f64, now: f64) {
         self.now = now;
+        let arriving = self.ghost.as_ref().and_then(|ghost| ghost.passage_end(now));
         self.leaving = Some(Leaving {
             heading,
             axis: self.axis_of(heading, 0.0),
-            start: now,
+            start: arriving.unwrap_or(now),
             ms,
         });
     }
@@ -396,6 +402,7 @@ impl Stage {
             self.land();
         }
         self.ghost = self.ghost.take().filter(|ghost| !ghost.gone(now));
+        self.behind.retain(|ghost| !ghost.gone(now));
         self.presentation.fading_words = self
             .dive
             .as_ref()

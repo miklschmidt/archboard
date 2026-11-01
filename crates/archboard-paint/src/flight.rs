@@ -50,6 +50,11 @@ impl Stretch {
     fn share(&self, now: f64) -> f64 {
         share(now, self.start.unwrap_or(now), self.ms)
     }
+
+    /// When it ends, if it starts by a moment.
+    fn end(&self, now: f64) -> f64 {
+        self.start.unwrap_or(now) + self.ms
+    }
 }
 
 /// A picture on its way in.
@@ -245,8 +250,9 @@ pub(crate) struct Ghost {
     /// The line of the passage, and the place on it where the reader stood when
     /// the next picture arrived.
     pub(crate) axis: Option<(Axis, f64)>,
-    /// Where the board stood on the passage before this one, if one was under way.
-    pub(crate) held: Plane,
+    /// The passage that was still bringing this board in, if one was: the board
+    /// goes on along it as it leaves, so a change of mind has no stop in it.
+    pub(crate) held: Option<(Axis, f64, Stretch)>,
     /// How the picture looked when it was last seen: it leaves in its own light.
     pub(crate) look: Presentation,
 }
@@ -255,6 +261,18 @@ impl Ghost {
     /// Whether the ghost is gone by a moment.
     pub(crate) fn gone(&self, now: f64) -> bool {
         self.time.share(now) >= 1.0
+    }
+
+    /// When a passage under way ends, if one is.
+    pub(crate) fn passage_end(&self, now: f64) -> Option<f64> {
+        self.axis.map(|_| self.time.end(now))
+    }
+
+    /// Where the passage that brought this board in has taken it by a moment.
+    pub(crate) fn held_at(&self, now: f64) -> Plane {
+        self.held.map_or(Plane::STILL, |(axis, from, time)| {
+            axis.arrived(place_at(from, time.share(now)))
+        })
     }
 
     /// What the ghost shows at a moment.

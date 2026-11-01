@@ -9,7 +9,7 @@ use super::Stage;
 use crate::between::{Entrance, Handover, Heading, frame_of};
 use crate::draw::Picture;
 use crate::flight::{Dive, DiveWay, Flight, Ghost, Stretch};
-use crate::passage::{Axis, Plane};
+use crate::passage::Axis;
 use crate::presentation::Camera;
 use crate::warnings::Warnings;
 
@@ -43,8 +43,12 @@ impl Stage {
         if let (Some(ghost), Some(flown)) = (&mut ghost, flight.as_ref().and_then(Flight::flown)) {
             ghost.hand_over(flown);
         }
+        let on_its_way = self.ghost.take().filter(|ghost| ghost.axis.is_some());
+        let behind = std::mem::take(&mut self.behind);
         self.stand(painting);
         self.lit_afresh = true;
+        self.behind = behind;
+        self.behind.extend(on_its_way);
         self.ghost = ghost;
         self.flight = flight;
         if self.flight.is_some() {
@@ -79,7 +83,7 @@ impl Stage {
 
     /// What is left of the picture on the stage, as a ghost. On a passage it stands
     /// where the click took it, and a board that a passage was still bringing in
-    /// goes on from where it stood.
+    /// goes on along that passage as it leaves.
     fn ghost_of_last(
         &mut self,
         (heading, next_width): (Option<Heading>, f64),
@@ -88,11 +92,10 @@ impl Stage {
         now: f64,
     ) -> Option<Ghost> {
         let exit = self.phases.as_ref()?.exit;
-        let held = self
-            .ghost
-            .as_ref()
-            .and_then(|ghost| ghost.passage(now))
-            .map_or(Plane::STILL, |(axis, place)| axis.arrived(place));
+        let held = self.ghost.as_ref().and_then(|ghost| {
+            let (axis, from) = ghost.axis?;
+            Some((axis, from, ghost.time))
+        });
         let leaving = self.leaving.take();
         let from = leaving
             .as_ref()

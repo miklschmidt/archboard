@@ -377,14 +377,27 @@ fn a_passage_runs_on_from_the_click_as_one_plane_and_ends_with_no_lens() {
 }
 
 #[test]
-fn a_second_arrival_takes_the_last_board_on_from_where_its_passage_left_it() {
+fn a_change_of_mind_takes_the_last_board_on_along_the_way_it_came() {
     let mut stage = stage();
     stage.set_phases(PHASES);
     stage.show(painting(Vec::new()));
     stage.enter(painting(Vec::new()), Some(BESIDE), 100.0, (0.0, 0.0), 0.0);
-    stage.enter(painting(Vec::new()), Some(BESIDE), 100.0, (0.0, 0.0), 30.0);
-    let held = stage.ghost.as_ref().expect("a ghost").held;
-    assert_ne!(held, Plane::STILL);
+    stage.advance(0.0);
+    stage.leave(BESIDE, 100.0, 30.0);
+    let stepped = stage
+        .leaving
+        .as_ref()
+        .and_then(|leaving| leaving.passage(30.0))
+        .map_or(1.0, |(_, place)| place);
+    assert!(stepped < 1e-6, "the click waits for the board to arrive");
+    stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 30.0);
+    let ghost = stage.ghost.as_ref().expect("a ghost");
+    assert_ne!(
+        ghost.held_at(30.0),
+        Plane::STILL,
+        "it goes on along the way it came"
+    );
+    assert_eq!(stage.behind.len(), 1, "the board before it goes on its way");
 }
 
 #[test]

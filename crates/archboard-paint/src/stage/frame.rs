@@ -26,6 +26,7 @@ impl Stage {
             flight,
             leaving,
             ghost,
+            behind,
             dive,
             settled,
             looks,
@@ -85,30 +86,32 @@ impl Stage {
                 &mut plain_inks,
             );
         }
-        if let Some(ghost) = ghost {
-            draw_ghost(canvas, ghost, now, plain_inks);
+        for ghost in behind.iter().chain(ghost.as_ref()) {
+            draw_ghost(canvas, ghost, now, &mut plain_inks);
         }
     }
 }
 
-/// Where the board on the stage stands at a moment: on its way out, or on its way
-/// in, when a passage carries it.
+/// Where the board on the stage stands at a moment: on its way in, then on its way
+/// out, when a passage carries it.
 fn plane_at(leaving: Option<&Leaving>, ghost: Option<&Ghost>, now: f64) -> Plane {
-    let left = leaving.and_then(|leaving| leaving.passage(now));
     let arrived = ghost.and_then(|ghost| ghost.passage(now));
-    left.map(|(axis, place)| axis.left(place))
-        .or_else(|| arrived.map(|(axis, place)| axis.arrived(place)))
+    let left = leaving.and_then(|leaving| leaving.passage(now));
+    arrived
+        .map(|(axis, place)| axis.arrived(place))
+        .or_else(|| left.map(|(axis, place)| axis.left(place)))
         .unwrap_or(Plane::STILL)
 }
 
 /// Draw what is left of the last picture over the rest, in its own light and
 /// where its passage has taken it.
-fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: Inks<'_>) {
+fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: &mut Inks<'_>) {
     let own = ghost
         .passage(now)
         .map_or(Plane::STILL, |(axis, place)| axis.left(place));
+    let held = ghost.held_at(now);
     let place = own.transform
-        * ghost.held.transform
+        * held.transform
         * placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
     let items = ghost.items(now);
     let look = Presentation {
@@ -118,10 +121,12 @@ fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: Inks<'_>
         ..ghost.look.clone()
     };
     let mut inks = Inks {
+        palette: inks.palette,
+        outlines: &mut *inks.outlines,
         presentation: &look,
-        ..inks
+        still: None,
     };
-    faded(canvas, own.shown * ghost.held.shown, |canvas| {
+    faded(canvas, own.shown * held.shown, |canvas| {
         draw_items(canvas, &items, &ghost.picture.definitions, place, &mut inks);
     });
 }

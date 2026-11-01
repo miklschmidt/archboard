@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T16:27:00Z'
+updated_date: '2026-11-01T17:04:00Z'
 labels:
   - renderer
   - motion
@@ -91,4 +91,8 @@ One material carries it: focus. A lens runs between Vello and the surface while 
 A true before and after of a flight shows no new long frames, and a build with the lens switched off gives the same numbers as one with it. The design rule against blur over the picture now names shell layers, because the lens is part of the picture. That is a change to a stated rule, so the owner can reverse it.
 
 AC 6 stays open until the owner judges this pass.
+
+## The owner's third message
+
+The owner asked for motion that reflects the depth of the recursive decomposition: sideways at the same depth, a zoom into a deeper module, and a zoom out to a shallower one. The module tree now decides every move between boards. See ADR 0071, "A move follows the module tree", and DESIGN.md, "The Depth Rule". The moves were filmed and looked at. AC 6 stays open until the owner judges this pass.
 <!-- SECTION:NOTES:END -->
