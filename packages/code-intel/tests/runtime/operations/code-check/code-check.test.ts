@@ -311,6 +311,8 @@ test("what the pass cannot read is skipped with its reason, and a reason for a w
 			"ref-not-checked-out pP",
 			"ref-not-checked-out e8",
 			"repository-unregistered e5",
+			// A part with no binding is counted, so that an unbound model is not read as agreement.
+			"unbound pX",
 		].toSorted(),
 	);
 	// A repository this machine has not registered stays silent.

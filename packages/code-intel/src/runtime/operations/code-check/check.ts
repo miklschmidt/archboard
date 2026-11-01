@@ -74,7 +74,7 @@ import {
 } from "#runtime/operations/code-check/interfaces/interfaces.ts";
 import { lineagesOf } from "#runtime/operations/code-check/evidence/ownership.ts";
 import { kubernetesEvidenceOf } from "#runtime/operations/code-check/evidence/kubernetes-evidence.ts";
-import { partCodesOf } from "#runtime/operations/code-check/part-code.ts";
+import { partCodesOf, unboundSkips } from "#runtime/operations/code-check/part-code.ts";
 import { judgeRelationships } from "#runtime/operations/code-check/evidence/relationships.ts";
 import { openResolution, type Resolve } from "#runtime/operations/code-check/resolution.ts";
 import { judgeSupport } from "#runtime/operations/code-check/claims/support.ts";
@@ -419,7 +419,11 @@ async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<
 		modules: pass.modules,
 	});
 	pass.outcome.findings.push(...judged.findings, ...interfaces.findings);
-	pass.outcome.skipped.push(...judged.skipped, ...interfaces.skipped);
+	pass.outcome.skipped.push(
+		...judged.skipped,
+		...interfaces.skipped,
+		...unboundSkips(codes, { board: read.board.name, variant: read.variant.id }),
+	);
 }
 
 /**

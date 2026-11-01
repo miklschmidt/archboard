@@ -201,6 +201,7 @@ test("a symbol found only in code that did not parse is skipped, and text-only n
 			["symbol-unparsed", "pK", "src/web/broken.ts:2"],
 			["symbol-unparsed", "e9", "src/web/broken.ts:2"],
 			["text-only", MART, expect.stringContaining(".md")],
+			["unbound", "pX", undefined],
 		].toSorted(),
 	);
 	const textOnly = outcome.skipped.find((skip) => skip.reason === "text-only");

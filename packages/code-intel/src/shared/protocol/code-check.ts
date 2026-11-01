@@ -225,6 +225,7 @@ const CodeCheckSkipSchema = z
 		reason: z.enum([
 			"no-current-variant",
 			"board-unreadable",
+			"unbound",
 			"repository-unregistered",
 			"ref-not-checked-out",
 			"ref-without-language-server",

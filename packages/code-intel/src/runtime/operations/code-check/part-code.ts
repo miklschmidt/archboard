@@ -52,6 +52,7 @@ import type { CheckoutSnapshot, LocalCodeTarget } from "@archboard/code-binding/
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, type CodeBinding } from "@archboard/code-binding/bindings";
 import type { SemanticNode } from "@archboard/board/content";
+import { nodeSubject } from "@archboard/board/vault-policy";
 
 /**
  * A directory that holds tests, by the conventions of common languages: `test`,
@@ -346,6 +347,26 @@ async function partCodesOf(
 	return codes;
 }
 
+/**
+ * The skip of each part with no binding, because the pass has no code to read for it. The answer
+ * says how many, so that a model that binds nothing is not mistaken for code that agrees.
+ * @param codes Each part's code, by its id.
+ * @param site The board and the variant the codes were read at.
+ * @param site.board The board's name.
+ * @param site.variant The variant's id.
+ * @returns One skip for each unbound part.
+ */
+function unboundSkips(
+	codes: ReadonlyMap<string, PartCode>,
+	site: { readonly board: string; readonly variant: string },
+): CodeCheckSkip[] {
+	return [...codes.values()].flatMap((code) =>
+		code.status === "unbound"
+			? [{ ...site, subject: nodeSubject(code.node), reason: "unbound" as const }]
+			: [],
+	);
+}
+
 export {
 	type Grain,
 	type PartCode,
@@ -358,4 +379,5 @@ export {
 	isTestPath,
 	pairsOf,
 	partCodesOf,
+	unboundSkips,
 };
