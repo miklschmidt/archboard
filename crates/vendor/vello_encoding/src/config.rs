@@ -399,13 +399,17 @@ impl BufferSizes {
         // well as paris-30k. These should instead get derived from the scene layout using
         // reasonable heuristics.
         let bin_data = BufferSize::new(1 << 18);
-        let tiles = BufferSize::new(1 << 21);
+        // archboard: twice upstream's size. A path costs its whole box in tiles, and
+        // a board at full zoom on a canvas of 13 million pixels spends more.
+        let tiles = BufferSize::new(1 << 22);
         let lines = BufferSize::new(1 << 21);
         let seg_counts = BufferSize::new(1 << 21);
         let segments = BufferSize::new(1 << 21);
         // 16 * 16 (1 << 8) is one blend spill, so this allows for 4096 spills.
         let blend_spill = BufferSize::new(1 << 20);
-        let ptcl = BufferSize::new(1 << 23);
+        // archboard: twice upstream's size, for the same boards. Running out of
+        // either buffer leaves the last frame on the screen with no error.
+        let ptcl = BufferSize::new(1 << 24);
         Self {
             path_reduced,
             path_reduced2,
