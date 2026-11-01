@@ -265,8 +265,10 @@
 /* A painter draws the picture on the canvas behind the surface (ADR 0071). Once it
    has drawn, the SVG keeps its groups and its words for search, copy, screen
    readers and the viewer's marks, and shows no ink. A painter answers the pointer,
-   so the surface takes none. */
-[data-slot="semantic-board-surface"][data-painter] {
+   so nothing in the surface takes it, a shape that says it takes every pointer
+   included. */
+[data-slot="semantic-board-surface"][data-painter],
+[data-slot="semantic-board-surface"][data-painter] svg * {
 	pointer-events: none;
 }
 [data-slot="semantic-board-surface"][data-painter]

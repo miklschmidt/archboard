@@ -44,3 +44,20 @@ bun scripts/render-corpus.ts render /tmp/corpus --engines blocks --variants curr
   --comparison off --themes light,dark --svg
 bun scripts/paint-parity.ts /tmp/corpus /tmp/parity --worst 40
 ```
+
+## Parity at the gate
+
+The corpus holds 528 readings of the blocks engine in both themes, near and far, for each painter.
+The first run stopped at its time limit after 332 readings and kept only its rasters at 1% or more.
+Three far readings in the light theme reached 1%, with both painters.
+The other 196 readings gave 784 comparisons. Their three batches averaged 0.30%, 0.30% and 0.33%, and the worst was 1.34%.
+Traffic on the largest board differed by 0.10% to 0.28%.
+All the differences that were looked at are antialiasing of small words at half scale.
+
+Real screenshots at 1920x1080 held the rest: a line crossing, the slab look, a picked line and the tip.
+A real pointer on a grid of 64 points gave the same answer on 64 at two zooms, and on 61 at the fit zoom.
+Those three points lie less than a pixel past the edge of a line's halo.
+
+The grid found one real fault. A shape with its own `pointer-events` took the pointer in a surface with `pointer-events: none`, so no pick ran.
+Now nothing inside a painted surface takes the pointer, and `canonical-model-gestures.test.ts` owns that.
+The old page drew no recede at deep zoom, although its classes asked for one. The painter draws it at every zoom.

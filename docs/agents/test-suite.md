@@ -790,7 +790,8 @@ Canonical drawings use the existing IndexedDB picture store and the public rende
 Their cache identity includes the renderer build and the exact prepared scene.
 
 `semantic-traffic.test.ts` uses canonical relationships and an independent sequence flow.
-It retains the SMIL comparison and the animation clock continuity assertion after a public module edit.
+It holds that traffic reaches the page only as painted motion, that reduced motion stills it, and that it comes back.
+The Rust tests of `archboard-paint` own the look of a pulse and the clock across versions of a picture.
 Ordinary readers keep their drawing surface while local layout runs and show progress.
 Captured walkthroughs retain their existing picture-readiness contract.
 

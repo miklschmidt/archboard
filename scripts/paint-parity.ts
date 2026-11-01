@@ -14,7 +14,14 @@
 // screenshot of a canvas under an emulated size is resampled.
 
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+	appendFileSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
@@ -498,13 +505,17 @@ async function main(): Promise<void> {
 	const server = servePage(run.out);
 	const page = await openPage(run.browser, `http://127.0.0.1:${server.port}/`);
 	const results: Result[] = [];
+	// Each comparison goes on disk as it ends, so a stopped run keeps what it found.
+	const journal = join(run.out, "parity.jsonl");
 	try {
 		await pageReady(page, run);
 		for (const reading of readingsOf(run)) {
 			for (const name of run.views) {
 				const view = { name, painters: run.painters };
 				// oxlint-disable-next-line no-await-in-loop -- one page shows one reading at a time
-				results.push(...(await compareReading(page, run.out, reading, view)));
+				const found = await compareReading(page, run.out, reading, view);
+				results.push(...found);
+				appendFileSync(journal, found.map((one) => `${JSON.stringify(one)}\n`).join(""));
 			}
 		}
 	} finally {

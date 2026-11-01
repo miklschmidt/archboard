@@ -161,6 +161,24 @@ test("a double click opens a card", async () => {
 		"the card",
 		WAIT,
 	);
+	const takers = await pollUntil(
+		() =>
+			browser.eval<number | null>(`(() => {
+				const surface = document.querySelector('[data-slot="semantic-board-surface"][data-painter]');
+				if (surface === null) return null;
+				const box = surface.getBoundingClientRect();
+				const places = Array.from({ length: 64 }, (_, index) => [
+					box.left + (box.width * ((index % 8) + 0.5)) / 8,
+					box.top + (box.height * (Math.floor(index / 8) + 0.5)) / 8,
+				]);
+				return places.flatMap(([x, y]) => document.elementsFromPoint(x, y))
+					.filter((element) => surface.contains(element)).length;
+			})()`),
+		(found) => found !== null,
+		"a painted surface",
+		WAIT,
+	);
+	expect(takers).toBe(0);
 	await browser.run(["dblclick", card]);
 	await settledOn(browser, "Shop#Gateway");
 }, 30_000);
