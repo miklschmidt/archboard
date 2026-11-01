@@ -113,22 +113,30 @@ A pointer that rests on a row of the Right panel peeks at that row's part and wa
 one. A scene that clicks such a row moves the pointer to empty canvas with `restPointer` before it
 holds the shot.
 
-`design-smells` is the one clip over real history. It starts a server over this checkout's own
-`.archboard/vault`, in place and read only, so its counts come from this repository's Git
-history and change as the history does. The take reads a year of Git once before the camera
-runs, which takes the server about 15 seconds, and the browser keeps the answer. It also selects the
-first module before the camera runs, because the Right panel shows the model's own summary while
-nothing is selected. Each beat names its module, in `BEATS` of `design-smells.ts`: the top of a sort
-is often one of several modules that tie, and a module is chosen by what its row and its panel show.
-Read the panel of a new choice before you use it, and do not choose a module whose panel shows
-words that the model has since left behind. The clip shows Diagram surface under Unjoined,
-Retained reads under Entries (many entries, nothing hidden), and Command contract under
-Pass-through, ending on its About page where each entry that passes a call on names its target. The
-terminal prints the summary of `archboard model locality`. The clip is encoded at 1920 px, so that
-the column heads and the sort line stay legible. The reader clears the picture for an instant when a
-selection moves it to another scope, and a clip filmed in real time catches that instant in a frame
-or two. The take finds those frames, by how little their canvas varies, and drops them. It refuses a
-clip in which a window holds the home directory's path.
+`design-smells` uses this checkout's real history.
+It starts a server over `.archboard/vault` in place and reads without changes.
+Its counts come from this repository's Git history and change with that history.
+The take reads a year of Git before the camera starts.
+The server takes about 15 seconds, and the browser keeps the answer.
+The take also selects the first module before filming because an empty selection shows the model's summary.
+
+`BEATS` in `design-smells.ts` names each selected module.
+Ties in a sort do not decide which module demonstrates a smell.
+Read a new choice's row and panel before recording it.
+Choose a module whose panel describes the current model accurately.
+The take refuses missing counts and a module that no longer demonstrates its beat.
+Its refusal names the module and asks for another choice in `BEATS`.
+
+Diagram surface demonstrates Unjoined with at least one unjoined connection.
+Retained reads demonstrates Entries with several entry points and no hidden parts.
+Command contract demonstrates Pass-through with at least one entry that passes a call on.
+The clip ends on its About page, where each such entry names its target.
+The terminal prints the summary of `archboard model locality`.
+The clip uses a width of 1920 px to keep the column headings legible.
+
+The reader briefly clears the picture when a selection opens another scope.
+The take finds these blank frames through their low variation in brightness and drops them.
+The take refuses a clip if a window contains the home directory's path.
 
 The `history` take uses a separate copy of the canonical Shop example.
 It retains current architecture, creates a delivery-tracking proposal, and adopts that proposal through the public CLI.

@@ -64,11 +64,47 @@ const BEATS = {
 } as const;
 
 /** A row of the list: the module's identity, and its counts by measure. */
-const RowSchema = z.object({ id: z.string(), counts: z.record(z.string(), z.number()) });
+const CountSchema = z.number().int().nonnegative();
+const RowSchema = z.object({
+	id: z.string(),
+	counts: z.object({
+		unjoined: CountSchema,
+		entryPoints: CountSchema,
+		hiddenParts: CountSchema,
+		passThrough: CountSchema,
+	}),
+});
 /** A row, with the name of its module. */
 type Row = z.infer<typeof RowSchema> & { readonly name: string };
 /** The name of every module of the model, by identity. */
 type Names = ReadonlyMap<string, string>;
+
+/**
+ * Require the selected row to demonstrate its beat before the kit encodes it.
+ * @param beat The demonstration.
+ * @param value The row read from the live page.
+ * @returns The row, with its module name.
+ * @throws {Error} When the row is absent, incomplete, or no longer demonstrates the beat.
+ */
+function requireSmellRow(beat: keyof typeof BEATS, value: unknown): Row {
+	const parsed = RowSchema.safeParse(value);
+	const name = BEATS[beat];
+	if (!parsed.success)
+		throw new Error(
+			`Measures has no complete row for ${name}. Read its counts before recording again.`,
+		);
+	const { counts } = parsed.data;
+	const demonstrates = {
+		unjoined: counts.unjoined > 0,
+		shallow: counts.entryPoints > 1 && counts.hiddenParts === 0,
+		passThrough: counts.passThrough > 0 && counts.passThrough <= counts.entryPoints,
+	};
+	if (!demonstrates[beat])
+		throw new Error(
+			`${name} no longer demonstrates ${beat}: ${JSON.stringify(counts)}. Choose another module in BEATS.`,
+		);
+	return { ...parsed.data, name };
+}
 
 /**
  * A count with its noun.
@@ -100,12 +136,13 @@ function idOf(names: Names, name: string): string {
  * The row of a module in the list, with every count it shows.
  * @param page The shell.
  * @param id The module's identity.
- * @param name Its name.
+ * @param beat The demonstration that the row must support.
  * @returns Its name and counts.
  * @throws {Error} When the list has no row for it.
  */
-async function rowOf(page: Page, id: string, name: string): Promise<Row> {
-	const row = RowSchema.parse(
+async function rowOf(page: Page, id: string, beat: keyof typeof BEATS): Promise<Row> {
+	return requireSmellRow(
+		beat,
 		await page.evaluate(`(() => {
 			const row = document.querySelector("[data-measure-row='${id}']");
 			if (row === null) return null;
@@ -116,7 +153,6 @@ async function rowOf(page: Page, id: string, name: string): Promise<Row> {
 			return { id: row.getAttribute("data-measure-row"), counts };
 		})()`),
 	);
-	return { ...row, name };
 }
 
 /**
@@ -167,13 +203,14 @@ async function shows(page: Page, selector: string): Promise<void> {
  * that the camera never films through the change of a selection.
  * @param page The shell.
  * @param names Every module's name, by identity.
- * @param name The module's name.
+ * @param beat The demonstration whose module is selected.
  * @returns The row.
  */
-async function selectRow(page: Page, names: Names, name: string): Promise<Row> {
+async function selectRow(page: Page, names: Names, beat: keyof typeof BEATS): Promise<Row> {
+	const name = BEATS[beat];
 	const id = idOf(names, name);
 	await page.atRest();
-	const row = await rowOf(page, id, name);
+	const row = await rowOf(page, id, beat);
 	await page.click(`[data-measure-row='${id}']`);
 	await page.waitFor(
 		`document.querySelector("${PANEL} [data-slot='module-details']")?.getAttribute("data-module-id") === ${JSON.stringify(id)}`,
@@ -254,7 +291,7 @@ async function openReader(
 		HISTORY_MS,
 	);
 	await sortBy(page, "Unjoined");
-	await selectRow(page, names, BEATS.unjoined);
+	await selectRow(page, names, "unjoined");
 	await page.moveTo({ x: 1000, y: 700 }, 1);
 	await Bun.sleep(900);
 	return page;
@@ -340,9 +377,9 @@ async function say(terminal: Terminal, row: Row, sentence: (counts: Row["counts"
  */
 async function showUnjoined(page: Page, terminal: Terminal, names: Names): Promise<void> {
 	await shows(page, `${PANEL} [data-slot='model-panel-changes-with']`);
-	const row = await rowOf(page, idOf(names, BEATS.unjoined), BEATS.unjoined);
+	const row = await rowOf(page, idOf(names, BEATS.unjoined), "unjoined");
 	await say(terminal, row, (counts) => {
-		const unjoined = words(counts["unjoined"] ?? 0, "module changes", "modules change");
+		const unjoined = words(counts.unjoined, "module changes", "modules change");
 		return `${unjoined} with it and nothing joins them.`;
 	});
 }
@@ -357,11 +394,11 @@ async function showUnjoined(page: Page, terminal: Terminal, names: Names): Promi
 async function showShallow(page: Page, terminal: Terminal, names: Names): Promise<void> {
 	await page.atRest();
 	await sortBy(page, "Entries");
-	const row = await selectRow(page, names, BEATS.shallow);
+	const row = await selectRow(page, names, "shallow");
 	await shows(page, `${PANEL} [data-slot='model-panel-implementation']`);
 	await say(terminal, row, (counts) => {
-		const entries = words(counts["entryPoints"] ?? 0, "entry", "entries");
-		return `${entries} and ${counts["hiddenParts"] ?? 0} hidden parts: nothing stands behind its interface.`;
+		const entries = words(counts.entryPoints, "entry", "entries");
+		return `${entries} and ${counts.hiddenParts} hidden parts: no modeled parts stand behind its interface.`;
 	});
 }
 
@@ -376,11 +413,11 @@ async function showShallow(page: Page, terminal: Terminal, names: Names): Promis
 async function showPassThrough(page: Page, terminal: Terminal, names: Names): Promise<number> {
 	await page.atRest();
 	await sortBy(page, "Pass-through");
-	const row = await selectRow(page, names, BEATS.passThrough);
+	const row = await selectRow(page, names, "passThrough");
 	await shows(page, `${PANEL} [data-slot='model-panel-interface']`);
 	await say(terminal, row, (counts) => {
-		const entries = words(counts["entryPoints"] ?? 0, "entry", "entries");
-		return `${counts["passThrough"] ?? 0} of ${entries} pass a call straight on.`;
+		const entries = words(counts.entryPoints, "entry", "entries");
+		return `${counts.passThrough} of ${entries} pass a call straight on.`;
 	});
 	await Bun.sleep(1800);
 	const aboutAt = now();
@@ -460,4 +497,4 @@ const designSmells: Producer = {
 	},
 };
 
-export { designSmells };
+export { designSmells, requireSmellRow };
