@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { cpSync } from "node:fs";
+import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
@@ -30,6 +30,30 @@ test("one surface outlives each reading, and Back returns the camera of that rea
 	cpSync(resolve(import.meta.dir, "../../../examples/canonical-model/.archboard/vault"), vault, {
 		recursive: true,
 	});
+	writeFileSync(
+		join(vault, "decode.module.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Shop#Decode",
+			name: "Decode",
+			kind: "module",
+			parent: "Shop#Handler",
+			order: 40,
+			outgoing: [],
+		}),
+	);
+	writeFileSync(
+		join(vault, "sibling.module.json"),
+		JSON.stringify({
+			schemaVersion: 1,
+			id: "Shop#Sibling",
+			name: "Sibling",
+			kind: "module",
+			parent: "Shop#Gateway",
+			order: 41,
+			outgoing: [],
+		}),
+	);
 	initializeSource(root);
 	const server = await startOwnedServer({ serverPath, vault, env: serverTestEnvironment() });
 	resources.defer(() => server.dispose());

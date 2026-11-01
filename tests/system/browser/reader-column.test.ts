@@ -143,6 +143,13 @@ test("every move of the left column has a keyboard route, also in a presented pa
 
 	// Find selects, and Enter enters what it selected.
 	await browser.run(["press", "Control+k"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(`document.activeElement?.matches('[data-slot="model-find"] input')`),
+		Boolean,
+		"the palette's input",
+		WAIT,
+	);
 	await browser.run(["keyboard", "type", "decode"]);
 	await pollUntil(
 		() =>
