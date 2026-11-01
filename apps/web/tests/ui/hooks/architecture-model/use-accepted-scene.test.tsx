@@ -40,7 +40,6 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * Nothing paints here.
 	 * @returns Nothing.
 	 */
-	warmPainter: () => undefined,
 	/**
 	 * A renderer that does what the test asks.
 	 * @returns A drawing step.

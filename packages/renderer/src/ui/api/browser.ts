@@ -4,4 +4,4 @@ export {
 	prepareContentHere,
 	startBrowserRenderer,
 } from "#ui/state/browser-renderer.ts";
-export { startPainter, warmPainter } from "#ui/clients/painter.ts";
+export { startPainter } from "#ui/clients/painter.ts";

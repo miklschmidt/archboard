@@ -48,8 +48,7 @@ function modelDrawingQuery(
 		 * @returns The stored or newly rendered scene.
 		 */
 		queryFn: async () => {
-			const { prepareContentHere, warmPainter } = await import("@archboard/renderer/browser");
-			warmPainter();
+			const { prepareContentHere } = await import("@archboard/renderer/browser");
 			return cachedModelDrawing(storage, key, prepareContentHere(request).draw);
 		},
 		staleTime: Infinity,

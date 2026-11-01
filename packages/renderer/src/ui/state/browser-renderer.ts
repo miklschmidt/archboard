@@ -26,6 +26,7 @@ import {
 } from "#shared/rules/render/board.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
+import { warmPainter } from "#ui/clients/painter.ts";
 import { loadDiagramIcons, loadedIconPaths } from "#ui/state/diagram-icons.ts";
 import {
 	createEnginePool,
@@ -130,6 +131,9 @@ async function drawBoardHere(
  */
 function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
 	const request = scopedRequest(scoped);
+	// A browser takes a third of a second to answer for its GPU, so the picture's painter
+	// starts as the picture is drawn.
+	warmPainter();
 	return {
 		/**
 		 * Render only after the renderer core and the icons are available.
