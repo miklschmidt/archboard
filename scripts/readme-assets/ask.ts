@@ -1,6 +1,8 @@
-// The ask clip: a person picks a part out, types a question into the agent dock, and a real Codex
-// agent answers from the captured model. It runs on a server with the machine's Archboard Codex sign-in and
-// spends Codex usage. The wait for the answer is played faster, so it lasts about seven seconds.
+// The ask clip: a person picks a part out, chooses Explain selection from Explain with Codex in the
+// Right panel, and a real Codex agent answers from the captured reading: its activity line and its
+// answer stream under the picture, and the conversation beside it holds the same turn. It runs on a
+// server with the machine's Archboard Codex sign-in and spends Codex usage. The wait before the
+// answer begins is played faster, so it lasts about seven seconds.
 
 import {
 	encodeTake,
@@ -18,32 +20,50 @@ import {
 const MODEL = "Shop";
 const SCOPE = "Shop/MKhTEYqf#lwmpnaVU";
 const PART = "Timeout guard";
-const QUESTION = "Why does this part exist, and what would break without it?";
 const CLIP = attachmentFile("ask.webp");
 const THUMBNAIL = readmeFile("idx-ask.webp");
 const STATUS = "document.querySelector(\"[data-slot='agent-status']\")?.textContent.trim() ?? ''";
 const EXPLANATION_STATUS =
 	"document.querySelector(\"[data-slot='model-explanation']\")?.getAttribute('data-status') ?? ''";
+const EXPLAIN = "[data-slot='model-explain']";
+const SELECTION = "[data-explanation-action='explain-selection']";
+const ANSWER = "[data-slot='model-explanation']";
 
-/** How long the wait for the answer lasts once it is played faster. */
+/** How long the wait before the answer begins lasts once it is played faster. */
 const FAST_WAIT_SECONDS = 7;
+
+/** How much of the answer's streaming plays at its own pace; an answer that streams longer is sped up. */
+const STREAM_SECONDS = 12;
 
 /** How long the agent may take to answer. */
 const ANSWER_MS = 240_000;
 
 /**
- * A script for the page that shows a person's home directory as `~`: the agent's activity rows
- * name the shell it runs commands in, by its whole path, and a clip in a public README should not
- * carry the name of whoever filmed it.
+ * A script for the page that keeps a person's machine out of every frame. The agent's activity rows
+ * name the shell it runs commands in and the files it reads, by their whole paths, and the
+ * conversation's first turn is the captured request: a sentence, and a line of JSON that names a
+ * temporary file. A clip in a public README should carry none of it:
+ *
+ * - the prompt of the turn is not drawn at all;
+ * - the JSON line that names the capture file is cut from any text;
+ * - a path in a temporary directory shows only its last name, and a home directory shows as `~`.
+ *
+ * A mutation observer runs before the next paint, so no frame shows the words before it changes them.
  */
-const SCRUB_HOME = `(() => {
+const SCRUB = `(() => {
+	const style = document.createElement("style");
+	style.textContent = "[data-slot='prompt'] { display: none !important; }";
+	document.head.appendChild(style);
+	const capture = /\\{\\s*"captureFile"[^}]*\\}/g;
+	const temporary = /\\/(?:var\\/)?tmp(?:\\/[^\\s"'\`)\\]}]*)?/g;
 	const home = /\\/home\\/[^/\\s]+/g;
+	const last = (path) => path.split("/").filter(Boolean).pop() ?? "";
+	const clean = (text) => text.replace(capture, "").replace(temporary, last).replace(home, "~");
 	const scrub = () => {
 		const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
 		for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-			if (node.nodeValue !== null && /\\/home\\/[^/\\s]+/.test(node.nodeValue)) {
-				node.nodeValue = node.nodeValue.replace(home, "~");
-			}
+			const text = node.nodeValue;
+			if (text !== null && clean(text) !== text) node.nodeValue = clean(text);
 		}
 	};
 	new MutationObserver(scrub).observe(document.body, { childList: true, subtree: true, characterData: true });
@@ -133,6 +153,40 @@ async function requireAnswer(page: Page): Promise<void> {
 		throw new Error("The completed explanation contains no answer.");
 }
 
+/**
+ * Wait until the answer's text begins, or the explanation ends without one.
+ * @param page The shell.
+ * @returns Once the text is drawn, or the explanation has ended.
+ */
+async function awaitText(page: Page): Promise<void> {
+	await page.waitFor(
+		`!!document.querySelector("${ANSWER} [data-slot='model-explanation-text']") ||
+			['failed', 'cancelled', 'unavailable', 'completed'].includes(${EXPLANATION_STATUS})`,
+		"the answer's first words",
+		ANSWER_MS,
+	);
+}
+
+/**
+ * The stretch of a take that plays faster: the wait before the answer begins, and the start of an
+ * answer that streams for longer than a viewer needs.
+ * @param noted The seconds that the take noted.
+ * @param noted.sent When Explain selection was chosen.
+ * @param noted.began When the answer's text began.
+ * @param noted.done When the answer was whole.
+ * @param from The take's first second.
+ * @returns The stretch, or nothing when the wait is too short to be worth speeding up.
+ */
+function fastStretch(
+	noted: { readonly sent: number; readonly began: number; readonly done: number },
+	from: number,
+) {
+	const start = noted.sent - from + 1.5;
+	const end = Math.max(noted.began, noted.done - STREAM_SECONDS) - from - 0.5;
+	if (end - start < FAST_WAIT_SECONDS + 1) return undefined;
+	return { from: start, to: end, speed: (end - start) / FAST_WAIT_SECONDS };
+}
+
 const ask: Producer = {
 	kind: "clip",
 	codex: true,
@@ -140,9 +194,9 @@ const ask: Producer = {
 	attachments: [CLIP],
 	needs: ["chromium", "ffmpeg", "codex"],
 	plan: [
-		`Start an Archboard server over a copy of examples/web-shop that uses this machine's Archboard Codex sign-in, and open the shell on ${MODEL} at 1920x1080, light, with the conversation open; refuse when Codex is not signed in.`,
-		`Film the pointer picking ${PART} out and typing "${QUESTION}" into the agent dock, and the Codex agent's answer; this spends Codex usage.`,
-		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, with the wait for the answer played in about ${FAST_WAIT_SECONDS} seconds, and cut ${THUMBNAIL} from the answer.`,
+		`Start an Archboard server over a copy of examples/web-shop that uses this machine's Archboard Codex sign-in, and open the shell on ${MODEL} at 1920x1080, light, with the conversation open; refuse when Codex is not signed in. Keep the prompt of the conversation's first turn, any temporary path and the home directory out of every frame.`,
+		`Film the pointer selecting ${PART}, opening Explain with Codex in the Right panel and choosing Explain selection: the panel's activity line and the Codex agent's answer stream under the picture, and the conversation holds the same turn. This spends Codex usage.`,
+		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, with the wait before the answer begins played in about ${FAST_WAIT_SECONDS} seconds, and cut ${THUMBNAIL} from the finished answer.`,
 	],
 	/**
 	 * Film the take and encode it.
@@ -156,40 +210,39 @@ const ask: Producer = {
 				cursor: true,
 			});
 			await page.atRest();
-			await page.evaluate(SCRUB_HOME);
+			await page.evaluate(SCRUB);
 			await requireSignedIn(page);
 			const open = "button[aria-label='Open the conversation']";
 			if (await page.evaluate(`!!document.querySelector("${open}")`)) await page.click(open);
 			await Bun.sleep(1500);
 			await page.atRest();
-			await page.moveTo({ x: 900, y: 700 }, 1);
+			await page.moveTo({ x: 1250, y: 300 }, 1);
 			const take = await filmTogether("ask", [page], async () => {
 				await Bun.sleep(1000);
 				await page.click(await page.card(PART));
 				await Bun.sleep(1200);
-				await page.click("textarea[aria-label='Message the agent']");
-				await page.type(QUESTION);
-				await Bun.sleep(500);
-				await page.key("Enter");
+				await page.atRest();
+				await page.click(EXPLAIN);
+				await Bun.sleep(700);
+				await page.click(SELECTION);
 				const sent = now();
-				await page.moveTo({ x: 1300, y: 640 }, 20);
-				await Bun.sleep(1500);
+				await page.moveTo({ x: 1250, y: 300 }, 20);
+				await awaitText(page);
+				const began = now();
 				await requireAnswer(page);
 				const done = now();
 				await page.evaluate("document.activeElement && document.activeElement.blur()");
 				await Bun.sleep(1000);
-				const answered = await moment(page, ["[data-slot='agent-panel']"], 960);
+				const answered = await moment(page, [ANSWER, await page.card(PART)], 960);
 				await Bun.sleep(3000);
-				return { answered, sent, done };
+				return { answered, sent, began, done };
 			});
-			const from = take.noted.sent - take.from + 1.5;
-			const to = take.noted.done - take.from;
 			await encodeTake(
 				{ ...take, noted: take.noted.answered },
 				{
 					clip: CLIP,
 					width: 1440,
-					fast: { from, to, speed: Math.max(1, (to - from) / FAST_WAIT_SECONDS) },
+					fast: fastStretch(take.noted, take.from),
 					thumbnail: THUMBNAIL,
 				},
 			);

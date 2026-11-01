@@ -48,7 +48,7 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 | `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach        | no    |
 | `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still     | no    |
 | `design-smells`                                      | the Measures tab over this checkout's own vault and Git history, encoded to a WebP with a still     | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers a question typed into the conversation                 | yes   |
+| `ask`                                                | the shell filmed while a Codex agent answers Explain selection from the Right panel                 | yes   |
 | `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached             | yes   |
 | `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium                 | no    |
 
@@ -83,7 +83,10 @@ worktree's source. It never uses the server that `archboard` reaches: port
 3000 in the main checkout, or the worktree's own port.
 The hero's change is `scripts/readme-assets/hero-change.json`, written as an
 agent writes one. The hero prints how many subjects its proposal changes. The README's alt text
-for the hero names that number, so read it after each make.
+for the hero names that number, so read it after each make. The terminal of the hero and of
+`take-back` names a short folder, `~/shop`, shows its input files by short names, and names a state
+by its name. Words that an agent writes there, such as the reason of a claim and the doing line of an
+edit, are about the change itself: `editModel` takes them as its `intent`.
 
 The three code and history demonstrations add a small checkout example to their
 copied vault. `scripts/readme-assets/evidence-fixture.ts` holds its source and fixed
@@ -100,17 +103,32 @@ two hidden parts.
 `git-history` selects a part. The Changes with section of its Right panel lists the part that
 changes with it, and the terminal reports their shared commits through `model locality`. It then
 compares the branch with a proposal through `model footprint`.
-A reader pane narrower than 900 px hides its Right panel until something is selected. These
-clips give the shell 1440 px beside a 480 px terminal, so the panel shows from the start.
+A reader pane narrower than 900 px hides its Right panel until something is selected. `code-evidence`
+and `git-history` give the shell 1440 px beside a 480 px terminal, so the panel shows from the start.
+`module-interfaces` has no terminal. At 1920 px each of its two panes is 735 px wide, and a pane's
+header cuts the name of its state and overprints its crumb on its buttons, so it films a 2560 px
+shell and encodes it at 2560 px, and its proposals have short names ("Per job" and "One entry"). `plan`
+films 2560 px for the same reason, and its panes then show their Right panel.
+A pointer that rests on a row of the Right panel peeks at that row's part and washes out the selected
+one. A scene that clicks such a row moves the pointer to empty canvas with `restPointer` before it
+holds the shot.
 
 `design-smells` is the one clip over real history. It starts a server over this checkout's own
 `.archboard/vault`, in place and read only, so its counts come from this repository's Git
 history and change as the history does. The take reads a year of Git once before the camera
-runs, which takes the server about 15 seconds, and the browser keeps the answer. The camera then
-films the Measures tab: sort by Unjoined, by Pass-through, and by Hidden with Fewest first over
-the modules with parts, and select the first row of each. The terminal prints the summary of
-`archboard model locality`. The take refuses a clip in which a window holds the home directory's
-path.
+runs, which takes the server about 15 seconds, and the browser keeps the answer. It also selects the
+first module before the camera runs, because the Right panel shows the model's own summary while
+nothing is selected. Each beat names its module, in `BEATS` of `design-smells.ts`: the top of a sort
+is often one of several modules that tie, and a module is chosen by what its row and its panel show.
+Read the panel of a new choice before you use it, and do not choose a module whose panel shows
+words that the model has since left behind. The clip shows Diagram surface under Unjoined,
+Retained reads under Entries (many entries, nothing hidden), and Command contract under
+Pass-through, ending on its About page where each entry that passes a call on names its target. The
+terminal prints the summary of `archboard model locality`. The clip is encoded at 1920 px, so that
+the column heads and the sort line stay legible. The reader clears the picture for an instant when a
+selection moves it to another scope, and a clip filmed in real time catches that instant in a frame
+or two. The take finds those frames, by how little their canvas varies, and drops them. It refuses a
+clip in which a window holds the home directory's path.
 
 The `history` take uses a separate copy of the canonical Shop example.
 It retains current architecture, creates a delivery-tracking proposal, and adopts that proposal through the public CLI.
@@ -154,6 +172,13 @@ the account's Codex usage.
 - `ask`, `explainer`, `pr-walkthrough` and `newcomer` run on a server that uses
   the machine's Archboard Codex sign-in. If Codex is not signed in, they stop
   before anything is spent. Sign in from the agent dock of any Archboard server.
+- `ask` selects Timeout guard, opens Explain with Codex in the Right panel and chooses Explain
+  selection. It types no question. The captured request that Archboard sends is a sentence and a line of
+  JSON that names a temporary file. The take hides the prompt of the conversation's first turn, cuts that
+  JSON line from any text and shows a path in a temporary directory by its last name, through `SCRUB` in
+  `ask.ts`, so that no frame carries the line, a temporary path or the home directory. The wait before the
+  answer begins is played faster, and an answer that streams for longer than twelve seconds is sped up
+  at its start.
 - A recording keeps its talk (the exact model, steps, words, and voice)
   in the scratch directory. When only the renderer changed, the walkthrough and
   the voice did not, so `--replay` renders the kept talk again with

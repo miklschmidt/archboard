@@ -183,6 +183,38 @@ async function fit(page: Page): Promise<void> {
 }
 
 /**
+ * Take the pointer off whatever it rests on, and put it on empty canvas: a point of a pane's
+ * picture that no drawn subject covers. A pointer over a row of the Right panel peeks at that row's
+ * part and washes out the selected one, so a clip moves it away once it has clicked.
+ * @param page The shell.
+ * @param pane The pane whose canvas it rests on.
+ * @throws {Error} When the pane's picture has no empty point.
+ */
+async function restPointer(page: Page, pane = "A"): Promise<void> {
+	const at = PointSchema.parse(
+		await page.evaluate(`(() => {
+		const stage = document.querySelector("[data-slot='pane-stage'][data-pane='${pane}']");
+		if (!stage) return null;
+		const box = stage.getBoundingClientRect();
+		for (let y = box.bottom - 48; y > box.top + 48; y -= 32) {
+			for (let x = box.left + 48; x < box.right - 48; x += 32) {
+				const element = document.elementFromPoint(x, y);
+				if (element && element.closest("[data-slot='semantic-board-surface']") && !element.closest("[data-semantic-id], [data-slot='model-panel']")) {
+					return { x: Math.round(x), y: Math.round(y) };
+				}
+			}
+		}
+		return null;
+	})()`),
+	);
+	if (at === null) throw new Error(`Pane ${pane} has no empty canvas to rest the pointer on.`);
+	await page.moveTo(at, 18);
+}
+
+/** A point of the page, in CSS pixels. */
+const PointSchema = z.object({ x: z.number(), y: z.number() }).nullable();
+
+/**
  * The 16:9 rectangle a thumbnail is cut from: around the elements, at least a minimum width,
  * kept inside the window.
  * @param page The page.
@@ -340,6 +372,7 @@ export {
 	fit,
 	moment,
 	present,
+	restPointer,
 	stageUrl,
 	withTake,
 	type Moment,

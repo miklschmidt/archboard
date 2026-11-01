@@ -21,6 +21,7 @@ import {
 	fit,
 	moment,
 	readmeFile,
+	restPointer,
 	scratch,
 	withTake,
 	type Browser,
@@ -43,6 +44,12 @@ const PANEL = "[data-slot='model-panel']";
 const WARNINGS = `${PANEL} [data-slot='code-warning-count']`;
 const FINDINGS = `${PANEL} [data-slot='semantic-inspector-findings']`;
 const CHANGES_WITH = `${PANEL} [data-slot='model-panel-changes-with']`;
+/**
+ * The shell with two panes and a Right panel in each. At 1920 px a pane is 735 px wide, and its
+ * header cuts the state's name and lets its crumb and its buttons overprint each other, so the
+ * two-pane clip films a wider shell, and encodes it at the width it films.
+ */
+const TWO_PANES = { width: 2560, height: 1080 } as const;
 /** Where the shell sits in the stacked clip: right of the terminal. */
 const SHELL_AT = { x: TERMINAL.width, y: 0 } as const;
 
@@ -158,9 +165,7 @@ async function showSource(
 async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture): Promise<void> {
 	const terminal = await Terminal.open(browser, "light", PANE.height, TERMINAL);
 	const page = await openModel(server, browser, fixture.model, PANE.width, fixture.nodes.orders);
-	await terminal.say(
-		"Find a call that the map leaves out.\nSynthetic checkout example. Live results.",
-	);
+	await terminal.say("Find a call that the map leaves out.\nAn example checkout. Live results.");
 	const take = await filmTogether("code-evidence", [terminal.page, page], async () => {
 		await Bun.sleep(1400);
 		const evidence = await checkCode(server, terminal, fixture);
@@ -171,6 +176,7 @@ async function filmCode(server: TakeServer, browser: Browser, fixture: Fixture):
 		await Bun.sleep(2200);
 		await page.click(WARNINGS);
 		await appears(page, FINDINGS, "the finding in the Right panel");
+		await restPointer(page);
 		await Bun.sleep(1800);
 		await showSource(terminal, fixture, evidence);
 		await page.screenshot(join(scratch("takes", "code-evidence"), "evidence.png"));
@@ -228,7 +234,7 @@ async function filmInterfaces(
 	browser: Browser,
 	fixture: Fixture,
 ): Promise<void> {
-	const page = await openModel(server, browser, fixture.model, 1920);
+	const page = await openModel(server, browser, fixture.model, TWO_PANES.width);
 	await server.cli(["browser", "open"]);
 	await showModel(server, "module-interfaces", "A", {
 		model: fixture.model,
@@ -261,7 +267,7 @@ async function filmInterfaces(
 	});
 	await encodeTake(take, {
 		clip: attachmentFile("module-interfaces.webp"),
-		width: 1440,
+		width: TWO_PANES.width,
 		thumbnail: readmeFile("idx-module-interfaces.webp"),
 	});
 }
@@ -338,7 +344,7 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 	const terminal = await Terminal.open(browser, "light", PANE.height, TERMINAL);
 	const page = await openModel(server, browser, fixture.model, PANE.width, fixture.nodes.orders);
 	await terminal.say(
-		"Read changes through the architecture.\nSynthetic checkout and example Git history.",
+		"Read changes through the architecture.\nAn example checkout and its Git history.",
 	);
 	const take = await filmTogether("git-history", [terminal.page, page], async () => {
 		await Bun.sleep(1400);
@@ -348,7 +354,8 @@ async function filmHistory(server: TakeServer, browser: Browser, fixture: Fixtur
 		await appears(page, `${CHANGES_WITH} [data-unjoined='true']`, "the pair in Changes with");
 		await Bun.sleep(3200);
 		await page.click(`${CHANGES_WITH} [data-part='${fixture.nodes.save}']`);
-		await Bun.sleep(2000);
+		await restPointer(page);
+		await Bun.sleep(1600);
 		await page.screenshot(join(scratch("takes", "git-history"), "history.png"));
 		const still = await moment(
 			page,
@@ -398,7 +405,7 @@ function evidenceProducer(name: string, description: string, scene: Scene): Prod
 		plan: [
 			"Create a synthetic TypeScript checkout with fixed Git commits in the scratch directory. Author its canonical model through the CLI on an isolated server.",
 			description,
-			"Film the live shell, encode a 1440 px lossless WebP, and cut an index still from the demonstrated result. No Codex session runs.",
+			"Film the live shell, encode a lossless WebP, and cut an index still from the demonstrated result. No Codex session runs.",
 		],
 		/**
 		 * Run this take on isolated source and canonical inputs.

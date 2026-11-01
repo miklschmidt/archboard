@@ -25,7 +25,12 @@ import {
 import { readModel, modelResult } from "./model-authoring.ts";
 
 const MODEL = "Shop";
-const REASON = "Explain the checkout responsibility";
+/** What the agent plans to change, as it says it when it claims the subject and when it edits. */
+const REASON = "Reword what Checkout API is responsible for";
+const REQUEST =
+	"Reword what Checkout API is responsible for, so that it says it answers the shopper.";
+/** The folder the terminal names, and the short names of the inputs the commands read there. */
+const FOLDER = "~/shop";
 const CLIP = attachmentFile("take-back.webp");
 const THUMBNAIL = readmeFile("idx-safety.webp");
 const TERMINAL_WIDTH = 600;
@@ -49,7 +54,7 @@ async function claimCheckout(server: TakeServer, terminal: Terminal) {
 		claimFile,
 		JSON.stringify({ target, writer, reason: REASON, subjects: [subject.id] }),
 	);
-	await terminal.command(`archboard model claim --input '${claimFile}'`);
+	await terminal.command("archboard model claim --input claim.json");
 	const claimed = ArchitectureClaimResultSchema.parse(
 		modelResult(await server.cli(["model", "claim", "--input", claimFile])),
 	);
@@ -65,7 +70,7 @@ async function claimCheckout(server: TakeServer, terminal: Terminal) {
 			operationId: crypto.randomUUID(),
 			writer,
 			claim: claimed.claim.id,
-			description: "Accept checkout requests and coordinate the order response.",
+			description: "Accepts a checkout request and answers the shopper once the order is saved.",
 		}),
 	);
 	const release = join(scratch("takes", "take-back"), "release.json");
@@ -86,7 +91,7 @@ async function refusedEdit(
 	input: string,
 	revision: string,
 ) {
-	await terminal.command(`archboard model edit --input '${input}' --doing '${REASON}'`);
+	await terminal.command(`archboard model edit --input edit.json --doing "${REASON}"`);
 	const refused = await server.attempt(["model", "edit", "--input", input, "--doing", REASON]);
 	const result = ArchitectureModuleEditResultSchema.parse(modelResult(JSON.parse(refused.stdout)));
 	if (refused.status !== 2 || result.success || result.code !== "CLAIM_REVOKED") {
@@ -106,7 +111,7 @@ const takeBack: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		"Open the copied canonical shop beside a terminal in an isolated browser.",
-		"Claim Checkout API, press Take back control, then attempt the former edit through the CLI.",
+		"Claim Checkout API for a planned rewording, press Take back control, then attempt the former edit through the CLI.",
 		"Require CLAIM_REVOKED and the unchanged authored revision before encoding the clip and claim thumbnail.",
 	],
 	/**
@@ -115,7 +120,7 @@ const takeBack: Producer = {
 	 */
 	make: async () =>
 		withTake("take-back", "examples/web-shop", false, async (server, browser) => {
-			const terminal = await Terminal.open(browser, "dark", PANE.height);
+			const terminal = await Terminal.open(browser, "dark", PANE.height, { path: FOLDER });
 			const page = await browser.open({
 				url: `${server.url}/?modelA=${MODEL}`,
 				theme: "dark",
@@ -126,7 +131,7 @@ const takeBack: Producer = {
 			await present(page);
 			await page.moveTo({ x: 1100, y: 700 }, 1);
 			const take = await filmTogether("take-back", [terminal.page, page], async () => {
-				await terminal.you("Explain the checkout responsibility in the architecture.");
+				await terminal.you(REQUEST);
 				const intent = await claimCheckout(server, terminal);
 				try {
 					await page.waitFor(`!!document.querySelector("${BANNER} button")`, "the subject claim");

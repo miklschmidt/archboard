@@ -22,7 +22,7 @@ type RelationshipInput = Extract<Change, { type: "add-relationship" }>;
 
 const MODEL = "Checkout and orders";
 const REPO = "example.invalid/archboard/readme-checkout";
-const PROPOSALS = { narrow: "One entry point", wide: "Entry per job" } as const;
+const PROPOSALS = { narrow: "One entry", wide: "Per job" } as const;
 const BASE = "main";
 
 /** The sample's complete source, before its history adds comments. */

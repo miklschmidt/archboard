@@ -4,9 +4,16 @@
 //
 // The clip is filmed over this checkout's vault in place, so it only reads. The code history of a
 // year takes the server a few seconds, so the take reads it once before the camera runs: the
-// browser keeps its answer, and the camera then films the Measures tab opening on a read list.
+// browser keeps its answer, and the camera then films the Measures tab on a read list. With nothing
+// selected the Right panel shows the model's own summary, so the take selects the first module
+// before the camera runs and the clip never shows that summary.
+//
+// A beat names its module. The top of a sort is often one of several modules that tie, and a
+// module that reads as a smell is chosen by what it shows, not by where a tie happens to put it.
 
+import { readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
 import { z } from "zod";
 
 import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
@@ -16,6 +23,7 @@ import {
 	Terminal,
 	attachmentFile,
 	encodeTake,
+	ffmpeg,
 	filmTogether,
 	holding,
 	now,
@@ -28,9 +36,13 @@ import {
 	// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 } from "./kit.ts";
 // oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
+import type { Footage } from "./browser.ts";
+// oxlint-disable-next-line archboard/absolute-imports -- scripts/ has no # imports; sibling imports stay relative
 import { modelResult, readModel } from "./model-authoring.ts";
 
 const CLIP = attachmentFile("design-smells.webp");
+/** The clip's width: the pixels of the shell and the terminal, so that a column head is as drawn. */
+const WIDTH = 1920;
 const THUMBNAIL = readmeFile("idx-design-smells.webp");
 /** The shell beside the terminal. A pane under 900 px hides its Right panel until a selection. */
 const PANE = { width: 1440, height: 1080 } as const;
@@ -40,10 +52,20 @@ const PANEL = "[data-slot='model-panel']";
 const HISTORY_MS = 120_000;
 /** The thumbnail: the top of the shell, above the agent dock, with the list and its Right panel. */
 const STILL = { x: TERMINAL.width, y: 0, width: PANE.width, height: 810 } as const;
+/** The canvas of the shell, where a picture is drawn: from the list to the Right panel. */
+const CANVAS = { x: 460, y: 60, width: 600, height: 900 } as const;
+/** How little the canvas may vary, in levels of brightness, before it counts as blank. */
+const BLANK_SPREAD = 6;
+/** The module each beat shows, by its name in the model. */
+const BEATS = {
+	unjoined: "Diagram surface",
+	shallow: "Retained reads",
+	passThrough: "Command contract",
+} as const;
 
-/** The counts of the first row of the list, by measure. */
+/** A row of the list: the module's identity, and its counts by measure. */
 const RowSchema = z.object({ id: z.string(), counts: z.record(z.string(), z.number()) });
-/** The first row, with the name of its module. */
+/** A row, with the name of its module. */
 type Row = z.infer<typeof RowSchema> & { readonly name: string };
 /** The name of every module of the model, by identity. */
 type Names = ReadonlyMap<string, string>;
@@ -60,16 +82,32 @@ function words(count: number, one: string, many: string): string {
 }
 
 /**
- * The first row of the list, with every count it shows.
- * @param page The shell.
+ * The identity of the one module that a name gives.
  * @param names Every module's name, by identity.
- * @returns Its module's name and counts.
- * @throws {Error} When the model has no module of that identity.
+ * @param name The name.
+ * @returns The identity.
+ * @throws {Error} When no module has the name, or more than one has.
  */
-async function firstRow(page: Page, names: Names): Promise<Row> {
+function idOf(names: Names, name: string): string {
+	const found = [...names].filter(([, one]) => one === name).map(([id]) => id);
+	const [only, ...more] = found;
+	if (only === undefined || more.length > 0)
+		throw new Error(`${name} names ${found.length} modules of the model, not one.`);
+	return only;
+}
+
+/**
+ * The row of a module in the list, with every count it shows.
+ * @param page The shell.
+ * @param id The module's identity.
+ * @param name Its name.
+ * @returns Its name and counts.
+ * @throws {Error} When the list has no row for it.
+ */
+async function rowOf(page: Page, id: string, name: string): Promise<Row> {
 	const row = RowSchema.parse(
 		await page.evaluate(`(() => {
-			const row = document.querySelector("[data-measure-row]");
+			const row = document.querySelector("[data-measure-row='${id}']");
 			if (row === null) return null;
 			const counts = {};
 			for (const cell of row.querySelectorAll("[data-measure][data-count]")) {
@@ -78,9 +116,6 @@ async function firstRow(page: Page, names: Names): Promise<Row> {
 			return { id: row.getAttribute("data-measure-row"), counts };
 		})()`),
 	);
-	const name = names.get(row.id);
-	if (name === undefined)
-		throw new Error(`The list shows ${row.id}, which the model does not hold.`);
 	return { ...row, name };
 }
 
@@ -128,19 +163,24 @@ async function shows(page: Page, selector: string): Promise<void> {
 }
 
 /**
- * Select the first row of the list, and wait until the Right panel explains its module.
+ * Select a module's row, wait until the Right panel explains it, and let the picture settle, so
+ * that the camera never films through the change of a selection.
  * @param page The shell.
  * @param names Every module's name, by identity.
+ * @param name The module's name.
  * @returns The row.
  */
-async function selectFirst(page: Page, names: Names): Promise<Row> {
-	const row = await firstRow(page, names);
-	await page.click("[data-measure-row]");
+async function selectRow(page: Page, names: Names, name: string): Promise<Row> {
+	const id = idOf(names, name);
+	await page.atRest();
+	const row = await rowOf(page, id, name);
+	await page.click(`[data-measure-row='${id}']`);
 	await page.waitFor(
-		`document.querySelector("${PANEL} [data-slot='module-details']")?.getAttribute("data-module-id") === ${JSON.stringify(row.id)}`,
-		`${row.name} explained in the Right panel`,
+		`document.querySelector("${PANEL} [data-slot='module-details']")?.getAttribute("data-module-id") === ${JSON.stringify(id)}`,
+		`${name} explained in the Right panel`,
 	);
-	await Bun.sleep(300);
+	await page.atRest();
+	await Bun.sleep(500);
 	return row;
 }
 
@@ -186,13 +226,19 @@ function localityLines(locality: Awaited<ReturnType<typeof readLocality>>): read
 
 /**
  * Open the reader on the model, and read the code history once before the camera runs: open
- * Measures, wait for its read, and return to Modules.
+ * Measures, wait for its read, sort by Unjoined, and select the module of the first beat.
  * @param server The take's server.
  * @param browser The private browser.
  * @param model The canonical model's identity.
- * @returns The page, on Modules with nothing selected.
+ * @param names Every module's name, by identity.
+ * @returns The page, on Measures with the first beat's module selected.
  */
-async function openReader(server: TakeServer, browser: Browser, model: string): Promise<Page> {
+async function openReader(
+	server: TakeServer,
+	browser: Browser,
+	model: string,
+	names: Names,
+): Promise<Page> {
 	const page = await browser.open({
 		url: `${server.url}/?modelA=${model}`,
 		theme: "light",
@@ -207,71 +253,148 @@ async function openReader(server: TakeServer, browser: Browser, model: string): 
 		"the code history of the checkout",
 		HISTORY_MS,
 	);
-	await page.click("[data-destination='modules']");
+	await sortBy(page, "Unjoined");
+	await selectRow(page, names, BEATS.unjoined);
 	await page.moveTo({ x: 1000, y: 700 }, 1);
 	await Bun.sleep(900);
 	return page;
 }
 
 /**
- * Sort by Unjoined, select the first row, and let the Right panel show what changes with it.
+ * A brightness statistic that ffmpeg printed for one frame.
+ * @param block What ffmpeg printed for the frame.
+ * @param name The statistic, such as YMAX.
+ * @returns Its value, or nought when it is missing.
+ */
+function level(block: string, name: string): number {
+	return Number(new RegExp(`signalstats\\.${name}=(\\d+)`, "u").exec(block)?.[1] ?? 0);
+}
+
+/**
+ * Whether the canvas of a frame is blank: it varies by hardly a level of brightness.
+ * @param block What ffmpeg printed for the frame.
+ * @returns Whether it is blank.
+ */
+function isBlank(block: string): boolean {
+	return level(block, "YMAX") - level(block, "YMIN") < BLANK_SPREAD;
+}
+
+/**
+ * The frames of the shell in which the canvas is blank. The reader clears the picture for an
+ * instant when a selection moves it to another scope, and the camera, filmed in real time, catches
+ * that instant in a frame or two. A frame of it is dropped from the clip, so that the frame before
+ * it stays on screen a moment longer.
+ * @param shell The shell's footage.
+ * @param before The second after which the canvas holds a page that is blank on purpose.
+ * @returns The files of the blank frames.
+ */
+async function blankFrames(shell: Footage, before: number): Promise<ReadonlySet<string>> {
+	const frames = shell.frames.filter((frame) => frame.at < before);
+	const list = join(shell.directory, "blank.ffconcat");
+	const stats = join(shell.directory, "blank.stats");
+	const files = [...frames.map((frame) => frame.file), frames.at(-1)?.file ?? ""];
+	writeFileSync(
+		list,
+		`ffconcat version 1.0\n${files.map((file) => `file '${file}'\nduration 0.04`).join("\n")}\n`,
+	);
+	const { x, y, width, height } = CANVAS;
+	await ffmpeg([
+		"-f",
+		"concat",
+		"-safe",
+		"0",
+		"-i",
+		list,
+		"-fps_mode",
+		"passthrough",
+		"-vf",
+		`crop=${width}:${height}:${x}:${y},signalstats,metadata=print:file=${stats}`,
+		"-f",
+		"null",
+		"-",
+	]);
+	const measured = readFileSync(stats, "utf8")
+		.split(/^frame:/mu)
+		.slice(1);
+	return new Set(
+		frames.filter((_, index) => isBlank(measured[index] ?? "")).map((frame) => frame.file),
+	);
+}
+
+/**
+ * Say what a row of the list counts, as a sentence in the terminal.
+ * @param terminal The filmed terminal.
+ * @param row The row.
+ * @param sentence The sentence, from the row's counts.
+ */
+async function say(terminal: Terminal, row: Row, sentence: (counts: Row["counts"]) => string) {
+	await terminal.say(`${row.name}: ${sentence(row.counts)}`);
+}
+
+/**
+ * The first beat, already selected before the camera runs: a module whose Right panel lists the
+ * modules that change with it, with no relationship to join them.
  * @param page The shell.
  * @param terminal The filmed terminal.
  * @param names Every module's name, by identity.
  */
 async function showUnjoined(page: Page, terminal: Terminal, names: Names): Promise<void> {
-	await sortBy(page, "Unjoined");
-	const row = await selectFirst(page, names);
 	await shows(page, `${PANEL} [data-slot='model-panel-changes-with']`);
-	const unjoined = words(row.counts["unjoined"] ?? 0, "module changes", "modules change");
-	await terminal.say(`${row.name}: ${unjoined} with it and nothing joins them.`);
+	const row = await rowOf(page, idOf(names, BEATS.unjoined), BEATS.unjoined);
+	await say(terminal, row, (counts) => {
+		const unjoined = words(counts["unjoined"] ?? 0, "module changes", "modules change");
+		return `${unjoined} with it and nothing joins them.`;
+	});
 }
 
 /**
- * Sort by Pass-through, select the first row, and let the Right panel show its interface.
+ * A module with a wide interface and nothing behind it: sort by Entries, select it by name, and
+ * hold on its row and its Right panel.
  * @param page The shell.
  * @param terminal The filmed terminal.
  * @param names Every module's name, by identity.
  */
-async function showPassThrough(page: Page, terminal: Terminal, names: Names): Promise<void> {
-	await sortBy(page, "Pass-through");
-	const row = await selectFirst(page, names);
-	await shows(page, `${PANEL} [data-slot='model-panel-interface']`);
-	const entries = words(row.counts["entryPoints"] ?? 0, "entry", "entries");
-	await terminal.say(
-		`${row.name}: ${entries}, ${row.counts["passThrough"] ?? 0} of them pass a call straight on.`,
-	);
-}
-
-/**
- * Sort by Hidden, fewest first, over the modules that have parts, select the first row, and let
- * the Right panel show what it keeps to itself.
- * @param page The shell.
- * @param terminal The filmed terminal.
- * @param names Every module's name, by identity.
- */
-async function showNothingHidden(page: Page, terminal: Terminal, names: Names): Promise<void> {
-	await sortBy(page, "Hidden");
-	await page.click("[data-slot='model-measure-order'] [data-choice='fewest']");
-	await page.waitFor(
-		"document.querySelector(\"[data-slot='model-measure-order'] [data-choice='fewest']\")?.getAttribute('aria-pressed') === 'true'",
-		"fewest first",
-	);
-	await choose(page, "model-measure-show", "Modules with parts");
-	await shows(page, "[data-slot='model-measures-shown']");
-	await Bun.sleep(400);
-	const row = await selectFirst(page, names);
+async function showShallow(page: Page, terminal: Terminal, names: Names): Promise<void> {
+	await page.atRest();
+	await sortBy(page, "Entries");
+	const row = await selectRow(page, names, BEATS.shallow);
 	await shows(page, `${PANEL} [data-slot='model-panel-implementation']`);
-	const hidden = row.counts["hiddenParts"] ?? 0;
-	await terminal.say(
-		hidden === 0
-			? `${row.name} hides nothing behind its interface.`
-			: `${row.name} keeps ${words(hidden, "part", "parts")} hidden behind its interface.`,
-	);
+	await say(terminal, row, (counts) => {
+		const entries = words(counts["entryPoints"] ?? 0, "entry", "entries");
+		return `${entries} and ${counts["hiddenParts"] ?? 0} hidden parts: nothing stands behind its interface.`;
+	});
 }
 
 /**
- * Film the three sorts, with the terminal reporting the locality of the checkout.
+ * Entries that only pass a call on: sort by Pass-through, select a module by name, and end on its
+ * About page, where each such entry says where it passes the call.
+ * @param page The shell.
+ * @param terminal The filmed terminal.
+ * @param names Every module's name, by identity.
+ * @returns The second the page opened About.
+ */
+async function showPassThrough(page: Page, terminal: Terminal, names: Names): Promise<number> {
+	await page.atRest();
+	await sortBy(page, "Pass-through");
+	const row = await selectRow(page, names, BEATS.passThrough);
+	await shows(page, `${PANEL} [data-slot='model-panel-interface']`);
+	await say(terminal, row, (counts) => {
+		const entries = words(counts["entryPoints"] ?? 0, "entry", "entries");
+		return `${counts["passThrough"] ?? 0} of ${entries} pass a call straight on.`;
+	});
+	await Bun.sleep(1800);
+	const aboutAt = now();
+	await page.click("[data-slot='model-interface-about']");
+	await page.waitFor(
+		"(document.querySelector(\"[data-slot='model-about']\")?.innerText ?? '').includes('passes one call on')",
+		"the entries that pass a call on, in About",
+	);
+	await page.atRest();
+	return aboutAt;
+}
+
+/**
+ * Film the three beats, with the terminal reporting the locality of the checkout.
  * @param server The take's server.
  * @param browser The private browser.
  */
@@ -280,7 +403,7 @@ async function film(server: TakeServer, browser: Browser): Promise<void> {
 	const names = new Map(model.modules.map((module) => [module.id, module.name]));
 	const locality = await readLocality(server);
 	const terminal = await Terminal.open(browser, "light", PANE.height, TERMINAL);
-	const page = await openReader(server, browser, model.manifest.id);
+	const page = await openReader(server, browser, model.manifest.id, names);
 	const take = await filmTogether("design-smells", [terminal.page, page], async () => {
 		await Bun.sleep(500);
 		await terminal.say(
@@ -288,20 +411,26 @@ async function film(server: TakeServer, browser: Browser): Promise<void> {
 		);
 		await terminal.command("archboard model locality");
 		await terminal.done(...localityLines(locality));
-		await page.click("[data-destination='measures']");
-		await page.waitFor("document.querySelector('[data-measure-row]') !== null", "the list");
-		await Bun.sleep(800);
 		await showUnjoined(page, terminal, names);
+		await Bun.sleep(1800);
+		await showShallow(page, terminal, names);
 		const still: Moment = { at: now(), crop: STILL };
-		await Bun.sleep(1600);
-		await showPassThrough(page, terminal, names);
-		await Bun.sleep(1600);
-		await showNothingHidden(page, terminal, names);
 		await Bun.sleep(2200);
+		const aboutAt = await showPassThrough(page, terminal, names);
+		await Bun.sleep(3200);
 		await requireNoHomePath([terminal.page, page]);
-		return still;
+		return { still, aboutAt };
 	});
-	await encodeTake(take, { clip: CLIP, width: 1440, thumbnail: THUMBNAIL });
+	const blank = await blankFrames(take.footage[1]!, take.noted.aboutAt);
+	const footage = take.footage.map((window, index) =>
+		index === 1
+			? { ...window, frames: window.frames.filter(({ file }) => !blank.has(file)) }
+			: window,
+	);
+	await encodeTake(
+		{ ...take, footage, noted: take.noted.still },
+		{ clip: CLIP, width: WIDTH, thumbnail: THUMBNAIL },
+	);
 }
 
 const designSmells: Producer = {
@@ -312,8 +441,8 @@ const designSmells: Producer = {
 	needs: ["chromium", "ffmpeg"],
 	plan: [
 		"Start an Archboard server over this checkout's own vault, in place and read only, and read a year of this repository's Git history through it. Open the shell on Archboard's model in a private headless Chromium, 1440x1080, in the light theme, beside a terminal.",
-		"Film the Measures tab: sort by Unjoined and select the first row for its Changes with section; sort by Pass-through and select the first row for its interface; sort by Hidden, fewest first, over the modules with parts, and select the first row. The terminal reports the summary of archboard model locality.",
-		`Encode the take as a 1440 px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the first selection. Refuse a take that shows the home directory's path. No Codex session runs.`,
+		`Film the Measures tab over a list that is already sorted by Unjoined, with ${BEATS.unjoined} selected: its Changes with section. Sort by Entries and select ${BEATS.shallow} by name: many entries and nothing hidden. Sort by Pass-through, select ${BEATS.passThrough} by name, and open its About page, where each entry that passes a call on names its target. The terminal reports the summary of archboard model locality.`,
+		`Encode the take as a ${WIDTH} px lossless WebP at 30 frames a second, in the scratch directory to attach by hand, and cut ${THUMBNAIL} from the second selection. Refuse a take that shows the home directory's path. No Codex session runs.`,
 	],
 	/**
 	 * Film the take and encode it.

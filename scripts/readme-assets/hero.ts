@@ -13,6 +13,7 @@ import {
 	filmTogether,
 	present,
 	attachmentFile,
+	scratch,
 	withTake,
 	type MakeContext,
 	type Producer,
@@ -29,6 +30,15 @@ const REQUEST =
 	"Checkout waits on stock, the card and the receipt email. Propose taking fulfilment off the request path, and show me.";
 const CLIP = attachmentFile("hero.webp");
 const PANE = { width: 1320, height: 1080 } as const;
+/** The folder the terminal names: where a person would keep this project. */
+const FOLDER = "~/shop";
+/** The words of the agent's claim and edit: what it plans to change, and what it is doing. */
+const INTENT = {
+	reason: "Take stock and the receipt off the checkout request",
+	doing: "Propose a worker behind a queue for stock and the receipt",
+} as const;
+/** Where the take keeps the inputs of its commands. */
+const INPUTS = scratch("takes", "hero");
 const PLACEHOLDER = /^@[NEFSW]:/;
 
 /**
@@ -101,6 +111,18 @@ function filled(value: unknown, model: Model): unknown {
 }
 
 /**
+ * An argument as the terminal shows it: an input file by its short name, as a person would keep it
+ * in the folder the terminal names.
+ * @param value The argument passed to the CLI.
+ * @returns What the terminal prints.
+ */
+function shown(value: string): string {
+	return value.startsWith(`${INPUTS}/`)
+		? value.slice(INPUTS.length + 1).replace(/^[0-9a-f-]{36}\./u, "")
+		: value;
+}
+
+/**
  * Show the exact arguments that the take executes through its CLI.
  * @param server The isolated source and transport.
  * @param terminal The filmed terminal.
@@ -115,7 +137,7 @@ function filmedCommands(server: TakeServer, terminal: Terminal): TakeServer {
 		 * @returns Its successful JSON result.
 		 */
 		cli: async (args) => {
-			await terminal.command(["archboard", ...args.map(shellWord)].join(" "));
+			await terminal.command(["archboard", ...args.map((arg) => shellWord(shown(arg)))].join(" "));
 			const answer = await server.cli(args);
 			await terminal.done("Completed");
 			await Bun.sleep(700);
@@ -130,7 +152,8 @@ function filmedCommands(server: TakeServer, terminal: Terminal): TakeServer {
  * @returns Copyable shell syntax.
  */
 function shellWord(value: string): string {
-	return /^[\w./:@-]+$/u.test(value) ? value : "'" + value.replaceAll("'", "'\\''") + "'";
+	if (/^[\w./:@-]+$/u.test(value)) return value;
+	return /["$`\\!]/u.test(value) ? "'" + value.replaceAll("'", "'\\''") + "'" : `"${value}"`;
 }
 
 /**
@@ -155,7 +178,7 @@ const hero: Producer = {
 		"Open the canonical shop model beside a terminal in an isolated take.",
 		"Film the actual read, claim, complete proposal edit, release, comparison, and pane commands.",
 		"Create the proposal through hero-change.json with continuing IDs from the current public reading.",
-		"Encode the two windows as a 1280 px WebP in scratch storage for attachment.",
+		"Encode the two windows as a 1440 px WebP in scratch storage for attachment.",
 	],
 	/**
 	 * Film the public authoring workflow and its resulting proposal, and say how many subjects the
@@ -165,7 +188,7 @@ const hero: Producer = {
 	 */
 	make: async (context: MakeContext) =>
 		withTake("hero", "examples/web-shop", false, async (server, browser) => {
-			const terminal = await Terminal.open(browser, "dark", PANE.height);
+			const terminal = await Terminal.open(browser, "dark", PANE.height, { path: FOLDER });
 			const page = await browser.open({
 				url: `${server.url}/?modelA=${MODEL}`,
 				theme: "dark",
@@ -177,15 +200,21 @@ const hero: Producer = {
 			const take = await filmTogether("hero", [terminal.page, page], async () => {
 				await terminal.you(REQUEST);
 				const current = await readModel(commands);
-				const result = await editModel(commands, "hero", null, proposalChanges(current), {
-					type: "create",
-					name: PROPOSAL,
-					summary: "Move stock reservations and receipt delivery to a worker.",
-				});
-				const state = result.target.state!;
+				await editModel(
+					commands,
+					"hero",
+					null,
+					proposalChanges(current),
+					{
+						type: "create",
+						name: PROPOSAL,
+						summary: "Move stock reservations and receipt delivery to a worker.",
+					},
+					INTENT,
+				);
 				const compared = ArchitectureModelReadSchema.parse(
 					modelResult(
-						await commands.cli(["model", "compare", "--state", state, "--against", "current"]),
+						await commands.cli(["model", "compare", "--state", PROPOSAL, "--against", "current"]),
 					),
 				);
 				if (!compared.success) throw new Error(JSON.stringify(compared));
@@ -197,7 +226,7 @@ const hero: Producer = {
 				if (changed === 0) throw new Error("The authored proposal changes no subjects.");
 				context.say(`${changed} subjects differ from current architecture.`);
 				await terminal.say(`${changed} subjects differ from current architecture.`);
-				await commands.cli(["browser", "show", MODEL, "--state", state, "--pane", "A"]);
+				await commands.cli(["browser", "show", MODEL, "--state", PROPOSAL, "--pane", "A"]);
 				await page.atRest();
 				await terminal.say(
 					"The proposal is saved and shown against current architecture. Current architecture remains unchanged.",
@@ -205,7 +234,7 @@ const hero: Producer = {
 				await Bun.sleep(2600);
 				return null;
 			});
-			await encodeTake(take, { clip: CLIP, width: 1280, leadWithEnd: 2.2, hold: 1.2 });
+			await encodeTake(take, { clip: CLIP, width: 1440, leadWithEnd: 2.2, hold: 1.2 });
 		}),
 };
 

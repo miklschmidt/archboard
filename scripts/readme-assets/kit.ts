@@ -13,6 +13,7 @@ export {
 	fit,
 	moment,
 	present,
+	restPointer,
 	stageUrl,
 	withTake,
 	type Moment,

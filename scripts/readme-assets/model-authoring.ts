@@ -40,6 +40,18 @@ async function readModel(server: TakeServer, state: string | null = null) {
 	return model;
 }
 
+/** Why a writer claims subjects and what its edit says it is doing: the words a reader of a claim sees. */
+interface Intent {
+	readonly reason: string;
+	readonly doing: string;
+}
+
+/** What an edit says when the scene gives no words of its own. */
+const EXAMPLE_INTENT: Intent = {
+	reason: "Author the example architecture",
+	doing: "Author the example architecture",
+};
+
 /**
  * Apply one authored change through the public claim and edit commands.
  * @param server The isolated take server.
@@ -47,6 +59,7 @@ async function readModel(server: TakeServer, state: string | null = null) {
  * @param state The proposal to edit, or current when null.
  * @param changes The complete change batch.
  * @param proposal An explicit proposal lifecycle action, when needed.
+ * @param intent The claim's reason and the edit's doing line.
  * @returns The durable operation receipt.
  */
 async function editModel(
@@ -55,6 +68,7 @@ async function editModel(
 	state: string | null,
 	changes: Batch["changes"],
 	proposal?: Proposal,
+	intent: Intent = EXAMPLE_INTENT,
 ) {
 	const model = await readModel(server, state);
 	const target = modelTarget(model);
@@ -68,7 +82,7 @@ async function editModel(
 		JSON.stringify({
 			target,
 			writer,
-			reason: "Author the synthetic README example",
+			reason: intent.reason,
 			subjects: [
 				...new Set([
 					model.manifest.id,
@@ -102,16 +116,7 @@ async function editModel(
 			}),
 		);
 		const result = ArchitectureModuleEditResultSchema.parse(
-			modelResult(
-				await server.cli([
-					"model",
-					"edit",
-					"--input",
-					input,
-					"--doing",
-					"Author the synthetic README example",
-				]),
-			),
+			modelResult(await server.cli(["model", "edit", "--input", input, "--doing", intent.doing])),
 		);
 		if (!result.success) throw new Error(JSON.stringify(result));
 		return result;
