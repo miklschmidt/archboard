@@ -450,6 +450,44 @@ fn tall_board() -> Scene {
 }
 
 #[test]
+fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
+    let cast = |owner: &str| {
+        let Item::Group(group) = shadow() else {
+            unreachable!("a shadow is a group");
+        };
+        Item::Group(group.standing_with(vec![owner.to_owned()]))
+    };
+    let board = scene(
+        vec![Item::Group(Group::new(
+            Role::Move,
+            vec![
+                cast("bottom"),
+                cast("e"),
+                card("top", rect(10.0, 10.0, 80.0, 40.0), &["A"]),
+                card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
+                line("e", &[(50.0, 50.0), (50.0, 110.0)]),
+            ],
+        ))],
+        &[],
+    );
+    let early = Entrance::new(&board, &PHASES).at(0.1);
+    let Some(Item::Group(picture)) = early.first() else {
+        panic!("the picture is one group");
+    };
+    let shadows: Vec<&Group> = picture
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Group(group) if matches!(group.role, Role::Shadow(_)) => Some(group),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(shadows.len(), 2);
+    assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
+    assert_eq!(solid(shadows[1]), 0.0, "its line's words come last");
+}
+
+#[test]
 fn an_entrance_runs_down_the_board() {
     let board = tall_board();
     let early = Entrance::new(&board, &PHASES).at(0.2);

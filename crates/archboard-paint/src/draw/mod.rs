@@ -334,6 +334,10 @@ impl<C: Canvas> Walk<'_, C> {
         );
         let words = if spoken { inside.words } else { 1.0 };
         let opacity = group.opacity.unwrap_or(1.0) * swap * recede * words;
+        // Nothing of it shows, and the cuts of a mask must not run on what is under it.
+        if opacity <= 0.0 {
+            return;
+        }
         let mask = group
             .mask
             .as_ref()

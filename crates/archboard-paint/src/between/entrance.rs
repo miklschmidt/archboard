@@ -13,7 +13,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Item, Scene};
+use archboard_scene::scene::{Item, Role, Scene};
 
 use super::arrive::Grow;
 use super::found::{Form, Found, found, holds_subject};
@@ -61,9 +61,8 @@ pub struct Entrance {
     landed: Vec<Item>,
 }
 
-/// The cards, which grow into place in a wave. Each is placed by its place in
-/// the groups.
-fn cards(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
+/// When each card grows, by its place in the groups: the wave's start and end.
+fn card_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
         .filter(|&at| {
             groups[at].form() == Form::Card && !groups[at].is_region() && !groups[at].is_label()
@@ -77,10 +76,16 @@ fn cards(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
     places
         .into_iter()
         .zip(begins)
-        .map(|(at, begin)| {
-            let end = (begin + entry.card_span).min(1.0);
-            (at, Mover::Grow(Grow::new(&groups[at], begin, end)))
-        })
+        .map(|(at, begin)| (at, begin, (begin + entry.card_span).min(1.0)))
+        .collect()
+}
+
+/// The cards, which grow into place in a wave. Each is placed by its place in
+/// the groups.
+fn cards(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
+    card_times(groups, entry)
+        .into_iter()
+        .map(|(at, begin, end)| (at, Mover::Grow(Grow::new(&groups[at], begin, end))))
         .collect()
 }
 
@@ -117,7 +122,7 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)>
         .enumerate()
         .filter_map(|(at, group)| {
             if group.is_region() {
-                let frame = Mover::Frame(Item::Group(group.group.clone()), entry.frames_end);
+                let frame = Mover::Frame(Item::Group(group.group.clone()), 0.0, entry.frames_end);
                 Some((at, frame))
             } else if group.is_label() {
                 Some((at, Mover::Grow(Grow::new(group, entry.labels_start, 1.0))))
@@ -126,6 +131,35 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)>
             }
         })
         .collect()
+}
+
+/// When something that belongs to no subject fades in. A shadow comes with what
+/// casts it, and a mark on the lines comes after the lines. The rest of the page's
+/// furniture fades in with the frames, so that nothing stands on its own before the
+/// picture arrives.
+fn furniture_times(
+    item: &Item,
+    cards: &HashMap<&str, (f64, f64)>,
+    regions: &HashSet<&str>,
+    entry: &Entry,
+) -> (f64, f64) {
+    let frames = (0.0, entry.frames_end);
+    let labels = (entry.labels_start, 1.0);
+    let Item::Group(group) = item else {
+        return frames;
+    };
+    match group.role {
+        Role::Shadow(_) => group.members.first().map_or(frames, |owner| {
+            let by_line = if regions.contains(owner.as_str()) {
+                frames
+            } else {
+                labels
+            };
+            cards.get(owner.as_str()).copied().unwrap_or(by_line)
+        }),
+        Role::Junctions => labels,
+        _ => frames,
+    }
 }
 
 /// What an entrance does with each subject group, and which mover has which.
@@ -156,22 +190,29 @@ impl Entrance {
             .filter(|group| group.form() == Form::Line)
             .map(|group| group.id)
             .collect();
-        let (mut all, of_subject) = movers(&groups, phases);
-        // What the picture draws that belongs to no subject, its page's
-        // furniture, is faded with the frames, so that nothing is left standing
-        // on its own before the picture arrives.
-        let mut of_top = HashMap::new();
-        for (place, item) in scene.body.iter().enumerate() {
-            if !matches!(item, Item::Definitions { .. } | Item::Break)
-                && !holds_subject(item, &|_| true)
-            {
-                of_top.insert(place, all.len());
-                all.push(Mover::Frame(item.clone(), phases.entry.frames_end));
-            }
-        }
+        let (all, of_subject) = movers(&groups, phases);
+        let cards: HashMap<&str, (f64, f64)> = card_times(&groups, &phases.entry)
+            .into_iter()
+            .map(|(at, begin, end)| (groups[at].id, (begin, end)))
+            .collect();
+        let regions: HashSet<&str> = groups
+            .iter()
+            .filter(|group| group.is_region())
+            .map(|group| group.id)
+            .collect();
+        let furniture = |item: &Item, top: bool| {
+            let alone = matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_) | Role::Junctions));
+            let page = top
+                && !matches!(item, Item::Definitions { .. } | Item::Break)
+                && !holds_subject(item, &|_| true);
+            (alone || page).then(|| {
+                let (start, end) = furniture_times(item, &cards, &regions, &phases.entry);
+                Mover::Frame(item.clone(), start, end)
+            })
+        };
         let wiring = Wiring {
             of_subject: &of_subject,
-            of_top: &of_top,
+            furniture: &furniture,
             silent: &silent,
         };
         Entrance {

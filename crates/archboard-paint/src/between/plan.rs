@@ -3,7 +3,7 @@
 //! left as it is. Each frame clones what is still and asks each mover for its
 //! moment.
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use archboard_scene::scene::{Group, Item, Role};
 
@@ -31,7 +31,7 @@ pub(super) enum Mover {
     /// A subject that only becomes more or less visible.
     Visible(Group, Ground),
     /// Part of the ground of a picture, faded in with its frames.
-    Frame(Item, f64),
+    Frame(Item, f64, f64),
 }
 
 impl Mover {
@@ -45,7 +45,9 @@ impl Mover {
             Mover::Card(card, ground) => grounded(card.at(progress), *ground, progress),
             Mover::Line(line, ground) => grounded(line.at(progress), *ground, progress),
             Mover::Visible(group, ground) => grounded(group.clone(), Some(*ground), progress),
-            Mover::Frame(item, end) => vec![faded_in(item, ease_out(phase(progress, 0.0, *end)))],
+            Mover::Frame(item, start, end) => {
+                vec![faded_in(item, ease_out(phase(progress, *start, *end)))]
+            }
         }
     }
 }
@@ -94,8 +96,9 @@ enum Slot {
 pub(super) struct Wiring<'a> {
     /// The mover of each subject group of the body, in drawing order.
     pub(super) of_subject: &'a [Option<usize>],
-    /// The mover of each top-level item that holds no subject, by its place.
-    pub(super) of_top: &'a HashMap<usize, usize>,
+    /// The mover of an item that holds no subject and comes in on its own, given
+    /// the item and whether it stands at the top of the body.
+    pub(super) furniture: &'a dyn Fn(&Item, bool) -> Option<Mover>,
     /// The traffic layers left out until the picture lands, by line.
     pub(super) silent: &'a HashSet<&'a str>,
 }
@@ -104,16 +107,17 @@ pub(super) struct Wiring<'a> {
 struct Walk<'a> {
     wiring: &'a Wiring<'a>,
     subjects: usize,
+    movers: Vec<Mover>,
 }
 
 impl Walk<'_> {
     fn slots(&mut self, items: &[Item], top: bool) -> Vec<Slot> {
         items
             .iter()
-            .enumerate()
-            .map(|(index, item)| {
-                if let Some(&mover) = self.wiring.of_top.get(&index).filter(|_| top) {
-                    return Slot::Mover(mover);
+            .map(|item| {
+                if let Some(mover) = (self.wiring.furniture)(item, top) {
+                    self.movers.push(mover);
+                    return Slot::Mover(self.movers.len() - 1);
                 }
                 match item {
                     Item::Group(group) if group.subject.is_some() => {
@@ -170,12 +174,16 @@ pub(super) struct Plan {
 impl Plan {
     /// Prepare the body of a scene.
     pub(super) fn new(body: &[Item], movers: Vec<Mover>, wiring: &Wiring<'_>) -> Plan {
-        let slots = Walk {
+        let mut walk = Walk {
             wiring,
             subjects: 0,
+            movers,
+        };
+        let slots = walk.slots(body, true);
+        Plan {
+            slots,
+            movers: walk.movers,
         }
-        .slots(body, true);
-        Plan { slots, movers }
     }
 
     /// Put a mover at a place among the top-level items.

@@ -29,7 +29,7 @@ mod testing;
 #[cfg(test)]
 mod tests;
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use archboard_scene::scene::{Definition, Item, Role, Scene, SubjectKind, Transform};
 
@@ -196,7 +196,7 @@ impl Between {
         }
         let wiring = Wiring {
             of_subject: &of_subject,
-            of_top: &HashMap::new(),
+            furniture: &|_, _| None,
             silent: &silent,
         };
         let mut plan = Plan::new(&next.body, movers, &wiring);
