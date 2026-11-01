@@ -125,7 +125,7 @@ Ties in a sort do not decide which module demonstrates a smell.
 Read a new choice's row and panel before recording it.
 Choose a module whose panel describes the current model accurately.
 The take refuses missing counts and a module that no longer demonstrates its beat.
-Its refusal names the module and asks for another choice in `BEATS`.
+Each refusal names the module and gives a recovery step.
 
 Diagram surface demonstrates Unjoined with at least one unjoined connection.
 Retained reads demonstrates Entries with several entry points and no hidden parts.
