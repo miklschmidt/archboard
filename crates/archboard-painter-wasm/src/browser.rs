@@ -136,10 +136,9 @@ impl Painter {
         shift_x: f64,
         shift_y: f64,
         ms: f64,
-        now: f64,
     ) -> Result<(), JsError> {
         let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
-        self.stage.carry(painting, (shift_x, shift_y), ms, now);
+        self.stage.carry(painting, (shift_x, shift_y), ms);
         Ok(())
     }
 

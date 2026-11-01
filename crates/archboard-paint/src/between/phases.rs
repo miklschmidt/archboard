@@ -66,11 +66,11 @@ pub struct Phases {
 }
 
 #[cfg(test)]
-pub(super) mod fixtures {
+pub(crate) mod fixtures {
     use super::{Entry, Phases, Transition};
 
     /// The values `@archboard/timing` holds today.
-    pub(in crate::between) const PHASES: Phases = Phases {
+    pub(crate) const PHASES: Phases = Phases {
         transition: Transition {
             exit_end: 0.35,
             move_start: 0.06,

@@ -11,6 +11,7 @@ use archboard_scene::scene::{
 };
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 
+use crate::between::PHASES;
 use crate::canvas::{Canvas, Count, Ink};
 use crate::flight::DiveWay;
 use crate::palette::Theme;
@@ -348,6 +349,16 @@ fn drawn_in_a_card(far: bool) -> usize {
 #[test]
 fn the_board_inside_a_card_stands_in_the_far_view_of_the_board_around_it() {
     assert!(drawn_in_a_card(true) > drawn_in_a_card(false));
+}
+
+#[test]
+fn a_flight_starts_with_the_first_frame_drawn_of_it() {
+    let mut stage = stage_of(vec![plate(1.0)]);
+    stage.set_phases(PHASES);
+    stage.carry(painting(vec![plate(100.0)]), (0.0, 0.0), 100.0);
+    assert!(frame(&mut stage, 1000.0).1);
+    assert!(frame(&mut stage, 1050.0).1);
+    assert!(!frame(&mut stage, 1100.0).1);
 }
 
 /// A line drawn through a mask with one gap at a crossing and one stretch that

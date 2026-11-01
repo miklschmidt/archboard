@@ -17,7 +17,7 @@ use crate::between::{Heading, Phases};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
-use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving};
+use crate::flight::{Dive, DiveWay, Flight, Ghost, Leaving, Stretch};
 use crate::outlines::Outlines;
 use crate::palette::{Palette, Theme};
 use crate::pick::Targets;
@@ -144,19 +144,13 @@ impl Stage {
 
     /// Carry the picture on the stage into the next, over a time in
     /// milliseconds. A stage with nothing to carry shows the next picture.
-    pub fn carry(&mut self, painting: Painting, shift: (f64, f64), ms: f64, now: f64) {
+    pub fn carry(&mut self, painting: Painting, shift: (f64, f64), ms: f64) {
         let last = self.shown.take();
         let flight = last
             .as_ref()
             .zip(self.phases.as_ref())
             .map(|(last, phases)| {
-                Flight::carry(
-                    &last.picture.scene,
-                    &painting.scene,
-                    shift,
-                    phases,
-                    (now, ms),
-                )
+                Flight::carry(&last.picture.scene, &painting.scene, shift, phases, ms)
             });
         self.stand(painting);
         self.flight = flight;
@@ -181,7 +175,7 @@ impl Stage {
         let flight = self
             .phases
             .as_ref()
-            .map(|phases| Flight::enter(&painting.scene, phases, (now, ms)));
+            .map(|phases| Flight::enter(&painting.scene, phases, ms));
         self.stand(painting);
         self.flight = flight;
         if self.flight.is_some() {
@@ -215,8 +209,7 @@ impl Stage {
                 ..camera
             },
             from,
-            start: now,
-            ms: exit * (1.0 - from),
+            time: Stretch::of(exit * (1.0 - from)),
         })
     }
 
@@ -449,6 +442,12 @@ impl Stage {
             scale: self.glide.scale.at(now),
         };
         self.presentation.far = self.far.at(now);
+        if let Some(flight) = &mut self.flight {
+            flight.begin(now);
+        }
+        if let Some(ghost) = &mut self.ghost {
+            ghost.time.begin(now);
+        }
         if self
             .flight
             .as_ref()

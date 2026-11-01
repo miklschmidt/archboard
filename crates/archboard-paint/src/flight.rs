@@ -22,6 +22,31 @@ fn share(now: f64, start: f64, ms: f64) -> f64 {
     }
 }
 
+/// A stretch of time that starts with the first frame drawn of it, so that the
+/// work of getting a picture up does not eat the start of its move.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct Stretch {
+    start: Option<f64>,
+    ms: f64,
+}
+
+impl Stretch {
+    /// A stretch of a time in milliseconds, not yet begun.
+    pub(crate) fn of(ms: f64) -> Stretch {
+        Stretch { start: None, ms }
+    }
+
+    /// Start at a moment, unless it has started.
+    pub(crate) fn begin(&mut self, now: f64) {
+        self.start.get_or_insert(now);
+    }
+
+    /// How far through it a moment is, from 0 to 1.
+    fn share(&self, now: f64) -> f64 {
+        share(now, self.start.unwrap_or(now), self.ms)
+    }
+}
+
 /// A picture on its way in.
 #[derive(Debug)]
 pub(crate) enum Flight {
@@ -29,14 +54,12 @@ pub(crate) enum Flight {
     Carry {
         between: Box<Between>,
         definitions: Definitions,
-        start: f64,
-        ms: f64,
+        time: Stretch,
     },
     /// A picture coming in part by part.
     Enter {
         entrance: Box<Entrance>,
-        start: f64,
-        ms: f64,
+        time: Stretch,
     },
 }
 
@@ -47,46 +70,49 @@ impl Flight {
         to: &Scene,
         shift: (f64, f64),
         phases: &Phases,
-        (start, ms): (f64, f64),
+        ms: f64,
     ) -> Flight {
         let between = Box::new(Between::new(from, to, shift, phases));
         Flight::Carry {
             definitions: Definitions::listed(&between.definitions()),
             between,
-            start,
-            ms,
+            time: Stretch::of(ms),
         }
     }
 
     /// An entrance.
-    pub(crate) fn enter(scene: &Scene, phases: &Phases, (start, ms): (f64, f64)) -> Flight {
+    pub(crate) fn enter(scene: &Scene, phases: &Phases, ms: f64) -> Flight {
         Flight::Enter {
             entrance: Box::new(Entrance::new(scene, phases)),
-            start,
-            ms,
+            time: Stretch::of(ms),
+        }
+    }
+
+    /// The flight's time.
+    fn time(&self) -> Stretch {
+        match self {
+            Flight::Carry { time, .. } | Flight::Enter { time, .. } => *time,
+        }
+    }
+
+    /// Start at the moment of the first frame.
+    pub(crate) fn begin(&mut self, now: f64) {
+        match self {
+            Flight::Carry { time, .. } | Flight::Enter { time, .. } => time.begin(now),
         }
     }
 
     /// Whether the flight has landed by a moment.
     pub(crate) fn landed(&self, now: f64) -> bool {
-        match self {
-            Flight::Carry { start, ms, .. } | Flight::Enter { start, ms, .. } => {
-                share(now, *start, *ms) >= 1.0
-            }
-        }
+        self.time().share(now) >= 1.0
     }
 
     /// What the flight shows at a moment.
     pub(crate) fn items(&self, now: f64) -> Vec<Item> {
+        let share = self.time().share(now);
         match self {
-            Flight::Carry {
-                between, start, ms, ..
-            } => between.at(share(now, *start, *ms)),
-            Flight::Enter {
-                entrance,
-                start,
-                ms,
-            } => entrance.at(share(now, *start, *ms)),
+            Flight::Carry { between, .. } => between.at(share),
+            Flight::Enter { entrance, .. } => entrance.at(share),
         }
     }
 
@@ -122,19 +148,18 @@ pub(crate) struct Ghost {
     pub(crate) heading: Heading,
     pub(crate) camera: Camera,
     pub(crate) from: f64,
-    pub(crate) start: f64,
-    pub(crate) ms: f64,
+    pub(crate) time: Stretch,
 }
 
 impl Ghost {
     /// Whether the ghost is gone by a moment.
     pub(crate) fn gone(&self, now: f64) -> bool {
-        share(now, self.start, self.ms) >= 1.0
+        self.time.share(now) >= 1.0
     }
 
     /// What the ghost shows at a moment.
     pub(crate) fn items(&self, now: f64) -> Vec<Item> {
-        let rest = EASE_OUT.at(share(now, self.start, self.ms));
+        let rest = EASE_OUT.at(self.time.share(now));
         let progress = self.from + (1.0 - self.from) * rest;
         departure(&self.picture.scene, &self.heading, progress)
     }

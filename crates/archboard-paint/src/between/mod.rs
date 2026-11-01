@@ -44,6 +44,8 @@ use plan::{Mover, Plan, Wiring};
 pub use departure::{Heading, departure};
 pub use entrance::{Entrance, entrance};
 pub use found::shared_shift;
+#[cfg(test)]
+pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
 
 /// One move from scene A to scene B, prepared once and sampled every frame.

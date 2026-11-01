@@ -130,7 +130,7 @@ class PictureStage {
 	 */
 	carry(painting: string | undefined, shift: StageShift): void {
 		this.#take(painting, (painter, taken) => {
-			painter.carry(taken, shift.x, shift.y, PICTURE_MS.transition, frameClock().now());
+			painter.carry(taken, shift.x, shift.y, PICTURE_MS.transition);
 		});
 	}
 
