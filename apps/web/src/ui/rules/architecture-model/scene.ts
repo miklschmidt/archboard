@@ -289,9 +289,10 @@ function cardToward(scene: AcceptedScene, model: Model, scope: string | null): s
  * @param model The modules.
  * @param scope The scope left.
  * @param to The board above, or null for the roots.
- * @returns The card.
+ * @returns The card, or null when the destination does not hold the scope.
  */
-function cardAbove(model: Model, scope: string, to: string | null): string {
+function cardAbove(model: Model, scope: string | null, to: string | null): string | null {
+	if (scope === null || !within(model, scope, to)) return null;
 	const way = [scope, ...ancestorsOf(model, scope)];
 	const below = to === null ? way.length : way.indexOf(to);
 	return way[below - 1] ?? scope;
@@ -408,8 +409,8 @@ function moveTo(scene: AcceptedScene | null, next: string | null): Move {
 		return { kind: "plain" };
 	const { model } = scene;
 	const { scope } = scene.reading;
-	if (scope !== null && within(model, scope, next))
-		return { kind: "out", card: cardAbove(model, scope, next) };
+	const above = cardAbove(model, scope, next);
+	if (above !== null) return { kind: "out", card: above };
 	return wayBetween(model, scope, next) === "into"
 		? { kind: "into", card: cardToward(scene, model, next) }
 		: { kind: "plain" };
