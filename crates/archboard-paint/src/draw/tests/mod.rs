@@ -311,18 +311,12 @@ fn pulses(stage: &mut Stage, now: f64) -> (usize, bool) {
 }
 
 #[test]
-fn traffic_asks_for_frames_while_it_runs_and_none_while_it_is_held() {
+fn traffic_asks_for_frames_while_it_is_shown() {
     let mut stage = stage_of(traffic_picture());
     let (drawn, more) = pulses(&mut stage, 0.0);
     assert!(drawn > 0 && more);
-    stage.hold_traffic();
-    let (held, more) = pulses(&mut stage, 1000.0);
-    assert!(held > 0 && !more);
-    assert_eq!(stage.picture_time(), 0.0);
-    stage.resume_traffic(1000.0, 1000.0);
-    assert!(pulses(&mut stage, 1100.0).1);
-    stage.release_traffic();
-    assert!(pulses(&mut stage, 1200.0).1);
+    stage.set_traffic_shown(false);
+    assert!(!pulses(&mut stage, 1000.0).1);
 }
 
 #[test]

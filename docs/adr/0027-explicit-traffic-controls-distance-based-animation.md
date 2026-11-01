@@ -80,12 +80,10 @@ faster by the same factor.
 Reduced motion hides every pulse. A relationship that is removed or removed
 standing carries no traffic. Traffic is still illustration, not measurement.
 
-In the browser, traffic stands still while a hand moves the camera: a drag, a
-wheel or a key. It comes back the moment a drag is let go, even if the picture
-is thrown and coasts on, and 400 ms after the last turn of a wheel or press of
-a key. It never returns at its speed: it starts from a creep and reaches its
-speed over 1.5 seconds, so no pulse jumps. A camera that the page moves by
-itself, such as a fit or a step of a walkthrough, leaves traffic running.
+In the browser, traffic keeps running while the camera moves. The old page held
+it still during a drag, a wheel or a key, because its pulses cost a repaint of
+every line. The painter draws each frame whole, so the owner removed the hold
+on 2026-11-01 (TASK-562).
 
 The paragraphs after the settled requirements hold again, with one change: a
 pulse flies at 2S, so it takes L/2S seconds to cross a line of length L. The

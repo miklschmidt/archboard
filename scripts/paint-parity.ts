@@ -96,9 +96,8 @@ window.keepPainter = async (kind, file) => {
 	painter.setCamera(0, 0, scale, 0, 0);
 	painter.setFar(far, 0, 0);
 	painter.setTrafficShown(traffic);
-	painter.holdTraffic();
 	if (traffic) painter.setPictureTime(1.5);
-	painter.frame(performance.now());
+	painter.frame(0);
 	const copy = new OffscreenCanvas(width, height);
 	copy.getContext("2d").drawImage(canvas, 0, 0);
 	await fetch(file, { method: "PUT", body: await copy.convertToBlob({ type: "image/png" }) });

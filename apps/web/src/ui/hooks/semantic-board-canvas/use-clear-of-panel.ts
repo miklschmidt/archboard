@@ -2,10 +2,8 @@
 // edge. When that panel would cover the subject, the picture glides left just
 // far enough to show it, once, in the time the panel takes to arrive; anywhere
 // else, nothing moves. A subject wider than the room that the panel leaves keeps
-// its left end in view. The stage makes this move and not a hand, so the traffic
-// of the picture runs on (use-traffic-rest.ts). Once it lands the camera counts
-// as the person's, as after a reveal, so a refit does not put the subject back
-// under the panel.
+// its left end in view. Once it lands the camera counts as the person's, as after
+// a reveal, so a refit does not put the subject back under the panel.
 
 import { useLayoutEffect, type RefObject } from "react";
 

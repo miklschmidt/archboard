@@ -232,14 +232,6 @@ test("a painter that finishes startup after disposal is freed", async () => {
 	expect(surface.hasAttribute("data-painter")).toBe(false);
 });
 
-test("holding traffic during startup reaches the painter before its first frame", async () => {
-	const { surface } = await surfaceWithAPicture();
-	stageOf(surface)?.holdTraffic();
-	await start("cpu");
-	expect(taken).toContain("holdTraffic");
-	expect(taken.indexOf("holdTraffic")).toBeLessThan(taken.indexOf("frame"));
-});
-
 test("failure during the initial briefing frees the painter and leaves SVG ink", async () => {
 	const { surface, original } = await surfaceWithAPicture();
 	starting.failCall = "enter";

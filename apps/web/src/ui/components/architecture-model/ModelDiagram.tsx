@@ -34,7 +34,6 @@ import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
 import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
-import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
 import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
@@ -197,7 +196,6 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		},
 		far,
 	);
-	useTrafficRest(surface, camera, gesture === "dragging");
 	useSceneArrival(surface, scene.presentation, props.onPresentation);
 	useAttention(lighting.resting, single, props.onAttention);
 	// Like the retained diagram, this pan-and-zoom surface needs a tab stop and

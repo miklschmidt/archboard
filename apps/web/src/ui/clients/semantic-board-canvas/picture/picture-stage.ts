@@ -59,7 +59,6 @@ class PictureStage {
 		marks: { selected: new Set(), whole: new Set() },
 		light: null,
 		trafficShown: true,
-		trafficHeld: false,
 		heads: {},
 		warned: new Set(),
 	};
@@ -207,33 +206,6 @@ class PictureStage {
 		this.#held.trafficShown = shown;
 		this.#tell((painter) => {
 			painter.setTrafficShown(shown);
-		});
-	}
-
-	/** Stand the traffic still until it is resumed. */
-	holdTraffic(): void {
-		this.#held.trafficHeld = true;
-		this.#tell((painter) => {
-			painter.holdTraffic();
-		});
-	}
-
-	/**
-	 * Bring held traffic back to its speed, from standing still.
-	 * @param ms How long that takes.
-	 */
-	resumeTraffic(ms: number): void {
-		this.#held.trafficHeld = false;
-		this.#tell((painter) => {
-			painter.resumeTraffic(ms, frameClock().now());
-		});
-	}
-
-	/** Let held traffic go at its speed at once. */
-	releaseTraffic(): void {
-		this.#held.trafficHeld = false;
-		this.#tell((painter) => {
-			painter.releaseTraffic();
 		});
 	}
 

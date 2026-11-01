@@ -282,24 +282,6 @@ impl Painter {
         self.stage.set_traffic_shown(shown);
     }
 
-    /// Stand the traffic still, and keep it so until it is resumed.
-    #[wasm_bindgen(js_name = holdTraffic)]
-    pub fn hold_traffic(&mut self) {
-        self.stage.hold_traffic();
-    }
-
-    /// Bring the held traffic back to its speed over a time in milliseconds.
-    #[wasm_bindgen(js_name = resumeTraffic)]
-    pub fn resume_traffic(&mut self, ms: f64, now: f64) {
-        self.stage.resume_traffic(ms, now);
-    }
-
-    /// Let the held traffic go at its speed at once.
-    #[wasm_bindgen(js_name = releaseTraffic)]
-    pub fn release_traffic(&mut self) {
-        self.stage.release_traffic();
-    }
-
     /// Stand the traffic's clock at a time in seconds.
     #[wasm_bindgen(js_name = setPictureTime)]
     pub fn set_picture_time(&mut self, seconds: f64) {

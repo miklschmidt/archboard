@@ -49,7 +49,6 @@ interface Held {
 	marks: StageMarks;
 	light: StageLight | null;
 	trafficShown: boolean;
-	trafficHeld: boolean;
 	heads: Readonly<Record<string, number>>;
 	warned: ReadonlySet<string>;
 }
@@ -157,5 +156,4 @@ export function briefPainter(
 	if (painting === undefined) painter.clear();
 	else if (arrive === null) painter.show(painting);
 	else arrive(painter, painting);
-	if (held.trafficHeld) painter.holdTraffic();
 }

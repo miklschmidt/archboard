@@ -344,24 +344,6 @@ impl Stage {
         self.clock.show(shown);
     }
 
-    /// Stand the traffic still, and keep it so until it is resumed.
-    pub fn hold_traffic(&mut self) {
-        self.clock.hold();
-    }
-
-    /// Bring the held traffic back to its speed over a time in milliseconds,
-    /// from standing still, easing in and out. Traffic that is not held keeps
-    /// its pace.
-    pub fn resume_traffic(&mut self, ms: f64, now: f64) {
-        self.now = now;
-        self.clock.resume(ms, now);
-    }
-
-    /// Let the held traffic go at its speed at once.
-    pub fn release_traffic(&mut self) {
-        self.clock.release();
-    }
-
     /// Stand the traffic's clock at a time in seconds, so that the traffic of a
     /// picture that replaces another runs on from where the other's was.
     pub fn set_picture_time(&mut self, seconds: f64) {

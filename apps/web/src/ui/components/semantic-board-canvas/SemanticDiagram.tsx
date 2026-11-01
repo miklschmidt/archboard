@@ -43,7 +43,6 @@ import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.t
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
-import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import {
 	NO_FOCUS,
@@ -302,10 +301,6 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	useEffect(() => {
 		if (gesture === "dragging") leave();
 	}, [gesture, leave]);
-	// A drag, a pinch, a wheel or a key draws a frame for every move, and moving
-	// traffic paints its lines again in each of them. The traffic stands still until
-	// the camera has rested, and then comes back gently.
-	useTrafficRest(surface, camera, gesture === "dragging");
 
 	const onKeyDown = useCallback(
 		(event: KeyboardEvent<HTMLElement>): void => {
