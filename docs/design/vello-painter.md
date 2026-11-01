@@ -322,5 +322,5 @@ Eight sideways moves between two large boards gave 913 frames in about 16 second
 A move that a walkthrough makes between boards was not filmed in this pass. The film of a walkthrough stayed on one board.
 
 The pass over the lines filmed a first load at full pixel scale on both grounds, a door, and a flight into a card, and looked at the frames. It also filmed a first load with `prefers-reduced-motion`, and the diagonal reveal on a first load and a door.
-A door on the large board gave 103 frames in headless Chrome at 60 Hz, with a median of 4.9 ms on the main thread for each frame and 9 frames over 25 ms. The longest gap, 83 ms, follows one main-thread task of 86 ms when the picture arrives.
+The final build, measured in three runs of each move in headless Chrome at 60 Hz, gave these medians on the large board. A door drew 104 frames, with a median of 4.6 ms on the main thread for each frame and 8 frames over 25 ms. Its longest gap, 83 ms, follows one main-thread task of 88 ms when the picture arrives. A dive drew 97 frames, with 6 frames over 25 ms and a longest gap of 67 ms.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.

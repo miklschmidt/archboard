@@ -142,7 +142,7 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 - A person without WebGPU sees a correct board on the CPU painter, but with slower
   frames. Traffic there rests as long as its last frame took. On a small board it takes
   21% of the main thread, against 8% on the old page.
-- The painter adds 4.2 MB of WebAssembly, and the page loads it apart from the core.
+- The painter adds 4.7 MB of WebAssembly, and the page loads it apart from the core.
   The page asks for the GPU while it draws a first picture, because a browser's first
   answer takes about 350 ms.
 - README takes run with `--disable-gpu`, so they paint on the CPU. They did not run again
