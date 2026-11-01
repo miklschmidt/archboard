@@ -186,15 +186,40 @@ type ServerError = Error & {
  */
 function responseError(data: unknown, response: Response): Error {
 	const body = isRecord(data) ? data : {};
-	const error: ServerError = new Error(
-		stringAt(body, "error") ?? `HTTP server error: ${response.status} ${response.statusText}`,
-	);
+	const reason =
+		stringAt(body, "error") ?? `HTTP server error: ${response.status} ${response.statusText}`;
+	const error: ServerError = new Error([reason, ...diagnosticLines(body)].join("\n"));
 	describeFailure(error, body);
 	error.answer = body;
 	if (isBoardRefusal(data)) {
 		error.refusal = data;
 	}
 	return error;
+}
+
+/**
+ * The diagnostics an answer carries, each as its code, the file it is about, what it says and
+ * what to do next, because a refusal's reason alone names none of them.
+ * @param body The answer body.
+ * @returns One line for each diagnostic that has a code and a message.
+ */
+function diagnosticLines(body: Record<string, unknown>): string[] {
+	const diagnostics = body["diagnostics"];
+	if (!Array.isArray(diagnostics)) {
+		return [];
+	}
+	return diagnostics.filter(isRecord).flatMap((diagnostic) => {
+		const code = stringAt(diagnostic, "code");
+		const message = stringAt(diagnostic, "message");
+		if (code === undefined || message === undefined) {
+			return [];
+		}
+		const file = stringAt(diagnostic, "file");
+		const recovery = stringAt(diagnostic, "recovery");
+		return [
+			`${code}${file === undefined ? "" : ` ${file}`}: ${message}${recovery === undefined ? "" : ` ${recovery}`}`,
+		];
+	});
 }
 
 /**

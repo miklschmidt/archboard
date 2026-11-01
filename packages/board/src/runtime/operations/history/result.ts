@@ -19,7 +19,8 @@ const recovery: Partial<Record<Failure["code"], string>> = {
 	STATE_AMBIGUOUS: "Use one stable state identity from the diagnostic.",
 	PREDECESSOR_CHANGED:
 		"Read current inputs, claim the following family, and submit an explicit reconcile intent against its predecessor.",
-	PROPOSAL_BLOCKED: "Settle the named ancestor before editing or settling this descendant.",
+	PROPOSAL_BLOCKED:
+		"Settle the proposal that the diagnostic names, which is this one or an ancestor of it, before you edit, settle or adopt this one.",
 	PROPOSAL_SUPERSEDED:
 		"Read the proposal with an explicit comparison against current. Submit that comparison with force only when complete replacement is intended.",
 	COMPARISON_REQUIRED:
