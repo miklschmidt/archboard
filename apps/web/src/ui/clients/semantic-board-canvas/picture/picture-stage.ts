@@ -96,6 +96,14 @@ class PictureStage {
 	}
 
 	/**
+	 * Whether a painter is on its way, which a recording waits for.
+	 * @returns True while one starts.
+	 */
+	get starting(): boolean {
+		return this.#starting;
+	}
+
+	/**
 	 * Put a picture up in place of what stands there.
 	 * @param painting The picture's painting, or nothing when it has none.
 	 */
@@ -471,6 +479,8 @@ class PictureStage {
 		} catch (cause) {
 			// No painter at all: the SVG stays, a correct board, and says why.
 			this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, String(cause));
+		} finally {
+			this.#starting = false;
 		}
 	}
 
@@ -540,15 +550,27 @@ interface PointerPlace {
 
 /**
  * What an event lands on in the picture, the topmost first. With a painter at
- * work the surface takes no pointer, so the painter answers.
+ * work the surface takes no pointer, so the painter answers. An event that
+ * reached a group of the picture all the same came from no pointer: assistive
+ * technology clicks the group it found, and the event says which.
  * @param event The event.
- * @returns The painter's answer, or null while no painter works.
+ * @returns The painter's answer, or null while no painter works or the event names its group.
  */
 function pickedElements(event: PointerPlace): readonly (Element | null)[] | null {
 	const viewport = event.currentTarget;
 	const surface = viewport instanceof Element ? viewport.querySelector(SURFACE) : null;
-	if (surface === null) return null;
+	if (surface === null || namesItsGroup(event, surface)) return null;
 	return stageOf(surface)?.elementsAt(event.clientX, event.clientY) ?? null;
+}
+
+/**
+ * Whether an event reached a group of the picture.
+ * @param event The event.
+ * @param surface The picture's surface.
+ * @returns True when its target is inside the surface.
+ */
+function namesItsGroup(event: PointerPlace, surface: Element): boolean {
+	return event.target instanceof Node && surface.contains(event.target);
 }
 
 /**

@@ -26,20 +26,20 @@ const OPAQUE_SRGB =
  * @param browser The page.
  * @param surface The selector of the element the picture is in.
  * @param id The relationship's semantic id.
- * @returns The four inks, each as the browser resolves it.
+ * @returns The three inks, each as the browser resolves it.
  */
 const edgeInks = (
 	browser: AgentBrowserSession,
 	surface: string,
 	id: string,
-): Promise<{ line: string; band: string; head: string; streams: string[] }> =>
+): Promise<{ line: string; band: string; head: string }> =>
 	browser.eval(
 		`(() => {` +
 			OPAQUE_SRGB +
 			` const group = document.querySelector("${surface} [data-semantic-id='${id}']");` +
 			` const paths = [...group.querySelectorAll(":scope > path")];` +
 			` const line = paths.find((path) => path.getAttribute("marker-end") !== null);` +
-			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo") && !path.classList.contains("ab-pulse"));` +
+			` const band = paths.find((path) => path !== line && !path.classList.contains("ab-halo"));` +
 			` const marker = "#" + line.getAttribute("marker-end").slice(5, -1);` +
 			` const head = document.querySelector(marker + " path");` +
 			` return {` +
@@ -47,9 +47,6 @@ const edgeInks = (
 			`  band: opaque(getComputedStyle(band).stroke),` +
 			`  head: opaque(getComputedStyle(head).fill === "none"` +
 			`   ? getComputedStyle(head).stroke : getComputedStyle(head).fill),` +
-			// A pulse is painted with a gradient, and its first stop is the colour of its body.
-			`  streams: [...document.querySelectorAll("${surface} [data-traffic='${id}'] .ab-pulse")].map((pulse) =>` +
-			`   opaque(getComputedStyle(pulse.querySelector("stop")).stopColor)),` +
 			` }; })()`,
 	);
 

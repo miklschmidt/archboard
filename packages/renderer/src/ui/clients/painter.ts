@@ -39,7 +39,7 @@ function loadPainter(): Promise<void> {
 		if (built !== ARCHBOARD_CORE_SOURCE_HASH) {
 			throw new Error(
 				`CORE_BUILD_STALE: The painter records ${built}, but this page expects ${ARCHBOARD_CORE_SOURCE_HASH}. ` +
-					"Run `bun run build:frontend` inside `nix develop`, then reload the page.",
+					"Run `bun run build` inside `nix develop`, then reload the page.",
 			);
 		}
 	})();

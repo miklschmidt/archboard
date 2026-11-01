@@ -37,6 +37,7 @@ import {
 	takePicturesFrom,
 } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
 import { readBoardsFrom } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
@@ -59,6 +60,8 @@ interface Rendering {
 	readonly clock: SteppedClock;
 	readonly playback: TalkPlayback;
 	readonly client: QueryClient;
+	/** The element the talk is mounted in. */
+	readonly root: HTMLElement;
 	readonly readiness: FrameReadiness;
 	/** Boards read that the talk could not answer. */
 	readonly foreign: string[];
@@ -124,12 +127,23 @@ function canonicalPending(
 }
 
 /**
+ * Whether a painter of the page is still on its way, so a frame would show its SVG.
+ * @param rendering The rendering.
+ * @returns True while one starts.
+ */
+function paintersStarting(rendering: Rendering): boolean {
+	const surfaces = rendering.root.querySelectorAll("[data-slot='semantic-board-surface']");
+	return [...surfaces].some((surface) => stageOf(surface)?.starting === true);
+}
+
+/**
  * What a frame still waits for before it shows the talk's board at its step.
  * @param rendering The rendering.
  * @returns What it waits for, in words, or null when nothing.
  */
 function pendingOf(rendering: Rendering): string | null {
 	if (rendering.client.isFetching() > 0) return "the board's picture to be drawn";
+	if (paintersStarting(rendering)) return "the painter to start";
 	const board = boardPending(rendering);
 	if (board !== null) return board;
 	return stepPending(rendering);
@@ -222,6 +236,7 @@ class WalkthroughReplay {
 			clock,
 			playback: new TalkPlayback(talk, levels),
 			client: createBoardQueryClient(),
+			root: this.#root,
 			readiness: new FrameReadiness(this.#root),
 			foreign: [],
 			reading: null,

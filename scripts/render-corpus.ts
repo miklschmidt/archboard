@@ -13,8 +13,8 @@
 //   bun scripts/render-corpus.ts compare <before> <after>
 //
 // A run's times are honest only with --jobs 1: parallel drawings wait for the
-// same engine workers. --svg also writes each drawing, which the full corpus
-// makes into gigabytes, so name a smaller corpus with it.
+// same engine workers. --svg also writes each drawing and its painting, which
+// the full corpus makes into gigabytes, so name a smaller corpus with it.
 
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -219,14 +219,16 @@ function readingsOf(model: Model): Reading[] {
  * @param job The drawing.
  * @returns Its record and its SVG, or nothing when the reading draws nothing.
  */
-async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined> {
+async function draw(
+	job: Job,
+): Promise<{ drawn: Drawn; svg: string; painting: string } | undefined> {
 	const { model, reference } = job.state;
 	const { scope, flow, grammar } = job.reading;
 	const architecture = projectModel(model, scope, null, {}, job.comparison ? reference : undefined);
 	const reading = flow === undefined ? architecture : projectFlow(architecture, flow);
 	if (reading.content.nodes.length === 0) return undefined;
 	const started = performance.now();
-	const { svg, width, height } = await renderArchitecture({
+	const { svg, painting, width, height } = await renderArchitecture({
 		content: reading.content,
 		variant: reading.complete,
 		held: reading.held,
@@ -239,7 +241,7 @@ async function draw(job: Job): Promise<{ drawn: Drawn; svg: string } | undefined
 	});
 	const ms = Math.round(performance.now() - started);
 	const sha256 = createHash("sha256").update(svg).digest("hex");
-	return { drawn: { sha256, ms, width, height }, svg };
+	return { drawn: { sha256, ms, width, height }, svg, painting };
 }
 
 /**
@@ -342,7 +344,11 @@ async function drawAll(
 			if (next % 200 === 0) console.log(`${next} of ${jobs.length}`);
 			if (result === undefined) continue;
 			drawn[job.key] = result.drawn;
-			if (svgs !== undefined) writeFileSync(join(svgs, svgFileOf(job.key)), result.svg);
+			if (svgs !== undefined) {
+				const file = join(svgs, svgFileOf(job.key));
+				writeFileSync(file, result.svg);
+				writeFileSync(`${file}.painting.json`, result.painting);
+			}
 		}
 	}
 	await Promise.all(Array.from({ length: parallel }, worker));

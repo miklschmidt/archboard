@@ -24,7 +24,7 @@ async function loadBrowserCore(): Promise<BrowserCore> {
 	} catch (cause) {
 		throw new Error(
 			"CORE_BUILD_MISSING: The renderer core did not load. " +
-				"Run `bun run build:frontend` inside `nix develop`, then reload the page.",
+				"Run `bun run build` inside `nix develop`, then reload the page.",
 			{ cause },
 		);
 	}
@@ -44,7 +44,7 @@ async function instantiateBrowserCore(module: WebAssembly.Module): Promise<typeo
 	} catch (cause) {
 		throw new Error(
 			"CORE_BUILD_INVALID: The renderer core did not start. " +
-				"Run `bun run build:frontend` inside `nix develop`, then reload the page.",
+				"Run `bun run build` inside `nix develop`, then reload the page.",
 			{ cause },
 		);
 	}
@@ -52,7 +52,7 @@ async function instantiateBrowserCore(module: WebAssembly.Module): Promise<typeo
 	if (built !== ARCHBOARD_CORE_SOURCE_HASH) {
 		throw new Error(
 			`CORE_BUILD_STALE: The renderer core records ${built}, but this page expects ${ARCHBOARD_CORE_SOURCE_HASH}. ` +
-				"Run `bun run build:frontend` inside `nix develop`, then reload the page.",
+				"Run `bun run build` inside `nix develop`, then reload the page.",
 		);
 	}
 	return core;

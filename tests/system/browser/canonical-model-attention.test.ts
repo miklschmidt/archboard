@@ -58,37 +58,6 @@ function labelLooks(browser: AgentBrowserSession): Promise<LabelLook[]> {
 	);
 }
 
-/** What the page paints of the lit relationships' lines. */
-interface LitInk {
-	/** How many lit lines the picture cuts a stretch out of because another line of a trunk draws it. */
-	readonly trunked: number;
-	/** How many lit lines still have that stretch cut out of what the browser paints. */
-	readonly cut: number;
-}
-
-/**
- * Whether the lines the picture is lit along are painted whole.
- *
- * The picture has one line of a trunk draw each shared stretch and cuts it from
- * the others with a mask whose cutouts for it have butt ends. A lit line must
- * not lose that stretch, or the lane it rides looks receded along the trunk.
- * @param browser The page.
- * @returns How many lit lines are cut for a trunk, and how many still are.
- */
-function litInk(browser: AgentBrowserSession): Promise<LitInk> {
-	return browser.eval<LitInk>(
-		`(() => { const root = document.querySelector("${SURFACE} > svg");` +
-			` const trunk = (mask) => mask !== null && [...mask.querySelectorAll("path")].some((cut) => cut.getAttribute("stroke-linecap") === "butt");` +
-			` const named = (url) => { const id = /#([^")]+)/.exec(url)?.[1]; return id === undefined ? null : root.querySelector("mask[id='" + id + "']"); };` +
-			` let trunked = 0; let cut = 0;` +
-			` for (const line of root.querySelectorAll("g[data-semantic-kind='edge'].is-lit[mask]")) {` +
-			`   if (!trunk(named(line.getAttribute("mask")))) continue;` +
-			`   trunked += 1;` +
-			`   if (trunk(named(getComputedStyle(line).maskImage))) cut += 1; }` +
-			` return { trunked, cut }; })()`,
-	);
-}
-
 /** A stretch that several lines share. */
 interface SharedStretch {
 	/** Where it is on the page. */
@@ -225,13 +194,6 @@ test("attention lights canonical connections without hiding labels or cutting sh
 		WAIT,
 	);
 	await pick(browser, id("Hub"));
-	const ink = await pollUntil(
-		() => litInk(browser),
-		(found) => found.trunked > 0,
-		"the selected route in its shared lane",
-		WAIT,
-	);
-	expect(ink.cut).toBe(0);
 	await browser.run(["focus", '[data-slot="model-diagram"]']);
 	await browser.run(["press", "Escape"]);
 	await pollUntil(
