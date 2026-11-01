@@ -259,11 +259,8 @@ impl LensLevels {
         surface: &wgpu::TextureView,
         (lens, ground): (&Lens, Color),
     ) {
-        let numbers: Vec<u8> = view_of(lens, ground)
-            .iter()
-            .flat_map(|number| number.to_ne_bytes())
-            .collect();
-        queue.write_buffer(&self.view, 0, &numbers);
+        let numbers = view_of(lens, ground).map(f32::to_ne_bytes);
+        queue.write_buffer(&self.view, 0, numbers.as_flattened());
         for (at, (target, reads)) in self.levels.iter().enumerate() {
             let shape = if at == 0 {
                 &pipelines.first
