@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T15:21:00Z'
+updated_date: '2026-11-01T15:51:00Z'
 labels:
   - renderer
   - motion
@@ -71,4 +71,12 @@ docs/design/vello-painter.md lists what stays. The largest is a draw on the main
 ## Lab facts
 
 The private sway compositor stopped at its time limit. The later films and the parity run used headless Chrome on the same NVIDIA adapter. Those runs read each frame from the WebGPU swap texture, through a lab copy of the parity script. In that browser, the first adapter request can answer null, so the lab copy retries.
+
+The review covers commits a268c576f through c37efb119. The fixes isolate GPU lifetimes and retain stop notifications until the stage subscribes. They also preserve masks, card transforms, shadows, and traffic when a new picture interrupts an entrance or flight. Visible entrances blend the near and far views. Reduced motion ends the pending fade at once. Each fix has a signed commit and a focused regression test.
+
+These repairs stay within the existing browser, renderer, and painter owners. They change no architecture module, relationship, flow, or consumer contract. The existing architecture stays accurate, so no proposal is needed.
+
+This review does not retest Hyprland workspace switches or establish visual acceptance.
+
+Review validation: The explicit core build passed. All 106 archboard-paint tests and the three GPU lifecycle tests passed. The focused page and painter tests passed. The final `bun run check` passed on commit 29ff33d69 with all 21 tasks and 49 browser owners. The review leaves no verified finding open. The task stays In Progress because this review does not establish its remaining visual and Hyprland acceptance criteria.
 <!-- SECTION:NOTES:END -->
