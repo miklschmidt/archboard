@@ -546,7 +546,7 @@ impl GpuTarget {
                 &self.canvas.scene,
                 &self.view,
                 &RenderParams {
-                    base_color: peniko::Color::TRANSPARENT,
+                    base_color: Color::TRANSPARENT,
                     width,
                     height,
                     antialiasing_method: AaConfig::Area,
