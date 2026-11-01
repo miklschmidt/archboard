@@ -136,7 +136,7 @@ function moves(): readonly string[] {
 }
 
 describe("the surface across pictures", () => {
-	test("a picture arriving in flight lands the flight, then carries on from it", () => {
+	test("a picture arriving in flight carries on from what shows, landing nothing", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
 			const second = picture([{ ...A, box: { x: 300, y: 10, width: 100, height: 60 } }], []);
@@ -160,9 +160,9 @@ describe("the surface across pictures", () => {
 			rerender(createElement(Surface, { drawing: { ...second }, reducedMotion: false }));
 			expect(moves()).toEqual(["carry"]);
 			expect(followed).toHaveLength(1);
-			// The third picture lands the second first, and the new flight starts from it.
+			// The third picture lands nothing: the stage starts it from what shows.
 			rerender(createElement(Surface, { drawing: third, reducedMotion: false }));
-			expect(moves()).toEqual(["carry", "land", "carry"]);
+			expect(moves()).toEqual(["carry", "carry"]);
 			runFrames(1000 + PICTURE_MS.transition / 2 + PICTURE_MS.transition + 1);
 			expect(surface.hasAttribute("data-picture-motion")).toBe(false);
 			// Reduced motion cuts: the next picture is simply there.
