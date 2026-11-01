@@ -3,7 +3,7 @@
 //! animates the pulses as it can; the painter of the scene and every frontend
 //! share these dimensions of a pulse.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::geometry::Curve;
@@ -28,7 +28,7 @@ pub fn pulse_breadth(line_width: f64) -> f64 {
 }
 
 /// The colours of a pulse and how thick the line it rides is.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct PulseLook {
     /// The colour of the beam's body.
@@ -40,7 +40,7 @@ pub struct PulseLook {
 }
 
 /// How the pulses on a route move.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Motion {
     /// A steady train: pulses `spacing` apart flying at `speed`, one `phase`
@@ -66,7 +66,7 @@ pub enum Motion {
 }
 
 /// A train of pulses on a route.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct TrafficMark {
     /// The pulses' colours, and how thick the line they ride is.
     pub look: PulseLook,

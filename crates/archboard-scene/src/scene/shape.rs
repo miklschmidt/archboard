@@ -2,7 +2,7 @@
 //! stroked. Every number is the one the picture is drawn with, rounded where
 //! the painter rounds it.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::geometry::{Point, Rect};
@@ -12,7 +12,7 @@ use crate::scene::definition::{ClipId, MarkerId};
 /// What a shape is to the picture. A painter that only draws reads the
 /// geometry and the paint; the SVG painter also writes each sort as the
 /// picture has always been written, and a viewer lights the rings.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 pub enum Purpose {
     /// A rounded box that states whether it takes the pointer: a part's seat,
@@ -56,7 +56,7 @@ pub enum Purpose {
 }
 
 /// Whether a shape or a group takes the pointer.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Pointer {
     /// It never takes the pointer, which goes to what is under it.
@@ -66,7 +66,7 @@ pub enum Pointer {
 }
 
 /// How a stroke's open ends are drawn.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Cap {
     /// Cut square at the end.
@@ -76,7 +76,7 @@ pub enum Cap {
 }
 
 /// How a stroke's corners are drawn.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Join {
     /// Rounded.
@@ -85,7 +85,7 @@ pub enum Join {
 
 /// One step of a path. Absolute steps go to a point of the picture; relative
 /// ones move from where the path stands.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "step", rename_all = "camelCase")]
 pub enum PathStep {
     /// Start a new piece at a point.
@@ -157,7 +157,7 @@ pub enum PathStep {
 }
 
 /// Where a shape is.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Geometry {
     /// A box, its corners rounded by a radius when it has one.
@@ -193,7 +193,7 @@ pub enum Geometry {
 }
 
 /// How a shape's outline is stroked.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Stroke {
     /// What it is stroked with.
     pub paint: Paint,
@@ -222,7 +222,7 @@ pub struct Stroke {
 }
 
 /// One shape: what it is, where it is, and how it is painted.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Shape {
     /// What it is to the picture.
     pub purpose: Purpose,

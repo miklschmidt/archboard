@@ -3,14 +3,14 @@
 //! the frontend resolves against the theme it shows the picture in, so one
 //! scene takes either theme.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::request::PaletteColor;
 use crate::scene::definition::GradientId;
 
 /// One colour of the page's theme, named by what it is for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, TS)]
 #[serde(rename_all = "kebab-case")]
 pub enum Token {
     /// The page behind everything.
@@ -80,7 +80,7 @@ pub enum Token {
 /// A colour: a token, a named palette colour, a fixed colour, or one made of
 /// other colours. Every operation is the one CSS names for it, in the sRGB and
 /// OKLCH spaces CSS computes it in.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "colour", rename_all = "camelCase")]
 pub enum Colour {
     /// One of the theme's tokens.
@@ -171,7 +171,7 @@ impl From<Token> for Colour {
 }
 
 /// What fills or strokes a shape: nothing, a colour, or a gradient.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "paint", rename_all = "camelCase")]
 pub enum Paint {
     /// Nothing is painted.

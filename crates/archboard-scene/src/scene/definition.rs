@@ -3,7 +3,7 @@
 //! what it is made for, a value of the scene, so the same definition has the
 //! same name wherever the picture is painted.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::drawing::Emphasis;
@@ -13,7 +13,7 @@ use crate::scene::colour::Colour;
 use crate::scene::shape::{PathStep, Shape};
 
 /// The two forms of arrowhead a line can end in.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Head {
     /// A solid head, whose tip reaches a little past the end of its line.
@@ -23,7 +23,7 @@ pub enum Head {
 }
 
 /// The ink of an arrowhead every line of some standing shares.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum HeadInk {
     /// A neutral line's.
@@ -39,7 +39,7 @@ pub enum HeadInk {
 }
 
 /// Which arrowhead a line ends in.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "for", rename_all = "camelCase")]
 pub enum MarkerId {
     /// One every line of a weight and an ink shares.
@@ -63,7 +63,7 @@ pub enum MarkerId {
 }
 
 /// Which gradient a paint is.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "gradient", rename_all = "camelCase")]
 pub enum GradientId {
     /// One of the nine patches of a box's soft shadow, by its row and column from the top left.
@@ -97,21 +97,21 @@ pub enum GradientId {
 }
 
 /// The mask that hides what one line must not show.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct MaskId {
     /// The relationship whose line it masks.
     pub line: String,
 }
 
 /// The clip one card is drawn through, with a hole for each of its ports.
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 pub struct ClipId {
     /// The card it clips.
     pub card: String,
 }
 
 /// An arrowhead, drawn in a square of its own and laid on the end of a path.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Marker {
     /// Its name.
     pub id: MarkerId,
@@ -126,7 +126,7 @@ pub struct Marker {
 }
 
 /// How a gradient runs.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "form", rename_all = "camelCase")]
 pub enum GradientForm {
     /// Along a line, in shares of the painted shape's box unless it runs in
@@ -150,7 +150,7 @@ pub enum GradientForm {
 }
 
 /// One stop of a gradient.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Stop {
     /// Where it stands along the gradient, from 0 to 1; at the start when it states none.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -165,7 +165,7 @@ pub struct Stop {
 }
 
 /// A gradient.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Gradient {
     /// Its name.
     pub id: GradientId,
@@ -177,7 +177,7 @@ pub struct Gradient {
 
 /// A mask in the picture's own units: what it shows where its shapes are white,
 /// and hides where they are black, inside its bounds.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Mask {
     /// Its name.
     pub id: MaskId,
@@ -189,7 +189,7 @@ pub struct Mask {
 
 /// A clip in shares of the clipped shape's box: what lies inside its outline
 /// shows, a region inside it an even number of times being outside.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Clip {
     /// Its name.
     pub id: ClipId,
@@ -198,7 +198,7 @@ pub struct Clip {
 }
 
 /// One thing a scene defines.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "definition", rename_all = "camelCase")]
 pub enum Definition {
     /// An arrowhead.

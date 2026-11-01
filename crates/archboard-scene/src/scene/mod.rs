@@ -11,7 +11,7 @@
 //! light, the recede, the far view, the camera and the flight are each
 //! painter's own (ADR 0023).
 
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use ts_rs::TS;
 
 use crate::drawing::ReadingDirection;
@@ -36,7 +36,7 @@ pub use text::{GlyphPlace, Icon, Text, Viewport};
 pub use traffic::{Motion, PulseLook, TrafficMark};
 
 /// One thing in a scene's order.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(tag = "item", rename_all = "camelCase")]
 pub enum Item {
     /// A group, which a painter can light or pick out by its role and subject.
@@ -61,7 +61,7 @@ pub enum Item {
 }
 
 /// One subject's box in the picture, in the units of the document.
-#[derive(Clone, Copy, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[ts(rename = "DiagramBox")]
 pub struct AtlasBox {
     /// Distance from the left edge of the document.
@@ -85,8 +85,19 @@ impl Serialize for Boxes {
     }
 }
 
+impl<'de> Deserialize<'de> for Boxes {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        // A map's order is the order it was written in, which a `Vec` of pairs keeps
+        // only when it is read as one: the painter reads the boxes by id, so a sorted
+        // map loses nothing it needs.
+        let boxes: std::collections::BTreeMap<String, AtlasBox> =
+            Deserialize::deserialize(deserializer)?;
+        Ok(Boxes(boxes.into_iter().collect()))
+    }
+}
+
 /// Where every subject landed in the picture.
-#[derive(Clone, Debug, Default, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize, TS)]
 #[ts(rename = "DiagramAtlas")]
 pub struct Atlas {
     /// The box of each node, by node id.
@@ -98,7 +109,7 @@ pub struct Atlas {
 }
 
 /// A whole picture.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 pub struct Scene {
     /// The page's width, in the document's units.
     pub width: f64,
@@ -127,7 +138,7 @@ pub struct Scene {
 }
 
 /// A picture written as a document: what the core answers its host.
-#[derive(Clone, Debug, PartialEq, Serialize, TS)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 pub struct PaintedDocument {
     /// The whole SVG document.
