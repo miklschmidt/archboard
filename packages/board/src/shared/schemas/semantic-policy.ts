@@ -240,7 +240,7 @@ type DiagnosticOfAnySeverity = Omit<VaultDiagnostic, "severity"> & {
 	severity: VaultDiagnostic["severity"] | "information";
 };
 /** Each subject kind in the words of a person. */
-const SUBJECT_WORD = { node: "node", edge: "relationship", flow: "flow", step: "step" } as const;
+const SUBJECT_WORD = { node: "module", edge: "relationship", flow: "flow", step: "step" } as const;
 /**
  * A subject as a line of text names it.
  * @param subject The diagnostic's subject.

@@ -90,7 +90,11 @@ test("reparenting requires both containment scopes and refuses a cycle without c
 		success: false,
 		code: "CLAIM_REQUIRED",
 		diagnostics: expect.arrayContaining([
-			expect.objectContaining({ subjects: expect.arrayContaining(["Shop#Worker"]) }),
+			expect.objectContaining({
+				subjects: expect.arrayContaining(["Shop#Worker"]),
+				// The message names the unclaimed subject and leaves out the claimed one.
+				message: expect.stringMatching(/claim: (?!.*Shop#Gateway).*Shop#Worker/u),
+			}),
 		]),
 	});
 	const { releaseArchitectureClaim } = await import("@archboard/board/store-write");

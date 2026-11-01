@@ -218,7 +218,7 @@ function OpenerSettingsDialog(props: OpenerSettingsDialogProps): JSX.Element {
 				<Dialog.Header>
 					<Dialog.Title>Opener settings</Dialog.Title>
 					<Dialog.Description>
-						Which editor a code-bound element opens on this machine. Test it before you save.
+						Which editor opens a module's code on this machine. Test it before you save.
 					</Dialog.Description>
 				</Dialog.Header>
 				{settings ? (

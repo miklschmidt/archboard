@@ -99,7 +99,7 @@ const MERGED = {
 
 /** What each kind of subject is called where somebody reads about it. */
 const SUBJECT_WORDS = {
-	node: "node",
+	node: "module",
 	edge: "relationship",
 	flow: "flow",
 	walkthrough: "walkthrough",
@@ -333,7 +333,7 @@ function decideField<Entity extends { readonly id: string }>(
 				mine: stated(mine),
 				theirs: stated(theirs),
 				repair:
-					`This proposal and the variant it came from both changed \`${field}\` of this ` +
+					`This proposal and the state it came from both changed \`${field}\` of this ` +
 					`${merge.what}. Say which one this proposal means, or write a third answer.`,
 			},
 		],

@@ -32,7 +32,7 @@ function walkthroughOf(model: ArchitectureModel, selector: string) {
 					file: "model.json",
 					subjects: matches.map((walk) => walk.id),
 					message: "The walkthrough selector does not identify one narrative.",
-					recovery: "Read the walkthrough catalogue and select one stable identity.",
+					recovery: "Run `model read` to list the walkthroughs, then select one by its id.",
 				},
 			]);
 }

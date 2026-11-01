@@ -202,8 +202,14 @@ test("the root help lists every top-level command and the shared options", async
 	for (const name of Object.keys(routes)) {
 		expect(text).toContain(name);
 	}
-	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS)) {
+	const read = (key: (typeof SHARED_OPTION_KEYS)[number]) =>
+		registry.some((entry) => entry.contract.shared.includes(key));
+	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter(read))) {
 		expect(text).toContain(option.spellings[0]);
+	}
+	// An option that no command reads is refused everywhere, so the root help must not offer it.
+	for (const option of sharedOptionsFor(SHARED_OPTION_KEYS.filter((key) => !read(key)))) {
+		expect(text).not.toContain(option.spellings[0]);
 	}
 	expect(process.exitCode).toBe(0);
 });

@@ -121,7 +121,7 @@ function anchorSymbolMissing(claim: AnchorClaim, held: Held): CodeFinding {
 		"ANCHOR_SYMBOL_MISSING",
 		`The anchor of ${describeSubject(site.subject)} names ${JSON.stringify(anchor.symbol)} in ` +
 			`${JSON.stringify(anchor.path)}, and ${lacking(LACKS.anchor, held, anchor.symbol)}. Cite ` +
-			"the symbol that proves it now, or change the board to what the code does.",
+			"the symbol that proves it now, or change the model to what the code does.",
 	);
 }
 

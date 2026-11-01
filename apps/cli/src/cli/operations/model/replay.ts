@@ -30,9 +30,9 @@ const ReplayInputSchema = z.object({
 const ReplayReceiptSchema = z.object({
 	success: z.literal(true),
 	talk: z.string(),
-	board: z.string(),
-	variant: z.string().nullable(),
-	/** The id of the variant every frame is read against, when the talk was recorded with --against. */
+	model: z.string(),
+	state: z.string().nullable(),
+	/** The id of the state every frame is read against, when the talk was recorded against one. */
 	against: z.string().nullable(),
 	walkthrough: z.object({ id: z.string(), name: z.string() }),
 	steps: z.int(),
@@ -46,12 +46,12 @@ const ReplayReceiptSchema = z.object({
 });
 
 /**
- * The variant that was current on the board a talk kept, which a talk of the current variant
- * was recorded on, so the receipt names it by id as `semantic record` does.
- * @param document The board the talk kept, which reading the talk proved readable.
- * @returns The variant's id, or null for a board with no current variant.
+ * The state that was current in the model a talk kept, which a talk of the current state
+ * was recorded on, so the receipt names it by id as `model record` does.
+ * @param document The model the talk kept, which reading the talk proved readable.
+ * @returns The state's id, or null for a model with no current state.
  */
-function currentVariantOf(document: unknown): string | null {
+function currentStateOf(document: unknown): string | null {
 	const parsed = parseSemanticBoard(document);
 	return parsed.ok ? (parsed.board.current ?? null) : null;
 }
@@ -79,13 +79,13 @@ const modelReplayContract = defineCommand({
 		"Renders the picture of a talk that a recording kept to an MP4 or WebM file, chosen by the --out extension.",
 		"",
 		"The talk directory holds:",
-		"- talk.json: the board as it was recorded and when each step and subtitle line came.",
+		"- talk.json: the model as it was recorded and when each step and subtitle line came.",
 		"- voice.wav: the voice.",
 		"",
 		"How it renders:",
 		"- The Archboard server's own page draws each frame of the video in a private headless Chromium, in software at 1920x1080.",
 		"- The command encodes the frames at 30 frames a second with the voice.",
-		"- No Codex or voice is used, and the board need not exist.",
+		"- No Codex or voice is used, and the model need not exist.",
 		"- So a talk can be rendered again in the other theme with --theme, with the other layout engine with --layout, or after a renderer fix.",
 		"",
 		"Needs:",
@@ -131,7 +131,7 @@ const modelReplayContract = defineCommand({
 			placeholder: "engine",
 			choices: LayoutEngineSchema.options,
 			description:
-				"Which layout engine lays the board out; the engine the talk was recorded with when absent",
+				"Which layout engine lays the model out; the engine the talk was recorded with when absent",
 		},
 	],
 	input: { ingress: ReplayInputSchema },
@@ -197,8 +197,8 @@ const modelReplayContract = defineCommand({
 			result: {
 				success: true as const,
 				talk: directory,
-				board: talk.board.name,
-				variant: talk.board.variant ?? currentVariantOf(talk.document),
+				model: talk.board.name,
+				state: talk.board.variant ?? currentStateOf(talk.document),
 				against: talk.board.against ?? null,
 				walkthrough: talk.board.walkthrough,
 				steps: talk.board.steps,

@@ -112,7 +112,7 @@ function timingLine(timing: CheckTiming): string {
 				? "code facts"
 				: timing.check === "history"
 					? "history lens"
-					: "board check";
+					: "model check";
 	return `time: ${name}: ${timing.elapsedMs.toFixed(1)} ms`;
 }
 

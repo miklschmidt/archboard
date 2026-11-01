@@ -30,7 +30,8 @@ function refuse(
 				file: "model.json",
 				subjects,
 				message,
-				recovery: "Read the requested architecture again and start a new action.",
+				recovery:
+					"Run `model checkpoints` to list checkpoint ids or `model read` to read the current model, then retry.",
 			},
 		],
 	};
@@ -221,7 +222,14 @@ async function readRequestedArchitecture(
 ): Promise<ArchitectureModelRead> {
 	const { model: expectedModel, code, references, reference, ...intent } = input;
 	const parsed = StateSelectionSchema.safeParse(intent);
-	if (!parsed.success) return refuse("MODEL_INVALID", [], "The reading request is invalid.");
+	if (!parsed.success)
+		return refuse(
+			"MODEL_INVALID",
+			[],
+			parsed.error.issues.some((issue) => issue.path[0] === "checkpoint")
+				? "The checkpoint is not a complete checkpoint id."
+				: "The reading request is invalid.",
+		);
 	const { explain, beside: _beside, ...selection } = parsed.data;
 	const invalidSelection = selectionFailure(parsed.data);
 	if (invalidSelection !== undefined) return invalidSelection;

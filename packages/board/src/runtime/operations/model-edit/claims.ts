@@ -293,6 +293,23 @@ function takeBackArchitectureClaim(
 	return endClaim(vault, request.claim);
 }
 /**
+ * Say which affected subjects a claim lacks.
+ * @param claimed The subjects of the matching live claim, or none when no claim matches.
+ * @param subjects The complete affected scope.
+ * @returns The refusal message, or nothing when the claim covers every subject.
+ */
+function missingClaimMessage(
+	claimed: string[] | undefined,
+	subjects: string[],
+): string | undefined {
+	if (claimed === undefined)
+		return "No live claim of this writer and target covers this operation. Claim every affected subject, then retry.";
+	const unclaimed = subjects.filter((id) => !claimed.includes(id));
+	return unclaimed.length === 0
+		? undefined
+		: `${unclaimed.length} of ${subjects.length} affected subjects are not in the claim: ${unclaimed.join(", ")}. Claim them, then retry.`;
+}
+/**
  * Require ownership of every affected subject immediately before installation.
  * @param vault The explicitly addressed vault.
  * @param request The original operation intent.
@@ -331,13 +348,9 @@ function requireSubjectClaim(
 			Date.parse(value.until) > Date.now() &&
 			isDeepStrictEqual(value.target, request.target),
 	);
-	if (claim === undefined || subjects.some((subject) => !claim.subjects.includes(subject)))
-		throw new ArchiveError(
-			"CLAIM_REQUIRED",
-			"Claim every affected subject before this operation.",
-			"model.json",
-			subjects,
-		);
+	const missing = missingClaimMessage(claim?.subjects, subjects);
+	if (missing !== undefined)
+		throw new ArchiveError("CLAIM_REQUIRED", missing, "model.json", subjects);
 }
 export {
 	claimableSubjects,

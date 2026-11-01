@@ -52,8 +52,8 @@ function VaultDiagnostics(props: VaultDiagnosticsProps): JSX.Element {
 					<Dialog.Title>Vault diagnostics</Dialog.Title>
 					<Dialog.Description>
 						{check.data?.configurationValid === false
-							? "Configuration needs attention. Boards use bundled defaults until it is repaired."
-							: "Configuration and every board family, checked together."}
+							? "Configuration needs attention. Bundled defaults apply until it is repaired."
+							: "Configuration and the model, checked together."}
 					</Dialog.Description>
 				</Dialog.Header>
 				<CheckResult check={check} />
