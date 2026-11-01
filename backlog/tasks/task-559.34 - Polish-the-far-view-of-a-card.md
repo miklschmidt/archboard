@@ -4,7 +4,7 @@ title: Polish the far view of a card
 status: To Do
 assignee: []
 created_date: '2026-10-31T20:03:00Z'
-updated_date: '2026-11-01T01:48:00Z'
+updated_date: '2026-11-01T02:08:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-559
@@ -37,4 +37,6 @@ After owner review: a far card shows one line more than the previous build, whic
 Paint batch: a mixed line is a double line and the legend shows it. Far view thickens lines and arrowheads by FAR_SCALE. Cards have a gradient, a top highlight and a downward shadow in both themes; light neutrals stand off the floor. Wells show top and side walls with the tabs. Doors and tags use white tinted ink in light. The door separator is a shade of the door. Rim bands merge with corners. Gate 21 of 21. Grid compaction remains open on feat/grid-compaction.
 
 Well and tab repair: a well's walls thin round each corner into the next, and the line round the well replaces the crease. A proposal's six tabs hold one row, with Previous, Next and the position in the reading header. A tab's side turns into the well's edge with no Y at its foot. New flake seen once: model-measures.test.tsx, React work scheduled after teardown.
+
+Header and panel repair: the caption line is gone. The comparison control and Clear focus stand in the header. The panel heads a flow with its name, its collection and the representation switch. Standing blocks keep the panel's margin. The Migration baseline repeats names because it holds one module per old board, 656 modules, with 8 named Archboard server: exact retained data, left unchanged.
 <!-- SECTION:NOTES:END -->
