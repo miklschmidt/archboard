@@ -16,6 +16,11 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-design-lens-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
+/**
+ * The identity of the example's Queued fulfilment draft. A shelved first draft still holds that
+ * name as a former one, so a name does not select the draft alone.
+ */
+const QUEUED = "wyzlP1Nf";
 
 /**
  * Run one command in the directory that holds the example's vault.
@@ -119,19 +124,13 @@ test("model inspect answers that a module with no parts has no interface", () =>
 });
 
 test("model inspect reads the state it selects", () => {
-	const { status, stdout, stderr } = run(
-		"model",
-		"inspect",
-		"Checkout API",
-		"--state",
-		"Queued fulfilment",
-	);
+	const { status, stdout, stderr } = run("model", "inspect", "Checkout API", "--state", QUEUED);
 	expect(status, stderr).toBe(0);
 	const answer = JSON.parse(stdout);
 	expect(answer.state).toMatchObject({ name: "Queued fulfilment", lifecycle: "draft" });
 	expect(names(answer.entryPoints)).toContain("Payment webhook");
 	// The comparison's column is this same derivation.
-	const row = compared("--state", "Queued fulfilment").comparison.interfaceMeasures.containers.find(
+	const row = compared("--state", QUEUED).comparison.interfaceMeasures.containers.find(
 		({ container }) => container.name === "Checkout API",
 	);
 	expect(row?.byState[0]).toMatchObject({ holdsParts: true, measures: answer.measures });
@@ -163,7 +162,7 @@ test("model inspect --group reads a group's boundary in the state it selects", (
 		"Timeout guard",
 		"Warehouse system",
 	]);
-	const proposed = run("model", "inspect", "--group", "fulfilment", "--state", "Queued fulfilment");
+	const proposed = run("model", "inspect", "--group", "fulfilment", "--state", QUEUED);
 	expect(proposed.status, proposed.stderr).toBe(0);
 	const { members, internal } = JSON.parse(proposed.stdout);
 	expect(members).toHaveLength(4);
@@ -182,7 +181,7 @@ test("model inspect refuses without one subject, and an unknown one with its rea
 });
 
 test("model compare with no base states interface changes first, against the default base", () => {
-	const { comparison, raw, stderr } = compared("--state", "Queued fulfilment");
+	const { comparison, raw, stderr } = compared("--state", QUEUED);
 	expect(comparison.reason).toBe("current");
 	const [checkout, stock, inventory, ...others] = comparison.interfaceChanges.changed;
 	expect(others).toEqual([]);
@@ -190,15 +189,15 @@ test("model compare with no base states interface changes first, against the def
 	expect(names(checkout?.entryPointsAdded ?? [])).toEqual(["Payment webhook"]);
 	expect(names(checkout?.callersGained ?? [])).toEqual(["Payment provider"]);
 	expect(stock?.container.name).toBe("Stock API");
-	expect(names(inventory?.callersGained ?? [])).toEqual(["Checkout API", "Fulfilment worker"]);
+	expect(names(inventory?.callersGained ?? [])).toEqual(["Fulfilment worker"]);
 	expect(names(inventory?.callersLost ?? [])).toEqual(["Place order", "Timeout guard"]);
 	expect(names(comparison.interfaceChanges.unchanged)).toEqual([]);
 	const sections = Object.keys(raw.comparison);
 	expect(sections.indexOf("interfaceChanges")).toBeLessThan(sections.indexOf("subjects"));
 	// The words say what moved, then the counts of each state beside each other.
 	expect(stderr.indexOf("Payment webhook")).toBeGreaterThanOrEqual(0);
-	expect(stderr.indexOf("Payment webhook")).toBeLessThan(stderr.indexOf("3, 0, 2, 8, 0"));
-	expect(stderr.indexOf("3, 0, 2, 8, 0")).toBeLessThan(stderr.indexOf("2, 1, 1, 8, 0"));
+	expect(stderr.indexOf("Payment webhook")).toBeLessThan(stderr.indexOf("3, 0, 2, 6, 0"));
+	expect(stderr.indexOf("3, 0, 2, 6, 0")).toBeLessThan(stderr.indexOf("2, 1, 1, 8, 0"));
 	expect(stderr).not.toMatch(/\b(?:deep|shallow|smell)/iu);
 });
 
@@ -210,7 +209,7 @@ test("model compare puts competing proposals beside each other, in the order nam
 		"--beside",
 		"Live events",
 		"--beside",
-		"Queued fulfilment",
+		QUEUED,
 	);
 	const { states, containers } = comparison.interfaceMeasures;
 	expect(states.map(({ state }) => state?.name)).toEqual([

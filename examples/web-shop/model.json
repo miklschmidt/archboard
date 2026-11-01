@@ -5,15 +5,12 @@
   "current": {
     "id": "dAg7XGx2",
     "name": "Synchronous checkout",
-    "formerNames": [
-      "TASK-549.24"
-    ],
-    "summary": "Keep the checkout architecture and place the inventory implementation inside its owning service.",
+    "summary": "A web shop. Shoppers place an order through the checkout API, which reserves the stock, charges the card and sends the receipt before it answers.",
     "predecessor": "Shop",
     "baseline": "8b2ff5e7a01b87fd4e4a293d972afdb9eef7fc78",
     "createdAt": "2026-10-27T23:29:47.891Z",
     "adoptedAt": "2026-10-27T23:30:43.574Z",
-    "reason": "TASK-549.24 now models the same implemented shop with inventory internals owned by their service. All original history and independent proposals remain available.",
+    "reason": "The shop now draws its inventory internals inside the Inventory service that owns them. All earlier readings and the other proposals stay available.",
     "previousCurrent": "Shop"
   },
   "retiredIds": [

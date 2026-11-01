@@ -38,6 +38,8 @@ import { lockupMarkup } from "./lockup.ts";
 /** The board and the proposal the banner shows. */
 const MODEL = "Shop";
 const PROPOSAL = "Queued fulfilment";
+/** Its identity, because the shelved first draft of the example still holds the name as a former one. */
+const PROPOSAL_STATE = "wyzlP1Nf";
 
 /** The banner's size. The README shows it at its full width, and dark through the colour scheme. */
 const BANNER = { width: 2172, height: 724 } as const;
@@ -123,7 +125,7 @@ body { position: relative; margin: 0; width: ${BANNER.width}px; height: ${BANNER
  */
 async function drawProposal(server: TakeServer, theme: Theme, work: string): Promise<string> {
 	const file = join(work, `drawing-${theme}.svg`);
-	await server.cli(["model", "render", "--state", PROPOSAL, "--theme", theme, "--out", file]);
+	await server.cli(["model", "render", "--state", PROPOSAL_STATE, "--theme", theme, "--out", file]);
 	return readFileSync(file, "utf8");
 }
 

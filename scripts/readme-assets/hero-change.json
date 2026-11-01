@@ -50,7 +50,7 @@
 		"subject": "@E:Place order:reserve stock, and wait",
 		"source": "Fulfilment worker",
 		"set": {
-			"to": "Inventory service",
+			"to": "Reserve route",
 			"kind": "http",
 			"label": "reserve stock",
 			"traffic": {}
