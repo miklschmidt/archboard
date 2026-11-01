@@ -427,11 +427,11 @@ class PictureStage {
 		}
 		this.#started = next;
 		this.#canvas = next.canvas;
+		briefPainter(next.painter, this.#held, this.#ink.arrive, pageIsDark(), frameClock().now());
+		this.#invalidate();
 		this.#stopWatchingGpu = next.whenGpuStops?.((reason) => {
 			this.#replacePainter(new Error(reason));
 		});
-		briefPainter(next.painter, this.#held, this.#ink.arrive, pageIsDark(), frameClock().now());
-		this.#invalidate();
 	}
 
 	/**
@@ -498,15 +498,21 @@ class PictureStage {
 		if (this.#disposed || this.#starting || this.#started !== null) return;
 		this.#starting = true;
 		sizeCanvas(this.#canvas);
+		let next: StartedPainter;
 		try {
 			const { startPainter } = await import("@archboard/renderer/browser");
-			const next = await startPainter(this.#canvas, pageIsDark(), failure);
-			this.#employ(next);
+			next = await startPainter(this.#canvas, pageIsDark(), failure);
 		} catch (cause) {
 			// No painter at all: the SVG stays, a correct board, and says why.
 			this.#retire(cause);
+			return;
 		} finally {
 			this.#starting = false;
+		}
+		try {
+			this.#employ(next);
+		} catch (cause) {
+			this.#replacePainter(cause);
 		}
 	}
 

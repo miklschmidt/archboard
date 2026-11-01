@@ -50,42 +50,62 @@ function loadPainter(): Promise<void> {
 	return loading;
 }
 
-/** Who hears that the GPU of this page stopped. */
-const stopListeners = new Set<(reason: string) => void>();
-
-/**
- * The GPU of this page stopped. The next painter starts it again.
- * @param reason Why it stopped.
- */
-function gpuStopped(reason: string): void {
-	gpuAnswer = undefined;
-	for (const listener of stopListeners) listener(reason);
-}
-
 /**
  * Why this browser's WebGPU does not paint, once the page's GPU is ready: its first frame is
  * drawn and finished, so the first frame a reader sees is not the one that compiles the pipelines.
+ * @param stopped What to tell when this GPU stops.
  * @returns The reason, or null when it gave a real adapter.
  */
-async function askForGpu(): Promise<string | null> {
+async function askForGpu(stopped: (reason: string) => void): Promise<string | null> {
 	if (!("gpu" in navigator)) return "This browser has no WebGPU.";
 	const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
 	if (adapter === null) return "WebGPU gave no adapter.";
 	if (adapter.info.isFallbackAdapter) return "WebGPU gave a software adapter.";
 	await loadPainter();
-	await Painter.warm(gpuStopped);
+	await Painter.warm(stopped);
 	return null;
 }
 
-let gpuAnswer: Promise<string | null> | undefined;
+/** One GPU start and the stop notification that belongs to it. */
+interface GpuAnswer {
+	readonly refusal: string | null;
+	readonly whenGpuStops: NonNullable<StartedPainter["whenGpuStops"]>;
+}
+
+let gpuAnswer: Promise<GpuAnswer> | undefined;
 
 /**
  * Why this browser's WebGPU does not paint, asked once until the GPU stops.
  * @returns The reason, or null when the GPU is ready.
  */
-function gpuRefusal(): Promise<string | null> {
-	gpuAnswer ??= askForGpu().catch((cause: unknown) => `WebGPU did not start: ${String(cause)}`);
-	return gpuAnswer;
+function gpuRefusal(): Promise<GpuAnswer> {
+	if (gpuAnswer !== undefined) return gpuAnswer;
+	let stopped: string | null = null;
+	const listeners = new Set<(reason: string) => void>();
+	const answer = askForGpu((reason) => {
+		stopped = reason;
+		if (gpuAnswer === answer) gpuAnswer = undefined;
+		for (const listener of listeners) listener(reason);
+	})
+		.catch((cause: unknown) => `WebGPU did not start: ${String(cause)}`)
+		.then((refusal): GpuAnswer => ({
+			refusal,
+			/**
+			 * Hear this GPU stop, including a stop before the stage subscribed.
+			 * @param listener Who hears it.
+			 * @returns Stop listening.
+			 */
+			whenGpuStops: (listener) => {
+				if (stopped !== null) {
+					listener(stopped);
+					return () => undefined;
+				}
+				listeners.add(listener);
+				return () => listeners.delete(listener);
+			},
+		}));
+	gpuAnswer = answer;
+	return answer;
 }
 
 /** Start what a painter needs as the page starts, so that it is ready for the first picture. */
@@ -122,23 +142,20 @@ function freshCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
  * Start Vello on WebGPU.
  * @param canvas The canvas.
  * @param dark Whether the page is dark.
+ * @param whenGpuStops Hear when this GPU stops.
  * @returns The painter.
  */
-function startGpu(canvas: HTMLCanvasElement, dark: boolean): StartedPainter {
+function startGpu(
+	canvas: HTMLCanvasElement,
+	dark: boolean,
+	whenGpuStops: GpuAnswer["whenGpuStops"],
+): StartedPainter {
 	return {
 		painter: Painter.gpu(canvas, dark),
 		canvas,
 		kind: "gpu",
 		reason: null,
-		/**
-		 * Hear that the GPU of this page stopped.
-		 * @param listener Who hears it.
-		 * @returns The way to stop listening.
-		 */
-		whenGpuStops: (listener) => {
-			stopListeners.add(listener);
-			return () => stopListeners.delete(listener);
-		},
+		whenGpuStops,
 	};
 }
 
@@ -162,10 +179,10 @@ async function startBest(
 	dark: boolean,
 	failed?: string,
 ): Promise<StartedPainter> {
-	const refusal = await gpuRefusal();
+	const { refusal, whenGpuStops } = await gpuRefusal();
 	if (refusal !== null) return startCpu(target, dark, failed ?? refusal);
 	try {
-		return startGpu(target, dark);
+		return startGpu(target, dark, whenGpuStops);
 	} catch (cause) {
 		return startCpu(freshCanvas(target), dark, `WebGPU did not start: ${String(cause)}`);
 	}

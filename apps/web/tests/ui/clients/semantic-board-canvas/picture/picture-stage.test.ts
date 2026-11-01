@@ -16,6 +16,7 @@ const starting: {
 	settle?: (outcome: Outcome) => void;
 	failCall?: string;
 	retry?: boolean | undefined;
+	stoppedBeforeListening?: boolean;
 } = {};
 const painter = new Proxy(
 	{},
@@ -70,7 +71,24 @@ await mock.module("@archboard/renderer/browser", () => ({
 					next = document.createElement("canvas");
 					canvas.replaceWith(next);
 				}
-				resolve({ painter, canvas: next, kind: outcome, reason: failure?.reason ?? null });
+				resolve({
+					painter,
+					canvas: next,
+					kind: outcome,
+					reason: failure?.reason ?? null,
+					/**
+					 * Report a GPU stop that preceded subscription.
+					 * @param listener Who hears it.
+					 * @returns Stop listening.
+					 */
+					whenGpuStops: (listener: (reason: string) => void) => {
+						if (starting.stoppedBeforeListening) {
+							delete starting.stoppedBeforeListening;
+							listener("device stopped before subscription");
+						}
+						return () => undefined;
+					},
+				});
 			};
 		}),
 }));
@@ -90,6 +108,7 @@ beforeEach(() => {
 	taken.length = 0;
 	delete starting.failCall;
 	delete starting.settle;
+	delete starting.stoppedBeforeListening;
 	clock = createSteppedClock(0);
 	leave.push(driveFramesFrom(clock));
 });
@@ -219,6 +238,17 @@ test("a stopped GPU gets one more try, and a second failure soon after ends the 
 	clock.runFrame();
 	await flushStartup();
 	expect(starting.retry).toBe(false);
+});
+
+test("a GPU that stops before subscription restarts after startup releases its guard", async () => {
+	const { surface } = await surfaceWithAPicture();
+	starting.stoppedBeforeListening = true;
+	await start("gpu");
+	expect(taken.filter((call) => call === "free")).toHaveLength(1);
+	expect(stageOf(surface)?.starting).toBe(true);
+	expect(starting.retry).toBe(true);
+	await start("cpu");
+	expect(surface.getAttribute("data-painter")).toBe("cpu");
 });
 
 test("CPU replacement failure is handled and leaves the full SVG visible", async () => {
