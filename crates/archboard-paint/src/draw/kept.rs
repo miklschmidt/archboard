@@ -44,7 +44,9 @@ impl<C: Canvas> Walk<'_, C> {
             .map(f32::to_bits)
             .hash(&mut key);
         let at = inside.transform * Affine::translate((text.at.x, text.at.y));
-        self.part(PartKey::Text(key.finish()), at, |walk, at| walk.glyphs(text, at));
+        self.part(PartKey::Text(key.finish()), at, |walk, at| {
+            walk.glyphs(text, at)
+        });
     }
 
     /// Draw the glyphs of a run, its baseline starting under a transform.
