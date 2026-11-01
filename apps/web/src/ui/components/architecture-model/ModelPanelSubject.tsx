@@ -44,6 +44,8 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
 	readonly onReveal: () => void;
 	/** What stands under the subject's own details: what touches it. */
 	readonly context: ReactNode;
+	/** The head of the flow on screen, when a flow is read. */
+	readonly flowHead: ReactNode;
 	/** Expand a door or collapse a frame. */
 	readonly onToggle: (id: string) => boolean;
 	/** What the interface line of a module does. */
@@ -55,17 +57,19 @@ interface ModelPanelSubjectProps extends ModelSelectionDetailsProps {
  * @param props What is open.
  * @param props.name Its name.
  * @param props.description What it says of itself.
+ * @param props.flowHead The head of the flow on screen, which stands in place of the name.
  * @param props.children What touches it.
  * @returns The body.
  */
 function ModelPanelScope(props: {
 	readonly name: ReactNode;
 	readonly description: string | undefined;
+	readonly flowHead: ReactNode;
 	readonly children: ReactNode;
 }): JSX.Element {
 	return (
 		<ModelPanel.Body slot="model-panel-scope">
-			<ModelPanel.Head title={props.name} />
+			{props.flowHead ?? <ModelPanel.Head title={props.name} />}
 			{Boolean(props.description) && (
 				<p className="text-control font-normal whitespace-pre-wrap">{props.description}</p>
 			)}
@@ -152,13 +156,17 @@ function OtherSubject(
 				<ModelCollectionDetails {...subject} onOpenFlow={props.onRevealFlow} />
 			)}
 			{subject.kind === "flow" && (
-				<ModelFlowDetails
-					model={model}
-					flow={subject.flow}
-					reference={projection.reference}
-					selection={selection}
-					brief
-				/>
+				<>
+					{props.flowHead}
+					<ModelFlowDetails
+						model={model}
+						flow={subject.flow}
+						reference={projection.reference}
+						selection={selection}
+						brief
+						bare
+					/>
+				</>
 			)}
 			{subject.kind === "subjects" && (
 				<SelectedSubjects

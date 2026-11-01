@@ -243,8 +243,7 @@ it is dragged, resizes it between 320px and 720px, or drags it shut below that.
 Every Diagram reading of the canonical reader has a right panel beside its picture
 (360px, or 46 percent of a narrow pane), in every pane, and the picture fits the room
 that it leaves. A selection never refits the picture. A retained board recording keeps a sidebar (280px). Every
-column starts with a chrome row (40px). A pane then has a band (36px) for its caption,
-and the left column has Find and the repository switcher, each 32px high. A pane's header stands
+column starts with a chrome row (40px), and the left column has Find and the repository switcher, each 32px high. A pane's header stands
 on a whole-pixel grid: 16px lines and icons, 32px crumbs and text trimmed to its
 cap height, so its parts sit on one line at any display scale. A row of a list
 is at least 28px high. Panels have 16px of padding. The shell has no narrow or

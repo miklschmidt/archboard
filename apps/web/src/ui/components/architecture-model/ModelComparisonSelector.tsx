@@ -37,7 +37,7 @@ function useSavedAt(vault: string, comparison: Model["comparison"]): string | un
 }
 
 /**
- * The one control of a comparison, beside the picture: it says what the picture is compared with,
+ * The one control of a comparison, in the header: it says what the picture is compared with,
  * and it is the way out. A checkpoint is compared from its row in History.
  * @param props The reading.
  * @returns The control, or nothing for a reading with nothing to compare with.
@@ -66,7 +66,7 @@ function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Eleme
 				data-slot="model-comparison-selector"
 				aria-label="Compare with"
 				title={line}
-				className="ml-auto max-w-96 min-w-0 shrink-0"
+				className="max-w-72 min-w-32 shrink"
 			>
 				<Select.Value>
 					<ComparisonLine comparison={model.comparison} line={line} />

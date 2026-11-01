@@ -1,7 +1,6 @@
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
 import { Tree } from "#ui/components/shell/Tree.tsx";
-import { ROW_GUTTER } from "#ui/rules/shell/tree-grid.ts";
 
 /** One thing a list offers. */
 interface Choice {
@@ -28,12 +27,7 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly flat?: boolean | undefined;
 	/** The section that a row stands in. Neighbours in one section share its name. */
 	readonly sectionOf?: ((entry: Entry) => string) | undefined;
-	/** What stands under the lit row. */
-	readonly under?: ReactNode;
 }
-
-/** The space a control under a row keeps from the column's edge. */
-const UNDER_STYLE = { paddingLeft: 24 - ROW_GUTTER } as const;
 
 /**
  * A list that stays open while the reader walks it, and holds the same rows wherever they stand.
@@ -106,7 +100,7 @@ function ChoiceRows<Entry extends Choice>(props: ModelChoiceListProps<Entry>): J
 }
 
 /**
- * One entry, and what stands under it while it is lit.
+ * One entry.
  * @param props The entry and its list.
  * @returns The row.
  */
@@ -118,25 +112,18 @@ function ChoiceRow<Entry extends Choice>(
 	const open = useCallback((beside: boolean) => onChoose(entry, beside), [onChoose, entry]);
 	const dataset = useMemo(() => ({ [props.attribute]: entry.id }), [props.attribute, entry.id]);
 	return (
-		<>
-			<Tree.Row
-				id={entry.id}
-				depth={0}
-				selected={selected}
-				current={selected}
-				dataset={dataset}
-				label={props.rowLabel?.(entry)}
-				flat={props.flat}
-				onOpen={open}
-			>
-				<ChoiceLine {...props} />
-			</Tree.Row>
-			{selected && props.under !== undefined && (
-				<div style={UNDER_STYLE} className="py-1">
-					{props.under}
-				</div>
-			)}
-		</>
+		<Tree.Row
+			id={entry.id}
+			depth={0}
+			selected={selected}
+			current={selected}
+			dataset={dataset}
+			label={props.rowLabel?.(entry)}
+			flat={props.flat}
+			onOpen={open}
+		>
+			<ChoiceLine {...props} />
+		</Tree.Row>
 	);
 }
 

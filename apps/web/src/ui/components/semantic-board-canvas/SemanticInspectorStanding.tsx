@@ -251,6 +251,8 @@ function issueName(issue: ReconciliationIssue, names: WaitingProps["names"]): st
 interface StandingRegionProps extends WaitingProps, StandingBlockProps {
 	/** What the last code check found about the subject, or null when it found nothing. */
 	code: CodeStanding | null;
+	/** Lay it in a place that keeps its own margins and rules. */
+	flush?: boolean;
 }
 
 /**
@@ -261,16 +263,23 @@ interface StandingRegionProps extends WaitingProps, StandingBlockProps {
  * @returns The region, or nothing when there is nothing to say.
  */
 function Standing(props: StandingRegionProps): JSX.Element | null {
-	const { open, against, code } = props;
+	const { open, against, code, flush } = props;
 	if (open.length === 0 && !differs(against) && code === null) {
 		return null;
 	}
-	return (
-		<SidebarRegion slot="semantic-inspector-standing-region">
+	const blocks = (
+		<>
 			<WaitingBlock open={open} />
 			<CodeBlock code={code} />
 			<StandingBlock against={against} />
-		</SidebarRegion>
+		</>
+	);
+	return flush === true ? (
+		<div data-slot="semantic-inspector-standing-region" className="flex flex-col gap-4">
+			{blocks}
+		</div>
+	) : (
+		<SidebarRegion slot="semantic-inspector-standing-region">{blocks}</SidebarRegion>
 	);
 }
 

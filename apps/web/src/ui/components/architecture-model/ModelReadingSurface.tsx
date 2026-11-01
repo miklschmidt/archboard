@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useState, type JSX, type ReactNode } from "react";
 import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
-import { Button } from "@archboard/ui-kit/components";
 import { ModelAbout, scopeHead } from "#ui/components/architecture-model/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
-import { ModelCaption } from "#ui/components/architecture-model/ModelCaption.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelEngine } from "#ui/components/architecture-model/ModelEngine.tsx";
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
+import { ModelFlowHead } from "#ui/components/architecture-model/ModelFlowHead.tsx";
 import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
 import { ModelLegend } from "#ui/components/architecture-model/ModelLegend.tsx";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
@@ -32,6 +31,7 @@ import {
 	flowSubjects,
 	collectionSubjects,
 	walkthroughSubjects,
+	flowCollections,
 } from "#ui/rules/architecture-model/flow-reading.ts";
 import { scopeSubjects, walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
 import { selectedSubject } from "#ui/rules/architecture-model/selected-subject.ts";
@@ -45,7 +45,6 @@ const NO_FILTERS = {};
 interface ModelReadingSurfaceProps {
 	overlay?: ReactNode;
 	overview?: (shown: Model) => ReactNode;
-	comparison?: (shown: Model) => ReactNode;
 	onCodeTargetNotice: Parameters<typeof activateCodeTarget>[0]["onNotice"];
 	paneId: string;
 	reducedMotion: boolean;
@@ -107,36 +106,6 @@ function SelectionControls(props: SelectionActions): JSX.Element {
 				/>
 			)}
 		</ModelSelectionBar>
-	);
-}
-
-/**
- * The line over the picture: what the open module does, and what its reading leaves out.
- * @param props The reader and what the stage says of the comparison.
- * @param props.reader The reader.
- * @param props.comparison What the reading is compared with.
- * @returns The caption.
- */
-function ReadingCaption(props: {
-	readonly reader: Reader;
-	readonly comparison: ReactNode;
-}): JSX.Element {
-	const { reader } = props;
-	const { location, accepted } = reader;
-	const { focus, grammar, setFocus } = location;
-	const clearFocus = useCallback((): void => setFocus(null), [setFocus]);
-	return (
-		<ModelCaption
-			model={accepted.shown.model}
-			projection={accepted.shown.projection}
-			comparison={props.comparison}
-		>
-			{grammar === "architecture" && focus !== null && (
-				<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clearFocus}>
-					Clear focus ({focus.length})
-				</Button>
-			)}
-		</ModelCaption>
 	);
 }
 
@@ -222,6 +191,20 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 	const pathOf = useCallback((id: string) => tree.owner.get(id)?.path, [tree]);
 	const head = scopeHead({ model, scope, tree, projection });
 	const context = <ReadingContext reader={reader} selected={ids} />;
+	const { flow, reference } = projection;
+	const { grammar, selectGrammar } = location;
+	const flowHead = useMemo(
+		() =>
+			flow === null ? undefined : (
+				<ModelFlowHead
+					flow={flow}
+					collection={flowCollections(model, reference).get(flow.id)}
+					grammar={grammar}
+					onGrammar={selectGrammar}
+				/>
+			),
+		[flow, model, reference, grammar, selectGrammar],
+	);
 	const { onAbout } = props;
 	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
 	const subject = {
@@ -239,6 +222,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		code: code.reading,
 		pathOf,
 		context,
+		flowHead,
 		line,
 	};
 	return (
@@ -247,7 +231,11 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 				{selecting ? (
 					<ModelPanelSubject {...subject} />
 				) : (
-					<ModelPanelScope name={head.name} description={head.description ?? head.lead}>
+					<ModelPanelScope
+						name={head.name}
+						description={head.description ?? head.lead}
+						flowHead={flowHead}
+					>
 						<ModelInterfaceLine
 							{...line}
 							inspection={projection.inspection}
@@ -383,7 +371,6 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 				data-comparison={comparison.status}
 				className="relative flex min-h-0 min-w-0 flex-1 flex-col"
 			>
-				<ReadingCaption reader={reader} comparison={props.comparison?.(shown.model)} />
 				<ReadingPicture surface={props} warnings={code.warnings}>
 					<ReadingPanel
 						surface={props}

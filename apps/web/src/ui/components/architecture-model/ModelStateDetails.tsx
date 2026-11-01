@@ -147,7 +147,7 @@ function ModelSubjectStanding({
 	);
 	const open =
 		model.selectedState?.standing?.issues.filter((issue) => issue.subject === subject) ?? NO_ISSUES;
-	return <Standing against={against} open={open} code={null} />;
+	return <Standing against={against} open={open} code={null} flush />;
 }
 
 export { ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };

@@ -279,7 +279,7 @@ function ChangesWalker(props: { readonly walk: ChangeWalk }): JSX.Element {
 	const previous = useCallback((): void => void step(-1), [step]);
 	const next = useCallback((): void => void step(1), [step]);
 	return (
-		<div data-slot="model-change-walk" className="flex items-center gap-1">
+		<div data-slot="model-change-walk" className="flex shrink-0 items-center gap-1">
 			<Button
 				variant="outline"
 				size="sm"
@@ -295,7 +295,10 @@ function ChangesWalker(props: { readonly walk: ChangeWalk }): JSX.Element {
 				<KeyCap letter="P" />
 			</Button>
 			{position !== undefined && (
-				<span data-slot="model-change-place" className="text-control px-1 tabular-nums">
+				<span
+					data-slot="model-change-place"
+					className="text-control px-1 whitespace-nowrap tabular-nums"
+				>
 					{position + 1} of {count}
 				</span>
 			)}

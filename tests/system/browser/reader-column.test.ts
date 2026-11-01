@@ -175,21 +175,21 @@ test("every move of the left column has a keyboard route, also in a presented pa
 		),
 	).toBe("location");
 
-	// A flow says what it belongs to: its collection and what it does, and no crumb claims it.
+	// A flow says what it belongs to, in the panel, and no crumb claims it.
 	expect(
 		await pollUntil(
 			() =>
-				browser.eval<{ line: string | null; section: boolean; onTrail: boolean }>(`({
-			line: document.querySelector('[data-slot="model-flow-line"]')?.textContent ?? null,
+				browser.eval<{ home: string | null; section: boolean; onTrail: boolean }>(`({
+			home: document.querySelector('[data-slot="model-flow-home"]')?.textContent ?? null,
 			section: document.querySelector('[data-tree-section="Requests"] [data-flow-id="Shop#Request"]') !== null,
 			onTrail: document.querySelector('[data-slot="model-breadcrumbs"] [data-slot="model-reading-name"]') !== null,
 		})`),
-			(now) => now.line !== null,
-			"the line of the flow",
+			(now) => now.home !== null,
+			"the home of the flow",
 			WAIT,
 		),
 	).toEqual({
-		line: "RequestsThe gateway hands a request to the handler.",
+		home: "Flow in Requests",
 		section: true,
 		onTrail: false,
 	});

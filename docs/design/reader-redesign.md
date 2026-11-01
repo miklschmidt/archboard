@@ -19,13 +19,11 @@ what the marks of the picture mean.
 - Left column, 448 px (TASK-559.36): Find, a repository switcher that shows the pane letter, the destinations
   `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures` on one row, and Talk. `Flows` and `Walkthroughs` list
   the whole model and show its count, so a list here never changes under a reader. A proposal read against its base
-  adds `Changes` on a second row, with its count and the reader's position.
-- Header: crumbs, the open module's code path, the state chip and `Diagram | About`. A flow or a walkthrough
+  adds `Changes` to that row with its count, and the tabs of the model drop their counts to make room.
+- Header: crumbs, the open module's code path, the state chip, the comparison control, the walk of a proposal's
+  changes with the reader's position, `Clear focus` while a focus stands, and `Diagram | About`. A flow or a walkthrough
   stands beside the crumbs after a dot, not on them: the crumbs state containment, the open module gives the way
   back, and it does not own what is read.
-- Caption, one line: the responsibility of the open module. A flow reading shows its collection's name, then its
-  summary, with no label before them. A retained flow with no summary shows the collection alone. The comparison
-  control ends the line, and `Clear focus` while a focus stands.
 - Picture: the open module with its parts and doors, and each expanded module as another frame with its parts. It fits
   the room that the right panel leaves.
 - Right panel: a permanent column of about 360 px on every Diagram reading (TASK-559.19). The owner chose it because
@@ -198,7 +196,7 @@ checkpoints of this repository are a record, not a list to read. A checkpoint ro
 A proposal opens against its base. If it has `predecessorCheckpoint`, the base is that checkpoint, because
 `against=<predecessor>` refuses the eight imported drafts. A draft then shows 2 to 61 changes, not about 3,000.
 
-One control stands in the caption line, beside the picture, on every reading that can compare. It says what the
+One control stands in the header on every reading that can compare. It says what the
 picture is compared with, and it is the way out. It offers `No comparison`, `Current`, the draft's own base as
 `Its base`, and the other drafts by summary. A draft with no comparison looks like a plain draft: no marks, no
 `Changes` tab. A checkpoint is not a choice in the control, because 50 rows that differ by a time and a hash are

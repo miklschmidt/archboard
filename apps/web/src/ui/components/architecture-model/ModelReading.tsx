@@ -1,4 +1,5 @@
 import { Activity, useCallback, useMemo, useRef, useState, type JSX, type ReactNode } from "react";
+import { Button } from "@archboard/ui-kit/components";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type { Model as Content } from "@archboard/board/content";
 import { ModelBreadcrumbs } from "#ui/components/architecture-model/ModelBreadcrumbs.tsx";
@@ -206,7 +207,6 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 						flow={location.flow}
 						grammar={location.grammar}
 						onChoose={choices.chooseFlow}
-						onGrammar={location.selectGrammar}
 					/>
 				</ModelColumn.List>
 				<ModelColumn.List value="walkthroughs">
@@ -244,15 +244,41 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 }
 
 /**
- * The header of a reading: the crumbs, the open module's code path, the state chip, the walk of a
- * proposal's changes and `Diagram | About`. A code path says where a module is, so a flow shows none.
+ * What walks or narrows a reading: the changes of a proposal, and the way out of a focus.
  * @param props The reader.
  * @param props.reader The reader.
+ * @returns The controls.
+ */
+function ReadingWalk(props: { readonly reader: Reader }): JSX.Element {
+	const { walk, location } = props.reader;
+	const { focus, grammar, setFocus } = location;
+	const clear = useCallback((): void => setFocus(null), [setFocus]);
+	return (
+		<>
+			{walk.reviewing && <ModelChanges.Walker walk={walk} />}
+			{grammar === "architecture" && focus !== null && (
+				<Button data-slot="model-clear-focus" variant="ghost" size="sm" onClick={clear}>
+					Clear focus ({focus.length})
+				</Button>
+			)}
+		</>
+	);
+}
+
+/**
+ * The header of a reading: the crumbs, the open module's code path, the state chip, what it is
+ * compared with, the walk of a proposal's changes, a standing focus and `Diagram | About`. A code path says where a module is, so a flow shows none.
+ * @param props The reader.
+ * @param props.reader The reader.
+ * @param props.comparison What the reading is compared with, while the picture is on screen.
  * @returns The parts of the header.
  */
-function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
+function ReadingHeading(props: {
+	readonly reader: Reader;
+	readonly comparison: ReactNode;
+}): JSX.Element {
 	const { reader } = props;
-	const { model, location, structure, tree, accepted, walk, onOpen } = reader;
+	const { model, location, structure, tree, accepted, onOpen } = reader;
 	const { opened, trail } = structure;
 	const ending = endingOf(reader);
 	return (
@@ -274,7 +300,8 @@ function ReadingHeading(props: { readonly reader: Reader }): JSX.Element {
 					onOpen={reader.openHistory}
 				/>
 			)}
-			{walk.reviewing && <ModelChanges.Walker walk={walk} />}
+			{props.comparison}
+			<ReadingWalk reader={reader} />
 		</ModelHeading>
 	);
 }
@@ -292,7 +319,10 @@ function ModelReading(props: ModelReadingProps): JSX.Element {
 	return (
 		<>
 			<ReadingColumn reader={reader} />
-			<ReadingHeading reader={reader} />
+			<ReadingHeading
+				reader={reader}
+				comparison={reader.presenting ? null : props.comparison?.(reader.accepted.shown.model)}
+			/>
 			<Activity mode={reader.presenting ? "hidden" : "visible"}>
 				<ModelReadingSurface {...props} reader={reader} />
 			</Activity>

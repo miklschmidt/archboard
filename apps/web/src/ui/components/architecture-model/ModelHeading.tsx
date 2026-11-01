@@ -135,7 +135,7 @@ function ModelStateChip(props: {
 			aria-label={`Reading ${label}. Open History.`}
 			title={label}
 			onClick={open}
-			className="max-w-96 shrink-0 font-medium"
+			className="max-w-72 min-w-20 shrink-[3] font-medium"
 		>
 			<span className="truncate">{label}</span>
 		</Button>
