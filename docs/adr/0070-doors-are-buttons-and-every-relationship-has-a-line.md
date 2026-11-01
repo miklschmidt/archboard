@@ -73,8 +73,8 @@ and the panel of the selected line shows them.
 
 ## Rule 6 is deleted, so every relationship has a line
 
-If a reading held more than 18 lines and a longer path joined the ends of a line,
-rule 6 took that line off the picture. The caption then said that the line
+Rule 6 held for a reading of more than 18 lines. If a longer path joined the
+ends of a line there, rule 6 took that line off the picture. The caption then said that the line
 followed from that path. That claim was false: a path through a third part does
 not state what the dropped line states.
 So the budget, its count, the caption's statement, `Show every line` and
@@ -96,8 +96,8 @@ picture. A selection still never refits the picture.
 ## A sequence or a flowchart keeps its 0.6 landing
 
 If a sequence or a flowchart fits whole at 0.6 or more, it lands whole. Any other
-flow lands at 0.6 on the head of its frame. The reason is that a tall flowchart
-lands at about 0.19 when whole, and nobody can read it there.
+flow lands at 0.6 on the head of its frame. Drawn whole, a tall flowchart lands
+at about 0.19, and nobody can read it there.
 
 ## Consequences
 

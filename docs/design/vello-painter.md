@@ -160,5 +160,5 @@ Slow share is the part of the frames that took over 25 ms.
 
 A failed painter releases its resources and restores the SVG glyphs and definitions.
 The stage hides the failed canvas while a replacement starts.
-The surface keeps complete ink if the CPU painter also fails.
+If the CPU painter also fails, the surface keeps complete ink.
 React owns the canvas host, and the stage owns each canvas inside it.
