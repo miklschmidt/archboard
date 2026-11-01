@@ -120,7 +120,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 					onToggle={toggle}
 				>
 					{sections.map(({ label, entries }) => (
-						<Tree.Section key={label} label={label} depth={0}>
+						<Tree.Section key={label} label={label}>
 							{entries.map((entry) => (
 								<RecordBranch key={entry.head.id} entry={entry} actions={actions} />
 							))}

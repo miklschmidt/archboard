@@ -145,12 +145,6 @@ function StateRow(props: {
 				</span>
 				<StateWords entry={entry} drawn={drawn} />
 			</button>
-			{drawn && (
-				<span
-					aria-hidden="true"
-					className="bg-primary-mark absolute inset-y-1.5 left-0 w-0.5 rounded-full"
-				/>
-			)}
 			<TimelineLane lane={lane} geometry={PAGE_LANE} />
 			{props.children !== null && (
 				<div className="pr-4 pb-4" style={rowStyle}>

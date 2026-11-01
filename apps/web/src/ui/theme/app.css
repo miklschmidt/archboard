@@ -373,7 +373,7 @@
      sink     the well that a column's list lies in (--elevation-sink), cut as
               the picture cuts a container: one inner shadow from the whole of
               its top edge and a lit lip along its foot.
-     slab     a number or a bar that lies on a surface (--elevation-slab), built
+     slab     a number that lies on a surface (--elevation-slab), built
               as the picture builds a small part: a lit top edge, a front edge
               along its foot and a short shadow.
      chrome   the navigator, a pane's header, the sidebar and the
@@ -524,8 +524,7 @@
 	flex-direction: column;
 	min-height: 0;
 	overflow: hidden;
-	border: 1px solid var(--border);
-	border-radius: var(--radius-panel);
+	border-top: 1px solid var(--border);
 	background-color: var(--tray-sink);
 	&::after {
 		content: "";
@@ -542,8 +541,7 @@
    sets to its --bright-<name> (theme.css). Every stop stays in OKLCH, because a mix
    toward a dark colour in sRGB turns orange brown. A tag's size is its site's.
    A tag that is a button lights under the pointer. While it is on the gradient
-   turns over, the shadow moves inside and a gold mark stands under it, as under
-   a key held pressed in. */
+   turns over and the shadow moves inside, as under a key held pressed in. */
 @utility group-tag {
 	--tag-face-top: oklch(from var(--tag) calc(l + 0.02) calc(c + 0.02) h);
 	--tag-face-foot: oklch(from var(--tag) calc(l - 0.06) calc(c + 0.03) h);
@@ -577,15 +575,6 @@
 	&:is(button):active:not(:disabled) {
 		background-image: linear-gradient(0deg, var(--tag-face-top), var(--tag-face-foot));
 		box-shadow: inset 0 1px 3px oklch(from var(--tag) 0.2 0.03 h / 0.55);
-	}
-	&[aria-pressed="true"]::after {
-		position: absolute;
-		inset-inline: 2px;
-		bottom: -5px;
-		height: 2px;
-		border-radius: 1px;
-		background-color: var(--primary-mark);
-		content: "";
 	}
 }
 
@@ -1191,9 +1180,7 @@
    stands on the picture (ADR 0044). The open tab is the lighter piece raised on that
    edge, with the well's own corners. Its side turns into the edge in a crisp concave
    curve in place of reaching it, the top edge runs on under it, and one line goes round
-   the tab and the well. A tab at the well's left end keeps the well's left side, so it
-   has no curve there. Its gold mark
-   lies under its words. The rules stand outside any layer, so they replace the
+   the tab and the well. The rules stand outside any layer, so they replace the
    registry's trigger. */
 [data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"] {
 	--foot: 5px;
@@ -1222,10 +1209,6 @@
 	z-index: 1;
 	border-color: var(--border);
 	background-color: var(--tray-tab);
-	background-image: linear-gradient(var(--primary-mark), var(--primary-mark));
-	background-repeat: no-repeat;
-	background-position: 4px calc(100% - 4px);
-	background-size: calc(100% - 8px) 2px;
 	box-shadow:
 		inset 0 1px 0 var(--highlight),
 		0 -3px 6px -3px var(--slab-shadow);
@@ -1260,14 +1243,6 @@
 	background:
 		radial-gradient(circle at 100% 0, var(--curve)),
 		linear-gradient(to right, var(--tray-tab) 1px, transparent 1px);
-}
-[data-slot="tabs-list"][data-variant="edge"]
-	[data-slot="tabs-trigger"][data-active]:first-of-type::before {
-	content: none;
-}
-[data-slot="tabs-list"][data-variant="edge"]:has(> [data-active]:first-of-type)
-	+ [data-slot="column-well"] {
-	border-top-left-radius: 0;
 }
 
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in

@@ -26,6 +26,7 @@ import {
 	disclosureX,
 	FACTS_GAP,
 	FACTS_INSET,
+	FLAT_INSET,
 	guideX,
 	MARKER_WIDTH,
 	NAME_GAP,
@@ -169,7 +170,7 @@ interface TreeRowProps {
 	readonly depth: number;
 	/** The row that is lit. */
 	readonly selected: boolean;
-	/** The row of what the pane has open, which wears the gold mark. */
+	/** The row of what the pane has open. */
 	readonly current?: boolean | undefined;
 	/** Whether the rows it holds are drawn, or undefined for a row that holds none. */
 	readonly expanded?: boolean | undefined;
@@ -192,7 +193,7 @@ interface TreeRowProps {
  * @returns The style.
  */
 function rowPlace(depth: number, expanded: boolean | undefined, flat: boolean): CSSProperties {
-	const left = flat ? 2 : disclosureX(depth) - ROW_GUTTER;
+	const left = (flat ? FLAT_INSET : disclosureX(depth)) - ROW_GUTTER;
 	const place: CSSProperties = { paddingLeft: left, paddingRight: FACTS_INSET - ROW_GUTTER };
 	return expanded === true ? { ...place, top: depth * ROW_HEIGHT } : place;
 }
@@ -282,17 +283,14 @@ function TreeRow(props: TreeRowProps): JSX.Element {
 			style={rowPlace(props.depth, props.expanded, props.flat === true)}
 			className={rowClass(props)}
 		>
-			{current === true && (
-				<span
-					aria-hidden="true"
-					className="bg-primary-mark absolute inset-x-1 bottom-0 h-0.5 rounded-full"
-				/>
-			)}
 			{props.flat !== true && <Disclosure expanded={props.expanded} onToggle={props.onToggle} />}
 			{props.children}
 		</div>
 	);
 }
+
+/** A section's label stands over the words of its rows. */
+const SECTION_STYLE = { paddingLeft: FLAT_INSET, paddingRight: FACTS_INSET } as const;
 
 /**
  * What a row holds, under the guide that runs down from it.
@@ -316,31 +314,24 @@ function TreeGroup(props: { readonly depth: number; readonly children: ReactNode
 /**
  * Rows that belong together without one row that holds them. The name is not a row, so it adds
  * no stop to the keys of the tree, and it stays above its rows while the column scrolls.
- * @param props The section's name, its depth and its rows.
+ * @param props The section's name and its rows.
  * @param props.label The name.
- * @param props.depth The depth of its rows.
  * @param props.children The rows.
  * @returns The section.
  */
-function TreeSection(props: {
-	readonly label: string;
-	readonly depth: number;
-	readonly children: ReactNode;
-}): JSX.Element {
-	const place = useMemo(
-		() => ({
-			top: props.depth * ROW_HEIGHT,
-			paddingLeft: disclosureX(props.depth) - ROW_GUTTER + DISCLOSURE_WIDTH + NAME_GAP,
-		}),
-		[props.depth],
-	);
+function TreeSection(props: { readonly label: string; readonly children: ReactNode }): JSX.Element {
 	return (
-		// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA tree pattern's group
-		<div role="group" aria-label={props.label} data-tree-section={props.label}>
+		<div
+			// oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- the ARIA tree pattern's group
+			role="group"
+			aria-label={props.label}
+			data-tree-section={props.label}
+			className="group/section"
+		>
 			<div
 				aria-hidden="true"
-				style={place}
-				className="bg-tray-sink text-control text-muted-foreground sticky z-10 truncate py-1"
+				style={SECTION_STYLE}
+				className="bg-sidebar border-border text-body text-muted-foreground sticky top-0 z-10 -mx-1 truncate border-y py-1 font-semibold group-first/section:-mt-1"
 			>
 				{props.label}
 			</div>

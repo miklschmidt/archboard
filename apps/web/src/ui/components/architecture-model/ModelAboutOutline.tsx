@@ -111,14 +111,8 @@ function OutlineEntry<Key extends string>(props: {
 				data-slot="about-outline-entry"
 				data-section={section.key}
 				onClick={go}
-				className="text-control text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=location]:text-foreground rounded-control relative flex h-8 w-full items-center gap-2 px-2 whitespace-nowrap"
+				className="text-control text-muted-foreground hover:bg-muted hover:text-foreground aria-[current=location]:text-foreground aria-[current=location]:bg-muted rounded-control relative flex h-8 w-full items-center gap-2 px-2 whitespace-nowrap"
 			>
-				{current && (
-					<span
-						aria-hidden="true"
-						className="bg-primary-mark absolute inset-x-2 -bottom-1.5 h-0.5 rounded-full @min-[1040px]/about:inset-x-auto @min-[1040px]/about:inset-y-1.5 @min-[1040px]/about:left-0 @min-[1040px]/about:h-auto @min-[1040px]/about:w-0.5"
-					/>
-				)}
 				<Icon aria-hidden="true" className="size-4 shrink-0" />
 				<span className="flex-1 text-left">{section.label}</span>
 				{section.count !== undefined && (

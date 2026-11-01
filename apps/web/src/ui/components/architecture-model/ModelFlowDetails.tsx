@@ -1,4 +1,3 @@
-import { ModelAboutTable } from "#ui/components/architecture-model/ModelAboutTable.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import type { JSX } from "react";
 import { everyStep, stepWords, isMessage, type FlowStep } from "@archboard/board/flow";
@@ -70,7 +69,6 @@ function FlowStepDetails(
 	const pick = useModelPick(step.id, selection.select);
 	return (
 		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent relative border-b">
-			{selection.ids.has(step.id) && <ModelAboutTable.Picked />}
 			<button
 				type="button"
 				data-step-id={step.id}

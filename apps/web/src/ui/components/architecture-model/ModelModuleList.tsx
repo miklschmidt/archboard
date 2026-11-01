@@ -106,7 +106,6 @@ function ModuleRow(props: ModuleRowProps): JSX.Element {
 	return (
 		<li className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent relative flex min-w-0 items-stretch border-b">
 			{depth > 0 && <ContainmentRail />}
-			{selected && <ModelAboutTable.Picked />}
 			<button
 				type="button"
 				data-module-id={id}

@@ -30,19 +30,6 @@ function TableHead(props: { readonly grid: string; readonly children: ReactNode 
 }
 
 /**
- * The gold mark on the edge of a row that is picked out, as the left column marks what is open.
- * @returns The mark.
- */
-function PickedMark(): JSX.Element {
-	return (
-		<span
-			aria-hidden="true"
-			className="bg-primary-mark absolute inset-y-1 left-0 w-0.5 rounded-full"
-		/>
-	);
-}
-
-/**
  * The control at the end of a row that picks its subject and shows it on the diagram.
  * @param props What the subject is called, and the way to show it.
  * @param props.name What the subject is called.
@@ -86,6 +73,6 @@ function KindChip(props: { readonly kind: string; readonly look: KindLook }): JS
 	);
 }
 
-const ModelAboutTable = { Head: TableHead, Picked: PickedMark, Show: ShowOnDiagram };
+const ModelAboutTable = { Head: TableHead, Show: ShowOnDiagram };
 
 export { KindChip, ModelAboutTable };

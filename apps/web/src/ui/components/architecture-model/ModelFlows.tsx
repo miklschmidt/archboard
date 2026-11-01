@@ -38,6 +38,7 @@ function ModelFlows(props: ModelFlowsProps): JSX.Element {
 			attribute="data-flow-id"
 			onChoose={choose}
 			sectionOf={collectionOf}
+			flat
 		/>
 	);
 }

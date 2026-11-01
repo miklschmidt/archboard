@@ -23,7 +23,7 @@ interface ModelChoiceListProps<Entry extends Choice> {
 	readonly facts?: ((entry: Entry) => ReactNode) | undefined;
 	/** What a row says to assistive technology, where its words alone do not say it. */
 	readonly rowLabel?: ((entry: Entry) => string) | undefined;
-	/** Rows of a table: they have no depth, so they keep no room for a disclosure. */
+	/** Rows with no depth, which keep no room for a disclosure. */
 	readonly flat?: boolean | undefined;
 	/** The section that a row stands in. Neighbours in one section share its name. */
 	readonly sectionOf?: ((entry: Entry) => string) | undefined;
@@ -89,7 +89,7 @@ function ChoiceRows<Entry extends Choice>(props: ModelChoiceListProps<Entry>): J
 	return (
 		<>
 			{sectionRuns(entries, sectionOf).map((run) => (
-				<Tree.Section key={run.entries[0]!.id} label={run.label} depth={0}>
+				<Tree.Section key={run.entries[0]!.id} label={run.label}>
 					{run.entries.map((entry) => (
 						<ChoiceRow key={entry.id} {...props} entry={entry} />
 					))}

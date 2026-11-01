@@ -90,7 +90,7 @@ function ChangesList(props: ChangesListProps): JSX.Element {
 		<div ref={box} data-slot="model-changes" className="min-h-0 flex-1">
 			<Tree label="Changes" rows={rows} home={place} onOpen={open}>
 				{list.groups.map((group) => (
-					<Tree.Section key={group.id} label={group.name} depth={0}>
+					<Tree.Section key={group.id} label={group.name}>
 						{group.changes.map((change) => (
 							<ChangeRow
 								key={change.id}
@@ -126,7 +126,15 @@ function ChangeRowOf(props: {
 		[change.id, change.standing],
 	);
 	return (
-		<Tree.Row id={change.id} depth={0} selected={lit} current={lit} dataset={dataset} onOpen={open}>
+		<Tree.Row
+			id={change.id}
+			depth={0}
+			flat
+			selected={lit}
+			current={lit}
+			dataset={dataset}
+			onOpen={open}
+		>
 			<Tree.Marker title={change.standing}>
 				<StandingSample standing={change.standing} />
 			</Tree.Marker>
@@ -161,7 +169,7 @@ function InterfaceChanges(props: InterfaceChangesProps): JSX.Element {
 	return (
 		<div data-slot="model-interface-changes" className="border-border border-b">
 			<Tree label="Interface changes" rows={tree} home={selected} onOpen={open}>
-				<Tree.Section label="Interface changes" depth={0}>
+				<Tree.Section label="Interface changes">
 					{rows.map((row) => (
 						<InterfaceChangeRow key={row.id} row={row} lit={row.id === selected} onShow={onShow} />
 					))}
@@ -191,6 +199,7 @@ function InterfaceChangeRow(props: {
 		<Tree.Row
 			id={row.id}
 			depth={0}
+			flat
 			selected={lit}
 			current={lit}
 			label={interfaceRowWords(row)}

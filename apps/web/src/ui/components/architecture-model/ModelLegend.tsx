@@ -43,9 +43,8 @@ const CHIP = "size-5 [&>svg]:size-3.5";
 /** The two columns that the head, the kinds and the line types stand in. */
 const CELLS = "grid grid-cols-2 gap-x-4";
 
-/** A key held pressed in, with a gold mark under its words, as the dock's conversation key is. */
-const PRESSED =
-	"bg-muted dark:bg-muted text-foreground shadow-pressed before:bg-primary-mark before:absolute before:inset-x-2 before:bottom-[3px] before:h-0.5 before:rounded-full";
+/** A key held pressed in. */
+const PRESSED = "bg-muted dark:bg-muted text-foreground shadow-pressed";
 
 /** Inputs for the legend. */
 interface ModelLegendProps {

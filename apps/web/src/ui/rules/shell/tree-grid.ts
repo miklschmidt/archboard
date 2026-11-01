@@ -19,6 +19,9 @@ const TREE_STEP = DISCLOSURE_WIDTH;
 /** From the navigator's left edge to the disclosure column of depth zero. */
 const TREE_INSET = 8;
 
+/** From the navigator's left edge to the words of a flat row, under the tabs' words. */
+const FLAT_INSET = 13;
+
 /** The marker column: what kind of row it is, and an agent at work. */
 const MARKER_WIDTH = 16;
 
@@ -77,6 +80,7 @@ export {
 	DISCLOSURE_WIDTH,
 	FACTS_GAP,
 	FACTS_INSET,
+	FLAT_INSET,
 	MARKER_WIDTH,
 	NAME_GAP,
 	ROW_GUTTER,

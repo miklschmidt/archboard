@@ -81,7 +81,6 @@ function ConnectionRow(
 			data-lit={selected.has(line.from) || selected.has(line.to) || undefined}
 			className="border-border hover:bg-muted/50 has-aria-pressed:bg-sidebar-accent data-lit:bg-primary-subtle relative flex min-w-0 items-stretch border-b"
 		>
-			{picked && <ModelAboutTable.Picked />}
 			<div className="min-w-0 flex-1">
 				<button
 					type="button"

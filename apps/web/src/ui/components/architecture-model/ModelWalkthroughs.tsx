@@ -40,6 +40,7 @@ function ModelWalkthroughs(props: {
 			attribute="data-walkthrough-id"
 			onChoose={choose}
 			facts={stepCount}
+			flat
 		/>
 	);
 }
