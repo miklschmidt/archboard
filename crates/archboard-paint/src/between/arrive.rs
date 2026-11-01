@@ -1,0 +1,194 @@
+//! The parts of a move that are not a carry: a subject only the last scene had
+//! leaves, one only the next has arrives, and one drawn another way swaps in
+//! place.
+
+use archboard_scene::geometry::Rect;
+use archboard_scene::scene::{Group, Item, Pointer, Role, Transform};
+
+use super::ease::{ease_in_out, ease_out, emphasised, phase, scale_about, then};
+use super::found::Found;
+use super::phases::Transition;
+
+/// How much a card leaving shrinks to.
+const LEAVE_SCALE: f64 = 0.96;
+
+/// How much a card arriving grows from.
+const ARRIVE_SCALE: f64 = 0.94;
+
+/// The move that changes nothing.
+const STILL: Transform = Transform::translate(0.0, 0.0);
+
+/// How solid a group is drawn, whatever the move does to it.
+fn base(group: &Group) -> f64 {
+    group.opacity.unwrap_or(1.0)
+}
+
+/// A group borrowed from the last scene: drawn but not picked, and without the
+/// crossing mask, which cuts gaps where nothing crosses here.
+fn borrowed(group: &Group) -> Group {
+    Group {
+        mask: None,
+        pointer: Some(Pointer::None),
+        ..group.clone()
+    }
+}
+
+/// A group scaled about the middle of a box, under the move it already has.
+fn scaled_about(group: &mut Group, frame: Option<Rect>, scale: f64) {
+    if let Some(frame) = frame {
+        group.transform = Some(then(
+            group.transform.unwrap_or(STILL),
+            Some(scale_about(frame, scale)),
+        ));
+    }
+}
+
+/// A subject only the last scene had, seen off: it fades, and a card draws in on
+/// itself a little as it goes.
+#[derive(Clone, Debug)]
+pub(super) struct Leave {
+    group: Group,
+    frame: Option<Rect>,
+    /// How the plain groups around it moved it.
+    outer: Option<Transform>,
+    exit_end: f64,
+}
+
+impl Leave {
+    /// A subject of the last scene, leaving.
+    pub(super) fn new(found: &Found<'_>, phases: Transition) -> Leave {
+        Leave {
+            group: borrowed(found.group),
+            frame: found
+                .frame
+                .filter(|_| found.form() == super::found::Form::Card),
+            outer: found.outer,
+            exit_end: phases.exit_end,
+        }
+    }
+
+    /// The subject at a moment of the move: nothing once it is gone.
+    pub(super) fn at(&self, progress: f64) -> Vec<Item> {
+        let gone = ease_out(phase(progress, 0.0, self.exit_end));
+        if gone >= 1.0 {
+            return Vec::new();
+        }
+        let mut group = self.group.clone();
+        group.opacity = Some(base(&group) * (1.0 - gone));
+        scaled_about(&mut group, self.frame, 1.0 - (1.0 - LEAVE_SCALE) * gone);
+        let item = Item::Group(group);
+        match self.outer {
+            Some(outer) => {
+                let mut around = Group::new(Role::Marks, vec![item]);
+                around.transform = Some(outer);
+                vec![Item::Group(around)]
+            }
+            None => vec![item],
+        }
+    }
+}
+
+/// A card only the next scene has, grown into place and faded in.
+#[derive(Clone, Debug)]
+pub(super) struct Grow {
+    group: Group,
+    frame: Option<Rect>,
+    start: f64,
+    end: f64,
+}
+
+impl Grow {
+    /// A card, arriving between two points of the move.
+    pub(super) fn new(found: &Found<'_>, start: f64, end: f64) -> Grow {
+        Grow {
+            group: found.group.clone(),
+            frame: found.frame,
+            start,
+            end,
+        }
+    }
+
+    /// The card at a moment of the move.
+    pub(super) fn at(&self, progress: f64) -> Group {
+        let here = phase(progress, self.start, self.end);
+        let mut group = self.group.clone();
+        if here >= 1.0 {
+            return group;
+        }
+        group.opacity = Some(base(&group) * ease_out(here));
+        scaled_about(
+            &mut group,
+            self.frame,
+            ARRIVE_SCALE + (1.0 - ARRIVE_SCALE) * emphasised(here),
+        );
+        group
+    }
+}
+
+/// Two drawings of one subject, swapped in place when there is no geometry to
+/// carry one into the other: the old fades and the new fades in.
+#[derive(Clone, Debug)]
+pub(super) struct Swap {
+    old: Group,
+    new: Group,
+    start: f64,
+    end: f64,
+}
+
+impl Swap {
+    /// The old drawing of a subject, and the new.
+    pub(super) fn new(old: &Group, new: &Group, phases: Transition) -> Swap {
+        Swap {
+            old: borrowed(old),
+            new: new.clone(),
+            start: phases.fade_start,
+            end: phases.fade_end,
+        }
+    }
+
+    /// The pair at a moment of the move.
+    pub(super) fn at(&self, progress: f64) -> Vec<Item> {
+        let swapped = ease_in_out(phase(progress, self.start, self.end));
+        let mut new = self.new.clone();
+        new.opacity = Some(base(&new) * swapped);
+        let mut items = Vec::with_capacity(2);
+        if swapped < 1.0 {
+            let mut old = self.old.clone();
+            old.opacity = Some(base(&old) * (1.0 - swapped));
+            items.push(Item::Group(old));
+        }
+        items.push(Item::Group(new));
+        items
+    }
+}
+
+/// How solid a shared subject is drawn at each end of a move. A subject a
+/// proposal removes fades to a ghost with the rest of its change, rather than
+/// dropping to one at once while its colours are still on their way.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct Ground {
+    from: f64,
+    to: f64,
+    start: f64,
+    end: f64,
+}
+
+impl Ground {
+    /// The easing of a shared subject's opacity, or nothing when the two scenes
+    /// draw it equally visible.
+    pub(super) fn new(old: &Group, new: &Group, phases: Transition) -> Option<Ground> {
+        let (from, to) = (base(old), base(new));
+        (from != to).then_some(Ground {
+            from,
+            to,
+            start: phases.fade_start,
+            end: phases.fade_end,
+        })
+    }
+
+    /// Draw a group this far through the move.
+    pub(super) fn apply(self, group: &mut Group, progress: f64) {
+        let t = ease_in_out(phase(progress, self.start, self.end));
+        group.opacity = Some(self.from + (self.to - self.from) * t);
+    }
+}
