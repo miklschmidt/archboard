@@ -1324,6 +1324,414 @@
       }
     },
     {
+      "type": "add",
+      "subject": "vKEsyHFk#jPdi4ndV",
+      "kind": "walkthrough",
+      "value": {
+        "schemaVersion": 1,
+        "id": "vKEsyHFk#jPdi4ndV",
+        "name": "Review: feat/vello-renderer",
+        "target": {
+          "state": "JTZvj2vi"
+        }
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#JuK9kPUC",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#JuK9kPUC",
+        "title": "Vello paints the board canvas, so picture changes leave the DOM",
+        "narrative": "A picture change used to edit thousands of SVG attributes per frame, and a flight of a large board dropped frames. The browser now paints the same typed scene with Vello. On the largest board, a move now takes about 5 ms of the main thread for each frame.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#JuK9kPUC",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#2QaIm9u5"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#2QaIm9u5",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#2QaIm9u5",
+        "title": "Painter core holds every move as plain Rust",
+        "narrative": "Canvas drawing has one Canvas trait, so Vello on the GPU and Vello on the CPU run the same walk over a scene. Picture motion is a pure function of two scenes and a progress value, so Rust tests own it. Painter stage works out each frame from the clock that a host gives it.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#ttPYQNXo",
+            "vKEsyHFk#9jix9Dsx",
+            "vKEsyHFk#290spzv7"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#2QaIm9u5",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#PoaUWNrZ"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#PoaUWNrZ",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#PoaUWNrZ",
+        "title": "A move between boards follows the module tree",
+        "narrative": "The page compares the depth of two scopes. The same depth travels sideways, a deeper module zooms in, and a shallower one zooms out. A card on the way flies, and a lens in Painter stage racks focus only while a move runs.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#9FxduWoO",
+            "vKEsyHFk#ttPYQNXo"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#PoaUWNrZ",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#1Ki6QCRp"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#1Ki6QCRp",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#1Ki6QCRp",
+        "title": "Picture motion draws lines along their connections",
+        "narrative": "A spark leaves each card that nothing feeds and runs along its lines. Where it lands, that card sends its own lines on, so a board builds along the way its parts talk. On the largest board, the last line of a first load lands at about 2.1 seconds.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#9jix9Dsx"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#1Ki6QCRp",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#N8ZJyIbU"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#N8ZJyIbU",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#N8ZJyIbU",
+        "title": "Painter choice decides once, from what the browser says",
+        "narrative": "If the browser gives a real adapter and a device, Vello paints on WebGPU. Otherwise Vello paints on the CPU, and the rule reads no frame back. If the GPU fails, the CPU painter takes over on a fresh canvas, because a canvas that held a WebGPU context never takes a 2D one.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#hKrzJUPf",
+            "vKEsyHFk#UpjzNLKH"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#N8ZJyIbU",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#0oYDU8cV"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#0oYDU8cV",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#0oYDU8cV",
+        "title": "The SVG stays in the page as the semantic layer",
+        "narrative": "Picture stage keeps the SVG under the canvas with its ink hidden, so search, copy, screen readers and the keyboard keep working. A pointer lands on the canvas, so Picture pick asks Scene picking, which answers from the scene in the order the painter draws. Exports, PNGs and README assets stay SVG products.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#9FxduWoO",
+            "vKEsyHFk#IYU05cQX",
+            "vKEsyHFk#107AGlEf"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#0oYDU8cV",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV",
+        "before": "vKEsyHFk#KMmwoBvr"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#KMmwoBvr",
+      "kind": "beat",
+      "value": {
+        "id": "vKEsyHFk#KMmwoBvr",
+        "title": "Where to look: what happens when a painter fails",
+        "narrative": "Read the failure paths in picture-stage.ts and picture-ink.ts. A painted surface drops the glyphs and definitions of its SVG, so a failed painter must release its resources and give them back. Check that complete ink shows while the replacement starts, and that the board stays visible if the CPU painter also fails.",
+        "reading": {
+          "visibility": {
+            "modules": [
+              "vKEsyHFk/UOXNWLhR#3iSHwOiM",
+              "vKEsyHFk#9FxduWoO",
+              "vKEsyHFk#IYU05cQX",
+              "vKEsyHFk/UOXNWLhR#F90402mH",
+              "vKEsyHFk#hKrzJUPf",
+              "vKEsyHFk#UpjzNLKH",
+              "vKEsyHFk#ttPYQNXo",
+              "vKEsyHFk#9jix9Dsx",
+              "vKEsyHFk#290spzv7",
+              "vKEsyHFk#107AGlEf"
+            ],
+            "relationships": [
+              "vKEsyHFk#xalAnyTh",
+              "vKEsyHFk#oKYGWd42",
+              "vKEsyHFk#HIuM9juy",
+              "vKEsyHFk#pRZRhE3w",
+              "vKEsyHFk#irHUnOY7",
+              "vKEsyHFk/UOXNWLhR#iVizf8Iu",
+              "vKEsyHFk#NWxlWRCj",
+              "vKEsyHFk#kIIEgwrt",
+              "vKEsyHFk#uDNOaatU",
+              "vKEsyHFk#RaRMc6Gn"
+            ],
+            "flows": []
+          },
+          "selection": [
+            "vKEsyHFk#9FxduWoO"
+          ],
+          "focus": [],
+          "filters": {
+            "relationships": [],
+            "groups": []
+          },
+          "grammar": "architecture"
+        }
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#KMmwoBvr",
+      "placement": {
+        "holder": "vKEsyHFk#jPdi4ndV"
+      }
+    },
+    {
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#kLbQ8AUu",
       "field": "participants",
