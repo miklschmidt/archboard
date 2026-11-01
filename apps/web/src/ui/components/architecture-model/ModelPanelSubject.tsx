@@ -5,6 +5,7 @@ import {
 	kindNames,
 	moduleName,
 } from "#ui/components/architecture-model/ModelConnections.tsx";
+import { ModelChangesWith } from "#ui/components/architecture-model/ModelChangesWith.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelCollectionDetails } from "#ui/components/architecture-model/ModelCollectionDetails.tsx";
 import { ModelFlowDetails } from "#ui/components/architecture-model/ModelFlowDetails.tsx";
@@ -198,6 +199,12 @@ function ModuleSubject(
 			<ModuleHead {...props} model={source} />
 			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} brief />
+			<ModelChangesWith
+				vault={props.vault}
+				model={model}
+				module={module}
+				onSelect={selection.select}
+			/>
 			<ModelSubjectStanding model={model} subject={module.id} reference={projection.reference} />
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
