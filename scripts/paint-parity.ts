@@ -307,7 +307,8 @@ function servePage(out: string): ReturnType<typeof Bun.serve> {
 			if (file !== undefined) {
 				return new Response(Bun.file(file[0]), { headers: { "content-type": file[1] } });
 			}
-			return new Response(Bun.file(join(out, pathname)));
+			const kept = Bun.file(join(out, pathname));
+			return (await kept.exists()) ? new Response(kept) : new Response(null, { status: 404 });
 		},
 	});
 }
