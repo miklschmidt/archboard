@@ -469,6 +469,11 @@ The summary states what the exchange does and why it matters, in one or two sent
 Archboard allocates every new identity.
 Messages, decisions, loops, notes, repeat counts, summaries, and anchors keep their existing semantic fields.
 Returns remain messages and never create reverse structural relationships.
+Back each step with the source that sends it: read the code path first, and put the file and symbol in the step's `anchor`.
+Then read that source a second time for what the first pass skips.
+A self-call is one `self` step, with the module at both ends.
+A fixed count, such as a retry limit or a batch of known size, is `repeat` on the step. A note that states it does not replace `repeat`.
+A loop that depends on data is a `loop` step, and a branch is a `decision` step.
 Use qualified module IDs or unique current or former module names for participant and message references.
 A flow can reference a module that the same batch adds by its unique name.
 Only qualified identities persist.

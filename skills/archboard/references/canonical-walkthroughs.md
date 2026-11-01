@@ -103,3 +103,37 @@ Canonical requests name the pane and walkthrough without a legacy board key.
 The recording page drives its own steps and receives no first-beat request from the server.
 Both paths narrate only available beats after the pane reports arrival.
 Leaving the walkthrough ends its narration.
+
+## Write each beat
+
+The voice explains a beat from its title, narrative and selection, beside the picture.
+Make one point in each beat.
+Let the title state that point ("Only the ledger sets items aside") and the narrative say what the picture cannot show.
+Name modules as the model names them, and give the one number that the source states, such as a limit, a count or a timeout.
+Select the two or three subjects that the beat is about.
+
+## A newcomer's walkthrough
+
+Use it when somebody new asks how one thing works.
+The tour starts with the big picture, narrows to one module and one exchange, and ends on what to read next.
+
+1. Write the answer as one sentence, "When you do this, this happens". Done: it names what the reader does and what they get.
+2. Choose the path of four to ten modules and the flow that runs along it. Give each module a plain `responsibility`. Leave out helpers, configuration, types and tests. Done: every module and relationship that the answer rests on is on the path.
+3. Open on the big picture: omit `visibility` so that the roots draw whole, and put the module that holds the answer in `focus`.
+4. Grow the path beat by beat. A beat's `visibility` repeats the previous beat's modules and relationships and adds one to three more, and its `selection` names the additions. The first of these beats shows two modules. Done: the last one draws the whole path.
+5. Show the one exchange in a sequence beat with its `flow`.
+6. Add a beat where the path goes wrong, if the reader will meet that failure: what fails and what they see.
+7. End on the answer sentence again, with one number that the source states and the module or flow to read next. Done: the last beat stands alone as the summary.
+
+## A pull request's walkthrough
+
+Use it for reviewers who have not read the code.
+Put the change in a proposal, and target the walkthrough at it.
+Write three to six beats, each a few sentences, so that the talk runs one to three minutes.
+
+1. Read the diff against the merge base and write one sentence on why the pull request exists. Done: it names the need, not the files.
+2. Run `archboard model footprint --base <merge-base> --state <proposal>`. Read the subject of a commit marked large before you give it a beat. Done: every changed module has a beat, or you can say why not.
+3. Open with the why sentence and no selection. Then give the change that matters most a beat, and each other change one of its own. Name what the pull request did in the title. Name a removed module in the narrative, because a beat cannot select it.
+4. End on the seam or invariant that deserves the closest look, and what to check there. Done: a reviewer can answer "what changed, and why" from the beats alone.
+
+Record from the retained checkpoint as above. The archboard-pr skill attaches the video and places it in the pull request.
