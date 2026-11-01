@@ -35,9 +35,7 @@ mod tests;
 use std::collections::HashMap;
 
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{
-    Definition, Group, Item, Mask, Role, Scene, SubjectKind, TrafficMark, Transform,
-};
+use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
 
 use arrive::{Ground, Grow, LABEL_GONE_BY, Leave, Swap};
 use card::CardCarry;
@@ -140,9 +138,9 @@ fn parked_in(items: &[Item]) -> Vec<Group> {
 /// line that stops, which go where the lines stand, and what is parked for a card
 /// that does not stay. `pulses` says how deep the pulses stand, and when they end.
 fn stopping(
-    traffic: &HashMap<&str, &TrafficMark>,
-    landing: &HashMap<&str, &TrafficMark>,
-    parked: Vec<Group>,
+    traffic: &HashMap<&str, &Group>,
+    landing: &HashMap<&str, &Group>,
+    parked: &[Group],
     moved: &HashMap<&str, (f64, f64)>,
     pulses: (usize, f64),
 ) -> Vec<(usize, Mover)> {
@@ -151,16 +149,16 @@ fn stopping(
     traffic
         .iter()
         .filter(|(line, _)| !landing.contains_key(*line))
-        .map(|(_, mark)| {
-            let pulses = Item::Traffic((*mark).clone());
+        .map(|(_, group)| {
+            let pulses = Item::Group((*group).clone());
             (lines_at, Mover::Leave(Leave::plain(pulses, gone_by)))
         })
         .chain(
             parked
-                .into_iter()
+                .iter()
                 .filter(|group| !group.members.first().is_some_and(stays))
                 .map(|group| {
-                    let item = Item::Group(group);
+                    let item = Item::Group(group.clone());
                     (0, Mover::Leave(Leave::plain(item, LABEL_GONE_BY)))
                 }),
         )
@@ -168,13 +166,13 @@ fn stopping(
 }
 
 /// Every line's pulses among some items, to any depth.
-fn traffic_in<'a>(items: &'a [Item], found: &mut HashMap<&'a str, &'a TrafficMark>) {
+fn traffic_in<'a>(items: &'a [Item], found: &mut HashMap<&'a str, &'a Group>) {
     for item in items {
         match item {
             Item::Group(group) => match &group.role {
                 Role::Traffic(line) => {
-                    if let Some(mark) = mark_of(group) {
-                        found.insert(line, mark);
+                    if mark_of(group).is_some() {
+                        found.insert(line, group);
                     }
                 }
                 _ => traffic_in(&group.items, found),
@@ -191,7 +189,9 @@ struct LastPicture<'a> {
     /// How far back each carried card starts.
     moved: HashMap<&'a str, (f64, f64)>,
     /// The pulses of each line.
-    traffic: HashMap<&'a str, &'a TrafficMark>,
+    traffic: HashMap<&'a str, &'a Group>,
+    /// The shadows and marks of the last frame, with their visibility.
+    parked: &'a [Group],
 }
 
 /// What moves a shadow, a line's pulses or the marks where routes join. A shadow
@@ -208,24 +208,28 @@ fn furniture_of(item: &Item, last: &LastPicture<'_>, phases: Transition) -> Opti
         Role::Junctions => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
         Role::Shadow(_) => {
             let owner = group.members.first()?;
+            let ground = last
+                .parked
+                .iter()
+                .find(|old| old.role == group.role && old.members == group.members)
+                .and_then(|old| Ground::new(old, group, phases));
             match last.moved.get(owner.as_str()) {
-                Some(&(0.0, 0.0)) => None,
+                Some(&(0.0, 0.0)) => ground.map(|ground| Mover::Visible(group.clone(), ground)),
                 Some(&back) => Some(Mover::Riding(Box::new(Riding {
                     shadow: group.clone(),
                     back,
                     start: phases.move_start,
                     end: phases.move_end,
+                    ground,
                 }))),
                 None => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
             }
         }
         Role::Traffic(line) => {
-            let next = mark_of(group)?;
+            mark_of(group)?;
             match last.traffic.get(line.as_str()) {
-                Some(&mark) if mark == next => None,
-                Some(&mark) => {
-                    Ride::new(mark, group, phases).map(|ride| Mover::Ride(Box::new(ride)))
-                }
+                Some(&old) if old == group => None,
+                Some(&old) => Ride::new(old, group, phases).map(|ride| Mover::Ride(Box::new(ride))),
                 None => Some(Mover::Frame(item.clone(), phases.arrowhead_at, 1.0)),
             }
         }
@@ -376,11 +380,15 @@ impl Between {
         let stopping = stopping(
             &traffic,
             &landing,
-            parked,
+            &parked,
             &moved,
             (lines_at, phases.exit_end),
         );
-        let known = LastPicture { moved, traffic };
+        let known = LastPicture {
+            moved,
+            traffic,
+            parked: &parked,
+        };
         let furniture = |item: &Item, _: bool| furniture_of(item, &known, phases);
         let wiring = Wiring {
             of_subject: &of_subject,

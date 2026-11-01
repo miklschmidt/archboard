@@ -5,6 +5,7 @@
 use archboard_scene::geometry::{Curve, Point, Segment};
 use archboard_scene::scene::{Group, Item, PathStep, TrafficMark};
 
+use super::arrive::Ground;
 use super::content::shell;
 use super::ease::{ease_in_out, emphasised, phase, receded};
 use super::line::depth_of_travel;
@@ -57,12 +58,15 @@ pub(super) struct Ride {
     morph: Option<Morph>,
     /// How far the pulses recede with their line.
     depth: f64,
+    /// The visibility of pulses whose entrance was still running.
+    ground: Option<Ground>,
     phases: Transition,
 }
 
 impl Ride {
     /// The ride between two traffic groups that both hold pulses.
-    pub(super) fn new(last: &TrafficMark, group: &Group, phases: Transition) -> Option<Ride> {
+    pub(super) fn new(old: &Group, group: &Group, phases: Transition) -> Option<Ride> {
+        let last = mark_of(old)?;
         let next = mark_of(group)?;
         let same = last.motion == next.motion && last.look == next.look;
         let morph = Morph::new(&steps_of(&last.route), &steps_of(&next.route));
@@ -72,17 +76,21 @@ impl Ride {
             next: next.clone(),
             depth: depth_of_travel(morph.as_ref().map_or(0.0, Morph::reach)),
             morph,
+            ground: Ground::new(old, group, phases),
             phases,
         })
     }
 
     /// One mark on the route of a moment, this much visible.
-    fn drawn(&self, mark: &TrafficMark, along: f64, visible: f64) -> Item {
+    fn drawn(&self, mark: &TrafficMark, along: f64, visible: f64, progress: f64) -> Item {
         let route = self
             .morph
             .as_ref()
             .and_then(|morph| curve_of(&morph.at(along)));
         let mut group = self.group.clone();
+        if let Some(ground) = self.ground {
+            ground.apply(&mut group, progress);
+        }
         group.items = vec![Item::Traffic(TrafficMark {
             route: route.unwrap_or_else(|| mark.route.clone()),
             ..mark.clone()
@@ -97,12 +105,12 @@ impl Ride {
         let along = emphasised(phase(progress, t.move_start, t.move_end));
         let shown = receded(self.depth, progress);
         let Some(last) = &self.last else {
-            return vec![self.drawn(&self.next, along, shown)];
+            return vec![self.drawn(&self.next, along, shown, progress)];
         };
         let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
         vec![
-            self.drawn(last, along, (1.0 - swapped) * shown),
-            self.drawn(&self.next, along, swapped * shown),
+            self.drawn(last, along, (1.0 - swapped) * shown, progress),
+            self.drawn(&self.next, along, swapped * shown, progress),
         ]
     }
 }

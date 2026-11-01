@@ -1,7 +1,11 @@
 //! A new flight starts with the geometry and cuts of the frame it interrupts.
 
+use archboard_scene::geometry::{Curve, Segment};
 use archboard_scene::paint::design::RAIL_GAP;
-use archboard_scene::scene::{Definition, Geometry, Item, Mask, MaskId, Purpose, Shape, Stroke, Token};
+use archboard_scene::scene::{
+    Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, PulseLook, Purpose, Role,
+    Shape, Stroke, Token, TrafficMark,
+};
 
 use super::testing::{PHASES, card, drawing, line, plate, rect, scene};
 use super::{Between, Entrance, Scene};
@@ -60,7 +64,7 @@ fn a_double_line_keeps_its_in_between_core_when_another_picture_arrives() {
 }
 
 /// A card's visible box includes the growth of its entrance.
-fn drawn_box(group: &archboard_scene::scene::Group) -> archboard_scene::geometry::Rect {
+fn drawn_box(group: &Group) -> archboard_scene::geometry::Rect {
     let frame = plate(group);
     let transform = group
         .transform
@@ -89,5 +93,63 @@ fn an_interrupted_entrance_keeps_the_box_the_reader_saw() {
         let carried = between.at(0.0);
         assert_eq!(drawn_box(drawing(&carried, "a")[0]), expected);
         assert_eq!(drawn_box(drawing(&between.at(0.99), "a")[0]), there);
+    }
+}
+
+#[test]
+fn the_furniture_of_an_interrupted_entrance_keeps_its_visibility() {
+    let frame = rect(10.0, 10.0, 100.0, 50.0);
+    let Item::Group(shadow) = super::testing::shadow() else {
+        unreachable!("a shadow is a group");
+    };
+    let mark = TrafficMark {
+        look: PulseLook {
+            head: Colour::White,
+            hot: Colour::White,
+            line_width: 1.2,
+        },
+        route: Curve {
+            from: super::testing::at(110.0, 35.0),
+            segments: vec![Segment::Line {
+                to: super::testing::at(200.0, 35.0),
+            }],
+        },
+        motion: Motion::Steady {
+            speed: 50.0,
+            spacing: 100.0,
+            phase: 0.0,
+        },
+    };
+    let next = scene(
+        vec![
+            Item::Group(shadow.standing_with(vec!["a".into()])),
+            line("e", &[(110.0, 35.0), (200.0, 35.0)]),
+            Item::Group(Group::new(
+                Role::Traffic("e".into()),
+                vec![Item::Traffic(mark)],
+            )),
+            card("a", frame, &["Title"]),
+        ],
+        &[("a", frame)],
+    );
+    for progress in [0.2, 0.75] {
+        let seen = Scene {
+            body: Entrance::new(&next, &PHASES).at(progress),
+            ..next.clone()
+        };
+        let carried = Between::new(&seen, &next, (0.0, 0.0), &PHASES).at(0.0);
+        let visibility = |body: &[Item]| {
+            body.iter()
+                .filter_map(|item| match item {
+                    Item::Group(group)
+                        if matches!(group.role, Role::Shadow(_) | Role::Traffic(_)) =>
+                    {
+                        Some(group.opacity.unwrap_or(1.0))
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(visibility(&carried), visibility(&seen.body));
     }
 }

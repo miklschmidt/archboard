@@ -104,13 +104,16 @@ pub(super) struct Riding {
     pub(super) back: (f64, f64),
     pub(super) start: f64,
     pub(super) end: f64,
+    /// A shadow can still be coming in when the next flight starts.
+    pub(super) ground: Option<Ground>,
 }
 
 impl Riding {
     /// The shadow at a moment of the move.
     fn at(&self, progress: f64) -> Item {
         let left = 1.0 - emphasised(phase(progress, self.start, self.end));
-        let mut around = Group::new(Role::Move, vec![Item::Group(self.shadow.clone())]);
+        let shadow = grounded(self.shadow.clone(), self.ground, progress);
+        let mut around = Group::new(Role::Move, shadow);
         around.transform = Some(Transform::translate(self.back.0 * left, self.back.1 * left));
         Item::Group(around)
     }
