@@ -42,15 +42,15 @@ Refresh an asset when `readme:check` lists it after your change. Then:
 
 ## The assets
 
-| Asset                                                | What makes it                                                                                       | Codex |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ----- |
-| `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with embedded font subsets; `architecture` keeps its exact recipe | no    |
-| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach        | no    |
-| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still     | no    |
-| `design-smells`                                      | the Measures tab over this checkout's own vault and Git history, encoded to a WebP with a still     | no    |
-| `ask`                                                | the shell filmed while a Codex agent answers Explain selection from the Right panel                 | yes   |
-| `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached             | yes   |
-| `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium                 | no    |
+| Asset                                                | What makes it                                                                                   | Codex |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----- |
+| `architecture`, `sequence`, `web-shop`               | `model render` in light and dark, with drawn glyphs; `architecture` keeps its exact recipe      | no    |
+| `hero`, `plan`, `history`, `drill-down`, `take-back` | the real shell filmed in headless Chromium while the CLI writes, encoded to a WebP to attach    | no    |
+| `code-evidence`, `module-interfaces`, `git-history`  | the real shell and CLI results from a generated checkout, encoded to a WebP with an index still | no    |
+| `design-smells`                                      | the Measures tab over this checkout's own vault and Git history, encoded to a WebP with a still | no    |
+| `ask`                                                | the shell filmed while a Codex agent answers Explain selection from the Right panel             | yes   |
+| `explainer`, `pr-walkthrough`, `newcomer`            | `model record` at an exact checkpoint, narrated by the Codex voice; the MP4 is attached         | yes   |
+| `banner`                                             | `model render` of a web-shop proposal, laid as vector beside the lockup in Chromium             | no    |
 
 Most assets also write an index thumbnail (`idx-*.webp`), which stays in the
 repository. The manifest lists the files of each asset in the repository. The
