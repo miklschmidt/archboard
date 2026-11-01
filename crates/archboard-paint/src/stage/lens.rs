@@ -54,10 +54,6 @@ const OUT_RETURNS: (f64, f64) = (0.4, 0.98);
 /// the canvas's height.
 const ACROSS_BLUR: f64 = 0.003;
 
-/// How long a frame's shutter stands open, in milliseconds. A moving frame
-/// smears by as far as it goes in this time.
-const SHUTTER_MS: f64 = 8.0;
-
 /// How far the focus of an entrance opens past the picture, and how soft its
 /// edge is, as shares of the reach from the picture's middle to its corner.
 const OPENS_TO: f64 = 1.5;
@@ -221,7 +217,7 @@ impl Stage {
             ghost.or_else(|| self.leaving.as_ref()?.passage(moment))
         };
         let passage = at(now)?;
-        let before = at(now - SHUTTER_MS).map_or(passage.1, |(_, place)| place);
+        let before = at(now - self.phases.as_ref()?.shutter).map_or(passage.1, |(_, place)| place);
         Some((passage, passage.1 - before))
     }
 

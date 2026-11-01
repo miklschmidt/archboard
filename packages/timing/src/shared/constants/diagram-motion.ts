@@ -36,6 +36,11 @@ const PICTURE_MS = durations({
 	 */
 	transition: 640,
 	/**
+	 * How long the shutter samples a sideways passage, in milliseconds.
+	 * A longer sample smears words too far to read during travel.
+	 */
+	shutter: 8,
+	/**
 	 * How long the picture on the stage takes to step back once the next one is on
 	 * its way. A large board takes a moment to lay out, and this answers the click
 	 * at once. A flight then goes on from where this stands.

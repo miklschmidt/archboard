@@ -75,6 +75,7 @@ const PHASES = JSON.stringify({
 	entry: PICTURE_ENTRY_PHASES,
 	enter: PICTURE_MS.entry,
 	exit: PICTURE_MS.exit,
+	shutter: PICTURE_MS.shutter,
 });
 
 /**

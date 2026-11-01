@@ -73,6 +73,8 @@ pub struct Phases {
     pub enter: f64,
     /// How long a picture takes to leave, in milliseconds.
     pub exit: f64,
+    /// How long a sideways passage's shutter samples, in milliseconds.
+    pub shutter: f64,
 }
 
 #[cfg(test)]
@@ -108,6 +110,7 @@ pub(crate) mod fixtures {
         },
         enter: 760.0,
         exit: 280.0,
+        shutter: 8.0,
     };
 }
 
@@ -120,7 +123,7 @@ mod tests {
         let phases: Phases = serde_json::from_str(
             r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46,"drawStart":0.42,"drawEnd":3.0},
                 "entry":{"framesEnd":0.3,"cardsStart":0.02,"cardsStartBy":0.3,"cardSpan":0.48,"linesStart":0.26,"drawEnd":2.8,"pulseSpan":0.12,"labelsStart":0.66},
-                "enter":760,"exit":280}"#,
+                "enter":760,"exit":280,"shutter":8}"#,
         )
         .expect("the timing package's phases");
         assert_eq!(phases, PHASES);
