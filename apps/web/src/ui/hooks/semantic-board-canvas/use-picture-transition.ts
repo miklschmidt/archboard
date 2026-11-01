@@ -285,6 +285,17 @@ function publish(store: PictureStore, surface: HTMLElement | null): void {
 }
 
 /**
+ * Whether a surface already shows a picture.
+ * @param last What the surface was last given, if anything.
+ * @param surface The surface.
+ * @param drawing The picture.
+ * @returns True when nothing on the surface would change.
+ */
+function standsOn(last: Shown | null, surface: HTMLElement, drawing: MovingPicture): boolean {
+	return last?.surface === surface && last.drawing.svg === drawing.svg;
+}
+
+/**
  * Keep the surface showing the drawing, carrying it from the last one when
  * the two are pictures of one board read the same way.
  * @param surface The element the picture goes in, or null before it exists.
@@ -321,8 +332,9 @@ function usePictureTransition(
 		// The same picture again, as another answer: a picture read twice while
 		// it is on its way arrives twice. Nothing on the surface changes, so a
 		// flight carrying it keeps flying rather than being landed by itself.
-		if (surface === null || (last?.surface === surface && last.drawing.svg === drawing.svg)) {
-			if (surface !== null) shown.current = { surface, drawing };
+		if (surface === null) return;
+		if (standsOn(last, surface, drawing)) {
+			shown.current = { surface, drawing };
 			return;
 		}
 		// A picture arriving mid-flight stops the wait for the last one. The stage

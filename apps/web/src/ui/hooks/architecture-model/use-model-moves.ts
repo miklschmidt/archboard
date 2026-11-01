@@ -54,11 +54,11 @@ function useModelMoves(inputs: MoveInputs) {
 		async (to: Destination): Promise<ScenePicture | null> => {
 			const scope = to.board === ROOTS ? null : to.board;
 			const filters = { ...reading.filters, controls: true };
-			const projection = projectModel(model, scope, null, filters, reference);
-			if (projection.content.nodes.length === 0) return null;
+			const opened = projectModel(model, scope, null, filters, reference);
+			if (opened.content.nodes.length === 0) return null;
 			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
-				...(await client.fetchQuery(modelDrawingQuery(model, projection, "architecture", layout))),
+				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture", layout))),
 				board: sceneBoard(destination),
 				view: sceneView(destination),
 			};
@@ -135,10 +135,10 @@ function useDrawAhead(
 		 */
 		const step = async (): Promise<void> => {
 			while (work.next !== null) {
-				const task = work.next;
+				const next = work.next;
 				work.next = null;
 				// oxlint-disable-next-line no-await-in-loop -- one at a time, so drawing ahead never takes more than one of the renderer's workers
-				await task().catch(() => null);
+				await next().catch(() => null);
 			}
 			work.running = false;
 		};

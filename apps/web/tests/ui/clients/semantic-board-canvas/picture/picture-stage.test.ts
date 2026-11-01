@@ -45,6 +45,8 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * @param canvas The canvas.
 	 * @param _dark The theme.
 	 * @param failure The GPU failure, if any.
+	 * @param failure.reason What went wrong.
+	 * @param failure.retry Whether the GPU gets another try.
 	 * @returns The started painter.
 	 */
 	startPainter: (

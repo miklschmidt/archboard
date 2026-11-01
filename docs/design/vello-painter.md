@@ -82,6 +82,19 @@ Traffic on the largest board differed by 0.09% to 0.27%.
 The door fix came after this run and after the frame measurements below. It changed layout and no painter code, and nobody measured these numbers again.
 TASK-562 changed the painter after this run, and [Parity on the current painter](#parity-on-the-current-painter) holds the later numbers.
 
+## Parity on the current painter
+
+The TASK-562 build compared all 528 readings near and far, which gave 2112 comparisons in headless Chrome on the same NVIDIA adapter.
+The run read each GPU frame from the WebGPU swap texture, through a lab copy of `scripts/paint-parity.ts`. It did not compare traffic.
+
+| Painter | Near, mean | Near, worst | Far, mean | Far, worst |
+| ------- | ---------- | ----------- | --------- | ---------- |
+| GPU     | 0.20%      | 0.76%       | 0.12%     | 0.73%      |
+| CPU     | 0.19%      | 0.75%       | 0.11%     | 0.78%      |
+
+The light theme averaged 0.31% near and 0.19% far. The dark theme averaged 0.08% and 0.05%.
+No comparison reached 1%.
+
 ## The hill climb
 
 The method is TASK-405's: real Chrome 155 over CDP with real input, an rAF recorder, long tasks, and the median of 3 runs.
