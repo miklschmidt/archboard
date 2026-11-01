@@ -64,21 +64,20 @@ Now nothing inside a painted surface takes the pointer, and `canonical-model-ges
 At deep zoom, screenshots of the old page showed no recede, although its classes asked for one. The painter draws it at every zoom.
 The cause on the old page is not known.
 
-## Parity after the hill climb
+## Parity on the final build
 
-A full run after the hill climb compared all 528 readings, which gave 2112 comparisons.
+A full run on the final build compared all 528 readings, which gave 2112 comparisons.
 
 | Painter | Near, mean | Near, worst | Far, mean | Far, worst |
 | ------- | ---------- | ----------- | --------- | ---------- |
-| GPU     | 0.23%      | 0.65%       | 0.41%     | 1.34%      |
-| CPU     | 0.22%      | 0.62%       | 0.42%     | 1.30%      |
+| GPU     | 0.23%      | 0.65%       | 0.41%     | 1.14%      |
+| CPU     | 0.22%      | 0.62%       | 0.41%     | 1.16%      |
 
 The light theme averaged 0.33% near and 0.61% far. The dark theme averaged 0.11% and 0.22%.
-Ten comparisons reached 1%, and all ten are far readings in the light theme. None reached 2%.
-The worst diff is antialiasing of small words at half scale, and no shape differs.
+Eight comparisons reached 1%, and all eight are far readings in the light theme. None reached 2%.
+The worst diffs are antialiasing of small words and line tips at half scale, and no shape moved.
 
-This run came before the last fixes to light and traffic. A still corpus picture has no veil, so those fixes change none of these numbers.
-Traffic on the largest board ran again after those fixes, and it differed by 0.09% to 0.26%.
+Traffic on the largest board differed by 0.09% to 0.27%.
 
 ## The hill climb
 

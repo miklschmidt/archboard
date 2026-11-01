@@ -1,11 +1,11 @@
 ---
 id: TASK-560
 title: Vello paints the board canvas, and motion lives in the painter
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T03:41:00Z'
-updated_date: '2026-11-01T10:01:00Z'
+updated_date: '2026-11-01T11:09:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -27,7 +27,7 @@ The owner wants smoother animations and transitions in the canvas. A browser pan
 - [x] #2 A person with no WebGPU adapter sees a correct board, chosen by a deterministic rule that a real run measured
 - [x] #3 No SVG DOM motion remains in the browser viewer, and SVG stays for exports, PNGs and README assets
 - [x] #4 Search, copy, screen readers, keyboard and picking keep the behavior that the page has now
-- [ ] #5 bun run check passes
+- [x] #5 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -106,4 +106,12 @@ Review fixes preserve the painter and stage ownership described by proposal JTZv
 Review against 11b0f32db fixed retained part collisions, GPU cache accounting, GPU device cleanup, delayed reduced-motion lighting, stale frame clocks, interrupted entrance ghosts, and the default stroke hit area. Signed Rust commits: 7265addbe and 40110bb1f. Browser fixes restore SVG glyphs and definitions after failure, release failed painters, handle replacement and resize errors, preserve startup traffic holds, cancel obsolete entrances, and hide stale canvas ink. React owns a stable host while the stage owns replaceable canvases. One startup path serves initial and replacement painters. Rust tests: 96 passed, 0 failed. Core lint and build passed. The full repository gate remains for the owner.
 
 Final review validation passed: frontend TypeScript exited 0 with no diagnostics. Full lint exited 0 with 8/8 successful and no lint warnings or errors. The web UI suite passed 592 tests across 101 files. The focused stage owner covers 14 startup, failure, cleanup, and recovery cases. The only shell warning names the expected dirty Git tree before the commits. No full gate or new browser GPU measurements ran during this review.
+
+Phase 3 and 4. The delegated review on gpt-6.1-sol at xhigh found 14 faults, and three commits fixed them. After the rebase onto origin/main, bun run check exited 0 with 21 of 21 tasks and 49 of 49 browser owners. The last frame run on the rebased build: toggle mean gap 9.15 ms, longest 150.1 ms, 11 slow, long tasks 559 ms. Dive mean gap 8.75 ms, longest 83.4 ms, 9 slow, long tasks 195 ms. Wheel, pinch, keys and drag have no slow frames. Full parity on the rebased build: 528 readings, 2112 comparisons. GPU near mean 0.23% worst 0.65%, far mean 0.41% worst 1.14%. CPU near 0.22% and 0.62%, far 0.41% and 1.16%. Eight comparisons reached 1%, all far and light, and none reached 2%. Traffic on the largest board differed by 0.09% to 0.27%. A first parity run stalled after 1102 comparisons when another Chrome window opened, so a second run covered the remaining readings on the same build. A recording page finds its vault by model id, so a registered copy of a vault outside Git refused narration with ARCHIVE_NOT_INITIALIZED, and the chosen checkout held no canonical model. A temporary clone with its own identity made the video.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Vello now paints the board canvas by default, on WebGPU or on the CPU, and all picture motion lives in Rust in archboard-paint. The SVG stays in the page as the hidden semantic layer, and it stays the product of an export. On the largest board at 120 Hz, the mean frame gap of a toggle fell from 31.63 ms to 9.15 ms, and its slow frames from 68 to 11. Full parity on the final build reached a worst 1.16% of ink. Safari, Windows and macOS were not measured. ADR 0071 and docs/design/vello-painter.md hold the decision and the numbers.
+<!-- SECTION:FINAL_SUMMARY:END -->
