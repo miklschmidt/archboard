@@ -471,6 +471,20 @@ fn a_canvas_draws_a_new_look_afresh() {
 }
 
 #[test]
+fn a_frame_stamped_before_a_change_shows_the_change() {
+    let mut stage = stage_of(vec![plate(1.0)]);
+    frame(&mut stage, 0.0);
+    let camera = Camera {
+        x: 100.0,
+        y: 0.0,
+        scale: 1.0,
+    };
+    stage.set_camera(camera, 0.0, 1000.0);
+    let stale = places(&frame(&mut stage, 990.0).0);
+    assert_eq!(stale, places(&frame(&mut stage, 2000.0).0));
+}
+
+#[test]
 fn a_flight_starts_with_the_first_frame_drawn_of_it() {
     let mut stage = stage_of(vec![plate(1.0)]);
     stage.set_phases(PHASES);

@@ -560,6 +560,8 @@ impl Stage {
     /// Draw the frame of a moment, in milliseconds. A stage with no picture
     /// draws nothing.
     pub fn draw<C: Canvas>(&mut self, canvas: &mut C, now: f64) -> bool {
+        // A frame's stamp is older than a change that a long task made in its turn.
+        let now = now.max(self.now);
         self.advance(now);
         if self.shown.is_some() {
             self.draw_frame(canvas, now);
