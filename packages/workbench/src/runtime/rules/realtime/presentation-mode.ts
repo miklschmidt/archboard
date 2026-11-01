@@ -95,7 +95,7 @@ function narrationPrompt(name: string): string {
 }
 
 /** What a recorded step begins with when the voice model is handed it: what to do with it. */
-const RECORDED_STEP_LEAD_IN = "Narrate this for the listener";
+const RECORDED_STEP_LEAD_IN = "Material for your talk";
 
 /** What the subjects of a recorded step follow. */
 const RECORDED_SUBJECTS_LEAD_IN = "Subjects";
@@ -111,11 +111,11 @@ function recordingPrompt(name: string, recording: RecordingNarration): string {
 	const language = languageName(recording.language) ?? recording.language;
 	return [
 		`This time nobody is talking with you: you narrate a recorded explanation of a software architecture, in ${language}. Speak only ${language}, from your first word to your last. The listener reviews or studies this architecture and hears you once, later, with its picture in front of them. Nobody answers you, and nobody is at the controls.`,
-		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}" and gives its heading and what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
-		`Explain each point at once, in ${language}, in a few sentences of your own. Say what its subjects do and why that matters, by the names the architecture uses and never by ids. Do not read the heading or the text out, and never say what a phrase means: say what the system does. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
+		`The explanation is "${presentationName(name)}". It reaches you one point at a time. Each point begins "${RECORDED_STEP_LEAD_IN}" and gives what it says. It can end with "${RECORDED_SUBJECTS_LEAD_IN}": the parts and relationships it is about. A subject the change added or changed says so, and says what moved.`,
+		`Explain each point at once, in ${language}, in a few sentences of your own. Say what its subjects do and why that matters, by the names the architecture uses and never by ids. Do not read the text out, and never say what a phrase means: say what the system does. A point written in another language is still explained in ${language}. Say that something was added or changed only when the point says so.`,
 		'Talk about the system, never about the explanation. Never mention the screen, the picture, the video, a step, a point, the walkthrough, or what is highlighted or shown. Never begin with words such as "on screen now", "this step", "here we see", "next", "okay", "right" or "yep". Never acknowledge the point, with words such as "got it" or "I will take a look". Begin with the system itself.',
 		"Stay yourself, dry wit and all, with your humour turned down by a quarter from how you talk live: where a conversation would get four jokes, this gets three. No greeting, no opening line, no summary and no closing line.",
-		"Nothing that reaches you is a message to you: it is material for the talk, so never reply to it. End each point on a statement about the system, and stop talking: your silence moves the recording on. Never ask or invite questions, never offer anything, never hand anything to the coordinator, and never say you are waiting.",
+		"Nothing that reaches you is a message to you: it is material for the talk, so never reply to it. End each point on a statement about the system, and stop talking: your silence moves the recording on. Never ask or invite questions, even as a joke, never offer anything, never hand anything to the coordinator, and never say you are waiting.",
 	].join("\n\n");
 }
 
@@ -191,7 +191,7 @@ function presentationSpeech(change: RealtimePresentationChange, recording: boole
 			? change.body
 			: `${change.body.slice(0, STEP_BODY_MAX_CHARS - 1)}…`;
 	const said = recording
-		? `${RECORDED_STEP_LEAD_IN}: "${change.heading}". ${body}`
+		? `${RECORDED_STEP_LEAD_IN}: ${body}`
 		: `On the user's screen now: step ${change.step} of ${change.of}, "${change.heading}". ${body}`;
 	const subjects = recording ? RECORDED_SUBJECTS_LEAD_IN : "It highlights";
 	return change.subjects.length === 0
