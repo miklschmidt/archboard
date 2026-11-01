@@ -6,6 +6,7 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, test } from "bun:test";
 import { createElement, type ComponentProps } from "react";
 import type { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
 import type { z } from "zod";
 
 GlobalRegistrator.register();
@@ -31,6 +32,8 @@ afterEach(() => {
 	globalThis.fetch = realFetch;
 });
 afterAll(async () => {
+	// A read that settles after the last test leaves React work that needs the window.
+	await Bun.sleep(1);
 	await GlobalRegistrator.unregister();
 });
 
@@ -73,6 +76,7 @@ const MODEL: Props["model"] = {
 	selectedState: STATE,
 	revision: REVISION,
 	modules: [{ binding: { repo: "example/shop", path: "src" } }],
+	policy: DEFAULT_SEMANTIC_POLICY,
 };
 
 const PROJECTION: Props["projection"] = {
@@ -220,12 +224,14 @@ test("the list says once why modules were not read", async () => {
 	expect(row("worker").textContent).not.toContain("Not read");
 });
 
-test("the bar of a row follows the sorted count, and a count of none has none", async () => {
+test("the bar of a row follows the sorted count in its kind's colour, and a count of none has none", async () => {
 	answering(async () => Response.json(ANSWER));
 	mount();
 	await waitFor(() => expect(history()).toBe("read"));
 	const bar = '[data-slot="model-measure-bar"]';
-	expect(row("api").querySelector<HTMLElement>(bar)?.style.width).toContain("* 1)");
+	const drawn = row("api").querySelector<HTMLElement>(bar);
+	expect(drawn?.style.width).toContain("* 1)");
+	expect(drawn?.style.getPropertyValue("--kind")).toStartWith("var(--semantic-");
 	expect(row("route").querySelector(bar)).toBeNull();
 	expect(row("worker").querySelector(bar)).toBeNull();
 });

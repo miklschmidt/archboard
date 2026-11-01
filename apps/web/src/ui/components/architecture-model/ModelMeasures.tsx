@@ -1,5 +1,6 @@
 import { useCallback, useId, useMemo, useRef, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
+import type { Model } from "@archboard/board/content";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 import { Button, cn, Select } from "@archboard/ui-kit/components";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
@@ -28,6 +29,7 @@ import {
 	type MeasureKey,
 	type MeasureRow,
 } from "#ui/rules/architecture-model/module-measures.ts";
+import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 
 /** What the sort offers, by where the measure comes from. */
 const HISTORY_MEASURES = MEASURES.filter(({ key }) => isHistoryMeasure(key));
@@ -48,7 +50,7 @@ interface MeasureSortProps {
 interface ModelMeasuresProps {
 	readonly vault: string;
 	/** The reading on show. */
-	readonly model: Parameters<typeof modelHistoryQuery>[1] & HistoryReading;
+	readonly model: Parameters<typeof modelHistoryQuery>[1] & HistoryReading & Pick<Model, "policy">;
 	readonly projection: Parameters<typeof interfaceRows>[0];
 	/** The module that is selected on the picture, or null. */
 	readonly selected: string | null;
@@ -90,9 +92,10 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 		[onChoose],
 	);
 	const most = mostOf(rows, measure);
+	const look = useMemo(() => kindLookOf(model.policy, new Map()), [model.policy]);
 	const facts = useCallback(
-		(row: MeasureRow) => <ModelMeasureCells row={row} sorted={measure} most={most} />,
-		[measure, most],
+		(row: MeasureRow) => <ModelMeasureCells row={row} sorted={measure} most={most} look={look} />,
+		[measure, most, look],
 	);
 	return (
 		<div data-slot="model-measures" data-history={state} className="flex min-h-full flex-col">
@@ -178,9 +181,6 @@ function ColumnHead(props: { readonly label: string; readonly sorted: boolean })
 			>
 				{label}
 			</span>
-			{sorted && (
-				<span className="bg-primary-mark absolute inset-x-1 bottom-0 h-0.5 rounded-full" />
-			)}
 		</span>
 	);
 }

@@ -183,7 +183,7 @@ every role and changes the values. The file theme.css holds both themes.
 - **Reading Tone** (oklch(0.935 0.006 85), dark oklch(0.255 0.008 78)): the chosen row of a list on a page or in the right panel, raised as a plate.
 - **Well Floor** (`--tray-sink`, oklch(0.95 0.005 85), dark oklch(0.14 0.005 75)): the floor of the well that the left column's list lies in, and of a field sunk into the column. It is the floor of a nested container on the picture, so the column and the picture are one material.
 - **Tab Piece** (`--tray-tab`, oklch(1 0 0), dark oklch(0.25 0.007 75)): the lighter piece raised on the edge of a well: the open tab of the left column, and its chosen row.
-- **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge and of the bar of a `Measures` row, on a front edge of `--slab-edge`.
+- **Slab Face** (`--slab-face`, oklch(0.915 0.005 85), dark oklch(0.31 0.007 75)): the top face of a number badge, on a front edge of `--slab-edge`.
 - **Card White** (oklch(1 0 0), dark oklch(0.235 0.007 75)): cards, popovers, dialogs and raised controls.
 - **Ink Graphite** (oklch(0.17 0.006 75), dark oklch(0.955 0.006 90)) and **Muted Ink** (oklch(0.48 0.008 75), dark oklch(0.72 0.01 80)): text.
 - **Rule** (oklch(0.905 0.005 85), dark chalk at 9%): the edge of a control or a card, one pixel wide. It also divides regions on one plane.
@@ -269,7 +269,7 @@ The file app.css holds the values for both themes and gives each one a
 
 - **well** (`--elevation-well`, an inner shadow of 1px offset and 2px blur): a field sunk into a surface, such as an input or the composer.
 - **sink** (`--elevation-sink`, built from `--slab-shadow` and `--tray-lip`): the well that a column's list lies in. One inner shadow falls from the whole of its top edge, and a lit lip runs along its foot, as on a container of the picture. The `column-well` utility holds the recipe.
-- **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number or a bar that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
+- **slab** (`--elevation-slab`, built from `--slab-glint`, `--slab-edge` and `--slab-shadow`): a number that lies on a surface, as a small part of the picture does: a lit top edge, a front edge 2px thick and a short shadow.
 - **edge-down, edge-side and edge-up** (`--elevation-edge-*`): the chrome casts these onto what is under it or beside it. Each is a 1px contact shadow and a soft shadow. The soft shadow has an 8px offset on chalk and 10px to 12px on graphite. A tray casts edge-up over the list that scrolls under it.
 - **raised** (`--elevation-raised`, a white highlight on top and a 1px seat): a control, a key cap, the voice circle and the chosen row of a list.
 - **pressed** (`--elevation-pressed`, an inner shadow): a raised control while somebody presses it.
@@ -426,7 +426,7 @@ The left column's tabs stand on the top edge of the well, as a container's name 
 
 A shelf stands over the table while it scrolls, on Tray Chalk with `shadow-edge-down`. It holds the `Sort by` select, one line that says what the chosen measure counts and what it shows, and the head of each column. A head is turned on its side, as the dimension of a drawing is, because seven names do not fit seven narrow columns. The head of the sorted column is in full ink and semibold, with a piece of Gold Mark under it. Its numbers stand on number badges, so the sorted measure and its numbers read as one column.
 
-A neutral bar under the name draws the sorted count of a row, on the scale of the most in the list, with the slab's face and front edge. So the shape of the whole list shows at a glance: one module that stands far out, or a long even run. It draws one count and adds nothing up.
+A bar under the name draws the sorted count of a row, on the scale of the most in the list. It is a slab in the colour of the module's kind, so that the list reads in colour and says what each row is. So the shape of the whole list shows at a glance: one module that stands far out, or a long even run. It draws one count and adds nothing up.
 
 A count of none is in a quieter ink, so what is there stands out. An empty cell is a module with no such measure: a module with no parts has no interface, and a count of none would say something else. Before the history arrives, its two cells stay empty. A module the read skipped takes one dash in each history cell, whose tooltip says why, and a row says all of it to assistive technology. A foot stands under the table on Tray Chalk with `shadow-edge-up`. It says once what the counts cover and why modules were not read, with `Refresh` at its end, or why there are no counts. No count takes a color, nothing combines the counts, and no row carries a rank.
 

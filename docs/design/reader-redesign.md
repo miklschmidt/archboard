@@ -16,7 +16,8 @@ from Shop, on the renderer core before commit `4b970e501`. Measure again before 
 The left column lists where to go. The middle shows it. The right column explains what is selected or open, and
 what the marks of the picture mean.
 
-- Left column, 448 px (TASK-559.36): Find, a repository switcher that shows the pane letter, the destinations
+- Left column, 448 px (TASK-559.36): a repository switcher that shows the pane letter and opens a dropdown, the
+  destinations
   `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures` on one row, and Talk. `Flows` and `Walkthroughs` list
   the whole model and show its count, so a list here never changes under a reader. A proposal read against its base
   adds `Changes` to that row with its count, and the tabs of the model drop their counts to make room.
@@ -55,7 +56,7 @@ what the marks of the picture mean.
   not a count of none. A row selects its module on its picture through the same path as a count in the interface
   line, opening what it must. The interface counts need no server and show at once, and the history counts arrive
   with the read. The list is a table (TASK-559.36): each count keeps a column on every row, the sorted column has a
-  lit head and its numbers on slabs, and a neutral bar under the name draws that one count. A module the read skipped
+  lit head and its numbers on slabs, and a bar in the colour of the module's kind under the name draws that one count. A module the read skipped
   takes a dash, and the foot of the list says why. A failed read says what happened and offers `Read again`, and a
   model with no bindings says that history needs them. Counts only: no score, no color, no rank and no mark on the
   picture (ADR 0044).

@@ -1,4 +1,4 @@
-import { useMemo, type JSX } from "react";
+import { useMemo, type CSSProperties, type JSX } from "react";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import {
 	MEASURES,
@@ -7,6 +7,7 @@ import {
 	type MeasureKey,
 	type MeasureRow,
 } from "#ui/rules/architecture-model/module-measures.ts";
+import type { KindLook } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
 
 /** Why the lens did not read a module, as a row and the foot of the list say it. */
@@ -27,26 +28,32 @@ const QUIET_INK = "text-muted-foreground/80";
 /** The room the bar has: the row less the count columns and the room around them. */
 const BAR_ROOM = "(100% - 236px)";
 
+/** A bar is a slab in the colour of its kind: a lit top edge and a front edge in shade. */
+const BAR_SLAB =
+	"shadow-[inset_0_1px_0_color-mix(in_oklch,var(--kind)_70%,white),0_2px_0_color-mix(in_oklch,var(--kind)_60%,black)]";
+
 /**
  * A row's counts, each in its own column, and the bar of the sorted count under the name. Every
  * measure keeps its column on every row, so the eye runs down one edge, and the sorted count stands
  * on a slab. An empty cell is a module with no such measure, and a dash is a module the lens did
  * not read, so neither looks like a count of none.
- * @param props The row, what it is sorted by and the most of that measure.
+ * @param props The row, what it is sorted by, the most of that measure and how kinds look.
  * @param props.row The row.
  * @param props.sorted What it is sorted by.
  * @param props.most The most of that measure in the list.
+ * @param props.look How the kinds of the model look.
  * @returns The cells.
  */
 function ModelMeasureCells(props: {
 	readonly row: MeasureRow;
 	readonly sorted: MeasureKey;
 	readonly most: number;
+	readonly look: KindLook;
 }): JSX.Element {
-	const { row, sorted, most } = props;
+	const { row, sorted, most, look } = props;
 	return (
 		<>
-			<SortedBar count={measureOf(row, sorted) ?? 0} most={most} />
+			<SortedBar count={measureOf(row, sorted) ?? 0} most={most} color={look.nodeColor(row.kind)} />
 			<span data-slot="model-measure-cells" className={COUNT_COLUMNS}>
 				{MEASURES.map(({ key }) => (
 					<Cell key={key} row={row} measure={key} sorted={key === sorted} />
@@ -58,22 +65,33 @@ function ModelMeasureCells(props: {
 
 /**
  * The length of the sorted count, under the name. It draws that one count and no other, in the
- * neutral of a slab, so it adds nothing up and judges nothing (ADR 0044).
- * @param props The count and the most of its measure.
+ * colour of the module's kind, so it adds nothing up and judges nothing (ADR 0044).
+ * @param props The count, the most of its measure and the colour.
  * @param props.count The count.
  * @param props.most The most of its measure in the list.
+ * @param props.color The colour of the module's kind, as a CSS colour.
  * @returns The bar, or nothing for a count of none.
  */
-function SortedBar(props: { readonly count: number; readonly most: number }): JSX.Element | null {
-	const { count, most } = props;
-	const style = useMemo(() => ({ width: `calc(${BAR_ROOM} * ${count / most})` }), [count, most]);
+function SortedBar(props: {
+	readonly count: number;
+	readonly most: number;
+	readonly color: string;
+}): JSX.Element | null {
+	const { count, most, color } = props;
+	const style = useMemo<CSSProperties>(
+		() => ({ "--kind": color, width: `calc(${BAR_ROOM} * ${count / most})` }),
+		[color, count, most],
+	);
 	if (count === 0) return null;
 	return (
 		<span
 			aria-hidden="true"
 			data-slot="model-measure-bar"
 			style={style}
-			className="bg-slab-face/70 shadow-slab rounded-chip absolute top-0.5 bottom-1 left-1 -z-10 min-w-0.5"
+			className={cn(
+				"rounded-chip absolute top-0.5 bottom-1 left-1 -z-10 min-w-0.5 bg-(color:--kind)/55 dark:bg-(color:--kind)/70",
+				BAR_SLAB,
+			)}
 		/>
 	);
 }

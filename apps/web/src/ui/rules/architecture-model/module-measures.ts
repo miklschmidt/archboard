@@ -35,6 +35,8 @@ type ModuleHistory =
 interface MeasureRow {
 	readonly id: string;
 	readonly name: string;
+	/** Its kind, which colours its bar. */
+	readonly kind: string;
 	/** Its name and code path, because two modules can share a name. */
 	readonly title: string;
 	/** What its interface counts, or nothing for a module with no parts: it has no interface. */
@@ -137,11 +139,12 @@ function isHistoryMeasure(key: MeasureKey): key is "commits" | "unjoined" {
  */
 function interfaceRows(projection: Pick<Projection, "complete">): readonly MeasureRow[] {
 	const { nodes } = projection.complete;
-	return nodes.map(({ id, name, binding }) => {
+	return nodes.map(({ id, name, kind, binding }) => {
 		const inspection = moduleInterface(projection, id);
 		return {
 			id,
 			name,
+			kind,
 			title: binding === undefined ? name : `${name}\n${binding.path}`,
 			counts: inspection?.holdsParts === true ? interfaceCounts(inspection, nodes) : null,
 		};
