@@ -85,13 +85,13 @@
       "kind": "relationship",
       "value": {
         "order": 1000,
-        "kind": "call",
-        "label": "a whole picture's move, as a flight or an entrance",
+        "kind": "dependency",
+        "label": "the phases of a move, and its heading",
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "crates/archboard-paint/src/stage/mod.rs",
-          "symbol": "Flight"
+          "symbol": "Phases"
         },
         "id": "vKEsyHFk#xalAnyTh",
         "to": "vKEsyHFk#9jix9Dsx"
@@ -169,7 +169,7 @@
         ],
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-paint/src/between/mod.rs"
+          "path": "crates/archboard-paint/src/between"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#9jix9Dsx"
@@ -217,12 +217,12 @@
       "value": {
         "order": 1000,
         "kind": "dependency",
-        "label": "the typed scene the core painted",
+        "label": "the design constants of the scene it draws",
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
           "path": "crates/archboard-paint/src/draw/mod.rs",
-          "symbol": "Scene"
+          "symbol": "design"
         },
         "id": "vKEsyHFk#NjziT92Y",
         "to": "vKEsyHFk#8oId5pfI"
@@ -392,6 +392,12 @@
       "subject": "vKEsyHFk/UOXNWLhR#iVizf8Iu",
       "field": "to",
       "value": "vKEsyHFk#9FxduWoO"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/UOXNWLhR#AmxCEbK0",
+      "field": "kind",
+      "value": "dependency"
     },
     {
       "type": "assign",
@@ -832,35 +838,10 @@
       }
     },
     {
-      "type": "add",
-      "subject": "vKEsyHFk#tv4MSYd6",
-      "kind": "relationship",
-      "value": {
-        "order": 2000,
-        "kind": "call",
-        "label": "Vello on WebGPU implements the same Canvas",
-        "emphasis": "normal",
-        "anchor": {
-          "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-painter-wasm/src/gpu.rs",
-          "symbol": "Canvas"
-        },
-        "id": "vKEsyHFk#tv4MSYd6",
-        "to": "vKEsyHFk#290spzv7"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk#tv4MSYd6",
-      "placement": {
-        "holder": "vKEsyHFk#UpjzNLKH"
-      }
-    },
-    {
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "field": "label",
-      "value": "how the picture is lit and seen"
+      "value": "the canvas the picture is painted on"
     },
     {
       "type": "assign",
@@ -868,8 +849,8 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "useStageLook"
+        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "symbol": "attachStage"
       }
     },
     {
@@ -901,6 +882,31 @@
       "subject": "vKEsyHFk#LOCiLRdW",
       "placement": {
         "holder": "vKEsyHFk#0bsThTMv"
+      }
+    },
+    {
+      "type": "add",
+      "subject": "vKEsyHFk#m5Ct61Wj",
+      "kind": "relationship",
+      "value": {
+        "order": 990100,
+        "kind": "call",
+        "label": "warm the painter while a drawing is made",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
+          "symbol": "warmPainter"
+        },
+        "id": "vKEsyHFk#m5Ct61Wj",
+        "to": "vKEsyHFk#hKrzJUPf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#m5Ct61Wj",
+      "placement": {
+        "holder": "vKEsyHFk#65P5jbnZ"
       }
     },
     {
@@ -1005,7 +1011,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#1lZkK1Ce",
       "field": "label",
-      "value": "how the picture is lit and seen"
+      "value": "the canvas, and how the picture is lit and seen"
     },
     {
       "type": "assign",
@@ -1013,8 +1019,8 @@
       "field": "anchor",
       "value": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
-        "symbol": "useStageLook"
+        "path": "apps/web/src/ui/components/semantic-board-canvas/CameraSurface.tsx",
+        "symbol": "attachStage"
       }
     },
     {
@@ -1201,6 +1207,7 @@
     "vKEsyHFk/UOXNWLhR#OAY8mj0y",
     "vKEsyHFk/UOXNWLhR#n5No6FUy",
     "vKEsyHFk/UOXNWLhR#WT3s42AE",
-    "vKEsyHFk/UOXNWLhR#9VphxuuC"
+    "vKEsyHFk/UOXNWLhR#9VphxuuC",
+    "vKEsyHFk#tv4MSYd6"
   ]
 }
