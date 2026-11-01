@@ -150,6 +150,18 @@ fn a_picture_leaves_in_its_own_light_and_the_next_stands_in_its_own_at_once() {
 }
 
 #[test]
+fn a_picture_that_takes_the_stage_over_has_no_last_light_to_fade_from() {
+    let mut stage = stage();
+    stage.show(painting(Vec::new()));
+    stage.set_light(&veil(0.14), 0.0);
+    stage.advance(900.0);
+    stage.show(painting(Vec::new()));
+    stage.set_light(&veil(1.0), 900.0);
+    stage.advance(901.0);
+    assert!((stage.presentation.recede.rest - 1.0).abs() < 1e-6);
+}
+
+#[test]
 fn a_further_hop_lights_later() {
     let mut stage = stage();
     let far_hop = Light {

@@ -4,10 +4,7 @@
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Transform;
 
-use crate::timing::Curve;
-
-/// The curve a move follows: a start the eye can catch, a long settle.
-const EMPHASISED: Curve = Curve(0.5, 0.0, 0.1, 1.0);
+use crate::timing::EMPHASISED;
 
 /// Where a line that travels is as far back as it goes.
 const RECEDES_BY: f64 = 0.2;

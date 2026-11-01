@@ -12,26 +12,41 @@ pub const EASE_OUT: Curve = Curve(0.0, 0.0, 0.58, 1.0);
 pub const EASE_IN_OUT: Curve = Curve(0.42, 0.0, 0.58, 1.0);
 /// The far swap's curve, as the SVG's stylesheet spells it.
 pub const SWAP: Curve = Curve(0.4, 0.0, 0.2, 1.0);
+/// The curve a move follows: a start the eye can catch, a long settle. The
+/// host's camera glides on the same curve (`glideEase`).
+pub const EMPHASISED: Curve = Curve(0.45, 0.0, 0.15, 1.0);
+
+/// One axis of a curve at a point along it.
+fn along(one: f64, other: f64, point: f64) -> f64 {
+    let rest = 1.0 - point;
+    3.0 * rest * rest * point * one + 3.0 * rest * point * point * other + point * point * point
+}
+
+/// The point of a curve at which one axis reaches a value.
+fn point_at(one: f64, other: f64, value: f64) -> f64 {
+    let (mut low, mut high) = (0.0, 1.0);
+    for _ in 0..32 {
+        let point = f64::midpoint(low, high);
+        if along(one, other, point) < value {
+            low = point;
+        } else {
+            high = point;
+        }
+    }
+    f64::midpoint(low, high)
+}
 
 impl Curve {
     /// The share of a change done a share of the way through its time.
     pub fn at(self, progress: f64) -> f64 {
         let Curve(x1, y1, x2, y2) = self;
-        let progress = progress.clamp(0.0, 1.0);
-        let along = |one: f64, other: f64, t: f64| {
-            let rest = 1.0 - t;
-            3.0 * rest * rest * t * one + 3.0 * rest * t * t * other + t * t * t
-        };
-        let (mut low, mut high) = (0.0, 1.0);
-        for _ in 0..32 {
-            let t = f64::midpoint(low, high);
-            if along(x1, x2, t) < progress {
-                low = t;
-            } else {
-                high = t;
-            }
-        }
-        along(y1, y2, f64::midpoint(low, high))
+        along(y1, y2, point_at(x1, x2, progress.clamp(0.0, 1.0)))
+    }
+
+    /// How far through its time a change has done a share of itself.
+    pub fn time_of(self, share: f64) -> f64 {
+        let Curve(x1, y1, x2, y2) = self;
+        along(x1, x2, point_at(y1, y2, share.clamp(0.0, 1.0)))
     }
 }
 

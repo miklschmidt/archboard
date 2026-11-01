@@ -11,7 +11,7 @@ use crate::between::{Between, Entrance, Heading, Phases, departure};
 use crate::definitions::Definitions;
 use crate::draw::Picture;
 use crate::presentation::{Camera, Presentation};
-use crate::timing::{EASE_IN_OUT, EASE_OUT};
+use crate::timing::{EASE_IN_OUT, EASE_OUT, EMPHASISED};
 
 /// How far through a stretch of time a moment is, from 0 to 1.
 fn share(now: f64, start: f64, ms: f64) -> f64 {
@@ -36,11 +36,9 @@ impl Stretch {
         Stretch { start: None, ms }
     }
 
-    /// Start at a moment, unless it has started. Says whether it starts now.
-    pub(crate) fn begin(&mut self, now: f64) -> bool {
-        let first = self.start.is_none();
+    /// Start at a moment, unless it has started.
+    pub(crate) fn begin(&mut self, now: f64) {
         self.start.get_or_insert(now);
-        first
     }
 
     /// How far through it a moment is, from 0 to 1.
@@ -102,15 +100,10 @@ impl Flight {
         }
     }
 
-    /// Start at the moment of the first frame. Says whether that moment brings
-    /// a picture onto the stage, with no last light on it.
-    pub(crate) fn begin(&mut self, now: f64) -> bool {
+    /// Start at the moment of the first frame.
+    pub(crate) fn begin(&mut self, now: f64) {
         match self {
-            Flight::Carry { time, .. } => {
-                time.begin(now);
-                false
-            }
-            Flight::Enter { time, .. } => time.begin(now),
+            Flight::Carry { time, .. } | Flight::Enter { time, .. } => time.begin(now),
         }
     }
 
@@ -221,6 +214,16 @@ fn fade_at(stops: &Stops, progress: f64) -> f64 {
     from.1 + (to.1 - from.1) * eased
 }
 
+/// Where a moment of a flight stands on the way in. Each part shows at one place
+/// of the camera's path both ways. The clock cannot say that, because a glide
+/// takes off at once and settles slowly in both directions.
+fn along_flight(way: DiveWay, progress: f64) -> f64 {
+    match way {
+        DiveWay::In => progress,
+        DiveWay::Out => EMPHASISED.time_of(1.0 - EMPHASISED.at(progress)),
+    }
+}
+
 /// The board inside a card, in the parent's own coordinates, so the camera
 /// carries it along.
 #[derive(Debug)]
@@ -242,13 +245,9 @@ pub(crate) struct DiveFades {
 }
 
 impl Dive {
-    /// The fades at a moment. Going back out is the same run the other way.
+    /// The fades at a moment.
     pub(crate) fn fades(&self, now: f64) -> DiveFades {
-        let progress = share(now, self.start, self.ms);
-        let along = match self.way {
-            DiveWay::In => progress,
-            DiveWay::Out => 1.0 - progress,
-        };
+        let along = along_flight(self.way, share(now, self.start, self.ms));
         DiveFades {
             parent: fade_at(&PARENT, along),
             inset: fade_at(&INSET, along),
@@ -264,7 +263,7 @@ impl Dive {
 
 #[cfg(test)]
 mod tests {
-    use super::{INSET, PARENT, WORDS, fade_at};
+    use super::{DiveWay, INSET, PARENT, WORDS, along_flight, fade_at};
 
     #[test]
     fn what_a_card_says_goes_before_the_board_above_it() {
@@ -279,6 +278,15 @@ mod tests {
         assert_eq!(fade_at(&INSET, 0.04), 0.0);
         assert_eq!(fade_at(&INSET, 0.3), 1.0);
         assert!(fade_at(&PARENT, 0.3) > 0.0);
+    }
+
+    #[test]
+    fn the_way_back_finds_the_board_above_around_the_board_it_leaves() {
+        let halfway = along_flight(DiveWay::Out, 0.5);
+        assert!(fade_at(&PARENT, halfway) > 0.5);
+        assert!(fade_at(&INSET, halfway) > 0.5);
+        assert!((along_flight(DiveWay::Out, 0.0) - 1.0).abs() < 1e-6);
+        assert!(along_flight(DiveWay::Out, 1.0) < 1e-6);
     }
 
     #[test]

@@ -74,6 +74,8 @@ pub struct Stage {
     far: Fade,
     far_line: FarLine,
     lighting: Lighting,
+    /// Whether a picture came onto the stage with no last light on it.
+    lit_afresh: bool,
     clock: TrafficClock,
     /// The subjects the code check warns about.
     warned: HashSet<String>,
@@ -113,6 +115,7 @@ impl Stage {
             far: Fade::still(0.0),
             far_line: FarLine::default(),
             lighting: Lighting::default(),
+            lit_afresh: false,
             clock: TrafficClock::default(),
             warned: HashSet::new(),
             now: 0.0,
@@ -148,6 +151,7 @@ impl Stage {
     /// Put a picture on the stage in place of what stands there.
     pub fn show(&mut self, painting: Painting) {
         self.stand(painting);
+        self.lit_afresh = true;
     }
 
     /// Carry the picture on the stage into the next, over a time in
@@ -186,6 +190,7 @@ impl Stage {
             .as_ref()
             .map(|phases| Flight::enter(&painting.scene, phases, ms));
         self.stand(painting);
+        self.lit_afresh = true;
         self.ghost = ghost;
         self.flight = flight;
         if self.flight.is_some() {
@@ -448,7 +453,10 @@ impl Stage {
         };
         self.swap_views(now);
         self.presentation.far = self.far.at(now);
-        if self.flight.as_mut().is_some_and(|flight| flight.begin(now)) {
+        if let Some(flight) = &mut self.flight {
+            flight.begin(now);
+        }
+        if std::mem::take(&mut self.lit_afresh) {
             self.lighting.stand();
         }
         if let Some(ghost) = &mut self.ghost {
