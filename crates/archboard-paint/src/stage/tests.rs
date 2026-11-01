@@ -268,22 +268,15 @@ fn a_timed_picture_change_keeps_a_stale_frame_from_rewinding_the_camera() {
 }
 
 #[test]
-fn a_cut_or_carry_takes_away_the_ghost_of_an_interrupted_entrance() {
-    let replacements: [fn(&mut Stage); 2] = [
-        |stage| stage.show(painting(Vec::new())),
-        |stage| stage.carry(painting(Vec::new()), (0.0, 0.0), 100.0),
-    ];
-    for replace in replacements {
-        let mut stage = stage();
-        stage.set_phases(PHASES);
-        stage.show(painting(Vec::new()));
-        stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 0.0);
-        stage.advance(0.0);
-        assert!(stage.ghost.is_some());
-        stage.land();
-        replace(&mut stage);
-        assert!(stage.ghost.is_none());
-    }
+fn a_cut_takes_away_the_ghost_of_an_interrupted_entrance() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 0.0);
+    stage.advance(0.0);
+    assert!(stage.ghost.is_some());
+    stage.show(painting(Vec::new()));
+    assert!(stage.ghost.is_none());
 }
 
 #[test]

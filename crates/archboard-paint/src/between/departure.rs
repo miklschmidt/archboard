@@ -55,6 +55,11 @@ pub fn visible_at(progress: f64) -> f64 {
 /// nothing is answered once it is as good as gone. The definitions it refers to
 /// are the scene's own.
 pub fn departure(scene: &Scene, progress: f64) -> Vec<Item> {
+    departing(scene.body.clone(), (scene.width, scene.height), progress)
+}
+
+/// The visible items leaving at a share of the whole departure.
+pub(crate) fn departing(body: Vec<Item>, (width, height): (f64, f64), progress: f64) -> Vec<Item> {
     let eased = LEAVE_EASING.at(progress);
     let visible = 1.0 - eased;
     if visible <= VISIBLE_FLOOR {
@@ -63,10 +68,10 @@ pub fn departure(scene: &Scene, progress: f64) -> Vec<Item> {
     let page = Rect {
         x: 0.0,
         y: 0.0,
-        width: scene.width,
-        height: scene.height,
+        width,
+        height,
     };
-    let mut leaving = Group::new(Role::Marks, scene.body.clone());
+    let mut leaving = Group::new(Role::Marks, body);
     leaving.opacity = Some(visible);
     leaving.transform = Some(scale_about(page, lerp(1.0, LEAVING_SCALE, eased)));
     vec![Item::Group(leaving)]

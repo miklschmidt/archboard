@@ -5,7 +5,7 @@ use archboard_scene::scene::Item;
 use kurbo::{Affine, RoundedRect, Shape as _};
 
 use super::Stage;
-use crate::between::departure;
+use crate::between::departing;
 use crate::canvas::Canvas;
 use crate::draw::{Inks, draw_ground, draw_items};
 use crate::flight::{Dive, Flight, Ghost, Leaving};
@@ -42,12 +42,14 @@ impl Stage {
         let transform = plane.transform * placed(camera.x, camera.y, Some(camera.scale));
         let fades = dive.as_ref().map(|dive| dive.fades(now));
         let parent = fades.map_or(1.0, |fades| fades.parent) * plane.shown;
-        let moved: Option<Vec<Item>> = match (flight.as_mut(), &*leaving) {
-            (Some(flight), _) => Some(flight.items(now)),
-            (None, Some(leaving)) if leaving.axis.is_none() => {
-                Some(departure(&picture.scene, leaving.progress(now)))
-            }
-            _ => None,
+        let moved = flight.as_mut().map(|flight| flight.items(now));
+        let moved = match leaving.as_ref().filter(|leaving| leaving.axis.is_none()) {
+            Some(leaving) => Some(departing(
+                moved.unwrap_or_else(|| picture.scene.body.clone()),
+                (picture.scene.width, picture.scene.height),
+                leaving.progress(now),
+            )),
+            None => moved,
         };
         let definitions = flight
             .as_ref()

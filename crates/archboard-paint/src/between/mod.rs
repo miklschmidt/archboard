@@ -57,6 +57,7 @@ use ride::{Ride, mark_of};
 use spark::{DrawOn, redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
 
+pub(crate) use departure::departing;
 pub use departure::{Heading, departure, visible_at};
 pub(crate) use ease::phase;
 pub use entrance::{Entrance, Handover};

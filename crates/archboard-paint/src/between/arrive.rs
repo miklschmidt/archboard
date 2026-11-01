@@ -188,8 +188,8 @@ impl Grow {
         if here >= 1.0 {
             return group;
         }
-        let shown = self.shown + (1.0 - self.shown) * ease_out(phase(here, 0.0, SHOWN_BY));
-        group.opacity = Some(base(&group) * shown);
+        let shown = ease_out(phase(here, 0.0, SHOWN_BY));
+        group.opacity = Some(self.shown + (base(&group) - self.shown) * shown);
         let placed = emphasised(here);
         scaled_about(
             &mut group,

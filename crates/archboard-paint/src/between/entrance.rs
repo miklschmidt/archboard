@@ -103,7 +103,7 @@ pub struct Handover<'a> {
 /// the last one shows. Only a card that stayed about its size flies: a door that
 /// became a tile has no shape to keep.
 struct Last<'a> {
-    stood: HashMap<&'a str, Rect>,
+    stood: HashMap<&'a str, (Rect, f64)>,
     shown: f64,
 }
 
@@ -119,7 +119,23 @@ impl<'a> Last<'a> {
         let stood = found(handover.last)
             .iter()
             .filter(|group| is_card(group) && group.ordinal == 0)
-            .filter_map(|group| Some((group.id, group.frame?)))
+            .filter_map(|group| {
+                let frame = group.frame?;
+                let moved = super::ease::then(
+                    group
+                        .outer
+                        .unwrap_or(archboard_scene::scene::Transform::translate(0.0, 0.0)),
+                    group.group.transform,
+                );
+                let scale = moved.scale.unwrap_or(1.0);
+                let frame = Rect {
+                    x: frame.x * scale + moved.x,
+                    y: frame.y * scale + moved.y,
+                    width: frame.width * scale,
+                    height: frame.height * scale,
+                };
+                Some((group.id, (frame, group.group.opacity.unwrap_or(1.0))))
+            })
             .collect();
         Last {
             stood,
@@ -128,12 +144,12 @@ impl<'a> Last<'a> {
     }
 
     /// The box a card stood in, when it can fly from there.
-    fn stood_for(&self, card: &Found<'_>) -> Option<(Rect, Rect)> {
-        let (old, new) = (*self.stood.get(card.id)?, card.frame?);
+    fn stood_for(&self, card: &Found<'_>) -> Option<(Rect, Rect, f64)> {
+        let ((old, shown), new) = (*self.stood.get(card.id)?, card.frame?);
         let ratio = old.width / new.width;
         (1.0 / MOST_CHANGE..=MOST_CHANGE)
             .contains(&ratio)
-            .then_some((old, new))
+            .then_some((old, new, shown))
     }
 }
 
@@ -198,7 +214,14 @@ fn arriving(
                 pull_of(card.frame, middle),
             )
         },
-        |boxes| Grow::flown(group.clone(), boxes, (0.0, FLOWN_BY), last.shown),
+        |(old, new, shown)| {
+            Grow::flown(
+                group.clone(),
+                (old, new),
+                (0.0, FLOWN_BY),
+                last.shown * shown,
+            )
+        },
     ))
 }
 

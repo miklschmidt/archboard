@@ -5,6 +5,8 @@
 
 mod arrival;
 mod frame;
+#[cfg(test)]
+mod interrupted;
 mod lens;
 mod lighting;
 #[cfg(test)]
@@ -193,7 +195,13 @@ impl Stage {
                 }
                 None => Flight::carry(&last.picture.scene, &painting.scene, shift, phases, ms),
             });
+        let ghost = self.ghost.take();
+        let behind = std::mem::take(&mut self.behind);
+        let leaving = self.leaving.take();
         self.stand(painting);
+        self.ghost = ghost;
+        self.behind = behind;
+        self.leaving = leaving;
         self.flight = flight;
         if self.flight.is_some() {
             self.presentation.warnings = Warnings::default();

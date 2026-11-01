@@ -111,12 +111,19 @@ impl Stage {
             (axis, place)
         });
         let last = self.shown.take()?;
+        let (picture, back) = match &self.flight {
+            Some(flight) => {
+                let (scene, back) = flight.seen_at(now, &last.picture.scene);
+                (Picture::new(scene), back)
+            }
+            None => (last.picture, (0.0, 0.0)),
+        };
         let camera = self.presentation.camera;
         Some(Ghost {
-            picture: last.picture,
+            picture,
             camera: Camera {
-                x: camera.x + moved.0,
-                y: camera.y + moved.1,
+                x: camera.x + moved.0 - back.0 * camera.scale,
+                y: camera.y + moved.1 - back.1 * camera.scale,
                 ..camera
             },
             from,
