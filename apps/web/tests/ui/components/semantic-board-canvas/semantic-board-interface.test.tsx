@@ -207,6 +207,9 @@ test("a picked container shows the interface of the variant on screen, and an en
 		{ part: "h", noted: false },
 		{ part: "r", noted: true },
 	]);
+	// The relay's note names the part that its one call goes to, so the entry can be tested at once.
+	const note = "[data-part='r'] [data-slot='sidebar-label'] > span";
+	expect(document.querySelector(note)?.textContent).toContain("Ledger");
 	expect(measure("hidden-parts")).toEqual({ count: 1, rows: [{ part: "q", noted: false }] });
 	// The admin reaches Orders itself, and so is a caller that reaches no entry point.
 	const callers = measure("callers");

@@ -5,7 +5,8 @@
 // `inspectContainer` derives the interface from the content of the variant on
 // screen, the same function `semantic inspect` answers with, so the pane and
 // the CLI cannot disagree about a container. A pass-through entry point is said
-// in words on its row; the picture draws no mark for it.
+// in words on its row, with the part that its one call goes to; the picture
+// draws no mark for it.
 
 import { useCallback, useMemo, type JSX, type ReactNode } from "react";
 
@@ -74,7 +75,7 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 								slot="semantic-inspector-entry-point"
 								look={look}
 								onPick={onPick}
-								note={passesThrough(inspection, entry.id) ? "passes one call on" : undefined}
+								note={passedOn(inspection, content, entry.id)}
 							/>
 						))}
 					</SidebarChoices>
@@ -198,13 +199,18 @@ function PartRow(props: PartRowProps): JSX.Element {
 }
 
 /**
- * Whether an entry point only passes one call on.
+ * What an entry point says of itself when it only passes one call on: where that call goes, so the
+ * reader can test whether the entry earns its place without opening the part.
  * @param inspection The interface.
+ * @param content The variant that holds the relationship.
  * @param id The entry point.
- * @returns True when the derivation names it a pass-through.
+ * @returns The words, or nothing when it is no pass-through.
  */
-function passesThrough(inspection: Derived, id: string): boolean {
-	return inspection.passThrough.some((node) => node.id === id);
+function passedOn(inspection: Derived, content: VariantContent, id: string): string | undefined {
+	if (!inspection.passThrough.some((node) => node.id === id)) return undefined;
+	const target = content.edges.find((edge) => edge.from === id)?.to;
+	const name = content.nodes.find((node) => node.id === target)?.name ?? target;
+	return name === undefined ? "passes one call on" : `passes one call on → ${name}`;
 }
 
 /**
