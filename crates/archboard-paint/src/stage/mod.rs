@@ -4,6 +4,7 @@
 //! clock the host gives, so a stepped clock records it frame by frame.
 
 mod frame;
+mod lens;
 mod lighting;
 #[cfg(test)]
 mod tests;
@@ -14,7 +15,7 @@ use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Painting;
 use kurbo::{Affine, Point};
 
-use crate::between::{Heading, Phases};
+use crate::between::{Entrance, Heading, Phases, frame_of};
 use crate::canvas::Canvas;
 use crate::clock::TrafficClock;
 use crate::draw::Picture;
@@ -274,9 +275,19 @@ impl Stage {
     ) {
         self.now = now;
         self.outlines.learn_icons(&painting.icons);
+        let card_box = self
+            .shown
+            .as_ref()
+            .and_then(|shown| frame_of(&shown.picture.scene, &card));
+        let bloom = self
+            .phases
+            .as_ref()
+            .map(|phases| Entrance::new(&painting.scene, phases));
         self.dive = Some(Dive {
             inset: Picture::new(painting.scene),
+            bloom,
             frame,
+            card_box,
             card,
             way,
             start: now,
@@ -568,6 +579,9 @@ impl Stage {
         self.advance(now);
         if self.shown.is_some() {
             self.draw_frame(canvas, now);
+            if let Some(lens) = self.lens_at(now) {
+                canvas.look_through(lens);
+            }
             self.drawn = true;
         }
         self.changing(now)

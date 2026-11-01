@@ -140,6 +140,27 @@ impl Flight {
         }
     }
 
+    /// The box of the door that opens at a moment, when one does.
+    pub(crate) fn opening(&self, now: f64) -> Option<Rect> {
+        match self {
+            Flight::Carry { between, time, .. } => between.opening_at(time.share(now)),
+            Flight::Enter { .. } => None,
+        }
+    }
+
+    /// How far through the flight a moment is.
+    pub(crate) fn share(&self, now: f64) -> f64 {
+        self.time().share(now)
+    }
+
+    /// How far through an entrance a moment is, when the flight is one.
+    pub(crate) fn entering(&self, now: f64) -> Option<f64> {
+        match self {
+            Flight::Enter { time, .. } => Some(time.share(now)),
+            Flight::Carry { .. } => None,
+        }
+    }
+
     /// The definitions that what the flight shows refers to, when they are its own.
     pub(crate) fn definitions(&self) -> Option<&Definitions> {
         match self {
@@ -155,6 +176,13 @@ pub(crate) struct Leaving {
     pub(crate) heading: Heading,
     pub(crate) start: f64,
     pub(crate) ms: f64,
+}
+
+impl Ghost {
+    /// How far through its end a moment is, from 0 to 1.
+    pub(crate) fn gone_by(&self, now: f64) -> f64 {
+        self.from + (1.0 - self.from) * self.time.share(now)
+    }
 }
 
 impl Leaving {
@@ -205,13 +233,13 @@ pub enum DiveWay {
 type Stops = [(f64, f64); 4];
 
 /// What a card says goes first, so the board inside it is not read through its label.
-const WORDS: Stops = [(0.0, 1.0), (0.1, 1.0), (0.28, 0.0), (1.0, 0.0)];
+const WORDS: Stops = [(0.0, 1.0), (0.03, 1.0), (0.16, 0.0), (1.0, 0.0)];
 
 /// The board above stays until the board inside can be made out.
-const PARENT: Stops = [(0.0, 1.0), (0.12, 1.0), (0.55, 0.0), (1.0, 0.0)];
+const PARENT: Stops = [(0.0, 1.0), (0.3, 1.0), (0.82, 0.0), (1.0, 0.0)];
 
 /// The board inside comes up before the card fills the pane.
-const INSET: Stops = [(0.0, 0.0), (0.04, 0.0), (0.3, 1.0), (1.0, 1.0)];
+const INSET: Stops = [(0.0, 0.0), (0.02, 0.0), (0.16, 1.0), (1.0, 1.0)];
 
 /// Where a fade stands at a point of the flight into the card. Each stretch
 /// between two stops eases on its own, as keyframes do.
@@ -225,6 +253,9 @@ fn fade_at(stops: &Stops, progress: f64) -> f64 {
     let eased = EASE_IN_OUT.at(((progress - from.0) / span).clamp(0.0, 1.0));
     from.1 + (to.1 - from.1) * eased
 }
+
+/// Which part of a flight the board inside the card blooms over.
+const BLOOM: (f64, f64) = (0.06, 0.96);
 
 /// Where a moment of a flight stands on the way in. Each part shows at one place
 /// of the camera's path both ways. The clock cannot say that, because a glide
@@ -241,7 +272,11 @@ fn along_flight(way: DiveWay, progress: f64) -> f64 {
 #[derive(Debug)]
 pub(crate) struct Dive {
     pub(crate) inset: Picture,
+    /// The board's parts on their way out of its middle.
+    pub(crate) bloom: Option<Entrance>,
     pub(crate) frame: Rect,
+    /// The card's own box, when the picture says where it is.
+    pub(crate) card_box: Option<Rect>,
     pub(crate) card: String,
     pub(crate) way: DiveWay,
     pub(crate) start: f64,
@@ -267,6 +302,19 @@ impl Dive {
         }
     }
 
+    /// Where a moment of the flight stands on the way in, from 0 to 1.
+    pub(crate) fn along(&self, now: f64) -> f64 {
+        along_flight(self.way, share(now, self.start, self.ms))
+    }
+
+    /// What the board inside the card shows at a moment.
+    pub(crate) fn inset_at(&self, now: f64) -> Vec<Item> {
+        let bloomed = ((self.along(now) - BLOOM.0) / (BLOOM.1 - BLOOM.0)).clamp(0.0, 1.0);
+        self.bloom
+            .as_ref()
+            .map_or_else(|| self.inset.scene.body.clone(), |bloom| bloom.at(bloomed))
+    }
+
     /// Whether the fades have ended by a moment.
     pub(crate) fn ended(&self, now: f64) -> bool {
         share(now, self.start, self.ms) >= 1.0
@@ -279,17 +327,17 @@ mod tests {
 
     #[test]
     fn what_a_card_says_goes_before_the_board_above_it() {
-        assert_eq!(fade_at(&WORDS, 0.05), 1.0);
-        assert_eq!(fade_at(&WORDS, 0.28), 0.0);
-        assert!(fade_at(&PARENT, 0.28) > 0.5);
-        assert_eq!(fade_at(&PARENT, 0.55), 0.0);
+        assert_eq!(fade_at(&WORDS, 0.03), 1.0);
+        assert_eq!(fade_at(&WORDS, 0.16), 0.0);
+        assert!(fade_at(&PARENT, 0.16) > 0.5);
+        assert_eq!(fade_at(&PARENT, 0.82), 0.0);
     }
 
     #[test]
     fn the_board_inside_is_up_before_the_board_above_has_gone() {
-        assert_eq!(fade_at(&INSET, 0.04), 0.0);
-        assert_eq!(fade_at(&INSET, 0.3), 1.0);
-        assert!(fade_at(&PARENT, 0.3) > 0.0);
+        assert_eq!(fade_at(&INSET, 0.02), 0.0);
+        assert_eq!(fade_at(&INSET, 0.16), 1.0);
+        assert!(fade_at(&PARENT, 0.16) > 0.0);
     }
 
     #[test]

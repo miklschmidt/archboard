@@ -31,6 +31,7 @@ mod ride;
 mod testing;
 #[cfg(test)]
 mod tests;
+mod unfold;
 
 use std::collections::HashMap;
 
@@ -45,12 +46,21 @@ use found::{Form, Found, found, holds_subject, pair};
 use line::{DrawOn, LineCarry};
 use plan::{Mover, Plan, Riding, Wiring};
 use ride::{Ride, mark_of};
+use unfold::{Doors, Inside, Unfold};
 
 pub use departure::{Heading, departure};
 pub use entrance::Entrance;
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
+
+/// The box a subject's first group is drawn in, when the scene says.
+pub(crate) fn frame_of(scene: &Scene, subject: &str) -> Option<Rect> {
+    found(scene)
+        .iter()
+        .find(|group| group.id == subject)
+        .and_then(|group| group.frame)
+}
 
 /// One move from scene A to scene B, prepared once and sampled every frame.
 ///
@@ -64,6 +74,8 @@ pub struct Between {
     definitions: Vec<Definition>,
     shift: (f64, f64),
     phases: Transition,
+    /// The largest door that opens in the move.
+    opening: Option<Unfold>,
 }
 
 /// Whether a label moves further than it is tall.
@@ -105,7 +117,15 @@ fn carried(
 }
 
 /// The mover of a subject only the next scene has.
-fn arriving(new: &Found<'_>, phases: Transition) -> Mover {
+fn arriving(new: &Found<'_>, doors: &Doors, phases: Transition) -> Mover {
+    if let Some(unfold) = doors.carrying(new) {
+        let fade = if new.is_label() {
+            (phases.labels_start, 1.0)
+        } else {
+            (phases.inside_start, phases.inside_end)
+        };
+        return Mover::Inside(Box::new(Inside::arriving(new.group.clone(), unfold, fade)));
+    }
     if new.form() == Form::Line {
         let draw = DrawOn::new(new.group, phases.enter_start, 1.0, phases.arrowhead_at);
         return Mover::Draw(draw);
@@ -192,6 +212,8 @@ struct LastPicture<'a> {
     traffic: HashMap<&'a str, &'a Group>,
     /// The shadows and marks of the last frame, with their visibility.
     parked: &'a [Group],
+    /// The new subjects that ride inside a door, by id.
+    inside: HashMap<&'a str, Unfold>,
 }
 
 /// What moves a shadow, a line's pulses or the marks where routes join. A shadow
@@ -222,7 +244,13 @@ fn furniture_of(item: &Item, last: &LastPicture<'_>, phases: Transition) -> Opti
                     end: phases.move_end,
                     ground,
                 }))),
-                None => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
+                None => Some(match last.inside.get(owner.as_str()) {
+                    Some(&unfold) => {
+                        let fade = (phases.inside_start, phases.inside_end);
+                        Mover::Inside(Box::new(Inside::arriving(group.clone(), unfold, fade)))
+                    }
+                    None => Mover::Frame(item.clone(), landing.0, landing.1),
+                }),
             }
         }
         Role::Traffic(line) => {
@@ -362,10 +390,11 @@ impl Between {
                 ),
             )
         });
+        let doors = Doors::of(&old, &new, &pairing, phases);
         let arrivals = pairing
             .added
             .iter()
-            .map(|&b| (b, Some(arriving(&new[b], phases))));
+            .map(|&b| (b, Some(arriving(&new[b], &doors, phases))));
         for (b, mover) in carries.chain(arrivals) {
             if let Some(mover) = mover {
                 of_subject[b] = Some(movers.len());
@@ -384,10 +413,16 @@ impl Between {
             &moved,
             (lines_at, phases.exit_end),
         );
+        let inside = pairing
+            .added
+            .iter()
+            .filter_map(|&b| Some((new[b].id, doors.carrying(&new[b])?)))
+            .collect();
         let known = LastPicture {
             moved,
             traffic,
             parked: &parked,
+            inside,
         };
         let furniture = |item: &Item, _: bool| furniture_of(item, &known, phases);
         let wiring = Wiring {
@@ -399,10 +434,15 @@ impl Between {
             .removed
             .iter()
             .map(|&a| {
-                (
-                    depth_of(&next.body, old[a].subject.kind),
-                    Mover::Leave(Leave::new(&old[a], phases)),
-                )
+                let leave = doors.taking(&old[a]).map_or_else(
+                    || Mover::Leave(Leave::new(&old[a], phases)),
+                    |unfold| {
+                        let group = old[a].group.clone();
+                        let fade = (0.0, phases.inside_end);
+                        Mover::Inside(Box::new(Inside::leaving(group, unfold, fade)))
+                    },
+                );
+                (depth_of(&next.body, old[a].subject.kind), leave)
             })
             .chain(stopping)
             .collect();
@@ -416,7 +456,14 @@ impl Between {
             definitions: borrowed_definitions(&last, to),
             shift,
             phases,
+            opening: doors.focus(),
         }
+    }
+
+    /// The box of the door that opens at a progress, in the picture's units, when
+    /// a door opens.
+    pub(crate) fn opening_at(&self, progress: f64) -> Option<Rect> {
+        self.opening.map(|unfold| unfold.box_at(progress))
     }
 
     /// The in-between at a progress from 0 to 1, as a scene body.

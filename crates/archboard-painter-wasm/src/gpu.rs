@@ -8,7 +8,7 @@ use std::mem;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
-use archboard_paint::canvas::{Canvas, Ink, PartKey};
+use archboard_paint::canvas::{Canvas, Ink, Lens, PartKey};
 use futures_channel::oneshot;
 use js_sys::Function;
 use kurbo::{Affine, BezPath, Rect, Shape as _};
@@ -17,6 +17,7 @@ use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene}
 use wasm_bindgen::{JsError, JsValue};
 use web_sys::{HtmlCanvasElement, OffscreenCanvas};
 
+use crate::lens::{LensLevels, LensPipelines};
 use crate::page_gpu::{Attempt, PageGpu};
 
 /// The clip of a layer that composes with all that is under it, in canvas pixels.
@@ -77,6 +78,8 @@ pub(crate) struct GpuCanvas {
     boxes: Vec<Option<Rect>>,
     /// Scenes to use again for see-through layers.
     spare: Vec<Scene>,
+    /// The lens this frame is seen through, if any.
+    lens: Option<Lens>,
 }
 
 impl Canvas for GpuCanvas {
@@ -158,6 +161,10 @@ impl Canvas for GpuCanvas {
         true
     }
 
+    fn look_through(&mut self, lens: Lens) {
+        self.lens = Some(lens);
+    }
+
     fn kept(&mut self, key: PartKey, transform: Affine) {
         let waiting = self.waiting.pop().unwrap_or_default();
         let part = mem::replace(&mut self.scene, waiting);
@@ -190,6 +197,7 @@ impl GpuCanvas {
             layers: Vec::new(),
             boxes: Vec::new(),
             spare: Vec::new(),
+            lens: None,
         }
     }
 
@@ -242,6 +250,8 @@ struct Gpu {
     queue: wgpu::Queue,
     renderer: Renderer,
     watch: DeviceWatch,
+    /// What the lens draws with, by surface format.
+    lenses: HashMap<wgpu::TextureFormat, Rc<LensPipelines>>,
 }
 
 impl Drop for Gpu {
@@ -358,7 +368,17 @@ impl Gpu {
             queue,
             renderer,
             watch,
+            lenses: HashMap::new(),
         })
+    }
+
+    /// What the lens of a surface format draws with.
+    fn lens_of(&mut self, format: wgpu::TextureFormat) -> Rc<LensPipelines> {
+        Rc::clone(
+            self.lenses
+                .entry(format)
+                .or_insert_with(|| Rc::new(LensPipelines::new(&self.device, format))),
+        )
     }
 }
 
@@ -392,7 +412,8 @@ pub(crate) async fn warm(stopped: Function) -> Result<(), JsError> {
     }
 }
 
-/// A frame that uses all that a picture uses: a layer, a clip, a fill and a stroke.
+/// A frame that uses all that a picture uses: a layer, a clip, a fill, a stroke
+/// and the lens.
 fn first_frame(canvas: &mut GpuCanvas) {
     let square = Rect::new(8.0, 8.0, 56.0, 56.0).to_path(BOX_TOLERANCE);
     let ink = Ink::Solid(peniko::color::palette::css::WHITE);
@@ -400,6 +421,12 @@ fn first_frame(canvas: &mut GpuCanvas) {
     canvas.fill(&square, &ink, false);
     canvas.stroke(&square, &kurbo::Stroke::new(2.0), &ink);
     canvas.pop();
+    canvas.look_through(Lens {
+        focus: None,
+        blur: 1.0,
+        sink: 0.0,
+        ground: peniko::color::palette::css::BLACK,
+    });
 }
 
 /// A surface and all that draws on it.
@@ -409,6 +436,9 @@ pub(crate) struct GpuTarget {
     configuration: wgpu::SurfaceConfiguration,
     blitter: wgpu::util::TextureBlitter,
     view: wgpu::TextureView,
+    lens: Rc<LensPipelines>,
+    /// The levels of the lens, once a frame needs them.
+    levels: Option<LensLevels>,
     canvas: GpuCanvas,
 }
 
@@ -448,8 +478,8 @@ impl GpuTarget {
         surface: wgpu::SurfaceTarget<'static>,
         (width, height): (u32, u32),
     ) -> Result<GpuTarget, JsError> {
-        let (surface, configuration, blitter, view) = {
-            let shared = gpu.borrow();
+        let (surface, configuration, blitter, view, lens) = {
+            let mut shared = gpu.borrow_mut();
             let surface = shared.instance.create_surface(surface).map_err(failed)?;
             let format = *surface
                 .get_capabilities(&shared.adapter)
@@ -471,7 +501,8 @@ impl GpuTarget {
             surface.configure(&shared.device, &configuration);
             let view = target_view(&shared.device, width, height);
             let blitter = wgpu::util::TextureBlitter::new(&shared.device, format);
-            (surface, configuration, blitter, view)
+            let lens = shared.lens_of(format);
+            (surface, configuration, blitter, view, lens)
         };
         Ok(GpuTarget {
             gpu,
@@ -479,6 +510,8 @@ impl GpuTarget {
             configuration,
             blitter,
             view,
+            lens,
+            levels: None,
             canvas: GpuCanvas::new(),
         })
     }
@@ -490,16 +523,18 @@ impl GpuTarget {
         let gpu = self.gpu.borrow();
         self.surface.configure(&gpu.device, &self.configuration);
         self.view = target_view(&gpu.device, width, height);
+        self.levels = None;
     }
 
     /// The canvas of the next frame, empty.
     pub(crate) fn begin(&mut self) -> &mut GpuCanvas {
         self.canvas.scene.reset();
+        self.canvas.lens = None;
         &mut self.canvas
     }
 
     /// Render the frame on the canvas and show it.
-    pub(crate) fn finish(&self) -> Result<(), JsError> {
+    pub(crate) fn finish(&mut self) -> Result<(), JsError> {
         let (width, height) = (self.configuration.width, self.configuration.height);
         let gpu = &mut *self.gpu.borrow_mut();
         gpu.renderer
@@ -527,8 +562,15 @@ impl GpuTarget {
         let mut encoder = gpu
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
-        self.blitter
-            .copy(&gpu.device, &mut encoder, &self.view, &view);
+        if let Some(lens) = &self.canvas.lens {
+            let levels = self.levels.get_or_insert_with(|| {
+                LensLevels::new(&gpu.device, &self.lens, &self.view, (width, height))
+            });
+            levels.draw(&self.lens, (&gpu.queue, &mut encoder), &view, lens);
+        } else {
+            self.blitter
+                .copy(&gpu.device, &mut encoder, &self.view, &view);
+        }
         gpu.queue.submit([encoder.finish()]);
         gpu.queue.present(frame);
         Ok(())

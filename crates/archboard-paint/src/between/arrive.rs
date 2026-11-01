@@ -15,6 +15,12 @@ const LEAVE_SCALE: f64 = 0.96;
 /// How much a card arriving grows from.
 const ARRIVE_SCALE: f64 = 0.94;
 
+/// How much a card that blooms out of a picture grows from.
+const BLOOM_SCALE: f64 = 0.84;
+
+/// How far through its arrival a card shows in full.
+const SHOWN_BY: f64 = 0.6;
+
 /// Where a label that crosses the board is gone, as a share of the move.
 pub(super) const LABEL_GONE_BY: f64 = 0.16;
 
@@ -108,6 +114,10 @@ pub(super) struct Grow {
     frame: Option<Rect>,
     start: f64,
     end: f64,
+    /// How small it starts.
+    from: f64,
+    /// How far from its place it starts.
+    pull: (f64, f64),
 }
 
 impl Grow {
@@ -118,6 +128,26 @@ impl Grow {
             frame: found.frame,
             start,
             end,
+            from: ARRIVE_SCALE,
+            pull: (0.0, 0.0),
+        }
+    }
+
+    /// Something that blooms out of a point between two points of the move: it
+    /// starts some way from its place, small about a box.
+    pub(super) fn bloom(
+        group: Group,
+        frame: Option<Rect>,
+        (start, end): (f64, f64),
+        pull: (f64, f64),
+    ) -> Grow {
+        Grow {
+            group,
+            frame,
+            start,
+            end,
+            from: BLOOM_SCALE,
+            pull,
         }
     }
 
@@ -128,12 +158,18 @@ impl Grow {
         if here >= 1.0 {
             return group;
         }
-        group.opacity = Some(base(&group) * ease_out(here));
+        group.opacity = Some(base(&group) * ease_out(phase(here, 0.0, SHOWN_BY)));
+        let placed = emphasised(here);
         scaled_about(
             &mut group,
             self.frame,
-            ARRIVE_SCALE + (1.0 - ARRIVE_SCALE) * emphasised(here),
+            self.from + (1.0 - self.from) * placed,
         );
+        let left = 1.0 - placed;
+        group.transform = Some(then(
+            Transform::translate(self.pull.0 * left, self.pull.1 * left),
+            group.transform,
+        ));
         group
     }
 }

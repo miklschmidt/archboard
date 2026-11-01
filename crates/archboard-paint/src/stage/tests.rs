@@ -284,3 +284,58 @@ fn a_cut_or_carry_takes_away_the_ghost_of_an_interrupted_entrance() {
         assert!(stage.ghost.is_none());
     }
 }
+
+#[test]
+fn a_picture_at_rest_has_no_lens() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.advance(0.0);
+    assert_eq!(stage.lens_at(0.0), None);
+}
+
+#[test]
+fn an_entrance_comes_into_focus_and_ends_with_no_lens() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 0.0);
+    stage.advance(0.0);
+    let soft = stage
+        .lens_at(10.0)
+        .expect("an entrance is seen through a lens");
+    assert!(soft.blur > 0.0);
+    stage.advance(100.0);
+    assert_eq!(stage.lens_at(100.0), None);
+}
+
+#[test]
+fn a_flight_into_a_card_keeps_the_card_in_focus_and_lets_the_board_fall_away() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(Vec::new()));
+    let frame = Rect {
+        x: 10.0,
+        y: 20.0,
+        width: 30.0,
+        height: 40.0,
+    };
+    stage.dive(
+        painting(Vec::new()),
+        frame,
+        (DiveWay::In, "card".to_owned()),
+        100.0,
+        0.0,
+    );
+    stage.advance(50.0);
+    let camera = stage.presentation.camera;
+    let lens = stage
+        .lens_at(50.0)
+        .expect("a flight is seen through a lens");
+    assert!(lens.blur > 0.0 && lens.sink > 0.0);
+    let focus = lens.focus.expect("the card is in focus");
+    assert_eq!(focus.place.x, frame.x * camera.scale + camera.x);
+    assert_eq!(focus.place.width, frame.width * camera.scale);
+    stage.advance(100.0);
+    assert_eq!(stage.lens_at(100.0), None);
+}

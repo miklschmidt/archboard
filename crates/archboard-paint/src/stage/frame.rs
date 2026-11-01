@@ -2,7 +2,7 @@
 //! over them what is left of the last picture.
 
 use archboard_scene::scene::Item;
-use kurbo::{Affine, Shape as _};
+use kurbo::{Affine, RoundedRect, Shape as _};
 
 use super::Stage;
 use crate::between::departure;
@@ -80,7 +80,15 @@ impl Stage {
             still: None,
         };
         if let Some((dive, fades)) = dive.as_ref().zip(fades) {
-            draw_inset(canvas, dive, fades.inset, transform, &mut plain_inks);
+            let items = dive.inset_at(now);
+            draw_inset(
+                canvas,
+                dive,
+                &items,
+                fades.inset,
+                transform,
+                &mut plain_inks,
+            );
         }
         if let Some(ghost) = ghost {
             let place = placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
@@ -100,6 +108,9 @@ impl Stage {
     }
 }
 
+/// The corners of the window a card opens into, in the picture's units.
+const CARD_CORNER: f64 = 8.0;
+
 /// An opacity as a canvas takes it.
 #[expect(clippy::cast_possible_truncation, reason = "a canvas's opacity is f32")]
 fn opacity_of(opacity: f64) -> f32 {
@@ -111,6 +122,7 @@ fn opacity_of(opacity: f64) -> f32 {
 fn draw_inset<C: Canvas>(
     canvas: &mut C,
     dive: &Dive,
+    items: &[Item],
     opacity: f64,
     transform: Affine,
     inks: &mut Inks<'_>,
@@ -119,13 +131,14 @@ fn draw_inset<C: Canvas>(
     let scale = (frame.width / scene.width).min(frame.height / scene.height);
     let x = frame.x + (frame.width - scene.width * scale) / 2.0;
     let y = frame.y + (frame.height - scene.height * scale) / 2.0;
-    let clip = rect_of(frame).to_path(0.1);
+    let clip = rect_of(dive.card_box.as_ref().unwrap_or(frame));
+    let clip = RoundedRect::from_rect(clip, CARD_CORNER).to_path(0.1);
     canvas.set_transform(transform);
     canvas.push(Some((&clip, false)), opacity_of(opacity));
     draw_ground(canvas, scene, (1e5, 1e5), inks.palette);
     draw_items(
         canvas,
-        &scene.body,
+        items,
         &dive.inset.definitions,
         transform * placed(x, y, Some(scale)),
         inks,

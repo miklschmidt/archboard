@@ -162,7 +162,7 @@ fn a_line_that_travels_far_recedes_and_comes_back() {
         stroke.and_then(|stroke| stroke.opacity).unwrap_or(1.0)
     };
     assert!(shown(0.0) > 0.99);
-    assert!(shown(0.4) < 0.5);
+    assert!(shown(0.4) < 0.75);
     assert!(shown(0.99) > 0.99);
 }
 
@@ -540,4 +540,48 @@ fn an_in_between_draws_with_balanced_layers() {
     stage.draw(&mut count, 0.0);
     assert!(count.fills > 0 && count.layers > 0);
     assert_eq!(count.open, 0);
+}
+
+/// A door, and the frame it opens into with a part inside.
+fn door_and_frame() -> (Scene, Scene) {
+    let door = rect(180.0, 140.0, 40.0, 20.0);
+    let frame = rect(100.0, 100.0, 200.0, 100.0);
+    let part = rect(120.0, 120.0, 60.0, 30.0);
+    let shut = scene(vec![card("d", door, &["D"])], &[("d", door)]);
+    let open = scene(
+        vec![region("d", frame), card("p", part, &["P"])],
+        &[("d", frame), ("p", part)],
+    );
+    (shut, open)
+}
+
+#[test]
+fn a_door_that_opens_carries_its_parts_inside_it() {
+    let (shut, open) = door_and_frame();
+    let between = Between::new(&shut, &open, (0.0, 0.0), &PHASES);
+    let early = between.at(0.2);
+    let part = drawing(&early, "p")[0];
+    assert!(part.opacity.is_some_and(|opacity| opacity > 0.0));
+    assert!(
+        part.transform
+            .and_then(|moved| moved.scale)
+            .is_some_and(|scale| scale < 1.0),
+        "a part is as small as its door still is"
+    );
+    let held = between.opening_at(0.0).expect("a door opens");
+    assert_eq!(held, rect(180.0, 140.0, 40.0, 20.0));
+}
+
+#[test]
+fn a_door_that_closes_takes_its_parts_back_inside_it() {
+    let (shut, open) = door_and_frame();
+    let between = Between::new(&open, &shut, (0.0, 0.0), &PHASES);
+    let early = between.at(0.2);
+    let part = drawing(&early, "p")[0];
+    assert!(
+        part.transform
+            .and_then(|moved| moved.scale)
+            .is_some_and(|scale| scale < 1.0)
+    );
+    assert!(between.opening_at(0.5).is_none(), "no door opens");
 }

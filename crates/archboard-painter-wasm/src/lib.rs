@@ -6,5 +6,7 @@
 mod browser;
 #[cfg(target_arch = "wasm32")]
 mod gpu;
+#[cfg(target_arch = "wasm32")]
+mod lens;
 #[cfg(any(target_arch = "wasm32", test))]
 mod page_gpu;

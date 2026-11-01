@@ -26,6 +26,10 @@ pub struct Transition {
     pub arrowhead_at: f64,
     /// Every label only the next picture has arrives from here to the end.
     pub labels_start: f64,
+    /// The parts inside a door begin to show here.
+    pub inside_start: f64,
+    /// The parts inside a door show in full by here.
+    pub inside_end: f64,
 }
 
 /// When, as shares of an entrance, each part of a picture arrives
@@ -83,16 +87,18 @@ pub(crate) mod fixtures {
             enter_start: 0.54,
             arrowhead_at: 0.9,
             labels_start: 0.66,
+            inside_start: 0.08,
+            inside_end: 0.46,
         },
         entry: Entry {
-            frames_end: 0.35,
-            cards_start: 0.04,
-            cards_start_by: 0.4,
-            card_span: 0.42,
-            lines_start: 0.34,
-            lines_start_by: 0.62,
+            frames_end: 0.3,
+            cards_start: 0.02,
+            cards_start_by: 0.3,
+            card_span: 0.48,
+            lines_start: 0.26,
+            lines_start_by: 0.56,
             pulse_span: 0.12,
-            line_span: 0.38,
+            line_span: 0.42,
             labels_start: 0.66,
         },
         exit: 280.0,
@@ -106,8 +112,8 @@ mod tests {
     #[test]
     fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
         let phases: Phases = serde_json::from_str(
-            r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66},
-                "entry":{"framesEnd":0.35,"cardsStart":0.04,"cardsStartBy":0.4,"cardSpan":0.42,"linesStart":0.34,"linesStartBy":0.62,"pulseSpan":0.12,"lineSpan":0.38,"labelsStart":0.66},
+            r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46},
+                "entry":{"framesEnd":0.3,"cardsStart":0.02,"cardsStartBy":0.3,"cardSpan":0.48,"linesStart":0.26,"linesStartBy":0.56,"pulseSpan":0.12,"lineSpan":0.42,"labelsStart":0.66},
                 "exit":280}"#,
         )
         .expect("the timing package's phases");

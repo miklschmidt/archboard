@@ -143,22 +143,28 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	 * the last layer of the picture, once the lines they name are in place.
 	 */
 	labelsStart: 0.66,
+	/**
+	 * The parts inside a door that opens show between these two, riding inside the
+	 * door as it grows, so that no frame travels empty.
+	 */
+	insideStart: 0.08,
+	insideEnd: 0.46,
 });
 
 /** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
 const PICTURE_ENTRY_PHASES = Object.freeze({
 	/** Frames fade in over the first part. */
-	framesEnd: 0.35,
-	/** The first card in reading order begins here, and the last begins by `cardsStartBy`. */
-	cardsStart: 0.04,
-	cardsStartBy: 0.4,
+	framesEnd: 0.3,
+	/** The card nearest the middle begins here, and the farthest begins by `cardsStartBy`. */
+	cardsStart: 0.02,
+	cardsStartBy: 0.3,
 	/** How long each card takes to arrive. */
-	cardSpan: 0.42,
+	cardSpan: 0.48,
 	/** The first line begins drawing here, and the last by `linesStartBy`. */
-	linesStart: 0.34,
-	linesStartBy: 0.62,
+	linesStart: 0.26,
+	linesStartBy: 0.56,
 	/** How long each line takes to draw on. */
-	lineSpan: 0.38,
+	lineSpan: 0.42,
 	/** How long a line's pulses take to come in once the line is drawn. */
 	pulseSpan: 0.12,
 	/**

@@ -16,19 +16,22 @@
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::paint::design::RAIL_GAP;
-use archboard_scene::scene::{Geometry, Group, Item, Mask, MaskId, PathStep, Purpose, Role, Shape};
+use archboard_scene::scene::{
+    Cap, Colour, Geometry, Group, Item, Mask, MaskId, Paint, PathStep, Purpose, Role, Shape,
+};
 
 use super::content::look;
 use super::ease::{ease_in_out, ease_out, emphasised, phase, receded};
 use super::found::Found;
 use super::morph::{Morph, length, route_of};
 use super::phases::Transition;
+use crate::path::path_of;
 
 /// How much of an arrival is spent fading in before the rest is drawing on.
 const ARRIVE_FADE_SHARE: f64 = 0.25;
 
 /// How far a line recedes when it travels far, so that the eye stays on the cards.
-const DEEPEST: f64 = 0.8;
+const DEEPEST: f64 = 0.5;
 /// How far a line travels before it recedes that far, in the picture's units.
 const FAR_TRAVEL: f64 = 240.0;
 
@@ -98,6 +101,14 @@ pub(super) fn start_of(group: &Group) -> Option<Point> {
             PathStep::Move { to } => Some(*to),
             _ => None,
         },
+        _ => None,
+    })
+}
+
+/// The outline of a line's first route.
+pub(super) fn outline_of(group: &Group) -> Option<kurbo::BezPath> {
+    group.items.iter().find_map(|item| match item {
+        Item::Shape(shape) => route_of(&shape.geometry).map(|steps| path_of(&steps)),
         _ => None,
     })
 }
@@ -266,9 +277,9 @@ impl Cuts {
 }
 
 /// The white ground of a mask, which cuts nothing.
-fn white() -> archboard_scene::scene::Paint {
-    archboard_scene::scene::Paint::Colour {
-        colour: archboard_scene::scene::Colour::White,
+fn white() -> Paint {
+    Paint::Colour {
+        colour: Colour::White,
     }
 }
 
@@ -461,6 +472,31 @@ fn slid(shape: &Shape, slide: &Slide, along: f64, swapped: f64) -> Shape {
     }
 }
 
+/// The light at the head of a line being drawn on, as the pulses it will carry
+/// are lit (ADR 0027): how far it reaches back, how much wider than the line it
+/// is, and how much of it shows. It cools where the line lands.
+const SPARK: [(f64, f64, f64); 3] = [(64.0, 3.4, 0.1), (36.0, 1.3, 0.3), (14.0, 0.5, 0.95)];
+
+/// Where the light at a line's head starts to cool, as a share of its drawing.
+const SPARK_COOLS_FROM: f64 = 0.82;
+
+/// One layer of the light at the head of a line.
+fn spark(shape: &Shape, length: f64, head: f64, (reach, wider, light): (f64, f64, f64)) -> Item {
+    let mut lit = shape.clone();
+    lit.marker = None;
+    lit.start_marker = None;
+    if let Some(stroke) = &mut lit.stroke {
+        let period = reach + length * 2.0;
+        stroke.paint = white();
+        stroke.width = Some(stroke.width.unwrap_or(1.0) + wider);
+        stroke.opacity = Some(light);
+        stroke.cap = Some(Cap::Round);
+        stroke.dashes = vec![reach, length * 2.0];
+        stroke.dash_offset = Some((period + reach - head).rem_euclid(period));
+    }
+    Item::Shape(lit)
+}
+
 /// A shape being drawn on, and how long its route is.
 #[derive(Clone, Copy, Debug)]
 struct Stroked {
@@ -535,6 +571,16 @@ impl DrawOn {
                 shape.marker = None;
                 shape.start_marker = None;
             }
+        }
+        let cooled = 1.0 - phase(arrived, SPARK_COOLS_FROM, 1.0);
+        if let Some(&Stroked { child, length }) = self.strokes.last()
+            && let Some(Item::Shape(shape)) = self.template.items.get(child)
+        {
+            let lights = SPARK.map(|(reach, wider, light)| (reach, wider, light * cooled));
+            let head = length * drawn;
+            group
+                .items
+                .extend(lights.map(|layer| spark(shape, length, head, layer)));
         }
         group
     }

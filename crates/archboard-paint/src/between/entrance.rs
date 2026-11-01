@@ -2,13 +2,13 @@
 //! page, another board, another view of this one.
 //!
 //! A move can carry what two scenes share. Here nothing is shared, so the
-//! picture is built up the way it is read instead. Frames first, fading in, so
-//! the pane has its shape. Then the cards, in a wave that runs down the board
-//! and a little across it, each growing into place. Then the lines between cards
-//! that are already there, drawn from their start. Last, every connection label
-//! at once, as the final layer. Everything is timed by where it is on the
-//! board, not by how many there are, so a board of four cards and a board of
-//! forty take the same time to arrive and read as the same gesture.
+//! picture blooms out of its middle instead. Frames fade in first, so the pane
+//! has its shape. The cards come out of the middle in a wave, each from a little
+//! nearer the middle and smaller than it lands. The lines between them are drawn
+//! on as the wave passes, and each label arrives when its line reaches it.
+//! Everything is timed by where it is on the board, not by how many there are, so
+//! a board of four cards and a board of forty take the same time to arrive and
+//! read as the same gesture.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -21,14 +21,35 @@ use super::line::{DrawOn, start_of};
 use super::phases::{Entry, Phases};
 use super::plan::{Mover, Plan, Wiring};
 
-/// How much a step across the board counts against a step down it when a
-/// card's turn is decided: the wave runs mostly downwards, and leans left to
-/// right.
-const ACROSS_WEIGHT: f64 = 0.35;
+/// How far a card starts from its place, as a share of its way to the middle.
+const PULL: f64 = 0.16;
 
-/// How far along the wave a point is. A smaller key arrives sooner.
-fn wave_key(point: Point) -> f64 {
-    point.y + point.x * ACROSS_WEIGHT
+/// How far through its line's drawing a label arrives.
+const LABEL_AT: f64 = 0.55;
+
+/// How long a label takes to arrive, as a share of the entrance.
+const LABEL_SPAN: f64 = 0.24;
+
+/// How far along the wave a point is: its distance from the middle. A smaller
+/// key arrives sooner.
+fn wave_key(point: Point, middle: Point) -> f64 {
+    (point.x - middle.x).hypot(point.y - middle.y)
+}
+
+/// The middle of a scene.
+fn middle_of_scene(scene: &Scene) -> Point {
+    Point {
+        x: scene.width / 2.0,
+        y: scene.height / 2.0,
+    }
+}
+
+/// How far from its place something in a box starts.
+fn pull_of(frame: Option<Rect>, middle: Point) -> (f64, f64) {
+    frame.map_or((0.0, 0.0), |frame| {
+        let own = middle_of(frame);
+        ((middle.x - own.x) * PULL, (middle.y - own.y) * PULL)
+    })
 }
 
 /// Where a card sits in the wave: its middle.
@@ -62,7 +83,7 @@ pub struct Entrance {
 }
 
 /// When each card grows, by its place in the groups: the wave's start and end.
-fn card_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
+fn card_times(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
         .filter(|&at| {
             groups[at].form() == Form::Card && !groups[at].is_region() && !groups[at].is_label()
@@ -70,7 +91,11 @@ fn card_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
         .collect();
     let keys: Vec<Option<f64>> = places
         .iter()
-        .map(|&at| groups[at].frame.map(|frame| wave_key(middle_of(frame))))
+        .map(|&at| {
+            groups[at]
+                .frame
+                .map(|frame| wave_key(middle_of(frame), middle))
+        })
         .collect();
     let begins = spread(&keys, entry.cards_start, entry.cards_start_by);
     places
@@ -80,24 +105,29 @@ fn card_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
         .collect()
 }
 
-/// The cards, which grow into place in a wave. Each is placed by its place in
+/// The cards, which bloom into place in a wave. Each is placed by its place in
 /// the groups.
-fn cards(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
-    card_times(groups, entry)
+fn cards(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, Mover)> {
+    card_times(groups, entry, middle)
         .into_iter()
-        .map(|(at, begin, end)| (at, Mover::Grow(Grow::new(&groups[at], begin, end))))
+        .map(|(at, begin, end)| {
+            let Found { group, frame, .. } = groups[at];
+            let pull = pull_of(frame, middle);
+            let bloom = Grow::bloom(group.clone(), frame, (begin, end), pull);
+            (at, Mover::Grow(bloom))
+        })
         .collect()
 }
 
 /// When each line is drawn on, by its place in the groups: the wave's start and
 /// end.
-fn line_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
+fn line_times(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
         .filter(|&at| groups[at].form() == Form::Line)
         .collect();
     let keys: Vec<Option<f64>> = places
         .iter()
-        .map(|&at| start_of(groups[at].group).map(wave_key))
+        .map(|&at| start_of(groups[at].group).map(|start| wave_key(start, middle)))
         .collect();
     let begins = spread(&keys, entry.lines_start, entry.lines_start_by);
     places
@@ -108,9 +138,9 @@ fn line_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
 }
 
 /// The lines, which are drawn on in the wave once the cards are there.
-fn lines(groups: &[Found<'_>], phases: &Phases) -> Vec<(usize, Mover)> {
+fn lines(groups: &[Found<'_>], phases: &Phases, middle: Point) -> Vec<(usize, Mover)> {
     let arrowhead = phases.transition.arrowhead_at;
-    line_times(groups, &phases.entry)
+    line_times(groups, &phases.entry, middle)
         .into_iter()
         .map(|(at, begin, end)| {
             let draw = DrawOn::new(groups[at].group, begin, end, arrowhead);
@@ -119,9 +149,13 @@ fn lines(groups: &[Found<'_>], phases: &Phases) -> Vec<(usize, Mover)> {
         .collect()
 }
 
-/// The containers, which fade in with the frames, and the labels, which come in
-/// together at the end.
-fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
+/// The containers, which fade in with the frames, and the labels, each of which
+/// arrives as its line reaches it.
+fn frames_and_labels(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, Mover)> {
+    let lines: HashMap<&str, (f64, f64)> = line_times(groups, entry, middle)
+        .into_iter()
+        .map(|(at, begin, end)| (groups[at].id, (begin, end)))
+        .collect();
     groups
         .iter()
         .enumerate()
@@ -130,7 +164,13 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)>
                 let frame = Mover::Frame(Item::Group(group.group.clone()), 0.0, entry.frames_end);
                 Some((at, frame))
             } else if group.is_label() {
-                Some((at, Mover::Grow(Grow::new(group, entry.labels_start, 1.0))))
+                let start = lines
+                    .get(group.id)
+                    .map_or(entry.labels_start, |(begin, end)| {
+                        begin + (end - begin) * LABEL_AT
+                    });
+                let end = (start + LABEL_SPAN).min(1.0);
+                Some((at, Mover::Grow(Grow::new(group, start, end))))
             } else {
                 None
             }
@@ -138,13 +178,20 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)>
         .collect()
 }
 
-/// When something that belongs to no subject fades in. A shadow comes with what
-/// casts it, a line's pulses start as it ends, and a mark on the lines comes after
-/// the lines. The rest of the page's furniture fades in with the frames, so that
-/// nothing stands on its own before the picture arrives.
+/// When a card arrives, and the box it arrives in.
+#[derive(Clone, Copy)]
+struct Arrival {
+    begin: f64,
+    end: f64,
+    frame: Option<Rect>,
+}
+
+/// When something that belongs to no subject fades in. A line's pulses start as
+/// it ends, and a mark on the lines comes after the lines. The rest of the page's
+/// furniture fades in with the frames, so that nothing stands on its own before
+/// the picture arrives.
 fn furniture_times(
     item: &Item,
-    cards: &HashMap<&str, (f64, f64)>,
     drawn: &HashMap<&str, f64>,
     regions: &HashSet<&str>,
     entry: &Entry,
@@ -163,24 +210,44 @@ fn furniture_times(
             )
         }
         Role::Shadow(_) => group.members.first().map_or(frames, |owner| {
-            let by_line = if regions.contains(owner.as_str()) {
+            if regions.contains(owner.as_str()) {
                 frames
             } else {
                 labels
-            };
-            cards.get(owner.as_str()).copied().unwrap_or(by_line)
+            }
         }),
         Role::Junctions => labels,
         _ => frames,
     }
 }
 
+/// A shadow on the card that casts it, the two moving as one.
+fn riding(item: &Item, cards: &HashMap<&str, Arrival>, middle: Point) -> Option<Mover> {
+    let Item::Group(group) = item else {
+        return None;
+    };
+    if !matches!(group.role, Role::Shadow(_)) {
+        return None;
+    }
+    let card = group
+        .members
+        .first()
+        .and_then(|owner| cards.get(owner.as_str()))?;
+    let pull = pull_of(card.frame, middle);
+    let bloom = Grow::bloom(group.clone(), card.frame, (card.begin, card.end), pull);
+    Some(Mover::Grow(bloom))
+}
+
 /// What an entrance does with each subject group, and which mover has which.
-fn movers(groups: &[Found<'_>], phases: &Phases) -> (Vec<Mover>, Vec<Option<usize>>) {
+fn movers(
+    groups: &[Found<'_>],
+    phases: &Phases,
+    middle: Point,
+) -> (Vec<Mover>, Vec<Option<usize>>) {
     let by_place: BTreeMap<usize, Mover> = [
-        cards(groups, &phases.entry),
-        lines(groups, phases),
-        frames_and_labels(groups, &phases.entry),
+        cards(groups, &phases.entry, middle),
+        lines(groups, phases, middle),
+        frames_and_labels(groups, &phases.entry, middle),
     ]
     .into_iter()
     .flatten()
@@ -198,12 +265,16 @@ impl Entrance {
     /// Prepare the entrance of a scene.
     pub fn new(scene: &Scene, phases: &Phases) -> Entrance {
         let groups = found(scene);
-        let (all, of_subject) = movers(&groups, phases);
-        let cards: HashMap<&str, (f64, f64)> = card_times(&groups, &phases.entry)
+        let middle = middle_of_scene(scene);
+        let (all, of_subject) = movers(&groups, phases, middle);
+        let cards: HashMap<&str, Arrival> = card_times(&groups, &phases.entry, middle)
             .into_iter()
-            .map(|(at, begin, end)| (groups[at].id, (begin, end)))
+            .map(|(at, begin, end)| {
+                let frame = groups[at].frame;
+                (groups[at].id, Arrival { begin, end, frame })
+            })
             .collect();
-        let drawn: HashMap<&str, f64> = line_times(&groups, &phases.entry)
+        let drawn: HashMap<&str, f64> = line_times(&groups, &phases.entry, middle)
             .into_iter()
             .map(|(at, _, end)| (groups[at].id, end))
             .collect();
@@ -218,8 +289,10 @@ impl Entrance {
                 && !matches!(item, Item::Definitions { .. } | Item::Break)
                 && !holds_subject(item, &|_| true);
             (alone || page).then(|| {
-                let (start, end) = furniture_times(item, &cards, &drawn, &regions, &phases.entry);
-                Mover::Frame(item.clone(), start, end)
+                riding(item, &cards, middle).unwrap_or_else(|| {
+                    let (start, end) = furniture_times(item, &drawn, &regions, &phases.entry);
+                    Mover::Frame(item.clone(), start, end)
+                })
             })
         };
         let wiring = Wiring {
@@ -265,52 +338,74 @@ mod tests {
         scene(body, &[])
     }
 
-    #[test]
-    fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
-        let cast = |owner: &str| {
-            let Item::Group(group) = shadow() else {
-                unreachable!("a shadow is a group");
-            };
-            Item::Group(group.standing_with(vec![owner.to_owned()]))
-        };
-        let board = scene(
-            vec![Item::Group(Group::new(
-                Role::Move,
-                vec![
-                    cast("bottom"),
-                    cast("e"),
-                    card("top", rect(10.0, 10.0, 80.0, 40.0), &["A"]),
-                    card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
-                    line("e", &[(50.0, 50.0), (50.0, 110.0)]),
-                ],
-            ))],
-            &[],
-        );
-        let early = Entrance::new(&board, &PHASES).at(0.1);
-        let Some(Item::Group(picture)) = early.first() else {
+    /// The shadows at the top of a picture that is one group.
+    fn shadows_of(body: &[Item]) -> Vec<&Group> {
+        let Some(Item::Group(picture)) = body.first() else {
             panic!("the picture is one group");
         };
-        let shadows: Vec<&Group> = picture
+        picture
             .items
             .iter()
             .filter_map(|item| match item {
                 Item::Group(group) if matches!(group.role, Role::Shadow(_)) => Some(group),
                 _ => None,
             })
-            .collect();
-        assert_eq!(shadows.len(), 2);
-        assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
-        assert_eq!(solid(shadows[1]), 0.0, "its line's words come last");
+            .collect()
+    }
+
+    /// A picture whose cards cast shadows, and whose line casts one too.
+    fn cast_board() -> Scene {
+        let cast = |owner: &str| {
+            let Item::Group(group) = shadow() else {
+                unreachable!("a shadow is a group");
+            };
+            Item::Group(group.standing_with(vec![owner.to_owned()]))
+        };
+        scene(
+            vec![Item::Group(Group::new(
+                Role::Move,
+                vec![
+                    cast("top"),
+                    cast("e"),
+                    cast("bottom"),
+                    card("top", rect(10.0, 10.0, 80.0, 40.0), &["A"]),
+                    card("bottom", rect(10.0, 210.0, 80.0, 40.0), &["C"]),
+                    line("e", &[(50.0, 50.0), (50.0, 110.0)]),
+                ],
+            ))],
+            &[],
+        )
     }
 
     #[test]
-    fn an_entrance_runs_down_the_board() {
+    fn a_shadow_inside_the_picture_waits_for_what_casts_it() {
+        let early = Entrance::new(&cast_board(), &PHASES).at(0.1);
+        let shadows = shadows_of(&early);
+        assert_eq!(shadows.len(), 3);
+        assert_eq!(solid(shadows[0]), 0.0, "the last card is not there yet");
+        assert_eq!(solid(shadows[1]), 0.0, "its line's words come later");
+    }
+
+    #[test]
+    fn a_card_and_its_shadow_bloom_out_as_one() {
+        let early = Entrance::new(&cast_board(), &PHASES).at(0.2);
+        let shadow = shadows_of(&early)[2];
+        let card = drawing(&early, "bottom")[0];
+        assert!(solid(card) > 0.0);
+        assert_eq!(shadow.transform, card.transform);
+        assert_eq!(solid(shadow), solid(card));
+    }
+
+    #[test]
+    fn an_entrance_opens_from_the_middle_of_the_board() {
         let board = tall_board();
-        let early = Entrance::new(&board, &PHASES).at(0.2);
+        let early = Entrance::new(&board, &PHASES).at(0.1);
         let of = |name: &str| solid(drawing(&early, name)[0]);
-        assert!(of("top") > 0.0, "the first card is on its way");
-        assert_eq!(of("middle"), 0.0);
-        assert_eq!(of("bottom"), 0.0, "the wave has not reached the last");
+        assert!(
+            of("middle") > 0.0,
+            "the card nearest the middle is on its way"
+        );
+        assert_eq!(of("top"), 0.0, "the wave has not reached the farthest");
         let ground = early
             .iter()
             .find_map(|item| match item {
@@ -330,7 +425,16 @@ mod tests {
     }
 
     #[test]
-    fn an_entrance_draws_the_lines_after_the_cards_and_names_them_last() {
+    fn a_card_comes_out_of_the_middle_small_and_lands_where_it_is_drawn() {
+        let early = Entrance::new(&tall_board(), &PHASES).at(0.12);
+        let moved = drawing(&early, "middle")[0].transform.expect("it is moved");
+        assert!(moved.scale.is_some_and(|scale| scale < 1.0));
+        let (x, _) = (50.0 * moved.scale.unwrap_or(1.0) + moved.x, 0.0);
+        assert!(x > 50.0, "it starts nearer the middle than it lands");
+    }
+
+    #[test]
+    fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reaches_it() {
         let board = tall_board();
         let lines = |progress: f64| {
             let body = Entrance::new(&board, &PHASES).at(progress);
@@ -340,10 +444,11 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(lines(0.2), [0.0, 0.0], "no line before the cards");
-        let [line, label] = lines(0.5)[..] else {
+        let [line, label] = lines(0.4)[..] else {
             panic!("a line and its label")
         };
         assert!(line > 0.0, "the line has begun");
-        assert_eq!(label, 0.0, "its label comes last, all together");
+        assert_eq!(label, 0.0, "the line has not reached its label");
+        assert!(lines(0.6)[1] > 0.0, "it arrives as the line reaches it");
     }
 }

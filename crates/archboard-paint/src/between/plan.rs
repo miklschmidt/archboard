@@ -11,6 +11,7 @@ use super::content::shell;
 use super::ease::{ease_out, emphasised, phase};
 use super::line::{DrawOn, LineCarry};
 use super::ride::Ride;
+use super::unfold::Inside;
 
 /// What changes a part of the picture during a move.
 #[derive(Clone, Debug)]
@@ -35,6 +36,8 @@ pub(super) enum Mover {
     Riding(Box<Riding>),
     /// A line's pulses on the line as it moves.
     Ride(Box<Ride>),
+    /// A part that rides inside a door.
+    Inside(Box<Inside>),
 }
 
 impl Mover {
@@ -50,6 +53,7 @@ impl Mover {
             Mover::Visible(group, ground) => grounded(group.clone(), Some(*ground), progress),
             Mover::Riding(riding) => vec![riding.at(progress)],
             Mover::Ride(ride) => ride.at(progress),
+            Mover::Inside(inside) => inside.at(progress),
             Mover::Frame(item, start, end) => {
                 vec![faded_in(item, ease_out(phase(progress, *start, *end)))]
             }
