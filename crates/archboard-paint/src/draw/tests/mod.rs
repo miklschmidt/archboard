@@ -462,3 +462,12 @@ fn a_lit_line_keeps_its_gaps_and_a_picked_line_has_no_mask() {
     });
     assert_eq!(cuts(&mut stage), 0);
 }
+
+#[test]
+fn a_picture_steps_back_for_the_next_by_its_lines_and_labels() {
+    use super::awaiting;
+    assert!(awaiting(1.0, &Role::Line(None)) < 1.0);
+    assert!(awaiting(1.0, &Role::Label) < 1.0);
+    assert_eq!(awaiting(1.0, &Role::Shadow(None)), 1.0);
+    assert_eq!(awaiting(0.0, &Role::Label), 1.0);
+}

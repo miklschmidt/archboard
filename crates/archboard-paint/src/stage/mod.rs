@@ -240,7 +240,7 @@ impl Stage {
     }
 
     /// Land whatever flies, at once.
-    pub fn land(&mut self) {
+    fn land(&mut self) {
         if self.flight.take().is_some() {
             self.find_warnings();
         }

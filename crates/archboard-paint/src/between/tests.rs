@@ -138,6 +138,52 @@ fn a_picture_that_arrives_during_a_move_starts_from_what_shows() {
     assert_ne!(plate(card), plate(drawing(&first.body, "a")[0]));
 }
 
+/// A move of one group down the board, far enough to count as a long way.
+fn a_long_way(before: Item, after: Item) -> Between {
+    Between::new(
+        &scene(vec![before], &[]),
+        &scene(vec![after], &[]),
+        (0.0, 0.0),
+        &PHASES,
+    )
+}
+
+#[test]
+fn a_line_that_travels_far_recedes_and_comes_back() {
+    let between = a_long_way(
+        line("e", &[(0.0, 0.0), (100.0, 0.0)]),
+        line("e", &[(0.0, 900.0), (100.0, 900.0)]),
+    );
+    let shown = |progress| {
+        let items = between.at(progress);
+        let stroke = shape_of(drawing(&items, "e")[0], Purpose::Line)
+            .stroke
+            .as_ref();
+        stroke.and_then(|stroke| stroke.opacity).unwrap_or(1.0)
+    };
+    assert!(shown(0.0) > 0.99);
+    assert!(shown(0.4) < 0.5);
+    assert!(shown(0.99) > 0.99);
+}
+
+#[test]
+fn a_label_that_crosses_the_board_leaves_and_comes_back_at_its_new_place() {
+    let new_place = rect(300.0, 300.0, 40.0, 10.0);
+    let between = a_long_way(
+        label("e", rect(0.0, 0.0, 40.0, 10.0), "words"),
+        label("e", new_place, "words"),
+    );
+    let gone = between.at(0.3);
+    assert!(drawing(&gone, "e").iter().all(|group| solid(group) < 0.01));
+    let back = between.at(0.999);
+    let seen: Vec<_> = drawing(&back, "e")
+        .into_iter()
+        .filter(|group| solid(group) > 0.5)
+        .collect();
+    assert_eq!(seen.len(), 1);
+    assert_eq!(plate(seen[0]), new_place);
+}
+
 #[test]
 fn a_repeated_id_pairs_in_order() {
     let before = scene(
