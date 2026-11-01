@@ -6,9 +6,13 @@ GlobalRegistrator.register();
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 const awaited = mock((_shown: boolean, _ms: number) => undefined);
 await mock.module("#ui/clients/semantic-board-canvas/picture/picture-stage.ts", () => ({
+	/** Supply the controlled stage. @returns The stage. */
 	stageOf: () => ({
+		/** Ignore lighting. @returns Nothing. */
 		setLight: () => undefined,
+		/** Ignore the far view. @returns Nothing. */
 		setFarLine: () => undefined,
+		/** Ignore traffic. @returns Nothing. */
 		setTrafficShown: () => undefined,
 		setAwaited: awaited,
 	}),

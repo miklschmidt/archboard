@@ -3,12 +3,20 @@ import { expect, mock, test } from "bun:test";
 
 const stops: ((reason: string) => void)[] = [];
 await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", () => ({
+	/** Load the controlled painter. @returns Once ready. */
 	default: async () => undefined,
+	/** Name this test build. @returns Its source identity. */
 	sourceHash: () => "painter-test",
 	Painter: {
+		/**
+		 * Keep the device stop callback.
+		 * @param stopped The device callback.
+		 * @returns Once the device starts.
+		 */
 		warm: async (stopped: (reason: string) => void) => {
 			stops.push(stopped);
 		},
+		/** Start a controlled painter. @returns The painter. */
 		gpu: () => ({}),
 	},
 }));
@@ -22,7 +30,10 @@ test("GPU stops reach late subscribers and stay with the GPU that stopped", asyn
 		configurable: true,
 	});
 	Object.defineProperty(navigator, "gpu", {
-		value: { requestAdapter: async () => ({ info: { isFallbackAdapter: false } }) },
+		value: {
+			/** Supply a hardware adapter. @returns The adapter. */
+			requestAdapter: async () => ({ info: { isFallbackAdapter: false } }),
+		},
 		configurable: true,
 	});
 	try {
