@@ -3,7 +3,10 @@ import type { ArchitectureModelRead } from "@archboard/board/model";
 import type { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { ModelAbout, scopeHead } from "#ui/components/architecture-model/ModelAbout.tsx";
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
-import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
+import {
+	ModelCodeDetails,
+	ModelCodeWarnings,
+} from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelEngine } from "#ui/components/architecture-model/ModelEngine.tsx";
 import { ModelFlowHead } from "#ui/components/architecture-model/ModelFlowHead.tsx";
 import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
@@ -19,7 +22,6 @@ import {
 import { ModelReadingCanvas } from "#ui/components/architecture-model/ModelReadingCanvas.tsx";
 import {
 	ReadingExplain,
-	ReadingFindings,
 	SelectionControls,
 	type SelectionActions,
 } from "#ui/components/architecture-model/ModelReadingControls.tsx";
@@ -173,6 +175,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		[flow, model, reference, grammar, selectGrammar],
 	);
 	const { onAbout } = props;
+	const onShow = useShowSubject(reader);
 	const { onPage } = reader;
 	const openAbout = useCallback((): void => onPage("about"), [onPage]);
 	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
@@ -216,21 +219,22 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 							selection={held}
 							onToggle={reader.onToggle}
 						/>
-						<ReadingFindings reader={reader} code={code} />
+						<ModelCodeDetails reading={code.reading} selected={ids} scope={scope} />
 						<ModelStateStanding model={model} onOpen={openAbout} />
 						{context}
 					</ModelPanelScope>
 				)}
 			</ModelPanel.Subject>
-			{selecting ? (
-				<ModelPanelActions {...subject}>
-					<SelectionControls {...props.actions} />
-				</ModelPanelActions>
-			) : (
-				<ModelPanel.Foot>
+			<ModelPanel.Foot>
+				<ModelCodeWarnings reading={code.reading} onSelect={onShow} />
+				{selecting ? (
+					<ModelPanelActions {...subject}>
+						<SelectionControls {...props.actions} />
+					</ModelPanelActions>
+				) : (
 					<ReadingExplain {...props.actions} />
-				</ModelPanel.Foot>
-			)}
+				)}
+			</ModelPanel.Foot>
 			<ReadingLegend reader={reader} />
 		</ModelPanel>
 	);

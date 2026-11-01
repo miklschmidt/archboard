@@ -30,7 +30,8 @@ what the marks of the picture mean.
 - Right panel: a permanent column of about 360 px on every Diagram reading (TASK-559.19). The owner chose it because
   a legend behind a button went unnoticed for hours. With nothing selected it shows the open module's name and
   description, and with a selection it shows the subject. The panel is always there, so a selection never refits the
-  picture. An expanded module does not take the panel: the panel stays with the module that the reading opened, and an
+  picture. A pane narrower than 900 px hides the panel while nothing is selected. A selection opens it with its Legend.
+  An expanded module does not take the panel: the panel stays with the module that the reading opened, and an
   `Expanded` section lists each expanded module, selects its frame and holds its collapse (TASK-559.26). A selected
   frame explains itself like any module, and the counts of its interface line select on this picture.
 - Context: the right panel is where the flows and walkthroughs of what a reader looks at stand (TASK-559.22), under
@@ -40,8 +41,9 @@ what the marks of the picture mean.
   the left column to its tab. A list shows four rows, then how many more.
 - Interface measures: the reason for this redesign is to find code smells the way A Philosophy of Software Design
   does, so this line matters most. For a module with parts, open or selected, an `Interface` section under its head
-  holds one line that counts entries (entry points), hidden parts, callers and pass-through entry points (TASK-559.22,
-  ADR 0044). The counts stay apart, because no score combines them, and a pass-through reads like the others, because
+  counts entries (entry points), callers and pass-through entry points (TASK-559.22, ADR 0044).
+  Hidden parts stand under `Implementation`, because they are outside the interface (TASK-559.38).
+  The counts stay apart, because no score combines them, and a pass-through reads like the others, because
   it is a question and not a fault. A count selects what it counts on the module's own picture, opening the module if
   it is not open, so a reader sees the shape: parts as their cards, and callers on the door that holds them. A count of
   none selects nothing. The selection is the only mark, and the picture gains no permanent one. A relationship that ends
@@ -51,15 +53,22 @@ what the marks of the picture mean.
   selected module with parts now also has, and which names its hidden parts.
 - Measures: the interface line answers for a module that a reader already picked, so `Measures` answers where to
   look across the whole model (TASK-559.29). The list holds every module with its entries, hidden parts, callers,
-  `to module` and pass-through entry points, its commits and its unjoined pairs. One sort control orders the list by
-  one count, the most first. A tie goes by name, and a module with no such measure comes last, because no count is
-  not a count of none. A row selects its module on its picture through the same path as a count in the interface
+  `to module` and pass-through entry points, its commits and the modules that change with it.
+  `Unjoined` counts those partners that no relationship joins. One sort control orders the list by one count.
+  The reader can put the most or the fewest first and show all modules, modules with parts, or modules with no parts.
+  Equal partner counts sort by the most shared commits of one pair, then by name. Other ties sort by name.
+  A module with no such measure comes last in either order, because an absent count differs from zero.
+  A row selects its module on its picture through the same path as a count in the interface
   line, opening what it must. The interface counts need no server and show at once, and the history counts arrive
   with the read. The list is a table (TASK-559.36): each count keeps a column on every row, the sorted column has a
   lit head and its numbers on slabs, and a bar in the colour of the module's kind under the name draws that one count. A module the read skipped
   takes a dash, and the foot of the list says why. A failed read says what happened and offers `Read again`, and a
-  model with no bindings says that history needs them. Counts only: no score, no color, no rank and no mark on the
-  picture (ADR 0044).
+  model with no bindings says that history needs them. Counts stay separate and add no score or mark to the
+  picture (ADR 0044). Bars scale to the modules on show. The `to module` column appears only when a module has such a caller.
+  The foot distinguishes zero, an absent count and an unread count. It states that a container counts its whole code path.
+  A selected module lists its change partners in the right panel, with the most shared commits first.
+  Each partner names its shared commit count and states when no relationship joins the pair.
+  A pass-through entry in About names the target of its one outgoing relationship.
 - Trace: with one module selected, the head of `Sends to` holds `Trace onward` and the head of `Receives from` holds
   `Trace back`, each with how many cards it reaches (TASK-559.22). Each further hop lights more faintly, nothing is
   written, and a trace goes with the pick. The walk covers the whole model, because a path can leave through one door
@@ -69,6 +78,7 @@ what the marks of the picture mean.
 - Legend: the foot of the right panel, under any action bar, so that a selection never moves it. A group's tag is a
   control, and a bar under the legend put the tag out from under the pointer. It needs no click, and it lists the
   kinds, line types and groups of the reading. A long subject and its lists scroll above it.
+  The action bar offers `Explain with Codex` with nothing selected. Its warning control stays through selection and scope changes.
 - Layout engine: a switch under the legend on a structural reading, because the owner asked for it back (TASK-559.21).
   This browser remembers the choice for every pane. A switch keeps the selection and fits the new picture. The engine
   is part of what a stored drawing is kept under, so one engine never answers for the other. No engine lays out a flow,

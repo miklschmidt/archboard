@@ -1,14 +1,8 @@
 import type { JSX } from "react";
-import {
-	ModelCodeDetails,
-	ModelCodeWarnings,
-} from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
 import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelectionBar.tsx";
-import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import type { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
-import { useShowSubject } from "#ui/hooks/architecture-model/use-show-subject.ts";
 import { selectedSubject } from "#ui/rules/architecture-model/selected-subject.ts";
 
 /** What can be done with a selection, wherever it is explained. */
@@ -63,31 +57,4 @@ function ReadingExplain(props: SelectionActions): JSX.Element | null {
 	);
 }
 
-/**
- * What the code says of what is open, for the panel while nothing is selected: every warning of
- * the model, which the picture cannot mark while it does not draw the warned part, and the findings
- * of the open module itself.
- * @param props The reader and the findings.
- * @param props.reader The reader.
- * @param props.code The code findings of the reading.
- * @returns The findings.
- */
-function ReadingFindings(props: {
-	readonly reader: Reader;
-	readonly code: ReturnType<typeof useModelCodeFindings>;
-}): JSX.Element {
-	const { reader, code } = props;
-	const onShow = useShowSubject(reader);
-	return (
-		<>
-			<ModelCodeWarnings reading={code.reading} onSelect={onShow} />
-			<ModelCodeDetails
-				reading={code.reading}
-				selected={reader.selection.ids}
-				scope={reader.location.scope}
-			/>
-		</>
-	);
-}
-
-export { ReadingExplain, ReadingFindings, SelectionControls, type SelectionActions };
+export { ReadingExplain, SelectionControls, type SelectionActions };

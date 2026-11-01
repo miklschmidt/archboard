@@ -119,10 +119,10 @@ function ModelPanelActions(
 ): JSX.Element {
 	const subject = selectedSubject({ ...props, ids: props.selection.ids });
 	return (
-		<ModelPanel.Foot>
+		<>
 			{subject.kind === "module" && <ModuleActions {...props} module={subject.module} />}
 			{props.children}
-		</ModelPanel.Foot>
+		</>
 	);
 }
 
@@ -202,7 +202,7 @@ function ModuleSubject(
 			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} />
 			<ModelChangesWith
 				vault={props.vault}
-				model={model}
+				model={source}
 				module={module}
 				onSelect={selection.select}
 			/>
@@ -210,7 +210,7 @@ function ModuleSubject(
 			<ModuleOpenReferences
 				paneId={props.paneId}
 				vault={props.vault}
-				model={props.model}
+				model={source}
 				module={module}
 				onNotice={props.onCodeTargetNotice}
 			/>

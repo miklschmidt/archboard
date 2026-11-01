@@ -6,6 +6,8 @@ import { expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { COLUMN_MS } from "@archboard/timing";
+import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { browserTestRoots, pollUntil, type AgentBrowserSession } from "./support/agent-browser.ts";
 import { fixtureGit } from "./support/canonical-model.ts";
 import {
@@ -167,4 +169,65 @@ test("a selection reads the history, and the list shows every module and selects
 		WAIT,
 	);
 	expect(await reads(browser)).toBe(1);
+	await walkWarnings(browser);
 });
+
+/**
+ * A warning cycle survives selection and a move to another scope.
+ * @param browser The reader.
+ */
+async function walkWarnings(browser: AgentBrowserSession): Promise<void> {
+	const vault = join(browserTestRoots().ownerRoot, "measures", ".archboard", "vault");
+	const base = await browser.eval<string>("location.origin");
+	const model: ArchitectureModelRead = await (
+		await fetch(`${base}/api/architecture/model?${new URLSearchParams({ vault })}`)
+	).json();
+	if (!model.success) throw new Error(JSON.stringify(model));
+	const remembered: RememberedFindings = {
+		readings: [],
+		models: [
+			{
+				model: model.manifest.id,
+				state: model.selectedState?.id ?? null,
+				revision: model.revision,
+				checkedAt: "2026-11-01T12:00:00.000Z",
+				findings: ["Shop#Handler", "Shop#Worker"].map((id) => ({
+					code: "BINDING_SYMBOL_MISSING",
+					severity: "warning",
+					file: "module.json",
+					path: "binding.symbol",
+					subject: { kind: "node", id, name: id },
+					message: `Missing symbol for ${id}`,
+				})),
+			},
+		],
+	};
+	await browser.run([
+		"network",
+		"route",
+		"**/api/vault/code-findings*",
+		"--body",
+		JSON.stringify({ success: true, ...remembered }),
+	]);
+	const warning = '[data-slot="model-panel"] [data-slot="code-warning-count"]';
+	await pollUntil(
+		() => browser.eval<boolean>(`document.querySelector('${warning}')?.matches(':enabled')`),
+		Boolean,
+		"the model's warnings",
+		WAIT,
+	);
+	await browser.run(["click", '[data-slot="semantic-selection-clear"]']);
+	for (const id of ["Shop#Handler", "Shop#Worker", "Shop#Handler"]) {
+		await browser.run(["click", warning]);
+		await pollUntil(
+			() =>
+				browser.eval<string | null>(
+					`document.querySelector('[data-slot="model-panel"] [data-slot="module-details"]')?.getAttribute('data-module-id') ?? null`,
+				),
+			(selected) => selected === id,
+			"the next warned module",
+			WAIT,
+		);
+		await drawn(browser);
+	}
+}
