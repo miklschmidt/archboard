@@ -246,6 +246,31 @@
     },
     {
       "type": "add",
+      "subject": "vKEsyHFk#pRZRhE3w",
+      "kind": "relationship",
+      "value": {
+        "order": 990100,
+        "kind": "call",
+        "label": "warm the painter while a picture is prepared",
+        "emphasis": "normal",
+        "anchor": {
+          "repo": "github.com/miklschmidt/archboard",
+          "path": "packages/renderer/src/ui/state/browser-renderer.ts",
+          "symbol": "warmPainter"
+        },
+        "id": "vKEsyHFk#pRZRhE3w",
+        "to": "vKEsyHFk#hKrzJUPf"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk#pRZRhE3w",
+      "placement": {
+        "holder": "vKEsyHFk/UOXNWLhR#F90402mH"
+      }
+    },
+    {
+      "type": "add",
       "subject": "vKEsyHFk#hKrzJUPf",
       "kind": "module",
       "value": {
@@ -436,7 +461,7 @@
         "name": "Picture stage",
         "kind": "function",
         "responsibility": "Owns the canvas of one surface and its painter, hands the painter what the page says, and asks the frame clock for frames only while something moves",
-        "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct board. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. The surface says which painter draws in data-painter, and why the GPU does not in data-painter-reason.",
+        "description": "Until the painter's first frame the surface shows the SVG with its ink, and a painter that cannot start leaves it so: a correct board. The SVG stays in the page under the canvas as the hidden semantic layer that search, copy, screen readers and the marks read, written by picture-transition.ts. picture-ink.ts keeps a first picture's ink back for a moment so that the painter brings the picture in. React gives the stage a host, and the stage makes each canvas inside it, so a painter that fails is released and a replacement gets a fresh canvas. picture-ink.ts then gives the SVG back the glyphs and definitions that a painted surface dropped, so complete ink shows while the replacement starts. The surface says which painter draws in data-painter, and why the GPU does not in data-painter-reason.",
         "groups": [
           "drawing"
         ],
@@ -847,7 +872,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#eKc3FaJx",
       "field": "label",
-      "value": "the canvas the picture is painted on"
+      "value": "the host of the canvases the picture is painted on"
     },
     {
       "type": "assign",
@@ -888,31 +913,6 @@
       "subject": "vKEsyHFk#LOCiLRdW",
       "placement": {
         "holder": "vKEsyHFk#0bsThTMv"
-      }
-    },
-    {
-      "type": "add",
-      "subject": "vKEsyHFk#m5Ct61Wj",
-      "kind": "relationship",
-      "value": {
-        "order": 990100,
-        "kind": "call",
-        "label": "warm the painter while a drawing is made",
-        "emphasis": "normal",
-        "anchor": {
-          "repo": "github.com/miklschmidt/archboard",
-          "path": "apps/web/src/ui/clients/architecture-model/drawing.ts",
-          "symbol": "warmPainter"
-        },
-        "id": "vKEsyHFk#m5Ct61Wj",
-        "to": "vKEsyHFk#hKrzJUPf"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk#m5Ct61Wj",
-      "placement": {
-        "holder": "vKEsyHFk#65P5jbnZ"
       }
     },
     {
@@ -1017,7 +1017,7 @@
       "type": "assign",
       "subject": "vKEsyHFk/UOXNWLhR#1lZkK1Ce",
       "field": "label",
-      "value": "the canvas, and how the picture is lit and seen"
+      "value": "the canvas host, and how the picture is lit and seen"
     },
     {
       "type": "assign",
@@ -1215,6 +1215,7 @@
     "vKEsyHFk/UOXNWLhR#WT3s42AE",
     "vKEsyHFk/UOXNWLhR#9VphxuuC",
     "vKEsyHFk#tv4MSYd6",
-    "vKEsyHFk#NjziT92Y"
+    "vKEsyHFk#NjziT92Y",
+    "vKEsyHFk#m5Ct61Wj"
   ]
 }
