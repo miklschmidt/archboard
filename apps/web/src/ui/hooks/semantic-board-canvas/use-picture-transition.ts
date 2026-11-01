@@ -283,7 +283,7 @@ function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
 	const { surface, last, drawing, keepStill } = next;
 	const shift = shiftFrom(last, surface, drawing, next.presenting === true);
 	if (shift !== undefined) keepStill(shift);
-	stagePicture(surface, drawing.svg);
+	stagePicture(surface, drawing);
 	const duration = arrive(next, shift ?? NO_SHIFT);
 	return duration === null ? null : fly(surface, duration, onLanded);
 }

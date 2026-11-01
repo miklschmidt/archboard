@@ -19,12 +19,12 @@ import { assertThemeParity } from "./support/theme-parity.ts";
 
 // The core shapes every word a picture draws, and a picture draws the glyphs it
 // was given (ADR 0059). The core says where each glyph stands and how far a run
-// advances; nothing else measures. This holds every painter to that in a real
-// browser: the page's own core, which draws the pane, and the Bun core, which
-// draws a picture for the CLI, an export and the rasterizer. Each run's glyphs
-// must stand where the core put them, inside the advance the layout gave the
-// run, and the run's words, laid over the glyphs for search and screen
-// readers, must cover that same advance.
+// advances; nothing else measures. This holds that in a real browser: the Bun
+// core, which draws a picture for the CLI, an export and the rasterizer, and
+// the page's own core, whose picture keeps only its words once a painter draws
+// the glyphs. Each run's glyphs must stand where the core put them, inside the
+// advance the layout gave the run, and the run's words, laid over the glyphs
+// for search and screen readers, must cover that same advance.
 
 /** Short on purpose: each wait names itself well inside the owner's budget. */
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -109,35 +109,37 @@ interface Runs {
  * @param root A selector for the element the pictures sit in.
  * @returns The expression that checks them.
  */
-const runsUnder = (root: string): string => `(() => {
+const runsUnder = (root: string, glyphs: "with glyphs" | "words alone"): string => `(() => {
 	const problems = [];
 	let checked = 0;
 	for (const text of document.querySelectorAll(${JSON.stringify(`${root} svg text[textLength]`)})) {
 		const words = text.textContent;
 		const box = text.getBoundingClientRect();
 		if (box.width === 0) continue; // A layer the picture does not show at this distance.
-		const glyphs = text.previousElementSibling;
-		if (glyphs === null || glyphs.tagName !== "g" || glyphs.getAttribute("aria-hidden") !== "true") {
-			if (words.trim() !== "") problems.push({ words, why: "no glyphs before the words" });
-			continue;
-		}
-		checked += 1;
-		const scale = text.getScreenCTM().a;
-		const size = Number(text.getAttribute("font-size")) * scale;
 		const advance = Number(text.getAttribute("textLength"));
-		const origin = glyphs.transform.baseVal.consolidate().matrix;
-		if (Math.abs(origin.e - text.x.baseVal[0].value) > 0.01 || Math.abs(origin.f - text.y.baseVal[0].value) > 0.01) {
-			problems.push({ words, why: "glyphs start away from the words" });
-		}
-		for (const use of glyphs.querySelectorAll("use")) {
-			if (document.getElementById(use.getAttribute("href").slice(1)) === null) {
-				problems.push({ words, why: "a glyph the picture does not define" });
+		if (${glyphs === "with glyphs"}) {
+			const glyphs = text.previousElementSibling;
+			if (glyphs === null || glyphs.tagName !== "g" || glyphs.getAttribute("aria-hidden") !== "true") {
+				if (words.trim() !== "") problems.push({ words, why: "no glyphs before the words" });
+				continue;
+			}
+			const scale = text.getScreenCTM().a;
+			const size = Number(text.getAttribute("font-size")) * scale;
+			const origin = glyphs.transform.baseVal.consolidate().matrix;
+			if (Math.abs(origin.e - text.x.baseVal[0].value) > 0.01 || Math.abs(origin.f - text.y.baseVal[0].value) > 0.01) {
+				problems.push({ words, why: "glyphs start away from the words" });
+			}
+			for (const use of glyphs.querySelectorAll("use")) {
+				if (document.getElementById(use.getAttribute("href").slice(1)) === null) {
+					problems.push({ words, why: "a glyph the picture does not define" });
+				}
+			}
+			const ink = glyphs.getBoundingClientRect();
+			if (ink.left < box.left - ${BEARING} * size || ink.right > box.right + ${BEARING} * size) {
+				problems.push({ words, why: "glyphs stand outside the run's advance: " + [ink.left, ink.right, box.left, box.right].join(" ") });
 			}
 		}
-		const ink = glyphs.getBoundingClientRect();
-		if (ink.left < box.left - ${BEARING} * size || ink.right > box.right + ${BEARING} * size) {
-			problems.push({ words, why: "glyphs stand outside the run's advance: " + [ink.left, ink.right, box.left, box.right].join(" ") });
-		}
+		checked += 1;
 		if (Math.abs(text.getComputedTextLength() - advance) > 0.01 * advance + 0.05) {
 			problems.push({ words, why: "the words do not cover the advance: " + text.getComputedTextLength() + " " + advance });
 		}
@@ -197,17 +199,17 @@ test("every painter draws the glyphs where the core put them, and the words are 
 	await browser.run(["open", modelAddress(server.base, model)]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
 	await pollUntil(
-		() => browser.eval<Runs>(runsUnder(SURFACE)),
+		() => browser.eval<Runs>(runsUnder(SURFACE, "words alone")),
 		(runs) => runs.checked > 8 && runs.problems.length === 0,
 		"the model to be drawn in the page",
 		WAIT,
 	);
-	const inPage = await browser.eval<Runs>(runsUnder(SURFACE));
+	const inPage = await browser.eval<Runs>(runsUnder(SURFACE, "words alone"));
 	expect(inPage.problems).toEqual([]);
 	expect(inPage.checked).toBeGreaterThan(8);
 
 	await showServerPictures(browser, drawnByServer);
-	const byServer = await browser.eval<Runs>(runsUnder("#server-pictures"));
+	const byServer = await browser.eval<Runs>(runsUnder("#server-pictures", "with glyphs"));
 	expect(byServer.problems).toEqual([]);
 	expect(byServer.checked).toBeGreaterThan(3 * 8);
 

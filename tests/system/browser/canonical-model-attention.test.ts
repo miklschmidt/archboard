@@ -68,18 +68,20 @@ interface SharedStretch {
 }
 
 /**
- * The middle of a stretch that one line of a trunk draws for the others.
+ * A place on the stretch that the most lines of a trunk share.
  * @param browser The page.
  * @returns Where it is, and how many lines' routes run through it, or none while a line is still being drawn on.
  */
 function sharedStretch(browser: AgentBrowserSession): Promise<SharedStretch> {
 	return browser.eval<SharedStretch>(
 		`(() => { const root = document.querySelector("${SURFACE} > svg");` +
-			` const cut = root.querySelector("mask path[stroke-linecap='butt']");` +
-			` const middle = cut.getPointAtLength(cut.getTotalLength() / 2);` +
 			` const inked = (line) => [...line.querySelectorAll(":scope > path:not(.ab-halo)")];` +
-			` const lines = [...root.querySelectorAll("g[data-semantic-kind='edge']")]` +
-			`   .filter((line) => inked(line).some((path) => path.isPointInStroke(middle)));` +
+			` const edges = [...root.querySelectorAll("g[data-semantic-kind='edge']")];` +
+			` const under = (point) => edges.filter((line) => inked(line).some((path) => path.isPointInStroke(point)));` +
+			` const route = inked(edges[0])[0];` +
+			` const places = Array.from({ length: 41 }, (_, step) => route.getPointAtLength(route.getTotalLength() * step / 40));` +
+			` const middle = places.reduce((best, place) => under(place).length > under(best).length ? place : best);` +
+			` const lines = under(middle);` +
 			` const drawing = [...root.querySelectorAll("g[data-semantic-kind='edge'] path[stroke-dashoffset]")]` +
 			`   .some((path) => Number(path.getAttribute("stroke-dashoffset")) > 0.01);` +
 			` const place = middle.matrixTransform(root.getScreenCTM());` +

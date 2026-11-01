@@ -90,16 +90,19 @@ function continuousPictures(before: MovingPicture, after: MovingPicture): boolea
  * pane has to find its groups, mark them, and keep its words in the page.
  * Nothing else is ever put through this property. It is made away from the
  * page and its traffic taken out there, because the stage draws the traffic and
- * none of its SMIL must start in the page.
+ * none of its SMIL must start in the page. A painter draws a picture that has a
+ * painting, so what only the eye needs stays out of the page too.
  * @param surface The element the picture is put into.
- * @param svg The picture.
+ * @param picture The picture.
  */
-function stagePicture(surface: HTMLElement, svg: string): void {
+function stagePicture(surface: HTMLElement, picture: MovingPicture): void {
 	const made = surface.ownerDocument.createElement("div");
-	made.innerHTML = svg;
+	made.innerHTML = picture.svg;
 	for (const pulse of made.querySelectorAll(".ab-pulse")) pulse.remove();
+	const stage = stageOf(surface);
+	if (picture.painting !== undefined) stage?.thin(made);
 	surface.replaceChildren(...made.childNodes);
-	stageOf(surface)?.learnGroups(surface);
+	stage?.learnGroups(surface);
 }
 
 export { NO_SHIFT, continuousPictures, sharedShift, stagePicture, type MovingPicture, type Shift };

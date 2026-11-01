@@ -32,6 +32,9 @@ const PAINTER_ATTRIBUTE = "data-painter";
 /** The attribute on the surface that says why the GPU does not paint. */
 const PAINTER_REASON_ATTRIBUTE = "data-painter-reason";
 
+/** What a picture holds for the eye alone: its definitions, and its words' glyphs. */
+const EYE_ONLY = "svg defs, g:has(> use)";
+
 /** The groups a painter's pick names, by counting them in document order. */
 const PICKED = "[data-semantic-id],[data-toggle]";
 
@@ -98,6 +101,16 @@ class PictureStage {
 	 */
 	get starting(): boolean {
 		return this.#starting;
+	}
+
+	/**
+	 * Take what only the eye needs out of a picture once a painter draws it.
+	 * Laying out its glyphs and definitions was half of what a new picture cost.
+	 * @param picture The picture's parent.
+	 */
+	thin(picture: ParentNode): void {
+		if (!this.#surface.hasAttribute(PAINTER_ATTRIBUTE)) return;
+		for (const ink of picture.querySelectorAll(EYE_ONLY)) ink.remove();
 	}
 
 	/**
@@ -444,7 +457,9 @@ class PictureStage {
 			this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
 			return;
 		}
+		const first = !this.#surface.hasAttribute(PAINTER_ATTRIBUTE);
 		this.#surface.setAttribute(PAINTER_ATTRIBUTE, started.kind);
+		if (first) this.thin(this.#surface);
 		if (started.reason === null) this.#surface.removeAttribute(PAINTER_REASON_ATTRIBUTE);
 		else this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, started.reason);
 	}

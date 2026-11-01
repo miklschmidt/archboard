@@ -198,10 +198,10 @@ describe("the surface across pictures", () => {
 
 	test("a picture's traffic never runs in the page, because the stage draws it", () => {
 		const surface = document.createElement("div");
-		stagePicture(
-			surface,
-			'<svg><g class="ab-pulse" data-traffic="e1"><animate/></g><g data-semantic-id="n1"></g></svg>',
-		);
+		stagePicture(surface, {
+			...picture([], []),
+			svg: '<svg><g class="ab-pulse" data-traffic="e1"><animate/></g><g data-semantic-id="n1"></g></svg>',
+		});
 		expect(surface.querySelector(".ab-pulse")).toBeNull();
 		expect(surface.querySelector("[data-semantic-id='n1']")).not.toBeNull();
 	});

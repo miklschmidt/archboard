@@ -167,7 +167,7 @@ function whenLanded(surface: HTMLElement, then: () => void): () => void {
  */
 function putUp(surface: HTMLElement, picture: MovingPicture | null): void {
 	if (picture === null) return;
-	stagePicture(surface, picture.svg);
+	stagePicture(surface, picture);
 	stageOf(surface)?.show(picture.painting);
 }
 
