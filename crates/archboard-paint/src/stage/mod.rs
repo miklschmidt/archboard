@@ -119,6 +119,7 @@ impl Stage {
         });
         self.flight = None;
         self.leaving = None;
+        self.ghost = None;
         self.dive = None;
         self.presentation.sweep = None;
         self.looks += 1;
@@ -159,12 +160,14 @@ impl Stage {
         moved: (f64, f64),
         now: f64,
     ) {
-        self.ghost = self.ghost_of_last(heading, moved, now);
+        self.now = now;
+        let ghost = self.ghost_of_last(heading, moved, now);
         let flight = self
             .phases
             .as_ref()
             .map(|phases| Flight::enter(&painting.scene, phases, ms));
         self.stand(painting);
+        self.ghost = ghost;
         self.flight = flight;
         if self.flight.is_some() {
             self.presentation.warnings = Warnings::default();
@@ -211,6 +214,7 @@ impl Stage {
 
     /// Send the picture on its way out, while the next is drawn.
     pub fn leave(&mut self, heading: Heading, ms: f64, now: f64) {
+        self.now = now;
         self.leaving = Some(Leaving {
             heading,
             start: now,
@@ -233,6 +237,7 @@ impl Stage {
         ms: f64,
         now: f64,
     ) {
+        self.now = now;
         self.outlines.learn_icons(&painting.icons);
         self.dive = Some(Dive {
             inset: Picture::new(painting.scene),

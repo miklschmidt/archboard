@@ -2,9 +2,12 @@
 
 use super::Stage;
 use crate::between::PHASES;
+use crate::cpu::CpuCanvas;
 use crate::draw::tests::painting;
+use crate::flight::DiveWay;
 use crate::palette::Theme;
 use crate::presentation::{Camera, Light, Shine};
+use archboard_scene::geometry::Rect;
 use std::collections::HashMap;
 
 fn stage() -> Stage {
@@ -109,4 +112,86 @@ fn a_further_hop_lights_later() {
     assert_eq!(stage.presentation.recede.subjects["far"], 1.0);
     stage.advance(200.0);
     assert!((stage.presentation.recede.subjects["far"] - 0.6).abs() < 1e-6);
+}
+
+#[test]
+fn a_light_cut_skips_the_delays_of_further_hops() {
+    let mut stage = stage();
+    let light = Light {
+        rest: 0.14,
+        labels: 0.28,
+        subjects: HashMap::from([(
+            "far".to_owned(),
+            Shine {
+                opacity: 0.6,
+                delay: 100.0,
+            },
+        )]),
+        duration: 0.0,
+    };
+    stage.set_light(&light, 10.0);
+    stage.advance(10.0);
+    assert_eq!(stage.presentation.recede.rest, light.rest);
+    assert_eq!(stage.presentation.recede.labels, light.labels);
+    assert_eq!(stage.presentation.recede.subjects["far"], 0.6);
+    assert!(!stage.changing(10.0));
+}
+
+#[test]
+fn a_timed_picture_change_keeps_a_stale_frame_from_rewinding_the_camera() {
+    let changes: [fn(&mut Stage); 3] = [
+        |stage| stage.leave(crate::between::Heading::Across, 100.0, 75.0),
+        |stage| stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 75.0),
+        |stage| {
+            stage.dive(
+                painting(Vec::new()),
+                Rect {
+                    x: 0.0,
+                    y: 0.0,
+                    width: 10.0,
+                    height: 10.0,
+                },
+                (DiveWay::In, "card".to_owned()),
+                100.0,
+                75.0,
+            );
+        },
+    ];
+    for change in changes {
+        let mut stage = stage();
+        stage.set_phases(PHASES);
+        stage.show(painting(Vec::new()));
+        stage.set_camera(
+            Camera {
+                x: 100.0,
+                ..Camera::default()
+            },
+            100.0,
+            0.0,
+        );
+        stage.advance(50.0);
+        let before = stage.presentation.camera.x;
+        change(&mut stage);
+        stage.draw(&mut CpuCanvas::new(1, 1), 50.0);
+        assert!(stage.presentation.camera.x > before);
+    }
+}
+
+#[test]
+fn a_cut_or_carry_takes_away_the_ghost_of_an_interrupted_entrance() {
+    let replacements: [fn(&mut Stage); 2] = [
+        |stage| stage.show(painting(Vec::new())),
+        |stage| stage.carry(painting(Vec::new()), (0.0, 0.0), 100.0),
+    ];
+    for replace in replacements {
+        let mut stage = stage();
+        stage.set_phases(PHASES);
+        stage.show(painting(Vec::new()));
+        stage.enter(painting(Vec::new()), None, 100.0, (0.0, 0.0), 0.0);
+        stage.advance(0.0);
+        assert!(stage.ghost.is_some());
+        stage.land();
+        replace(&mut stage);
+        assert!(stage.ghost.is_none());
+    }
 }

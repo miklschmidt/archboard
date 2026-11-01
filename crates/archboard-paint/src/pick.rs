@@ -187,7 +187,9 @@ impl Finder<'_> {
             return;
         }
         let (path, own) = outline_of(&shape.geometry);
-        let reach = stroke.map(|stroke| stroke.width.unwrap_or(1.0) / 2.0);
+        let reach = stroke
+            .map(|stroke| stroke.width.unwrap_or(1.0) / 2.0)
+            .or_else(|| all.then_some(0.5));
         let room = reach.unwrap_or(0.0);
         self.found.push(Target {
             marked: around.marked,
@@ -412,6 +414,34 @@ mod tests {
             &Presentation::default(),
         );
         assert_eq!(targets.under(at(5.0, 5.0)), vec![0]);
+    }
+
+    #[test]
+    fn an_unpainted_seat_takes_the_pointer_on_its_default_stroke_perimeter() {
+        let seat = Item::Group(
+            Group::new(
+                Role::Label,
+                vec![Item::Shape(
+                    Shape::rect(
+                        Purpose::Plate,
+                        Rect {
+                            x: 0.0,
+                            y: 0.0,
+                            width: 10.0,
+                            height: 10.0,
+                        },
+                        None,
+                    )
+                    .unfilled()
+                    .pointer(Pointer::All),
+                )],
+            )
+            .drawing(subject("seat", SubjectKind::Node)),
+        );
+        let targets = Targets::of(&scene(vec![seat]), false, &Presentation::default());
+        assert_eq!(targets.under(at(5.0, -0.4)), vec![0]);
+        assert_eq!(targets.under(at(5.0, 0.4)), vec![0]);
+        assert_eq!(targets.under(at(5.0, -0.6)), Vec::<i32>::new());
     }
 
     #[test]

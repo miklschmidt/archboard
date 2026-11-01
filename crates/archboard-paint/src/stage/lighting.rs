@@ -55,6 +55,9 @@ impl Lighting {
                 },
             );
         }
+        if ms <= 0.0 {
+            self.stand();
+        }
     }
 
     /// Stand where the light is going: a picture that just entered has no last
