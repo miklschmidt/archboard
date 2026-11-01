@@ -3,15 +3,14 @@
 //! left as it is. Each frame clones what is still and asks each mover for its
 //! moment.
 
-use std::collections::HashSet;
-
-use archboard_scene::scene::{Group, Item, Role, Transform};
+use archboard_scene::scene::{Group, Item, Mask, Role, Transform};
 
 use super::arrive::{Ground, Grow, Leave, Swap};
 use super::card::CardCarry;
 use super::content::shell;
 use super::ease::{ease_out, emphasised, phase};
 use super::line::{DrawOn, LineCarry};
+use super::ride::Ride;
 
 /// What changes a part of the picture during a move.
 #[derive(Clone, Debug)]
@@ -34,6 +33,8 @@ pub(super) enum Mover {
     Frame(Item, f64, f64),
     /// A shadow that rides under the card that casts it.
     Riding(Box<Riding>),
+    /// A line's pulses on the line as it moves.
+    Ride(Box<Ride>),
 }
 
 impl Mover {
@@ -48,6 +49,7 @@ impl Mover {
             Mover::Line(line, ground) => grounded(line.at(progress), *ground, progress),
             Mover::Visible(group, ground) => grounded(group.clone(), Some(*ground), progress),
             Mover::Riding(riding) => vec![riding.at(progress)],
+            Mover::Ride(ride) => ride.at(progress),
             Mover::Frame(item, start, end) => {
                 vec![faded_in(item, ease_out(phase(progress, *start, *end)))]
             }
@@ -87,8 +89,6 @@ fn faded_in(item: &Item, visible: f64) -> Item {
 enum Slot {
     /// An item that does not change.
     Still(Item),
-    /// An item left out until the picture lands.
-    Absent,
     /// A plain group, some of whose parts change.
     Shell(Group, Vec<Slot>),
     /// The part a mover draws.
@@ -123,8 +123,6 @@ pub(super) struct Wiring<'a> {
     /// The mover of an item that holds no subject and comes in on its own, given
     /// the item and whether it stands at the top of the body.
     pub(super) furniture: &'a dyn Fn(&Item, bool) -> Option<Mover>,
-    /// The traffic layers left out until the picture lands, by line.
-    pub(super) silent: &'a HashSet<&'a str>,
 }
 
 /// The walk that turns a body into slots.
@@ -161,17 +159,10 @@ impl Walk<'_> {
             .collect()
     }
 
-    /// A group of no subject: left out, or whole, or a shell round slots.
+    /// A group of no subject: whole, or a shell round slots.
     fn plain(&mut self, group: &Group) -> Slot {
-        if matches!(&group.role, Role::Traffic(line) if self.wiring.silent.contains(line.as_str()))
-        {
-            return Slot::Absent;
-        }
         let slots = self.slots(&group.items, false);
-        if slots
-            .iter()
-            .all(|slot| matches!(slot, Slot::Still(_) | Slot::Absent))
-        {
+        if slots.iter().all(|slot| matches!(slot, Slot::Still(_))) {
             let items = slots
                 .into_iter()
                 .filter_map(|slot| match slot {
@@ -219,6 +210,17 @@ impl Plan {
         );
     }
 
+    /// The masks of the lines that move, at a moment of the move.
+    pub(super) fn masks_at(&self, progress: f64) -> Vec<Mask> {
+        self.movers
+            .iter()
+            .filter_map(|mover| match mover {
+                Mover::Line(line, _) => line.mask_at(progress),
+                _ => None,
+            })
+            .collect()
+    }
+
     /// The body at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Vec<Item> {
         let mut body = Vec::with_capacity(self.slots.len());
@@ -230,7 +232,6 @@ impl Plan {
         for slot in slots {
             match slot {
                 Slot::Still(item) => out.push(item.clone()),
-                Slot::Absent => {}
                 Slot::Shell(group, inside) => {
                     let mut items = Vec::with_capacity(inside.len());
                     self.lay(inside, progress, &mut items);

@@ -120,10 +120,17 @@ impl Flight {
     }
 
     /// What the flight shows at a moment.
-    pub(crate) fn items(&self, now: f64) -> Vec<Item> {
+    pub(crate) fn items(&mut self, now: f64) -> Vec<Item> {
         let share = self.time().share(now);
         match self {
-            Flight::Carry { between, .. } => between.at(share),
+            Flight::Carry {
+                between,
+                definitions,
+                ..
+            } => {
+                definitions.replace_masks(between.masks_at(share));
+                between.at(share)
+            }
             Flight::Enter { entrance, .. } => entrance.at(share),
         }
     }

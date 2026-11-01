@@ -43,7 +43,7 @@ impl Stage {
             canvas.set_transform(Affine::IDENTITY);
             canvas.push(None, opacity_of(parent));
         }
-        let moved: Option<Vec<Item>> = match (&*flight, &*leaving) {
+        let moved: Option<Vec<Item>> = match (flight.as_mut(), &*leaving) {
             (Some(flight), _) => Some(flight.items(now)),
             (None, Some(leaving)) => Some(departure(
                 &picture.scene,

@@ -151,6 +151,8 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	linesStartBy: 0.62,
 	/** How long each line takes to draw on. */
 	lineSpan: 0.38,
+	/** How long a line's pulses take to come in once the line is drawn. */
+	pulseSpan: 0.12,
 	/**
 	 * Every connection label only the new picture has arrives from here to the
 	 * end, all together. Timed by its own line, labels came in scattered batches

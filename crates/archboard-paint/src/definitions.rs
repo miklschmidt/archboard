@@ -71,6 +71,13 @@ impl Definitions {
         }
     }
 
+    /// Put masks in the place of those that bear their names.
+    pub(crate) fn replace_masks(&mut self, masks: Vec<Mask>) {
+        for mask in masks {
+            self.masks.insert(mask.id.line.clone(), mask);
+        }
+    }
+
     /// The mask of a line.
     pub(crate) fn mask(&self, line: &str) -> Option<&Mask> {
         self.masks.get(line)

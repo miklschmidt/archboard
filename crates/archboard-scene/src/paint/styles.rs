@@ -27,8 +27,7 @@ pub(super) fn stroke_width(weight: Emphasis) -> f64 {
     }
 }
 
-/// The gap a double line's rails leave down its middle.
-pub(super) const RAIL_GAP: f64 = 1.2;
+pub(super) use crate::paint::design::RAIL_GAP;
 
 /// How long an arrowhead of each weight is, from its base to its tip.
 pub(super) const HEAD_LENGTH: f64 = 11.0;

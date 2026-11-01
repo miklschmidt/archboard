@@ -433,17 +433,22 @@ impl<C: Canvas> Walk<'_, C> {
         self.inner(group, held);
         self.canvas.set_transform(held.transform);
         self.canvas.push_cut();
-        let black = Ink::Solid(peniko::Color::BLACK);
+        let black = |opacity: Option<f64>| {
+            #[expect(clippy::cast_possible_truncation, reason = "a colour's alpha is f32")]
+            let alpha = opacity.unwrap_or(1.0) as f32;
+            Ink::Solid(peniko::Color::BLACK.with_alpha(alpha))
+        };
         for shape in mask.shapes.iter().filter(|shape| cuts(shape)) {
             if whole && cuts_a_trunk(shape) {
                 continue;
             }
             let (path, _) = outline_of(&shape.geometry);
             if shape.fill.as_ref().is_some_and(|fill| *fill != Paint::None) {
-                self.canvas.fill(&path, &black, false);
+                self.canvas.fill(&path, &black(shape.fill_opacity), false);
             }
             if let Some(stroke) = &shape.stroke {
-                self.canvas.stroke(&path, &stroke_of(stroke, 1.0), &black);
+                self.canvas
+                    .stroke(&path, &stroke_of(stroke, 1.0), &black(stroke.opacity));
             }
         }
         self.canvas.pop();

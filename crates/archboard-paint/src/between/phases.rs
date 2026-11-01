@@ -45,6 +45,8 @@ pub struct Entry {
     pub lines_start: f64,
     /// The last line begins drawing by here.
     pub lines_start_by: f64,
+    /// How long a line's pulses take to come in once it is drawn.
+    pub pulse_span: f64,
     /// How long each line takes to draw on.
     pub line_span: f64,
     /// Every label arrives from here to the end.
@@ -89,6 +91,7 @@ pub(crate) mod fixtures {
             card_span: 0.42,
             lines_start: 0.34,
             lines_start_by: 0.62,
+            pulse_span: 0.12,
             line_span: 0.38,
             labels_start: 0.66,
         },
@@ -104,7 +107,7 @@ mod tests {
     fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
         let phases: Phases = serde_json::from_str(
             r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66},
-                "entry":{"framesEnd":0.35,"cardsStart":0.04,"cardsStartBy":0.4,"cardSpan":0.42,"linesStart":0.34,"linesStartBy":0.62,"lineSpan":0.38,"labelsStart":0.66},
+                "entry":{"framesEnd":0.35,"cardsStart":0.04,"cardsStartBy":0.4,"cardSpan":0.42,"linesStart":0.34,"linesStartBy":0.62,"pulseSpan":0.12,"lineSpan":0.38,"labelsStart":0.66},
                 "exit":280}"#,
         )
         .expect("the timing package's phases");

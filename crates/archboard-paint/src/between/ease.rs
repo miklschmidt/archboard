@@ -6,8 +6,14 @@ use archboard_scene::scene::Transform;
 
 use crate::timing::Curve;
 
-/// The curve a move follows: off quickly, settling slowly.
-const EMPHASISED: Curve = Curve(0.2, 0.0, 0.0, 1.0);
+/// The curve a move follows: a start the eye can catch, a long settle.
+const EMPHASISED: Curve = Curve(0.5, 0.0, 0.1, 1.0);
+
+/// Where a line that travels is as far back as it goes.
+const RECEDES_BY: f64 = 0.2;
+/// Where a line that travels starts to return, and where it is back.
+const RETURNS_FROM: f64 = 0.58;
+const RETURNS_BY: f64 = 0.92;
 
 /// How far through one phase a moment is: 0 before it, 1 after it.
 pub(super) fn phase(progress: f64, start: f64, end: f64) -> f64 {
@@ -39,6 +45,15 @@ pub(super) fn ease_in_out(t: f64) -> f64 {
     } else {
         1.0 - (-2.0 * t + 2.0).powi(3) / 2.0
     }
+}
+
+/// How much of what travels shows at a moment of a move, 1 when all of it does.
+/// It recedes as the move starts and returns before the move ends, by as much as
+/// `depth` at its deepest.
+pub(super) fn receded(depth: f64, progress: f64) -> f64 {
+    let gone = ease_in_out(phase(progress, 0.0, RECEDES_BY));
+    let back = ease_in_out(phase(progress, RETURNS_FROM, RETURNS_BY));
+    1.0 - depth * gone * (1.0 - back)
 }
 
 /// A number some way between two.

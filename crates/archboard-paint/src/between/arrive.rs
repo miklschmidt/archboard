@@ -15,6 +15,9 @@ const LEAVE_SCALE: f64 = 0.96;
 /// How much a card arriving grows from.
 const ARRIVE_SCALE: f64 = 0.94;
 
+/// Where a label that crosses the board is gone, as a share of the move.
+pub(super) const LABEL_GONE_BY: f64 = 0.16;
+
 /// The move that changes nothing.
 const STILL: Transform = Transform::translate(0.0, 0.0);
 
@@ -64,6 +67,16 @@ impl Leave {
                 .filter(|_| found.form() == super::found::Form::Card),
             outer: found.outer,
             exit_end: phases.exit_end,
+        }
+    }
+
+    /// Something of the last scene that is no subject, gone by a point of the move.
+    pub(super) fn plain(item: Item, exit_end: f64) -> Leave {
+        Leave {
+            group: Group::new(Role::Marks, vec![item]),
+            frame: None,
+            outer: None,
+            exit_end,
         }
     }
 
@@ -131,30 +144,45 @@ impl Grow {
 pub(super) struct Swap {
     old: Group,
     new: Group,
-    start: f64,
-    end: f64,
+    /// When the old drawing goes.
+    out: (f64, f64),
+    /// When the new drawing comes.
+    arrives: (f64, f64),
 }
 
 impl Swap {
     /// The old drawing of a subject, and the new.
     pub(super) fn new(old: &Group, new: &Group, phases: Transition) -> Swap {
+        let window = (phases.fade_start, phases.fade_end);
         Swap {
             old: borrowed(old),
             new: new.clone(),
-            start: phases.fade_start,
-            end: phases.fade_end,
+            out: window,
+            arrives: window,
+        }
+    }
+
+    /// A label whose line travels far: it goes as the line sets off, and comes
+    /// back where the line lands, so that no words cross the board.
+    pub(super) fn across(old: &Group, new: &Group, phases: Transition) -> Swap {
+        Swap {
+            old: borrowed(old),
+            new: new.clone(),
+            out: (0.0, LABEL_GONE_BY),
+            arrives: (phases.labels_start, 1.0),
         }
     }
 
     /// The pair at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Vec<Item> {
-        let swapped = ease_in_out(phase(progress, self.start, self.end));
+        let gone = ease_in_out(phase(progress, self.out.0, self.out.1));
+        let come = ease_in_out(phase(progress, self.arrives.0, self.arrives.1));
         let mut new = self.new.clone();
-        new.opacity = Some(base(&new) * swapped);
+        new.opacity = Some(base(&new) * come);
         let mut items = Vec::with_capacity(2);
-        if swapped < 1.0 {
+        if gone < 1.0 {
             let mut old = self.old.clone();
-            old.opacity = Some(base(&old) * (1.0 - swapped));
+            old.opacity = Some(base(&old) * (1.0 - gone));
             items.push(Item::Group(old));
         }
         items.push(Item::Group(new));

@@ -89,9 +89,9 @@ fn cards(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)> {
         .collect()
 }
 
-/// The lines, which are drawn on in the wave once the cards are there.
-fn lines(groups: &[Found<'_>], phases: &Phases) -> Vec<(usize, Mover)> {
-    let entry = phases.entry;
+/// When each line is drawn on, by its place in the groups: the wave's start and
+/// end.
+fn line_times(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
         .filter(|&at| groups[at].form() == Form::Line)
         .collect();
@@ -103,13 +103,18 @@ fn lines(groups: &[Found<'_>], phases: &Phases) -> Vec<(usize, Mover)> {
     places
         .into_iter()
         .zip(begins)
-        .map(|(at, begin)| {
-            let end = (begin + entry.line_span).min(1.0);
-            let arrowhead = phases.transition.arrowhead_at;
-            (
-                at,
-                Mover::Draw(DrawOn::new(groups[at].group, begin, end, arrowhead)),
-            )
+        .map(|(at, begin)| (at, begin, (begin + entry.line_span).min(1.0)))
+        .collect()
+}
+
+/// The lines, which are drawn on in the wave once the cards are there.
+fn lines(groups: &[Found<'_>], phases: &Phases) -> Vec<(usize, Mover)> {
+    let arrowhead = phases.transition.arrowhead_at;
+    line_times(groups, &phases.entry)
+        .into_iter()
+        .map(|(at, begin, end)| {
+            let draw = DrawOn::new(groups[at].group, begin, end, arrowhead);
+            (at, Mover::Draw(draw))
         })
         .collect()
 }
@@ -134,12 +139,13 @@ fn frames_and_labels(groups: &[Found<'_>], entry: &Entry) -> Vec<(usize, Mover)>
 }
 
 /// When something that belongs to no subject fades in. A shadow comes with what
-/// casts it, and a mark on the lines comes after the lines. The rest of the page's
-/// furniture fades in with the frames, so that nothing stands on its own before the
-/// picture arrives.
+/// casts it, a line's pulses start as it ends, and a mark on the lines comes after
+/// the lines. The rest of the page's furniture fades in with the frames, so that
+/// nothing stands on its own before the picture arrives.
 fn furniture_times(
     item: &Item,
     cards: &HashMap<&str, (f64, f64)>,
+    drawn: &HashMap<&str, f64>,
     regions: &HashSet<&str>,
     entry: &Entry,
 ) -> (f64, f64) {
@@ -148,7 +154,14 @@ fn furniture_times(
     let Item::Group(group) = item else {
         return frames;
     };
-    match group.role {
+    match &group.role {
+        Role::Traffic(line) => {
+            let end = drawn.get(line.as_str()).copied().unwrap_or(1.0);
+            (
+                end.min(1.0 - entry.pulse_span),
+                (end + entry.pulse_span).min(1.0),
+            )
+        }
         Role::Shadow(_) => group.members.first().map_or(frames, |owner| {
             let by_line = if regions.contains(owner.as_str()) {
                 frames
@@ -185,15 +198,14 @@ impl Entrance {
     /// Prepare the entrance of a scene.
     pub fn new(scene: &Scene, phases: &Phases) -> Entrance {
         let groups = found(scene);
-        let silent: HashSet<&str> = groups
-            .iter()
-            .filter(|group| group.form() == Form::Line)
-            .map(|group| group.id)
-            .collect();
         let (all, of_subject) = movers(&groups, phases);
         let cards: HashMap<&str, (f64, f64)> = card_times(&groups, &phases.entry)
             .into_iter()
             .map(|(at, begin, end)| (groups[at].id, (begin, end)))
+            .collect();
+        let drawn: HashMap<&str, f64> = line_times(&groups, &phases.entry)
+            .into_iter()
+            .map(|(at, _, end)| (groups[at].id, end))
             .collect();
         let regions: HashSet<&str> = groups
             .iter()
@@ -201,19 +213,18 @@ impl Entrance {
             .map(|group| group.id)
             .collect();
         let furniture = |item: &Item, top: bool| {
-            let alone = matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_) | Role::Junctions));
+            let alone = matches!(item, Item::Group(group) if matches!(group.role, Role::Shadow(_) | Role::Junctions | Role::Traffic(_)));
             let page = top
                 && !matches!(item, Item::Definitions { .. } | Item::Break)
                 && !holds_subject(item, &|_| true);
             (alone || page).then(|| {
-                let (start, end) = furniture_times(item, &cards, &regions, &phases.entry);
+                let (start, end) = furniture_times(item, &cards, &drawn, &regions, &phases.entry);
                 Mover::Frame(item.clone(), start, end)
             })
         };
         let wiring = Wiring {
             of_subject: &of_subject,
             furniture: &furniture,
-            silent: &silent,
         };
         Entrance {
             plan: Plan::new(&scene.body, all, &wiring),

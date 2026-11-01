@@ -182,6 +182,33 @@ impl Morph {
         })
     }
 
+    /// The box that holds the route this far along.
+    pub(super) fn bounds_at(&self, t: f64) -> kurbo::Rect {
+        let along = self.left.between(&self.right, t.clamp(0.0, 1.0));
+        along
+            .segments
+            .iter()
+            .map(kurbo::ParamCurveExtrema::bounding_box)
+            .reduce(|a, b| a.union(b))
+            .unwrap_or_default()
+    }
+
+    /// How far the point of the route that moves most moves.
+    pub(super) fn reach(&self) -> f64 {
+        let points = |chain: &Chain| {
+            chain
+                .segments
+                .iter()
+                .flat_map(|segment| [segment.p0, segment.p3])
+                .collect::<Vec<_>>()
+        };
+        points(&self.left)
+            .iter()
+            .zip(&points(&self.right))
+            .map(|(a, b)| a.distance(*b))
+            .fold(0.0, f64::max)
+    }
+
     /// The route this far along. It is exact at both ends: the first route as
     /// it was given at 0 and the second at 1.
     pub(super) fn at(&self, t: f64) -> Vec<PathStep> {

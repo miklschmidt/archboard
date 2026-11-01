@@ -14,17 +14,33 @@
 //! drawn from its start to its end, its arrowhead appearing once it is nearly
 //! there.
 
-use archboard_scene::geometry::Point;
-use archboard_scene::scene::{Geometry, Group, Item, PathStep, Purpose, Role, Shape};
+use archboard_scene::geometry::{Point, Rect};
+use archboard_scene::paint::design::RAIL_GAP;
+use archboard_scene::scene::{Geometry, Group, Item, Mask, MaskId, PathStep, Purpose, Role, Shape};
 
 use super::content::look;
-use super::ease::{ease_in_out, ease_out, emphasised, phase};
+use super::ease::{ease_in_out, ease_out, emphasised, phase, receded};
 use super::found::Found;
 use super::morph::{Morph, length, route_of};
 use super::phases::Transition;
 
 /// How much of an arrival is spent fading in before the rest is drawing on.
 const ARRIVE_FADE_SHARE: f64 = 0.25;
+
+/// How far a line recedes when it travels far, so that the eye stays on the cards.
+const DEEPEST: f64 = 0.8;
+/// How far a line travels before it recedes that far, in the picture's units.
+const FAR_TRAVEL: f64 = 240.0;
+
+/// Where the cuts of the last picture are gone, as a share of the move.
+const OLD_CUTS_GONE_BY: f64 = 0.1;
+/// How far a mask reaches past its line.
+const MASK_ROOM: f64 = 18.0;
+
+/// How far something that moves this far recedes in a move.
+pub(super) fn depth_of_travel(reach: f64) -> f64 {
+    DEEPEST * (reach / FAR_TRAVEL).min(1.0)
+}
 
 /// A line's shapes by job.
 struct Paths<'a> {
@@ -147,12 +163,125 @@ struct Ghost {
     morph: Option<Morph>,
 }
 
+/// Whether a shape of a mask is the core of a double line.
+fn is_core(shape: &Shape) -> bool {
+    shape.purpose == Purpose::Cutout
+        && shape.stroke.as_ref().and_then(|stroke| stroke.width) == Some(RAIL_GAP)
+}
+
+/// A cut this much of the way in.
+fn cut_at(shape: &Shape, strength: f64) -> Shape {
+    dim(shape.clone(), strength)
+}
+
+/// What a line's masks do through a move. The core of a double line travels with
+/// it. The rest of the cuts belong to where a line stands: the old ones go as it
+/// sets off, and the new ones come once it is in place.
+#[derive(Clone, Debug)]
+struct Cuts {
+    id: MaskId,
+    /// The core of the line, and how it gets from one route to the other.
+    core: Option<(Shape, Option<Morph>)>,
+    /// How the core stands at each end of the move, when it does not at both.
+    core_shown: (f64, f64),
+    old: Vec<Shape>,
+    next: Vec<Shape>,
+    /// The next mask's box, for a moment when the line stands still.
+    bounds: Rect,
+}
+
+impl Cuts {
+    /// The cuts of a line, from its masks in the two pictures.
+    fn of(old: Option<&Mask>, next: Option<&Mask>) -> Option<Cuts> {
+        let cuts = |mask: Option<&Mask>, core: bool| -> Vec<Shape> {
+            mask.map_or_else(Vec::new, |mask| {
+                mask.shapes
+                    .iter()
+                    .filter(|shape| shape.fill != Some(white()) && is_core(shape) == core)
+                    .cloned()
+                    .collect()
+            })
+        };
+        let (old_core, next_core) = (cuts(old, true), cuts(next, true));
+        let (from, to) = (old_core.first(), next_core.first());
+        let core = to.or(from).map(|shape| {
+            let morph = from
+                .zip(to)
+                .and_then(|(a, b)| Morph::new(&route(Some(a)), &route(Some(b))));
+            (shape.clone(), morph)
+        });
+        let (old_cuts, next_cuts) = (cuts(old, false), cuts(next, false));
+        let bounds = next.or(old)?.bounds;
+        Some(Cuts {
+            id: next.or(old)?.id.clone(),
+            core,
+            core_shown: (
+                f64::from(u8::from(from.is_some())),
+                f64::from(u8::from(to.is_some())),
+            ),
+            old: old_cuts,
+            next: next_cuts,
+            bounds,
+        })
+    }
+
+    /// The mask at a moment of the move, or none while nothing is cut.
+    fn at(&self, progress: f64, along: f64, swapped: f64, t: &Transition) -> Option<Mask> {
+        let mut shapes = Vec::new();
+        let leaving = 1.0 - ease_in_out(phase(progress, 0.0, OLD_CUTS_GONE_BY));
+        if leaving > 0.0 {
+            shapes.extend(self.old.iter().map(|shape| cut_at(shape, leaving)));
+        }
+        let landing = ease_in_out(phase(progress, t.move_end, 1.0));
+        if landing > 0.0 {
+            shapes.extend(self.next.iter().map(|shape| cut_at(shape, landing)));
+        }
+        let mut bounds = self.bounds;
+        if let Some((shape, morph)) = &self.core {
+            let (from, to) = self.core_shown;
+            let strength = from + (to - from) * swapped;
+            let shape = match morph {
+                Some(morph) => {
+                    let held = morph.bounds_at(along).inflate(MASK_ROOM, MASK_ROOM);
+                    bounds = Rect {
+                        x: held.x0,
+                        y: held.y0,
+                        width: held.width(),
+                        height: held.height(),
+                    };
+                    on_route(shape.clone(), morph.at(along))
+                }
+                None => shape.clone(),
+            };
+            if strength > 0.0 {
+                shapes.push(cut_at(&shape, strength));
+            }
+        }
+        (!shapes.is_empty()).then(|| Mask {
+            id: self.id.clone(),
+            bounds,
+            shapes,
+        })
+    }
+}
+
+/// The white ground of a mask, which cuts nothing.
+fn white() -> archboard_scene::scene::Paint {
+    archboard_scene::scene::Paint::Colour {
+        colour: archboard_scene::scene::Colour::White,
+    }
+}
+
 /// One line carried from its old route to its new one.
 #[derive(Clone, Debug)]
 pub(super) struct LineCarry {
     template: Group,
     slides: Vec<Slide>,
     ghosts: Vec<Ghost>,
+    /// How far the line recedes as it travels.
+    depth: f64,
+    /// What its masks do.
+    cuts: Option<Cuts>,
     phases: Transition,
 }
 
@@ -243,6 +372,7 @@ impl LineCarry {
     pub(super) fn new(
         before: &Found<'_>,
         after: &Found<'_>,
+        masks: (Option<&Mask>, Option<&Mask>),
         phases: Transition,
     ) -> Option<LineCarry> {
         let (old, next) = (paths(before.group), paths(after.group));
@@ -260,6 +390,11 @@ impl LineCarry {
         if slides.is_empty() && ghosts.is_empty() {
             return None;
         }
+        let reach = slides
+            .iter()
+            .filter_map(|slide| slide.morph.as_ref())
+            .map(Morph::reach)
+            .fold(0.0, f64::max);
         // The crossing mask cuts gaps where the route used to cross others.
         let mut template = in_flight(after.group);
         template.mask = None;
@@ -267,8 +402,18 @@ impl LineCarry {
             template,
             slides,
             ghosts,
+            depth: depth_of_travel(reach),
+            cuts: Cuts::of(masks.0, masks.1),
             phases,
         })
+    }
+
+    /// What the line's mask cuts at a moment of the move.
+    pub(super) fn mask_at(&self, progress: f64) -> Option<Mask> {
+        let t = &self.phases;
+        let along = emphasised(phase(progress, t.move_start, t.move_end));
+        let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
+        self.cuts.as_ref()?.at(progress, along, swapped, t)
     }
 
     /// The line at a moment of the move.
@@ -276,6 +421,7 @@ impl LineCarry {
         let t = &self.phases;
         let along = emphasised(phase(progress, t.move_start, t.move_end));
         let swapped = ease_in_out(phase(progress, t.fade_start, t.fade_end));
+        let shown = receded(self.depth, progress);
         let mut items = Vec::with_capacity(self.template.items.len() + self.ghosts.len());
         for (child, item) in self.template.items.iter().enumerate() {
             for ghost in self.ghosts.iter().filter(|ghost| ghost.before == child) {
@@ -283,12 +429,12 @@ impl LineCarry {
                     Some(morph) => on_route(ghost.shape.clone(), morph.at(along)),
                     None => ghost.shape.clone(),
                 };
-                items.push(Item::Shape(dim(shape, 1.0 - swapped)));
+                items.push(Item::Shape(dim(shape, (1.0 - swapped) * shown)));
             }
             items.push(
                 match (item, self.slides.iter().find(|slide| slide.child == child)) {
                     (Item::Shape(shape), Some(slide)) => {
-                        Item::Shape(slid(shape, slide, along, swapped))
+                        Item::Shape(dim(slid(shape, slide, along, swapped), shown))
                     }
                     _ => item.clone(),
                 },
@@ -296,6 +442,7 @@ impl LineCarry {
         }
         Group {
             items,
+            mask: self.mask_at(progress).map(|mask| mask.id),
             ..super::content::shell(&self.template)
         }
     }

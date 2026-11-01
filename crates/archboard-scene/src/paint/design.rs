@@ -180,6 +180,8 @@ pub const LINE_WIDTH: f64 = 1.4;
 pub const HERO_LINE_WIDTH: f64 = 2.2;
 /// How wide a double line's rails stand, side to side.
 pub const RAILS: f64 = 3.6;
+/// The gap a double line's rails leave down its middle.
+pub const RAIL_GAP: f64 = 1.2;
 /// The room between an architecture card's edge and its chip and words.
 pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 /// The room between an architecture card's chip and its words.
