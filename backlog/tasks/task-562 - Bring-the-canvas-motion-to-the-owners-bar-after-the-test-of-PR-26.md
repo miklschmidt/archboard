@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T17:31:00Z'
+updated_date: '2026-11-01T18:56:00Z'
 labels:
   - renderer
   - motion
@@ -97,4 +97,6 @@ AC 6 stays open until the owner judges this pass.
 The owner asked for motion that reflects the depth of the recursive decomposition: sideways at the same depth, a zoom into a deeper module, and a zoom out to a shallower one. The module tree now decides every move between boards. See ADR 0071, "A move follows the module tree", and DESIGN.md, "The Depth Rule". The moves were filmed and looked at. AC 6 stays open until the owner judges this pass.
 
 The final commit of this pass is 7ce152d81. `bun run check` passed on it, and parity is 0.157 percent of ink apart on average, worst case 0.78 percent. The commits after a268c576f are not pushed and did not receive the delegated review. The owner authorizes a push, and the review runs before it.
+
+Line reveal: the owner found the lines too fast and asked for lines along traced connections, or a reveal from the top left. A spark now draws each line in the order of the connections, a card it lands on takes the spark round its edge, and a line that changes its shape leaves and is drawn again. A first load finishes its lines at about 2.1 s and a door at about 1.9 s. The diagonal reveal was filmed for comparison and removed, because its order says nothing about the board. The commit is d28988f4d. bun run check passed on it, 21 of 21. Nothing after a268c576f is pushed or reviewed. Video: /tmp/vello/line-reveal.mp4. AC 5 stays open until the owner retests Hyprland, and AC 6 and AC 7 stay open until the owner judges the motion.
 <!-- SECTION:NOTES:END -->
