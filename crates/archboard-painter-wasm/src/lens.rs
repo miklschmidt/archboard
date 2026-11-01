@@ -175,14 +175,16 @@ impl LensLevels {
         frame: &wgpu::TextureView,
         (width, height): (u32, u32),
     ) -> LensLevels {
+        let (width, height) = ((width / 2).max(1), (height / 2).max(1));
+        let count = LEVELS.min(width.max(height).ilog2() + 1);
         let texture = device.create_texture(&wgpu::TextureDescriptor {
             label: None,
             size: wgpu::Extent3d {
-                width: (width / 2).max(1),
-                height: (height / 2).max(1),
+                width,
+                height,
                 depth_or_array_layers: 1,
             },
-            mip_level_count: LEVELS,
+            mip_level_count: count,
             sample_count: 1,
             dimension: wgpu::TextureDimension::D2,
             format: LEVEL_FORMAT,
@@ -212,7 +214,7 @@ impl LensLevels {
                 ],
             })
         };
-        let levels = (0..LEVELS)
+        let levels = (0..count)
             .map(|at| {
                 let source = at.checked_sub(1).map(level);
                 (level(at), reads(source.as_ref().unwrap_or(frame)))

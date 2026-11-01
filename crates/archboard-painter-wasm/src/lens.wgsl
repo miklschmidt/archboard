@@ -36,7 +36,7 @@ fn whole(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
 // The middle of a pixel of the level being drawn, and the four corners round it.
 fn taps(place: vec2f) -> array<vec3f, 5> {
     let size = vec2f(textureDimensions(source));
-    let at = place / floor(size / 2.0);
+    let at = place / max(vec2f(1.0), floor(size / 2.0));
     let texel = 1.0 / size;
     return array<vec3f, 5>(
         textureSampleLevel(source, filtered, at, 0.0).rgb,
@@ -99,9 +99,10 @@ fn out_of_focus(uv: vec2f, sharp: vec3f, blur: f32) -> vec3f {
     if blur < 2.0 {
         return mix(sharp, level_at(uv, 0), blur / 2.0);
     }
-    let level = min(log2(blur) - 1.0, f32(textureNumLevels(levels)) - 1.001);
-    let low = floor(level);
-    return mix(level_at(uv, i32(low)), level_at(uv, i32(low) + 1), level - low);
+    let last = i32(textureNumLevels(levels)) - 1;
+    let level = min(log2(blur) - 1.0, f32(last));
+    let low = i32(floor(level));
+    return mix(level_at(uv, low), level_at(uv, min(low + 1, last)), fract(level));
 }
 
 // A frame in travel: what it passes on the way across, as a shutter sees it.
