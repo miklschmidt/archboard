@@ -79,6 +79,8 @@ The worst diffs are antialiasing of small words and line tips at half scale, and
 
 Traffic on the largest board differed by 0.09% to 0.27%.
 
+The door fix came after this run and after the frame measurements below. It changed layout and no painter code, and nobody measured these numbers again.
+
 ## The hill climb
 
 The method is TASK-405's: real Chrome 155 over CDP with real input, an rAF recorder, long tasks, and the median of 3 runs.
