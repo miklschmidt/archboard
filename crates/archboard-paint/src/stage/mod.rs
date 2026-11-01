@@ -144,6 +144,7 @@ impl Stage {
         self.ghost = None;
         self.dive = None;
         self.presentation.sweep = None;
+        self.drawn = false;
         self.looks += 1;
         self.find_warnings();
     }
@@ -343,8 +344,7 @@ impl Stage {
             0.0
         };
         if goal != self.far.target() {
-            let unseen = !self.drawn || self.flight.as_ref().is_some_and(Flight::entering);
-            let ms = if unseen { 0.0 } else { ms };
+            let ms = if self.drawn { ms } else { 0.0 };
             self.far = self.far.toward(goal, now, 0.0, ms, SWAP);
         }
     }

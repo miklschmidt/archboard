@@ -92,6 +92,26 @@ fn a_camera_that_rests_on_the_far_line_stays_in_its_view() {
 }
 
 #[test]
+fn a_zoom_swaps_a_visible_entrance_over_time() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.set_far_line(0.8, 100.0);
+    stage.enter(painting(Vec::new()), None, 900.0, (0.0, 0.0), 0.0);
+    stage.draw(&mut CpuCanvas::new(1, 1), 0.0);
+    stage.set_camera(
+        Camera {
+            scale: 0.4,
+            ..Camera::default()
+        },
+        0.0,
+        200.0,
+    );
+    stage.advance(200.0);
+    stage.advance(250.0);
+    assert!(stage.presentation.far > 0.0 && stage.presentation.far < 1.0);
+}
+
+#[test]
 fn what_leaves_the_light_fades_to_the_rest_and_is_forgotten() {
     let mut stage = stage();
     let lit = Light {
