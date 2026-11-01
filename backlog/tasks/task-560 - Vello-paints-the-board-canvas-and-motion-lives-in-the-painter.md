@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T03:41:00Z'
-updated_date: '2026-11-01T07:26:00Z'
+updated_date: '2026-11-01T09:48:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -23,10 +23,10 @@ The owner wants smoother animations and transitions in the canvas. A browser pan
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Vello paints the browser canvas by default and the painter in use can be inspected
-- [ ] #2 A person with no WebGPU adapter sees a correct board, chosen by a deterministic rule that a real run measured
-- [ ] #3 No SVG DOM motion remains in the browser viewer, and SVG stays for exports, PNGs and README assets
-- [ ] #4 Search, copy, screen readers, keyboard and picking keep the behavior that the page has now
+- [x] #1 Vello paints the browser canvas by default and the painter in use can be inspected
+- [x] #2 A person with no WebGPU adapter sees a correct board, chosen by a deterministic rule that a real run measured
+- [x] #3 No SVG DOM motion remains in the browser viewer, and SVG stays for exports, PNGs and README assets
+- [x] #4 Search, copy, screen readers, keyboard and picking keep the behavior that the page has now
 - [ ] #5 bun run check passes
 <!-- AC:END -->
 
@@ -78,4 +78,24 @@ The grid found a real fault: a hidden shape with its own `pointer-events` took t
 Stage life: `attachSurface` ran again on one element, which disposed the stage and left a new stage with nothing held while `data-painter` still hid the ink. The stage now lives as long as the surface in a layout effect, and `dispose` removes the attribute.
 
 Phase 1 gate passed: `bun run check` exited 0 with 21 of 21 tasks and 49 of 49 browser owners on the commit after the About helper fix. Before that fix, the browser lane failed in about one run of three. The failures were intermittent, each in one owner. Logged runs caught `canonical-model-references`: a followed reference lands after the test sees the old reading's About, and the test then waited on a page that was gone. After the fix, four lane runs in a row and the full check passed. One failure stays unexplained: `canonical-model-attention` failed once with no lit line under the pointer, passed 8 of 8 alone and 5 of 5 on three cores, and did not come back in 11 later lane runs. One failure of `canonical-model-surface` at its 15 s limit came while an orphan Chrome used 90% of a core, and it did not come back.
+
+Phase 2, hill climb. Method: TASK-405. Real Chrome 155 over CDP with real input, rAF recorder, long tasks, medians of 3. Largest board, 120 Hz, RTX 4090. Slow means over 25 ms. Both pages ran on one copy of the vault with a load under 5.
+
+Mean gap / longest / slow, old page then painter:
+wheel 8.54/66.7/1, 8.37/16.8/0. pinch 8.65/58.3/2, 8.33/9.5/0. keys 8.47/16.7/0, 8.33/8.5/0. drag 9.63/66.7/2, 8.33/9.7/0. idle 8.57/16.8/0, 8.37/16.7/0. open 9.70/141.6/7, 8.45/33.3/1. toggle 31.63/750/68, 9.13/150/10. dive 14.42/350/58, 8.92/100/11.
+Long tasks: toggle 4431 ms to 514 ms, dive 2563 ms to 304 ms.
+
+Rounds kept: SVG thinned on a painted surface. A flight's clock starts at its first drawn frame. GPU canvas keeps still items and word runs. Camera glides reach the stage. Flights know definitions inside a scene body. Dashed paths are straightened before kurbo dashes them. A first picture's ink waits up to 400 ms for its painter. A frame never takes a time older than the last change. CPU traffic rests as long as its last frame took. A leaving picture keeps its last look, and an entering one stands in its light at once. Traffic on an unlit line recedes twice.
+
+Faults found by looking at frames: glides cut in one frame on the painter, pills and arrowheads popped at landing, a stale stamp made the board jump for one frame, a first load had no entrance. In the second to last pass a walkthrough step lifted its veil and ring for 200 ms, and pulses showed on veiled lines. All are fixed.
+
+Last pass, on the final build, painter above old page: toggle on a middle board and on the largest board, dive, back, open a leaf, first load, breadcrumb, opening a sequence, pointer rest with light, recede and tip, fit key, zoom through the far view, walkthrough step. Nothing left to improve at the level of the painter. The pass before covered a flowchart entrance, traffic motion and a far rest. They match. Reduced motion: two screenshots 700 ms apart are identical, no ink wait, a toggle gives 4 frames. Not judged: sweep width in the far view at close range. The walkthrough step ran on the example model's tour, because a vault copy outside Git has no retained walkthrough.
+
+Stays by choice: a 100 to 150 ms pause before a toggle on the largest board, about a third of it hidden SVG layout (TASK-561). A pill grows as a large box into a container, as on the old page. A first load starts about 150 ms later than on the old page, and has its entrance. A receded line keeps its arrowhead.
+
+Full parity after the climb: 528 readings, 2112 comparisons. GPU near mean 0.23% worst 0.65%, far mean 0.41% worst 1.34%. CPU near mean 0.22% worst 0.62%, far mean 0.42% worst 1.30%. Ten comparisons reached 1%, all far and light. None reached 2%. Traffic on the largest board after the last fixes: 0.09% to 0.26%.
+
+CPU painter, largest board: idle 11.2 ms, wheel 21.5 ms, toggle 23.4 ms, dive 12.4 ms. On a small board it takes 21% of the main thread, against 8% on the old page. Ideas not done: vello_common Recording, two kept layers around traffic.
+
+Environment: PR 19 merged during this work. The chosen checkout of github.com/miklschmidt/archboard moved to the main checkout at 09:58:59 local, which holds a legacy vault at 38a8da877, so that address shows migration required on this machine. No command of this task's transcript moved it. Measurements after that ran on an untracked copy of the vault named copy.
 <!-- SECTION:NOTES:END -->

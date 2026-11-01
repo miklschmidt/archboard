@@ -72,9 +72,14 @@ was a third backend, its masks panicked, and it was slower than Vello on the GPU
 ### The SVG stays in the page as the semantic layer
 
 The surface keeps the same `drawing.svg`, and CSS hides its ink once a painter has drawn.
-Search, copy, screen readers, the marks and the keyboard keep working. A slow or failed
-painter leaves a correct board, because the ink only hides after the first frame.
-Its traffic is taken out before it enters the page, so no SMIL runs under the canvas.
+Search, copy, screen readers, the marks and the keyboard keep working.
+A painted surface drops the SVG's glyphs and definitions, because they were half of a new
+picture's layout. Its traffic is taken out before it enters the page, so no SMIL runs
+under the canvas.
+
+A first picture's ink waits up to `PICTURE_MS.painterGrace` for its painter, so that the
+painter brings the picture in. A late or failed painter leaves a correct board, because
+the ink then shows.
 
 A pointer lands on the canvas, because the surface takes no pointer. The painter
 answers what lies under it from the scene, in the order it draws, with flow heads where
@@ -89,10 +94,16 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 
 ## Consequences
 
+- On the largest board at 120 Hz, a toggle's mean frame gap fell from 31.6 ms to 9.1 ms,
+  and its slow frames from 68 to 10. Wheel, pinch, keys and drag have no slow frames.
 - A person without WebGPU sees a correct board on the CPU painter, but with slower
-  frames. On this machine traffic on the CPU painter costs about one core.
+  frames. Traffic there rests as long as its last frame took. On a small board it takes
+  21% of the main thread, against 8% on the old page.
 - The painter adds 4.2 MB of WebAssembly, and the page loads it apart from the core.
-  A first GPU frame compiles pipelines in about 700 ms, and the SVG shows until then.
+  The page asks for the GPU while it draws a first picture, because a browser's first
+  answer takes about 350 ms.
+- README takes run with `--disable-gpu`, so they paint on the CPU. They did not run again
+  with this change.
 - The page holds a canvas and an SVG. TASK-561 follows this change to reduce the DOM.
 - Headless Chromium with a GPU adapter draws a blank canvas in the runs of 2026-11-01.
   So GPU parity and frame measurements run in a browser with a window. The notes of

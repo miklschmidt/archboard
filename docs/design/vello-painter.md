@@ -10,10 +10,11 @@ Read the ADR for the decision. Read this note before you change a painter, a mov
 | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
 | `crates/archboard-paint`                                                 | The `Canvas` trait, the walk over a scene, the palette, picking, and all motion as pure Rust. |
 | `crates/archboard-paint/src/between`                                     | One scene turning into the next, the entrance and the departure.                              |
-| `crates/archboard-paint/src/stage.rs`                                    | One canvas's picture and all that a frame of it needs.                                        |
+| `crates/archboard-paint/src/stage`                                       | One canvas's picture and all that a frame of it needs.                                        |
 | `crates/archboard-painter-wasm`                                          | The `Painter` class that a page holds, and `vello` on WebGPU.                                 |
 | `packages/renderer/src/ui/clients/painter.ts`                            | The choice of painter.                                                                        |
 | `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-stage.ts` | One surface's stage. It tells the painter what the page says, and it asks for frames.         |
+| `apps/web/src/ui/clients/semantic-board-canvas/picture/picture-ink.ts`   | A first picture's ink, held back for a moment while its painter starts.                       |
 
 `vello` and `vello_cpu` share peniko and kurbo, so one `Canvas` trait serves both.
 
@@ -60,4 +61,93 @@ Those three points lie less than a pixel past the edge of a line's halo.
 
 The grid found one real fault. A shape with its own `pointer-events` took the pointer in a surface with `pointer-events: none`, so no pick ran.
 Now nothing inside a painted surface takes the pointer, and `canonical-model-gestures.test.ts` owns that.
-The old page drew no recede at deep zoom, although its classes asked for one. The painter draws it at every zoom.
+At deep zoom, screenshots of the old page showed no recede, although its classes asked for one. The painter draws it at every zoom.
+The cause on the old page is not known.
+
+## Parity after the hill climb
+
+A full run after the hill climb compared all 528 readings, which gave 2112 comparisons.
+
+| Painter | Near, mean | Near, worst | Far, mean | Far, worst |
+| ------- | ---------- | ----------- | --------- | ---------- |
+| GPU     | 0.23%      | 0.65%       | 0.41%     | 1.34%      |
+| CPU     | 0.22%      | 0.62%       | 0.42%     | 1.30%      |
+
+The light theme averaged 0.33% near and 0.61% far. The dark theme averaged 0.11% and 0.22%.
+Ten comparisons reached 1%, and all ten are far readings in the light theme. None reached 2%.
+The worst diff is antialiasing of small words at half scale, and no shape differs.
+
+This run came before the last fixes to light and traffic. A still corpus picture has no veil, so those fixes change none of these numbers.
+Traffic on the largest board ran again after those fixes, and it differed by 0.09% to 0.26%.
+
+## The hill climb
+
+The method is TASK-405's: real Chrome 155 over CDP with real input, an rAF recorder, long tasks, and the median of 3 runs.
+The board is the largest in this repository, 3646 by 2117 units, on an RTX 4090 at 120 Hz. A slow frame takes over 25 ms.
+Each round changed one thing and compared numbers and captured frames with the round before.
+
+| Moment | Mean gap, old page | Mean gap, painter | Longest gap, old page | Longest gap, painter | Slow, old page | Slow, painter |
+| ------ | ------------------ | ----------------- | --------------------- | -------------------- | -------------- | ------------- |
+| Wheel  | 8.54 ms            | 8.37 ms           | 66.7 ms               | 16.8 ms              | 1              | 0             |
+| Pinch  | 8.65 ms            | 8.33 ms           | 58.3 ms               | 9.5 ms               | 2              | 0             |
+| Keys   | 8.47 ms            | 8.33 ms           | 16.7 ms               | 8.5 ms               | 0              | 0             |
+| Drag   | 9.63 ms            | 8.33 ms           | 66.7 ms               | 9.7 ms               | 2              | 0             |
+| Idle   | 8.57 ms            | 8.37 ms           | 16.8 ms               | 16.7 ms              | 0              | 0             |
+| Open   | 9.70 ms            | 8.45 ms           | 141.6 ms              | 33.3 ms              | 7              | 1             |
+| Toggle | 31.63 ms           | 9.13 ms           | 750.0 ms              | 150.1 ms             | 68             | 10            |
+| Dive   | 14.42 ms           | 8.92 ms           | 350.0 ms              | 99.9 ms              | 58             | 11            |
+
+Long tasks in a toggle fell from 4431 ms to 514 ms, and in a dive from 2563 ms to 304 ms.
+Both columns ran on the same copy of the vault with a load under 5, one after the other.
+
+### What the rounds changed
+
+| Round         | Change                                                                                       | What it gave                                                                                                       |
+| ------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Thin SVG      | A painted surface drops its glyphs and definitions.                                          | Toggle long tasks 1847 to 575 ms. Dive 1650 to 298 ms.                                                             |
+| Flight clock  | A flight starts with its first drawn frame.                                                  | A picture no longer jumps into the middle of its flight. Frames rose, so the slow count rose until the next round. |
+| Kept parts    | The GPU canvas keeps still items and each run of words.                                      | Toggle 95th percentile 25 to 16.6 ms.                                                                              |
+| Glide         | A camera glide tells the stage each frame.                                                   | The fit key, a toggle's camera and a walkthrough step no longer cut.                                               |
+| Definitions   | A flight knows what the next scene defines inside its body.                                  | Pills and arrowheads no longer pop in at landing.                                                                  |
+| Dashes        | A dashed path is cut into straight pieces first.                                             | Toggle 95th percentile 16.6 to 8.4 ms. kurbo measured each curve to one part in a million.                         |
+| First picture | The page asks for the GPU while it draws, and the ink waits up to `PICTURE_MS.painterGrace`. | A reload has its entrance, and the far view shows no fade from near words.                                         |
+| Time          | A frame takes the later of its stamp and the last change.                                    | A long task in a frame's turn no longer draws the old camera with the new picture.                                 |
+| Own light     | A leaving picture keeps its last look, and an entering one stands in its light at once.      | A walkthrough step no longer lifts the veil for its first 200 ms.                                                  |
+| Veil          | Traffic on an unlit line recedes twice, as it did through the line's mask.                   | A walkthrough step shows no pulses on what it is not about.                                                        |
+| CPU traffic   | Traffic on the CPU painter rests as long as its last frame took.                             | See below.                                                                                                         |
+
+### What the last pass covered
+
+The last pass ran on the final build. It captured frames on both pages at the same moments, and each sheet put the painter above the old page.
+It covered 12 moments:
+
+- A toggle on a middle board and on the largest board.
+- A dive, the way back, and opening a leaf.
+- A first load, a breadcrumb, and opening a sequence.
+- A pointer's rest with its light, recede and tip.
+- The fit key, a zoom through the far view, and a walkthrough step.
+
+The pass found nothing left to improve at the level of the painter.
+The pass before it also covered a flowchart entrance, traffic in motion, and a rest in the far view. They match the old page.
+With `prefers-reduced-motion`, two screenshots 700 ms apart were the same, no ink waited, and a toggle produced 4 frames.
+
+The walkthrough step is on the example model's recorded tour, because a copy of a vault outside Git has no retained walkthrough.
+No pass judged the width of a sweep in the far view at close range.
+
+Four things stay, by choice:
+
+- A toggle pauses for 100 to 150 ms before its flight on the largest board. About a third of that is layout of the hidden SVG, which TASK-561 can remove.
+- A pill that opens into a container grows as a large colored box while it crosses to the container's look. The old page does the same.
+- A first load starts about 150 ms later than on the old page, because the ink waits for the painter. The reader sees the entrance in exchange.
+- A receded line keeps its arrowhead. On the old page the head vanishes under a veil.
+
+### The CPU painter
+
+On the largest board the CPU painter gives a mean gap of 11.2 ms at idle and 21.5 ms on the wheel.
+In a toggle the mean gap is 23.4 ms, and in a dive it is 12.4 ms.
+Traffic alone used to take the whole thread, with a mean gap of 24.7 ms. It now rests after each frame for as long as that frame took.
+On a small board the painter takes 21% of the main thread with traffic running, against 8% on the old page.
+A quarter of the frame goes to the gradient tables of `vello_common`, which it builds again each frame.
+
+A failed CPU painter leaves a thinned SVG, with no glyphs or definitions, until the next picture arrives.
+This needs a CPU painter that ran and then failed, and no run has shown one.
