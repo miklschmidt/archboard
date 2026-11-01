@@ -119,7 +119,7 @@ The tour starts with the big picture, narrows to one module and one exchange, an
 
 1. Write the answer as one sentence, "When you do this, this happens". Done: it names what the reader does and what they get.
 2. Choose the path of four to ten modules and the flow that runs along it. Give each module a plain `responsibility`. Leave out helpers, configuration, types and tests. Done: every module and relationship that the answer rests on is on the path.
-3. Open on the big picture: omit `visibility` so that the roots draw whole, and put the module that holds the answer in `focus`.
+3. Open on the big picture. Omit `scope`, `visibility`, and `focus` so that the roots draw whole. Select the root module that holds the answer.
 4. Grow the path beat by beat. A beat's `visibility` repeats the previous beat's modules and relationships and adds one to three more, and its `selection` names the additions. The first of these beats shows two modules. Done: the last one draws the whole path.
 5. Show the one exchange in a sequence beat with its `flow`.
 6. Add a beat where the path goes wrong, if the reader will meet that failure: what fails and what they see.
