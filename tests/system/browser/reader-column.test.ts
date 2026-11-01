@@ -144,6 +144,15 @@ test("every move of the left column has a keyboard route, also in a presented pa
 	// Find selects, and Enter enters what it selected.
 	await browser.run(["press", "Control+k"]);
 	await browser.run(["keyboard", "type", "decode"]);
+	await pollUntil(
+		() =>
+			browser.eval<boolean>(
+				`document.querySelector('[data-find-id][aria-selected="true"]') !== null`,
+			),
+		Boolean,
+		"the first thing found",
+		WAIT,
+	);
 	await browser.run(["press", "Enter"]);
 	await reads(browser, "Shop#Handler");
 	await browser.run(["press", "Enter"]);

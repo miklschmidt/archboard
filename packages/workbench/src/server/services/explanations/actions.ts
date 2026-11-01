@@ -1,9 +1,10 @@
-import { releaseCapture, retireCapture } from "#server/services/explanations/capture.ts";
+import { aboutOf, releaseCapture, retireCapture } from "#server/services/explanations/capture.ts";
 import { panes, sendBoardlessToPane } from "#server/services/panes/registry.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
 import { readArchitectureModel } from "@archboard/board/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import type {
 	CodexWorkbenchDomainScope,
 	CodexWorkbenchDomain,
@@ -12,6 +13,7 @@ import {
 	refuse,
 	reply,
 	type Entry,
+	type Notification,
 	type Request,
 	type Invocation,
 	type Result,
@@ -39,6 +41,7 @@ function capturedEntry(vault: string, invocation: Invocation, model: Reading): E
 			status: "captured",
 			attempt: 0,
 			capture: model.explanation,
+			about: aboutOf(model),
 			text: "",
 			retryable: false,
 		},
@@ -178,7 +181,7 @@ function createExplanationActions(scope: CodexWorkbenchDomainScope) {
 				scope.identity.identity.decoder.serializeCodexIdentity(entry.threadId) ===
 					notification.params.threadId
 			) {
-				if (noteExplanation(entry, notification)) announce(entry);
+				report(entry, notification);
 			}
 		}
 	};
@@ -296,10 +299,31 @@ function latestAction(entries: Map<string, Entry>): Result {
  * @param entry The action whose progress changed.
  */
 function announce(entry: Entry): void {
+	clearTimeout(entry.announcing);
+	delete entry.announcing;
 	for (const pane of panes.values()) {
 		if (tabSessionOf(pane.clientId) === entry.invocation.tabSessionId)
 			sendBoardlessToPane(pane.clientId, { type: "architecture_explanations_changed" });
 	}
+}
+
+/**
+ * Take in one provider event and tell the tab what changed.
+ * @param entry The captured action on the event's thread.
+ * @param notification The event.
+ */
+function report(entry: Entry, notification: Notification): void {
+	if (!noteExplanation(entry, notification)) return;
+	if (notification.method === "item/agentMessage/delta") announceSoon(entry);
+	else announce(entry);
+}
+
+/**
+ * Report text that Codex writes, at the pace a reader can use.
+ * @param entry The action whose text changed.
+ */
+function announceSoon(entry: Entry): void {
+	entry.announcing ??= setTimeout(() => announce(entry), CODEX_SESSION_MS.explanationText);
 }
 
 /**

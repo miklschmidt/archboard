@@ -33,6 +33,10 @@ const ExplanationActionResultSchema = z.discriminatedUnion("success", [
 			]),
 			attempt: z.number().int(),
 			capture: CaptureSchema,
+			/** What the action is about, in the words of the model. */
+			about: z.string(),
+			/** What Codex is doing now. */
+			activity: z.string().optional(),
 			text: z.string(),
 			error: z.string().optional(),
 			retryable: z.boolean(),

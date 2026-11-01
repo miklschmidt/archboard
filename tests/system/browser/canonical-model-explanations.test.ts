@@ -114,7 +114,7 @@ test("an explanation keeps its captured comparison and selection after scope nav
 		await browser.eval<string>(
 			`document.querySelector('[data-slot="model-explanation-context"]')?.textContent ?? ''`,
 		),
-	).toContain("Shop#Gateway");
+	).toContain("Gateway · Shop architecture");
 	const paneContext = await pollUntil(
 		async () => (await (await fetch(`${server.base}/api/panes`)).json()).panes[0]?.architecture,
 		(architecture) => architecture?.reading.scope === "Shop#Gateway",

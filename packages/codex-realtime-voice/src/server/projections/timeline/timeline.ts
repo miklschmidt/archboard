@@ -473,6 +473,7 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 			return;
 		}
 		const concerned = chatsConcerned(eventThreadId(event), event);
+		announceUnknownThread(event, concerned);
 		if (live.hold(event)) {
 			if (concerned.some((state) => state.data !== null)) {
 				options.onChange();
@@ -482,6 +483,21 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 		for (const state of concerned) {
 			state.dirty = true;
 			refresh(state);
+		}
+	};
+
+	/**
+	 * Publish again for a thread no chat names yet. A chat learns of a thread the server started for
+	 * it, as an explanation does, from the next publication, and until then no event reaches it.
+	 * @param event The notification.
+	 * @param concerned The chats it is about.
+	 */
+	const announceUnknownThread = (
+		event: TransportServerNotification,
+		concerned: readonly TimelineChatState[],
+	): void => {
+		if (concerned.length === 0 && event.notification.method.startsWith("thread/")) {
+			options.onChange();
 		}
 	};
 

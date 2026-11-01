@@ -1,17 +1,25 @@
 import { useCallback, type JSX } from "react";
+import { AgentAnswer } from "@archboard/workbench/agent";
 import { Button } from "@archboard/ui-kit/components";
-import { RiCloseLine } from "@remixicon/react";
+import { RiCloseLine, RiLoader4Line, RiOpenaiFill } from "@remixicon/react";
 import type { ExplanationAction } from "#ui/clients/architecture-model/explanations.ts";
 
 const STATUS: Record<ExplanationAction["status"], string> = {
-	captured: "Preparing explanation…",
-	queued: "Waiting for the local agent…",
-	running: "Explaining…",
-	completed: "Explanation",
-	failed: "Explanation failed",
-	cancelled: "Explanation cancelled",
-	unavailable: "Local agent unavailable",
+	captured: "Starting Codex",
+	queued: "Waiting for Codex",
+	running: "Codex is explaining",
+	completed: "Codex explained",
+	failed: "Codex could not explain",
+	cancelled: "You cancelled",
+	unavailable: "Codex is not connected",
 };
+
+/** The states in which Codex still has something to say. */
+const WORKING: ReadonlySet<ExplanationAction["status"]> = new Set([
+	"captured",
+	"queued",
+	"running",
+]);
 
 interface ResultProps {
 	action: ExplanationAction;
@@ -27,44 +35,58 @@ interface ResultProps {
  */
 function ModelExplanationResult(props: ResultProps): JSX.Element {
 	const { action } = props;
+	const working = WORKING.has(action.status);
 	return (
 		<section
 			data-slot="model-explanation"
 			data-action-id={action.actionId}
 			data-status={action.status}
 			aria-label="Architecture explanation"
-			className="border-border bg-background max-h-72 shrink-0 overflow-auto border-t px-6 py-4"
+			className="border-border bg-sidebar shadow-edge-up relative z-40 flex max-h-80 shrink-0 flex-col border-t"
 		>
-			<div className="flex items-center gap-3">
-				<h3 aria-live="polite" className="text-control font-semibold">
+			<header className="border-border h-chrome flex shrink-0 items-center gap-3 border-b pr-2 pl-5">
+				<RiOpenaiFill aria-hidden="true" className="text-muted-foreground size-4 shrink-0" />
+				<h3 aria-live="polite" className="text-control shrink-0 font-semibold">
 					{STATUS[action.status]}
 				</h3>
+				<ExplanationContext action={action} />
 				<ExplanationControls {...props} />
-				<Button
-					className="ml-auto"
-					size="icon"
-					variant="ghost"
-					aria-label="Close explanation"
-					onClick={props.onClose}
-				>
+				<Button size="icon" variant="ghost" aria-label="Close explanation" onClick={props.onClose}>
 					<RiCloseLine aria-hidden="true" className="size-4" />
 				</Button>
+			</header>
+			<div className="min-h-0 flex-1 overflow-auto px-5 py-3">
+				{working && <ExplanationActivity activity={action.activity} />}
+				{action.error !== undefined && (
+					<p role="alert" className="text-body">
+						{action.error}
+					</p>
+				)}
+				{action.text && (
+					<div data-slot="model-explanation-text" className="text-body max-w-3xl">
+						<AgentAnswer text={action.text} running={working} />
+					</div>
+				)}
 			</div>
-			<ExplanationContext capture={action.capture} />
-			{action.error !== undefined && (
-				<p role="alert" className="text-body mt-3">
-					{action.error}
-				</p>
-			)}
-			{action.text && (
-				<div
-					data-slot="model-explanation-text"
-					className="text-reading mt-4 max-w-prose whitespace-pre-wrap"
-				>
-					{action.text}
-				</div>
-			)}
 		</section>
+	);
+}
+
+/**
+ * What Codex is doing while the answer comes.
+ * @param props What it is doing.
+ * @param props.activity Its latest step, or nothing before the first.
+ * @returns The line.
+ */
+function ExplanationActivity(props: { readonly activity: string | undefined }): JSX.Element {
+	return (
+		<p
+			data-slot="model-explanation-activity"
+			className="text-body text-muted-foreground mb-2 flex items-center gap-2"
+		>
+			<RiLoader4Line aria-hidden="true" className="size-4 shrink-0 animate-spin" />
+			<span className="truncate">{props.activity ?? "Getting started"}</span>
+		</p>
 	);
 }
 
@@ -109,20 +131,20 @@ function ExplanationControls(props: ResultProps): JSX.Element {
 }
 
 /**
- * Identify the architecture that the answer explains after navigation changes.
- * @param props The captured reading metadata.
- * @param props.capture The exact original model, state, selection, and revision.
- * @returns The visible origin of this temporary answer.
+ * Say what the answer explains, which holds after the reading moves on.
+ * @param props The action.
+ * @param props.action The action, with the model, the state and the subjects in their own words.
+ * @returns The line.
  */
-function ExplanationContext({ capture }: { capture: ExplanationAction["capture"] }): JSX.Element {
+function ExplanationContext({ action }: { readonly action: ExplanationAction }): JSX.Element {
+	const { modelName, state } = action.capture;
 	return (
 		<p
 			data-slot="model-explanation-context"
-			className="text-control text-muted-foreground mt-1 break-words"
+			title={`${modelName} · ${state?.name ?? "Current"} · ${action.about}`}
+			className="text-body text-muted-foreground min-w-0 flex-1 truncate"
 		>
-			{capture.modelName} · {capture.state?.name ?? "Current"} ·{" "}
-			{capture.request.subjects.join(", ") || capture.request.reading.flow || "Flow investigation"}{" "}
-			· Revision {capture.revision.digest.slice(0, 8)}
+			{action.about} · {modelName} · {state?.name ?? "Current"}
 		</p>
 	);
 }

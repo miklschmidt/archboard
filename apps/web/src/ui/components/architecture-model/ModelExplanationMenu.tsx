@@ -1,15 +1,23 @@
-import { useCallback, type JSX } from "react";
-import { DropdownMenu } from "@archboard/ui-kit/components";
+import { useCallback, type ComponentType, type JSX } from "react";
+import {
+	RiArrowDownSLine,
+	RiFocus3Line,
+	RiGitPullRequestLine,
+	RiLinksLine,
+	RiOpenaiFill,
+	RiRouteLine,
+} from "@remixicon/react";
+import { buttonVariants, DropdownMenu } from "@archboard/ui-kit/components";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
 import type { Model } from "@archboard/board/content";
 
 type Action = ExplanationInvocation["request"]["action"];
 const ACTIONS = {
-	"explain-selection": "Explain selection",
-	"explain-relationship": "Explain relationships",
-	"trace-flow": "Trace flow",
-	"explain-proposal": "Explain proposal",
-} satisfies Record<Action, string>;
+	"explain-selection": { label: "Explain selection", Icon: RiFocus3Line },
+	"explain-relationship": { label: "Explain relationships", Icon: RiLinksLine },
+	"trace-flow": { label: "Trace flow", Icon: RiRouteLine },
+	"explain-proposal": { label: "Explain proposal", Icon: RiGitPullRequestLine },
+} satisfies Record<Action, { readonly label: string; readonly Icon: ComponentType }>;
 
 interface MenuProps {
 	open: boolean;
@@ -49,11 +57,18 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 		<DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
 			<DropdownMenu.Trigger
 				data-slot="model-explain"
-				className="text-control hover:bg-muted rounded-control px-2 py-1"
+				className={buttonVariants({ variant: "outline", size: "sm" })}
 			>
-				Explain
+				<RiOpenaiFill aria-hidden="true" />
+				Explain with Codex
+				<RiArrowDownSLine aria-hidden="true" />
 			</DropdownMenu.Trigger>
-			<DropdownMenu.Content align="start">
+			<DropdownMenu.Content align="end" className="w-72">
+				<p className="text-body text-muted-foreground px-2 py-1.5">
+					Codex reads this view and the code, and answers below and in the conversation. It changes
+					nothing.
+				</p>
+				<DropdownMenu.Separator />
 				{(
 					["explain-selection", "explain-relationship", "trace-flow", "explain-proposal"] as const
 				).map((action) => (
@@ -77,9 +92,11 @@ function ModelExplanationMenu(props: MenuProps): JSX.Element {
 function ActionChoice(props: ChoiceProps): JSX.Element {
 	const { onAction, action } = props;
 	const invoke = useCallback(() => onAction(action), [onAction, action]);
+	const { label, Icon } = ACTIONS[action];
 	return (
 		<DropdownMenu.Item data-explanation-action={action} disabled={props.disabled} onClick={invoke}>
-			{ACTIONS[action]}
+			<Icon aria-hidden="true" />
+			{label}
 		</DropdownMenu.Item>
 	);
 }

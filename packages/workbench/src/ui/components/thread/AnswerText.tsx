@@ -3,7 +3,7 @@
 // away, and an image is a link to it rather than a request the answer's author
 // makes on the reader's behalf.
 
-import type { TextMessagePartProps } from "@assistant-ui/react";
+import { TextMessagePartProvider, type TextMessagePartProps } from "@assistant-ui/react";
 import type { ComponentPropsWithoutRef, JSX } from "react";
 
 import { MarkdownText } from "#ui/components/thread/markdown-text.tsx";
@@ -61,4 +61,19 @@ function AnswerText(props: TextMessagePartProps): JSX.Element {
 	return <MarkdownText {...props} components={ANSWER_COMPONENTS} />;
 }
 
-export { AnswerText };
+/**
+ * An answer that stands outside a conversation.
+ * @param props The answer and whether it is still arriving.
+ * @param props.text The markdown.
+ * @param props.running Whether it is still arriving.
+ * @returns The rendered markdown.
+ */
+function AgentAnswer(props: { readonly text: string; readonly running: boolean }): JSX.Element {
+	return (
+		<TextMessagePartProvider text={props.text} isRunning={props.running}>
+			<MarkdownText components={ANSWER_COMPONENTS} />
+		</TextMessagePartProvider>
+	);
+}
+
+export { AgentAnswer, AnswerText };

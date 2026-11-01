@@ -6,6 +6,7 @@ import {
 import { checkoutOfVault } from "@archboard/workspace/vault";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { logger } from "@archboard/diagnostics/logger";
+import { CODEX_SESSION_MS } from "@archboard/timing";
 import type { CodexWorkbenchDomainScope } from "#runtime/protocol/voice/extension.ts";
 import type { Entry, Workhorse } from "#server/services/explanations/contract.ts";
 
@@ -106,12 +107,30 @@ async function enqueue(scope: CodexWorkbenchDomainScope, entry: Entry) {
 		 */
 		beforeEffect: () => requireActiveCapture(entry),
 	});
-	requireDelivery(queued.outcome);
 	const submission = queued.queue.find((item) => item.clientUserMessageId === entry.clientId);
+	// An idle thread takes an added message at once, so only its turn can say that it arrived.
+	if (submission === undefined && queued.outcome !== "not_delivered") return awaitTurn(entry);
+	requireDelivery(queued.outcome);
 	if (submission === undefined) return requireCorrelatedTurn(entry);
 	entry.submission = submission.id;
 	entry.action.status = "queued";
 	await startQueued(scope, entry, workhorse, threadId, submission.id);
+}
+/**
+ * Wait for the turn of a message that Codex took from the queue by itself.
+ * @param entry The action whose lifecycle notification can precede its queue response.
+ */
+async function awaitTurn(entry: Entry) {
+	if (entry.turnId === undefined) {
+		entry.action.status = "queued";
+		const { promise, resolve } = Promise.withResolvers<void>();
+		entry.turnNamed = resolve;
+		const timer = setTimeout(resolve, CODEX_SESSION_MS.explanationTurnStart);
+		await promise;
+		clearTimeout(timer);
+		delete entry.turnNamed;
+	}
+	requireCorrelatedTurn(entry);
 }
 /**
  * Recognize a queued message that Codex already consumed.
@@ -160,6 +179,8 @@ async function startExplanation(scope: CodexWorkbenchDomainScope, entry: Entry) 
 	entry.action.text = "";
 	entry.action.retryable = false;
 	delete entry.action.error;
+	delete entry.action.activity;
+	delete entry.answerItem;
 	delete entry.turnId;
 	delete entry.submission;
 	try {
@@ -188,8 +209,8 @@ async function requireAccount(scope: CodexWorkbenchDomainScope) {
  */
 function failureMessage(entry: Entry, error: unknown) {
 	if (entry.threadId === undefined)
-		return "The local agent is unavailable. Sign in or reconnect it, then retry this explanation.";
+		return "Codex is not connected. Sign in or reconnect it, then try again.";
 	if (unknownOutcome(error))
-		return "The agent did not confirm this request. Read its conversation before starting another explanation.";
-	return "The local agent could not answer this captured request. Read its conversation, then retry if this action allows it.";
+		return "Codex has not started on this request. It can still start, so open the conversation before you ask again.";
+	return "Codex could not answer this request. Open the conversation to see why.";
 }

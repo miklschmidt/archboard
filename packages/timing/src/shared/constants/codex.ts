@@ -55,6 +55,13 @@ function codexRestartDelayMs(restartAttempt: number): number {
 
 /** Requests to the app-server session, and how often its thread state is read. */
 const CODEX_SESSION_MS = durations({
+	/**
+	 * How long an explanation waits for the turn of a message that an idle thread took from the
+	 * queue by itself, before it tells the reader to look at the conversation.
+	 */
+	explanationTurnStart: 15_000,
+	/** How often an answer that Codex writes reaches the panel: a reader sees it arrive in steps. */
+	explanationText: 150,
 	/** Uncertainty-bound classification. Pulls against a lost non-idempotent response before `outcome_unknown`. */
 	requestSettlement: 30_000,
 	/**

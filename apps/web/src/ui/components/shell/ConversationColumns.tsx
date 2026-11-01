@@ -176,7 +176,7 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				groupResizeBehavior="preserve-pixel-size"
 				onResize={handleResize}
 				inert={!open}
-				className="flex h-full justify-end overflow-hidden"
+				className="shadow-edge-side relative z-20 flex h-full justify-end overflow-hidden"
 			>
 				<ConversationSlide open={open} moving={slide.moving} width={width}>
 					{props.conversation}
