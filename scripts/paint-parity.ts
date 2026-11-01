@@ -74,7 +74,8 @@ const PAGE = `<!doctype html><html><head><meta charset="utf-8"><link rel="styles
 const PAGE_SCRIPT = `
 import init, { Painter } from "/painter.js";
 await init({ module_or_path: "/painter.wasm" });
-const gpu = await Painter.gpu(document.getElementById("gpu"), true).catch(() => null);
+const started = await Painter.warm(() => {}).then(() => true, () => false);
+const gpu = started ? Painter.gpu(document.getElementById("gpu"), true) : null;
 const cpu = Painter.cpu(document.getElementById("cpu"), true);
 const painters = { gpu, cpu };
 const svg = document.getElementById("svg");

@@ -180,13 +180,10 @@ The last pass filmed these moments at the real canvas size on the final painter:
 - A pointer's rest, a pick with its sweep, and the recede.
 - The fit key, the arrow keys, a drag, a wheel in and out, and a pinch, each through the far view where it reaches it.
 - Opening a sequence, the departure of the last picture, and a change from one flow to another.
+- A walkthrough step, on the small model of `captureCanonicalWalkthrough`, because a copy of a vault outside Git has no retained walkthrough.
 - A door and a dive with `prefers-reduced-motion`, where each is one cut and no pulse shows.
 
-These moments had no film at this size, so this pass says nothing about them:
-
-- A walkthrough step, because a copy of a vault outside Git has no retained walkthrough.
-- The light theme.
-- Any moment at 120 Hz.
+This pass says nothing about the light theme or about any moment at 120 Hz, because it filmed neither.
 
 These things stay after the pass, and each one has a reason:
 
