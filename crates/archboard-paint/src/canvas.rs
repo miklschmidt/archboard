@@ -13,6 +13,20 @@ pub enum Ink {
     Gradient(Gradient, Affine),
 }
 
+/// What a retained part of a frame is known by.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum PartKey {
+    /// One item in one settled look, numbered across the whole picture.
+    Item {
+        /// The look the item belongs to.
+        look: u64,
+        /// The item's number in the walk.
+        index: usize,
+    },
+    /// A shaped run of words, independent of the picture it occurs in.
+    Text(u64),
+}
+
 /// A surface that takes one frame's drawing.
 pub trait Canvas {
     /// Set the transform of everything drawn from now on.
@@ -32,7 +46,7 @@ pub trait Canvas {
     fn pop(&mut self);
     /// Draw again what is kept under a key, under a transform. A canvas that
     /// holds nothing under the key answers false.
-    fn again(&mut self, _key: u64, _transform: Affine) -> bool {
+    fn again(&mut self, _key: PartKey, _transform: Affine) -> bool {
         false
     }
     /// Start keeping what is drawn from now on, in its own space. A canvas that
@@ -42,7 +56,7 @@ pub trait Canvas {
     }
     /// End what [`Canvas::keep`] started: keep it under a key, and draw it
     /// under a transform.
-    fn kept(&mut self, _key: u64, _transform: Affine) {}
+    fn kept(&mut self, _key: PartKey, _transform: Affine) {}
 }
 
 /// A canvas that only counts, for tests of what a frame draws.

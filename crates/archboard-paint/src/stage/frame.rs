@@ -12,9 +12,6 @@ use crate::flight::{Dive, Flight};
 use crate::path::{placed, rect_of};
 use crate::presentation::Presentation;
 
-/// How far apart the keys of two looks stand: far more than a picture has items.
-const STILL_STEP: u64 = 0x9E37_79B9_7F4A_7C15;
-
 impl Stage {
     /// Draw what stands on the stage: its ground, the picture, the board
     /// inside a card, and over them what is left of the last picture.
@@ -64,7 +61,7 @@ impl Stage {
             palette,
             outlines: &mut *outlines,
             presentation,
-            still: (*settled && moved.is_none()).then(|| looks.wrapping_mul(STILL_STEP)),
+            still: (*settled && moved.is_none()).then_some(*looks),
         };
         draw_items(canvas, items, definitions, transform, &mut inks);
         if parent < 1.0 {

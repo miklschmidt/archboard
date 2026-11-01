@@ -4,7 +4,7 @@
 use std::collections::HashMap;
 use std::mem;
 
-use archboard_paint::canvas::{Canvas, Ink};
+use archboard_paint::canvas::{Canvas, Ink, PartKey};
 use kurbo::{Affine, BezPath, Rect, Shape as _};
 use peniko::{BlendMode, Brush, Compose, Fill, Mix};
 use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene};
@@ -34,7 +34,7 @@ const MOST_KEPT: usize = 32 << 20;
 pub(crate) struct GpuCanvas {
     scene: Scene,
     transform: Affine,
-    parts: HashMap<u64, Scene>,
+    parts: HashMap<PartKey, Scene>,
     /// The drawings that wait for the part on the canvas to end.
     waiting: Vec<Scene>,
     /// The bytes of path data in `parts`.
@@ -94,7 +94,7 @@ impl Canvas for GpuCanvas {
         self.scene.pop_layer();
     }
 
-    fn again(&mut self, key: u64, transform: Affine) -> bool {
+    fn again(&mut self, key: PartKey, transform: Affine) -> bool {
         let part = self.parts.get(&key);
         if let Some(part) = part {
             self.scene.append(part, Some(transform));
@@ -107,16 +107,19 @@ impl Canvas for GpuCanvas {
         true
     }
 
-    fn kept(&mut self, key: u64, transform: Affine) {
+    fn kept(&mut self, key: PartKey, transform: Affine) {
         let waiting = self.waiting.pop().unwrap_or_default();
         let part = mem::replace(&mut self.scene, waiting);
         self.scene.append(&part, Some(transform));
-        self.kept += part.encoding().path_data.len();
-        if self.kept > MOST_KEPT {
+        let bytes = part.encoding().path_data.len();
+        if self.kept + bytes > MOST_KEPT {
             self.parts.clear();
             self.kept = 0;
         }
-        self.parts.insert(key, part);
+        if bytes <= MOST_KEPT {
+            self.kept += bytes;
+            self.parts.insert(key, part);
+        }
     }
 }
 
@@ -143,6 +146,14 @@ pub(crate) struct GpuTarget {
     blitter: wgpu::util::TextureBlitter,
     view: wgpu::TextureView,
     canvas: GpuCanvas,
+}
+
+impl Drop for GpuTarget {
+    fn drop(&mut self) {
+        // wgpu's WebGPU device drop is a no-op. Each target owns its device,
+        // so release its GPU allocations when the page disposes the painter.
+        self.device.destroy();
+    }
 }
 
 /// The texture Vello draws into, and its view.
@@ -201,7 +212,10 @@ impl GpuTarget {
             .get_capabilities(&adapter)
             .formats
             .first()
-            .ok_or_else(|| JsError::new("The surface offers no format."))?;
+            .ok_or_else(|| {
+                device.destroy();
+                JsError::new("The surface offers no format.")
+            })?;
         let configuration = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format,
@@ -223,7 +237,10 @@ impl GpuTarget {
                 pipeline_cache: None,
             },
         )
-        .map_err(failed)?;
+        .map_err(|error| {
+            device.destroy();
+            failed(error)
+        })?;
         Ok(GpuTarget {
             view: target_view(&device, width, height),
             blitter: wgpu::util::TextureBlitter::new(&device, format),
