@@ -324,9 +324,10 @@ fn traffic_is_alone_until_anything_else_moves() {
     let mut stage = stage_of(traffic_picture());
     pulses(&mut stage, 0.0);
     assert!(stage.traffic_alone(0.0));
-    stage.set_far(true, 100.0, 0.0);
+    stage.set_far_line(2.0, 100.0);
+    pulses(&mut stage, 1.0);
     assert!(!stage.traffic_alone(50.0));
-    assert!(stage.traffic_alone(100.0));
+    assert!(stage.traffic_alone(101.0));
 }
 
 #[test]
@@ -352,7 +353,7 @@ fn a_picture_with_no_traffic_never_asks_for_frames_on_its_account() {
 /// has one far part, at a far blend.
 fn drawn_in_a_card(far: bool) -> usize {
     let mut stage = stage_of(Vec::new());
-    stage.set_far(far, 0.0, 0.0);
+    stage.set_far_line(if far { f64::INFINITY } else { 0.0 }, 0.0);
     let card = Rect {
         x: 0.0,
         y: 0.0,

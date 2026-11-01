@@ -36,6 +36,17 @@ struct Glide {
     scale: Fade,
 }
 
+/// How far past the far line the camera goes before the views swap, as a share
+/// of the line. A camera that rests on the line does not swap back and forth.
+const FAR_MARGIN: f64 = 0.02;
+
+/// The scale of the camera where the far view begins, and how long the swap takes.
+#[derive(Clone, Copy, Debug, Default)]
+struct FarLine {
+    scale: f64,
+    ms: f64,
+}
+
 /// The picture on the stage, and what takes the pointer in each of its views.
 #[derive(Debug)]
 struct Shown {
@@ -59,6 +70,7 @@ pub struct Stage {
     dive: Option<Dive>,
     glide: Glide,
     far: Fade,
+    far_line: FarLine,
     lighting: Lighting,
     clock: TrafficClock,
     /// The subjects the code check warns about.
@@ -72,6 +84,8 @@ pub struct Stage {
     looks: u64,
     /// Whether this frame looks as the last one did.
     settled: bool,
+    /// Whether a frame of a picture was drawn yet.
+    drawn: bool,
 }
 
 impl Stage {
@@ -94,6 +108,7 @@ impl Stage {
                 scale: Fade::still(1.0),
             },
             far: Fade::still(0.0),
+            far_line: FarLine::default(),
             lighting: Lighting::default(),
             clock: TrafficClock::default(),
             warned: HashSet::new(),
@@ -101,6 +116,7 @@ impl Stage {
             look: Presentation::default(),
             looks: 0,
             settled: false,
+            drawn: false,
         }
     }
 
@@ -284,12 +300,34 @@ impl Stage {
         };
     }
 
-    /// Swap between the near and the far view, over a time in milliseconds.
-    pub fn set_far(&mut self, far: bool, ms: f64, now: f64) {
-        self.now = now;
-        let to = if far { 1.0 } else { 0.0 };
-        if self.far.target() != to {
-            self.far = self.far.toward(to, now, 0.0, ms, SWAP);
+    /// Say at which scale of the camera the far view begins, in canvas pixels
+    /// to a unit, and how long a swap takes in milliseconds. A picture with no
+    /// far view has its line at 0.
+    pub fn set_far_line(&mut self, scale: f64, ms: f64) {
+        self.far_line = FarLine { scale, ms };
+    }
+
+    /// Start the swap between the views when the camera crosses the far line,
+    /// wherever it is going. A picture that is only now coming in has nothing to
+    /// swap from.
+    fn swap_views(&mut self, now: f64) {
+        let FarLine { scale, ms } = self.far_line;
+        let far = self.far.target() > 0.5;
+        let edge = scale
+            * if far {
+                1.0 + FAR_MARGIN
+            } else {
+                1.0 - FAR_MARGIN
+            };
+        let goal = if self.presentation.camera.scale < edge {
+            1.0
+        } else {
+            0.0
+        };
+        if goal != self.far.target() {
+            let unseen = !self.drawn || self.flight.as_ref().is_some_and(Flight::entering);
+            let ms = if unseen { 0.0 } else { ms };
+            self.far = self.far.toward(goal, now, 0.0, ms, SWAP);
         }
     }
 
@@ -396,6 +434,7 @@ impl Stage {
             y: self.glide.y.at(now),
             scale: self.glide.scale.at(now),
         };
+        self.swap_views(now);
         self.presentation.far = self.far.at(now);
         if self.flight.as_mut().is_some_and(|flight| flight.begin(now)) {
             self.lighting.stand();
@@ -492,6 +531,7 @@ impl Stage {
         self.advance(now);
         if self.shown.is_some() {
             self.draw_frame(canvas, now);
+            self.drawn = true;
         }
         self.changing(now)
     }

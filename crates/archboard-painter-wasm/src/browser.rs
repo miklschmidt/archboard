@@ -239,10 +239,12 @@ impl Painter {
         self.stage.set_camera(Camera { x, y, scale }, ms, now);
     }
 
-    /// Swap between the near and the far view, over a time in milliseconds.
-    #[wasm_bindgen(js_name = setFar)]
-    pub fn set_far(&mut self, far: bool, ms: f64, now: f64) {
-        self.stage.set_far(far, ms, self.clock.at(now));
+    /// Say at which scale of the camera the far view begins, in canvas pixels to
+    /// a unit, and how long a swap takes in milliseconds. A picture with no far
+    /// view has its line at 0.
+    #[wasm_bindgen(js_name = setFarLine)]
+    pub fn set_far_line(&mut self, scale: f64, ms: f64) {
+        self.stage.set_far_line(scale, ms);
     }
 
     /// Say what is marked on the picture, as JSON.

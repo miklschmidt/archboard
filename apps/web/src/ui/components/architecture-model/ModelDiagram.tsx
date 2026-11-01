@@ -194,7 +194,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			reach: lighting.reach,
 			reducedMotion,
 		},
-		far,
+		hasFarView(scene),
 	);
 	useSceneArrival(surface, scene.presentation, props.onPresentation);
 	useAttention(lighting.resting, single, props.onAttention);

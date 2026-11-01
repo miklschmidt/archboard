@@ -366,6 +366,7 @@ export {
 	fitCamera,
 	panCamera,
 	pinchCamera,
+	FAR_SCALE,
 	seenFromFar,
 	unionRect,
 	zoomCameraAbout,

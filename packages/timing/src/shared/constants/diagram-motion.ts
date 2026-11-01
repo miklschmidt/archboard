@@ -205,8 +205,8 @@ const PRESENTATION_MS = durations({
  * and the start of the responsibility), and back. The chip moves and grows into
  * the tile and the words move between their places while they fade (TASK-428).
  * Both views fade over the whole of it, one in as the other goes out, so the
- * words never fade out together. The swap happens once the camera has come to
- * rest (TASK-405).
+ * words never fade out together. On a painted board the swap starts the moment the
+ * camera crosses the line, so it runs with a zoom or a flight (TASK-562).
  *
  * Pulls against the eye that follows the chip. Shorter than about 200 ms the
  * chip jumps rather than travels, and the change of the words reads as a cut.

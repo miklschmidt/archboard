@@ -167,7 +167,7 @@ test("a failed start leaves complete SVG ink and an inspectable reason", async (
 	expect(surface.innerHTML).toBe(original);
 });
 
-test.each(["frame", "resize", "setFar"])(
+test.each(["frame", "resize", "setFarLine"])(
 	"%s failure restores complete ink and keeps the semantic groups",
 	async (failedCall) => {
 		const { surface, host, original } = await surfaceWithAPicture();
@@ -175,7 +175,7 @@ test.each(["frame", "resize", "setFar"])(
 		await start("cpu");
 		starting.failCall = failedCall;
 		Object.defineProperty(host.firstChild, "clientWidth", { value: 2 });
-		stageOf(surface)?.setFar(true, 0);
+		stageOf(surface)?.setFarLine(1, 0);
 		clock.runFrame();
 		expect(taken.filter((call) => call === "free")).toHaveLength(1);
 		expect(surface.hasAttribute("data-painter")).toBe(false);
@@ -190,7 +190,7 @@ test("GPU failure waits for CPU replacement and disposal removes the replacement
 	await start("gpu");
 	const original = host.firstChild;
 	starting.failCall = "frame";
-	stageOf(surface)?.setFar(true, 0);
+	stageOf(surface)?.setFarLine(1, 0);
 	clock.runFrame();
 	expect(stageOf(surface)?.starting).toBe(true);
 	expect(surface.querySelector("use")).not.toBeNull();
@@ -207,13 +207,13 @@ test("a stopped GPU gets one more try, and a second failure soon after ends the 
 	const { surface } = await surfaceWithAPicture();
 	await start("gpu");
 	starting.failCall = "frame";
-	stageOf(surface)?.setFar(true, 0);
+	stageOf(surface)?.setFarLine(1, 0);
 	clock.runFrame();
 	await flushStartup();
 	expect(starting.retry).toBe(true);
 	await start("gpu");
 	starting.failCall = "frame";
-	stageOf(surface)?.setFar(false, 0);
+	stageOf(surface)?.setFarLine(0.5, 0);
 	clock.runFrame();
 	await flushStartup();
 	expect(starting.retry).toBe(false);
@@ -223,7 +223,7 @@ test("CPU replacement failure is handled and leaves the full SVG visible", async
 	const { surface, original } = await surfaceWithAPicture();
 	await start("gpu");
 	starting.failCall = "frame";
-	stageOf(surface)?.setFar(true, 0);
+	stageOf(surface)?.setFarLine(1, 0);
 	clock.runFrame();
 	await flushStartup();
 	await start("failed");
@@ -278,7 +278,7 @@ test("recovery restores the current picture after another picture was thinned of
 	stageOf(surface)?.show("next");
 	clock.runFrame();
 	starting.failCall = "frame";
-	stageOf(surface)?.setFar(true, 0);
+	stageOf(surface)?.setFarLine(1, 0);
 	clock.runFrame();
 	expect(surface.innerHTML).toBe(original);
 	expect(surface.querySelectorAll("defs").length).toBe(1);

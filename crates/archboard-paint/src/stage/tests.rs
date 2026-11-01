@@ -35,6 +35,63 @@ fn a_glide_moves_over_its_time_and_a_cut_moves_at_once() {
 }
 
 #[test]
+fn a_zoom_that_crosses_the_far_line_swaps_the_views_on_its_way() {
+    let mut stage = stage();
+    stage.drawn = true;
+    stage.set_far_line(0.8, 100.0);
+    let camera = Camera {
+        x: 0.0,
+        y: 0.0,
+        scale: 1.0,
+    };
+    stage.set_camera(camera, 0.0, 0.0);
+    stage.advance(0.0);
+    assert_eq!(stage.presentation.far, 0.0);
+    stage.set_camera(
+        Camera {
+            scale: 0.4,
+            ..camera
+        },
+        300.0,
+        0.0,
+    );
+    stage.advance(150.0);
+    assert!(stage.presentation.camera.scale < 0.8);
+    stage.advance(200.0);
+    assert!(stage.presentation.far > 0.0 && stage.presentation.far < 1.0);
+    stage.advance(350.0);
+    assert_eq!(stage.presentation.far, 1.0);
+}
+
+#[test]
+fn a_camera_that_rests_on_the_far_line_stays_in_its_view() {
+    let mut stage = stage();
+    stage.drawn = true;
+    stage.set_far_line(0.8, 0.0);
+    let on_the_line = Camera {
+        x: 0.0,
+        y: 0.0,
+        scale: 0.795,
+    };
+    stage.set_camera(on_the_line, 0.0, 0.0);
+    stage.advance(0.0);
+    assert_eq!(stage.presentation.far, 0.0);
+    stage.set_camera(
+        Camera {
+            scale: 0.7,
+            ..on_the_line
+        },
+        0.0,
+        1.0,
+    );
+    stage.advance(1.0);
+    assert_eq!(stage.presentation.far, 1.0);
+    stage.set_camera(on_the_line, 0.0, 2.0);
+    stage.advance(2.0);
+    assert_eq!(stage.presentation.far, 1.0);
+}
+
+#[test]
 fn what_leaves_the_light_fades_to_the_rest_and_is_forgotten() {
     let mut stage = stage();
     let lit = Light {

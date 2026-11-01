@@ -45,7 +45,8 @@ interface StageLight {
 interface Held {
 	painting: string | undefined;
 	camera: StageCamera;
-	far: boolean;
+	/** The camera's scale where the far view begins, and how long a swap takes. */
+	farLine: { readonly scale: number; readonly ms: number };
 	marks: StageMarks;
 	light: StageLight | null;
 	trafficShown: boolean;
@@ -147,7 +148,7 @@ export function briefPainter(
 	dark: boolean,
 	now: number,
 ): void {
-	const { camera, far, marks, light, painting, trafficShown, heads, warned } = held;
+	const { camera, farLine, marks, light, painting, trafficShown, heads, warned } = held;
 	painter.setPhases(PHASES);
 	painter.setLongestStep(PICTURE_MS.longestStep);
 	painter.setTheme(dark);
@@ -155,7 +156,7 @@ export function briefPainter(
 	painter.setHeads(JSON.stringify(heads));
 	painter.setWarnings(JSON.stringify([...warned]));
 	painter.setCamera(camera.x, camera.y, camera.scale, 0, now);
-	painter.setFar(far, 0, now);
+	painter.setFarLine(farLine.scale, farLine.ms);
 	painter.setMarks(marksJson(marks));
 	if (light !== null) painter.setLight(JSON.stringify(light), now);
 	if (painting === undefined) painter.clear();

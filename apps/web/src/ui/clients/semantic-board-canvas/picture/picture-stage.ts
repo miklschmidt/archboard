@@ -56,7 +56,7 @@ class PictureStage {
 	readonly #held: Held = {
 		painting: undefined,
 		camera: { x: 0, y: 0, scale: 1 },
-		far: false,
+		farLine: { scale: 0, ms: 0 },
 		marks: { selected: new Set(), whole: new Set() },
 		light: null,
 		trafficShown: true,
@@ -282,14 +282,15 @@ class PictureStage {
 	}
 
 	/**
-	 * Swap between the near and the far view.
-	 * @param far Whether the picture is seen from far.
-	 * @param ms How long it takes.
+	 * Say where the far view begins. The painter swaps the views the moment the camera crosses.
+	 * @param scale The camera's scale at the line, or 0 for a picture with no far view.
+	 * @param ms How long a swap takes.
 	 */
-	setFar(far: boolean, ms: number): void {
-		this.#held.far = far;
+	setFarLine(scale: number, ms: number): void {
+		this.#held.farLine = { scale: scale * (window.devicePixelRatio || 1), ms };
+		const line = this.#held.farLine;
 		this.#tell((painter) => {
-			painter.setFar(far, ms, frameClock().now());
+			painter.setFarLine(line.scale, line.ms);
 		});
 	}
 

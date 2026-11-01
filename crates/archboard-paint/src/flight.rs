@@ -90,6 +90,11 @@ impl Flight {
         }
     }
 
+    /// Whether this is a picture coming in with nothing to carry it from.
+    pub(crate) fn entering(&self) -> bool {
+        matches!(self, Flight::Enter { .. })
+    }
+
     /// The flight's time.
     fn time(&self) -> Stretch {
         match self {

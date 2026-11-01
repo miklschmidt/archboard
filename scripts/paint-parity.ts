@@ -94,7 +94,7 @@ window.keepPainter = async (kind, file) => {
 	painter.setTheme(theme === "dark");
 	painter.show(painting);
 	painter.setCamera(0, 0, scale, 0, 0);
-	painter.setFar(far, 0, 0);
+	painter.setFarLine(far ? Number.POSITIVE_INFINITY : 0, 0);
 	painter.setTrafficShown(traffic);
 	if (traffic) painter.setPictureTime(1.5);
 	painter.frame(0);
