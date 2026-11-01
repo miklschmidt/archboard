@@ -441,3 +441,10 @@ longer hold:
 
 The `lib/svg` paths in this record name files that moved. The painter now lives
 in `crates/archboard-scene/src/paint`.
+
+## Amendment of 2026-11-01: the light picture is warm
+
+The light picture's own neutrals move from near hue 255 to the shell's warm chalk, near hue 85. This replaces the cool
+neutrals, the navy shadow and the navy words that the earlier amendments on this page describe. The owner found the
+blue backgrounds wrong for the product: Archboard stays on the neutral or warm side of grey. The dark theme does not
+change. The left column's well shares `--tray-sink` with the picture, so it warms with it.
