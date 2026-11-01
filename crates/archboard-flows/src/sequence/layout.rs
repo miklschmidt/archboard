@@ -32,7 +32,7 @@ use crate::sequence::card::{
 use crate::sequence::design::{
     ARCHITECTURE_CARD_PADDING, COLUMN_GAP, COLUMN_MAX_WIDTH, COLUMN_MIN_WIDTH,
     CONTAINER_BOTTOM_PAD, DIAGRAM_MARGIN, FIRST_MESSAGE_DROP, FLOW_BOTTOM_PADDING, FLOW_GAP,
-    HEADER_HEIGHT, HEADER_HEIGHT_WITH_NOTE, ICON_MIN_CARD_WIDTH, LIFELINE_GAP, NEST_INSET,
+    FLOW_HEADING, FLOW_HEADING_WITH_NOTE, ICON_MIN_CARD_WIDTH, LIFELINE_GAP, NEST_INSET,
     TAB_PADDING, TAB_SHOULDER, TITLE_SIZE, TITLE_SIZE_MIN, TITLE_SIZE_SMALL, TITLE_SIZE_STEP,
 };
 use crate::sequence::frames::{place_frames, span_around};
@@ -386,9 +386,9 @@ fn layout_flow<'a>(
     // far under the well's edge as in from the frame's sides.
     let header_top = top + ARCHITECTURE_CARD_PADDING;
     let header_height = if flow.summary.is_none() {
-        HEADER_HEIGHT
+        FLOW_HEADING
     } else {
-        HEADER_HEIGHT_WITH_NOTE
+        FLOW_HEADING_WITH_NOTE
     };
     let tab_foot = header_top + header_height + ARCHITECTURE_CARD_PADDING;
     let cards_top = tab_foot + NEST_INSET;

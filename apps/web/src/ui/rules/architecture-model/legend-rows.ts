@@ -137,7 +137,9 @@ function policyLine(model: Model, id: string): AppliedAppearance {
  */
 function kindRows(reading: LegendReading): readonly LegendRow[] {
 	const { model, projection, picture } = reading;
-	const drawn = new Map(picture.kinds.map((item) => [item.typeKind, item]));
+	// A flowchart's frame is the flow on screen, and it shows no kind.
+	const shown = picture.kinds.filter((item) => item.typeKind !== "flow");
+	const drawn = new Map(shown.map((item) => [item.typeKind, item]));
 	const kinds = new Set([...drawn.keys(), ...modulesOf(projection).map((module) => module.kind)]);
 	return [...kinds].toSorted(policyOrder(model.policy.nodeKinds)).map((id) => ({
 		item: drawn.get(id) ?? policyPart(model, id),

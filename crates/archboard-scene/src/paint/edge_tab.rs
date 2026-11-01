@@ -11,7 +11,7 @@ use crate::paint::Ctx;
 use crate::paint::appearance::{tray_look, type_chip};
 use crate::paint::build::{Items, concat, grouped, lines};
 use crate::paint::design::{
-    BAND_RADIUS, DRILL_MARK_ROOM, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
+    BAND_RADIUS, DRILL_MARK_ROOM, FLOW_KIND, PARENT_ICON_SIZE, TAB_CHIP, TAB_FAR_CHIP, TAB_HEIGHT,
     TAB_PADDING, TAB_SHOULDER, TOGGLE_ROOM,
 };
 use crate::paint::drill_mark::corner_drill_mark;
@@ -48,7 +48,7 @@ impl Views {
         };
         let mark = drill + node.toggle.map_or(0.0, |_| TOGGLE_ROOM);
         let hugging = |runs: &[TextRun]| {
-            let words = runs.last().map_or(0.0, |run| run.x + run.width);
+            let words = js::max(runs.iter().map(|run| run.x + run.width));
             js::js_max(js::js_min(words + TAB_PADDING + mark, room), 0.0)
         };
         let line = tab_far(&node.name, far_scale, room - mark);
@@ -135,12 +135,18 @@ fn line_views(
         y: near_tab.y + (TAB_HEIGHT - size) / 2.0,
         size,
     };
-    lines(vec![
+    // A flow's tab holds its heading, as a sequence's does, and no kind.
+    let kind = if appearance.type_kind == FLOW_KIND {
+        Items::new()
+    } else {
         shared_chip(
             type_chip(appearance, palette, standing, ctx.icons, PARENT_ICON_SIZE),
             chip(TAB_CHIP),
             chip(TAB_FAR_CHIP),
-        ),
+        )
+    };
+    lines(vec![
+        kind,
         near_layer(concat(vec![
             moving_words(near.items, near.anchor, far.anchor),
             mark(near_tab, 1.0),

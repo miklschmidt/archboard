@@ -186,6 +186,12 @@ pub const ARCHITECTURE_CARD_PADDING: f64 = 16.0;
 pub(crate) const ARCHITECTURE_ICON_GAP: f64 = 12.0;
 /// The room between a part's name and its responsibility under it.
 pub const ARCHITECTURE_NOTE_GAP: f64 = 2.0;
+/// The kind of a flowchart's frame, which holds a flow.
+pub const FLOW_KIND: &str = "flow";
+/// How tall a flow's heading stands in its tab.
+pub const FLOW_HEADING: f64 = PART_TITLE_LINE;
+/// How tall a flow's heading stands in its tab with its summary.
+pub const FLOW_HEADING_WITH_NOTE: f64 = PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;
 /// How far a container's words stand in from the sides of its box.
 pub const ARCHITECTURE_HEADER_PADDING: f64 = HEADER_SLAB_INSET + ARCHITECTURE_CARD_PADDING;
 /// The room inside a relationship's label plate, on the left and the right of its words.

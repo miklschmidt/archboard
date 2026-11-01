@@ -5,12 +5,12 @@
 //! `archboard_scene::paint::design`'s.
 
 pub(super) use archboard_scene::paint::design::{
-    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, ARCHITECTURE_NOTE_GAP, CARD_PADDING_X,
-    DIAGRAM_MARGIN, DRILL_MARK_ROOM, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT, FRAME_PAD,
-    FRAME_TAB_PADDING, ICON_CHIP_GAP, ICON_CHIP_SIZE, MESSAGE_LINE_STEP, NOTE_SIZE, PART_NOTE_LINE,
-    PART_TITLE_LINE, PILL_HEIGHT, PILL_PADDING_X, PILL_TEXT_SIZE, SELF_LOOP_CORNER, SELF_LOOP_DROP,
-    SELF_LOOP_REACH, SHADOW_REACH, STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING,
-    TAB_SHOULDER, TEXT_LINE_HEIGHT, TITLE_SIZE, arrow_standoff,
+    ACTIVATION_HALF_WIDTH, ARCHITECTURE_CARD_PADDING, CARD_PADDING_X, DIAGRAM_MARGIN,
+    DRILL_MARK_ROOM, FLOW_HEADING, FLOW_HEADING_WITH_NOTE, FRAME_GUARD_HEIGHT, FRAME_HEAD_HEIGHT,
+    FRAME_PAD, FRAME_TAB_PADDING, ICON_CHIP_GAP, ICON_CHIP_SIZE, MESSAGE_LINE_STEP, NOTE_SIZE,
+    PILL_HEIGHT, PILL_PADDING_X, PILL_TEXT_SIZE, SELF_LOOP_CORNER, SELF_LOOP_DROP, SELF_LOOP_REACH,
+    SHADOW_REACH, STEP_NOTE_PADDING_X, STEP_NOTE_PADDING_Y, TAB_PADDING, TAB_SHOULDER,
+    TEXT_LINE_HEIGHT, TITLE_SIZE, arrow_standoff,
 };
 
 /// How far a container's well holds what it holds in from its walls.
@@ -28,11 +28,6 @@ pub(super) const TITLE_SIZE_SMALL: f64 = 11.5;
 /// half a point at a time, to a floor, before the column widens.
 pub(super) const TITLE_SIZE_MIN: f64 = 10.5;
 pub(super) const TITLE_SIZE_STEP: f64 = 0.5;
-/// A flow's header row, with and without its summary.
-pub(super) const HEADER_HEIGHT: f64 = PART_TITLE_LINE;
-pub(super) const HEADER_HEIGHT_WITH_NOTE: f64 =
-    PART_TITLE_LINE + ARCHITECTURE_NOTE_GAP + PART_NOTE_LINE;
-
 /// Bounds for the uniform participant-column width. The maximum keeps one
 /// long name from widening every column; longer names fit their card's text.
 pub(super) const COLUMN_MIN_WIDTH: f64 = 112.0;

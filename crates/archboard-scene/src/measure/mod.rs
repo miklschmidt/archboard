@@ -13,6 +13,7 @@ use crate::js;
 
 mod cards;
 mod far;
+mod flow_frame;
 mod labels;
 
 #[cfg(test)]
@@ -20,6 +21,7 @@ pub(crate) use cards::TAB_NEAR;
 pub use cards::{CardWords, measure_node};
 pub(crate) use cards::{DOOR_FAR, tab_far, tab_runs, tag_end, tag_top, tags_width};
 pub use far::{FarCard, FarWords, far_scale_for, far_words};
+pub use flow_frame::measure_flow_frame;
 pub use labels::{measure_label, message_lines, note_lines};
 
 /// The face a font names: Onest or Maple Mono NL, at 400 or at 500. A weight that

@@ -52,6 +52,16 @@ import type { Departure } from "#ui/clients/semantic-board-canvas/picture/pictur
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 import { isDoor } from "#ui/rules/architecture-model/selected-subject.ts";
 
+/**
+ * Whether a picture has a far view. A flowchart's shapes keep their words at any distance, so one
+ * would only hide what its cards say.
+ * @param scene The picture.
+ * @returns True for every grammar but the flowchart.
+ */
+function hasFarView(scene: AcceptedScene): boolean {
+	return scene.reading.grammar !== "flowchart";
+}
+
 interface ModelDiagramProps {
 	scene: AcceptedScene;
 	camera: BoardCamera;
@@ -137,7 +147,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const { lighting, single } = useSceneLighting(scene, selected, leaving !== null);
 	const tip = useSceneTip(drawing, camera, lighting);
 	const selectArea = useAreaSelection(scene, camera, onSelectMany);
-	const far = useCameraWith(camera, seenFromFar);
+	const far = useCameraWith(camera, seenFromFar) && hasFarView(scene);
 	const onPick = useReveal({
 		camera,
 		atlas: drawing.atlas,
@@ -360,7 +370,7 @@ function ModelSubjectTip(props: {
 	camera: BoardCamera;
 }): JSX.Element {
 	const { target, scene } = props;
-	const far = useCameraWith(props.camera, seenFromFar);
+	const far = useCameraWith(props.camera, seenFromFar) && hasFarView(scene);
 	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
 	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
 	if (target === null || !isDoor(scene.projection, target.id))

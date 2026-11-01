@@ -20,12 +20,12 @@ use std::collections::{BTreeMap, HashMap};
 
 use archboard_layout::{Content, Edge, Node as GraphNode};
 use archboard_scene::drawing::Emphasis;
+use archboard_scene::paint::design::FLOW_KIND;
 use archboard_scene::request::FlowchartShape;
 
 use crate::board::{Flow, Message, Node, Step};
 
 /// The kind of a flow's frame.
-pub(super) const FLOW_KIND: &str = "flow";
 /// The kind of a decision, a loop or a terminal, which is drawn by its shape
 /// and never by its kind.
 pub(super) const SHAPE_KIND: &str = "flowchart-shape";

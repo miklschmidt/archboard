@@ -36,7 +36,9 @@ use archboard_layout::{LineLook, Measured, Node as GraphNode, Solver};
 use archboard_scene::drawing::{MeasuredLabel, MeasuredNode, Painted};
 use archboard_scene::js;
 use archboard_scene::measure::{self, CardWords};
-use archboard_scene::paint::design::{FALLBACK_ICON, FLOW_ICON, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE};
+use archboard_scene::paint::design::{
+    FALLBACK_ICON, FLOW_ICON, FLOW_KIND, SHAPE_TEXT_LINE, SHAPE_TEXT_SIZE,
+};
 use archboard_scene::request::{
     ArchitecturePicture, Arrowhead, Dash, DocumentRequest, FlowchartParts, FlowchartShape,
     LineAppearance, NodeAppearance, PageRequest, PaintRequest, PaletteColor, Picture, ShapedCard,
@@ -45,7 +47,7 @@ use serde::Deserialize;
 
 use crate::board::{Flow, Node};
 use answer_order::laid_out;
-use graph::{FLOW_KIND, Graph, SHAPE_KIND, flowchart_of};
+use graph::{Graph, SHAPE_KIND, flowchart_of};
 use outlines::{to_diamonds, with_outlines};
 
 /// The widest a shape's words run before they wrap.
@@ -171,7 +173,7 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
         .iter()
         .map(|node| {
             let Some(shape) = graph.shape(&node.id) else {
-                let container = containers.contains(node.id.as_str());
+                let frame = containers.contains(node.id.as_str());
                 let words = CardWords {
                     name: &node.name,
                     responsibility: node.responsibility.as_deref(),
@@ -181,7 +183,11 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                     door: false,
                     toggle: None,
                 };
-                let measured = measure::measure_node(node.facts(), &words, container);
+                let measured = if frame {
+                    measure::measure_flow_frame(node.facts(), &words)
+                } else {
+                    measure::measure_node(node.facts(), &words, false)
+                };
                 return (node.id.clone(), measured);
             };
             let (lines, width, height) = shape_size(shape, &node.name);
