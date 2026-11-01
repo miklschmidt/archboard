@@ -17,6 +17,8 @@ use vello::{AaConfig, AaSupport, RenderParams, Renderer, RendererOptions, Scene}
 use wasm_bindgen::{JsError, JsValue};
 use web_sys::{HtmlCanvasElement, OffscreenCanvas};
 
+use crate::page_gpu::{Attempt, PageGpu};
+
 /// The clip of a layer that composes with all that is under it, in canvas pixels.
 const EVERYTHING: Rect = Rect::new(-1e5, -1e5, 1e5, 1e5);
 
@@ -239,10 +241,12 @@ struct Gpu {
     device: wgpu::Device,
     queue: wgpu::Queue,
     renderer: Renderer,
+    watch: DeviceWatch,
 }
 
 impl Drop for Gpu {
     fn drop(&mut self) {
+        self.watch.cancel();
         // wgpu's WebGPU device drop is a no-op, so release its allocations here.
         self.device.destroy();
     }
@@ -250,7 +254,7 @@ impl Drop for Gpu {
 
 thread_local! {
     /// The GPU of this page, once it started.
-    static PAGE_GPU: RefCell<Option<Rc<RefCell<Gpu>>>> = const { RefCell::new(None) };
+    static PAGE_GPU: RefCell<PageGpu<Rc<RefCell<Gpu>>>> = const { RefCell::new(PageGpu::new()) };
 }
 
 /// The side of the square canvas that the first frame lands on, in pixels.
@@ -268,9 +272,25 @@ fn refused(error: &JsValue) -> JsError {
 
 /// Tell the page once when the device stops: it lost the device, or it refused
 /// work. A surface that the compositor no longer gives textures for ends here.
-fn watch(device: &wgpu::Device, stopped: Function) {
+struct DeviceWatch(Arc<Mutex<Option<oneshot::Sender<String>>>>);
+
+impl DeviceWatch {
+    /// Release the waiting task even when the device is destroyed without an error.
+    fn cancel(&self) {
+        self.0.lock().ok().and_then(|mut tell| tell.take());
+    }
+}
+
+impl Drop for DeviceWatch {
+    fn drop(&mut self) {
+        self.cancel();
+    }
+}
+
+fn watch(device: &wgpu::Device, attempt: Attempt, stopped: Function) -> DeviceWatch {
     let (tell, told) = oneshot::channel::<String>();
     let tell = Arc::new(Mutex::new(Some(tell)));
+    let watch = DeviceWatch(Arc::clone(&tell));
     let once = move |reason: String| {
         let tell = tell.lock().ok().and_then(|mut tell| tell.take());
         if let Some(tell) = tell {
@@ -285,15 +305,18 @@ fn watch(device: &wgpu::Device, stopped: Function) {
         }
     });
     wasm_bindgen_futures::spawn_local(async move {
-        if let Ok(reason) = told.await {
+        if let Ok(reason) = told.await
+            && PAGE_GPU.with_borrow_mut(|page| page.stop(&attempt))
+        {
             stopped.call1(&JsValue::NULL, &reason.into()).ok();
         }
     });
+    watch
 }
 
 impl Gpu {
     /// Ask the browser for a device, and start Vello on it.
-    async fn start(stopped: Function) -> Result<Gpu, JsError> {
+    async fn start(attempt: Attempt, stopped: Function) -> Result<Gpu, JsError> {
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::BROWSER_WEBGPU,
             ..wgpu::InstanceDescriptor::new_without_display_handle()
@@ -314,7 +337,7 @@ impl Gpu {
             })
             .await
             .map_err(failed)?;
-        watch(&device, stopped);
+        let watch = watch(&device, attempt, stopped);
         let renderer = Renderer::new(
             &device,
             RendererOptions {
@@ -334,6 +357,7 @@ impl Gpu {
             device,
             queue,
             renderer,
+            watch,
         })
     }
 }
@@ -343,8 +367,8 @@ impl Gpu {
 /// a second, so the first frame a reader sees must not be the first it draws.
 /// This ends when the GPU finished that frame.
 pub(crate) async fn warm(stopped: Function) -> Result<(), JsError> {
-    let gpu = Rc::new(RefCell::new(Gpu::start(stopped).await?));
-    PAGE_GPU.set(Some(Rc::clone(&gpu)));
+    let attempt = PAGE_GPU.with_borrow_mut(PageGpu::begin);
+    let gpu = Rc::new(RefCell::new(Gpu::start(attempt.clone(), stopped).await?));
     let canvas = OffscreenCanvas::new(FIRST_FRAME_SIDE, FIRST_FRAME_SIDE)
         .map_err(|error| refused(&error))?;
     let mut target = GpuTarget::on(
@@ -358,7 +382,14 @@ pub(crate) async fn warm(stopped: Function) -> Result<(), JsError> {
     gpu.borrow().queue.on_submitted_work_done(move || {
         finished.send(()).ok();
     });
-    drawn.await.map_err(failed)
+    drawn.await.map_err(failed)?;
+    if PAGE_GPU.with_borrow_mut(|page| page.finish(&attempt, gpu)) {
+        Ok(())
+    } else {
+        Err(JsError::new(
+            "The GPU stopped or was replaced while it started.",
+        ))
+    }
 }
 
 /// A frame that uses all that a picture uses: a layer, a clip, a fill and a stroke.
@@ -405,7 +436,7 @@ impl GpuTarget {
     /// Draw on a canvas with the GPU of this page.
     pub(crate) fn start(canvas: HtmlCanvasElement) -> Result<GpuTarget, JsError> {
         let gpu = PAGE_GPU
-            .with_borrow(Clone::clone)
+            .with_borrow(|page| page.ready().cloned())
             .ok_or_else(|| JsError::new("The GPU of this page did not start."))?;
         let size = (canvas.width(), canvas.height());
         GpuTarget::on(gpu, wgpu::SurfaceTarget::Canvas(canvas), size)
