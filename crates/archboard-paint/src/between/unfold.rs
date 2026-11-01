@@ -5,6 +5,8 @@
 //! as one picture, at the scale of the box, so they grow out of the door and no
 //! frame travels empty. A door that closes takes them back the same way.
 
+use std::collections::HashMap;
+
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Transform};
 use kurbo::Shape as _;
@@ -139,6 +141,18 @@ impl Doors {
     /// The box that carries a subject only the next picture has, if one does.
     pub(super) fn carrying(&self, new: &Found<'_>) -> Option<Unfold> {
         Doors::around(&self.opened, new)
+    }
+
+    /// The box each subject only the next picture has rides in, by id.
+    pub(super) fn inside<'a>(
+        &self,
+        new: &[Found<'a>],
+        added: &[usize],
+    ) -> HashMap<&'a str, Unfold> {
+        added
+            .iter()
+            .filter_map(|&at| Some((new[at].id, self.carrying(&new[at])?)))
+            .collect()
     }
 
     /// The box that carries a subject only the last picture had, if one does.

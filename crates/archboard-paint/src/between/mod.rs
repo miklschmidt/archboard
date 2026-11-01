@@ -182,6 +182,17 @@ fn parked_in(items: &[Item]) -> Vec<Group> {
     found
 }
 
+/// The mover of a subject only the last scene had.
+fn leaving(old: &Found<'_>, doors: &Doors, phases: Transition) -> Mover {
+    doors.taking(old).map_or_else(
+        || Mover::Leave(Leave::new(old, phases)),
+        |unfold| {
+            let fade = (0.0, phases.inside_end);
+            Mover::Inside(Box::new(Inside::leaving(old.group.clone(), unfold, fade)))
+        },
+    )
+}
+
 /// What of the last picture stops with no subject to carry it: the pulses of a
 /// line that stops, which go where the lines stand, and what is parked for a card
 /// that does not stay. `pulses` says how deep the pulses stand, and when they end.
@@ -244,43 +255,49 @@ struct LastPicture<'a> {
     inside: HashMap<&'a str, Unfold>,
 }
 
-/// What moves a shadow, a line's pulses or the marks where routes join. A shadow
-/// rides under the card that casts it, and one that nothing carries comes in
-/// with what is new. Pulses run on, and those of a new line start once it is
-/// drawn. The marks stand where the routes land, so they come in as the lines
-/// arrive.
+/// What moves a shadow. It rides under the card that casts it, or inside the door
+/// that card rides in, and one that nothing carries comes in with what is new.
+fn shadow_of(
+    item: &Item,
+    group: &Group,
+    last: &LastPicture<'_>,
+    phases: Transition,
+) -> Option<Mover> {
+    let owner = group.members.first()?;
+    let ground = last
+        .parked
+        .iter()
+        .find(|old| old.role == group.role && old.members == group.members)
+        .and_then(|old| Ground::new(old, group, phases));
+    match last.moved.get(owner.as_str()) {
+        Some(&(0.0, 0.0)) => ground.map(|ground| Mover::Visible(group.clone(), ground)),
+        Some(&back) => Some(Mover::Riding(Box::new(Riding {
+            shadow: group.clone(),
+            back,
+            start: phases.move_start,
+            end: phases.move_end,
+            ground,
+        }))),
+        None => Some(match last.inside.get(owner.as_str()) {
+            Some(&unfold) => {
+                let fade = (phases.inside_start, phases.inside_end);
+                Mover::Inside(Box::new(Inside::arriving(group.clone(), unfold, fade)))
+            }
+            None => Mover::Frame(item.clone(), phases.labels_start, 1.0),
+        }),
+    }
+}
+
+/// What moves a shadow, a line's pulses or the marks where routes join. Pulses run
+/// on, and those of a new line start once it is drawn. The marks stand where the
+/// routes land, so they come in as the lines arrive.
 fn furniture_of(item: &Item, last: &LastPicture<'_>, phases: Transition) -> Option<Mover> {
     let Item::Group(group) = item else {
         return None;
     };
-    let landing = (phases.labels_start, 1.0);
     match &group.role {
-        Role::Junctions => Some(Mover::Frame(item.clone(), landing.0, landing.1)),
-        Role::Shadow(_) => {
-            let owner = group.members.first()?;
-            let ground = last
-                .parked
-                .iter()
-                .find(|old| old.role == group.role && old.members == group.members)
-                .and_then(|old| Ground::new(old, group, phases));
-            match last.moved.get(owner.as_str()) {
-                Some(&(0.0, 0.0)) => ground.map(|ground| Mover::Visible(group.clone(), ground)),
-                Some(&back) => Some(Mover::Riding(Box::new(Riding {
-                    shadow: group.clone(),
-                    back,
-                    start: phases.move_start,
-                    end: phases.move_end,
-                    ground,
-                }))),
-                None => Some(match last.inside.get(owner.as_str()) {
-                    Some(&unfold) => {
-                        let fade = (phases.inside_start, phases.inside_end);
-                        Mover::Inside(Box::new(Inside::arriving(group.clone(), unfold, fade)))
-                    }
-                    None => Mover::Frame(item.clone(), landing.0, landing.1),
-                }),
-            }
-        }
+        Role::Junctions => Some(Mover::Frame(item.clone(), phases.labels_start, 1.0)),
+        Role::Shadow(_) => shadow_of(item, group, last, phases),
         Role::Traffic(line) => {
             mark_of(group)?;
             match last.traffic.get(line.as_str()) {
@@ -433,24 +450,13 @@ impl Between {
         traffic_in(&last.body, &mut traffic);
         let mut landing = HashMap::new();
         traffic_in(&next.body, &mut landing);
-        let lines_at = depth_of(&next.body, SubjectKind::Edge);
-        let stopping = stopping(
-            &traffic,
-            &landing,
-            &parked,
-            &moved,
-            (lines_at, phases.exit_end),
-        );
-        let inside = pairing
-            .added
-            .iter()
-            .filter_map(|&b| Some((new[b].id, doors.carrying(&new[b])?)))
-            .collect();
+        let pulses = (depth_of(&next.body, SubjectKind::Edge), phases.exit_end);
+        let stopping = stopping(&traffic, &landing, &parked, &moved, pulses);
         let known = LastPicture {
             moved,
             traffic,
             parked: &parked,
-            inside,
+            inside: doors.inside(&new, &pairing.added),
         };
         let furniture = |item: &Item, _: bool| furniture_of(item, &known, phases);
         let wiring = Wiring {
@@ -462,14 +468,7 @@ impl Between {
             .removed
             .iter()
             .map(|&a| {
-                let leave = doors.taking(&old[a]).map_or_else(
-                    || Mover::Leave(Leave::new(&old[a], phases)),
-                    |unfold| {
-                        let group = old[a].group.clone();
-                        let fade = (0.0, phases.inside_end);
-                        Mover::Inside(Box::new(Inside::leaving(group, unfold, fade)))
-                    },
-                );
+                let leave = leaving(&old[a], &doors, phases);
                 (depth_of(&next.body, old[a].subject.kind), leave)
             })
             .chain(stopping)

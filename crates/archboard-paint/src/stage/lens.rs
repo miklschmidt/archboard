@@ -50,6 +50,10 @@ const OPENING_SOFT: f64 = 0.6;
 const ENTRANCE_OPENS: (f64, f64) = (0.0, 0.86);
 const ENTRANCE_CLEARS: (f64, f64) = (0.5, 0.92);
 
+/// The part of an entrance that the picture before it racks out of focus over.
+/// It goes on from where the picture stood when the next one arrived.
+const GHOST_RACKS: (f64, f64) = (0.0, 0.16);
+
 /// The curve the focus goes on: slow to begin, and gone quickly.
 const RACK: Curve = Curve(0.3, 0.0, 0.4, 1.0);
 
@@ -98,14 +102,33 @@ fn door_lens(door: Rect, share: f64, height: f64) -> Lens {
     }
 }
 
+/// What is left of the last picture as an entrance sees it.
+#[derive(Clone, Copy)]
+struct Before {
+    /// How far out of focus it stood when the entrance began, from 0 to 1.
+    racked: f64,
+    /// How much of its end is left, from 0 to 1.
+    left: f64,
+}
+
 /// What an entrance is seen through: a circle that opens from the middle of the
 /// picture, with the picture coming into focus inside it. What is left of the
-/// last picture holds the rest out of focus until it has gone.
-fn entrance_lens(page: Rect, share: f64, left: f64, (width, height): (f64, f64)) -> Lens {
+/// last picture holds the rest out of focus until it has gone. A picture with
+/// nothing before it has nothing to rack from.
+fn entrance_lens(
+    page: Rect,
+    share: f64,
+    before: Option<Before>,
+    (width, height): (f64, f64),
+) -> Lens {
     let (x, y) = (page.x + page.width / 2.0, page.y + page.height / 2.0);
     let reach = page.width.hypot(page.height).max(width.min(height)) / 2.0;
     let radius = reach * OPENS_TO * EMPHASISED.at(phase(share, ENTRANCE_OPENS.0, ENTRANCE_OPENS.1));
-    let soft = 1.0 - phase(share, ENTRANCE_CLEARS.0, ENTRANCE_CLEARS.1);
+    let clearing = 1.0 - phase(share, ENTRANCE_CLEARS.0, ENTRANCE_CLEARS.1);
+    let soft = before.map_or(clearing, |before| {
+        let racks = before.racked + (1.0 - before.racked) * racked(share, GHOST_RACKS);
+        racks * clearing.max(before.left)
+    });
     Lens {
         focus: Some(Focus {
             place: Rect {
@@ -117,7 +140,7 @@ fn entrance_lens(page: Rect, share: f64, left: f64, (width, height): (f64, f64))
             radius,
             soft: reach * OPENING_SOFT,
         }),
-        blur: height * MOST_BLUR * soft.max(left),
+        blur: height * MOST_BLUR * soft,
         sink: 0.0,
     }
 }
@@ -142,11 +165,11 @@ impl Stage {
                 width: scene.width,
                 height: scene.height,
             };
-            let left = self
-                .ghost
-                .as_ref()
-                .map_or(0.0, |ghost| 1.0 - ghost.gone_by(now));
-            entrance_lens(through(camera, page), share, left, self.size)
+            let before = self.ghost.as_ref().map(|ghost| Before {
+                racked: RACK.at(ghost.from),
+                left: 1.0 - ghost.gone_by(now),
+            });
+            entrance_lens(through(camera, page), share, before, self.size)
         } else if let Some((box_at, share)) = door {
             door_lens(through(camera, box_at), share, height)
         } else {
