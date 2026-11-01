@@ -17,6 +17,8 @@ crate-type = ["cdylib", "rlib"]
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 archboard-paint = { path = "../archboard-paint" }
 archboard-scene = { path = "../archboard-scene" }
+futures-channel = "0.3"
+js-sys = "0.3"
 kurbo = "0.13"
 peniko = "0.6"
 serde = { version = "1", features = ["derive"] }
@@ -28,5 +30,6 @@ web-sys = { version = "0.3.106", features = [
 	"CanvasRenderingContext2d",
 	"HtmlCanvasElement",
 	"ImageData",
+	"OffscreenCanvas",
 ] }
 wgpu = { version = "30", default-features = false, features = ["webgpu", "wgsl"] }

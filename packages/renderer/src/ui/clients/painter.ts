@@ -22,6 +22,12 @@ interface StartedPainter {
 	readonly kind: "gpu" | "cpu";
 	/** Why the GPU does not paint, or null when it does. */
 	readonly reason: string | null;
+	/**
+	 * Hear that the GPU of this page stopped.
+	 * @param listener What to tell, with the reason.
+	 * @returns Stop listening.
+	 */
+	readonly whenGpuStops?: (listener: (reason: string) => void) => () => void;
 }
 
 let loading: Promise<void> | undefined;
@@ -44,30 +50,45 @@ function loadPainter(): Promise<void> {
 	return loading;
 }
 
+/** Who hears that the GPU of this page stopped. */
+const stopListeners = new Set<(reason: string) => void>();
+
 /**
- * Why this browser's WebGPU does not paint.
+ * The GPU of this page stopped. The next painter starts it again.
+ * @param reason Why it stopped.
+ */
+function gpuStopped(reason: string): void {
+	gpuAnswer = undefined;
+	for (const listener of [...stopListeners]) listener(reason);
+}
+
+/**
+ * Why this browser's WebGPU does not paint, once the page's GPU is ready: its first frame is
+ * drawn and finished, so the first frame a reader sees is not the one that compiles the pipelines.
  * @returns The reason, or null when it gave a real adapter.
  */
 async function askForGpu(): Promise<string | null> {
 	if (!("gpu" in navigator)) return "This browser has no WebGPU.";
 	const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
 	if (adapter === null) return "WebGPU gave no adapter.";
-	return adapter.info.isFallbackAdapter ? "WebGPU gave a software adapter." : null;
+	if (adapter.info.isFallbackAdapter) return "WebGPU gave a software adapter.";
+	await loadPainter();
+	await Painter.warm(gpuStopped);
+	return null;
 }
 
 let gpuAnswer: Promise<string | null> | undefined;
 
 /**
- * Why this browser's WebGPU does not paint, asked once. A browser's first answer takes it
- * about 350 ms.
- * @returns The reason, or null when it gave a real adapter.
+ * Why this browser's WebGPU does not paint, asked once until the GPU stops.
+ * @returns The reason, or null when the GPU is ready.
  */
 function gpuRefusal(): Promise<string | null> {
-	gpuAnswer ??= askForGpu().catch((cause: unknown) => `WebGPU did not answer: ${String(cause)}`);
+	gpuAnswer ??= askForGpu().catch((cause: unknown) => `WebGPU did not start: ${String(cause)}`);
 	return gpuAnswer;
 }
 
-/** Ask for what a painter needs while a picture is being drawn, so that the painter is near. */
+/** Start what a painter needs as the page starts, so that it is ready for the first picture. */
 function warmPainter(): void {
 	void loadPainter().catch(() => undefined);
 	void gpuRefusal();
@@ -98,6 +119,33 @@ function freshCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
 }
 
 /**
+ * Start Vello on WebGPU.
+ * @param canvas The canvas.
+ * @param dark Whether the page is dark.
+ * @returns The painter.
+ */
+function startGpu(canvas: HTMLCanvasElement, dark: boolean): StartedPainter {
+	return {
+		painter: Painter.gpu(canvas, dark),
+		canvas,
+		kind: "gpu",
+		reason: null,
+		whenGpuStops: (listener) => {
+			stopListeners.add(listener);
+			return () => stopListeners.delete(listener);
+		},
+	};
+}
+
+/** Why a canvas's GPU painter stopped at work, and what comes next. */
+interface PainterFailure {
+	/** What went wrong. */
+	readonly reason: string;
+	/** Whether the GPU gets another try: a second failure soon after the first ends that. */
+	readonly retry: boolean;
+}
+
+/**
  * Start the painter of a canvas.
  * @param canvas The canvas, sized in pixels.
  * @param dark Whether the page is dark.
@@ -107,17 +155,19 @@ function freshCanvas(canvas: HTMLCanvasElement): HTMLCanvasElement {
 async function startPainter(
 	canvas: HTMLCanvasElement,
 	dark: boolean,
-	failure?: string,
+	failure?: PainterFailure,
 ): Promise<StartedPainter> {
 	await loadPainter();
-	if (failure !== undefined) return startCpu(freshCanvas(canvas), dark, failure);
+	// A canvas that held a GPU context takes no 2D context, and its surface may be what failed.
+	const target = failure === undefined ? canvas : freshCanvas(canvas);
+	if (failure !== undefined && !failure.retry) return startCpu(target, dark, failure.reason);
 	const refusal = await gpuRefusal();
-	if (refusal !== null) return startCpu(canvas, dark, refusal);
+	if (refusal !== null) return startCpu(target, dark, failure?.reason ?? refusal);
 	try {
-		return { painter: await Painter.gpu(canvas, dark), canvas, kind: "gpu", reason: null };
+		return startGpu(target, dark);
 	} catch (cause) {
-		return startCpu(freshCanvas(canvas), dark, `WebGPU did not start: ${String(cause)}`);
+		return startCpu(freshCanvas(target), dark, `WebGPU did not start: ${String(cause)}`);
 	}
 }
 
-export { startPainter, warmPainter };
+export { startPainter, warmPainter, type PainterFailure };

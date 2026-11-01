@@ -86,6 +86,9 @@ const WARM_UP_GRAPH = JSON.stringify({
 
 /** Make this page a renderer host. Once per page: later calls keep the first. */
 function startBrowserRenderer(): void {
+	// A browser takes up to a second to compile the GPU's pipelines, so the page's painter
+	// starts as the page starts, ahead of its first picture.
+	warmPainter();
 	if (started !== undefined) return;
 	const solve = createEnginePool(startLayoutWorker, workerCeiling(navigator.hardwareConcurrency));
 	installRendererHost({
@@ -131,9 +134,6 @@ async function drawBoardHere(
  */
 function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
 	const request = scopedRequest(scoped);
-	// A browser takes a third of a second to answer for its GPU, so the picture's painter
-	// starts as the picture is drawn.
-	warmPainter();
 	return {
 		/**
 		 * Render only after the renderer core and the icons are available.

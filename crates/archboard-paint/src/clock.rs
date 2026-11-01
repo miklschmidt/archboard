@@ -2,6 +2,40 @@
 //! timeline. Here the stage owns one clock and moves it forward from the
 //! moments a frame names, so a stepped clock records it frame by frame.
 
+/// The stage's time: the host's, less the stalls. A long task or a busy GPU can
+/// hold a frame back for a second, and a flight that went on through it would
+/// reach the reader finished. So one step of this clock is never longer than a
+/// longest step, and all that moves waits for the frames that show it.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct StageClock {
+    /// The latest moment the host named, in milliseconds.
+    host: Option<f64>,
+    /// How much of the host's time the stalls took.
+    lost: f64,
+    /// The longest step, in milliseconds. Without one, nothing is lost.
+    longest: Option<f64>,
+}
+
+impl StageClock {
+    /// Say how long a step can be, in milliseconds.
+    pub fn set_longest(&mut self, ms: f64) {
+        self.longest = Some(ms);
+    }
+
+    /// The stage's moment for a moment of the host. A moment earlier than the
+    /// latest counts as the latest: a frame's stamp is older than a change that
+    /// a long task made in its turn.
+    pub fn at(&mut self, host: f64) -> f64 {
+        let last = self.host.unwrap_or(host);
+        let host = host.max(last);
+        if let Some(longest) = self.longest {
+            self.lost += (host - last - longest).max(0.0);
+        }
+        self.host = Some(host);
+        host - self.lost
+    }
+}
+
 /// The traffic's clock, in seconds of traffic.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct TrafficClock {
@@ -58,7 +92,18 @@ impl TrafficClock {
 
 #[cfg(test)]
 mod tests {
-    use super::TrafficClock;
+    use super::{StageClock, TrafficClock};
+
+    #[test]
+    fn a_stall_costs_no_more_than_a_longest_step() {
+        let mut clock = StageClock::default();
+        clock.set_longest(50.0);
+        assert_eq!(clock.at(1000.0), 1000.0);
+        assert_eq!(clock.at(1016.0), 1016.0);
+        assert_eq!(clock.at(1416.0), 1066.0);
+        assert_eq!(clock.at(1432.0), 1082.0);
+        assert_eq!(clock.at(1420.0), 1082.0);
+    }
 
     #[test]
     fn hidden_traffic_asks_for_no_frames_and_shows_no_time() {

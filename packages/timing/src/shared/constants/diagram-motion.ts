@@ -71,6 +71,15 @@ const PICTURE_MS = durations({
 	 */
 	storeWait: 400,
 	/**
+	 * The longest step the painter's clock takes in one frame.
+	 *
+	 * A busy GPU or a long task holds a frame back, and a flight that runs on through the stall
+	 * reaches the reader finished. Past this, the stage's time waits for the frames that show it.
+	 * Pulls against a slow painter: a machine whose frames all take longer sees every motion
+	 * stretched, so this stays above the 33 ms of a recording's slowest frame.
+	 */
+	longestStep: 50,
+	/**
 	 * How long a first picture's ink waits for its painter before the SVG shows.
 	 *
 	 * A painter that arrives in time brings the picture in, and otherwise the page has no entrance
@@ -79,6 +88,14 @@ const PICTURE_MS = durations({
 	 * a correct board.
 	 */
 	painterGrace: 400,
+	/**
+	 * How soon after one GPU failure a second one leaves the board on the CPU painter.
+	 *
+	 * A stopped device can come back: a GPU process that restarted gives a new one, so the stage
+	 * starts a GPU painter again without a reload. Pulls against a failure that repeats, which
+	 * must not rebuild the painter over and over.
+	 */
+	gpuRetry: 30_000,
 });
 
 /**

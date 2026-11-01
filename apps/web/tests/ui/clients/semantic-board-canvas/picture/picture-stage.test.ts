@@ -12,7 +12,11 @@ const taken: string[] = [];
 type Outcome = "cpu" | "gpu" | "failed";
 
 /** Startup and failure are controlled at the painter boundary. */
-const starting: { settle?: (outcome: Outcome) => void; failCall?: string } = {};
+const starting: {
+	settle?: (outcome: Outcome) => void;
+	failCall?: string;
+	retry?: boolean | undefined;
+} = {};
 const painter = new Proxy(
 	{},
 	{
@@ -43,8 +47,13 @@ await mock.module("@archboard/renderer/browser", () => ({
 	 * @param failure The GPU failure, if any.
 	 * @returns The started painter.
 	 */
-	startPainter: (canvas: HTMLCanvasElement, _dark: boolean, failure?: string) =>
+	startPainter: (
+		canvas: HTMLCanvasElement,
+		_dark: boolean,
+		failure?: { reason: string; retry: boolean },
+	) =>
 		new Promise((resolve, reject) => {
+			starting.retry = failure?.retry;
 			/**
 			 * Finish startup with the chosen outcome.
 			 * @param outcome How startup ends.
@@ -59,7 +68,7 @@ await mock.module("@archboard/renderer/browser", () => ({
 					next = document.createElement("canvas");
 					canvas.replaceWith(next);
 				}
-				resolve({ painter, canvas: next, kind: outcome, reason: failure ?? null });
+				resolve({ painter, canvas: next, kind: outcome, reason: failure?.reason ?? null });
 			};
 		}),
 }));
@@ -192,6 +201,22 @@ test("GPU failure waits for CPU replacement and disposal removes the replacement
 	leave.pop()?.();
 	expect(host.childNodes.length).toBe(0);
 	expect(taken.filter((call) => call === "free")).toHaveLength(2);
+});
+
+test("a stopped GPU gets one more try, and a second failure soon after ends the tries", async () => {
+	const { surface } = await surfaceWithAPicture();
+	await start("gpu");
+	starting.failCall = "frame";
+	stageOf(surface)?.setFar(true, 0);
+	clock.runFrame();
+	await flushStartup();
+	expect(starting.retry).toBe(true);
+	await start("gpu");
+	starting.failCall = "frame";
+	stageOf(surface)?.setFar(false, 0);
+	clock.runFrame();
+	await flushStartup();
+	expect(starting.retry).toBe(false);
 });
 
 test("CPU replacement failure is handled and leaves the full SVG visible", async () => {

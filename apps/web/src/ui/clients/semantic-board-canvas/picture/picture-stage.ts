@@ -23,6 +23,7 @@ import {
 	type StageDive,
 	type StageLight,
 	type StageMarks,
+	type PainterFailure,
 	type PictureHand,
 	type StageShift,
 	type StartedPainter,
@@ -66,6 +67,10 @@ class PictureStage {
 	readonly #theme: MutationObserver;
 	#started: StartedPainter | null = null;
 	#starting = false;
+	/** Stop hearing about the GPU this stage's painter stands on. */
+	#stopWatchingGpu: (() => void) | undefined;
+	/** When this stage's GPU painter last failed at work. */
+	#gpuFailedAt = Number.NEGATIVE_INFINITY;
 	#disposed = false;
 	#frame: number | null = null;
 	#rest: number | null = null;
@@ -345,6 +350,8 @@ class PictureStage {
 		if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
 		this.#frame = null;
 		this.#rest = null;
+		this.#stopWatchingGpu?.();
+		this.#stopWatchingGpu = undefined;
 		this.#started?.painter.free();
 		this.#started = null;
 		this.#canvas.style.visibility = "hidden";
@@ -413,21 +420,28 @@ class PictureStage {
 		}
 		this.#started = next;
 		this.#canvas = next.canvas;
+		this.#stopWatchingGpu = next.whenGpuStops?.((reason) => {
+			this.#replacePainter(new Error(reason));
+		});
 		briefPainter(next.painter, this.#held, this.#ink.arrive, pageIsDark(), frameClock().now());
 		this.#invalidate();
 	}
 
 	/**
-	 * Replace a painter that failed at work with Vello on the CPU.
+	 * Replace a painter that failed at work: a GPU painter by another, the first time, and a
+	 * GPU painter that fails again soon by Vello on the CPU.
 	 * @param cause What went wrong.
 	 */
 	#replacePainter(cause: unknown): void {
 		const failed = this.#started;
 		if (failed === null || this.#disposed) return;
 		this.#retire(cause);
-		if (failed.kind === "gpu") {
-			void this.#start(cause instanceof Error ? cause.message : "The GPU painter failed.");
-		}
+		if (failed.kind !== "gpu") return;
+		const now = frameClock().now();
+		const retry = now - this.#gpuFailedAt > PICTURE_MS.gpuRetry;
+		this.#gpuFailedAt = now;
+		const reason = cause instanceof Error ? cause.message : "The GPU painter failed.";
+		void this.#start({ reason, retry });
 	}
 
 	/**
@@ -473,7 +487,7 @@ class PictureStage {
 	 * Start a painter for the held picture, or replace a failed GPU painter.
 	 * @param failure Why the GPU painter stopped, if it stopped.
 	 */
-	async #start(failure?: string): Promise<void> {
+	async #start(failure?: PainterFailure): Promise<void> {
 		if (this.#disposed || this.#starting || this.#started !== null) return;
 		this.#starting = true;
 		sizeCanvas(this.#canvas);

@@ -99,6 +99,9 @@ function sizeCanvas(canvas: HTMLCanvasElement): boolean {
 /** A painter at work, as the renderer starts one. */
 type StartedPainter = Awaited<ReturnType<typeof startPainter>>;
 
+/** Why a canvas's GPU painter stopped at work, and what comes next. */
+type PainterFailure = NonNullable<Parameters<typeof startPainter>[2]>;
+
 /** How a painter takes a picture. */
 type PictureHand = (painter: StartedPainter["painter"], painting: string) => void;
 
@@ -125,6 +128,7 @@ export {
 	type StageLight,
 	type StageMarks,
 	type StageShift,
+	type PainterFailure,
 	type StartedPainter,
 };
 
@@ -145,6 +149,7 @@ export function briefPainter(
 ): void {
 	const { camera, far, marks, light, painting, trafficShown, heads, warned } = held;
 	painter.setPhases(PHASES);
+	painter.setLongestStep(PICTURE_MS.longestStep);
 	painter.setTheme(dark);
 	painter.setTrafficShown(trafficShown);
 	painter.setHeads(JSON.stringify(heads));

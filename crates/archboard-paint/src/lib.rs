@@ -4,7 +4,7 @@
 
 pub mod between;
 pub mod canvas;
-mod clock;
+pub mod clock;
 pub mod cpu;
 mod definitions;
 pub mod draw;

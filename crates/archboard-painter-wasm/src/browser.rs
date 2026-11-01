@@ -2,6 +2,7 @@
 
 use std::collections::{HashMap, HashSet};
 
+use archboard_paint::clock::StageClock;
 use archboard_paint::cpu::CpuCanvas;
 use archboard_paint::flight::DiveWay;
 use archboard_paint::palette::Theme;
@@ -14,7 +15,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::{Clamped, JsCast};
 use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement, ImageData};
 
-use crate::gpu::GpuTarget;
+use crate::gpu::{GpuTarget, warm};
 
 /// Where a frame lands.
 enum Target {
@@ -60,22 +61,34 @@ fn refused(error: &JsValue) -> JsError {
 )]
 pub struct Painter {
     stage: Stage,
+    clock: StageClock,
     target: Target,
 }
 
 #[wasm_bindgen]
 impl Painter {
-    /// Start Vello on WebGPU on a canvas.
+    /// Start the GPU of this page, ready for its canvases. It ends when the GPU
+    /// finished a first frame, and `stopped` hears why the GPU stopped, if it does.
     ///
     /// # Errors
     ///
-    /// WebGPU gave no adapter, device or surface. A canvas that took a WebGPU
-    /// context takes no other, so the page falls back on a new canvas.
-    pub async fn gpu(canvas: HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
+    /// WebGPU gave no adapter or device, or it refused the frame.
+    pub async fn warm(stopped: js_sys::Function) -> Result<(), JsError> {
+        warm(stopped).await
+    }
+
+    /// Start Vello on WebGPU on a canvas, with the GPU of this page.
+    ///
+    /// # Errors
+    ///
+    /// The surface refused. A canvas that took a WebGPU context takes no other,
+    /// so the page falls back on a new canvas.
+    pub fn gpu(canvas: HtmlCanvasElement, dark: bool) -> Result<Painter, JsError> {
         let size = (f64::from(canvas.width()), f64::from(canvas.height()));
-        let target = GpuTarget::start(canvas).await?;
+        let target = GpuTarget::start(canvas)?;
         Ok(Painter {
             stage: Stage::new(theme_of(dark), size),
+            clock: StageClock::default(),
             target: Target::Gpu(Box::new(target)),
         })
     }
@@ -95,6 +108,7 @@ impl Painter {
         let (width, height) = (canvas.width(), canvas.height());
         Ok(Painter {
             stage: Stage::new(theme_of(dark), (f64::from(width), f64::from(height))),
+            clock: StageClock::default(),
             target: Target::Cpu {
                 canvas: Box::new(cpu_canvas(width, height)),
                 context,
@@ -159,6 +173,7 @@ impl Painter {
     ) -> Result<(), JsError> {
         let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
         let heading = serde_json::from_str(heading).map_err(unread)?;
+        let now = self.clock.at(now);
         self.stage
             .enter(painting, heading, ms, (moved_x, moved_y), now);
         Ok(())
@@ -176,7 +191,7 @@ impl Painter {
     /// The heading does not read as one.
     pub fn leave(&mut self, heading: &str, ms: f64, now: f64) -> Result<(), JsError> {
         let heading = serde_json::from_str(heading).map_err(unread)?;
-        self.stage.leave(heading, ms, now);
+        self.stage.leave(heading, ms, self.clock.at(now));
         Ok(())
     }
 
@@ -194,6 +209,7 @@ impl Painter {
     pub fn dive(&mut self, painting: &str, flight: &str, ms: f64, now: f64) -> Result<(), JsError> {
         let painting: Painting = serde_json::from_str(painting).map_err(unread)?;
         let flight: DiveFlight = serde_json::from_str(flight).map_err(unread)?;
+        let now = self.clock.at(now);
         self.stage
             .dive(painting, flight.frame, (flight.way, flight.card), ms, now);
         Ok(())
@@ -219,13 +235,14 @@ impl Painter {
     /// Move the picture on the canvas, in canvas pixels, over a time in milliseconds.
     #[wasm_bindgen(js_name = setCamera)]
     pub fn set_camera(&mut self, x: f64, y: f64, scale: f64, ms: f64, now: f64) {
+        let now = self.clock.at(now);
         self.stage.set_camera(Camera { x, y, scale }, ms, now);
     }
 
     /// Swap between the near and the far view, over a time in milliseconds.
     #[wasm_bindgen(js_name = setFar)]
     pub fn set_far(&mut self, far: bool, ms: f64, now: f64) {
-        self.stage.set_far(far, ms, now);
+        self.stage.set_far(far, ms, self.clock.at(now));
     }
 
     /// Say what is marked on the picture, as JSON.
@@ -309,6 +326,7 @@ impl Painter {
         now: f64,
     ) -> Result<(), JsError> {
         let delays: HashMap<String, f64> = serde_json::from_str(delays).map_err(unread)?;
+        let now = self.clock.at(now);
         self.stage.sweep(&delays, shortest, longest, now);
         Ok(())
     }
@@ -327,7 +345,7 @@ impl Painter {
     #[wasm_bindgen(js_name = setLight)]
     pub fn set_light(&mut self, light: &str, now: f64) -> Result<(), JsError> {
         let light: Light = serde_json::from_str(light).map_err(unread)?;
-        self.stage.set_light(&light, now);
+        self.stage.set_light(&light, self.clock.at(now));
         Ok(())
     }
 
@@ -335,6 +353,12 @@ impl Painter {
     /// number of its marked group, or -1 for a shape that stands in none.
     pub fn pick(&mut self, x: f64, y: f64) -> Vec<i32> {
         self.stage.pick(x, y)
+    }
+
+    /// Say how much of a stall the stage's time can take, in milliseconds.
+    #[wasm_bindgen(js_name = setLongestStep)]
+    pub fn set_longest_step(&mut self, ms: f64) {
+        self.clock.set_longest(ms);
     }
 
     /// Change the size of the canvas, in pixels.
@@ -349,8 +373,8 @@ impl Painter {
     /// Whether traffic is all that moves at a moment.
     #[wasm_bindgen(js_name = trafficAlone)]
     #[must_use]
-    pub fn traffic_alone(&self, now: f64) -> bool {
-        self.stage.traffic_alone(now)
+    pub fn traffic_alone(&mut self, now: f64) -> bool {
+        self.stage.traffic_alone(self.clock.at(now))
     }
 
     /// Draw the frame of a moment, in milliseconds, and say whether the next
@@ -360,6 +384,7 @@ impl Painter {
     ///
     /// The surface refused the frame.
     pub fn frame(&mut self, now: f64) -> Result<bool, JsError> {
+        let now = self.clock.at(now);
         match &mut self.target {
             Target::Gpu(target) => {
                 let changing = self.stage.draw(target.begin(), now);
