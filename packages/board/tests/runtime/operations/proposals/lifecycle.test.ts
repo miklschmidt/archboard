@@ -123,6 +123,27 @@ test("a planning root receives its first current designation without an invented
 	expect(current.states?.filter((state) => state.lifecycle === "historical")).toEqual([]);
 }, 15_000);
 
+test("a completed state still compares with Current after another state replaces it", async () => {
+	const { vault } = fixture();
+	const adopt = async (name: string, predecessor: string) => {
+		const created = await proposal(vault, name, predecessor);
+		const adopted = await editArchitectureModule(vault, {
+			...(await request(vault, created.target.state!)),
+			proposal: { type: "adopt", reason: "The implementation shipped." },
+			changes: [],
+		});
+		if (!adopted.success) throw new Error(JSON.stringify(adopted));
+		return created.target.state!;
+	};
+	const first = await adopt("First implementation", "Current");
+	const current = await adopt("Next implementation", first);
+	expect(await readArchitectureModel(vault, undefined, undefined, { state: first })).toMatchObject({
+		success: true,
+		selectedState: { id: first, lifecycle: "historical" },
+		comparison: { reason: "current", against: { id: current } },
+	});
+});
+
 test("shelving retains the final compact patch and metadata without changing current inputs", async () => {
 	const { vault } = fixture();
 	const created = await proposal(vault, "Alternate routing", "Current", [

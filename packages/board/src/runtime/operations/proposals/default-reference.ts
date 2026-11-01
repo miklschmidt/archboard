@@ -34,27 +34,25 @@ function retainedPredecessor(
 }
 
 /**
- * Whether the selected draft follows the current state, through the drafts between them.
+ * Whether the selected state compares with Current: a completed state, or a draft that follows it.
  * @param state The selected state.
  * @param current The working reading or refusal.
- * @returns True when current is on its chain of predecessors.
+ * @returns True when the current state is its default comparison.
  */
-function followsCurrentReading(
+function comparesWithCurrent(
 	state: ArchitectureModel["selectedState"],
 	current: ArchitectureModelRead,
 ): boolean {
-	return (
-		state != null &&
-		current.success &&
-		followsCurrent(state, current.proposals, current.manifest.current?.id)
-	);
+	if (state == null || !current.success) return false;
+	if (state.lifecycle !== "draft") return current.manifest.current !== null;
+	return followsCurrent(state, current.proposals, current.manifest.current?.id);
 }
 
 /**
  * Open a proposal against the checkpoint its changes were written on, because it can hold
- * only a fragment of Current. Otherwise choose current when the draft follows it, and else the
- * retained predecessor, because a draft written on a planning root differs from Current in
- * everything the root adds. A draft with no predecessor falls back to current.
+ * only a fragment of Current. Completed states compare with Current. A draft compares with
+ * Current when it follows it, and otherwise with its retained predecessor. A draft with no
+ * predecessor falls back to Current.
  * @param selected The complete selected state.
  * @param current The working reading or refusal.
  * @returns Its default reference, when one exists.
@@ -66,7 +64,7 @@ function defaultComparisonReference(
 	const state = selected.selectedState;
 	const pinned = selected.proposals.find(({ id }) => id === state?.id)?.predecessorCheckpoint;
 	if (pinned !== undefined) return { selector: pinned, reason: "predecessor" };
-	if (followsCurrentReading(state, current)) return currentReference(current);
+	if (comparesWithCurrent(state, current)) return currentReference(current);
 	return retainedPredecessor(state) ?? currentReference(current);
 }
 

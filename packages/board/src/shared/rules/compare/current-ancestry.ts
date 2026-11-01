@@ -1,8 +1,7 @@
+import type { ArchitectureModel } from "#shared/schemas/model.ts";
+
 /** A state that names the state it follows. */
-interface Following {
-	readonly id: string;
-	readonly predecessor?: string | null | undefined;
-}
+type Following = Pick<NonNullable<ArchitectureModel["selectedState"]>, "id" | "predecessor">;
 
 /**
  * Whether a draft follows Current: its chain of predecessors, through the other drafts, reaches

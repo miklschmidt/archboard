@@ -198,6 +198,15 @@ test("model compare with no base states interface changes first, against the def
 	expect(stderr).not.toMatch(/\b(?:deep|shallow|smell)/iu);
 });
 
+test("a draft outside Current's ancestry compares with its retained predecessor by default", () => {
+	const { comparison } = compared("--state", "Nightly batch");
+	expect(comparison).toMatchObject({
+		reason: "predecessor",
+		against: { id: "ud0cQDB9", name: "Starting point" },
+		checkpoint: expect.any(String),
+	});
+});
+
 test("model compare puts competing proposals beside each other, in the order named", async () => {
 	if (server === undefined) throw new Error("The server did not start");
 	const { comparison } = compared(

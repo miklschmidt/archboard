@@ -723,9 +723,11 @@ No active proposal stores unrelated module or flow snapshots.
 
 A selected draft with a `predecessorCheckpoint` compares against that checkpoint by default, with `comparison.reason:"predecessor"`.
 Such a draft can hold a fragment of current, so a comparison with current reports the rest of the model as removed.
-Any other selected draft compares against current by default.
-Without current, a dependent draft compares against its retained predecessor.
-A planning root has no default comparison.
+A draft that follows Current through its predecessor chain compares against Current by default.
+Otherwise, a dependent draft compares against its retained predecessor, even when the model has Current.
+A draft with no predecessor compares against Current when one exists.
+Without Current, that planning root has no default comparison.
+Completed states compare against Current when one exists.
 Use `--against` for an explicit coherent named state or complete checkpoint.
 The result's `comparison.reason` identifies the chosen default or explicit base.
 `comparison.revision` identifies the exact architecture inputs used for that base.
