@@ -45,11 +45,11 @@ interface StageLight {
 interface Held {
 	painting: string | undefined;
 	camera: StageCamera;
-	cameraMs: number;
 	far: boolean;
 	marks: StageMarks;
 	light: StageLight | null;
 	trafficShown: boolean;
+	trafficHeld: boolean;
 	heads: Readonly<Record<string, number>>;
 	warned: ReadonlySet<string>;
 }
@@ -128,3 +128,34 @@ export {
 	type StageShift,
 	type StartedPainter,
 };
+
+/**
+ * Hand a painter the current presentation and picture.
+ * @param painter The painter.
+ * @param held What the page holds.
+ * @param arrive How a first picture enters, if its ink still waits.
+ * @param dark Whether the page is dark.
+ * @param now The clock's time.
+ */
+export function briefPainter(
+	painter: StartedPainter["painter"],
+	held: Held,
+	arrive: PictureHand | null,
+	dark: boolean,
+	now: number,
+): void {
+	const { camera, far, marks, light, painting, trafficShown, heads, warned } = held;
+	painter.setPhases(PHASES);
+	painter.setTheme(dark);
+	painter.setTrafficShown(trafficShown);
+	painter.setHeads(JSON.stringify(heads));
+	painter.setWarnings(JSON.stringify([...warned]));
+	painter.setCamera(camera.x, camera.y, camera.scale, 0, now);
+	painter.setFar(far, 0, now);
+	painter.setMarks(marksJson(marks));
+	if (light !== null) painter.setLight(JSON.stringify(light), now);
+	if (painting === undefined) painter.clear();
+	else if (arrive === null) painter.show(painting);
+	else arrive(painter, painting);
+	if (held.trafficHeld) painter.holdTraffic();
+}

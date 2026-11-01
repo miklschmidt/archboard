@@ -13,7 +13,7 @@ import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
 import { HeldInk } from "#ui/clients/semantic-board-canvas/picture/picture-ink.ts";
 import {
-	PHASES,
+	briefPainter,
 	fitPainter,
 	headingJson,
 	marksJson,
@@ -30,12 +30,6 @@ import {
 
 /** The attribute on the surface that names the painter drawing it, once one has drawn. */
 const PAINTER_ATTRIBUTE = "data-painter";
-
-/** The attribute on the surface that says why the GPU does not paint. */
-const PAINTER_REASON_ATTRIBUTE = "data-painter-reason";
-
-/** What a picture holds for the eye alone: its definitions, and its words' glyphs. */
-const EYE_ONLY = "svg defs, g:has(> use)";
 
 /** The groups a painter's pick names, by counting them in document order. */
 const PICKED = "[data-semantic-id],[data-toggle]";
@@ -57,15 +51,15 @@ type Painter = StartedPainter["painter"];
 /** The stage of one canvas: all that a client tells it, handed to the painter at work. */
 class PictureStage {
 	readonly #surface: HTMLElement;
-	readonly #canvas: HTMLCanvasElement;
+	#canvas: HTMLCanvasElement;
 	readonly #held: Held = {
 		painting: undefined,
 		camera: { x: 0, y: 0, scale: 1 },
-		cameraMs: 0,
 		far: false,
 		marks: { selected: new Set(), whole: new Set() },
 		light: null,
 		trafficShown: true,
+		trafficHeld: false,
 		heads: {},
 		warned: new Set(),
 	};
@@ -75,6 +69,7 @@ class PictureStage {
 	#starting = false;
 	#disposed = false;
 	#frame: number | null = null;
+	#rest: number | null = null;
 	#groups: readonly Element[] = [];
 	#hoveredControl: string | null = null;
 	readonly #ink: HeldInk;
@@ -89,7 +84,7 @@ class PictureStage {
 		this.#canvas = canvas;
 		this.#ink = new HeldInk(surface);
 		this.#watching = new ResizeObserver(this.#invalidate);
-		this.#watching.observe(canvas);
+		this.#watching.observe(canvas.parentElement ?? canvas);
 		this.#theme = new MutationObserver(this.#themeChanged);
 		this.#theme.observe(document.documentElement, {
 			attributes: true,
@@ -113,8 +108,7 @@ class PictureStage {
 	 * @param picture The picture's parent.
 	 */
 	thin(picture: ParentNode): void {
-		if (!this.#surface.hasAttribute(PAINTER_ATTRIBUTE)) return;
-		for (const ink of picture.querySelectorAll(EYE_ONLY)) ink.remove();
+		this.#ink.thin(picture);
 	}
 
 	/**
@@ -218,6 +212,7 @@ class PictureStage {
 
 	/** Stand the traffic still until it is resumed. */
 	holdTraffic(): void {
+		this.#held.trafficHeld = true;
 		this.#tell((painter) => {
 			painter.holdTraffic();
 		});
@@ -228,6 +223,7 @@ class PictureStage {
 	 * @param ms How long that takes.
 	 */
 	resumeTraffic(ms: number): void {
+		this.#held.trafficHeld = false;
 		this.#tell((painter) => {
 			painter.resumeTraffic(ms, frameClock().now());
 		});
@@ -235,6 +231,7 @@ class PictureStage {
 
 	/** Let held traffic go at its speed at once. */
 	releaseTraffic(): void {
+		this.#held.trafficHeld = false;
 		this.#tell((painter) => {
 			painter.releaseTraffic();
 		});
@@ -302,7 +299,6 @@ class PictureStage {
 			scale: camera.scale * ratio,
 		};
 		this.#held.camera = { x, y, scale };
-		this.#held.cameraMs = ms;
 		this.#tell((painter) => {
 			painter.setCamera(x, y, scale, ms, frameClock().now());
 		});
@@ -364,11 +360,23 @@ class PictureStage {
 		this.#theme.disconnect();
 		this.#surface.parentElement?.removeEventListener("pointermove", this.#hoverControl);
 		this.#surface.parentElement?.removeEventListener("pointerleave", this.#leaveControl);
+		this.#retire();
+		this.#canvas.remove();
+	}
+
+	/**
+	 * Release the painter and its scheduled work, and show complete SVG ink.
+	 * @param cause Why it failed, if it failed.
+	 */
+	#retire(cause?: unknown): void {
 		if (this.#frame !== null) frameClock().cancelFrame(this.#frame);
+		if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
+		this.#frame = null;
+		this.#rest = null;
 		this.#started?.painter.free();
 		this.#started = null;
-		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
-		this.#ink.show();
+		this.#canvas.style.visibility = "hidden";
+		this.#ink.restore(this.#disposed ? undefined : cause);
 	}
 
 	/**
@@ -376,9 +384,13 @@ class PictureStage {
 	 * @param change What to tell it.
 	 */
 	#tell(change: (painter: Painter) => void): void {
-		if (this.#started === null) return;
-		change(this.#started.painter);
-		this.#invalidate();
+		if (this.#disposed || this.#started === null) return;
+		try {
+			change(this.#started.painter);
+			this.#invalidate();
+		} catch (cause) {
+			this.#replacePainter(cause);
+		}
 	}
 
 	/**
@@ -389,9 +401,13 @@ class PictureStage {
 	#take(painting: string | undefined, hand: PictureHand): void {
 		const taken = painting === "" ? undefined : painting;
 		this.#held.painting = taken;
+		this.#ink.show();
 		if (taken === undefined) {
-			this.#started?.painter.clear();
-			this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
+			this.#tell((painter) => {
+				painter.clear();
+			});
+			this.#canvas.style.visibility = "hidden";
+			this.#ink.restore();
 			return;
 		}
 		void this.#start();
@@ -402,7 +418,7 @@ class PictureStage {
 
 	/** Ask for one more frame, unless one is on its way. */
 	readonly #invalidate = (): void => {
-		if (this.#frame === null && this.#started !== null) {
+		if (!this.#disposed && this.#frame === null && this.#started !== null) {
 			this.#frame = frameClock().requestFrame(this.#tick);
 		}
 	};
@@ -415,34 +431,17 @@ class PictureStage {
 	};
 
 	/**
-	 * Hand a painter everything the page says now.
-	 * @param painter The painter.
-	 */
-	#brief(painter: Painter): void {
-		const { camera, far, marks, light, painting, trafficShown, heads, warned } = this.#held;
-		const now = frameClock().now();
-		painter.setPhases(PHASES);
-		painter.setTheme(pageIsDark());
-		painter.setTrafficShown(trafficShown);
-		painter.setHeads(JSON.stringify(heads));
-		painter.setWarnings(JSON.stringify([...warned]));
-		painter.setCamera(camera.x, camera.y, camera.scale, 0, now);
-		painter.setFar(far, 0, now);
-		painter.setMarks(marksJson(marks));
-		if (light !== null) painter.setLight(JSON.stringify(light), now);
-		if (painting === undefined) painter.clear();
-		else if (this.#ink.arrive === null) painter.show(painting);
-		else this.#ink.arrive(painter, painting);
-	}
-
-	/**
 	 * Put a painter to work.
 	 * @param next The painter.
 	 */
 	#employ(next: StartedPainter): void {
+		if (this.#disposed) {
+			next.painter.free();
+			return;
+		}
 		this.#started = next;
-		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
-		this.#brief(next.painter);
+		this.#canvas = next.canvas;
+		briefPainter(next.painter, this.#held, this.#ink.arrive, pageIsDark(), frameClock().now());
 		this.#invalidate();
 	}
 
@@ -450,31 +449,13 @@ class PictureStage {
 	 * Replace a painter that failed at work with Vello on the CPU.
 	 * @param cause What went wrong.
 	 */
-	async #replacePainter(cause: unknown): Promise<void> {
+	#replacePainter(cause: unknown): void {
 		const failed = this.#started;
-		this.#started = null;
-		this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
-		if (failed === null || failed.kind === "cpu") return;
-		const { startPainter } = await import("@archboard/renderer/browser");
-		const next = await startPainter(failed.canvas, pageIsDark(), String(cause));
-		if (this.#disposed) next.painter.free();
-		else this.#employ(next);
-	}
-
-	/**
-	 * Say on the surface which painter drew the frame.
-	 * @param started The painter at work.
-	 */
-	#name(started: StartedPainter): void {
-		if (this.#held.painting === undefined) {
-			this.#surface.removeAttribute(PAINTER_ATTRIBUTE);
-			return;
+		if (failed === null || this.#disposed) return;
+		this.#retire(cause);
+		if (failed.kind === "gpu") {
+			void this.#start(cause instanceof Error ? cause.message : "The GPU painter failed.");
 		}
-		const first = !this.#surface.hasAttribute(PAINTER_ATTRIBUTE);
-		this.#surface.setAttribute(PAINTER_ATTRIBUTE, started.kind);
-		if (first) this.thin(this.#surface);
-		if (started.reason === null) this.#surface.removeAttribute(PAINTER_REASON_ATTRIBUTE);
-		else this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, started.reason);
 	}
 
 	/**
@@ -484,17 +465,17 @@ class PictureStage {
 	readonly #tick = (now: number): void => {
 		this.#frame = null;
 		if (this.#started === null) return;
-		fitPainter(this.#started);
 		const clock = frameClock();
 		const began = clock.now();
 		try {
+			fitPainter(this.#started);
 			if (this.#started.painter.frame(now)) this.#nextFrame(now, clock.now() - began);
 		} catch (cause) {
-			void this.#replacePainter(cause);
+			this.#replacePainter(cause);
 			return;
 		}
-		this.#name(this.#started);
-		this.#ink.show();
+		this.#canvas.style.visibility = this.#held.painting === undefined ? "hidden" : "visible";
+		if (this.#held.painting !== undefined) this.#ink.painted(this.#started);
 	};
 
 	/**
@@ -506,26 +487,31 @@ class PictureStage {
 	#nextFrame(now: number, cost: number): void {
 		const started = this.#started;
 		if (started?.kind === "cpu" && cost > 0 && started.painter.trafficAlone(now)) {
-			frameClock().after(cost, this.#invalidate);
+			if (this.#rest !== null) frameClock().cancelAfter(this.#rest);
+			this.#rest = frameClock().after(cost, () => {
+				this.#rest = null;
+				this.#invalidate();
+			});
 			return;
 		}
 		this.#invalidate();
 	}
 
-	/** Start the painter, the first time there is something to paint. */
-	async #start(): Promise<void> {
-		if (this.#starting || this.#started !== null) return;
+	/**
+	 * Start a painter for the held picture, or replace a failed GPU painter.
+	 * @param failure Why the GPU painter stopped, if it stopped.
+	 */
+	async #start(failure?: string): Promise<void> {
+		if (this.#disposed || this.#starting || this.#started !== null) return;
 		this.#starting = true;
 		sizeCanvas(this.#canvas);
 		try {
 			const { startPainter } = await import("@archboard/renderer/browser");
-			const next = await startPainter(this.#canvas, pageIsDark());
-			if (this.#disposed) next.painter.free();
-			else this.#employ(next);
+			const next = await startPainter(this.#canvas, pageIsDark(), failure);
+			this.#employ(next);
 		} catch (cause) {
 			// No painter at all: the SVG stays, a correct board, and says why.
-			this.#surface.setAttribute(PAINTER_REASON_ATTRIBUTE, String(cause));
-			this.#ink.show();
+			this.#retire(cause);
 		} finally {
 			this.#starting = false;
 		}
@@ -572,13 +558,18 @@ function stageOf(surface: Element): PictureStage | undefined {
 /**
  * Give a surface its stage, in a page that can paint.
  * @param surface The surface.
- * @param canvas The canvas behind it.
+ * @param host The element that holds the stage-owned canvas.
  * @returns Take the stage away.
  */
-function attachStage(surface: HTMLElement, canvas: HTMLCanvasElement): () => void {
+function attachStage(surface: HTMLElement, host: HTMLElement): () => void {
 	if (typeof ResizeObserver === "undefined" || typeof WebAssembly === "undefined") {
 		return () => undefined;
 	}
+	const canvas = document.createElement("canvas");
+	canvas.setAttribute("data-slot", "picture-canvas");
+	canvas.className = "block size-full";
+	canvas.style.visibility = "hidden";
+	host.replaceChildren(canvas);
 	const stage = new PictureStage(surface, canvas);
 	stages.set(surface, stage);
 	return () => {

@@ -64,6 +64,8 @@ adapter and a device, `vello` paints. Otherwise `vello_cpu` paints. The rule rea
 frame back, because a blank-frame check also hides a missing adapter.
 If the GPU fails at start or in a frame, the CPU painter takes over on a fresh canvas.
 A canvas that held a WebGPU context never takes a 2D one.
+The stage releases each failed painter and restores complete SVG ink while its replacement starts.
+If the CPU painter fails, the SVG keeps the board visible.
 
 The surface says which painter drew: `data-painter` is `gpu` or `cpu`, and
 `data-painter-reason` says why the GPU does not paint. `vello_hybrid` is not used. It

@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T03:41:00Z'
-updated_date: '2026-11-01T09:48:00Z'
+updated_date: '2026-11-01T10:01:00Z'
 labels: []
 dependencies: []
 documentation:
@@ -43,6 +43,8 @@ The owner wants smoother animations and transitions in the canvas. A browser pan
 8. Hill climb each moment with the TASK-405 method and captured frames. Record the last full pass.
 9. Simplify, review on gpt-6.1-sol at xhigh through delegate_task, check until green, update the boards.
 10. Deliver only if PR #19 merged.
+
+Review against 11b0f32db: restore complete SVG ink after painter failure, correct stage lifecycle and canvas ownership, fix retained drawing cache collisions, and make reduced motion cut delayed lighting. Inspect timed changes and picking against the stated contracts. Run the required focused gates and commit each review scope.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -98,4 +100,10 @@ Full parity after the climb: 528 readings, 2112 comparisons. GPU near mean 0.23%
 CPU painter, largest board: idle 11.2 ms, wheel 21.5 ms, toggle 23.4 ms, dive 12.4 ms. On a small board it takes 21% of the main thread, against 8% on the old page. Ideas not done: vello_common Recording, two kept layers around traffic.
 
 Environment: PR 19 merged during this work. The chosen checkout of github.com/miklschmidt/archboard moved to the main checkout at 09:58:59 local, which holds a legacy vault at 38a8da877, so that address shows migration required on this machine. No command of this task's transcript moved it. Measurements after that ran on an untracked copy of the vault named copy.
+
+Review fixes preserve the painter and stage ownership described by proposal JTZvj2vi. They repair its existing failure, timing, and drawing contracts. No new architecture proposal or adoption is needed.
+
+Review against 11b0f32db fixed retained part collisions, GPU cache accounting, GPU device cleanup, delayed reduced-motion lighting, stale frame clocks, interrupted entrance ghosts, and the default stroke hit area. Signed Rust commits: 7265addbe and 40110bb1f. Browser fixes restore SVG glyphs and definitions after failure, release failed painters, handle replacement and resize errors, preserve startup traffic holds, cancel obsolete entrances, and hide stale canvas ink. React owns a stable host while the stage owns replaceable canvases. One startup path serves initial and replacement painters. Rust tests: 96 passed, 0 failed. Core lint and build passed. The full repository gate remains for the owner.
+
+Final review validation passed: frontend TypeScript exited 0 with no diagnostics. Full lint exited 0 with 8/8 successful and no lint warnings or errors. The web UI suite passed 592 tests across 101 files. The focused stage owner covers 14 startup, failure, cleanup, and recovery cases. The only shell warning names the expected dirty Git tree before the commits. No full gate or new browser GPU measurements ran during this review.
 <!-- SECTION:NOTES:END -->

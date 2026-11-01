@@ -69,7 +69,7 @@ function gpuRefusal(): Promise<string | null> {
 
 /** Ask for what a painter needs while a picture is being drawn, so that the painter is near. */
 function warmPainter(): void {
-	void loadPainter();
+	void loadPainter().catch(() => undefined);
 	void gpuRefusal();
 }
 

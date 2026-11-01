@@ -100,7 +100,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	const { attach, size, gesture, reducedMotion, marks } = props;
 	const { camera, instant, moving } = useCameraView(props.camera);
 	const { width, height } = size;
-	const canvas = useRef<HTMLCanvasElement>(null);
+	const canvas = useRef<HTMLDivElement>(null);
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
 	const attachSurface = useCallback(
 		(element: HTMLDivElement | null): void => {
@@ -137,9 +137,8 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 	);
 	return (
 		<>
-			<canvas
+			<div
 				ref={canvas}
-				data-slot="picture-canvas"
 				aria-hidden="true"
 				className="pointer-events-none absolute inset-0 size-full"
 			/>

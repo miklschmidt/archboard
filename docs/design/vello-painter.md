@@ -149,5 +149,7 @@ Traffic alone used to take the whole thread, with a mean gap of 24.7 ms. It now 
 On a small board the painter takes 21% of the main thread with traffic running, against 8% on the old page.
 A quarter of the frame goes to the gradient tables of `vello_common`, which it builds again each frame.
 
-A failed CPU painter leaves a thinned SVG, with no glyphs or definitions, until the next picture arrives.
-This needs a CPU painter that ran and then failed, and no run has shown one.
+A failed painter releases its resources and restores the SVG glyphs and definitions.
+The stage hides the failed canvas while a replacement starts.
+The surface keeps complete ink if the CPU painter also fails.
+React owns the canvas host, and the stage owns each canvas inside it.
