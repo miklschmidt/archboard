@@ -1189,13 +1189,14 @@
 
 /* The left column's tabs stand on the top edge of its well, as a container's name
    stands on the picture (ADR 0044). The open tab is the lighter piece raised on that
-   edge, with the well's own corners. It meets the edge in a crisp concave curve, the
-   top edge runs on under it, and a line goes round the tab and the well. A tab at the
-   well's left end keeps the well's left side, so it has no curve there. Its gold mark
+   edge, with the well's own corners. Its side turns into the edge in a crisp concave
+   curve in place of reaching it, the top edge runs on under it, and one line goes round
+   the tab and the well. A tab at the well's left end keeps the well's left side, so it
+   has no curve there. Its gold mark
    lies under its words. The rules stand outside any layer, so they replace the
    registry's trigger. */
 [data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"] {
-	--foot: 8px;
+	--foot: 5px;
 	flex: none;
 	gap: 6px;
 	height: 32px;
@@ -1223,8 +1224,8 @@
 	background-color: var(--tray-tab);
 	background-image: linear-gradient(var(--primary-mark), var(--primary-mark));
 	background-repeat: no-repeat;
-	background-position: 8px calc(100% - 4px);
-	background-size: calc(100% - 16px) 2px;
+	background-position: 4px calc(100% - 4px);
+	background-size: calc(100% - 8px) 2px;
 	box-shadow:
 		inset 0 1px 0 var(--highlight),
 		0 -3px 6px -3px var(--slab-shadow);
@@ -1240,25 +1241,33 @@
 	position: absolute;
 	inset: auto;
 	bottom: 0;
-	width: var(--foot);
+	width: calc(var(--foot) + 1px);
 	height: var(--foot);
 	opacity: 1;
 	pointer-events: none;
 	--curve:
-		transparent calc(var(--foot) - 1px), var(--border) calc(var(--foot) - 1px),
-		var(--border) var(--foot), var(--tray-tab) calc(var(--foot) + 0.5px);
+		transparent var(--foot), var(--border) var(--foot), var(--border) calc(var(--foot) + 1px),
+		var(--tray-tab) calc(var(--foot) + 1.5px);
 }
 [data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::before {
-	right: calc(100% + 1px);
-	background: radial-gradient(circle at 0 0, var(--curve));
+	right: 100%;
+	background:
+		radial-gradient(circle at 0 0, var(--curve)),
+		linear-gradient(to left, var(--tray-tab) 1px, transparent 1px);
 }
 [data-slot="tabs-list"][data-variant="edge"] [data-slot="tabs-trigger"][data-active]::after {
-	left: calc(100% + 1px);
-	background: radial-gradient(circle at 100% 0, var(--curve));
+	left: 100%;
+	background:
+		radial-gradient(circle at 100% 0, var(--curve)),
+		linear-gradient(to right, var(--tray-tab) 1px, transparent 1px);
 }
 [data-slot="tabs-list"][data-variant="edge"]
 	[data-slot="tabs-trigger"][data-active]:first-of-type::before {
 	content: none;
+}
+[data-slot="tabs-list"][data-variant="edge"]:has(> [data-active]:first-of-type)
+	+ [data-slot="column-well"] {
+	border-top-left-radius: 0;
 }
 
 /* The sidebar's scroll areas are quiet: a thin bar in the theme's own tone, in
