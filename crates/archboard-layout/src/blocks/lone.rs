@@ -10,7 +10,7 @@
 use crate::constants::{ARCHITECTURE_HEADER_PADDING, REGION_INSET};
 use crate::ecma::{abs, js_max, js_min, number_of, sorted_by};
 use crate::geometry::{Point, Rect};
-use crate::graph::{GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
+use crate::graph::{DOOR, GROUP_CAPTIONS, Node, PLACING_GROUP, semantic_order};
 use crate::placed::FrameRow;
 use crate::track::containers::FrameShape;
 use crate::track::scene::Map;
@@ -53,6 +53,8 @@ pub(crate) struct Stop {
 pub(crate) struct Card {
     pub width: f64,
     pub height: f64,
+    /// A door keeps its measured size through alignment and port allocation.
+    pub door: bool,
     /// What interchangeable cards share, when the card has any: kind and responsibility.
     pub peers: Option<String>,
 }
@@ -64,6 +66,7 @@ fn card_of(node: &Node) -> Card {
     Card {
         width: node.w(),
         height: node.h(),
+        door: node.option(DOOR).is_some(),
         peers: peers.filter(|&peers| peers != own).map(str::to_owned),
     }
 }
