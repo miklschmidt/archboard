@@ -220,14 +220,17 @@ fn keep_aligned(
 
 /// Bring the cards of a station that stand near each other to the last of them, and say
 /// whether any moved.
-fn gather(standing: &[(f64, usize)], shifts: &mut [f64]) -> bool {
+fn gather(mut standing: &[(f64, usize)], shifts: &mut [f64]) -> bool {
     let mut moved = false;
-    for near in standing.chunk_by(|a, b| b.0 - a.0 <= STAY_ALIGNED) {
+    while let Some(&(first, _)) = standing.first() {
+        let count = standing.partition_point(|&(at, _)| at - first <= STAY_ALIGNED);
+        let (near, rest) = standing.split_at(count);
         let to = near[near.len() - 1].0;
         for &(at, body) in near {
             shifts[body] += to - at;
             moved |= at != to;
         }
+        standing = rest;
     }
     moved
 }
@@ -394,5 +397,31 @@ mod tests {
         };
         assert_eq!(gap(2, 3), CARD_GAP);
         assert!(gap(0, 1) >= 3.0 * 2.0 * 8.0);
+    }
+
+    #[test]
+    fn alignment_cannot_chain_small_gaps_into_a_large_cost() {
+        let mut cards = Vec::new();
+        for row in 0..3 {
+            let y = f64::from(row) * 300.0;
+            let mut left = card(&format!("left{row}"), 0.0, y);
+            left.bx.width += f64::from(row) * 35.0;
+            cards.extend([left, card(&format!("right{row}"), 600.0, y)]);
+        }
+        let shape = Shape::new(Placed {
+            width: 1000.0,
+            height: 1000.0,
+            cards,
+            frames: Vec::new(),
+            regions: Vec::new(),
+            edges: Vec::new(),
+            titles: Vec::new(),
+            routed: None,
+        });
+        let drawn = drawing(&shape, 8.0).expect("room between the cards");
+        for row in drawn.cards.as_chunks::<2>().0 {
+            let gap = row[1].bx.x - row[0].bx.x - row[0].bx.width;
+            assert!(gap <= CARD_GAP + STAY_ALIGNED);
+        }
     }
 }

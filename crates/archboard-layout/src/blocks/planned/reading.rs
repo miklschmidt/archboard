@@ -76,9 +76,9 @@ pub(super) fn rank(lines: &[PlacedLine]) -> (usize, u64) {
     (approaches(lines), cost.to_bits())
 }
 
-/// How a finished drawing ranks: whether it lands whole, whether its words read where it
-/// lands, its long detours, then the work of tracing its lines, with its crowded approaches,
-/// times the room it takes.
+/// How a finished drawing ranks: whether its words read where it lands, whether it stays
+/// within the room limit, its long detours, then the work of tracing its lines, with its
+/// crowded approaches, times the room it takes.
 pub(super) type Order = (bool, bool, usize, f64);
 
 /// The scale that a landing must reach for its words to read (the first gate of the reader).
@@ -127,8 +127,8 @@ pub(super) fn order(drawing: &crate::blocks::assembly::Placed) -> Order {
     let routed = &as_routed(drawing).edges;
     let (crowded, cost) = rank(routed);
     (
-        drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         drawing.width * NEAR_SCALE > LANDING_ROOM.0 || drawing.height * NEAR_SCALE > LANDING_ROOM.1,
+        drawing.width > LANDS_WHOLE.0 || drawing.height > LANDS_WHOLE.1,
         long_detours(routed),
         (1.0 + f64::from_bits(cost) + crowded as f64 * CROWDED_COST) * room_taken(drawing),
     )
@@ -291,5 +291,20 @@ mod tests {
             &first,
             &graph
         ));
+    }
+
+    #[test]
+    fn readable_landing_precedes_the_legacy_room_limit() {
+        let readable = Placed {
+            width: 1000.0,
+            height: 1580.0,
+            ..fan(Point { x: 400.0, y: 0.0 }, None)
+        };
+        let unreadable = Placed {
+            width: 2000.0,
+            height: 1000.0,
+            ..readable.clone()
+        };
+        assert!(order(&readable) < order(&unreadable));
     }
 }

@@ -153,7 +153,7 @@ fn dense_rooms(lines: usize, frames: usize) -> &'static [f64] {
 }
 
 /// The best dense drawing of a reading, if one passes every guard. A wider room
-/// runs only while no drawing lands whole, and past some lines only while none is drawn.
+/// runs only while no drawing lands readably, and past some lines only while none is drawn.
 pub(super) fn dense_drawing(graph: &crate::graph::Node) -> Option<crate::blocks::assembly::Placed> {
     let mut best = None;
     let lines = relationships(graph);

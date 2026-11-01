@@ -13,7 +13,8 @@ It takes a reading of one open frame that holds only cards, and a root of 18 or 
 It sets the parts on a grid below the edge tab, and it stands the doors round the frame, each near what it joins.
 The grid is where routing starts. Contraction then closes the space that nothing uses, so the finished picture need not keep it.
 Inside a frame, compactness comes before fewer bends.
-The planner routes each dense placement, tightest first, and the first room that lands whole wins.
+The planner routes each dense placement, tightest first.
+It stops widening the room once the best drawing reaches a landing scale of 0.6.
 A reading that the dense placement does not take, or cannot route, falls to the legacy placer.
 The legacy placer owns card positions, dependency order, block packing, frames, folds, and wraps for such a reading.
 The planner owns every final Blocks route and label.
