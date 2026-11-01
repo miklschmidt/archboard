@@ -221,30 +221,10 @@ impl<C: Canvas> Walk<'_, C> {
         let Some(swap) = self.far_opacity(group) else {
             return;
         };
-        let view = match group.role {
-            Role::NearView => View::Near,
-            Role::FarView => View::Far,
-            _ => inside.view,
-        };
-        let transform = self
-            .place_of(group, inside.view)
-            .map_or(inside.transform, |place| {
-                inside.transform * placed(place.x, place.y, place.scale)
-            });
         let subject = group.subject.as_ref().map(|subject| subject.id.as_str());
         let selected = subject.is_some_and(|id| self.presentation.selected.contains(id));
         let (recede, lit) = self.recede_of(group, inside);
-        let held = Inside {
-            transform,
-            view,
-            selected: inside.selected || selected,
-            lit,
-            line: matches!(group.role, Role::Line(Some(_))),
-            stuck: match &group.role {
-                Role::FlowHead(id) => self.presentation.stuck.contains(id),
-                _ => inside.stuck,
-            },
-        };
+        let held = self.held_by(group, inside, selected, lit);
         let opacity = group.opacity.unwrap_or(1.0) * swap * recede;
         let mask = group
             .mask
@@ -254,8 +234,38 @@ impl<C: Canvas> Walk<'_, C> {
         if let Some(mask) = mask {
             let whole = subject.is_some_and(|id| self.presentation.whole.contains(id));
             self.masked(group, mask, opacity, whole, held);
-        } else if opacity < 1.0 {
-            self.canvas.set_transform(transform);
+        } else {
+            self.layered(group, opacity, held);
+        }
+    }
+
+    /// What a group hands down.
+    fn held_by(&self, group: &Group, inside: Inside, selected: bool, lit: bool) -> Inside {
+        let view = match group.role {
+            Role::NearView => View::Near,
+            Role::FarView => View::Far,
+            _ => inside.view,
+        };
+        let place = self.place_of(group, inside.view);
+        Inside {
+            transform: place.map_or(inside.transform, |place| {
+                inside.transform * placed(place.x, place.y, place.scale)
+            }),
+            view,
+            selected: inside.selected || selected,
+            lit,
+            line: matches!(group.role, Role::Line(Some(_))),
+            stuck: match &group.role {
+                Role::FlowHead(id) => self.presentation.stuck.contains(id),
+                _ => inside.stuck,
+            },
+        }
+    }
+
+    /// Draw a group's items, on a layer of their own when it is see-through.
+    fn layered(&mut self, group: &Group, opacity: f64, held: Inside) {
+        if opacity < 1.0 {
+            self.canvas.set_transform(held.transform);
             self.canvas.push(None, opacity_of(opacity));
             self.items(&group.items, held);
             self.canvas.pop();
