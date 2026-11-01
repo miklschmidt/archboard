@@ -4,7 +4,7 @@ title: Polish the far view of a card
 status: To Do
 assignee: []
 created_date: '2026-10-31T20:03:00Z'
-updated_date: '2026-11-01T02:08:00Z'
+updated_date: '2026-11-01T02:56:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-559
@@ -39,4 +39,6 @@ Paint batch: a mixed line is a double line and the legend shows it. Far view thi
 Well and tab repair: a well's walls thin round each corner into the next, and the line round the well replaces the crease. A proposal's six tabs hold one row, with Previous, Next and the position in the reading header. A tab's side turns into the well's edge with no Y at its foot. New flake seen once: model-measures.test.tsx, React work scheduled after teardown.
 
 Header and panel repair: the caption line is gone. The comparison control and Clear focus stand in the header. The panel heads a flow with its name, its collection and the representation switch. Standing blocks keep the panel's margin. The Migration baseline repeats names because it holds one module per old board, 656 modules, with 8 named Archboard server: exact retained data, left unchanged.
+
+Polish batch, gate 21 of 21: Find is a cmdk command palette opened from the brand bar, Ctrl K or /. The repository switcher opens a real popover. Gold underlines and bars are gone from active rows, which take the raised fill. The left well is full width to the Talk bar. Flat lists lost their dead margin and section labels are bands. A flowchart has the sequence header and no far view. Measures bars take the colour of the module kind. ui-kit stays at 37 names: Technical moved onto Dialog and Skeleton went.
 <!-- SECTION:NOTES:END -->
