@@ -4,7 +4,7 @@ title: Polish the far view of a card
 status: To Do
 assignee: []
 created_date: '2026-10-31T20:03:00Z'
-updated_date: '2026-11-01T01:21:00Z'
+updated_date: '2026-11-01T01:48:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-559
@@ -35,4 +35,6 @@ Far view redone after owner review. The far scale no longer follows where a pict
 After owner review: a far card shows one line more than the previous build, which is what its box holds. Doors now count the way round a frame between them and what they join, a two-way line shares its trunk's ink, the reader panel heading uses title-name, and the light picture uses warm neutrals. Still open for the owner: a better drawing of mixed relationships and its legend sample, and whether the container grid stays.
 
 Paint batch: a mixed line is a double line and the legend shows it. Far view thickens lines and arrowheads by FAR_SCALE. Cards have a gradient, a top highlight and a downward shadow in both themes; light neutrals stand off the floor. Wells show top and side walls with the tabs. Doors and tags use white tinted ink in light. The door separator is a shade of the door. Rim bands merge with corners. Gate 21 of 21. Grid compaction remains open on feat/grid-compaction.
+
+Well and tab repair: a well's walls thin round each corner into the next, and the line round the well replaces the crease. A proposal's six tabs hold one row, with Previous, Next and the position in the reading header. A tab's side turns into the well's edge with no Y at its foot. New flake seen once: model-measures.test.tsx, React work scheduled after teardown.
 <!-- SECTION:NOTES:END -->
