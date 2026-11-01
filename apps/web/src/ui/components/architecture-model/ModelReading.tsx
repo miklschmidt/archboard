@@ -21,7 +21,7 @@ import type { ChangeWalk } from "#ui/hooks/architecture-model/use-change-walk.ts
 import { useChangeKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import { useReader, type Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
-import type { MeasureKey } from "#ui/rules/architecture-model/module-measures.ts";
+import { MEASURE_VIEW, type MeasureView } from "#ui/rules/architecture-model/module-measures.ts";
 import type { InterfaceRow } from "#ui/rules/architecture-model/interface-changes.ts";
 import { changeStepOf } from "#ui/rules/architecture-model/reader-keys.ts";
 
@@ -152,8 +152,8 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 	const { shown } = reader.accepted;
 	const [finding, setFinding] = useState(false);
 	const [query, setQuery] = useState("");
-	// The reader's sort stays while the list is away: a closed tab draws nothing.
-	const [measure, setMeasure] = useState<MeasureKey>("commits");
+	// The reader's sort and what it shows stay while the list is away: a closed tab draws nothing.
+	const [measureView, setMeasureView] = useState<MeasureView>(MEASURE_VIEW);
 	const { reviewing, step } = walk;
 	const typeAhead = useCallback(
 		(text: string): void => {
@@ -219,8 +219,8 @@ function ReadingColumn(props: { readonly reader: Reader }): JSX.Element {
 						model={shown.model}
 						projection={shown.projection}
 						selected={soleOf(reader.selection.ids)}
-						measure={measure}
-						onMeasure={setMeasure}
+						view={measureView}
+						onView={setMeasureView}
 						onChoose={choices.findModule}
 					/>
 				</ModelColumn.List>

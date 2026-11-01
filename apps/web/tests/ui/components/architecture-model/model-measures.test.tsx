@@ -14,6 +14,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query");
 const { act, cleanup, fireEvent, render, waitFor } = await import("@testing-library/react");
 const { ModelMeasures } = await import("#ui/components/architecture-model/ModelMeasures.tsx");
+const { MEASURE_VIEW } = await import("#ui/rules/architecture-model/module-measures.ts");
 
 type Props = ComponentProps<typeof ModelMeasures>;
 type HistoryAnswer = Extract<
@@ -113,12 +114,16 @@ function answering(...answer: readonly (() => Promise<Response>)[]): { reads: nu
 /**
  * Mount the list.
  * @param overrides What differs from a bound reading sorted by commits.
- * @returns The reader's choices of a module.
+ * @returns The reader's choices of a module, and of how the list stands.
  */
-function mount(overrides: Partial<Props> = {}): { readonly chosen: string[] } {
+function mount(overrides: Partial<Props> = {}): {
+	readonly chosen: string[];
+	readonly views: Props["view"][];
+} {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	clients.push(client);
 	const chosen: string[] = [];
+	const views: Props["view"][] = [];
 	render(
 		createElement(
 			QueryClientProvider,
@@ -128,12 +133,14 @@ function mount(overrides: Partial<Props> = {}): { readonly chosen: string[] } {
 				model: MODEL,
 				projection: PROJECTION,
 				selected: null,
-				measure: "commits",
+				view: MEASURE_VIEW,
 				/**
-				 * No test here changes the sort.
-				 * @returns Nothing.
+				 * Report how the reader changed the list.
+				 * @param view How it stands now.
 				 */
-				onMeasure: () => undefined,
+				onView: (view) => {
+					views.push(view);
+				},
 				/**
 				 * Report the module a row chose.
 				 * @param id The module.
@@ -145,7 +152,7 @@ function mount(overrides: Partial<Props> = {}): { readonly chosen: string[] } {
 			}),
 		),
 	);
-	return { chosen };
+	return { chosen, views };
 }
 
 /**
@@ -186,7 +193,7 @@ test("the interface stands at once, and the history arrives with the answer", as
 
 test("a module the read skipped says why, and a module no commit changed shows its count", async () => {
 	answering(async () => Response.json(ANSWER));
-	mount({ measure: "callers" });
+	mount({ view: { ...MEASURE_VIEW, measure: "callers" } });
 	await waitFor(() => expect(history()).toBe("read"));
 	expect(row("worker").querySelector("[data-not-read]")?.getAttribute("data-not-read")).toBe(
 		"unbound",
@@ -197,12 +204,83 @@ test("a module the read skipped says why, and a module no commit changed shows i
 	);
 });
 
-test("every measure keeps its place on a row, whatever the row can say of it", async () => {
+/**
+ * How many cells a row holds, one for each measure on show.
+ * @param id The module.
+ * @returns The count.
+ */
+function cells(id: string): number | undefined {
+	return row(id).querySelector('[data-slot="model-measure-cells"]')?.childElementCount;
+}
+
+/**
+ * The modules of the list, in the order of its rows.
+ * @returns Their identities.
+ */
+function order(): (string | null)[] {
+	return [...document.querySelectorAll("[data-measure-row]")].map((one) =>
+		one.getAttribute("data-measure-row"),
+	);
+}
+
+test("every measure on show keeps its place on a row, whatever the row can say of it", async () => {
 	answering(async () => Response.json(ANSWER));
 	mount();
 	await waitFor(() => expect(history()).toBe("read"));
-	for (const id of ["api", "route", "worker"])
-		expect(row(id).querySelector('[data-slot="model-measure-cells"]')?.childElementCount).toBe(7);
+	// Nothing in this model reaches a module as a whole, so To module has no column.
+	for (const id of ["api", "route", "worker"]) expect(cells(id)).toBe(7);
+	expect(document.querySelector('[data-measure="wholeModule"]')).toBeNull();
+});
+
+test("To module has its column once a caller reaches a module as a whole", async () => {
+	answering(async () => Response.json(ANSWER));
+	const edge = {
+		id: "w",
+		from: "worker",
+		to: "api",
+		kind: "call",
+		order: 1,
+		emphasis: "normal",
+	} as const;
+	mount({ projection: { complete: { ...PROJECTION.complete, edges: [edge] } } });
+	await waitFor(() => expect(history()).toBe("read"));
+	for (const id of ["api", "route", "worker"]) expect(cells(id)).toBe(8);
+	expect(row("api").querySelector('[data-measure="wholeModule"]')).not.toBeNull();
+});
+
+test("the fewest can come first, and a module with no count stays last", async () => {
+	answering(async () => Response.json(ANSWER));
+	mount({ view: { ...MEASURE_VIEW, fewest: true } });
+	await waitFor(() => expect(history()).toBe("read"));
+	expect(order()).toEqual(["route", "api", "worker"]);
+});
+
+test("the list shows the modules that a reader chose, and its bars scale to them", async () => {
+	const more = { ...ANSWER, hotspots: [ANSWER.hotspots[0]!, { ...ANSWER.hotspots[1]!, count: 2 }] };
+	answering(async () => Response.json(more));
+	const bar = '[data-slot="model-measure-bar"]';
+	mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	expect(row("route").querySelector<HTMLElement>(bar)?.style.width).toContain("* 0.5)");
+	expect(document.querySelector('[data-slot="model-measures-shown"]')).toBeNull();
+	cleanup();
+	mount({ view: { ...MEASURE_VIEW, show: "no-parts" } });
+	await waitFor(() => expect(history()).toBe("read"));
+	expect(order()).toEqual(["route", "worker"]);
+	expect(row("route").querySelector<HTMLElement>(bar)?.style.width).toContain("* 1)");
+	expect(document.querySelector('[data-slot="model-measures-shown"]')).not.toBeNull();
+});
+
+test("a reader can turn the order round", async () => {
+	answering(async () => Response.json(ANSWER));
+	const { views } = mount();
+	await waitFor(() => expect(history()).toBe("read"));
+	await act(async () => {
+		fireEvent.click(
+			document.querySelector('[data-slot="model-measure-order"] [data-choice="fewest"]')!,
+		);
+	});
+	expect(views).toEqual([{ ...MEASURE_VIEW, fewest: true }]);
 });
 
 test("a row says its counts to assistive technology, because a bare number says nothing", async () => {

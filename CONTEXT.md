@@ -290,7 +290,12 @@ _Avoid_: scene (that is what the renderer core answers), board, workspace, sessi
 The column that lists where to go: Find, the repository switcher, the destinations `Modules`, `Flows`, `Walkthroughs`, `History` and `Measures`, and Talk.
 
 **Measures**:
-The destination of the left column that lists every module of the model on show with its interface measures, its commits and its unjoined pairs, sorted by one count at a time.
+The destination of the left column that lists every module of the model on show with its interface measures, its commits, the modules it changes with and its unjoined pairs, sorted by one count at a time.
+The user can read the most first or the fewest first, and can show all modules, those with parts or those with no parts.
+A module with no such count stays last, and a column that is none on every module has no place.
+A tie between counts of pairs goes to the module whose strongest pair shares the most commits.
+A module with parts counts the commits of its whole code path.
+The Right panel of a selected module lists the modules that it changes with, each with its shared commits and a mark where no relationship joins the two.
 It shows counts only: no score combines them, and the user judges them (ADR 0044).
 _Avoid_: ranking, scorecard, hotspot list
 

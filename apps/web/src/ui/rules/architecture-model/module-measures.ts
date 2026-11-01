@@ -24,11 +24,34 @@ type HistorySource = "bound" | "unbound" | "original";
 type HistoryState = Exclude<HistorySource, "bound"> | "reading" | "read" | "failed";
 
 /** What a reader can sort the modules of a model by. */
-type MeasureKey = "commits" | "unjoined" | InterfaceKey;
+type MeasureKey = "commits" | "together" | "unjoined" | InterfaceKey;
+
+/** The history measures that count the modules a module changes with. */
+type CouplingKey = "together" | "unjoined";
+
+/** Which modules a reader has on show: all, those with parts, or those with none. */
+type ShowKey = "all" | "with-parts" | "no-parts";
+
+/** How the list stands: what it is sorted by, from which end, and which modules it shows. */
+interface MeasureView {
+	readonly measure: MeasureKey;
+	/** Whether the fewest of the measure stand first. */
+	readonly fewest: boolean;
+	readonly show: ShowKey;
+}
 
 /** What the code history says of one module. */
 type ModuleHistory =
-	| { readonly kind: "read"; readonly commits: number; readonly unjoined: number }
+	| {
+			readonly kind: "read";
+			readonly commits: number;
+			/** How many modules change in the same commits, joined or not. */
+			readonly together: number;
+			/** How many of those nothing in the model joins it to. */
+			readonly unjoined: number;
+			/** The commits that its strongest such pair shares, which breaks a tie between rows. */
+			readonly strongest: Readonly<Record<CouplingKey, number>>;
+	  }
 	| { readonly kind: "skipped"; readonly reason: SkipReason };
 
 /** One module of the list, with what it has to show. */
@@ -58,6 +81,11 @@ const MEASURES: readonly Measure[] = [
 		key: "commits",
 		label: "Commits",
 		description: "Commits that changed its code. Shows code that keeps changing.",
+	},
+	{
+		key: "together",
+		label: "Changes with",
+		description: "Modules that change in the same commits. Shows how far one change reaches.",
 	},
 	{
 		key: "unjoined",
@@ -94,6 +122,16 @@ const MEASURES: readonly Measure[] = [
 /** What a model with no code history to read sorts by. */
 const NO_HISTORY_MEASURE: MeasureKey = "entryPoints";
 
+/** The list as a reader first finds it. */
+const MEASURE_VIEW: MeasureView = { measure: "commits", fewest: false, show: "all" };
+
+/** What a reader can have on show, in the order of the control. */
+const SHOWS: readonly { readonly key: ShowKey; readonly label: string }[] = [
+	{ key: "all", label: "All modules" },
+	{ key: "with-parts", label: "Modules with parts" },
+	{ key: "no-parts", label: "Modules with no parts" },
+];
+
 /**
  * Whether a reading can read code history. An original under migration has no checkout to read
  * against, and a model that binds no code gives Git nothing to read.
@@ -127,8 +165,17 @@ function historyState(
  * @param key The measure.
  * @returns True for a measure of the history.
  */
-function isHistoryMeasure(key: MeasureKey): key is "commits" | "unjoined" {
-	return key === "commits" || key === "unjoined";
+function isHistoryMeasure(key: MeasureKey): key is "commits" | CouplingKey {
+	return key === "commits" || isCoupling(key);
+}
+
+/**
+ * Whether a measure counts the modules that a module changes with.
+ * @param key The measure.
+ * @returns True for those measures.
+ */
+function isCoupling(key: MeasureKey): key is CouplingKey {
+	return key === "together" || key === "unjoined";
 }
 
 /**
@@ -151,6 +198,34 @@ function interfaceRows(projection: Pick<Projection, "complete">): readonly Measu
 	});
 }
 
+/** What the coupled pairs of an answer say of one module. */
+type Coupled = Pick<
+	Extract<ModuleHistory, { kind: "read" }>,
+	"together" | "unjoined" | "strongest"
+>;
+
+/** A module that no pair names. */
+const UNCOUPLED: Coupled = { together: 0, unjoined: 0, strongest: { together: 0, unjoined: 0 } };
+
+/**
+ * One more pair of a module.
+ * @param one What the pairs so far say of it.
+ * @param pair The pair.
+ * @returns What they say with the pair.
+ */
+function coupledWith(one: Coupled, pair: Locality["coupling"][number]): Coupled {
+	const { shared, unjoined } = pair;
+	const { strongest } = one;
+	return {
+		together: one.together + 1,
+		unjoined: one.unjoined + Number(unjoined),
+		strongest: {
+			together: Math.max(strongest.together, shared),
+			unjoined: unjoined ? Math.max(strongest.unjoined, shared) : strongest.unjoined,
+		},
+	};
+}
+
 /**
  * What one answer says of every module. A skipped module is in no count, so it never looks like a
  * module that no commit changed (ADR 0045).
@@ -158,14 +233,15 @@ function interfaceRows(projection: Pick<Projection, "complete">): readonly Measu
  * @returns Each module the answer names.
  */
 function historyByModule(answer: Locality): ReadonlyMap<string, ModuleHistory> {
-	const unjoined = new Map<string, number>();
-	for (const { subjects } of answer.coupling.filter((pair) => pair.unjoined)) {
-		for (const { id } of subjects) unjoined.set(id, (unjoined.get(id) ?? 0) + 1);
+	const coupled = new Map<string, Coupled>();
+	for (const pair of answer.coupling) {
+		for (const { id } of pair.subjects)
+			coupled.set(id, coupledWith(coupled.get(id) ?? UNCOUPLED, pair));
 	}
 	return new Map<string, ModuleHistory>([
 		...answer.hotspots.map(({ subject, count }): [string, ModuleHistory] => [
 			subject.id,
-			{ kind: "read", commits: count, unjoined: unjoined.get(subject.id) ?? 0 },
+			{ kind: "read", commits: count, ...(coupled.get(subject.id) ?? UNCOUPLED) },
 		]),
 		...answer.skipped.map(({ subject, reason }): [string, ModuleHistory] => [
 			subject.id,
@@ -223,17 +299,95 @@ function byName(one: MeasureRow, other: MeasureRow): number {
 }
 
 /**
- * The modules with the most of a measure first, and those with none of it last, because no count
- * is not a count of none. Each order is one order: a tie goes by name.
+ * The order of two counts. A module with no such count comes after one with a count of none, in
+ * either direction, because no count is not a count of none.
+ * @param one A module.
+ * @param other Another module.
+ * @param key The measure.
+ * @param fewest Whether the fewest come first.
+ * @returns Their order.
+ */
+function byCount(one: MeasureRow, other: MeasureRow, key: MeasureKey, fewest: boolean): number {
+	const [left, right] = [measureOf(one, key), measureOf(other, key)];
+	if (left === undefined || right === undefined)
+		return Number(left === undefined) - Number(right === undefined);
+	return fewest ? left - right : right - left;
+}
+
+/**
+ * The most commits that one pair of a module shares, for a measure that counts pairs.
+ * @param row The module.
+ * @param key The measure.
+ * @returns The commits, or none for a module with no such pair.
+ */
+function strongestOf(row: MeasureRow, key: CouplingKey): number {
+	return row.history?.kind === "read" ? row.history.strongest[key] : 0;
+}
+
+/**
+ * A tie of pair counts puts the module with the stronger pair first, in either direction.
+ * @param one A module.
+ * @param other Another module.
+ * @param key The measure.
+ * @returns Their order.
+ */
+function byStrongest(one: MeasureRow, other: MeasureRow, key: MeasureKey): number {
+	return isCoupling(key) ? strongestOf(other, key) - strongestOf(one, key) : 0;
+}
+
+/**
+ * The modules with the most of a measure first, or the fewest first. Each order is one order: a tie
+ * goes by the strongest pair, where the measure counts pairs, and then by name.
  * @param rows The modules.
  * @param key The measure.
+ * @param fewest Whether the fewest come first.
  * @returns The modules in order.
  */
-function sortedRows(rows: readonly MeasureRow[], key: MeasureKey): readonly MeasureRow[] {
-	return rows.toSorted((one, other) => {
-		const [left, right] = [measureOf(one, key) ?? -1, measureOf(other, key) ?? -1];
-		return right - left || byName(one, other);
-	});
+function sortedRows(
+	rows: readonly MeasureRow[],
+	key: MeasureKey,
+	fewest = false,
+): readonly MeasureRow[] {
+	return rows.toSorted(
+		(one, other) =>
+			byCount(one, other, key, fewest) || byStrongest(one, other, key) || byName(one, other),
+	);
+}
+
+/**
+ * The modules a reader has on show. A module with parts is one that has an interface.
+ * @param rows The modules.
+ * @param show Which ones to show.
+ * @returns Those modules, in their order.
+ */
+function shownRows(rows: readonly MeasureRow[], show: ShowKey): readonly MeasureRow[] {
+	if (show === "all") return rows;
+	return rows.filter((row) => (row.counts !== null) === (show === "with-parts"));
+}
+
+/**
+ * The measures that have something to show. `To module` is none on every module of some models, and
+ * a column of zeros says nothing.
+ * @param rows The modules, whole.
+ * @returns The measures, in the order of the columns.
+ */
+function measuresOf(rows: readonly MeasureRow[]): readonly Measure[] {
+	const used = rows.some((row) => (measureOf(row, "wholeModule") ?? 0) > 0);
+	return used ? MEASURES : MEASURES.filter(({ key }) => key !== "wholeModule");
+}
+
+/**
+ * The measure that the list is sorted by. A reading with no history to read cannot sort by history,
+ * and a measure that is not on show cannot be sorted by either.
+ * @param key The measure the reader chose.
+ * @param measures The measures on show.
+ * @param bound Whether the reading can read history.
+ * @returns The measure to sort by.
+ */
+function sortedBy(key: MeasureKey, measures: readonly Measure[], bound: boolean): MeasureKey {
+	const offered =
+		measures.some((measure) => measure.key === key) && (bound || !isHistoryMeasure(key));
+	return offered ? key : NO_HISTORY_MEASURE;
 }
 
 /**
@@ -248,13 +402,18 @@ function mostOf(rows: readonly MeasureRow[], key: MeasureKey): number {
 
 export {
 	MEASURES,
+	MEASURE_VIEW,
 	NO_HISTORY_MEASURE,
+	SHOWS,
 	historySource,
 	historyState,
 	interfaceRows,
 	isHistoryMeasure,
 	measureOf,
+	measuresOf,
 	mostOf,
+	shownRows,
+	sortedBy,
 	sortedRows,
 	withHistory,
 	type HistoryReading,
@@ -262,5 +421,7 @@ export {
 	type Measure,
 	type MeasureKey,
 	type MeasureRow,
+	type MeasureView,
 	type ModuleHistory,
+	type ShowKey,
 };

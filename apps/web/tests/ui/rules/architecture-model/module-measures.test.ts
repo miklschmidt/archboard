@@ -9,6 +9,9 @@ import {
 	historyState,
 	interfaceRows,
 	measureOf,
+	measuresOf,
+	shownRows,
+	sortedBy,
 	sortedRows,
 	withHistory,
 	type MeasureRow,
@@ -80,14 +83,20 @@ function hotspot(id: string, count: number): Locality["hotspots"][number] {
  * @param one A module.
  * @param other The other.
  * @param unjoined Whether nothing in the model joins them.
+ * @param shared How many commits they share.
  * @returns The pair.
  */
-function pair(one: string, other: string, unjoined: boolean): Locality["coupling"][number] {
+function pair(
+	one: string,
+	other: string,
+	unjoined: boolean,
+	shared = 5,
+): Locality["coupling"][number] {
 	return {
 		subjects: [subject(one), subject(other)],
 		repo: "example/shop",
 		commits: [],
-		shared: 5,
+		shared,
 		degree: 50,
 		unjoined,
 	};
@@ -103,10 +112,16 @@ const ANSWER: Locality = {
 /**
  * The modules in the order of a measure.
  * @param key The measure.
+ * @param fewest Whether the fewest come first.
+ * @param answer What the read says.
  * @returns Their names.
  */
-function orderBy(key: Parameters<typeof sortedRows>[1]): readonly string[] {
-	return sortedRows(withHistory(rows(), ANSWER), key).map((row) => row.name);
+function orderBy(
+	key: Parameters<typeof sortedRows>[1],
+	fewest = false,
+	answer: Locality = ANSWER,
+): readonly string[] {
+	return sortedRows(withHistory(rows(), answer), key, fewest).map((row) => row.name);
 }
 
 test("each measure gives one order, the most first, with a tie by name", () => {
@@ -138,8 +153,92 @@ test("a module with no such measure comes after a count of none", () => {
 test("a skipped module keeps its reason and joins no count", () => {
 	const joined = new Map(withHistory(rows(), ANSWER).map((row) => [row.id, row]));
 	expect(joined.get("far")?.history).toEqual({ kind: "skipped", reason: "unbound" });
-	expect(joined.get("hub")?.history).toEqual({ kind: "read", commits: 9, unjoined: 2 });
-	expect(joined.get("other")?.history).toEqual({ kind: "read", commits: 3, unjoined: 1 });
+	expect(measureOf(joined.get("hub")!, "commits")).toBe(9);
+	expect(measureOf(joined.get("other")!, "commits")).toBe(3);
+});
+
+/**
+ * What the read says of a module: the modules it changes with, and those nothing joins it to.
+ * @param joined Every module with its history.
+ * @param id The module.
+ * @returns The two counts.
+ */
+function counts(joined: ReadonlyMap<string, MeasureRow>, id: string): (number | undefined)[] {
+	return [measureOf(joined.get(id)!, "together"), measureOf(joined.get(id)!, "unjoined")];
+}
+
+test("changes with counts every module that changes in the same commits, and unjoined only those nothing joins", () => {
+	const joined = new Map(withHistory(rows(), ANSWER).map((row) => [row.id, row]));
+	expect(counts(joined, "hub")).toEqual([2, 2]);
+	expect(counts(joined, "leaf")).toEqual([2, 1]);
+	expect(counts(joined, "alone")).toEqual([0, 0]);
+	expect(counts(joined, "far")).toEqual([undefined, undefined]);
+});
+
+test("a tie of pair counts puts the module with the strongest pair first, then goes by name", () => {
+	const answer: Locality = {
+		hotspots: ["leaf", "other", "part", "used"].map((id) => hotspot(id, 3)),
+		coupling: [pair("leaf", "other", true, 5), pair("part", "used", true, 35)],
+		skipped: [],
+	};
+	expect(orderBy("unjoined", false, answer).slice(0, 4)).toEqual(["part", "used", "leaf", "other"]);
+	// The same rule holds from the other end: only the count turns round.
+	expect(orderBy("unjoined", true, answer).slice(0, 4)).toEqual(["part", "used", "leaf", "other"]);
+	expect(orderBy("together", false, answer).slice(0, 4)).toEqual(["part", "used", "leaf", "other"]);
+});
+
+test("the fewest can come first, and a module with no such count stays last either way", () => {
+	expect(orderBy("commits", true)).toEqual([
+		"alone",
+		"leaf",
+		"other",
+		"hub",
+		"far",
+		"part",
+		"used",
+	]);
+	expect(orderBy("commits", false).slice(-3)).toEqual(["far", "part", "used"]);
+	expect(orderBy("hiddenParts", true).slice(0, 2)).toEqual(["far", "hub"]);
+});
+
+test("a reader can have all modules on show, those with parts, or those with none", () => {
+	const all = rows();
+	expect(shownRows(all, "all")).toHaveLength(7);
+	expect(shownRows(all, "with-parts").map((row) => row.id)).toEqual(["hub", "far"]);
+	expect(shownRows(all, "no-parts").map((row) => row.id)).toEqual([
+		"used",
+		"alone",
+		"part",
+		"leaf",
+		"other",
+	]);
+});
+
+test("to module has no column while no module has such a caller", () => {
+	expect(measuresOf(rows()).map((measure) => measure.key)).toContain("wholeModule");
+	const none = interfaceRows({
+		complete: {
+			nodes: [module("hub"), module("used", "hub"), module("leaf")],
+			edges: [call("leaf", "used")],
+			flows: [],
+			walkthroughs: [],
+		},
+	});
+	expect(measuresOf(none).map((measure) => measure.key)).not.toContain("wholeModule");
+	expect(measuresOf(none)).toHaveLength(MEASURES.length - 1);
+});
+
+test("the sort falls back to a measure the reading can offer", () => {
+	const all = measuresOf(rows());
+	expect(sortedBy("commits", all, true)).toBe("commits");
+	expect(sortedBy("commits", all, false)).toBe("entryPoints");
+	expect(
+		sortedBy(
+			"wholeModule",
+			all.filter((one) => one.key !== "wholeModule"),
+			true,
+		),
+	).toBe("entryPoints");
 });
 
 test("the interface stands before any answer, and a module with no parts has none", () => {

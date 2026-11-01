@@ -1,9 +1,9 @@
 import { useMemo, type CSSProperties, type JSX } from "react";
 import { Badge, cn } from "@archboard/ui-kit/components";
 import {
-	MEASURES,
 	isHistoryMeasure,
 	measureOf,
+	type Measure,
 	type MeasureKey,
 	type MeasureRow,
 } from "#ui/rules/architecture-model/module-measures.ts";
@@ -19,14 +19,14 @@ const NOT_READ: Readonly<Record<LocalityAnswer["skipped"][number]["reason"], str
 	"ref-not-checked-out": "its ref is not checked out",
 };
 
-/** How wide a count column is. The heads and the rows take this one track. */
-const COUNT_COLUMNS = "grid grid-cols-[repeat(7,30px)]";
+/** How wide a count column is, and how many there are. The heads and the rows take this one track. */
+const COUNT_COLUMNS = "grid grid-cols-[repeat(var(--measure-columns),30px)]";
 
 /** A count of none and a dash, at the floor of a mark in the dark theme: Lc 37 on the well. */
 const QUIET_INK = "text-muted-foreground/80";
 
 /** The room the bar has: the row less the count columns and the room around them. */
-const BAR_ROOM = "(100% - 236px)";
+const BAR_ROOM = "(100% - var(--measure-columns) * 30px - 26px)";
 
 /** A bar is a slab in the colour of its kind: a lit top edge and a front edge in shade. */
 const BAR_SLAB =
@@ -37,8 +37,10 @@ const BAR_SLAB =
  * measure keeps its column on every row, so the eye runs down one edge, and the sorted count stands
  * on a slab. An empty cell is a module with no such measure, and a dash is a module the lens did
  * not read, so neither looks like a count of none.
- * @param props The row, what it is sorted by, the most of that measure and how kinds look.
+ * @param props The row, the measures on show, what it is sorted by, the most of that measure and how
+ * kinds look.
  * @param props.row The row.
+ * @param props.measures The measures on show, in the order of the columns.
  * @param props.sorted What it is sorted by.
  * @param props.most The most of that measure in the list.
  * @param props.look How the kinds of the model look.
@@ -46,16 +48,17 @@ const BAR_SLAB =
  */
 function ModelMeasureCells(props: {
 	readonly row: MeasureRow;
+	readonly measures: readonly Measure[];
 	readonly sorted: MeasureKey;
 	readonly most: number;
 	readonly look: KindLook;
 }): JSX.Element {
-	const { row, sorted, most, look } = props;
+	const { row, measures, sorted, most, look } = props;
 	return (
 		<>
 			<SortedBar count={measureOf(row, sorted) ?? 0} most={most} color={look.nodeColor(row.kind)} />
 			<span data-slot="model-measure-cells" className={COUNT_COLUMNS}>
-				{MEASURES.map(({ key }) => (
+				{measures.map(({ key }) => (
 					<Cell key={key} row={row} measure={key} sorted={key === sorted} />
 				))}
 			</span>
@@ -162,10 +165,11 @@ function EmptyCell(props: { readonly row: MeasureRow; readonly measure: MeasureK
 /**
  * What a row says to assistive technology, because a bare number in a column says nothing.
  * @param row The row.
+ * @param measures The measures on show.
  * @returns Its name and each count with what it counts.
  */
-function measureRowLabel(row: MeasureRow): string {
-	const counts = MEASURES.flatMap(({ key, label }) => {
+function measureRowLabel(row: MeasureRow, measures: readonly Measure[]): string {
+	const counts = measures.flatMap(({ key, label }) => {
 		const count = measureOf(row, key);
 		return count === undefined ? [] : [`${label} ${count}`];
 	});

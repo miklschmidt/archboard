@@ -1,53 +1,34 @@
-import { useCallback, useId, useMemo, useRef, type JSX } from "react";
+import { useCallback, useMemo, useRef, type CSSProperties, type JSX } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Model } from "@archboard/board/content";
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import { Button, cn, Select } from "@archboard/ui-kit/components";
+import { Button } from "@archboard/ui-kit/components";
 import { modelHistoryQuery } from "#ui/clients/architecture-model/history.ts";
 import { ModelChoiceList } from "#ui/components/architecture-model/ModelChoiceList.tsx";
 import {
-	COUNT_COLUMNS,
 	ModelMeasureCells,
 	NOT_READ,
 	measureRowLabel,
 } from "#ui/components/architecture-model/ModelMeasureRow.tsx";
+import { MeasureShelf } from "#ui/components/architecture-model/ModelMeasureShelf.tsx";
 import { useRevealedRow } from "#ui/hooks/architecture-model/use-revealed-row.ts";
 import { historyDay } from "#ui/rules/architecture-model/history-time.ts";
 import {
-	MEASURES,
-	NO_HISTORY_MEASURE,
 	historySource,
 	historyState,
 	interfaceRows,
-	isHistoryMeasure,
+	measuresOf,
 	mostOf,
+	shownRows,
+	sortedBy,
 	sortedRows,
 	withHistory,
 	type HistoryReading,
 	type HistoryState,
-	type Measure,
-	type MeasureKey,
 	type MeasureRow,
+	type MeasureView,
 } from "#ui/rules/architecture-model/module-measures.ts";
 import { kindLookOf } from "#ui/rules/semantic-board-canvas/board/kind-look.ts";
-
-/** What the sort offers, by where the measure comes from. */
-const HISTORY_MEASURES = MEASURES.filter(({ key }) => isHistoryMeasure(key));
-const IMPLEMENTATION_MEASURES = MEASURES.filter(({ key }) => key === "hiddenParts");
-const INTERFACE_MEASURES = MEASURES.filter(
-	({ key }) => !isHistoryMeasure(key) && key !== "hiddenParts",
-);
-
-/** The name of each measure, as the closed sort says it. */
-const SORT_ITEMS = MEASURES.map(({ key, label }) => ({ value: key, label }));
-
-/** Inputs for the sort, and for the shelf that holds it. */
-interface MeasureSortProps {
-	readonly measure: MeasureKey;
-	/** Whether the reading can read history. */
-	readonly history: boolean;
-	readonly onMeasure: (measure: MeasureKey) => void;
-}
 
 /** Inputs for the list. */
 interface ModelMeasuresProps {
@@ -57,9 +38,9 @@ interface ModelMeasuresProps {
 	readonly projection: Parameters<typeof interfaceRows>[0];
 	/** The module that is selected on the picture, or null. */
 	readonly selected: string | null;
-	/** What the list is sorted by. */
-	readonly measure: MeasureKey;
-	readonly onMeasure: (measure: MeasureKey) => void;
+	/** How the list stands: what it is sorted by, from which end, and what is on show. */
+	readonly view: MeasureView;
+	readonly onView: (view: MeasureView) => void;
 	/** Select a module on its picture, here or in the other pane. */
 	readonly onChoose: (id: string, beside: boolean) => void;
 }
@@ -74,7 +55,7 @@ interface ModelMeasuresProps {
  * @returns The list.
  */
 function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
-	const { vault, model, projection, selected, onMeasure, onChoose } = props;
+	const { vault, model, projection, selected, view, onView, onChoose } = props;
 	const source = historySource(model);
 	const query = useQuery({ ...modelHistoryQuery(vault, model), enabled: source === "bound" });
 	const { refetch } = query;
@@ -85,28 +66,50 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 	const answer = state === "read" ? query.data : undefined;
 	const modules = useMemo(() => interfaceRows(projection), [projection]);
 	const rows = useMemo(() => withHistory(modules, answer), [modules, answer]);
-	const measure =
-		source === "bound" || !isHistoryMeasure(props.measure) ? props.measure : NO_HISTORY_MEASURE;
-	const sorted = useMemo(() => sortedRows(rows, measure), [rows, measure]);
+	const measures = useMemo(() => measuresOf(modules), [modules]);
+	const measure = sortedBy(view.measure, measures, source === "bound");
+	const shown = useMemo(() => shownRows(rows, view.show), [rows, view.show]);
+	const sorted = useMemo(
+		() => sortedRows(shown, measure, view.fewest),
+		[shown, measure, view.fewest],
+	);
 	const list = useRef<HTMLDivElement>(null);
 	useRevealedRow(list, selected, 0);
 	const choose = useCallback(
 		(row: MeasureRow, beside: boolean): void => onChoose(row.id, beside),
 		[onChoose],
 	);
-	const most = mostOf(rows, measure);
+	const most = mostOf(shown, measure);
 	const look = useMemo(() => kindLookOf(model.policy, new Map()), [model.policy]);
 	const facts = useCallback(
-		(row: MeasureRow) => <ModelMeasureCells row={row} sorted={measure} most={most} look={look} />,
-		[measure, most, look],
+		(row: MeasureRow) => (
+			<ModelMeasureCells row={row} measures={measures} sorted={measure} most={most} look={look} />
+		),
+		[measures, measure, most, look],
+	);
+	const label = useCallback((row: MeasureRow) => measureRowLabel(row, measures), [measures]);
+	const columns = useMemo<CSSProperties>(
+		() => ({ "--measure-columns": measures.length }),
+		[measures.length],
 	);
 	return (
-		<div data-slot="model-measures" data-history={state} className="flex min-h-full flex-col">
-			<MeasureShelf measure={measure} history={source === "bound"} onMeasure={onMeasure} />
+		<div
+			data-slot="model-measures"
+			data-history={state}
+			style={columns}
+			className="flex min-h-full flex-col"
+		>
+			<MeasureShelf
+				view={view}
+				measure={measure}
+				measures={measures}
+				history={source === "bound"}
+				onView={onView}
+			/>
 			<div className="flex-1">
 				{sorted.length === 0 ? (
 					<p data-slot="model-measures-empty" className="text-body text-muted-foreground p-3">
-						This reading holds no module.
+						{rows.length === 0 ? "This reading holds no module." : "No module is of this kind."}
 					</p>
 				) : (
 					<div ref={list}>
@@ -117,13 +120,18 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 							attribute="data-measure-row"
 							onChoose={choose}
 							facts={facts}
-							rowLabel={measureRowLabel}
+							rowLabel={label}
 							flat
 						/>
 					</div>
 				)}
 			</div>
-			<div className="bg-raised shadow-edge-up sticky bottom-0 z-10 px-3 py-2">
+			<div className="bg-raised shadow-edge-up sticky bottom-0 z-10 flex flex-col gap-1.5 px-3 py-2">
+				{view.show !== "all" && (
+					<p data-slot="model-measures-shown" className="text-body text-muted-foreground">
+						{shown.length} of {rows.length} modules on show.
+					</p>
+				)}
 				<HistoryStatus
 					state={state}
 					answer={answer}
@@ -132,115 +140,12 @@ function ModelMeasures(props: ModelMeasuresProps): JSX.Element {
 					busy={query.isFetching}
 					onRead={readAgain}
 				/>
-			</div>
-		</div>
-	);
-}
-
-/**
- * What stands over the table while it scrolls: the sort, what it counts, and a head over each
- * column. The head of the sorted column is lit, so its numbers have a name.
- * @param props What the list is sorted by, and whether history can be read.
- * @returns The shelf.
- */
-function MeasureShelf(props: MeasureSortProps): JSX.Element {
-	const { measure, history, onMeasure } = props;
-	return (
-		<div className="bg-raised shadow-edge-down sticky top-0 z-20 flex items-end gap-2 pt-2 pr-3 pl-3">
-			<div className="flex min-w-0 flex-1 flex-col gap-1.5 self-start pb-2">
-				<MeasureSort measure={measure} history={history} onMeasure={onMeasure} />
-				<p data-slot="model-measure-meaning" className="text-body text-muted-foreground">
-					{MEASURES.find(({ key }) => key === measure)?.description}
+				<p data-slot="model-measures-key" className="text-body text-muted-foreground">
+					0 is none. A blank has no count: a module with no parts has no interface. A dash was not
+					read.
 				</p>
 			</div>
-			<div aria-hidden="true" className={COUNT_COLUMNS}>
-				{MEASURES.map(({ key, label }) => (
-					<ColumnHead key={key} label={label} sorted={key === measure} />
-				))}
-			</div>
 		</div>
-	);
-}
-
-/**
- * The name of one column, turned on its side as the dimension of a drawing is, so seven names
- * stand over seven narrow columns. The table's rows say each count in words to assistive
- * technology, so the head stays out of that reading.
- * @param props The name, and whether the list is sorted by it.
- * @param props.label The name.
- * @param props.sorted Whether the list is sorted by it.
- * @returns The head.
- */
-function ColumnHead(props: { readonly label: string; readonly sorted: boolean }): JSX.Element {
-	const { label, sorted } = props;
-	return (
-		<span className="relative flex h-22 justify-end pr-0.5">
-			<span
-				data-measure-head={sorted ? "sorted" : undefined}
-				className={cn(
-					"text-body rotate-180 pt-2 [writing-mode:vertical-rl]",
-					sorted ? "text-foreground font-semibold" : "text-muted-foreground",
-				)}
-			>
-				{label}
-			</span>
-		</span>
-	);
-}
-
-/**
- * The one sort control. A reading with no history to read offers only what it can sort by.
- * @param props What the list is sorted by, and whether history can be read.
- * @returns The control, with its label.
- */
-function MeasureSort(props: MeasureSortProps): JSX.Element {
-	const { measure, history, onMeasure } = props;
-	const id = useId();
-	const choose = useCallback(
-		(value: MeasureKey | null): void => {
-			if (value !== null) onMeasure(value);
-		},
-		[onMeasure],
-	);
-	return (
-		<div className="flex items-center gap-2">
-			<label htmlFor={id} className="text-body text-muted-foreground shrink-0">
-				Sort by
-			</label>
-			<Select items={SORT_ITEMS} value={measure} onValueChange={choose}>
-				<Select.Trigger id={id} size="sm" data-slot="model-measure-sort" className="min-w-0 flex-1">
-					<Select.Value />
-				</Select.Trigger>
-				<Select.Content className="w-115">
-					{history && <MeasureChoices label="Code history" measures={HISTORY_MEASURES} />}
-					<MeasureChoices label="Interface" measures={INTERFACE_MEASURES} />
-					<MeasureChoices label="Implementation" measures={IMPLEMENTATION_MEASURES} />
-				</Select.Content>
-			</Select>
-		</div>
-	);
-}
-
-/**
- * The choices of one source, each with what it counts and what it shows.
- * @param props The source and its measures.
- * @param props.label What the measures read.
- * @param props.measures The measures.
- * @returns The group.
- */
-function MeasureChoices(props: {
-	readonly label: string;
-	readonly measures: readonly Measure[];
-}): JSX.Element {
-	return (
-		<Select.Group>
-			<Select.Label>{props.label}</Select.Label>
-			{props.measures.map(({ key, label, description }) => (
-				<Select.Item key={key} value={key} description={description}>
-					{label}
-				</Select.Item>
-			))}
-		</Select.Group>
 	);
 }
 
@@ -307,7 +212,8 @@ function HistoryStatus(props: HistoryStatusProps): JSX.Element {
 }
 
 /**
- * What the counts of an answer cover: how many modules, since when, and what no count holds.
+ * What the counts of an answer cover: how many modules, since when, what no count holds, and that a
+ * module with parts counts every commit that changed its code path, its parts included.
  * @param answer The answer.
  * @param modules How many modules the list holds.
  * @returns The words.
@@ -320,6 +226,7 @@ function coverOf(answer: NonNullable<HistoryStatusProps["answer"]>, modules: num
 		`${hotspots.length} of ${modules} modules read${since === undefined ? "" : ` since ${historyDay(since)}`}.`,
 		notReadWords(answer.skipped),
 		large === 0 ? "" : `${large} large ${large === 1 ? "commit" : "commits"} left out.`,
+		"A module with parts counts the commits of its whole code path.",
 	]
 		.join(" ")
 		.trim();
