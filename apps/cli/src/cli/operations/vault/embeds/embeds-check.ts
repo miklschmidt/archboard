@@ -102,6 +102,24 @@ async function repair(
 	};
 }
 /**
+ * Say what changed in a picture and what to do about it.
+ * @param code The observed change.
+ * @param cached Whether the source comes only from a stale cache.
+ * @returns The message.
+ */
+function differentMessage(
+	code: "EMBED_OUTDATED" | "EMBED_RENDERER_CHANGED",
+	cached: boolean,
+): string {
+	const cause =
+		code === "EMBED_OUTDATED"
+			? "The model now draws this reading differently."
+			: "The renderer now draws this reading differently.";
+	return cached
+		? `${cause} Only a cached copy of the vault is available: fetch the vault's history, then run archboard check embeds --fix.`
+		: `${cause} Run archboard check embeds --fix to redraw it, then commit the file.`;
+}
+/**
  * Explain a different picture that the current invocation cannot replace.
  * @param embed The artifact.
  * @param recipe Its declared model.
@@ -122,7 +140,7 @@ function differentPicture(
 				code,
 				file: embed.file,
 				model: recipe.model,
-				message: "The canonical reading draws a different picture.",
+				message: differentMessage(code, cached),
 				...(cached ? { notFixed: "A cached source cannot replace this artifact." } : {}),
 			},
 		],
@@ -170,7 +188,9 @@ async function inspect(
 	options: Options,
 	cached: boolean,
 ): Promise<Checked> {
-	const fresh = await renderArchitectureFlowOnServer(recipe.reading, vault);
+	// A file stands alone, so a recipe that names no theme redraws as `auto`.
+	const reading = { ...recipe.reading, theme: recipe.reading.theme ?? ("auto" as const) };
+	const fresh = await renderArchitectureFlowOnServer(reading, vault);
 	if (!fresh.success)
 		return unavailable(
 			embed,
@@ -178,7 +198,11 @@ async function inspect(
 			fresh.diagnostics.map((item) => `${item.message} ${item.recovery}`).join(" "),
 		);
 	if (fresh.model !== recipe.model.id)
-		return unavailable(embed, recipe, "The vault contains another model.");
+		return unavailable(
+			embed,
+			recipe,
+			"The vault holds another model than the one this drawing was made from. Run the vault check from the checkout of the source model, or draw the diagram again with archboard model render --out.",
+		);
 	return inspectPicture(embed, recipe, fresh, options, cached);
 }
 /**

@@ -13,7 +13,7 @@ import {
 import { readRenderRecipe, embedRecipeInPng } from "@archboard/renderer/recipe";
 import { renderArchitectureFlowOnServer } from "#cli/clients/server/architecture-model.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
-import { modelRenderContract } from "#cli/operations/model/render.ts";
+import { modelRenderContract, requireGrammarForFlow } from "#cli/operations/model/render.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { regionWithin } from "#cli/rules/semantic/draw/raster-region.ts";
 type Picture = Extract<z.infer<typeof ArchitectureRenderResultSchema>, { success: true }>;
@@ -80,7 +80,26 @@ const modelRasterizeContract = defineCommand({
 		"Uses the same canonical projection and SVG renderer, then captures it through the existing local rasterizer.",
 	examples: ["archboard model rasterize --module Gateway --out gateway.png"],
 	parameters: [
-		...modelRenderContract.parameters,
+		...modelRenderContract.parameters.filter(({ key }) => key !== "theme" && key !== "out"),
+		{
+			kind: "option",
+			key: "theme",
+			spellings: ["--theme"],
+			value: "required",
+			placeholder: "theme",
+			choices: ["light", "dark"],
+			default: "dark",
+			description: "The ground the bitmap holds",
+		},
+		{
+			kind: "option",
+			key: "out",
+			spellings: ["--out"],
+			value: "required",
+			placeholder: "file.png",
+			required: true,
+			description: "Write the PNG to this file",
+		},
 		{
 			kind: "option",
 			key: "scale",
@@ -132,6 +151,7 @@ const modelRasterizeContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model rasterize");
 		const { out, scale, region, ...request } = input;
+		requireGrammarForFlow(request);
 		const picture = await renderArchitectureFlowOnServer(request);
 		if (!picture.success)
 			return {

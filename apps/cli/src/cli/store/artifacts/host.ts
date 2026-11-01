@@ -94,7 +94,8 @@ export const processCommandHost = {
 		}
 	},
 	/**
-	 * Commits a validated artifact to disk, in whichever encoding it declared.
+	 * Commits a validated artifact to disk, in whichever encoding it declared, and
+	 * creates the directory a single-file artifact is written into.
 	 * @param artifact - The pending artifact.
 	 */
 	writeArtifact(artifact: PendingArtifact): void {
@@ -102,6 +103,7 @@ export const processCommandHost = {
 			writeFileSetArtifact(artifact);
 			return;
 		}
+		fs.mkdirSync(path.dirname(artifact.path), { recursive: true });
 		if (artifact.encoding === "binary") {
 			fs.writeFileSync(artifact.path, artifact.content);
 			return;

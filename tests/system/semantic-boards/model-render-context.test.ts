@@ -294,7 +294,10 @@ test("canonical exports retain default comparison and unresolved subject marks t
 		args: ["model", "render", "--checkpoint", retained.checkpoint.id, "--out", out],
 	});
 	expect(cli.status, cli.stderr).toBe(0);
-	expect(readFileSync(out, "utf8")).toBe(pinned.svg);
+	// A file the CLI writes stands alone, so it is drawn in the `auto` theme.
+	expect(readFileSync(out, "utf8")).toBe(
+		(await render({ checkpoint: retained.checkpoint.id, theme: "auto" })).svg,
+	);
 	await edit("Current", [
 		{ type: "edit-module", subject: "Shop#Gateway", set: { description: "New comparison input" } },
 	]);
@@ -303,4 +306,36 @@ test("canonical exports retain default comparison and unresolved subject marks t
 	if (nextRecipe.kind !== "recipe") throw new Error(JSON.stringify(nextRecipe));
 	expect(comparedAgain.revision).toEqual(pinned.revision);
 	expect(nextRecipe.recipe.fingerprint).not.toBe(recipe.recipe.fingerprint);
+}, 30000);
+
+test("a file the CLI renders stands alone, in a directory it creates, and refuses a flow without a grammar", () => {
+	const run = (...args: string[]) =>
+		runServerCli({
+			repoRoot,
+			server: server!,
+			input: undefined,
+			args: ["model", "render", ...args],
+		});
+	const out = join(home, "docs", "nested", "plain.svg");
+	const drawn = run("--out", out);
+	expect(drawn.status, drawn.stderr).toBe(0);
+	expect(readFileSync(out, "utf8")).toContain("color-scheme");
+	expect(run("--flow", "Shop#Request", "--out", join(home, "refused.svg")).status).toBe(2);
+	expect(run().status).toBe(2);
+	// An older file whose recipe names no theme redraws as `auto`, never as a black page.
+	writeFileSync(out, readFileSync(out, "utf8").replace(',"theme":"auto"', ""));
+	Bun.spawnSync(["git", "-C", home, "add", out]);
+	const fixed = runServerCli({
+		repoRoot,
+		server: server!,
+		input: undefined,
+		args: ["check", "embeds", "--fix"],
+	});
+	expect(fixed.status, fixed.stderr).toBe(0);
+	const redrawn = readFileSync(out, "utf8");
+	expect(redrawn).toContain("color-scheme");
+	expect(readRenderRecipe(Buffer.from(redrawn))).toMatchObject({
+		kind: "recipe",
+		recipe: { reading: { theme: "auto" } },
+	});
 }, 30000);

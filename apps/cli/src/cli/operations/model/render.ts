@@ -3,11 +3,28 @@ import {
 	ArchitectureRenderRequestSchema,
 	ArchitectureRenderResultSchema,
 } from "@archboard/board/model";
+import { StandaloneThemeSchema } from "@archboard/board/render-reply";
 import { renderArchitectureFlowOnServer } from "#cli/clients/server/architecture-model.ts";
-import { defineCommand } from "#cli/protocol/contract/contract.ts";
+import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";
 import { PendingArtifactSchema } from "#cli/protocol/contract/schemas.ts";
-const InputSchema = ArchitectureRenderRequestSchema.extend({ out: z.string() });
+const InputSchema = ArchitectureRenderRequestSchema.extend({
+	out: z.string(),
+	theme: StandaloneThemeSchema.default("auto"),
+});
+/**
+ * Refuse a flow that the architecture grammar would silently ignore.
+ * @param request The selected reading.
+ * @param request.flow The named flow, when there is one.
+ * @param request.grammar The grammar the reading draws.
+ * @throws {CliUsageError} When a flow is named without a behavioral grammar.
+ */
+function requireGrammarForFlow(request: { flow?: string | undefined; grammar: string }): void {
+	if (request.flow !== undefined && request.grammar === "architecture")
+		throw new CliUsageError(
+			`--flow ${request.flow} needs a behavioral grammar: add --grammar sequence or --grammar flowchart.`,
+		);
+}
 const modelRenderContract = defineCommand({
 	path: ["model", "render"],
 	shared: ["url", "directory"],
@@ -77,6 +94,7 @@ const modelRenderContract = defineCommand({
 			value: "required",
 			placeholder: "theme",
 			choices: ["auto", "light", "dark"],
+			default: "auto",
 			description: "The standalone SVG theme",
 		},
 		{
@@ -85,6 +103,7 @@ const modelRenderContract = defineCommand({
 			spellings: ["--out"],
 			value: "required",
 			placeholder: "file.svg",
+			required: true,
 			description: "Write the self-contained SVG to this file",
 		},
 	],
@@ -140,6 +159,7 @@ const modelRenderContract = defineCommand({
 	async handler(input, context) {
 		await context.require("server", "model render");
 		const { out, ...request } = input;
+		requireGrammarForFlow(request);
 		const result = await renderArchitectureFlowOnServer(request);
 		if (!result.success)
 			return {
@@ -157,4 +177,4 @@ const modelRenderContract = defineCommand({
 		};
 	},
 });
-export { modelRenderContract };
+export { modelRenderContract, requireGrammarForFlow };
