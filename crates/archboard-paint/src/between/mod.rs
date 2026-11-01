@@ -19,6 +19,8 @@ mod departure;
 mod ease;
 mod entrance;
 mod found;
+#[cfg(test)]
+mod interrupted;
 mod line;
 mod morph;
 mod phases;
@@ -257,6 +259,19 @@ fn defined_in(items: &[Item], found: &mut Vec<Definition>) {
     }
 }
 
+/// Drop definitions from a body whose complete definitions were lifted into
+/// the scene. A body's old mask must not replace the mask of the current frame.
+fn clear_definitions(items: &mut Vec<Item>) {
+    items.retain(|item| !matches!(item, Item::Definitions { .. }));
+    for item in items {
+        match item {
+            Item::Group(group) => clear_definitions(&mut group.items),
+            Item::Viewport(viewport) => clear_definitions(&mut viewport.items),
+            _ => {}
+        }
+    }
+}
+
 /// Every mask of a scene, by the name of its line.
 fn masks_of(scene: &Scene) -> HashMap<String, Mask> {
     let mut known = scene.definitions.clone();
@@ -428,15 +443,20 @@ impl Between {
     /// its place it stands. A picture that arrives during a move starts from it,
     /// so that it takes over from what the reader sees.
     pub fn seen_at(&self, progress: f64, landed: &Scene) -> (Scene, (f64, f64)) {
+        if progress >= 1.0 {
+            return (landed.clone(), (0.0, 0.0));
+        }
         let masks = self.masks_at(progress);
         let mut definitions = self.definitions.clone();
         definitions.retain(|definition| {
             !matches!(definition, Definition::Mask(mask) if masks.iter().any(|moved| moved.id == mask.id))
         });
         definitions.extend(masks.into_iter().map(Definition::Mask));
+        let mut body = self.plan.at(progress.max(0.0));
+        clear_definitions(&mut body);
         let scene = Scene {
             definitions,
-            body: self.plan.at(progress),
+            body,
             ..landed.clone()
         };
         (scene, self.back_at(progress))
