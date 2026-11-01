@@ -257,6 +257,11 @@ const PictureLegendSchema = z.object({
 /** A board that was drawn. */
 const DrawnBoardSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
+	/**
+	 * The scene and its icons, for a painter, which no host reads. Only a picture
+	 * drawn in the page that paints it has one: it stays out of a server's reply.
+	 */
+	painting: z.string().min(1).optional(),
 	width: z.number().positive(),
 	height: z.number().positive(),
 	atlas: DiagramAtlasSchema,

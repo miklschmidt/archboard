@@ -17,6 +17,7 @@
 // Progress is handed in rather than read from a clock: whoever drives this
 // owns the frame loop, and a test drives it by hand.
 
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { PICTURE_TRANSITION_PHASES } from "@archboard/timing";
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import {
@@ -67,7 +68,7 @@ interface PictureTransition {
  * drawing is one, and so is a canonical reading's scene: `board` names what the
  * picture is of, and `view` how that is read.
  */
-type MovingPicture = Pick<SemanticDrawing, "svg" | "atlas" | "width" | "height"> & {
+type MovingPicture = Pick<SemanticDrawing, "svg" | "painting" | "atlas" | "width" | "height"> & {
 	readonly board: string;
 	readonly view: { readonly id: string } | null;
 };
@@ -157,6 +158,7 @@ function stagePicture(surface: HTMLElement, svg: string, at = 0): void {
 	runTraffic(made, at);
 	stopTraffic(surface);
 	surface.replaceChildren(...made.childNodes);
+	stageOf(surface)?.learnGroups(surface);
 }
 
 /**

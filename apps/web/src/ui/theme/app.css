@@ -262,6 +262,19 @@
 	}
 }
 
+/* A painter draws the picture on the canvas behind the surface (ADR 0071). Once it
+   has drawn, the SVG keeps its groups and its words for search, copy, screen
+   readers and the viewer's marks, and shows no ink. A painter answers the pointer,
+   so the surface takes none. */
+[data-slot="semantic-board-surface"][data-painter] {
+	pointer-events: none;
+}
+[data-slot="semantic-board-surface"][data-painter]
+	svg
+	:is(path, rect, circle, line, use, polygon, polyline, image) {
+	visibility: hidden;
+}
+
 /* The picture answers a poke. While a part is picked out, or the pointer rests
    on one, what it is wired to stays as drawn and the rest recedes. The recede is
    a filter and not the opacity the picture's own stylesheet uses, for the reason

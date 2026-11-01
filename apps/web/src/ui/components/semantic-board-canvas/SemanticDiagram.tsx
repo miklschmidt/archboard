@@ -38,6 +38,7 @@ import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { seenFromFar } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
 import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
@@ -262,6 +263,18 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	// the middle of a move.
 	const far = useCameraWith(camera, seenFromFar);
 	const marks = surfaceMarks({ veiled: props.veil !== null, far, probing: lighting.mode });
+	useStageLook(
+		picture,
+		{
+			probing: lighting.mode,
+			veiled: props.veil !== null,
+			presenting: props.presenting != null,
+			standing: lighting.standing,
+			reach: lighting.reach,
+			reducedMotion,
+		},
+		far,
+	);
 	const tip = useSubjectTip({ drawing, camera });
 	const { dismiss: dismissTip, onHover: tipHover } = tip;
 	const { onHover: lightHover, release: leave } = lighting;

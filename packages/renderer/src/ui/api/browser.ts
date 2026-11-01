@@ -4,3 +4,9 @@ export {
 	prepareContentHere,
 	startBrowserRenderer,
 } from "#ui/state/browser-renderer.ts";
+export {
+	fallBackToCpu,
+	startPainter,
+	type PainterKind,
+	type StartedPainter,
+} from "#ui/clients/painter.ts";

@@ -69,6 +69,7 @@ interface AcceptedScene extends SceneRequest {
 const EMPTY_DRAWING: ModelDrawing = Object.freeze({
 	appearances: [],
 	legend: null,
+	painting: "",
 	svg: "",
 	width: 0,
 	height: 0,

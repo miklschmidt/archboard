@@ -29,6 +29,7 @@ import {
 	takePointerToDrag,
 	type Drag,
 } from "#ui/clients/semantic-board-canvas/subjects/pointer-gesture.ts";
+import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { openableAt } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { controlAt, subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
@@ -119,7 +120,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				return;
 			}
 			if (onSelectArea !== undefined) event.currentTarget.focus({ preventScroll: true });
-			const subject = subjectAt(event.target, atlas);
+			const subject = subjectAt(pickedTarget(event), atlas);
 			// What was pressed is decided here and nowhere else. By the time a click
 			// arrives the diagram may have been panned, and the click may have been
 			// retargeted by pointer capture; neither can change what was under the
@@ -131,7 +132,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 				x: event.clientX,
 				y: event.clientY,
 				pressed: subject,
-				control: controlAt(event.target),
+				control: controlAt(pickedTarget(event)),
 				action: dragAction(event.button, subject, onSelectArea !== undefined, space.current),
 				toggle: event.ctrlKey || event.metaKey,
 				captured: false,
@@ -276,10 +277,10 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 			// A click with no press behind it can only have been synthesised; there
 			// its own target is the only thing there is to go on.
 			onSelect(
-				landed === null ? subjectAt(event.target, atlas) : landed.subject,
+				landed === null ? subjectAt(pickedTarget(event), atlas) : landed.subject,
 				event.ctrlKey || event.metaKey,
 				event.detail > 1,
-				landed === null ? controlAt(event.target) : landed.control,
+				landed === null ? controlAt(pickedTarget(event)) : landed.control,
 			);
 		},
 		[onSelect, atlas],
@@ -289,7 +290,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: ReactMouseEvent<HTMLElement>): void => {
-			if (!controlAt(event.target)) openDown(openableAt(event.target, event.clientY));
+			if (!controlAt(pickedTarget(event))) openDown(openableAt(pickedTarget(event), event.clientY));
 		},
 		[openDown],
 	);

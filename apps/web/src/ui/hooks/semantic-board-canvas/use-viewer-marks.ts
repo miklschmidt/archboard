@@ -10,12 +10,16 @@
 import { useLayoutEffect } from "react";
 
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { lightInk } from "#ui/clients/semantic-board-canvas/subjects/lit-ink.ts";
 import {
 	markReach,
 	markSubjects,
 	markVeil,
 } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+
+/** No subjects. */
+const NOTHING: ReadonlySet<string> = new Set();
 
 /** What the viewer is attending to, and what a presented step veils. */
 interface ViewerMarks {
@@ -57,6 +61,16 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 			markReach(picture.surface, reach);
 		}
 	}, [picture, reach]);
+	// The painter draws what these marks said to the SVG's stylesheet.
+	useLayoutEffect(() => {
+		if (picture !== null) {
+			stageOf(picture.surface)?.setMarks({
+				selected: attended,
+				whole: veil ?? NOTHING,
+				stuck: NOTHING,
+			});
+		}
+	}, [picture, attended, veil]);
 }
 
 export { useViewerMarks };

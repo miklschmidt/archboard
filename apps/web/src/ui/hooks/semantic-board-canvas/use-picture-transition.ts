@@ -31,6 +31,7 @@ import {
 	type PictureTransition,
 	type Shift,
 } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { stopTraffic } from "#ui/clients/semantic-board-canvas/picture/picture-traffic.ts";
 
 /** The picture on the surface, as something to mark up. */
@@ -265,6 +266,7 @@ function movedSince(seenAt: Point | null, surface: HTMLElement): Point {
  */
 function showPicture(next: NextPicture, onLanded: () => void): Flight | null {
 	const { surface, last, drawing, reducedMotion, keepStill, heading, seenAt } = next;
+	stageOf(surface)?.show(drawing.painting);
 	const shift = shiftFrom(last, surface, drawing, next.presenting === true);
 	const from = carriedFrom(last, surface, drawing, next);
 	if (shift !== undefined) keepStill(shift);

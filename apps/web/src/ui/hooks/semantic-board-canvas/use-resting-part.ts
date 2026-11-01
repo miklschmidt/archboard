@@ -8,6 +8,10 @@
 // Lines that share a stretch draw over one another, and only the topmost hears the
 // pointer, so the pointer rests on every line of the stretch it is over.
 
+import {
+	pickedElements,
+	pickedTarget,
+} from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
@@ -57,9 +61,9 @@ function lineOf(group: Element | null): string | null {
  * @returns The lines' semantic ids.
  */
 function linesUnder(event: PointerEvent<HTMLElement>): string[] {
-	return document
-		.elementsFromPoint(event.clientX, event.clientY)
-		.map((element) => lineOf(element.closest("[data-semantic-id]")))
+	const under = pickedElements(event) ?? document.elementsFromPoint(event.clientX, event.clientY);
+	return under
+		.map((element) => lineOf(element?.closest("[data-semantic-id]") ?? null))
 		.filter((id) => id !== null);
 }
 
@@ -70,11 +74,12 @@ function linesUnder(event: PointerEvent<HTMLElement>): string[] {
  * @returns The semantic ids, or none over anything else.
  */
 function partsUnder(event: PointerEvent<HTMLElement>): readonly string[] {
-	const part = tipTargetAt(event.target, event.clientY);
+	const target = pickedTarget(event);
+	const part = tipTargetAt(target, event.clientY);
 	if (part !== null) {
 		return part.part === "line" ? [...new Set([part.id, ...linesUnder(event)])] : [part.id];
 	}
-	const group = event.target instanceof Element ? event.target.closest("[data-semantic-id]") : null;
+	const group = target instanceof Element ? target.closest("[data-semantic-id]") : null;
 	const line = lineOf(group);
 	return line === null ? [] : [line];
 }

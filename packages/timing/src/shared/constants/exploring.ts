@@ -20,6 +20,8 @@ const EXPLORING_MS = durations({
 	 * it follows a drag.
 	 */
 	cameraEase: 80,
+	/** The short ease of a keyed move or a fit, which the painter gives the camera. */
+	cameraSettle: 100,
 	/**
 	 * The longest one frame of a zoom or an ease counts for. A frame that comes
 	 * late, after the tab was hidden or the page stalled, moves the camera by no

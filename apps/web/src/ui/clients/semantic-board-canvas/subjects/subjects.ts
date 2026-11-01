@@ -6,6 +6,7 @@
 // is scenery. Going through the atlas also means the browser never has to
 // parse the picture to know what is on it.
 
+import type { ProbeMode } from "#ui/rules/semantic-board-canvas/picture/picture-light.ts";
 import type {
 	SemanticAtlas,
 	SemanticBox,
@@ -307,8 +308,6 @@ const PROBING_CLASS = "is-probing";
 /** The class it adds when the pointer rests on a part, which lights more lightly than a pick. */
 const PROBING_LIGHT_CLASS = "is-probing-light";
 
-/** How strongly the picture answers a poke: to the part picked out, or to one the pointer rests on. */
-type ProbeMode = "pick" | "hover";
 
 /**
  * The classes the surface itself carries for the picture's stylesheet: that a

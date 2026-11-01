@@ -32,6 +32,7 @@ import type { Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
+import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
 import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
 import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
 import { useTrafficRest } from "#ui/hooks/semantic-board-canvas/use-traffic-rest.ts";
@@ -184,6 +185,18 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
 	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
+	useStageLook(
+		staged,
+		{
+			probing: lighting.mode,
+			veiled: veil !== null,
+			presenting,
+			standing: veil ?? lighting.standing,
+			reach: lighting.reach,
+			reducedMotion,
+		},
+		far,
+	);
 	useTrafficRest(surface, camera, gesture === "dragging");
 	useSceneArrival(surface, scene.presentation, props.onPresentation);
 	useAttention(lighting.resting, single, props.onAttention);
