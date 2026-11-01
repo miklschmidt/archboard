@@ -85,13 +85,13 @@
       "kind": "relationship",
       "value": {
         "order": 1000,
-        "kind": "dependency",
-        "label": "the phases of a move, and its heading",
+        "kind": "call",
+        "label": "a whole picture's move, as a flight",
         "emphasis": "normal",
         "anchor": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-paint/src/stage/mod.rs",
-          "symbol": "Phases"
+          "path": "crates/archboard-paint/src/flight.rs",
+          "symbol": "Between"
         },
         "id": "vKEsyHFk#xalAnyTh",
         "to": "vKEsyHFk#9jix9Dsx"
@@ -169,7 +169,7 @@
         ],
         "binding": {
           "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-paint/src/between"
+          "path": "crates/archboard-paint/src/between/mod.rs"
         },
         "schemaVersion": 1,
         "id": "vKEsyHFk#9jix9Dsx"
@@ -208,31 +208,6 @@
       "subject": "vKEsyHFk#290spzv7",
       "placement": {
         "holder": "vKEsyHFk#NFwqWgrm"
-      }
-    },
-    {
-      "type": "add",
-      "subject": "vKEsyHFk#NjziT92Y",
-      "kind": "relationship",
-      "value": {
-        "order": 1000,
-        "kind": "dependency",
-        "label": "the design constants of the scene it draws",
-        "emphasis": "normal",
-        "anchor": {
-          "repo": "github.com/miklschmidt/archboard",
-          "path": "crates/archboard-paint/src/draw/mod.rs",
-          "symbol": "design"
-        },
-        "id": "vKEsyHFk#NjziT92Y",
-        "to": "vKEsyHFk#8oId5pfI"
-      }
-    },
-    {
-      "type": "place",
-      "subject": "vKEsyHFk#NjziT92Y",
-      "placement": {
-        "holder": "vKEsyHFk#290spzv7"
       }
     },
     {
@@ -1208,6 +1183,7 @@
     "vKEsyHFk/UOXNWLhR#n5No6FUy",
     "vKEsyHFk/UOXNWLhR#WT3s42AE",
     "vKEsyHFk/UOXNWLhR#9VphxuuC",
-    "vKEsyHFk#tv4MSYd6"
+    "vKEsyHFk#tv4MSYd6",
+    "vKEsyHFk#NjziT92Y"
   ]
 }
