@@ -122,6 +122,24 @@ function isRemoved(projection: Projection, id: string): boolean {
 }
 
 /**
+ * Whether a module opens into a reading of its own: it has parts to read, and is not the one open.
+ * @param model The reading.
+ * @param projection What the reading draws.
+ * @param scope The open module.
+ * @param id The module.
+ * @returns True when it opens.
+ */
+function opensAsModule(
+	model: Pick<Model, "modules">,
+	projection: Projection,
+	scope: string | null,
+	id: string,
+): boolean {
+	const holdsParts = model.modules.some((module) => module.parent === id);
+	return holdsParts && id !== scope && !isRemoved(projection, id);
+}
+
+/**
  * Whether a subject is a door of the reading: a module outside it that a line reaches.
  * @param projection The reading.
  * @param id The subject.
@@ -274,6 +292,7 @@ export {
 	isDoor,
 	isOpenDoor,
 	isRemoved,
+	opensAsModule,
 	linesOf,
 	moduleInterface,
 	moduleSource,

@@ -5,6 +5,7 @@ import { Select } from "@archboard/ui-kit/components";
 import { architectureCheckpointsQuery } from "#ui/clients/architecture-model/queries.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import {
+	COMPARED,
 	chosenComparison,
 	comparedWith,
 	comparisonAddress,
@@ -66,7 +67,7 @@ function ModelComparisonSelector(props: ModelComparisonSelectorProps): JSX.Eleme
 				data-slot="model-comparison-selector"
 				aria-label="Compare with"
 				title={line}
-				className="max-w-72 min-w-32 shrink"
+				className="max-w-72 min-w-20 shrink-[6]"
 			>
 				<Select.Value>
 					<ComparisonLine comparison={model.comparison} line={line} />
@@ -106,7 +107,8 @@ function ComparisonLine(props: {
 			data-reason={comparison.reason}
 			className="truncate"
 		>
-			{line}
+			<span className="@max-[800px]/pane-header:hidden">{COMPARED}</span>
+			{line.slice(COMPARED.length)}
 		</span>
 	);
 }

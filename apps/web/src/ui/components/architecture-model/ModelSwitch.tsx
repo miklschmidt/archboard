@@ -36,7 +36,12 @@ function ModelSwitch<Choice extends string>(props: ModelSwitchProps<Choice>): JS
 			onValueChange={change}
 		>
 			{choices.map((choice) => (
-				<ToggleGroup.Item key={choice.value} value={choice.value} data-choice={choice.value}>
+				<ToggleGroup.Item
+					key={choice.value}
+					value={choice.value}
+					data-choice={choice.value}
+					className="aria-pressed:bg-tray-tab aria-pressed:shadow-raised"
+				>
 					{choice.label}
 				</ToggleGroup.Item>
 			))}

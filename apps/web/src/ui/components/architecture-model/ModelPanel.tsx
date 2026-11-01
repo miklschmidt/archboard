@@ -76,6 +76,7 @@ function ModelPanelRoot(props: ModelPanelProps): JSX.Element {
 			className={cn(
 				"border-border bg-sidebar shadow-edge-side relative z-30 flex min-h-0 w-[min(360px,46%)] shrink-0 flex-col border-l in-data-presenting:hidden",
 				props.covered && "invisible",
+				onClose === undefined && "@max-[900px]/reading:hidden",
 			)}
 		>
 			{!props.covered && (

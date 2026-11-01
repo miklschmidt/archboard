@@ -5,7 +5,6 @@ import { ModelAbout, scopeHead } from "#ui/components/architecture-model/ModelAb
 import type { AboutPlace } from "#ui/components/architecture-model/ModelAboutFrame.tsx";
 import { ModelCodeDetails } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelEngine } from "#ui/components/architecture-model/ModelEngine.tsx";
-import { ModelExplanationMenu } from "#ui/components/architecture-model/ModelExplanationMenu.tsx";
 import { ModelFlowHead } from "#ui/components/architecture-model/ModelFlowHead.tsx";
 import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
 import { ModelLegend } from "#ui/components/architecture-model/ModelLegend.tsx";
@@ -18,8 +17,16 @@ import {
 	ModelPanelSubject,
 } from "#ui/components/architecture-model/ModelPanelSubject.tsx";
 import { ModelReadingCanvas } from "#ui/components/architecture-model/ModelReadingCanvas.tsx";
-import { ModelSelectionBar } from "#ui/components/architecture-model/ModelSelectionBar.tsx";
-import { ModelComparisonNotice } from "#ui/components/architecture-model/ModelStateDetails.tsx";
+import {
+	ReadingExplain,
+	ReadingFindings,
+	SelectionControls,
+	type SelectionActions,
+} from "#ui/components/architecture-model/ModelReadingControls.tsx";
+import {
+	ModelComparisonNotice,
+	ModelStateStanding,
+} from "#ui/components/architecture-model/ModelStateDetails.tsx";
 import { PeekProvider } from "#ui/components/semantic-board-canvas/Peek.tsx";
 import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useHistoryOnSelection } from "#ui/hooks/architecture-model/use-history-on-selection.ts";
@@ -27,6 +34,7 @@ import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-cod
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
 import { useReaderKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
+import { useShowSubject } from "#ui/hooks/architecture-model/use-show-subject.ts";
 import {
 	flowSubjects,
 	collectionSubjects,
@@ -34,7 +42,6 @@ import {
 	flowCollections,
 } from "#ui/rules/architecture-model/flow-reading.ts";
 import { scopeSubjects, walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
-import { selectedSubject } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 
@@ -67,46 +74,6 @@ function useBehavioralIds(reader: Reader): ReadonlySet<string> {
 		);
 		return new Set([...flowSubjects(flows), ...held].map((one) => one.id));
 	}, [model, flows, comparison.reference]);
-}
-
-/** What can be done with a selection, wherever it is explained. */
-interface SelectionActions {
-	readonly reader: Reader;
-	readonly behavioralIds: ReadonlySet<string>;
-	readonly explanation: ReturnType<typeof useModelExplanation>;
-	readonly menu: boolean;
-	readonly onMenu: (open: boolean) => void;
-}
-
-/**
- * What can be done with the selection.
- * @param props The reader and what the panel says of it.
- * @returns The controls.
- */
-function SelectionControls(props: SelectionActions): JSX.Element {
-	const { reader, behavioralIds, explanation } = props;
-	const { selection, location, model, accepted } = reader;
-	const { shown } = accepted;
-	return (
-		<ModelSelectionBar
-			selection={selection}
-			onFocus={location.setFocus}
-			architectural={location.grammar === "architecture"}
-			canFocus={![...selection.ids].some((id) => behavioralIds.has(id))}
-			oneLine={selectedSubject({ ...shown, ids: selection.ids }).kind === "connection"}
-		>
-			{model.migrationPreview === undefined && (
-				<ModelExplanationMenu
-					open={props.menu}
-					onOpenChange={props.onMenu}
-					model={shown.model}
-					selected={selection.ids}
-					unavailable={explanation.unavailable}
-					onAction={explanation.act}
-				/>
-			)}
-		</ModelSelectionBar>
-	);
 }
 
 /**
@@ -206,6 +173,8 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		[flow, model, reference, grammar, selectGrammar],
 	);
 	const { onAbout } = props;
+	const { onPage } = reader;
+	const openAbout = useCallback((): void => onPage("about"), [onPage]);
 	const line = useMemo(() => ({ onShow: choices.showHere, onAbout }), [choices.showHere, onAbout]);
 	const subject = {
 		vault: reader.vault,
@@ -247,14 +216,20 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 							selection={held}
 							onToggle={reader.onToggle}
 						/>
+						<ReadingFindings reader={reader} code={code} />
+						<ModelStateStanding model={model} onOpen={openAbout} />
 						{context}
 					</ModelPanelScope>
 				)}
 			</ModelPanel.Subject>
-			{selecting && (
+			{selecting ? (
 				<ModelPanelActions {...subject}>
 					<SelectionControls {...props.actions} />
 				</ModelPanelActions>
+			) : (
+				<ModelPanel.Foot>
+					<ReadingExplain {...props.actions} />
+				</ModelPanel.Foot>
 			)}
 			<ReadingLegend reader={reader} />
 		</ModelPanel>
@@ -369,7 +344,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 				data-scope={scope ?? ""}
 				data-grammar={grammar}
 				data-comparison={comparison.status}
-				className="relative flex min-h-0 min-w-0 flex-1 flex-col"
+				className="@container/reading relative flex min-h-0 min-w-0 flex-1 flex-col"
 			>
 				<ReadingPicture surface={props} warnings={code.warnings}>
 					<ReadingPanel
@@ -439,28 +414,13 @@ function ReadingAbout(props: {
 }): JSX.Element {
 	const { surface, code } = props;
 	const { reader } = surface;
-	const { accepted, selection, location, onPage, aboutSubject, choices } = reader;
+	const { accepted, selection, location, aboutSubject } = reader;
 	const { shown, scene } = accepted;
-	const { select } = selection;
-	const { findModule } = choices;
-	const { nodes } = shown.projection.content;
 	const walkthroughs = useMemo(
 		() => walkthroughsAbout(shown.model, scopeSubjects(shown.projection.opened)),
 		[shown.model, shown.projection.opened],
 	);
-	const onShow = useCallback(
-		(id: string | null): void => {
-			// A module inside a part opens that part, because this picture does not draw it.
-			const held = shown.model.modules.some((one) => one.id === id);
-			if (id !== null && held && !nodes.some((one) => one.id === id)) {
-				findModule(id, false);
-				return;
-			}
-			select(id);
-			if (id !== null) onPage("diagram");
-		},
-		[select, onPage, findModule, shown.model.modules, nodes],
-	);
+	const onShow = useShowSubject(reader);
 	const appearances = useMemo(
 		() => new Map(scene?.picture.appearances.map((one) => [one.id, one])),
 		[scene],

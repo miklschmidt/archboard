@@ -19,7 +19,10 @@ import {
 	type ModelSelectionDetailsProps,
 } from "#ui/components/architecture-model/ModelSelectionDetails.tsx";
 import { ModelSubjectStanding } from "#ui/components/architecture-model/ModelStateDetails.tsx";
-import { ModuleOpenCode } from "#ui/components/architecture-model/ModuleNavigation.tsx";
+import {
+	ModuleOpenCode,
+	ModuleOpenReferences,
+} from "#ui/components/architecture-model/ModuleNavigation.tsx";
 import { TraceToggle } from "#ui/components/semantic-board-canvas/TraceToggle.tsx";
 import type { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelPick } from "#ui/hooks/architecture-model/use-model-pick.ts";
@@ -27,10 +30,10 @@ import { usePeekRow } from "#ui/hooks/architecture-model/use-peek-row.ts";
 import { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
 import {
-	isRemoved,
 	linesOf,
 	moduleInterface,
 	moduleSource,
+	opensAsModule,
 	selectedSubject,
 	type Connection,
 	type SelectedSubject,
@@ -135,9 +138,7 @@ function OtherSubject(
 ): JSX.Element {
 	const { model, projection, selection, subject } = props;
 	const { ids, select } = selection;
-	const warnings = (
-		<ModelCodeDetails reading={props.code} selected={ids} scope={props.scope} brief />
-	);
+	const warnings = <ModelCodeDetails reading={props.code} selected={ids} scope={props.scope} />;
 	if (subject.kind === "connection")
 		return (
 			<ConnectionSummary
@@ -198,7 +199,7 @@ function ModuleSubject(
 		<ModelPanel.Body slot="module-details" moduleId={module.id}>
 			<ModuleHead {...props} model={source} />
 			<ModelInterfaceLine {...props.line} inspection={inspection} projection={projection} />
-			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} brief />
+			<ModelCodeDetails reading={props.code} selected={selection.ids} scope={props.scope} />
 			<ModelChangesWith
 				vault={props.vault}
 				model={model}
@@ -206,6 +207,13 @@ function ModuleSubject(
 				onSelect={selection.select}
 			/>
 			<ModelSubjectStanding model={model} subject={module.id} reference={projection.reference} />
+			<ModuleOpenReferences
+				paneId={props.paneId}
+				vault={props.vault}
+				model={props.model}
+				module={module}
+				onNotice={props.onCodeTargetNotice}
+			/>
 			<ModuleLines {...props} model={source} id={module.id} />
 			{props.context}
 		</ModelPanel.Body>
@@ -332,7 +340,7 @@ function ModuleActions(
 	const { module, projection } = props;
 	return (
 		<>
-			{!isRemoved(projection, module.id) && module.id !== props.scope && (
+			{opensAsModule(props.model, projection, props.scope, module.id) && (
 				<OpenModule id={module.id} onOpen={props.onOpen} />
 			)}
 			<ToggleModule

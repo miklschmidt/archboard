@@ -47,6 +47,15 @@ const NO_CHECKPOINTS: readonly never[] = [];
 const NO_TOUCHES: ReadonlyMap<string, string> = new Map();
 
 /**
+ * The identity of the state on show. An address can name a state by its name.
+ * @param props The address and the reading.
+ * @returns The identity, or nothing for no state.
+ */
+function stateOnShow(props: ModelReadingSelectorProps): string | null {
+	return props.state === null ? null : (props.selected?.id ?? props.state);
+}
+
+/**
  * Read what the catalogue says of the selected reading, keeping a requested state that it lacks.
  * @param props The selected identity and the catalogue.
  * @returns Proposals and the states, in the catalogue's order.
@@ -55,7 +64,8 @@ function logicalStates(props: ModelReadingSelectorProps) {
 	const entries = new Map<string, ListedState["state"]>(
 		stateCatalogue(props.catalogue.data).map((entry) => [entry.id, entry]),
 	);
-	if (props.state !== null) entries.set(props.state, entries.get(props.state) ?? props.selected);
+	const asked = stateOnShow(props);
+	if (asked !== null) entries.set(asked, entries.get(asked) ?? props.selected);
 	const listed = [...entries].map(([id, state]) => ({ id, state }));
 	return {
 		proposals: listed.filter(({ state }) => state?.lifecycle === "draft"),
@@ -84,7 +94,7 @@ function recordOf(props: ModelReadingSelectorProps, unfolded: ReadonlySet<string
  * @returns The list, with its recovery.
  */
 function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
-	const { checkpoint, state, against, onSelect, onState, onCompare, history } = props;
+	const { checkpoint, against, onSelect, onState, onCompare, history } = props;
 	const [unfolded, setUnfolded] = useState<ReadonlySet<string>>(new Set());
 	const toggle = useCallback((row: RecordRow): void => {
 		setUnfolded((current) => {
@@ -102,7 +112,7 @@ function ModelReadingSelector(props: ModelReadingSelectorProps): JSX.Element {
 		[onSelect, onState],
 	);
 	const sections = recordOf(props, unfolded);
-	const lit = checkpoint ?? state ?? CURRENT;
+	const lit = checkpoint ?? stateOnShow(props) ?? CURRENT;
 	const actions = useMemo(
 		() => ({ lit, against, onOpen: open, onToggle: toggle, onCompare }),
 		[lit, against, open, toggle, onCompare],

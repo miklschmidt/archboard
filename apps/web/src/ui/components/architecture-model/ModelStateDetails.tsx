@@ -150,4 +150,34 @@ function ModelSubjectStanding({
 	return <Standing against={against} open={open} code={null} flush />;
 }
 
-export { ModelStateDetails, ModelComparisonNotice, ModelSubjectStanding };
+/** What a proposal that cannot be adopted yet says, in the panel. */
+const STANDING_WORDS = {
+	conflicted: "This proposal has a decision to make before it can be adopted.",
+	blocked: "This proposal waits on another state.",
+} as const;
+
+/**
+ * Say that a proposal needs a decision, where a reader of the picture sees it. About holds the
+ * decision itself.
+ * @param props The reading and the way to About.
+ * @param props.model The reading.
+ * @param props.onOpen Open About.
+ * @returns The line, or nothing for a state that needs nothing.
+ */
+function ModelStateStanding(props: {
+	readonly model: Model;
+	readonly onOpen: () => void;
+}): JSX.Element | null {
+	const standing = proposalStanding(props.model.selectedState);
+	if (standing !== "conflicted" && standing !== "blocked") return null;
+	return (
+		<div data-slot="model-state-standing" data-standing={standing} className="flex flex-col gap-2">
+			<p className="text-body">{STANDING_WORDS[standing]}</p>
+			<Button variant="outline" size="sm" className="self-start" onClick={props.onOpen}>
+				Open in About
+			</Button>
+		</div>
+	);
+}
+
+export { ModelStateDetails, ModelStateStanding, ModelComparisonNotice, ModelSubjectStanding };

@@ -4,7 +4,6 @@ import { z } from "zod";
 import { logger } from "@archboard/diagnostics/logger";
 import {
 	addressablePanes,
-	architectureWords,
 	MAX_PANES,
 	panesInOrder,
 	resolvePane,
@@ -196,13 +195,12 @@ function postPaneRoute(req: Request, res: Response): void {
 // the browser boundary.
 
 /**
- * What a pane shows, in the words of `browser panes`.
+ * The model a pane shows, for a refusal to say.
  * @param pane The pane.
  * @returns The phrase.
  */
 function shownBy(pane: PaneRegistration): string {
-	const architecture = semanticPaneContextFor(pane.clientId)?.architecture;
-	return architecture == null ? "nothing yet" : architectureWords(architecture);
+	return semanticPaneContextFor(pane.clientId)?.architecture?.model ?? "nothing yet";
 }
 
 /**

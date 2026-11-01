@@ -59,14 +59,12 @@ function WarningSelection(props: {
  * @param props.reading The exact checked architecture, or absence.
  * @param props.selected Temporary selected identities.
  * @param props.scope The open module when nothing is selected.
- * @param props.brief Say what each finding is and leave its evidence out.
  * @returns Findings for the selected subjects, scope, or model itself.
  */
 function ModelCodeDetails(props: {
 	reading: ModelCodeReading | null;
 	selected: ReadonlySet<string>;
 	scope: string | null;
-	brief?: boolean | undefined;
 }): JSX.Element | null {
 	const { reading, selected, scope } = props;
 	const code = useMemo(() => {
@@ -77,7 +75,7 @@ function ModelCodeDetails(props: {
 		);
 		return findings.length === 0 ? null : { findings, checkedAt: reading.checkedAt };
 	}, [reading, selected, scope]);
-	return <CodeBlock code={code} brief={props.brief} />;
+	return <CodeBlock code={code} />;
 }
 
 export { ModelCodeWarnings, ModelCodeDetails };

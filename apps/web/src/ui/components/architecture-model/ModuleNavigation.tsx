@@ -1,4 +1,4 @@
-import { useCallback, type JSX } from "react";
+import { useCallback, type ComponentProps, type JSX } from "react";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { Button } from "@archboard/ui-kit/components";
 import { useModelNavigation } from "#ui/hooks/architecture-model/use-model-navigation.ts";
@@ -31,6 +31,35 @@ function ModuleNavigation(props: ModuleNavigationProps): JSX.Element | null {
 function ModuleOpenCode(props: ModuleNavigationProps): JSX.Element | null {
 	if (props.module.binding === undefined) return null;
 	return <OpenCode {...props} />;
+}
+
+/**
+ * The architectures a module refers to, for a place with no room for the rest of its navigation.
+ * @param props The selected module and exact reading context.
+ * @returns The references, or nothing for a module with none.
+ */
+function ModuleOpenReferences(props: ModuleNavigationProps): JSX.Element | null {
+	if (props.module.references === undefined || props.module.references.length === 0) return null;
+	return <OpenReferences {...props} references={props.module.references} />;
+}
+
+/**
+ * The references of a module, on their own read of it.
+ * @param props The module and its references.
+ * @returns The references.
+ */
+function OpenReferences(
+	props: ModuleNavigationProps & Pick<ComponentProps<typeof ModuleReferences>, "references">,
+): JSX.Element {
+	const navigation = useModelNavigation(props.vault, props.model, props.module);
+	return (
+		<ModuleReferences
+			key={JSON.stringify([props.vault, navigation.target, props.model.revision.digest])}
+			paneId={props.paneId}
+			references={props.references}
+			navigation={navigation}
+		/>
+	);
 }
 
 /**
@@ -152,4 +181,4 @@ function CodeTargetAvailability({ target }: { target: Model["codeTarget"] }): JS
 	);
 }
 
-export { ModuleNavigation, ModuleOpenCode };
+export { ModuleNavigation, ModuleOpenCode, ModuleOpenReferences };

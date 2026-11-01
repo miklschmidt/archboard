@@ -200,7 +200,12 @@ test("a draft written on a planning root has that root as its base, not Current"
 	 */
 	function bases(predecessor: string): string[] {
 		const mine = proposal("Mine", { predecessor });
-		const state = { ...DRAFT, predecessor };
+		const state: Model["selectedState"] = {
+			id: "Mine",
+			name: "Mine",
+			lifecycle: "draft",
+			predecessor,
+		};
 		const catalogue = reading({ selectedState: CURRENT, proposals: [root, mine] });
 		return comparisonChoices({
 			reading: reading({ selectedState: state, proposals: [root, mine], comparison: BASED }),

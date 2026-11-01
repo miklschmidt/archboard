@@ -49,6 +49,7 @@ import {
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
 import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
+import { useGradientsWhileShown } from "#ui/hooks/semantic-board-canvas/use-gradients-while-shown.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 import { isDoor } from "#ui/rules/architecture-model/selected-subject.ts";
 
@@ -102,6 +103,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 	const { reserve: reserveBottom } = camera;
 	useLayoutEffect(() => reserveBottom(props.reserve ?? 0), [reserveBottom, props.reserve]);
 	const [surface, setSurface] = useState<HTMLDivElement | null>(null);
+	useGradientsWhileShown(surface);
 	const attachViewport = useCallback(
 		(element: HTMLElement | null): void => camera.attachViewport(element),
 		[camera],

@@ -27,7 +27,7 @@ function ModelBreadcrumbs(props: {
 	const items = [{ id: null, name: props.name }, ...props.trail];
 	const here = props.ending === undefined ? props.scope : undefined;
 	return (
-		<div className="flex min-w-0 items-center">
+		<div className="flex min-w-16 items-center">
 			<nav
 				aria-label="Module path"
 				data-slot="model-breadcrumbs"

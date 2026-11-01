@@ -2,7 +2,6 @@
 // keeps its own values: `after` turns a default comparison off, and nothing at all means the
 // default. A person reads neither.
 
-import { followsCurrent } from "@archboard/board/comparison";
 import type { Model } from "@archboard/board/content";
 import { changedCount, reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
@@ -70,6 +69,25 @@ function hasBase(reading: Model, catalogue: Model | undefined): boolean {
 }
 
 /**
+ * Whether a draft's chain of predecessors reaches the current state, as the server asks before it
+ * chooses a default base.
+ * @param state The draft.
+ * @param catalogue The current catalogue.
+ * @returns True when the chain reaches Current.
+ */
+function followsCurrent(state: NonNullable<Model["selectedState"]>, catalogue: Model): boolean {
+	const by = new Map(catalogue.proposals.map(({ id, predecessor }) => [id, predecessor]));
+	const seen = new Set<string>();
+	let at = state.predecessor;
+	while (at != null && !seen.has(at)) {
+		if (at === catalogue.manifest.current?.id) return true;
+		seen.add(at);
+		at = by.get(at);
+	}
+	return false;
+}
+
+/**
  * Whether a draft has a predecessor and is not written on Current.
  * @param state The draft.
  * @param catalogue The current catalogue.
@@ -77,7 +95,7 @@ function hasBase(reading: Model, catalogue: Model | undefined): boolean {
  */
 function leavesCurrent(state: NonNullable<Model["selectedState"]>, catalogue: Model | undefined) {
 	if (catalogue === undefined || state.predecessor == null) return false;
-	return !followsCurrent(state, catalogue.proposals, catalogue.manifest.current?.id);
+	return !followsCurrent(state, catalogue);
 }
 
 /**
@@ -139,6 +157,9 @@ function savedWords(savedAt: string | undefined): string {
 	return savedAt === undefined ? "a saved reading" : `saved ${checkpointTime(savedAt)}`;
 }
 
+/** What the control says first, which a narrow pane leaves out so that the base still shows. */
+const COMPARED = "Compared with ";
+
 /**
  * What a comparison is with.
  * @param comparison The comparison.
@@ -150,7 +171,7 @@ function baseWords(comparison: Comparison, savedAt: string | undefined): string 
 	if (reason === "predecessor") return "its base";
 	if (against === null) return "the empty planning baseline";
 	if (checkpoint !== undefined) return savedWords(savedAt);
-	return against.lifecycle === "current" ? "Current" : (against.summary ?? against.name);
+	return against.lifecycle === "current" ? "Current" : against.name;
 }
 
 /**
@@ -161,7 +182,7 @@ function baseWords(comparison: Comparison, savedAt: string | undefined): string 
 function comparedWith(inputs: ComparisonInputs): string {
 	const { comparison } = inputs.reading;
 	if (comparison === undefined) return "No comparison";
-	const words = `Compared with ${baseWords(comparison, inputs.savedAt)}`;
+	const words = `${COMPARED}${baseWords(comparison, inputs.savedAt)}`;
 	// The Changes tab counts the changes of a proposal.
 	return reviewsChanges(inputs.reading) ? words : `${words} · ${changedCount(comparison)} changed`;
 }
@@ -225,6 +246,7 @@ function comparisonAddress(value: string, reading: Model): string | null {
 }
 
 export {
+	COMPARED,
 	chosenComparison,
 	comparedWith,
 	comparisonAddress,

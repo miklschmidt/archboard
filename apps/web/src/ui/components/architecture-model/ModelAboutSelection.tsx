@@ -52,9 +52,9 @@ import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 import { modulePlaces } from "#ui/rules/architecture-model/module-places.ts";
 import { walkthroughsAbout } from "#ui/rules/architecture-model/relevance.ts";
 import {
-	isRemoved,
 	moduleInterface,
 	moduleSource,
+	opensAsModule,
 	relationshipsOf,
 	selectedSubject,
 	type Connection,
@@ -281,7 +281,7 @@ function ModulePage(props: ModelAboutSelectionProps & { readonly module: Module 
 	const { module, model, projection, onOpen, scope } = props;
 	const source = moduleSource(model, projection, module.id);
 	const sections = useModuleSections({ ...props, source });
-	const opens = !isRemoved(projection, module.id) && module.id !== scope;
+	const opens = opensAsModule(model, projection, scope, module.id);
 	const tools = (
 		<>
 			{props.tools}

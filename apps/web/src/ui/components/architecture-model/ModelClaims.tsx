@@ -76,9 +76,6 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 	});
 	const { mutate } = takeBack;
 	const release = useCallback((): void => mutate(), [mutate]);
-	const names = claim.subjects.map((id) =>
-		model?.success ? (model.modules.find((module) => module.id === id)?.name ?? id) : id,
-	);
 	return (
 		<div
 			data-slot="model-claim"
@@ -89,7 +86,7 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
 			<div className="min-w-0 flex-1">
 				<p className="truncate">
 					<span className="font-semibold">{claim.writer}</span> · {claimedStateName(claim, model)} ·{" "}
-					{names.join(", ")}
+					{claimedSubjects(claim, model)}
 				</p>
 				<p className="truncate">{claim.reason}</p>
 			</div>
@@ -119,13 +116,30 @@ function ModelClaim(props: ModelClaimProps): JSX.Element {
  * Claims identify the state they affect, independently of the pane's selected state.
  * @param claim The exact runtime claim.
  * @param model The coherent catalogue available to this reader.
- * @returns Its authored state name, or the explicit unresolved identity.
+ * @returns Its authored state name, or words for a state this reading does not hold.
  */
 function claimedStateName(claim: ArchitectureClaim, model: ModelClaimsProps["model"]): string {
-	const fallback = claim.target.state ?? "Planning model";
-	if (!model?.success) return fallback;
+	if (!model?.success) return "Planning model";
 	const states = [model.selectedState, model.manifest.current, ...model.proposals];
-	return states.find((state) => state?.id === claim.target.state)?.name ?? fallback;
+	return states.find((state) => state?.id === claim.target.state)?.name ?? "A state of this model";
+}
+
+/**
+ * Name what a claim holds. A subject that this reading lacks, such as a module new in a draft, is
+ * counted: an identity says nothing to a reader.
+ * @param claim The claim.
+ * @param model The reading, for its names.
+ * @returns The names.
+ */
+function claimedSubjects(claim: ArchitectureClaim, model: ModelClaimsProps["model"]): string {
+	const reading = model?.success ? model : undefined;
+	const names = claim.subjects.flatMap(
+		(id) => reading?.modules.find((one) => one.id === id)?.name ?? [],
+	);
+	const others = claim.subjects.length - names.length;
+	if (others === 0) return names.join(", ");
+	const more = `${others} ${others === 1 ? "subject" : "subjects"}`;
+	return names.length === 0 ? more : `${names.join(", ")} and ${more}`;
 }
 
 export { ModelClaims, ModelClaimsFailure };

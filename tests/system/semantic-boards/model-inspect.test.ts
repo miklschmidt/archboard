@@ -16,11 +16,8 @@ const repoRoot = resolve(import.meta.dir, "../../..");
 const home = mkdtempSync(join(tmpdir(), "archboard-design-lens-"));
 const vault = vaultIn(home);
 let server: OwnedServer | undefined;
-/**
- * The identity of the example's Queued fulfilment draft. A shelved first draft still holds that
- * name as a former one, so a name does not select the draft alone.
- */
-const QUEUED = "wyzlP1Nf";
+/** The example's draft. A shelved first draft keeps this as a former name, and the draft's own wins. */
+const QUEUED = "Queued fulfilment";
 
 /**
  * Run one command in the directory that holds the example's vault.
@@ -206,6 +203,8 @@ test("model compare puts competing proposals beside each other, in the order nam
 	const { comparison } = compared(
 		"--state",
 		"Nightly batch",
+		"--against",
+		"current",
 		"--beside",
 		"Live events",
 		"--beside",
