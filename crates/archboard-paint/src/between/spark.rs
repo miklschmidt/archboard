@@ -240,12 +240,29 @@ fn ports_of(group: &Group) -> Vec<Item> {
         .collect()
 }
 
+/// Draw one route shape, keeping authored dashes and holding back its markers.
+fn draw_shape(shape: &mut Shape, length: f64, drawn: f64, arrowhead_at: f64) {
+    if let Some(stroke) = &mut shape.stroke {
+        if stroke.dashes.is_empty() {
+            stroke.dashes = vec![length, length];
+            stroke.dash_offset = Some(length * (1.0 - drawn));
+        } else {
+            let shown = ease_out(phase(drawn, 0.0, DASHED_FADE));
+            stroke.opacity = Some(stroke.opacity.unwrap_or(1.0) * shown);
+        }
+    }
+    if drawn < arrowhead_at {
+        shape.marker = None;
+        shape.start_marker = None;
+    }
+}
+
 /// A line only the next scene has, drawn on from its start by the spark at its
 /// head.
 #[derive(Clone, Debug)]
 pub(super) struct DrawOn {
     template: Group,
-    /// The solid shapes, which are pulled out along the route.
+    /// The route shapes, pulled out or faded according to their stroke.
     strokes: Vec<Stroked>,
     /// The shape that the spark runs along.
     head: Option<Stroked>,
@@ -266,18 +283,12 @@ impl DrawOn {
             };
             shape.stroke.as_ref()?;
             let length = length(&route_of(&shape.geometry)?).filter(|length| *length > 0.0)?;
-            Some((shape, Stroked { child, length }))
+            Some(Stroked { child, length })
         });
         let (mut strokes, mut head) = (Vec::new(), None);
-        for (shape, stroked) in routed {
+        for stroked in routed {
             head = Some(stroked);
-            if shape
-                .stroke
-                .as_ref()
-                .is_some_and(|stroke| stroke.dashes.is_empty())
-            {
-                strokes.push(stroked);
-            }
+            strokes.push(stroked);
         }
         let mut template = in_flight(group);
         template.mask.clone_from(&group.mask);
@@ -304,21 +315,14 @@ impl DrawOn {
             group.items.extend(self.ports.iter().cloned());
             return group;
         }
-        group.opacity = Some(group.opacity.unwrap_or(1.0) * self.shown_at(drawn));
+        if drawn <= 0.0 {
+            group.opacity = Some(0.0);
+        }
         for &Stroked { child, length } in &self.strokes {
             let Some(Item::Shape(shape)) = group.items.get_mut(child) else {
                 continue;
             };
-            // One dash as long as the line, pulled back all the way and let out.
-            if let Some(stroke) = &mut shape.stroke {
-                stroke.dashes = vec![length, length];
-                stroke.dash_offset = Some(length * (1.0 - drawn));
-            }
-            // The arrowheads wait until the line is nearly there.
-            if drawn < self.arrowhead_at {
-                shape.marker = None;
-                shape.start_marker = None;
-            }
+            draw_shape(shape, length, drawn, self.arrowhead_at);
         }
         let cooled = 1.0 - phase(drawn, SPARK_COOLS_FROM, 1.0);
         if let Some(Stroked { child, length }) = self.head
@@ -332,17 +336,6 @@ impl DrawOn {
         }
         group
     }
-
-    /// How much of a line shows this far through its drawing.
-    fn shown_at(&self, drawn: f64) -> f64 {
-        if drawn <= 0.0 {
-            0.0
-        } else if self.strokes.is_empty() {
-            ease_out(phase(drawn, 0.0, DASHED_FADE))
-        } else {
-            1.0
-        }
-    }
 }
 
 #[cfg(test)]
@@ -351,6 +344,33 @@ mod tests {
     use archboard_scene::scene::{Item, Purpose, Shape, Stroke, Token};
 
     use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline};
+
+    #[test]
+    fn a_dashed_line_keeps_its_dashes_and_waits_to_show_its_arrowhead() {
+        let Item::Group(mut group) = super::super::testing::line("e", &[(0.0, 0.0), (100.0, 0.0)])
+        else {
+            panic!("a line group")
+        };
+        let Some(Item::Shape(stroke)) = group.items.get_mut(1) else {
+            panic!("a stroke")
+        };
+        stroke.stroke.as_mut().expect("stroked").dashes = vec![4.0, 6.0];
+        let draw = super::DrawOn::new(&group, (0.0, 1.0), 0.9);
+        let early = draw.at(0.1);
+        let Some(Item::Shape(stroke)) = early.items.get(1) else {
+            panic!("a stroke")
+        };
+        assert!(stroke.marker.is_none());
+        let ink = stroke.stroke.as_ref().expect("stroked");
+        assert_eq!(ink.dashes, [4.0, 6.0]);
+        assert!(ink.opacity.is_some_and(|shown| shown > 0.0 && shown < 1.0));
+        let landed = draw.at(1.0);
+        let Some(Item::Shape(stroke)) = landed.items.get(1) else {
+            panic!("a stroke")
+        };
+        assert!(stroke.marker.is_some());
+        assert_eq!(stroke.stroke.as_ref().expect("stroked").opacity, None);
+    }
 
     #[test]
     fn a_rim_opens_from_where_the_line_landed_and_closes_round_the_card() {
