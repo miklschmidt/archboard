@@ -3,9 +3,15 @@ import { expect, mock, test } from "bun:test";
 
 const stops: ((reason: string) => void)[] = [];
 await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", () => ({
-	/** Load the controlled painter. @returns Once ready. */
+	/**
+	 * Load the controlled painter.
+	 * @returns Once ready.
+	 */
 	default: async () => undefined,
-	/** Name this test build. @returns Its source identity. */
+	/**
+	 * Name this test build.
+	 * @returns Its source identity.
+	 */
 	sourceHash: () => "painter-test",
 	Painter: {
 		/**
@@ -16,7 +22,10 @@ await mock.module("#shared/protocol/generated/core/archboard_painter_wasm.js", (
 		warm: async (stopped: (reason: string) => void) => {
 			stops.push(stopped);
 		},
-		/** Start a controlled painter. @returns The painter. */
+		/**
+		 * Start a controlled painter.
+		 * @returns The painter.
+		 */
 		gpu: () => ({}),
 	},
 }));
@@ -46,7 +55,10 @@ test("GPU stops reach late subscribers and stay with the GPU that stopped", asyn
 	});
 	Object.defineProperty(navigator, "gpu", {
 		value: {
-			/** Supply a hardware adapter. @returns The adapter. */
+			/**
+			 * Supply a hardware adapter.
+			 * @returns The adapter.
+			 */
 			requestAdapter: async () => ({ info: { isFallbackAdapter: false } }),
 		},
 		configurable: true,
