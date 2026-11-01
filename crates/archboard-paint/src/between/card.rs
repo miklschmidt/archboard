@@ -16,7 +16,7 @@ use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, Role, Shape, Transform, Viewport};
 
 use super::content::{Paired, look, pair_content, shell, split};
-use super::ease::{ease_in_out, emphasised, mix_rect, phase};
+use super::ease::{ease_in_out, emphasised, lerp, mix_rect, phase};
 use super::found::Found;
 use super::phases::Transition;
 
@@ -244,6 +244,8 @@ fn together(items: &[Item], dx: f64, dy: f64, opacity: f64) -> Option<Item> {
 #[derive(Clone, Debug)]
 pub(super) struct CardCarry {
     shell: Group,
+    /// The entrance's growth, or another move still on the old group.
+    from_transform: Option<Transform>,
     fixed: Vec<Item>,
     frames: Vec<Frame>,
     old_frames: Vec<Frame>,
@@ -285,7 +287,11 @@ impl CardCarry {
         } = pair_content(&old.content, &new.content);
         let changed = !arriving.is_empty() || !leaving.is_empty();
         let fading = fading_frame(&old.frame, &new.frame);
-        if from == to && !changed && fading.is_empty() {
+        if from == to
+            && !changed
+            && fading.is_empty()
+            && before.group.transform == after.group.transform
+        {
             return None;
         }
         let pick = |from: &[&Item], at: &[usize]| -> Vec<Item> {
@@ -296,6 +302,7 @@ impl CardCarry {
         };
         Some(CardCarry {
             shell: shell(after.group),
+            from_transform: before.group.transform,
             fixed: new.fixed.iter().map(|item| (*item).clone()).collect(),
             frames: new
                 .frame
@@ -322,11 +329,8 @@ impl CardCarry {
     /// The card at a moment of the move.
     pub(super) fn at(&self, progress: f64) -> Group {
         let t = &self.phases;
-        let card = mix_rect(
-            self.from,
-            self.to,
-            emphasised(phase(progress, t.move_start, t.move_end)),
-        );
+        let moved = emphasised(phase(progress, t.move_start, t.move_end));
+        let card = mix_rect(self.from, self.to, moved);
         let mut items = self.fixed.clone();
         items.extend(self.frames.iter().map(|frame| frame.at(card)));
         let old: Vec<Item> = self.old_frames.iter().map(|frame| frame.at(card)).collect();
@@ -335,8 +339,28 @@ impl CardCarry {
         self.content(&mut items, card, &self.swap(card, progress));
         Group {
             items,
+            transform: self.transform_at(moved),
             ..self.shell.clone()
         }
+    }
+
+    /// Carry an unfinished entrance's scale and position into the next scene.
+    fn transform_at(&self, moved: f64) -> Option<Transform> {
+        if self.from_transform == self.shell.transform {
+            return self.shell.transform;
+        }
+        let still = Transform::translate(0.0, 0.0);
+        let from = self.from_transform.unwrap_or(still);
+        let to = self.shell.transform.unwrap_or(still);
+        Some(Transform {
+            x: lerp(from.x, to.x, moved),
+            y: lerp(from.y, to.y, moved),
+            scale: Some(lerp(
+                from.scale.unwrap_or(1.0),
+                to.scale.unwrap_or(1.0),
+                moved,
+            )),
+        })
     }
 
     /// Each role's content with where it stands and how visible it is.

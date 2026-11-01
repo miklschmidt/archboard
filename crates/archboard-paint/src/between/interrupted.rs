@@ -3,8 +3,8 @@
 use archboard_scene::paint::design::RAIL_GAP;
 use archboard_scene::scene::{Definition, Geometry, Item, Mask, MaskId, Purpose, Shape, Stroke, Token};
 
-use super::testing::{PHASES, line, rect, scene};
-use super::{Between, Scene};
+use super::testing::{PHASES, card, drawing, line, plate, rect, scene};
+use super::{Between, Entrance, Scene};
 
 fn double_line(y: f64) -> Scene {
     let route = vec![
@@ -57,4 +57,37 @@ fn a_double_line_keeps_its_in_between_core_when_another_picture_arrives() {
     let (seen, _) = first.seen_at(0.3, &next);
     let second = Between::new(&seen, &last, (0.0, 0.0), &PHASES);
     assert_eq!(core(&second.masks_at(0.0)[0]), expected);
+}
+
+/// A card's visible box includes the growth of its entrance.
+fn drawn_box(group: &archboard_scene::scene::Group) -> archboard_scene::geometry::Rect {
+    let frame = plate(group);
+    let transform = group
+        .transform
+        .unwrap_or(archboard_scene::scene::Transform::translate(0.0, 0.0));
+    let scale = transform.scale.unwrap_or(1.0);
+    rect(
+        frame.x * scale + transform.x,
+        frame.y * scale + transform.y,
+        frame.width * scale,
+        frame.height * scale,
+    )
+}
+
+#[test]
+fn an_interrupted_entrance_keeps_the_box_the_reader_saw() {
+    let frame = rect(10.0, 10.0, 100.0, 50.0);
+    let from = scene(vec![card("a", frame, &["Title"])], &[("a", frame)]);
+    let seen = Scene {
+        body: Entrance::new(&from, &PHASES).at(0.2),
+        ..from
+    };
+    let expected = drawn_box(drawing(&seen.body, "a")[0]);
+    for there in [frame, rect(200.0, 200.0, 100.0, 50.0)] {
+        let next = scene(vec![card("a", there, &["Title"])], &[("a", there)]);
+        let between = Between::new(&seen, &next, (0.0, 0.0), &PHASES);
+        let carried = between.at(0.0);
+        assert_eq!(drawn_box(drawing(&carried, "a")[0]), expected);
+        assert_eq!(drawn_box(drawing(&between.at(0.99), "a")[0]), there);
+    }
 }
