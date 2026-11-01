@@ -1,7 +1,7 @@
-// Driving a camera glide, one frame at a time, on the surface itself.
+// Driving a camera glide, one frame at a time, on the surface and its stage.
 //
-// A glide writes the surface's transform directly for as long as it lasts and
-// commits the camera to state once, at the end. Committing every frame would
+// A glide writes the surface's transform and the stage's camera directly for as
+// long as it lasts and commits the camera to state once, at the end. Committing every frame would
 // re-render the whole pane sixty times a second to move one transform. While
 // it flies the surface carries `data-camera-motion`, which is how anything
 // outside the pane can tell a step has not finished arriving.
@@ -17,6 +17,7 @@ import {
 	type Camera,
 	type Size,
 } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import { glidePath } from "#ui/rules/semantic-board-canvas/camera/camera-glide.ts";
 
 /**
@@ -111,6 +112,7 @@ function useCameraGlide(): CameraGlide {
 				const progress = Math.min(1, (now - began) / move.duration);
 				glide.at = path(easeInOut(progress));
 				surface.style.transform = cameraTransform(glide.at);
+				stageOf(surface)?.setCamera(glide.at, 0);
 				if (progress < 1) {
 					glide.frame = clock.requestFrame(tick);
 					return;
