@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T17:04:00Z'
+updated_date: '2026-11-01T17:31:00Z'
 labels:
   - renderer
   - motion
@@ -95,4 +95,6 @@ AC 6 stays open until the owner judges this pass.
 ## The owner's third message
 
 The owner asked for motion that reflects the depth of the recursive decomposition: sideways at the same depth, a zoom into a deeper module, and a zoom out to a shallower one. The module tree now decides every move between boards. See ADR 0071, "A move follows the module tree", and DESIGN.md, "The Depth Rule". The moves were filmed and looked at. AC 6 stays open until the owner judges this pass.
+
+The final commit of this pass is 7ce152d81. `bun run check` passed on it, and parity is 0.157 percent of ink apart on average, worst case 0.78 percent. The commits after a268c576f are not pushed and did not receive the delegated review. The owner authorizes a push, and the review runs before it.
 <!-- SECTION:NOTES:END -->
