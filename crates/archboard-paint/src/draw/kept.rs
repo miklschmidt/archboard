@@ -45,7 +45,7 @@ impl<C: Canvas> Walk<'_, C> {
             .hash(&mut key);
         let at = inside.transform * Affine::translate((text.at.x, text.at.y));
         self.part(PartKey::Text(key.finish()), at, |walk, at| {
-            walk.glyphs(text, at)
+            walk.glyphs(text, at);
         });
     }
 
