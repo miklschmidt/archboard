@@ -93,11 +93,11 @@ test(
 		);
 		expect(
 			speech.map((entry) =>
-				["The services", "The handler"].find((title) =>
-					String(entry.params?.["text"]).includes(title),
+				["The gateway accepts", "The handler dispatches"].find((words) =>
+					String(entry.params?.["text"]).includes(words),
 				),
 			),
-		).toEqual(["The services", "The handler"]);
+		).toEqual(["The gateway accepts", "The handler dispatches"]);
 	},
 	TEST_RECORDING_CASE_MS,
 );
