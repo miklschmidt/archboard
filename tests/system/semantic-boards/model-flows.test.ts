@@ -386,6 +386,10 @@ test("canonical locality and branch footprint retain source analysis without a l
 		base: "HEAD~1",
 		repositories: expect.any(Array),
 	});
+	// A base no checkout can read is a failure that names it, not a clean exit.
+	const unread = cli(["model", "footprint", "--base", "no-such-base"]);
+	expect(unread.status).toBe(2);
+	expect(unread.stderr).toContain("no-such-base");
 	const local = ArchitectureHistoryResultSchema.parse(answer(locality.stdout));
 	const branch = ArchitectureHistoryResultSchema.parse(answer(footprint.stdout));
 	if (!local.success || local.analysis !== "locality" || !branch.success || !("changed" in branch))
