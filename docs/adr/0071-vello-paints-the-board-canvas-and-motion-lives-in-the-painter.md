@@ -5,8 +5,8 @@ status: accepted
 # Vello paints the board canvas, and motion lives in the painter
 
 The owner decided this on 2026-11-01 (TASK-560). This record replaces one clause of
-[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md):
-"The browser viewer keeps its classes and Web Animations over that SVG."
+[ADR 0059](0059-the-renderer-is-a-rust-core-and-each-frontend-paints-its-scene.md).
+The clause is "The browser viewer keeps its classes and Web Animations over that SVG."
 
 This record also changes how three earlier decisions are carried out, but not what they decide.
 [ADR 0027](0027-explicit-traffic-controls-distance-based-animation.md) keeps its pulse,
@@ -53,7 +53,7 @@ run with no GPU and no DOM, and the Rust tests own them. The durations stay in
 ### The page keeps the decisions, and the stage keeps the motion
 
 The page decides which arrival a picture gets and how far the shared cards moved.
-It also decides when a flight lands. `PictureStage` hands those decisions to the painter and asks for
+It also sets the moment of landing for a flight. `PictureStage` hands those decisions to the painter and asks for
 frames from the frame clock only while something moves. The DOM motion modules are
 gone, so the viewer has one motion system.
 
@@ -108,6 +108,6 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
   with this change.
 - The page holds a canvas and an SVG. TASK-561 follows this change to reduce the DOM.
 - On the measured Linux machine, headless Chromium with a GPU adapter drew a blank canvas on 2026-11-01.
-  No fix was established in those runs.
+  The owner states that there is no fix for this.
   So GPU parity and frame measurements run in a browser with a window. The notes of
   TASK-560 hold the facts.
