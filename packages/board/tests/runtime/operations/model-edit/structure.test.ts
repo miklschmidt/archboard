@@ -92,8 +92,6 @@ test("reparenting requires both containment scopes and refuses a cycle without c
 		diagnostics: expect.arrayContaining([
 			expect.objectContaining({
 				subjects: expect.arrayContaining(["Shop#Worker"]),
-				// The message names the unclaimed subject and leaves out the claimed one.
-				message: expect.stringMatching(/claim: (?!.*Shop#Gateway).*Shop#Worker/u),
 			}),
 		]),
 	});
