@@ -190,10 +190,3 @@ impl Entrance {
         }
     }
 }
-
-/// A picture coming in part by part, with nothing to carry from.
-///
-/// Prepare an [`Entrance`] once to sample it every frame.
-pub fn entrance(scene: &Scene, progress: f64, phases: &Phases) -> Vec<Item> {
-    Entrance::new(scene, phases).at(progress)
-}

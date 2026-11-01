@@ -11,7 +11,7 @@ use super::ease::{emphasised, phase};
 use super::testing::{
     PHASES, card, drawing, label, line, plate, rect, region, route_of, scene, shadow,
 };
-use super::{Between, entrance};
+use super::{Between, Entrance};
 
 /// Every run of words a group draws, to any depth.
 fn said(items: &[Item]) -> Vec<String> {
@@ -452,7 +452,7 @@ fn tall_board() -> Scene {
 #[test]
 fn an_entrance_runs_down_the_board() {
     let board = tall_board();
-    let early = entrance(&board, 0.2, &PHASES);
+    let early = Entrance::new(&board, &PHASES).at(0.2);
     let of = |name: &str| solid(drawing(&early, name)[0]);
     assert!(of("top") > 0.0, "the first card is on its way");
     assert_eq!(of("middle"), 0.0);
@@ -469,7 +469,7 @@ fn an_entrance_runs_down_the_board() {
         "what belongs to no subject fades in with the frames"
     );
     assert_eq!(
-        entrance(&board, 1.0, &PHASES),
+        Entrance::new(&board, &PHASES).at(1.0),
         board.body,
         "it lands on the scene itself"
     );
@@ -479,7 +479,7 @@ fn an_entrance_runs_down_the_board() {
 fn an_entrance_draws_the_lines_after_the_cards_and_names_them_last() {
     let board = tall_board();
     let lines = |progress: f64| {
-        let body = entrance(&board, progress, &PHASES);
+        let body = Entrance::new(&board, &PHASES).at(progress);
         drawing(&body, "e")
             .iter()
             .map(|group| solid(group))
@@ -513,28 +513,21 @@ fn a_flight_knows_what_the_next_scene_defines_inside_its_body() {
 #[test]
 fn an_in_between_draws_with_balanced_layers() {
     use crate::canvas::Count;
-    use crate::draw::{Picture, draw};
-    use crate::outlines::Outlines;
-    use crate::palette::{Palette, Theme};
-    use crate::presentation::Presentation;
+    use crate::draw::tests::painting;
+    use crate::palette::Theme;
+    use crate::stage::Stage;
 
     let (body, nodes) = two_cards(rect(10.0, 10.0, 100.0, 50.0), "Old");
     let from = scene(body, &nodes);
     let (body, nodes) = two_cards(rect(40.0, 30.0, 140.0, 50.0), "New");
     let to = scene(body, &nodes);
     let between = Between::new(&from, &to, (0.0, 0.0), &PHASES);
-    let mut halfway = to;
-    halfway.body = between.at(0.5);
-    halfway.definitions = between.definitions();
+    let mut halfway = painting(between.at(0.5));
+    halfway.scene.definitions = between.definitions();
+    let mut stage = Stage::new(Theme::Light, (400.0, 300.0));
+    stage.show(halfway);
     let mut count = Count::default();
-    draw(
-        &mut count,
-        &Picture::new(halfway),
-        (400.0, 300.0),
-        &Palette::of(Theme::Light),
-        &mut Outlines::default(),
-        &Presentation::default(),
-    );
+    stage.draw(&mut count, 0.0);
     assert!(count.fills > 0 && count.layers > 0);
     assert_eq!(count.open, 0);
 }

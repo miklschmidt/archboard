@@ -154,33 +154,6 @@ pub(crate) fn draw_items<C: Canvas>(
     walk.items(items, inside);
 }
 
-/// Draw a picture on a canvas of a size in canvas pixels, its ground filling
-/// the whole canvas.
-pub fn draw<C: Canvas>(
-    canvas: &mut C,
-    picture: &Picture,
-    size: (f64, f64),
-    palette: &Palette,
-    outlines: &mut Outlines,
-    presentation: &Presentation,
-) {
-    draw_ground(canvas, &picture.scene, size, palette);
-    let camera = presentation.camera;
-    let mut inks = Inks {
-        palette,
-        outlines,
-        presentation,
-        still: None,
-    };
-    draw_items(
-        canvas,
-        &picture.scene.body,
-        &picture.definitions,
-        placed(camera.x, camera.y, Some(camera.scale)),
-        &mut inks,
-    );
-}
-
 /// A move from one place to another, a share of the way.
 fn between(from: Transform, to: Transform, share: f64) -> Transform {
     let mix = |one: f64, other: f64| one + (other - one) * share;

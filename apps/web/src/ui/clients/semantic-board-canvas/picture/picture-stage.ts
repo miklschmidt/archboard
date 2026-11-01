@@ -588,10 +588,8 @@ function attachStage(surface: HTMLElement, canvas: HTMLCanvasElement): () => voi
 }
 
 export {
-	PAINTER_ATTRIBUTE,
 	attachStage,
 	stageOf,
-	type PictureStage,
 	type StageCamera,
 	type StageDive,
 	type StageLight,

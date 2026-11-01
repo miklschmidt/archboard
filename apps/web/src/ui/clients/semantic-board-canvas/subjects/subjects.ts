@@ -31,13 +31,6 @@ const TRAFFIC_ATTRIBUTE = "data-traffic";
 const PULSE_CLASS = "ab-pulse";
 
 /**
- * The class the inside of a port carries (the renderer's `PORT_CLASS`): where a
- * line's end runs into a slot cut through a card's foot, drawn where the card
- * lands, not where it is in flight.
- */
-const PORT_CLASS = "ab-port";
-
-/**
  * The attribute a mark lists its members in, space-separated: a junction mark
  * lists the relationships that meet at it, and a row mark its step.
  * Neither is a subject of its own: the veil lights each with its members.
@@ -270,60 +263,10 @@ function surfaceMarks({
 	return `${veiled ? ` ${VEILED_CLASS}` : ""}${far ? ` ${FAR_VIEW_CLASS}` : ""}${lighting}`;
 }
 
-/** Every class the viewer puts on a subject's group; none of them is the renderer's. */
-const VIEWER_MARKS: readonly string[] = [SELECTED_CLASS, LIT_CLASS, ...REACH_CLASSES];
-
-/**
- * The viewer's marks on a surface, by subject.
- * @param surface The surface.
- * @returns Each marked subject's marks.
- */
-function marksOn(surface: Element): Map<string, string[]> {
-	const marked = new Map<string, string[]>();
-	for (const group of surface.querySelectorAll(MARKED)) {
-		const marks = VIEWER_MARKS.filter((mark) => group.classList.contains(mark));
-		const id = markedId(group);
-		if (id !== null && marks.length > 0) {
-			marked.set(id, marks);
-		}
-	}
-	return marked;
-}
-
-/**
- * Put a picture back on a surface without it ever being seen unmarked.
- *
- * The marks the viewer draws — attention and a presented step's veil —
- * are put on the markup after it is staged, and a flight that lands stages the
- * picture again from its string. Between the two a frame could be painted with
- * none of them, and whatever they light or veil would be seen to switch off and
- * fade back. So the marks the surface carries now are copied onto the fresh
- * markup, subject by subject, as it goes up; the marks' own effects bring them
- * up to date afterwards as they always do.
- * @param surface The surface.
- * @param stage Put the picture up.
- */
-function keepingMarks(surface: Element, stage: () => void): void {
-	const marked = marksOn(surface);
-	stage();
-	for (const group of surface.querySelectorAll(MARKED)) {
-		const marks = marked.get(markedId(group) ?? "");
-		if (marks !== undefined) {
-			group.classList.add(...marks);
-		}
-	}
-}
-
 export {
-	LIT_CLASS,
-	PORT_CLASS,
 	PULSE_CLASS,
-	SELECTED_CLASS,
 	SUBJECT_ATTRIBUTE,
-	TRAFFIC_ATTRIBUTE,
 	controlAt,
-	isSubject,
-	keepingMarks,
 	markReach,
 	markSubjects,
 	markVeil,

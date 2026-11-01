@@ -8,7 +8,7 @@
 //!
 //! The in-between is plain items. Progress is a share of the whole move, and
 //! every phase of it comes from [`Phases`], which the host reads from
-//! `@archboard/timing`. [`Between`] turns one scene into the next, [`entrance()`]
+//! `@archboard/timing`. [`Between`] turns one scene into the next, [`Entrance`]
 //! brings a scene in with nothing to carry it from, and [`departure()`] sends the
 //! last scene off.
 
@@ -42,7 +42,7 @@ use line::{DrawOn, LineCarry};
 use plan::{Mover, Plan, Wiring};
 
 pub use departure::{Heading, departure};
-pub use entrance::{Entrance, entrance};
+pub use entrance::Entrance;
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
