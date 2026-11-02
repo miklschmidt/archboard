@@ -12,6 +12,7 @@ import { takeFrames } from "#tests/ui/support/semantic-board-canvas/camera-probe
 import { settle, viewport } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import {
 	WIRING,
+	group,
 	lighting,
 	lit,
 	pick,
@@ -139,6 +140,32 @@ test("a reader who turned the hover light off is lit only by a pick", async () =
 		expect(lit()).toEqual(light);
 	} finally {
 		again.restore();
+		act(() => chooseHoverLight("on"));
+	}
+});
+
+/**
+ * What stands under the pointer on a stretch that two lines share.
+ * @returns The lines, with the topmost first.
+ */
+function sharedStretch(): Element[] {
+	return [group("e3"), group("e4")];
+}
+
+test("a reader who turned the hover light off sees no other line of a picked line's stretch", async () => {
+	await served();
+	await pick("e3");
+	const light = lit();
+	document.elementsFromPoint = sharedStretch;
+	const frames = takeFrames();
+	try {
+		act(() => chooseHoverLight("off"));
+		pointAt("e3");
+		frames.run(240);
+		expect(lit()).toEqual(light);
+	} finally {
+		frames.restore();
+		Reflect.deleteProperty(document, "elementsFromPoint");
 		act(() => chooseHoverLight("on"));
 	}
 });
