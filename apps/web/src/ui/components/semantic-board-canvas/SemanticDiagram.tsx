@@ -130,6 +130,8 @@ interface SemanticDiagramProps {
 	group: GroupSelection | null;
 	/** What a presented step's veil leaves standing; null for no veil. */
 	veil: ReadonlySet<string> | null;
+	/** How many hops from a presented step's cards what they touch stands. */
+	reach?: ReadonlyMap<string, number> | null;
 	/**
 	 * The picture is on its way out: the reader went to another board, and
 	 * this one is kept only to be seen leaving while that one is drawn.
@@ -253,7 +255,8 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		() => subjectMarks(selection, focus, props.group?.members),
 		[selection, focus, props.group],
 	);
-	useViewerMarks(picture, { attended, veil: lighting.standing, reach: lighting.reach });
+	const reach = props.reach ?? lighting.reach;
+	useViewerMarks(picture, { attended, veil: lighting.standing, reach });
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
@@ -269,7 +272,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 			veiled: props.veil !== null,
 			presenting: props.presenting != null,
 			standing: lighting.standing,
-			reach: lighting.reach,
+			reach,
 			reducedMotion,
 		},
 		true,

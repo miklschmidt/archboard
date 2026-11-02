@@ -350,6 +350,7 @@ A tag selects what the picture draws of its group through the ordinary selection
 `ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
+`ModelHoverLight` stands under it. `clients/semantic-board-canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
 A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneBoard`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
@@ -359,6 +360,9 @@ The drawing projection translates aggregate lines into canonical relationship id
 Captured walkthroughs keep their own selection and suspend the ordinary reader.
 Their header shares the existing presentation context and holds the sidebar control until playback ends.
 Authored beat subjects drive the shared focus, camera glide, and emphasis rules.
+`beatFocus` holds the rule. A beat that names a line or a message lights that subject and its ends, and nothing more.
+A beat that names only cards answers as a pick does: the cards and the lines between them stand in full, and what they touch stands a step fainter, in both a structural picture and a sequence.
+The camera frames everything lit.
 An ordinary reader retains its own camera while a captured presentation runs.
 On one board, the surface that comes into sight starts from the camera that the other left and glides to its own rest.
 Leaving a remote presentation clears its request in the pane arrival owner, so another state read cannot restart it.

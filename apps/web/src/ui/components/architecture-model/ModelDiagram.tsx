@@ -1,5 +1,9 @@
 import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
-import { beatFocus, subjectMarks } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
+import {
+	beatFocus,
+	beatLight,
+	subjectMarks,
+} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
 import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
 import {
@@ -115,10 +119,8 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		[model.modules, onOpen],
 	);
 	const focus = useSceneFocus(scene);
-	const veil = useMemo(
-		() => (focus.drawn.length === 0 ? null : new Set(focus.drawn)),
-		[focus.drawn],
-	);
+	const beat = useMemo(() => beatLight(focus), [focus]);
+	const { veil } = beat;
 	// Before the picture moves, so the memory holds the camera that the reader left.
 	const recall = useCameraMemory(camera, scene);
 	const staged = usePictureTransition(surface, drawing, {
@@ -180,7 +182,14 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		},
 		[keyboard, camera, drawing, reducedMotion, lighting],
 	);
-	useSceneMarks(staged, scene, { selected, warnings: props.warnings, focus, veil, lighting });
+	useSceneMarks(staged, scene, {
+		selected,
+		warnings: props.warnings,
+		focus,
+		veil,
+		reach: beat.reach ?? lighting.reach,
+		lighting,
+	});
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
 	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
@@ -191,7 +200,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			veiled: veil !== null,
 			presenting,
 			standing: veil ?? lighting.standing,
-			reach: lighting.reach,
+			reach: beat.reach ?? lighting.reach,
 			reducedMotion,
 		},
 		hasFarView(scene),
@@ -398,6 +407,7 @@ interface SceneMarks {
 	warnings: ReadonlySet<string> | undefined;
 	focus: ReturnType<typeof useSceneFocus>;
 	veil: ReadonlySet<string> | null;
+	reach: ReadonlyMap<string, number> | null;
 	lighting: ReturnType<typeof useLighting>;
 }
 
@@ -412,7 +422,7 @@ function useSceneMarks(
 	scene: AcceptedScene,
 	marks: SceneMarks,
 ): void {
-	const { selected, warnings, focus, veil, lighting } = marks;
+	const { selected, warnings, focus, veil, reach, lighting } = marks;
 	const { connections } = scene.projection;
 	const warned = useMemo(() => projectedMarks(warnings, connections), [warnings, connections]);
 	// Before the viewer's marks, so a line's group made to hold a warning is lit and veiled with the rest.
@@ -423,7 +433,7 @@ function useSceneMarks(
 		() => projectedMarks(subjectMarks(null, focus, [...selected]), connections),
 		[focus, selected, connections],
 	);
-	useViewerMarks(staged, { attended, veil: veil ?? lighting.standing, reach: lighting.reach });
+	useViewerMarks(staged, { attended, veil: veil ?? lighting.standing, reach });
 }
 
 /**

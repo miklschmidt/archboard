@@ -134,8 +134,8 @@ function serving(content: Record<string, unknown> = CONTENT): void {
 /** The whole picture, fitted above the caption. */
 const WHOLE_ABOVE_CAPTION = { x: 232, y: 24, scale: 0.84 };
 
-/** `n1`, fitted above the caption: 80×40 at the origin, at half again its drawn size. */
-const N1_ABOVE_CAPTION = { x: 340, y: 120, scale: 1.5 };
+/** `n1` and the line it starts, fitted above the caption: 120×40 at the origin, at half again its drawn size. */
+const N1_ABOVE_CAPTION = { x: 310, y: 120, scale: 1.5 };
 
 /** The whole picture, fitted to the whole viewport, as the reader had it before presenting. */
 const WHOLE_PICTURE = { x: 32, y: 24, scale: 1.84 };
@@ -227,7 +227,7 @@ test("a step lights what it is about, lets the rest recede, and brings it into v
 	goTo(1);
 	await settle();
 	expect(marked()).toEqual(["n1"]);
-	expect(unveiled()).toEqual(["n1"]);
+	expect(unveiled()).toEqual(["n1", "e1"]);
 	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
 
 	// An opening step is about the architecture rather than a part of it, so it
@@ -256,7 +256,7 @@ test("a step told through a view keeps the last step's framing until that view's
 	goTo(1);
 	await settle();
 	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
-	expect(unveiled()).toEqual(["n1"]);
+	expect(unveiled()).toEqual(["n1", "e1"]);
 
 	// The view's picture is still being drawn. Worked out against the picture on
 	// screen, the step would send the camera and the veil somewhere now and
@@ -266,7 +266,7 @@ test("a step told through a view keeps the last step's framing until that view's
 	await settle();
 	expect(renderCalls().at(-1)).toContain(`view=${VIEW.id}`);
 	expectCamera(cameraNow(), N1_ABOVE_CAPTION);
-	expect(unveiled()).toEqual(["n1"]);
+	expect(unveiled()).toEqual(["n1", "e1"]);
 });
 
 test("a step about something this reading does not draw says so, on a line every step has", async () => {

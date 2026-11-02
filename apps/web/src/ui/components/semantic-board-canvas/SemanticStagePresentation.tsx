@@ -12,7 +12,11 @@ import { SemanticPresentation } from "#ui/components/semantic-board-canvas/Seman
 import type { Sidebar } from "#ui/hooks/semantic-board-canvas/use-sidebar.ts";
 import type { WalkthroughReading } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
 import type { GroupSelection } from "#ui/rules/semantic-board-canvas/board/groups.ts";
-import type { BeatFocus } from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
+import {
+	NO_FOCUS,
+	beatLight,
+	type BeatFocus,
+} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
 import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
 
 /** What a floating sidebar covers of the picture's right edge, with the overlay's own gutter beyond it. */
@@ -78,15 +82,15 @@ function presentationOver(view: PresentationView): ReactNode {
  * What the picture is told to mark beyond the single selection: the selected
  * group's members, and the veil over what a presented step is not about.
  * @param view What the stage knows.
- * @returns The selected group, and what the veil leaves standing.
+ * @returns The selected group, what the veil leaves standing, and what stands fainter.
  */
 function pictureMarks(view: PresentationView): {
 	readonly group: GroupSelection | null;
 	readonly veil: ReadonlySet<string> | null;
+	readonly reach: ReadonlyMap<string, number> | null;
 } {
 	const { group, narrative, focus } = view;
-	const veiled = narrative.open !== null && focus.drawn.length > 0;
-	return { group, veil: veiled ? new Set(focus.drawn) : null };
+	return { group, ...beatLight(narrative.open === null ? NO_FOCUS : focus) };
 }
 
 /**

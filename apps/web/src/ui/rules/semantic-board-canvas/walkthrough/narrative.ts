@@ -13,8 +13,10 @@
 // them asking the other.
 
 import type { SemanticVariant } from "@archboard/board/document";
+import { everyStep, isMessage } from "@archboard/board/flow";
 import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { subjectOf } from "#ui/rules/semantic-board-canvas/board/board-document.ts";
+import { litBy, type Wiring } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import {
 	unionRect,
 	type FitTarget,
@@ -42,9 +44,15 @@ interface BeatFocus {
 	/**
 	 * The beat's subjects this picture draws, in the order the beat names them,
 	 * each relationship or step followed by the parts at its ends, and then
-	 * the relationships between the cards the beat names.
+	 * the lines between the cards the beat names.
 	 */
 	readonly drawn: readonly string[];
+	/**
+	 * What a beat that names only cards touches: the other lines of those cards,
+	 * the parts at their far ends, and the frames that hold them. It stands a
+	 * step fainter than `drawn`, as a trace's second hop does.
+	 */
+	readonly around: readonly string[];
 	/** The beat's subjects this picture does not draw. */
 	readonly undrawn: readonly string[];
 	/**
@@ -62,7 +70,16 @@ interface BeatFocus {
 }
 
 /** Nothing is being read, so the picture is asked for nothing in particular. */
-const NO_FOCUS: BeatFocus = Object.freeze({ drawn: [], undrawn: [], target: null, key: "" });
+const NO_FOCUS: BeatFocus = Object.freeze({
+	drawn: [],
+	around: [],
+	undrawn: [],
+	target: null,
+	key: "",
+});
+
+/** How many hops from a beat's cards what they touch stands, as a trace counts them. */
+const AROUND_HOPS = 2;
 
 /**
  * What one fit target is, as one comparable value.
@@ -98,7 +115,19 @@ function endsOf(variant: Pick<SemanticVariant, "content"> | null, id: string): s
 }
 
 /**
- * The relationships between the cards a beat names, which it is about too.
+ * What a picture's cards and lines are, in both grammars: a structural picture
+ * draws relationships, and a sequence draws a flow's messages.
+ * @param variant The variant being read.
+ * @returns Its cards, and every line between them.
+ */
+function wiringOf(variant: Pick<SemanticVariant, "content">): Wiring {
+	const { nodes, edges, flows } = variant.content;
+	const messages = flows.flatMap((flow) => everyStep(flow.steps).filter(isMessage));
+	return { nodes, edges: [...edges, ...messages] };
+}
+
+/**
+ * The lines between the cards a beat names, which it is about too.
  *
  * A beat about several cards is about how they connect, and a picture that lit
  * the cards alone left every line between them under the veil. Only the cards
@@ -106,7 +135,7 @@ function endsOf(variant: Pick<SemanticVariant, "content"> | null, id: string): s
  * read with that line, not to light the other lines between them.
  * @param variant The variant being read, or null when none can be.
  * @param named The subjects the beat names that the picture draws.
- * @returns The ids of the relationships that join two cards the beat names.
+ * @returns The ids of the lines that join two cards the beat names.
  */
 function linesBetween(
 	variant: Pick<SemanticVariant, "content"> | null,
@@ -115,12 +144,32 @@ function linesBetween(
 	if (variant === null) {
 		return [];
 	}
-	const cards = new Set(
-		variant.content.nodes.map(({ id }) => id).filter((id) => named.includes(id)),
-	);
-	return variant.content.edges
+	const { nodes, edges } = wiringOf(variant);
+	const cards = new Set(nodes.map(({ id }) => id).filter((id) => named.includes(id)));
+	return edges
 		.filter((edge) => edge.from !== edge.to && cards.has(edge.from) && cards.has(edge.to))
 		.map(({ id }) => id);
+}
+
+/**
+ * What the cards of a beat touch, by the rule of a pick.
+ *
+ * A beat about a card is about what it is wired to, and a picture that lit the
+ * card alone left a lit card in the dark. A beat that names a line or a message
+ * says exactly what it is about, so it brings nothing more.
+ * @param variant The variant being read, or null when none can be.
+ * @param named The subjects the beat names that the picture draws.
+ * @returns The ids that a pick of each card lights, or none for a beat that names a line.
+ */
+function aroundCards(
+	variant: Pick<SemanticVariant, "content"> | null,
+	named: readonly string[],
+): string[] {
+	if (variant === null || named.some((id) => endsOf(variant, id).length > 0)) {
+		return [];
+	}
+	const wiring = wiringOf(variant);
+	return named.flatMap((id) => [...(litBy(wiring, id) ?? [])]);
 }
 
 /**
@@ -156,8 +205,8 @@ function flowAround(
  * quiet. A beat that names no subject is about the whole architecture and asks
  * for the whole of it. A beat whose subjects this picture draws asks for the
  * region they occupy, with the parts at the ends of every relationship or step
- * it names and the relationships between the cards it names, and the frame of
- * the flow they lie in as its context. A beat about some of a flow's messages
+ * it names, the lines between the cards it names, what a beat of cards alone
+ * touches, and the frame of the flow they lie in as its context. A beat about some of a flow's messages
  * asks for their rows from the top of the room, under the flow's head of cards
  * ({@link flowFocus}). A beat whose subjects this picture does not draw — a
  * narrative told across views, read through a view that narrows what is drawn
@@ -192,8 +241,28 @@ function beatFocus(
 		...linesBetween(variant, named),
 	];
 	const drawn = [...new Set(about)].filter(isDrawn);
-	const target = focusTarget(source, variant, drawn);
-	return { drawn, undrawn, target, key: `${beat.id}:${targetKey(target)}` };
+	const around = [...new Set(aroundCards(variant, named))].filter(
+		(id) => isDrawn(id) && !drawn.includes(id),
+	);
+	const target = focusTarget(source, variant, [...drawn, ...around]);
+	return { drawn, around, undrawn, target, key: `${beat.id}:${targetKey(target)}` };
+}
+
+/**
+ * What a presented beat leaves standing, and what stands a step fainter.
+ * @param focus What the beat asks for.
+ * @returns The veil, or null for a beat that lights nothing, and the hops of what is fainter.
+ */
+function beatLight(focus: BeatFocus): {
+	readonly veil: ReadonlySet<string> | null;
+	readonly reach: ReadonlyMap<string, number> | null;
+} {
+	if (focus.drawn.length === 0) return { veil: null, reach: null };
+	const reach = new Map(focus.around.map((id) => [id, AROUND_HOPS]));
+	return {
+		veil: new Set([...focus.drawn, ...focus.around]),
+		reach: reach.size === 0 ? null : reach,
+	};
 }
 
 /**
@@ -248,4 +317,4 @@ function subjectMarks(
 	return attended;
 }
 
-export { NO_FOCUS, beatFocus, subjectMarks, type BeatFocus, type FocusSource };
+export { NO_FOCUS, beatFocus, beatLight, subjectMarks, type BeatFocus, type FocusSource };
