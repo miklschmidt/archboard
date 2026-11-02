@@ -9,12 +9,14 @@
 
 import { useLayoutEffect } from "react";
 
+import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	markReach,
 	markSubjects,
 	markVeil,
+	ringed,
 } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** No subjects. */
@@ -28,6 +30,8 @@ interface ViewerMarks {
 	readonly veil: ReadonlySet<string> | null;
 	/** How many hops beyond the first each subject a trace reached is; null without a trace. */
 	readonly reach: ReadonlyMap<string, number> | null;
+	/** Where every subject ended up, which says which of them are lines. */
+	readonly atlas: SemanticAtlas;
 }
 
 /**
@@ -40,7 +44,7 @@ interface ViewerMarks {
  * @param marks What to mark.
  */
 function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void {
-	const { attended, veil, reach } = marks;
+	const { attended, veil, reach, atlas } = marks;
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			markSubjects(picture.root, attended);
@@ -62,11 +66,11 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			stageOf(picture.surface)?.setMarks({
-				selected: attended,
+				selected: ringed(attended, veil, atlas),
 				whole: veil ?? NOTHING,
 			});
 		}
-	}, [picture, attended, veil]);
+	}, [picture, attended, veil, atlas]);
 }
 
 export { useViewerMarks };

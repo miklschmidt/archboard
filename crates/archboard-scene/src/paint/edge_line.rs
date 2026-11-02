@@ -26,6 +26,9 @@ use crate::scene::{
 
 /// Width added to a connection's invisible selection halo.
 const EDGE_HALO_EXTRA: f64 = 5.0;
+/// How solid a line's halo stands when it is lit: a bed for the line, which
+/// keeps its own ink, and no band of gold.
+const EDGE_HALO_OPACITY: f64 = 0.3;
 /// An arrowhead's drawing: a square this many marker units wide.
 const MARKER_BOX: f64 = 10.0;
 /// How thick the open head's arms are drawn, in marker units.
@@ -146,7 +149,12 @@ pub(super) fn paint_edge_line(
     parts.push(shape(
         Shape::path(Purpose::Halo, path)
             .unfilled()
-            .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
+            .stroked(
+                styles
+                    .ring(Some(width + EDGE_HALO_EXTRA))
+                    .at(EDGE_HALO_OPACITY)
+                    .rounded(),
+            ),
     ));
     if appearance.dash == Dash::Mixed {
         parts.push(shape(

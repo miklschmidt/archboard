@@ -22,7 +22,10 @@ import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camer
 import type { SemanticDrawing } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
 import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
-import { SemanticSubjectTip } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	SemanticSubjectTip,
+	TipCorner,
+} from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import { STAGE_CLASS } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import {
 	useCameraWith,
@@ -256,7 +259,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[selection, focus, props.group],
 	);
 	const reach = props.reach ?? lighting.reach;
-	useViewerMarks(picture, { attended, veil: lighting.standing, reach });
+	useViewerMarks(picture, { attended, veil: lighting.standing, reach, atlas: drawing.atlas });
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it
@@ -368,13 +371,15 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
-				<SemanticSubjectTip
-					target={tip.shown}
-					appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
-					reading={reading}
-					far={far}
-					overview={drawing.view === null}
-				/>
+				<TipCorner corner={tip.corner}>
+					<SemanticSubjectTip
+						target={tip.shown}
+						appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
+						reading={reading}
+						far={far}
+						overview={drawing.view === null}
+					/>
+				</TipCorner>
 				<LeavingPart departure={departure} at="spinner" />
 			</div>
 		</section>

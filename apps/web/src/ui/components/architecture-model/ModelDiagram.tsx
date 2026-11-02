@@ -44,7 +44,7 @@ import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subject
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
-import { SubjectTipBox } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import { SubjectTipBox, TipCorner } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import {
 	subjectTip,
 	type TipTarget,
@@ -246,8 +246,10 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				onWholeScope={props.onWholeScope}
 				onOpenState={props.onOpenState}
 			/>
-			<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
-			<ModelLineTip target={tip.shown} model={model} projection={projection} />
+			<TipCorner corner={tip.corner}>
+				<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
+				<ModelLineTip target={tip.shown} model={model} projection={projection} />
+			</TipCorner>
 			<LeavingPart departure={leaving} at="spinner" />
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
@@ -352,7 +354,7 @@ function useSceneTip(
 	camera: BoardCamera,
 	lighting: ReturnType<typeof useLighting>,
 ) {
-	const { shown, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
+	const { shown, corner, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
 	const { onHover: lightHover, release } = lighting;
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -365,7 +367,7 @@ function useSceneTip(
 		dismiss();
 		release();
 	}, [dismiss, release]);
-	return { shown, onHover, dismiss, leave };
+	return { shown, corner, onHover, dismiss, leave };
 }
 
 /**
@@ -397,7 +399,7 @@ function ModelSubjectTip(props: {
 	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
 	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
 	if (target === null || !isDoor(scene.projection, target.id))
-		return <SubjectTipBox target={target} tip={tip} />;
+		return <SubjectTipBox tip={tip} />;
 	return <ModelDoorTip target={target} scene={scene} said={tip} appearance={appearance} />;
 }
 
@@ -433,7 +435,12 @@ function useSceneMarks(
 		() => projectedMarks(subjectMarks(null, focus, [...selected]), connections),
 		[focus, selected, connections],
 	);
-	useViewerMarks(staged, { attended, veil: veil ?? lighting.standing, reach });
+	useViewerMarks(staged, {
+		attended,
+		veil: veil ?? lighting.standing,
+		reach,
+		atlas: scene.picture.atlas,
+	});
 }
 
 /**

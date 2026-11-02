@@ -131,6 +131,23 @@ function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 	}
 }
 
+/**
+ * What wears the selection ring. A line wears it alone: among several, the light
+ * says which stand, and a ring round each would turn the picture gold.
+ * @param attended Which subjects are being attended to.
+ * @param veil What the light leaves standing, or null for no light.
+ * @param atlas Where every subject ended up, which says which are lines.
+ * @returns The subjects to ring.
+ */
+function ringed(
+	attended: ReadonlySet<string>,
+	veil: ReadonlySet<string> | null,
+	atlas: Pick<SemanticAtlas, "edges">,
+): ReadonlySet<string> {
+	const others = [...attended].filter((id) => atlas.edges[id] === undefined);
+	return veil === null || attended.size - others.length < 2 ? attended : new Set(others);
+}
+
 /** The class the surface carries while a presented step veils what it is not about. */
 const VEILED_CLASS = "is-veiled";
 
@@ -270,6 +287,7 @@ export {
 	markReach,
 	markSubjects,
 	markVeil,
+	ringed,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

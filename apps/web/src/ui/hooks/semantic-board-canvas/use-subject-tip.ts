@@ -4,6 +4,10 @@
 // once to the next part while one is open. It belongs to the picture and the
 // camera it opened under: a pan, a zoom or a new picture puts the part
 // somewhere else, so the tip closes rather than pointing at where it was.
+//
+// A tip stands in a top corner of the pane, across from the pointer. The pointer
+// rests on a part to see what it touches, so nothing that explains the part may
+// cover the part or what lights around it.
 
 import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
 import { useCallback, useEffect, useRef, useState, type PointerEvent } from "react";
@@ -13,6 +17,7 @@ import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
 import {
 	tipTargetAt,
+	type TipCorner,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 
@@ -23,16 +28,19 @@ interface TipScene {
 	readonly camera: Pick<BoardCamera, "subscribe">;
 }
 
-/** An open tip, and the picture it opened on. */
+/** An open tip, the picture it opened on, and the corner it stands in. */
 interface OpenTip {
 	readonly drawing: object;
 	readonly target: TipTarget;
+	readonly corner: TipCorner;
 }
 
 /** The open tip, and what moves it. */
 interface SubjectTipControls {
 	/** The part whose tip is open, or null. */
 	readonly shown: TipTarget | null;
+	/** The corner of the pane the open tip stands in. */
+	readonly corner: TipCorner;
 	/**
 	 * The pointer moved over the picture while no gesture is under way.
 	 * @param event The move.
@@ -53,6 +61,16 @@ function samePart(a: TipTarget, b: TipTarget): boolean {
 }
 
 /**
+ * The corner across from the pointer.
+ * @param event The move, on the pane.
+ * @returns The left corner for a pointer in the right half, else the right one.
+ */
+function cornerAcross(event: PointerEvent<HTMLElement>): TipCorner {
+	const pane = event.currentTarget.getBoundingClientRect();
+	return event.clientX < pane.left + pane.width / 2 ? "right" : "left";
+}
+
+/**
  * The tip over the picture, opened by resting the pointer.
  * @param scene The picture on the surface and the camera it is seen through.
  * @returns The open tip and its controls.
@@ -61,7 +79,7 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 	const [open, setOpen] = useState<OpenTip | null>(null);
 	const waiting = useRef<{ readonly target: TipTarget; readonly timer: number } | null>(null);
 	const shown =
-		open !== null && open.drawing === scene.drawing && open.target.anchor.isConnected
+		open !== null && open.drawing === scene.drawing && open.target.drawn.isConnected
 			? open.target
 			: null;
 
@@ -90,11 +108,12 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				dismiss();
 				return;
 			}
+			const corner = cornerAcross(event);
 			if (shown !== null) {
 				// One tip is open: the next opens at once, and the same one stays.
 				forget();
 				if (!samePart(shown, target)) {
-					setOpen({ target, drawing });
+					setOpen({ target, drawing, corner });
 				}
 				return;
 			}
@@ -106,14 +125,14 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				target,
 				timer: frameClock().after(EXPLORING_MS.subjectTip, () => {
 					waiting.current = null;
-					setOpen({ target, drawing });
+					setOpen({ target, drawing, corner });
 				}),
 			};
 		},
 		[shown, drawing, dismiss, forget],
 	);
 
-	return { shown, onHover, dismiss };
+	return { shown, corner: open?.corner ?? "right", onHover, dismiss };
 }
 
 export { useSubjectTip };

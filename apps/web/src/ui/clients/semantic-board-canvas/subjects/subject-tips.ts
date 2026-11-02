@@ -10,14 +10,13 @@
 // responsibility and description. A label shows its words, so its tip names the
 // kind of relationship or message it labels. A tip that would say nothing new
 // is not shown. Every tip is headed by what it is about, drawn the way the
-// picture draws it, so it reads on its own beside the part it explains.
+// picture draws it, so it reads on its own, away from the part it explains.
 
 import { drillWayWords } from "#ui/rules/semantic-board-canvas/drilling/drill-way.ts";
 import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
 import type { SemanticEdge, SemanticNode } from "@archboard/board/content";
 import type { SemanticVariant } from "@archboard/board/document";
 import type { AppliedAppearance } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { PULSE_CLASS } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 import {
 	endsOf,
 	overviewLineOf,
@@ -29,12 +28,15 @@ const SUBJECT_ATTRIBUTE = "data-semantic-id";
 /** The attribute on a subject's header or label group (the renderer's `PART_ATTRIBUTE`). */
 const PART_ATTRIBUTE = "data-semantic-part";
 
-/** The part of the picture a tip explains, and the element it stands against. */
+/** The part of the picture a tip explains, and the element that draws it. */
 interface TipTarget {
 	readonly id: string;
 	readonly part: "card" | "header" | "label" | "line";
-	readonly anchor: Element;
+	readonly drawn: Element;
 }
+
+/** The top corner of the pane a tip stands in. */
+type TipCorner = "left" | "right";
 
 /** What a tip says, each line only when there is something to say. */
 interface SubjectTip {
@@ -58,7 +60,7 @@ interface SubjectTip {
  * has none, so moving between the cards inside it never shows the container's.
  * @param target What the pointer is over.
  * @param clientY Where the pointer is, down the screen.
- * @returns The part and the element to place its tip against, or null.
+ * @returns The part and the element that draws it, or null.
  */
 function tipTargetAt(target: EventTarget | null, clientY: number): TipTarget | null {
 	const group = target instanceof Element ? target.closest(`[${SUBJECT_ATTRIBUTE}]`) : null;
@@ -77,7 +79,7 @@ function partOf(group: Element, id: string, clientY: number): TipTarget | null {
 	const part = group.getAttribute(PART_ATTRIBUTE);
 	if (part !== null) {
 		// A participant's lifeline runs the page's height: its card says who it is.
-		return part === "label" || part === "header" ? { id, part, anchor: group } : null;
+		return part === "label" || part === "header" ? { id, part, drawn: group } : null;
 	}
 	const kind = group.getAttribute("data-semantic-kind");
 	if (kind === "region") return headerBand(group, id, clientY);
@@ -92,56 +94,8 @@ function partOf(group: Element, id: string, clientY: number): TipTarget | null {
  * @returns The part, or null for anything else.
  */
 function wholeSubject(group: Element, id: string, kind: string | null): TipTarget | null {
-	if (kind === "node") return { id, part: "card", anchor: group };
-	return kind === "edge" ? { id, part: "line", anchor: group } : null;
-}
-
-/** A box a tip is placed against, as a positioning library reads one that is no element. */
-interface TipAnchor {
-	/** The element the box is in, which is what the library watches for changes. */
-	readonly contextElement: Element;
-	/**
-	 * Where the box is now.
-	 * @returns The box, in viewport pixels.
-	 */
-	readonly getBoundingClientRect: () => DOMRect;
-}
-
-/**
- * The box a tip is placed against: the part as the picture draws it, without
- * the traffic that runs along its edge. A pulse slides in a bar far longer than
- * the card it rounds, so the box of the card's group swells and shrinks with
- * every frame, and a tip placed against that moves with it.
- *
- * The picture is what is watched for change, not the part: a part that moves
- * with the camera closes its tip, and the box itself is read afresh each time.
- * @param part The part's group.
- * @returns The anchor.
- */
-function tipAnchor(part: Element): TipAnchor {
-	return {
-		contextElement: part.closest("svg") ?? part,
-		/**
-		 * The part's box now, without its traffic.
-		 * @returns The box.
-		 */
-		getBoundingClientRect: () => {
-			const boxes = [...part.children]
-				.filter((child) => !child.classList.contains(PULSE_CLASS))
-				.map((child) => child.getBoundingClientRect())
-				// A layer the picture hides at this distance has no box to count.
-				.filter((box) => box.width > 0 || box.height > 0);
-			if (boxes.length === 0) return part.getBoundingClientRect();
-			const left = Math.min(...boxes.map((box) => box.left));
-			const top = Math.min(...boxes.map((box) => box.top));
-			return new DOMRect(
-				left,
-				top,
-				Math.max(...boxes.map((box) => box.right)) - left,
-				Math.max(...boxes.map((box) => box.bottom)) - top,
-			);
-		},
-	};
+	if (kind === "node") return { id, part: "card", drawn: group };
+	return kind === "edge" ? { id, part: "line", drawn: group } : null;
 }
 
 /**
@@ -162,7 +116,7 @@ function headerBand(frame: Element, id: string, clientY: number): TipTarget | nu
 		return null;
 	}
 	return clientY <= rule.getBoundingClientRect().top
-		? { id, part: "header", anchor: header }
+		? { id, part: "header", drawn: header }
 		: null;
 }
 
@@ -349,9 +303,8 @@ const UNSAID = { lead: undefined, body: undefined, hint: undefined } as const;
 export {
 	openableAt,
 	subjectTip,
-	tipAnchor,
 	tipTargetAt,
 	type SubjectTip,
-	type TipAnchor,
+	type TipCorner,
 	type TipTarget,
 };
