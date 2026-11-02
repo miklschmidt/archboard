@@ -550,7 +550,7 @@
                   "id": "vKEsyHFk/6E6hL0Zk#f6zhGkTU",
                   "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
                   "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
-                  "label": "404 BOARD_NOT_FOUND",
+                  "label": "422 BINDING_UNAVAILABLE",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -567,7 +567,7 @@
                   "id": "vKEsyHFk/6E6hL0Zk#vNnTFjNm",
                   "from": "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
                   "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
-                  "label": "404 ELEMENT_NOT_FOUND",
+                  "label": "422 BINDING_UNAVAILABLE",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",

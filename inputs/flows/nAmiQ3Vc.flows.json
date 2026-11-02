@@ -105,7 +105,7 @@
                   "id": "vKEsyHFk/nAmiQ3Vc#jkXEa125",
                   "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                   "to": "vKEsyHFk/nAmiQ3Vc#zs4XwBa9",
-                  "label": "take -C, --board, --doing, --as-session and --expect-version",
+                  "label": "take -C, --doing and --as-session",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
