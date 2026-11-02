@@ -826,8 +826,7 @@
       "summary": "Reports a failure once, with the usage line for a usage error, and maps it to the exit code that scripts read. A contract can declare its own code, and anything unlisted exits 1.",
       "participants": [
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
-        "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-        "vKEsyHFk/nAmiQ3Vc#cIVCKJIR"
+        "vKEsyHFk/nAmiQ3Vc#bV1RPiKW"
       ],
       "steps": [
         {
@@ -868,34 +867,10 @@
               "label": "no",
               "steps": [
                 {
-                  "id": "vKEsyHFk/nAmiQ3Vc#ENkOCmmK",
-                  "from": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-                  "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
-                  "label": "format a refused model write",
-                  "kind": "sync",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-                    "symbol": "formatModelRefusal"
-                  }
-                },
-                {
-                  "id": "vKEsyHFk/nAmiQ3Vc#Iz0tEhRH",
-                  "from": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
-                  "to": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-                  "label": "the refusal text, or nothing",
-                  "kind": "return",
-                  "anchor": {
-                    "repo": "github.com/miklschmidt/archboard",
-                    "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-                    "symbol": "formatModelRefusal"
-                  }
-                },
-                {
                   "id": "vKEsyHFk/nAmiQ3Vc#d2BVGZC0",
                   "from": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
                   "to": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-                  "label": "write the refusal text or the error message to stderr",
+                  "label": "write the error message to stderr",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -1005,12 +980,12 @@
                   "id": "vKEsyHFk/nAmiQ3Vc#J0z7s32f",
                   "from": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
                   "to": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-                  "label": "exit 5",
+                  "label": "exit 5 for a revoked claim",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-                    "symbol": "isModelRefusalCode"
+                    "symbol": "WELL_KNOWN_EXIT_CODES"
                   }
                 }
               ]

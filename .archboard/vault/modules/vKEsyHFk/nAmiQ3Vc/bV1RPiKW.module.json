@@ -10,19 +10,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
   "parent": "vKEsyHFk/nAmiQ3Vc#EMV2VjBX",
-  "outgoing": [
-    {
-      "order": 11000,
-      "kind": "call",
-      "label": "formatModelRefusal",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-        "symbol": "formatModelRefusal"
-      },
-      "id": "vKEsyHFk/nAmiQ3Vc#1LCJsaUZ",
-      "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR"
-    }
-  ]
+  "outgoing": []
 }

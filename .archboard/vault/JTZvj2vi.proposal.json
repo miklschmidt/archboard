@@ -19,8 +19,8 @@
   "lifecycle": "draft",
   "createdAt": "2026-11-01T08:52:35.463Z",
   "predecessor": "oyXXnyCV",
-  "predecessorRevision": "286c5794960cc0118df3d256626841995c51f17014dc86e22ac13f3415ee5c36",
-  "baseline": "0d1b54484a86e2521dec8d8f3660f8a5c07d382f",
+  "predecessorRevision": "11c8a0679d959b4b53fccaa844d4da7e94529aeb449e41bd78ce35a914294592",
+  "baseline": "eefb07bc122a71bc2d3ad3814c5f86a7e8c0ec3a",
   "changes": [
     {
       "type": "remove",
@@ -324,6 +324,12 @@
       "placement": {
         "holder": "vKEsyHFk#hKrzJUPf"
       }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#U2DjfZHj",
+      "field": "order",
+      "value": 1009080
     },
     {
       "type": "assign",
