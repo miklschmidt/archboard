@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T14:51:00Z'
+updated_date: '2026-11-02T15:00:00Z'
 labels:
   - reader
   - design
@@ -22,15 +22,15 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 A tip stands against its part, in architecture, sequence and walkthrough readings, and hides nothing lit where any nearby spot leaves it in view
+- [x] #1 A tip stands against its part, in architecture, sequence and walkthrough readings, and hides nothing lit where any nearby spot leaves it in view
 - [x] #2 A chosen relationship rings its label, and its line keeps its own ink
 - [x] #3 A door takes the colour of its placing group or kind, a door with neither stands neutral, and the model's packages no longer read as one concern
 - [x] #4 A right click on a part selects it and opens a menu at the cursor, and anywhere else the browser keeps its own menu
 - [x] #5 The menu copies a reference to a subject: its identity, ends, kind, words and the reading's address
-- [ ] #6 A card widens for its group tags, so its name keeps the top of the card and no card opens on an empty band
+- [x] #6 A card widens for its group tags, so its name keeps the top of the card and no card opens on an empty band
 - [x] #7 This model names applications as Application, and keeps Service for what serves
 - [x] #8 Page start to Talk contract is a call
-- [ ] #9 A label never stands over a stretch of its own line (Vault address to Vault finder)
+- [x] #9 A label never stands over a stretch of its own line (Vault address to Vault finder)
 - [ ] #10 The full gate passes and an independent review of the final diff approves
 - [ ] #11 The README assets show the final picture
 <!-- AC:END -->
