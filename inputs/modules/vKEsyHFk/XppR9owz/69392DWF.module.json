@@ -38,5 +38,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1008010,
+      "kind": "call",
+      "label": "draw a recipe to PNG",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/model/rasterize.ts",
+        "symbol": "createSemanticRasterizer"
+      },
+      "to": "vKEsyHFk/SMjRfwN3#KyQxypRC",
+      "id": "vKEsyHFk#inbTEHtR"
+    }
+  ]
 }

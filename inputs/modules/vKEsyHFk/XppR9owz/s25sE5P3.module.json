@@ -44,6 +44,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#pn92tto1",
       "to": "vKEsyHFk/XppR9owz#kdK2HT99"
+    },
+    {
+      "order": 1008020,
+      "kind": "call",
+      "label": "the checkouts embeds read from",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/vault/embeds/embeds-check.ts",
+        "symbol": "checkoutsReadFrom"
+      },
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC",
+      "id": "vKEsyHFk#5yYA6WLY"
     }
   ]
 }

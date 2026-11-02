@@ -13,19 +13,6 @@
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "outgoing": [
     {
-      "order": 33000,
-      "kind": "http",
-      "label": "what the last code pass found",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
-        "symbol": "mountCodeCheckRoute"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
-      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
-    },
-    {
       "order": 5000,
       "kind": "http",
       "label": "board documents, listing, policy",
@@ -43,6 +30,19 @@
       "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     },
     {
+      "order": 33000,
+      "kind": "http",
+      "label": "what the last code pass found",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/code-check/code-check-route.ts",
+        "symbol": "mountCodeCheckRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#poDLrJ2M",
+      "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+    },
+    {
       "order": 48000,
       "kind": "call",
       "label": "names the pane's vault on each read",
@@ -54,6 +54,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#wQi4PrJj",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 1008080,
+      "kind": "call",
+      "label": "read remembered findings",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/semantic-boards.ts",
+        "symbol": "fetchCodeFindings"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
+      "id": "vKEsyHFk#aFx2toJd"
     }
   ]
 }

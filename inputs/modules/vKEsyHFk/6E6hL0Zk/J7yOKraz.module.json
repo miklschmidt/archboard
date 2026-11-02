@@ -113,6 +113,19 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#5zRUOSGW",
       "to": "vKEsyHFk/HBlhIeSD#FHvFFjFn"
+    },
+    {
+      "order": 1008050,
+      "kind": "call",
+      "label": "log the server",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/lifecycle/startup/server-startup.ts",
+        "symbol": "logger"
+      },
+      "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
+      "id": "vKEsyHFk#25xiZ6jI"
     }
   ]
 }

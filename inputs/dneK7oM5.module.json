@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 1008060,
+      "kind": "call",
+      "label": "read the repository listing",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
+        "symbol": "fetchRepositories"
+      },
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
+      "id": "vKEsyHFk#sbRLNpob"
     }
   ]
 }
