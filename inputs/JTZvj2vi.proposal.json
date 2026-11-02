@@ -919,14 +919,32 @@
       }
     },
     {
-      "type": "clear",
+      "type": "assign",
       "subject": "vKEsyHFk#SMjRfwN3",
-      "field": "formerNames"
+      "field": "name",
+      "value": "Board rasterizer"
     },
     {
-      "type": "clear",
+      "type": "assign",
+      "subject": "vKEsyHFk#SMjRfwN3",
+      "field": "formerNames",
+      "value": [
+        "Picture rasterizer"
+      ]
+    },
+    {
+      "type": "assign",
       "subject": "vKEsyHFk#UOXNWLhR",
-      "field": "formerNames"
+      "field": "name",
+      "value": "Board viewer"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk#UOXNWLhR",
+      "field": "formerNames",
+      "value": [
+        "Canvas viewer"
+      ]
     },
     {
       "type": "assign",
