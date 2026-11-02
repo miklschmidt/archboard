@@ -27,7 +27,6 @@ import {
 	takeDirectoryFlag,
 	takeDoingFlag,
 	takeSessionFlag,
-	takeExpectVersionFlag,
 } from "#cli/rules/routing/global-flags.ts";
 import { addressVault, VaultNotFoundError } from "#cli/operations/invocation/addressed-vault.ts";
 
@@ -273,7 +272,6 @@ interface StatedShared {
 	readonly directory: string | null;
 	readonly doing: string | null;
 	readonly session: string | null;
-	readonly expectVersion: number | null;
 }
 
 /**
@@ -288,7 +286,6 @@ function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 		directory: takeDirectoryFlag(rest),
 		doing: takeDoingFlag(rest),
 		session: takeSessionFlag(rest),
-		expectVersion: takeExpectVersionFlag(rest),
 	};
 }
 
@@ -297,7 +294,6 @@ const STATED_FIELDS: Readonly<Record<SharedOptionKey, keyof StatedShared>> = {
 	url: "url",
 	directory: "directory",
 	doing: "doing",
-	"expect-version": "expectVersion",
 	"as-session": "session",
 };
 
@@ -339,8 +335,7 @@ function applicableShared(
 
 /**
  * Refuses a shared option the selected command does not read. Accepting it
- * would let a person believe it did something — a `--doing` on a read, an
- * `--expect-version` on a command that checks no version.
+ * would let a person believe it did something, such as a `--doing` on a read.
  * @param selected - The command that will run.
  * @param stated - What the invocation stated.
  * @param argv - The selected command's local arguments, for conditional exclusions.
@@ -394,7 +389,6 @@ function applyShared(stated: StatedShared): void {
 	stateInvocation({
 		doing: stated.doing,
 		session: stated.session,
-		expectedVersion: stated.expectVersion,
 	});
 }
 

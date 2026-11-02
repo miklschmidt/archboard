@@ -2,7 +2,6 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { createPaneCore } from "#ui/state/pane-session/pane-core.ts";
-import { onModelChange } from "#ui/state/canvas/model-changes.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
@@ -101,9 +100,7 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
 		/** No model claim is involved. */
-		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** The server never moves this pane to another vault. */
 		setVault: (): void => {},
 	});
@@ -163,7 +160,7 @@ interface HeldCall {
 /**
  * A pane in the left vault, connected and registered, showing `payments`, with
  * every call it makes held for the test to answer.
- * @returns The pane, its socket, its calls, and what it said of itself and its holder.
+ * @returns The pane, its socket, its calls, and and what it said of itself.
  */
 async function paneOnPayments() {
 	const calls: HeldCall[] = [];
@@ -181,7 +178,6 @@ async function paneOnPayments() {
 		),
 	);
 	const statuses: PaneStatus[] = [];
-	const holders: unknown[] = [];
 	const core = createPaneCore({
 		paneId: "A",
 		clientId: "A-mv01",
@@ -202,15 +198,6 @@ async function paneOnPayments() {
 			onStatus: (status): void => {
 				statuses.push(status);
 			},
-			/**
-			 * Record who the pane says holds its model.
-			 * @param _paneId The pane.
-			 * @param _model The model.
-			 * @param holder The holder.
-			 */
-			onHolder: (_paneId, _model, holder): void => {
-				holders.push(holder);
-			},
 		}),
 		/**
 		 * Read the fixture state.
@@ -226,10 +213,7 @@ async function paneOnPayments() {
 		setOpened: (): void => {},
 		/** Read from the published status instead. */
 		arrived: (): void => {},
-		/** Read from the holder listener instead. */
-		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** Read from the published status instead. */
 		setVault: (): void => {},
 	});
@@ -250,7 +234,7 @@ async function paneOnPayments() {
 		core.dispose();
 		fetchMock.mockRestore();
 	}
-	return { core, socket, calls, statuses, holders, restore };
+	return { core, socket, calls, statuses, restore };
 }
 
 /**
@@ -351,28 +335,6 @@ test("an answer from the vault a pane left that comes back before the move leave
 	}
 });
 
-test("news of a model is news of the vault the pane is in, before and after the server moves it", async () => {
-	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
-	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
-	const pane = await paneOnPayments();
-	const heard: string[] = [];
-	const stop = onModelChange((vault) => {
-		heard.push(vault);
-	});
-	try {
-		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 2 });
-		chooseOtherCheckout(pane.socket);
-		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 7 });
-		// The server sends a pane only its own vault's news, so the model the
-		// canvas reads again is the one of the vault it moved to.
-		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);
-	} finally {
-		stop();
-		pane.restore();
-		Object.defineProperty(globalThis, "WebSocket", socketDescriptor);
-	}
-});
-
 /**
  * Open one pane's socket, the way the shell does for each pane of a tab, and read the tab
  * session it named to the server.
@@ -411,9 +373,7 @@ function dialledTabSession(paneId: string): string | null {
 		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
 		/** No model claim is involved. */
-		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
-		setDoing: (): void => {},
 		/** The server never moves this pane to another vault. */
 		setVault: (): void => {},
 	});

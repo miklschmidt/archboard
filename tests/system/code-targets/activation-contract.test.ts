@@ -263,8 +263,8 @@ describe("public code-target activation contract", () => {
 	});
 
 	test.each([
-		["other/board", "node", "BOARD_NOT_FOUND", 404],
-		["system/payments", "missing", "ELEMENT_NOT_FOUND", 404],
+		["other/model", "node", "BINDING_UNAVAILABLE", 422],
+		["system/payments", "missing", "BINDING_UNAVAILABLE", 422],
 	] as const)("refuses missing canonical identity %s/%s", async (model, element, code, status) => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture();

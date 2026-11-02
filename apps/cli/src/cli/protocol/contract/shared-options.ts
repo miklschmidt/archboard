@@ -42,15 +42,6 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 			"One present-tense line saying what this write does, shown on every pane holding the model " +
 			"and never written to it",
 	},
-	"expect-version": {
-		key: "expect-version",
-		spellings: ["--expect-version"],
-		value: "required",
-		placeholder: "n",
-		required: true,
-		description:
-			"The model revision this write was read against; refused if the model has moved past it",
-	},
 	"as-session": {
 		key: "as-session",
 		spellings: ["--as-session"],
@@ -61,13 +52,7 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 };
 
 /** Every shared option, in the order help lists them. */
-const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = [
-	"url",
-	"directory",
-	"doing",
-	"expect-version",
-	"as-session",
-];
+const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = ["url", "directory", "doing", "as-session"];
 
 /**
  * The shared options one command reads, as option parameters help can list.

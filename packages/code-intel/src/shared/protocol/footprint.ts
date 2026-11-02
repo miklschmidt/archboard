@@ -1,5 +1,5 @@
 // The answer of a footprint, `archboard semantic footprint` and
-// `GET /api/semantic-boards/footprint` (ADR 0045).
+// `GET /api/architecture/footprint` (ADR 0045).
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
 // to HEAD, or up to a named head ref that need not be checked out, in each

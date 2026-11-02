@@ -21,20 +21,12 @@ import {
 	handleSocketMessage,
 	type MessageContext,
 } from "#ui/rules/pane-session/socket-messages.ts";
-import {
-	UNKNOWN_HOLDER,
-	type PaneSessionOptions,
-} from "#ui/rules/pane-session/session-contracts.ts";
+import { type PaneSessionOptions } from "#ui/rules/pane-session/session-contracts.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
-import type {
-	LegacyIdentity,
-	DoingEntry,
-	LockHolder,
-	PaneStatus,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { LegacyIdentity, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
@@ -63,8 +55,6 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly setOpened: (key: string | null) => void;
 	/** The server pointed the pane somewhere other than the model on screen. */
 	readonly arrived: () => void;
-	readonly setHeldBy: (holder: LockHolder | null) => void;
-	readonly setDoing: (entries: DoingEntry[]) => void;
 }
 
 /** One pane's wiring, as the hook holds it. */
@@ -160,16 +150,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * Who holds the model when it is not this pane.
-	 * @param holder The holder, or null when free or ours.
-	 * @param _mine Whether this pane is the holder, which changes nothing here.
-	 */
-	function setHolder(holder: LockHolder | null, _mine = false): void {
-		ports.setHeldBy(holder);
-		ports.options().onHolder?.(paneId, status.paneKey, holder);
-	}
-
-	/**
 	 * Record connection health and say so.
 	 * @param connected Whether the pane is registered and connected.
 	 */
@@ -241,12 +221,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		setVault: ports.setVault,
 		setOpened: ports.setOpened,
 		setModel: ports.setModel,
-		setDoing: ports.setDoing,
-		/** Forget who holds the model on screen and what was reported of it. */
+		/** Forget what was reported of the model on screen. */
 		forgetModel: (): void => {
-			// The model we are arriving at is somebody else's until we are told it
-			// is not; the server sends that immediately behind the model (ADR 0016).
-			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
 		},
 		/**
@@ -265,34 +241,12 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		},
 	});
 
-	/**
-	 * The model this pane is showing has a new version.
-	 * @param version The version it is at now.
-	 */
-	function noteChange(version: number | null): void {
-		status.version = version;
-		status.lastChangeAt = new Date().toISOString();
-		publishStatus();
-	}
-
-	/**
-	 * What an agent said it was doing (TASK-095).
-	 * @param entries The last few, oldest first.
-	 */
-	function setDoing(entries: DoingEntry[]): void {
-		status.doing = entries;
-		ports.setDoing(entries);
-	}
-
 	const messageContext: MessageContext = {
 		clientId,
 		paneKey,
 		vault: paneVault,
 		adoptModel,
-		noteChange,
 		publishStatus,
-		setHolder,
-		setDoing,
 		/**
 		 * Where a layout request goes; read live, so a rebound shell hears it.
 		 * @returns The listener, or undefined when the shell wants none.
@@ -313,13 +267,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 */
 		get onModelRequest() {
 			return ports.options().onModelRequest;
-		},
-		/**
-		 * Where a model refusal goes; read live.
-		 * @returns The listener, or undefined when the shell wants none.
-		 */
-		get onModelError() {
-			return ports.options().onModelError;
 		},
 		/**
 		 * Where the agent-activity snapshot goes; read live.
@@ -523,11 +470,6 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 				? status.model
 				: { model: address.model, variant: address.variant ?? "current" };
 		ports.setModel(status.model);
-		// A different model is a different version and a different writer.
-		status.version = null;
-		status.doing = [];
-		ports.setDoing([]);
-		setHolder(UNKNOWN_HOLDER);
 		publishStatus();
 		// Immediately, not on the debounce: the pane inventory is read every turn,
 		// and a pane reporting the model it came from sends an agent to the wrong

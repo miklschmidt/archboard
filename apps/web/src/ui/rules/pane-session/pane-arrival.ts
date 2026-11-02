@@ -5,7 +5,7 @@
 
 import type { LivePaneStatus } from "#ui/state/pane-session/pane-status.ts";
 import type { PanePlace } from "#ui/rules/pane-session/socket-messages.ts";
-import type { LegacyIdentity, DoingEntry } from "#ui/rules/pane-session/session-types.ts";
+import type { LegacyIdentity } from "#ui/rules/pane-session/session-types.ts";
 
 /** What an arrival changes, and whom it tells. */
 interface PaneArrivalParts {
@@ -14,8 +14,7 @@ interface PaneArrivalParts {
 	readonly setVault: (vault: string) => void;
 	readonly setOpened: (key: string | null) => void;
 	readonly setModel: (model: LegacyIdentity | null) => void;
-	readonly setDoing: (entries: DoingEntry[]) => void;
-	/** The model on screen moved: who holds it and what was reported of it are not known yet. */
+	/** The model on screen moved: what was reported of it is not known yet. */
 	readonly forgetModel: () => void;
 	/** The server pointed the pane somewhere other than the model on screen. */
 	readonly arrived: (key: string, previousKey: string | null) => void;
@@ -93,11 +92,6 @@ function createPaneArrival(
 		parts.setOpened(key);
 		parts.setModel(status.model);
 		if (moved) {
-			// A different model is a different version and a different writer, and
-			// what an agent said about the last one is not news about this one.
-			status.version = null;
-			status.doing = [];
-			parts.setDoing([]);
 			parts.forgetModel();
 			parts.arrived(key, previousKey);
 		}

@@ -83,7 +83,7 @@ function continuousPictures(before: MovingPicture, after: MovingPicture): boolea
 /**
  * Put a picture on the surface, replacing whatever was there.
  *
- * The picture is a string of SVG from `/api/semantic-boards/render`, which is
+ * The picture is a string of SVG from `/api/architecture/render`, which is
  * this repository's own renderer: script-free, self-contained, and built from
  * the model's own content rather than from anything a person typed into the
  * browser. It is inserted rather than shown through an `<img>` because the

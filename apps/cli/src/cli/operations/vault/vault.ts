@@ -335,14 +335,7 @@ const checkOutcomes = [
 const embedsRelationships = [
 	{
 		method: "GET",
-		path: "/api/semantic-boards",
-		cardinality: "conditional",
-		description:
-			"Each vault an embed's recipe names, listed once, to find its model by id, and this vault's models with the embeds they track",
-	},
-	{
-		method: "GET",
-		path: "/api/semantic-boards/render",
+		path: "/api/architecture/render",
 		cardinality: "conditional",
 		description: "Each embed drawn again from its recipe",
 	},

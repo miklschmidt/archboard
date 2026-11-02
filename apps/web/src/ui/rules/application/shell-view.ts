@@ -97,7 +97,6 @@ function shellPanes(inputs: ShellViewInputs): ShellPane[] {
 		return {
 			status: record.status,
 			stage: inputs.panes[entry.paneId] ?? null,
-			holder: record.holder,
 		};
 	});
 }

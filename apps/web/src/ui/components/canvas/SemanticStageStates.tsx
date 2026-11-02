@@ -110,7 +110,6 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 
 /** What each way of failing is called, in the shell's voice. */
 const FAILURE_TITLES: Readonly<Record<string, string>> = {
-	MODEL_MISSING: "There is no such model",
 	UNKNOWN_VARIANT: "There is no such variant",
 	UNKNOWN_VIEW: "There is no such view",
 	MODEL_UNREADABLE: "This model could not be read",

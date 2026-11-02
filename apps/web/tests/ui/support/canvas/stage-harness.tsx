@@ -366,9 +366,4 @@ export {
 	viewport,
 } from "#tests/ui/support/canvas/stage-queries.ts";
 
-export {
-	NOTHING_DRAWN,
-	NO_SUCH_MODEL,
-	UNREADABLE,
-	drawing,
-} from "#tests/ui/support/canvas/render-answers.ts";
+export { NOTHING_DRAWN, UNREADABLE, drawing } from "#tests/ui/support/canvas/render-answers.ts";

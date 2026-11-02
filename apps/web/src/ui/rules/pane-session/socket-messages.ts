@@ -3,23 +3,19 @@
 // A semantic pane hears about its model rather than receiving it. The model is
 // a file the server reads and draws; the pane holds no copy, so nothing here
 // applies content, merges anything or decides what the model becomes (ADR
-// 0023). Eight kinds of news: which model this pane is on and in which
-// repository's vault, who is writing it, what they said they were doing, that it
-// has a new version, what an agent is doing elsewhere, what the shell should do
-// about the layout, which step of a walkthrough somebody narrating it asked for,
-// and that a checkout was chosen somewhere.
+// 0023). Five kinds of news: which model this pane is on and in which
+// repository's vault, what an agent is doing, what the shell should do about the
+// layout, which step of a walkthrough somebody narrating it asked for, and that
+// a checkout was chosen somewhere.
 
 import {
 	PanePresentRequestSchema,
 	ArchitecturePaneReadingSchema,
 } from "@archboard/model/pane-context";
-import { announceModelChange } from "#ui/state/canvas/model-changes.ts";
 import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import type {
 	AgentActivityEntry,
 	LegacyIdentity,
-	DoingEntry,
-	LockHolder,
 	WebSocketMessage,
 } from "#ui/rules/pane-session/session-types.ts";
 import type { z } from "zod";
@@ -58,24 +54,10 @@ interface MessageContext {
 		identity: LegacyIdentity | null | undefined,
 		place: PanePlace | null,
 	) => void;
-	/** The pane's model changed under it. */
-	readonly noteChange: (version: number | null) => void;
 	readonly publishStatus: () => void;
-	/**
-	 * The server said who holds the model; `mine` when it is this pane.
-	 * @param holder The holder, or null when nobody has it.
-	 * @param mine Whether this pane is the holder.
-	 */
-	readonly setHolder: (holder: LockHolder | null, mine: boolean) => void;
-	/**
-	 * What an agent said it was doing to this model.
-	 * @param entries The last few, oldest first.
-	 */
-	readonly setDoing: (entries: DoingEntry[]) => void;
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
 	readonly onModelRequest?: ((request: PaneModelRequest) => void) | undefined;
-	readonly onModelError: ((error: string) => void) | undefined;
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
@@ -114,34 +96,6 @@ function paneModel(context: MessageContext, data: WebSocketMessage): void {
 }
 
 /**
- * Who is writing this model (ADR 0016). The pane that holds it is told too,
- * and has to recognise itself.
- * @param context The pane.
- * @param data The message.
- */
-function modelLock(context: MessageContext, data: WebSocketMessage): void {
-	const holder = data.holder ?? null;
-	const mine = holder !== null && holder.id === context.clientId;
-	context.setHolder(data.held === true && !mine ? holder : null, mine);
-}
-
-/**
- * A model has a new version.
- *
- * Announced to whichever panes are showing that model, which answer by asking
- * the server to draw it again. The announcement names the model rather than
- * carrying the change, because there is no copy in the browser to patch.
- * @param context The pane.
- * @param data The message.
- */
-function modelChanged(context: MessageContext, data: WebSocketMessage): void {
-	announceModelChange(context.vault(), data.paneKey ?? "", data.version ?? 0);
-	if (typeof data.paneKey === "string" && aboutThisModel(context, data.paneKey)) {
-		context.noteChange(data.version ?? null);
-	}
-}
-
-/**
  * Whether a model's news is about the model this pane is showing.
  *
  * Compared by the model and not by the whole address: the news names the
@@ -158,18 +112,6 @@ function aboutThisModel(context: MessageContext, said: string): boolean {
 }
 
 /**
- * An agent said what it was doing to this model (TASK-095).
- * @param context The pane.
- * @param data The message.
- */
-function modelDoing(context: MessageContext, data: WebSocketMessage): void {
-	if (Array.isArray(data.recent)) {
-		context.setDoing(data.recent);
-	}
-	context.publishStatus();
-}
-
-/**
  * Which models an agent is working on in one vault (ADR 0022). Keyless and
  * sent to every client, naming its vault; the shell replaces that vault's whole
  * map, so two panes hearing the same snapshot say the same thing twice, harmlessly.
@@ -179,17 +121,6 @@ function modelDoing(context: MessageContext, data: WebSocketMessage): void {
 function agentActivity(context: MessageContext, data: WebSocketMessage): void {
 	if (typeof data.vault === "string" && Array.isArray(data.activity)) {
 		context.onAgentActivity?.(data.vault, data.activity);
-	}
-}
-
-/**
- * A model could not be read or drawn.
- * @param context The pane.
- * @param data The message.
- */
-function modelError(context: MessageContext, data: WebSocketMessage): void {
-	if (typeof data.error === "string") {
-		context.onModelError?.(data.error);
 	}
 }
 
@@ -235,10 +166,6 @@ function panePresent(context: MessageContext, data: WebSocketMessage): void {
 const HANDLERS: Readonly<Record<string, Handler>> = {
 	pane_model: paneModel,
 	pane_place: panePlaced,
-	model_lock: modelLock,
-	model_note: modelChanged,
-	model_doing: modelDoing,
-	pane_error: modelError,
 	agent_activity: agentActivity,
 	pane_open: paneOpen,
 	pane_close: paneClose,
@@ -256,15 +183,13 @@ const HANDLERS: Readonly<Record<string, Handler>> = {
 /**
  * Whether a message is about this pane.
  *
- * A model's news names the model it is about. `model_note` is the exception it
- * has always been: it is addressed to this socket but is about whichever model
- * moved, and the panes showing that model answer it wherever they are.
+ * A model's news names the model it is about.
  * @param context The pane.
  * @param data The message.
  * @returns True when the message is ours to act on.
  */
 function addressesThisPane(context: MessageContext, data: WebSocketMessage): boolean {
-	if (data.type === "pane_place" || data.type === "pane_model" || data.type === "model_note") {
+	if (data.type === "pane_place" || data.type === "pane_model") {
 		return true;
 	}
 	const said = data.paneKey;

@@ -9,8 +9,6 @@ import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts
 import type {
 	AgentActivityEntry,
 	LegacyIdentity,
-	DoingEntry,
-	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
@@ -24,21 +22,6 @@ type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Which palette the pane draws in. */
 type PaneTheme = "light" | "dark";
-
-/**
- * The holder a pane assumes before the server has said anything.
- *
- * Not a claim and not nobody: a pane that has not been told does not read the
- * model as free (ADR 0016). It disappears the moment the first `model_lock`
- * arrives, which the server sends immediately behind the model.
- */
-const UNKNOWN_HOLDER: LockHolder = Object.freeze({
-	id: "",
-	kind: "agent",
-	since: "",
-	until: "",
-	process: "",
-});
 
 /** What the shell tells one pane, and what it wants to hear back. */
 interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
@@ -66,13 +49,6 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 */
 	onStatus: (status: PaneStatus) => void;
 	/**
-	 * Who is writing this pane's model, or null when nobody is.
-	 * @param paneId The pane.
-	 * @param paneKey The model it is showing.
-	 * @param holder The holder, or null.
-	 */
-	onHolder?: (paneId: string, paneKey: string | null, holder: LockHolder | null) => void;
-	/**
 	 * The server asked the shell for another pane, or for this one to go.
 	 * @param request Which way the layout should move.
 	 */
@@ -92,11 +68,6 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param paneId The pane.
 	 */
 	onPaneReconnected?: (paneId: string) => void;
-	/**
-	 * The model could not be shown.
-	 * @param error What the server said, in words a person can act on.
-	 */
-	onModelError?: (error: string) => void;
 	/**
 	 * This tab is running a bundle the server no longer serves (TASK-056).
 	 * @param message What the server said about it.
@@ -162,9 +133,6 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly arrivals: number;
 	readonly model: LegacyIdentity | null;
 	readonly connected: boolean;
-	/** Who holds the model, or null when nobody does. */
-	readonly heldBy: LockHolder | null;
-	readonly doing: readonly DoingEntry[];
 	/**
 	 * Open the file a node's binding names, in the person's editor.
 	 *
@@ -203,4 +171,4 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	readonly workbenchTransport: () => Transport | null;
 }
 
-export { UNKNOWN_HOLDER, type PaneSession, type PaneSessionOptions, type PaneTheme };
+export { type PaneSession, type PaneSessionOptions, type PaneTheme };

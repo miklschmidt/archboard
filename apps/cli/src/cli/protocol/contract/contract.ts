@@ -68,7 +68,7 @@ interface PositionalParameter {
  * command that does nothing with one would otherwise accept it in silence. A
  * command lists the ones it reads; any other is refused as a usage error.
  */
-type SharedOptionKey = "url" | "directory" | "doing" | "expect-version" | "as-session";
+type SharedOptionKey = "url" | "directory" | "doing" | "as-session";
 
 interface InputStage {
 	name: string;

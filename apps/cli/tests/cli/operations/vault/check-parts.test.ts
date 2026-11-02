@@ -200,7 +200,6 @@ const PartsSchema = z.object({
 const NO_CHECKOUT = {
 	checkout: null,
 	embeds: [],
-	tracked: [],
 	vaults: [],
 	findings: [],
 	fixed: [],

@@ -109,7 +109,6 @@ function comparisonKey(request: SemanticRenderRequest): string {
  * that was not the contract.
  */
 type SemanticFailureCode =
-	| "MODEL_MISSING"
 	| "UNKNOWN_VARIANT"
 	| "UNKNOWN_VIEW"
 	| "MODEL_UNREADABLE"
@@ -152,7 +151,7 @@ function isRecord(value: unknown): value is JsonRecord {
 function codeOf(body: unknown): SemanticFailureCode | null {
 	const named = z
 		.object({
-			code: z.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"]),
+			code: z.enum(["UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"]),
 		})
 		.safeParse(body);
 	return named.success ? named.data.code : null;

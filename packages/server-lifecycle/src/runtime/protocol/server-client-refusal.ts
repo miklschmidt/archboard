@@ -15,7 +15,7 @@ interface ModelRefusal {
 	[key: string]: unknown;
 }
 
-const MODEL_REFUSAL_CODES = new Set(["MODEL_HELD", "MODEL_VERSION_CONFLICT", "CLAIM_REVOKED"]);
+const MODEL_REFUSAL_CODES = new Set(["MODEL_HELD", "CLAIM_REVOKED"]);
 
 /**
  * Whether an answer is a refused model write, which is decided by the shape

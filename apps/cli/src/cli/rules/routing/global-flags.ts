@@ -1,4 +1,4 @@
-// The global flags every command shares (-C, --doing, --expect-version,
+// The global flags every command shares (-C, --doing,
 // --as-session), pulled out of argv before a command's own parser sees them.
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
@@ -79,30 +79,4 @@ function takeSessionFlag(argv: string[]): string | null {
 	return takeGlobalFlag(argv, "--as-session");
 }
 
-/**
- * And `--expect-version <n>`, which says what the writer was editing (TASK-091).
- *
- * Global for the same reason: a command that makes several requests is making
- * them about one model, so the expectation belongs to the invocation rather
- * than to whichever request happens to be the write.
- *
- * A number here and refused if it is not, because a mistyped precondition that
- * was quietly dropped would leave the writer believing it had one.
- * @param argv - The arguments after the command name; the flag is spliced out.
- * @returns The expected model version, or null when none was passed.
- */
-function takeExpectVersionFlag(argv: string[]): number | null {
-	const raw = takeGlobalFlag(argv, "--expect-version");
-	if (raw === null) {
-		return null;
-	}
-	if (!/^\d+$/u.test(raw.trim())) {
-		throw new CliUsageError(
-			`--expect-version takes a whole number — the version your last write reported, or the one ` +
-				`\`model read\` says. Got ${JSON.stringify(raw)}.`,
-		);
-	}
-	return Number(raw.trim());
-}
-
-export { takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };
+export { takeDirectoryFlag, takeDoingFlag, takeSessionFlag };

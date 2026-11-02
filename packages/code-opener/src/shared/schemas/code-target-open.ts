@@ -25,8 +25,6 @@ type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 const CodeTargetFailureCodeSchema = z.enum([
 	"CROSS_ORIGIN_REFUSED",
 	"REQUEST_INVALID",
-	"BOARD_NOT_FOUND",
-	"ELEMENT_NOT_FOUND",
 	"BINDING_UNAVAILABLE",
 	"MODEL_UNAVAILABLE",
 	"SOURCE_UNAVAILABLE",

@@ -52,7 +52,7 @@ function twoPaneRecords(): PaneRecords {
 		vault: VAULT,
 		version: 3,
 	};
-	return patchRecord(patchRecord({}, "A", { status: statusA, holder: null }), "B", {
+	return patchRecord(patchRecord({}, "A", { status: statusA }), "B", {
 		...initialPaneRecord("B"),
 	});
 }
@@ -119,7 +119,6 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 			list: initialPaneList(),
 			records: patchRecord({}, "A", {
 				status: { ...emptyPaneStatus("A"), model: CHECKOUT, paneKey: "Checkout", vault },
-				holder: null,
 			}),
 			panes: {},
 			catalog: catalogOf(),
@@ -149,10 +148,10 @@ test("pane news keeps the repositories the navigator lists", () => {
 		agentActivity: {},
 	} as const;
 	const before = assembleShellView(inputs).repositories;
-	// An agent claims pane A's model: the view is assembled again, and nothing
-	// the navigator lists changed, so it keeps its rows as they were.
-	const claimed = patchRecord(records, "A", {
-		holder: { id: "agent-1", kind: "agent", since: "", until: "", process: "codex" },
+	// Pane A loses its connection: the view is assembled again, and nothing the
+	// navigator lists changed, so it keeps its rows as they were.
+	const dropped = patchRecord(records, "A", {
+		status: { ...records["A"]!.status, connected: false },
 	});
-	expect(assembleShellView({ ...inputs, records: claimed }).repositories).toBe(before);
+	expect(assembleShellView({ ...inputs, records: dropped }).repositories).toBe(before);
 });

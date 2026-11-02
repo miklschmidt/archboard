@@ -1,8 +1,8 @@
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 // Shapes shared between the shell and the panes it hosts.
 //
-// Everything here describes a *session*: which model a pane is showing, who is
-// writing it, and what they said they were doing. None of it is model content.
+// Everything here describes a *session*: which model a pane is showing and how
+// it stands with the server. None of it is model content.
 // A legacy board's content reaches a pane as a drawn picture and never as a
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
@@ -19,8 +19,6 @@ export interface WebSocketMessage {
 	type: string;
 	model?: string;
 	reading?: unknown;
-	/** On `pane_error`: the actionable refusal the shell must keep visible. */
-	error?: string;
 	/** The pane key a message is about. */
 	paneKey?: string;
 	identity?: LegacyIdentity;
@@ -28,20 +26,6 @@ export interface WebSocketMessage {
 	vault?: string;
 	/** On `pane_place`: the repository that vault is listed under, or null. */
 	repository?: string | null;
-	/**
-	 * On `model_note`: a legacy board changed. The panes showing that model
-	 * ask the server for a new picture; nothing about a pane's own state follows
-	 * from it, because the pane holds no copy of the content (ADR 0023).
-	 */
-	semantic?: boolean;
-	/** On `model_note`: the version the model is at now. */
-	version?: number | null;
-	/** On `model_lock`: is anybody writing this model (ADR 0016). */
-	held?: boolean;
-	/** On `model_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
-	holder?: LockHolder | null;
-	/** On `model_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
-	recent?: DoingEntry[];
 	/**
 	 * On `agent_activity`: every model of the named vault that an agent holds
 	 * or has just written, as one snapshot. Keyless, and told to every pane.
@@ -51,45 +35,6 @@ export interface WebSocketMessage {
 
 /** Every active canonical subject claim and the latest durable operation in one model. */
 export type AgentActivityEntry = AgentActivityMessage["activity"][number];
-
-/**
- * One thing an agent said it was doing to this model (TASK-095).
- *
- * Mirrors `DoingEntry` in `packages/model/src/runtime/store/doing.ts`. It is never model
- * content and it is nowhere in the model file: it is what somebody said while
- * changing something, and it dies with the server.
- */
-export interface DoingEntry {
-	doing: string;
-	at: string;
-	/** The writer's lock-holder id, so two agents on one model do not read as one. */
-	by: string;
-	kind: "human" | "agent";
-	/** Part of a claim — a step of a campaign, rather than a lone act. */
-	claimed?: boolean;
-}
-
-/**
- * Who holds a model's mutex. Mirrors `LockHolder` in `packages/model/src/runtime/store/lock/lock.ts`,
- * which the pane cannot import: that module reads the vault off a filesystem a
- * browser has not got.
- */
-export interface LockHolder {
-	id: string;
-	kind: "human" | "agent";
-	since: string;
-	until: string;
-	process: string;
-	reason?: string;
-	/**
-	 * A claim rather than one write: an agent has this model across everything it
-	 * is doing, not for the twenty milliseconds of a single write.
-	 *
-	 * What a claim buys the person watching is disclosure: the banner naming the
-	 * holder and their reason, and the one control that releases it (ADR 0022).
-	 */
-	claimed?: boolean;
-}
 
 /** What one pane tells the shell about itself. */
 export interface PaneStatus {
@@ -137,16 +82,6 @@ export interface PaneStatus {
 	 * and reopening it would ask for a view that model has not got.
 	 */
 	view: string | null;
-	/** When this pane last heard its model change. */
-	lastChangeAt: string | null;
-	/**
-	 * The last few things an agent said it was doing to this pane's model, oldest
-	 * first (TASK-095). Short on purpose: a list of one-liners is glanceable from
-	 * two metres away, and a transcript is a log nobody reads.
-	 */
-	doing: DoingEntry[];
-	/** The model version this pane last heard about, or null before any news. */
-	version: number | null;
 	/**
 	 * The vault the pane is in, as the server last said (ADR 0050), or null
 	 * before the pane is known. Opaque: what the pane names on its calls, never

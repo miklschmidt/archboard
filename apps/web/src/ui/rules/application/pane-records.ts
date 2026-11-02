@@ -2,16 +2,15 @@
 // and its reported holder. Pure: keyed by pane id,
 // replaced rather than mutated.
 
-import type { LockHolder, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
+import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** Everything the application has heard from one pane. */
 interface PaneRecord {
 	readonly status: PaneStatus;
-	readonly holder: LockHolder | null;
 }
 
 /** Every field a patch may carry; `patchRecord` compares them one by one. */
-const RECORD_FIELDS = ["status", "holder"] as const satisfies readonly (keyof PaneRecord)[];
+const RECORD_FIELDS = ["status"] as const satisfies readonly (keyof PaneRecord)[];
 
 /** The records by pane id. */
 type PaneRecords = Readonly<Record<string, PaneRecord>>;
@@ -40,9 +39,6 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		paneKey: null,
 		opened: null,
 		view: null,
-		lastChangeAt: null,
-		doing: [],
-		version: null,
 		vault: null,
 		repository: null,
 	};
@@ -56,7 +52,6 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 function initialPaneRecord(paneId: string): PaneRecord {
 	return Object.freeze({
 		status: emptyPaneStatus(paneId),
-		holder: null,
 	});
 }
 

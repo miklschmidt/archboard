@@ -249,12 +249,8 @@ function pane(
 			opened: paneKey,
 			model: null,
 			view: null,
-			lastChangeAt: null,
-			doing: [],
-			version: null,
 		},
 		stage: null,
-		holder: null,
 	};
 }
 

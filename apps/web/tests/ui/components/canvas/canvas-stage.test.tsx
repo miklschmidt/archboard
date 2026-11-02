@@ -9,7 +9,6 @@ import { expect, test } from "bun:test";
 import {
 	PANE_VAULT,
 	NOTHING_DRAWN,
-	NO_SUCH_MODEL,
 	UNREADABLE,
 	drawing,
 	mountStage,
@@ -46,15 +45,6 @@ test("a model that is there with nothing on it says exactly that", async () => {
 	await settle();
 	expect(stageState()).toBe("empty");
 	expect(document.body.textContent).toContain("has nothing on it yet");
-});
-
-test("a model the vault has not got is named rather than shrugged at", async () => {
-	server.reply = NO_SUCH_MODEL;
-	mountStage();
-	await settle();
-	expect(stageState()).toBe("error");
-	expect(document.body.textContent).toContain("There is no such model");
-	expect(document.body.textContent).toContain("pipeline");
 });
 
 test("a drawn model puts the server's picture on screen, asked for in no theme", async () => {

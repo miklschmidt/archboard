@@ -9,16 +9,11 @@ import { createPaneCore, type PaneCore } from "#ui/state/pane-session/pane-core.
 import { usePaneContact, type PaneContact } from "#ui/hooks/pane-session/use-pane-contact.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import {
-	UNKNOWN_HOLDER,
 	type PaneSession,
 	type PaneSessionOptions,
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
-import type {
-	LegacyIdentity,
-	DoingEntry,
-	LockHolder,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { LegacyIdentity } from "#ui/rules/pane-session/session-types.ts";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
@@ -46,10 +41,6 @@ interface SessionState {
 	/** How many times the server pointed the pane somewhere other than the model on screen. */
 	arrivals: number;
 	arrived: () => void;
-	heldBy: LockHolder | null;
-	setHeldBy: (holder: LockHolder | null) => void;
-	doing: DoingEntry[];
-	setDoing: (entries: DoingEntry[]) => void;
 	vault: string;
 	setVault: (vault: string) => void;
 }
@@ -65,10 +56,6 @@ function useSessionState(openingVault: string): SessionState {
 	const [openedKey, setOpened] = useState<string | null>(null);
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
-	// It starts as somebody else's until the server says otherwise: a pane that
-	// has not been told does not read the model as free (ADR 0016).
-	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
-	const [doing, setDoing] = useState<DoingEntry[]>([]);
 	const [vault, setVault] = useState(openingVault);
 	return {
 		contact,
@@ -79,10 +66,6 @@ function useSessionState(openingVault: string): SessionState {
 		setOpened,
 		arrivals,
 		arrived,
-		heldBy,
-		setHeldBy,
-		doing,
-		setDoing,
 		vault,
 		setVault,
 	};
@@ -165,8 +148,6 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 			setVault: state.setVault,
 			setOpened: state.setOpened,
 			arrived: state.arrived,
-			setHeldBy: state.setHeldBy,
-			setDoing: state.setDoing,
 		}),
 	);
 
@@ -211,8 +192,6 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		arrivals: state.arrivals,
 		model: state.model,
 		connected: state.contact.connected,
-		heldBy: state.heldBy,
-		doing: state.doing,
 		openCode,
 		readingChanged,
 		flushReading,

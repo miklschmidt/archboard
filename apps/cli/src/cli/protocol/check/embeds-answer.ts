@@ -25,14 +25,6 @@ import { z } from "zod";
  *   vault, fetching it failed and no copy is cached, so the embed was not checked.
  * - `EMBED_RECIPE_UNREADABLE` (warning): the file carries a recipe that cannot
  *   be read, so nothing can draw it again.
- * - `EMBED_VAULT_MOVED` (warning): a model of this vault tracks the embed and
- *   holds its model, and its recipe names the repository the model moved from
- *   (ADR 0051). `--fix` writes the recipe again, naming this vault.
- * - `EMBED_TRACKED_UNREACHABLE` (information): no checkout on this machine
- *   holds the repository of a tracked embed, so it was not read.
- * - `EMBED_TRACKED_MISSING` (information): a model of this vault tracks a file
- *   that is no embed of that model now: it is gone, Git does not track it in
- *   the checkout it was read in, or it carries no recipe of the model.
  *
  * A finding about a file of another repository is information whatever its
  * code: a warning would fail the vault's pull request until that repository
@@ -48,9 +40,6 @@ const EMBED_FINDING_CODES = [
 	"EMBED_VAULT_UNAVAILABLE",
 	"EMBED_VAULT_FETCH_FAILED",
 	"EMBED_RECIPE_UNREADABLE",
-	"EMBED_VAULT_MOVED",
-	"EMBED_TRACKED_UNREACHABLE",
-	"EMBED_TRACKED_MISSING",
 ] as const;
 
 /** A model by id, with the name a recipe or the vault gives it. */
@@ -84,9 +73,8 @@ const EmbedFindingSchema = z.object({
 	 */
 	unreadableModels: z.array(z.string()).optional(),
 	/**
-	 * For `EMBED_VAULT_UNAVAILABLE`, `EMBED_VAULT_FETCH_FAILED` and
-	 * `EMBED_VAULT_MOVED`: the repository identity of the vault the recipe
-	 * names, or null for none.
+	 * For `EMBED_VAULT_UNAVAILABLE` and `EMBED_VAULT_FETCH_FAILED`: the repository
+	 * identity of the vault the recipe names, or null for none.
 	 */
 	vaultRepo: z.string().nullable().optional(),
 	/** Why `--fix` left the embed as it was, when it was asked to fix it. */
@@ -159,8 +147,6 @@ const EmbedsPartSchema = z.object({
 	checkout: z.string().nullable(),
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
-	/** Every tracked embed of the vault's models (ADR 0057), in the order the models list them. */
-	tracked: z.array(z.object({ model: EmbedModelSchema, repo: z.string(), path: z.string() })),
 	/** Every vault an embed's recipe names that the check read, in the order the embeds name them. */
 	vaults: z.array(EmbedVaultSchema),
 	findings: z.array(EmbedFindingSchema),

@@ -50,7 +50,7 @@ type BindingLookup =
 	| { ok: true; binding: CodeBinding }
 	| {
 			ok: false;
-			code: "BOARD_NOT_FOUND" | "ELEMENT_NOT_FOUND" | "BINDING_UNAVAILABLE";
+			code: "BINDING_UNAVAILABLE";
 			error: string;
 	  };
 
@@ -74,8 +74,6 @@ const BODY_PARSER_FAILURES: ReadonlySet<string> = new Set([
 /** HTTP statuses for the failure codes that are not a plain 422 refusal. */
 const FAILURE_STATUSES: Readonly<Partial<Record<CodeTargetFailureCode, number>>> = {
 	CROSS_ORIGIN_REFUSED: 403,
-	BOARD_NOT_FOUND: 404,
-	ELEMENT_NOT_FOUND: 404,
 	MODEL_UNAVAILABLE: 404,
 	CHECKOUT_IDENTITY_CHANGED: 409,
 	CHECKOUT_ON_OTHER_REF: 409,

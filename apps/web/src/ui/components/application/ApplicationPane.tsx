@@ -93,14 +93,12 @@ function optionsFor(
 		theme: props.theme,
 		openingVault: props.openingVault,
 		onStatus: callbacks.onStatus,
-		onHolder: callbacks.onHolder,
 		onPaneReconnected: callbacks.onPaneReconnected,
 		onStaleFrontend: callbacks.onStaleFrontend,
 		onCodeTargetNotice: callbacks.onCodeTargetNotice,
 		onAgentActivity: callbacks.onAgentActivity,
 		onRepositoriesChanged: callbacks.onRepositoriesChanged,
 		onModelAdopted: callbacks.onModelAdopted,
-		onModelError: bound.onModelError,
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,
 	};
@@ -173,8 +171,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	useVaultPolicyRefresh(vault);
 	// Registration and departure are two different events, and they are two
 	// effects for that reason. `usePaneSession` hands back a fresh object every
-	// render — its model, its holder and what an agent is doing all change under
-	// it — so a single effect with the session in its dependencies would report
+	// render — its model and connection change under it — so a single effect with the session in its dependencies would report
 	// the pane gone and back on every ordinary piece of news. The workbench
 	// answers "gone" by tearing down the pane's media and its thread binding, so
 	// that is not a re-registration, it is a disconnection per render.

@@ -150,7 +150,7 @@ function documentReply(model: string): StubReply {
 			status: 404,
 			body: {
 				success: false,
-				code: "MODEL_MISSING",
+				code: "MODEL_UNREADABLE",
 				error: `there is no legacy board called "${model}"`,
 			},
 		};
@@ -192,9 +192,7 @@ async function captured(resource: string): Promise<unknown> {
 	if (!response.ok) {
 		const refusal = z
 			.object({
-				code: z
-					.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"])
-					.optional(),
+				code: z.enum(["UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"]).optional(),
 				error: z.string(),
 			})
 			.parse(body);

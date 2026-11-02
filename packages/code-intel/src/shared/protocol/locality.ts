@@ -1,5 +1,5 @@
 // The answer of `archboard semantic locality` and
-// `GET /api/semantic-boards/locality` (ADR 0045).
+// `GET /api/architecture/locality` (ADR 0045).
 //
 // Locality is where change concentrates in a document's code. The answer reads
 // one variant of one document over a period, through its parts' bindings.

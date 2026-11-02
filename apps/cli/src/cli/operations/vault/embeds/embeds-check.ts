@@ -316,14 +316,13 @@ async function checkEmbedsAt(
 			? at.checkout
 			: await repoRootOf(checkoutOfVault(at.vault), { signal: options.signal });
 	if (root === undefined)
-		return { checkout: null, embeds: [], tracked: [], vaults: [], findings: [], fixed: [] };
+		return { checkout: null, embeds: [], vaults: [], findings: [], fixed: [] };
 	const embeds = await checkoutEmbeds(root, options.signal);
 	const reader = vaultReader(checkoutsReadFrom(vault), options.signal);
 	const checked = await inspectInOrder(embeds, reader, options);
 	return {
 		checkout: root,
 		embeds: embeds.map((embed) => embed.file),
-		tracked: [],
 		vaults: await reader.vaults(),
 		...checked,
 	};

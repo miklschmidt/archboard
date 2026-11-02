@@ -23,11 +23,7 @@ import {
 	type PaneRecords,
 } from "#ui/rules/application/pane-records.ts";
 import type { PaneSessionOptions } from "#ui/rules/pane-session/session-contracts.ts";
-import type {
-	AgentActivityEntry,
-	LockHolder,
-	PaneStatus,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
@@ -55,7 +51,6 @@ type PaneCallbacks = Required<
 	Pick<
 		PaneSessionOptions<BrowserWorkbenchTransport>,
 		| "onStatus"
-		| "onHolder"
 		| "onPaneReconnected"
 		| "onStaleFrontend"
 		| "onCodeTargetNotice"
@@ -123,15 +118,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		events.read().onStatusPublished(status.paneId);
 	}
 	/**
-	 * Who holds a pane's model changed.
-	 * @param paneId The pane.
-	 * @param _paneKey The model.
-	 * @param holder The holder, or null.
-	 */
-	function onHolder(paneId: string, _paneKey: string | null, holder: LockHolder | null): void {
-		patch(paneId, { holder });
-	}
-	/**
 	 * The server asks for another pane, or for one to go.
 	 * @param paneId The pane that heard the request.
 	 * @param request Open or close.
@@ -154,7 +140,6 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	}
 	return {
 		onStatus,
-		onHolder,
 		onLayoutRequest,
 		/**
 		 * A pane's socket came back.

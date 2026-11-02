@@ -1,10 +1,6 @@
-// How a pane hears that the legacy board it is showing has changed.
-//
-// The server announces a semantic write on the existing pane socket, as
-// `{ type: "model_note", semantic: true, board, version }`, to every socket
-// the tab has. There is no second socket here and there must not be one: the
-// pane's own socket is already open, already reconnects, and is already the
-// one thing that says whether this tab is in contact with the server.
+// How a reader of a legacy board hears that it changed. The server no longer
+// announces this: a retained original does not change. The listeners and the
+// failure they lead to stay until the canvas drops its stale state.
 //
 // What the socket cannot do is reach the cache. A pane's message handler is
 // not a React component, so it cannot read the query client out of the

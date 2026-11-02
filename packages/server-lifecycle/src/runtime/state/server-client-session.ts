@@ -1,11 +1,10 @@
 // What one CLI invocation says about itself on every request it makes: which
-// vault it is for, what it says it is doing, and which version of the model it
-// believes it is writing against.
+// vault it is for and what it says it is doing.
 //
 // Carried here rather than threaded through thirty call sites. The CLI is one
 // command per process, so "this invocation" is a process-wide fact and stating
-// it once is what keeps a write's `--doing` and `--expect-version`
-// from being forgotten by whichever call site was written last.
+// it once is what keeps a write's `--doing` from being forgotten by whichever
+// call site was written last.
 
 /**
  * The vault this invocation names, which every server call states (ADR 0049):
@@ -18,12 +17,6 @@ let requestedVault: string | null = null;
 /** What this invocation says it is doing, or null when it says nothing. */
 let writeDoing: string | null = null;
 let writeSession: string | null = null;
-
-/**
- * The version this invocation states it is writing against: a number, null for
- * "against a model that carries no version", or undefined for "states none".
- */
-let expectedVersion: number | null | undefined;
 
 /**
  * A path with one more query parameter on it.
@@ -71,23 +64,8 @@ function withDoing(path: string): string {
 }
 
 /**
- * A path carrying the version this invocation states, when it states one.
- * @param path The path.
- * @returns The path, with `?expectVersion=` when there is one to state.
- */
-function withExpectedVersion(path: string): string {
-	if (expectedVersion === undefined || expectedVersion === null) {
-		return path;
-	}
-	// The same rule, for the same reason: the caller that built the query is the
-	// one that knows what it is writing against.
-	return /[?&]expectVersion=/u.test(path) ? path : addQuery(path, "expectVersion", expectedVersion);
-}
-
-/**
- * A path carrying everything a write states about itself: the line it is doing
- * under, and the version it believes it is writing against. Only a write, so a
- * read never carries either.
+ * A path carrying what a write states about itself: the line it is doing under.
+ * Only a write, so a read never carries it.
  * @param path The path.
  * @param method The request method; anything but GET is a write.
  * @returns The path.
@@ -96,7 +74,7 @@ function withWriteClaims(path: string, method?: string): string {
 	if (method === undefined || method.toUpperCase() === "GET") {
 		return path;
 	}
-	return withExpectedVersion(withDoing(path));
+	return withDoing(path);
 }
 
 /** What one invocation states about itself, which every later request carries. */
@@ -112,8 +90,6 @@ interface InvocationStatement {
 	 * session skip the model news it wrote itself, and nothing on a model rests on it.
 	 */
 	readonly session: string | null;
-	/** The version it writes against: null for a model that carries none, undefined for unstated. */
-	readonly expectedVersion: number | null | undefined;
 }
 
 /**
@@ -125,7 +101,6 @@ function stateInvocation(stated: Partial<InvocationStatement>): void {
 	requestedVault = next.vault;
 	writeDoing = next.doing;
 	writeSession = next.session;
-	expectedVersion = next.expectedVersion;
 }
 
 /**
@@ -137,7 +112,6 @@ function statedInvocation(): InvocationStatement {
 		vault: requestedVault,
 		doing: writeDoing,
 		session: writeSession,
-		expectedVersion,
 	};
 }
 

@@ -9,11 +9,7 @@ import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-contex
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type {
-	AgentActivityEntry,
-	LockHolder,
-	PaneStatus,
-} from "#ui/rules/pane-session/session-types.ts";
+import type { AgentActivityEntry, PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** The theme a person chose, stored on the root element. */
 type ThemeChoice = "light" | "dark";
@@ -26,8 +22,6 @@ interface ShellPane {
 	status: PaneStatus;
 	/** The pane's mounted stage, owned by the application so it never remounts. */
 	stage: ReactNode;
-	/** The model's current lock holder, or null when nobody is writing it. */
-	holder: LockHolder | null;
 }
 
 /** A recovery action a notice offers, reported back by id when chosen. */

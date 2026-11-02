@@ -59,16 +59,6 @@ const NOTHING_DRAWN = {
 	},
 } as const;
 
-/** The vault has no such model. */
-const NO_SUCH_MODEL = {
-	status: 404,
-	body: {
-		success: false,
-		code: "MODEL_MISSING",
-		error: 'there is no legacy board called "pipeline"',
-	},
-} as const;
-
 /** The model was there and has stopped being readable. */
 const UNREADABLE = {
 	status: 422,
@@ -115,4 +105,4 @@ const EXPLAINED_DOCUMENT = {
 	],
 };
 
-export { EXPLAINED_DOCUMENT, NOTHING_DRAWN, NO_SUCH_MODEL, UNREADABLE, drawing };
+export { EXPLAINED_DOCUMENT, NOTHING_DRAWN, UNREADABLE, drawing };
