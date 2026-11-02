@@ -33,6 +33,55 @@
   ],
   "outgoing": [
     {
+      "order": 22000,
+      "kind": "rpc",
+      "label": "state, start, voice, talk",
+      "description": "Through the one global the page publishes, evaluated over the recorder's DevTools connection.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "WalkthroughRecorder"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#IOU51tal",
+      "to": "vKEsyHFk#C6C8Xlzv"
+    },
+    {
+      "order": 35000,
+      "kind": "rpc",
+      "label": "load the talk, then frame(n) for every frame",
+      "description": "Through window.archboardReplay, evaluated over the renderer's DevTools connection. A frame answers once the page has drawn it at the frame's time and holds still.",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
+        "symbol": "WalkthroughReplay"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#nthMhjL4",
+      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
+    },
+    {
+      "order": 38000,
+      "kind": "http",
+      "label": "the recording and replay pages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "frontendRoute"
+      },
+      "id": "vKEsyHFk/XppR9owz#mLWF1WuB",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
       "order": 113000,
       "kind": "call",
       "label": "readArchitectureModelOnServer",

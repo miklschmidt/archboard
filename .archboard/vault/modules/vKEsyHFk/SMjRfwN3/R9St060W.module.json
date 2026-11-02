@@ -7,14 +7,5 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/SMjRfwN3#R9St060W",
   "parent": "vKEsyHFk/SMjRfwN3#jeDfgVfS",
-  "outgoing": [
-    {
-      "order": 25000,
-      "kind": "http",
-      "label": "load the recording page, or the replay page",
-      "emphasis": "normal",
-      "id": "vKEsyHFk/SMjRfwN3#yWqRrF8i",
-      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
-    }
-  ]
+  "outgoing": []
 }
