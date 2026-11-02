@@ -1,11 +1,11 @@
 ---
 id: TASK-562
 title: Bring the canvas motion to the owner's bar after the test of PR 26
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-02T05:12:00Z'
+updated_date: '2026-11-02T05:23:00Z'
 labels:
   - renderer
   - motion
@@ -138,3 +138,9 @@ Last pass on the final code, in the lab copy of the model. Filmed on the held cl
 
 Measured with the first-entrance gap script on the largest board in headless Chrome at 60 Hz: GPU 54 frames, mean 20.1 ms twice, 4 and 3 gaps over 25 ms, longest 150.0 ms. CPU 21 frames, mean 50.8 and 51.6 ms, longest 166.6 and 183.4 ms. A forced device loss brought a second GPU device, and the page kept the GPU painter. A broken surface failed the second GPU attempt too, and the page moved to the CPU painter with its reason. No film ran at 120 Hz. This pass did not test Hyprland: that result comes from the owner.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+The owner's test of PR 26 raised the motion bar, and this task met it on the final code. Cards, lines, containers, moves between boards, walkthroughs and traffic now follow one designed motion, and the design note records each change and its measurements. The owner's follow-ups added a hover light setting, a beat light that reaches what its cards touch, bars that arrive with their cards, and Workspace packages as a group in the model. The last pass filmed every kind of moment on the final code and found one fault, a rim round a decision's frame, which is fixed. bun run check passed in full on f08157701. The one later code commit passed type-check, lint and 225 focused tests. gpt-6.1-sol approved after two rounds. Risks: no film ran at 120 Hz, the 120 Hz table in the PR predates the motion work, no repository test owns device and surface recovery, and the README clips and narrated assets stay stale for readme:check.
+<!-- SECTION:FINAL_SUMMARY:END -->
