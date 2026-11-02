@@ -57,15 +57,17 @@ Then run these commands in the checkout:
 
 ```bash
 rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
-version=$(awk -F'"' '/^name = "wasm-bindgen"$/ { getline; print $2 }' Cargo.lock)
-cargo install wasm-bindgen-cli --version "$version" --locked
+rustup override set stable
+cargo install wasm-bindgen-cli --locked --version "$(awk -F'"' '/^name = "wasm-bindgen"$/ { getline; print $2 }' Cargo.lock)"
 bun install
 bun run build
 ```
 
-Keep `~/.cargo/bin` on your `PATH`, because it holds `wasm-bindgen`. That program
-must have the version of the `wasm-bindgen` crate in `Cargo.lock`. If a `git pull`
-changes that version, run the `cargo install` command again.
+`rustup override set` chooses that toolchain for this checkout and leaves your
+default as it is. Keep `~/.cargo/bin` on your `PATH`, because it holds
+`wasm-bindgen`. That program must have the version of the `wasm-bindgen` crate in
+`Cargo.lock`, so run the `cargo install` command again after each `git pull`. It
+does nothing when the version is the same.
 
 `flake.nix` is the list of the tools, if a build reports that a tool is missing.
 `package.json` pins Bun, `Cargo.lock` pins wasm-bindgen, and `flake.lock` pins
@@ -86,7 +88,8 @@ build. A build needs the Rust tools only when the core's sources changed. The
 server and the CLI run from the TypeScript in `apps/` and `packages/`. If the
 renderer core was built from other sources than the checkout holds, they refuse
 to draw and name `bun run build:core` (ADR 0059). After each `git pull`, run
-`bun install` and `bun run build` again, in the way that you built it. `bun install`
+`bun install` and `bun run build` again, in the way that you built it. With rustup,
+run the `cargo install` command first. `bun install`
 also links the workspace packages into `node_modules`, and the server does not
 start without those links.
 
@@ -599,11 +602,18 @@ gh 2.99 or newer.
 
 To update archboard, run `git pull` in the checkout. Then run `bun install` and
 `archboard restart` with the Rust tools on your `PATH`, because the restart builds
-the renderer core when its sources changed. With rustup, run the two commands as
-they are. With Nix, run this command:
+the renderer core when its sources changed. With Nix, run this command:
 
 ```bash
 nix develop --command bash -c 'bun install && archboard restart'
+```
+
+With rustup, run these commands in the checkout:
+
+```bash
+cargo install wasm-bindgen-cli --locked --version "$(awk -F'"' '/^name = "wasm-bindgen"$/ { getline; print $2 }' Cargo.lock)"
+bun install
+archboard restart
 ```
 
 `archboard restart` stops the Archboard server, builds the frontend and starts
