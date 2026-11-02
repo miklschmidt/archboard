@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/components/semantic-board-canvas/CodeWarnings.tsx"
   },
-  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "schemaVersion": 1,
   "id": "vKEsyHFk#T0qPemAp",
+  "parent": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
   "outgoing": []
 }

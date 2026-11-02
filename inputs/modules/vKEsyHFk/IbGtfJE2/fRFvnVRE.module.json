@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/IbGtfJE2#fRFvnVRE",
   "parent": "vKEsyHFk/vKEsyHFk#TBnOCNx2",
+  "formerNames": [
+    "Agent CLI"
+  ],
   "outgoing": [
     {
       "order": 32000,
@@ -25,8 +28,5 @@
       "id": "vKEsyHFk/IbGtfJE2#Tt8yC8yW",
       "to": "vKEsyHFk/IbGtfJE2#PEfE7dCL"
     }
-  ],
-  "formerNames": [
-    "Agent CLI"
   ]
 }

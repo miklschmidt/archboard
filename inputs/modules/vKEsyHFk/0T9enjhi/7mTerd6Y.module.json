@@ -276,8 +276,8 @@
         "path": "packages/board/src/runtime/operations/legacy-inventory/addresses.ts",
         "symbol": "parseBoardKey"
       },
-      "to": "vKEsyHFk#9VahN2IU",
-      "id": "vKEsyHFk#X4APDE6a"
+      "id": "vKEsyHFk#X4APDE6a",
+      "to": "vKEsyHFk#9VahN2IU"
     }
   ]
 }

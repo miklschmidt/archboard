@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/protocol/pane-context.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#qOrTIIKT",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "outgoing": []
 }

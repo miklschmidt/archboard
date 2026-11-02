@@ -41,6 +41,19 @@
       "to": "vKEsyHFk#iORmkZrI"
     },
     {
+      "order": 36000,
+      "kind": "dependency",
+      "label": "pane registrations and messages",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/registry.ts",
+        "symbol": "resolvePane"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
+      "to": "vKEsyHFk#PmExcyj9"
+    },
+    {
       "order": 79000,
       "kind": "call",
       "label": "confirm model readability",
@@ -53,19 +66,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
       "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 36000,
-      "kind": "dependency",
-      "label": "pane registrations and messages",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
-        "symbol": "resolvePane"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
-      "to": "vKEsyHFk#PmExcyj9"
     }
   ]
 }
