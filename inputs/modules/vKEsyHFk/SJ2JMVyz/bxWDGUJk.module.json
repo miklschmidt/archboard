@@ -81,18 +81,6 @@
       "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     },
     {
-      "order": 126000,
-      "kind": "call",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/explanations/actions.ts",
-        "symbol": "readArchitectureModel"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
-      "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
       "order": 70057,
       "kind": "call",
       "label": "publish structured local diagnostics",
@@ -104,6 +92,18 @@
       },
       "id": "vKEsyHFk#e00V8dhv",
       "to": "vKEsyHFk/vKEsyHFk#7nWcEvFx"
+    },
+    {
+      "order": 126000,
+      "kind": "call",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/explanations/actions.ts",
+        "symbol": "readArchitectureModel"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#yBgqPUx8",
+      "to": "vKEsyHFk#ZGONZKxj"
     }
   ]
 }

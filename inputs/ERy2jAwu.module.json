@@ -51,19 +51,6 @@
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
     },
     {
-      "order": 67000,
-      "kind": "http",
-      "label": "the person activated a checkout, naming the pane's vault",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
-        "symbol": "showConversation"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
-      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
-    },
-    {
       "order": 66000,
       "kind": "http",
       "label": "the person activated a checkout (/api/panes/conversation)",
@@ -76,6 +63,19 @@
       },
       "id": "vKEsyHFk/9ncuT5DP#99za8lFO",
       "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
+    },
+    {
+      "order": 67000,
+      "kind": "http",
+      "label": "the person activated a checkout, naming the pane's vault",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/pane-session/pane-requests.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
+      "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
     }
   ]
 }

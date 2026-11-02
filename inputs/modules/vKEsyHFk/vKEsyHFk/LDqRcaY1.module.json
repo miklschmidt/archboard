@@ -3,6 +3,9 @@
   "name": "skills",
   "kind": "package",
   "responsibility": "Ships the agent skills and evaluates them, when a person starts it",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/skills"
@@ -15,8 +18,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }
