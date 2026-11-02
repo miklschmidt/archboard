@@ -240,8 +240,8 @@ Archboard owns captured architecture context in `workbench` through its `./seman
 - `./session` is the session of `runtime/services/`. It creates the session and carries its
   interface, its options, its errors and its control symbol. It also carries the decoded results of
   a session request, such as `SessionThread`, and the schemas where code outside the package
-  validates: the reply to a server request, the supported login parameters, the queue parameters
-  and a queued submission. The session's storage proof is in `runtime/store/`.
+  validates: the reply to a server request, the supported login parameters and a queued
+  submission. The session's storage proof is in `runtime/store/`.
 - `./process` owns the `codex app-server` child of `runtime/processes/`: it creates the process and
   reports its lifecycle. It also carries the executable check, which finds the Codex executable of
   the checkout whose source runs, through `SOURCE_CHECKOUT` of `workspace`, and refuses a global one
