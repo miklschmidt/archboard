@@ -27,7 +27,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "09d757ef748fb827afeb1fcbf81e90aabfcc01da0908865835ac0e60e544426d"
+			"hash": "81e09837b7e88d26211dcc8bde131874a7a55422aa169a671874ea855fae5c89"
 		},
 		{
 			"name": "hero",
@@ -60,7 +60,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "54e4a719dfe3b914524228070b93179506cd888a8e06545331487edbd88e5d42"
+			"hash": "117decfb9595cfe9f99c04808d8fe16663847871733e30cfb71282cd35d62ad6"
 		},
 		{
 			"name": "explainer",
@@ -91,7 +91,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "682a6f13550de6df0858fc5b996ee744db8182a77cc1796f2cfe99020cefed37"
+			"hash": "65827b143cc49b668d66e4a85df1b5dc954f091922cf37eb22749bff88553923"
 		},
 		{
 			"name": "plan",
@@ -119,7 +119,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "2c2517fd4ca1098146674f731f1a0b624ff613fbc0f5bf0b02c43d21a14defed"
+			"hash": "6a11d728e141855eb0c43fc06b319b29f97aab26783a4d7922f085ee9cc6e90c"
 		},
 		{
 			"name": "history",
@@ -148,7 +148,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "17e4924cde84df7c0a4316e9001da9747b0195c17ed4c7411f1954e0c8d1900b"
+			"hash": "5ac57874d464dc0f65119b4bbc14543c652c806905aef6c4fe85bc14f0b8386a"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -180,7 +180,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "97ef289b1ceeabc251e996a143d1fc7421ffa72de549aa0186f7897237c55a88"
+			"hash": "2041394c4f42a8c50ac7fff521a4390dab3a05ec239e7b286874d80399940936"
 		},
 		{
 			"name": "sequence",
@@ -239,7 +239,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "97ef289b1ceeabc251e996a143d1fc7421ffa72de549aa0186f7897237c55a88"
+			"hash": "2041394c4f42a8c50ac7fff521a4390dab3a05ec239e7b286874d80399940936"
 		},
 		{
 			"name": "drill-down",
@@ -266,7 +266,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "60d8b910e90a63a0c9bf8f094cdc7113c4fc675eff6bf745df2da6546fc1406b"
+			"hash": "a4e0d3e86f7bdd7ed574795bd768451d568aae5b92b0c26c949a46247b03032e"
 		},
 		{
 			"name": "ask",
@@ -295,7 +295,7 @@
 				"apps/server/src/server/routes/architecture/explanation-routes.ts",
 				"apps/cli/src/cli/clients/server/architecture-model.ts"
 			],
-			"hash": "1c196cd434a6be5f061afb81dff8e39a1d8e26369455f48197d2a728dd5ff34d"
+			"hash": "a52362d41fbb01a49e01bb848d7c3158a0d3909ad63a2af64cda320f84ea68ba"
 		},
 		{
 			"name": "take-back",
@@ -327,7 +327,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "2be27997ba3db8c74fe209dac3c262e8e5268ba72aacae063101ea62575902e7"
+			"hash": "4b1b55de72324483166366e59c88a872f6e40dcd9710b090eb85b61a3abb8454"
 		},
 		{
 			"name": "web-shop",
@@ -396,7 +396,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "1670fa7b7f83b7fd8a5c891ebb37162a06f497f77f113843b4b63480fbab2b48"
+			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
 		},
 		{
 			"name": "module-interfaces",
@@ -429,7 +429,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "1670fa7b7f83b7fd8a5c891ebb37162a06f497f77f113843b4b63480fbab2b48"
+			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
 		},
 		{
 			"name": "git-history",
@@ -462,7 +462,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "1670fa7b7f83b7fd8a5c891ebb37162a06f497f77f113843b4b63480fbab2b48"
+			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
 		},
 		{
 			"name": "design-smells",
@@ -493,7 +493,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "396ef1fc45244cff7a448bc26a1de00739328ca683299daf3bd5cfd104c0fb0c"
+			"hash": "6937f99a33820474583614aaa88eab97101590e2a78dd0bc7fd5fbdec67ea0cf"
 		}
 	]
 }
