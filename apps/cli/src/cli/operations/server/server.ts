@@ -5,7 +5,6 @@ import { defineCommand } from "#cli/protocol/contract/contract.ts";
 const IgnoredTailSchema = z.array(z.string()).default([]);
 
 const StartInputSchema = z.object({ tail: IgnoredTailSchema });
-type StartInput = z.infer<typeof StartInputSchema>;
 
 const StartResultSchema = z.object({
 	running: z.literal(true),
@@ -13,7 +12,6 @@ const StartResultSchema = z.object({
 	spawned: z.boolean(),
 	pid: z.number().int().positive().optional(),
 });
-type StartResult = z.infer<typeof StartResultSchema>;
 
 const startContract = defineCommand({
 	path: ["start"],
@@ -90,14 +88,12 @@ const startContract = defineCommand({
 });
 
 const StopInputSchema = z.object({ tail: IgnoredTailSchema });
-type StopInput = z.infer<typeof StopInputSchema>;
 
 const StopResultSchema = z.object({
 	stopped: z.boolean(),
 	pid: z.number().int().positive().optional(),
 	message: z.string(),
 });
-type StopResult = z.infer<typeof StopResultSchema>;
 
 const stopContract = defineCommand({
 	path: ["stop"],
@@ -155,13 +151,11 @@ const stopContract = defineCommand({
 });
 
 const RestartInputSchema = z.object({ tail: IgnoredTailSchema });
-type RestartInput = z.infer<typeof RestartInputSchema>;
 
 const RestartResultSchema = StartResultSchema.extend({
 	stop: StopResultSchema,
 	frontendBuild: z.string().nullable(),
 });
-type RestartResult = z.infer<typeof RestartResultSchema>;
 
 const restartContract = defineCommand({
 	path: ["restart"],
@@ -245,18 +239,12 @@ const restartContract = defineCommand({
 
 export {
 	RestartInputSchema,
-	type RestartInput,
 	RestartResultSchema,
-	type RestartResult,
 	restartContract,
 	StartInputSchema,
-	type StartInput,
 	StartResultSchema,
-	type StartResult,
 	startContract,
 	StopInputSchema,
-	type StopInput,
 	StopResultSchema,
-	type StopResult,
 	stopContract,
 };

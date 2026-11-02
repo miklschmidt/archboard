@@ -29,10 +29,4 @@ const HistoricalCorrectionSchema = z
 	})
 	.strict();
 
-type HistoricalRevision = z.infer<typeof HistoricalRevisionSchema>;
-export {
-	HistoricalRevisionSchema,
-	HistoricalRevisionsSchema,
-	HistoricalCorrectionSchema,
-	type HistoricalRevision,
-};
+export { HistoricalRevisionSchema, HistoricalRevisionsSchema, HistoricalCorrectionSchema };

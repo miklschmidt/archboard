@@ -12,8 +12,6 @@ type ServerApplicationStopReason = NodeJS.Signals | "server-error" | "startup-fa
 import {
 	ServerApplicationBusyError,
 	createServerMutationAdmission,
-	type ServerActiveMutation,
-	type ServerMutationAdmissionOptions,
 	type ServerMutationLease,
 } from "#server/lifecycle/lifetime/mutation-admission.ts";
 
@@ -450,8 +448,6 @@ export {
 	type ServerApplicationPhase,
 	type ServerApplicationStopReason,
 	type ServerMutationLease,
-	type ServerMutationAdmissionOptions,
-	type ServerActiveMutation,
 	ServerApplicationBusyError,
 	createServerMutationAdmission,
 	type ServerApplicationResource,

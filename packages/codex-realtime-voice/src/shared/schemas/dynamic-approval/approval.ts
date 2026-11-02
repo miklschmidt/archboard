@@ -3,12 +3,7 @@ import { z } from "zod";
 import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import { createDynamicApprovalBrowserSchemas } from "#shared/schemas/dynamic-approval/browser.ts";
 import { effectHashFor } from "#shared/rules/dynamic-approval-hash.ts";
-import {
-	createDynamicApprovalEffectSchemas,
-	DYNAMIC_APPROVAL_DECISIONS,
-	DYNAMIC_APPROVAL_STATES,
-	DYNAMIC_APPROVAL_TOOLS,
-} from "#shared/schemas/dynamic-approval/effects.ts";
+import { createDynamicApprovalEffectSchemas } from "#shared/schemas/dynamic-approval/effects.ts";
 import type { DynamicApprovalEffectSchemas } from "#shared/schemas/dynamic-approval/effects.ts";
 import { NonNegativeIntegerSchema } from "#shared/schemas/browser/scalars.ts";
 import type { IdentityContext, IdentitySchemas } from "#shared/schemas/browser/scalars.ts";
@@ -325,14 +320,10 @@ function createDynamicApprovalSchemas(identity: IdentitySchemas, context: Identi
 }
 
 type DynamicApprovalSchemas = ReturnType<typeof createDynamicApprovalSchemas>;
-type DynamicApprovalIdentity = z.infer<DynamicApprovalSchemas["DynamicApprovalIdentitySchema"]>;
 type DynamicApprovalEffect = z.infer<DynamicApprovalSchemas["DynamicApprovalEffectSchema"]>;
 type DynamicApprovalRequest = z.infer<DynamicApprovalSchemas["DynamicApprovalRequestSchema"]>;
 type DynamicApprovalState = z.infer<DynamicApprovalSchemas["DynamicApprovalStateSchema"]>;
 type DynamicApprovalDecision = z.infer<DynamicApprovalSchemas["DynamicApprovalDecisionSchema"]>;
-type DynamicApprovalToolResult = z.infer<DynamicApprovalSchemas["DynamicApprovalToolResultSchema"]>;
-type DynamicApprovalLink = z.infer<DynamicApprovalSchemas["DynamicApprovalLinkSchema"]>;
-type DynamicApprovalBinding = z.infer<DynamicApprovalSchemas["DynamicApprovalBindingSchema"]>;
 type BrowserDynamicApprovalEffect = z.infer<
 	DynamicApprovalSchemas["BrowserDynamicApprovalEffectSchema"]
 >;
@@ -340,12 +331,6 @@ type BrowserDynamicApproval = z.infer<DynamicApprovalSchemas["BrowserDynamicAppr
 type BrowserDynamicApprovalResponse = z.infer<
 	DynamicApprovalSchemas["BrowserDynamicApprovalResponseSchema"]
 >;
-type DynamicApprovalResponse = BrowserDynamicApprovalResponse;
-type BrowserDynamicApprovalResponseCommand = BrowserDynamicApprovalResponse;
-type DynamicCoordinationApprovalRequest = DynamicApprovalRequest;
-type DynamicCoordinationApprovalState = DynamicApprovalState;
-type DynamicCoordinationApprovalResponse = BrowserDynamicApprovalResponse;
-type BrowserDynamicCoordinationApproval = BrowserDynamicApproval;
 
 export {
 	type DynamicApprovalCanonicalIdentity,
@@ -355,24 +340,11 @@ export {
 	canonicalDynamicApprovalJson,
 	createDynamicApprovalSchemas,
 	type DynamicApprovalSchemas,
-	type DynamicApprovalIdentity,
 	type DynamicApprovalEffect,
 	type DynamicApprovalRequest,
 	type DynamicApprovalState,
 	type DynamicApprovalDecision,
-	type DynamicApprovalToolResult,
-	type DynamicApprovalLink,
-	type DynamicApprovalBinding,
 	type BrowserDynamicApprovalEffect,
 	type BrowserDynamicApproval,
 	type BrowserDynamicApprovalResponse,
-	type DynamicApprovalResponse,
-	type BrowserDynamicApprovalResponseCommand,
-	type DynamicCoordinationApprovalRequest,
-	type DynamicCoordinationApprovalState,
-	type DynamicCoordinationApprovalResponse,
-	type BrowserDynamicCoordinationApproval,
-	DYNAMIC_APPROVAL_DECISIONS,
-	DYNAMIC_APPROVAL_STATES,
-	DYNAMIC_APPROVAL_TOOLS,
 };

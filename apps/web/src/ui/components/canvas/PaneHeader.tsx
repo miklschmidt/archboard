@@ -272,23 +272,4 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 	);
 }
 
-/**
- * The header of a pane the server has pointed at no model, as in a vault with
- * none: it says so, and keeps the shell's controls and what the shell says.
- * @returns The header row.
- */
-function NoModelHeader(): JSX.Element {
-	const { controls } = usePaneChrome();
-	return (
-		<HeaderRow>
-			<HeaderStart>
-				<h2 className="text-muted-foreground truncate text-[13px] leading-[18px] font-[650]">
-					No model
-				</h2>
-			</HeaderStart>
-			<HeaderEnd>{controls}</HeaderEnd>
-		</HeaderRow>
-	);
-}
-
-export { NoModelHeader, PaneHeader, type CrumbPlace, type PaneHeaderProps };
+export { PaneHeader, type CrumbPlace, type PaneHeaderProps };

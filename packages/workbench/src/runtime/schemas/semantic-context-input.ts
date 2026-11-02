@@ -18,14 +18,12 @@ import type {
 import {
 	byteLength,
 	clipJsonUtf8,
-	clipUtf8,
 	fail,
 	feedIdValue,
 	identityValue,
 	jsonStringByteLength,
 	nullableTextValue,
 	numberValue,
-	SemanticContextInputError,
 	textValue,
 	type BoundedValue,
 } from "#runtime/services/semantic-bounded-text.ts";
@@ -486,13 +484,11 @@ function normalizeContext(
 export {
 	type BoundedValue,
 	type NormalizedContext,
-	SemanticContextInputError,
 	fail,
 	byteLength,
 	jsonStringByteLength,
 	clipJsonUtf8,
 	feedIdValue,
-	clipUtf8,
 	textValue,
 	userChanges,
 	agentSwitchOf,

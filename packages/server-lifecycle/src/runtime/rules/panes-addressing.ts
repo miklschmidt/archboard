@@ -54,17 +54,6 @@ function addressablePanes(registrations: readonly PaneRegistration[]): PaneRegis
 	return registrations.filter((pane) => pane.recording !== true);
 }
 
-/**
- * Every pane, somebody's before a recording page's: for a lookup by pane id, where a recording
- * page presents the same id as the pane a person is looking at and the person's is meant.
- * @param registrations Every registered pane.
- * @returns The panes, addressable ones first.
- */
-function panesAddressableFirst(registrations: readonly PaneRegistration[]): PaneRegistration[] {
-	const recordings = registrations.filter((pane) => pane.recording === true);
-	return [...addressablePanes(registrations), ...recordings];
-}
-
 /** The command that makes a pane, said the same way everywhere it is offered. */
 const HOW_TO_OPEN_A_PANE =
 	"Open one with `archboard browser open`, which splits the live canvas and answers with the pane it made.";
@@ -215,7 +204,6 @@ export {
 	HOW_TO_OPEN_A_PANE,
 	MAX_PANES,
 	addressablePanes,
-	panesAddressableFirst,
 	paneWords,
 	resolvePane,
 	resolvePaneSpec,

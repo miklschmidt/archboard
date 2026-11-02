@@ -10,9 +10,6 @@ import { SemanticPolicySchema } from "@archboard/model/policy";
 const HomePathSchema = z.string().regex(/^~\/[^/]/u, "a path in the run's home, starting ~/");
 
 const RawFixtureStepSchema = z.looseObject({ op: z.string(), board: z.string() });
-const FixtureStepSchema = RawFixtureStepSchema;
-type FixtureStep = z.infer<typeof FixtureStepSchema>;
-type RawFixtureStep = FixtureStep;
 
 /**
  * A talk a recording kept of one walkthrough of a board the steps laid, where `semantic record
@@ -45,13 +42,4 @@ const FixtureSchema = z
 	.strict();
 type Fixture = z.infer<typeof FixtureSchema>;
 
-export {
-	FixtureSchema,
-	FixtureStepSchema,
-	HomePathSchema,
-	RawFixtureStepSchema,
-	type Fixture,
-	type FixtureStep,
-	type RawFixtureStep,
-	type TalkFixture,
-};
+export { FixtureSchema, HomePathSchema, RawFixtureStepSchema, type Fixture, type TalkFixture };

@@ -131,7 +131,6 @@ type RealtimeState =
 			readonly message: string;
 	  }
 	| { readonly phase: "closed"; readonly reason: "stopped" | "disposed" };
-type RealtimeTransitionReason = RealtimeState["reason"];
 
 type RealtimeTranscriptRole = "user" | "assistant";
 type RealtimeTranscriptStatus = "provisional" | "final" | "interrupted";
@@ -183,8 +182,6 @@ type AppendNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "ca
 type AppendOutcomeUnknownReason = "transport_failure" | "response_lost";
 type CommandNotDeliveredReason = "rejected" | "not_ready" | "stale_session" | "cancelled";
 type CommandOutcomeUnknownReason = "transport_failure" | "response_lost";
-type AppendOutcomeReason = AppendNotDeliveredReason | AppendOutcomeUnknownReason;
-type CommandOutcomeReason = CommandNotDeliveredReason | CommandOutcomeUnknownReason;
 type AppendOutcome =
 	| (RealtimeCorrelation & { readonly outcome: "delivered" })
 	| (RealtimeCorrelation & {
@@ -231,7 +228,6 @@ export {
 	type RealtimeRecoverableErrorReason,
 	type RealtimeTerminalErrorReason,
 	type RealtimeState,
-	type RealtimeTransitionReason,
 	type RealtimeTranscriptRole,
 	type RealtimeTranscriptStatus,
 	type RealtimeTranscriptRecord,
@@ -247,8 +243,6 @@ export {
 	type AppendOutcomeUnknownReason,
 	type CommandNotDeliveredReason,
 	type CommandOutcomeUnknownReason,
-	type AppendOutcomeReason,
-	type CommandOutcomeReason,
 	type AppendOutcome,
 	type CommandOutcome,
 	type RealtimeServer,

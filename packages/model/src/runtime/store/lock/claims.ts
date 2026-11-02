@@ -9,13 +9,8 @@ import {
 	processRevocations,
 	startRenewing,
 } from "#runtime/store/lock/claim-state.ts";
-import type {
-	Claim,
-	ClaimEntry,
-	ClaimRevocation,
-	LockHolder,
-} from "#runtime/store/lock/contracts.ts";
-import { modelLockState, newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
+import type { Claim, ClaimEntry, ClaimRevocation } from "#runtime/store/lock/contracts.ts";
+import { newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
 
 /** A claim this server lost, with the opening of the sentence its agent is told once. */
 type LostClaim = ClaimRevocation & {
@@ -139,38 +134,6 @@ function takeClaimRevocation(vault: string, model: string): LostClaim | null {
 }
 
 /**
- * The person at the canvas takes a model back (ADR 0022).
- *
- * The lease is taken with any claim revoked and given straight back, so the
- * model goes to nobody and the next write takes it as any write does. Nothing
- * already written is undone. It does not wait: an unclaimed writer holding the
- * model at that instant refuses it by name, so the person can ask again (TASK-153).
- * @param request The model, the pane asking for it and the request's cancellation.
- * @param request.vault The vault root the model lives in.
- * @param request.board The model's canonical key.
- * @param request.by The client id of the pane asking.
- * @param request.signal Cancels waiting for the lease when the caller goes.
- * @returns The agent's claim that stood when the person asked, or null when none did.
- */
-async function takeBackModel(
-	request: Readonly<{ vault: string; model: string; by: string; signal?: Readonly<AbortSignal> }>,
-): Promise<LockHolder | null> {
-	const { vault, model } = request;
-	const standing = modelLockState(vault, model);
-	const hold = await holdModel({
-		vault,
-		model,
-		holder: { id: request.by, kind: "human" },
-		revokeClaim: true,
-		...(request.signal !== undefined ? { signal: request.signal } : {}),
-	});
-	if (hold.created) {
-		releaseHold(vault, model, hold.holder.id);
-	}
-	return standing?.kind === "agent" && standing.claimed ? standing : null;
-}
-
-/**
  * Why a claim ended, as the opening of the refusal its agent is told once.
  *
  * Only a take-back names a person: a claim that ended any other way says what
@@ -189,12 +152,4 @@ function claimEndReason(lost: ClaimRevocation): string {
 	return `The lease on ${model} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
 }
 
-export {
-	type LostClaim,
-	claimModel,
-	claimOn,
-	claimWriterId,
-	releaseClaim,
-	takeBackModel,
-	takeClaimRevocation,
-};
+export { type LostClaim, claimModel, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };

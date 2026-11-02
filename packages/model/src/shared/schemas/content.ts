@@ -88,7 +88,6 @@ const DrillDownVariantSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("named"), name: DisplayNameSchema }).strict(),
 	z.object({ kind: z.literal("current") }).strict(),
 ]);
-type DrillDownVariant = z.infer<typeof DrillDownVariantSchema>;
 
 /**
  * A repository identity as a drill-down names one: the identity a binding
@@ -124,7 +123,6 @@ const DrillDownSchema = z
 		repo: DrillDownRepoSchema.optional(),
 	})
 	.strict();
-type DrillDown = z.infer<typeof DrillDownSchema>;
 
 /**
  * One architectural unit.
@@ -318,9 +316,7 @@ export {
 	type EdgeTraffic,
 	effectiveTraffic,
 	DrillDownVariantSchema,
-	type DrillDownVariant,
 	DrillDownSchema,
-	type DrillDown,
 	SemanticNodeSchema,
 	type SemanticNode,
 	SemanticEdgeSchema,

@@ -265,46 +265,10 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	return data as T;
 }
 
-/**
- * Whether an error is the network failing rather than the server answering.
- * @param error The thrown value.
- * @returns True when nothing was reached.
- */
-function isConnectionFailure(error: unknown): boolean {
-	if (!isRecord(error)) {
-		return false;
-	}
-	const unreachable =
-		stringAt(error, "name") === "ConnectionRefused" ||
-		stringAt(error, "message")?.startsWith("Unable to connect.") === true;
-	return unreachable || UNREACHABLE_CODES.has(failureCode(error) ?? "");
-}
-
-// The system errors that mean nothing answered.
-const UNREACHABLE_CODES = new Set([
-	"ECONNREFUSED",
-	"ECONNRESET",
-	"ENOTFOUND",
-	"EAI_AGAIN",
-	"ETIMEDOUT",
-]);
-
-/**
- * The system code behind a failure: the cause's when it has one, else the
- * error's own.
- * @param error The thrown value.
- * @returns The code, or undefined.
- */
-function failureCode(error: Record<string, unknown>): string | undefined {
-	const cause = error["cause"];
-	return (isRecord(cause) ? stringAt(cause, "code") : undefined) ?? stringAt(error, "code");
-}
-
 export {
 	ARCHBOARD_SERVICE_NAME,
 	assertServerIdentity,
 	foreignServiceError,
-	isConnectionFailure,
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,

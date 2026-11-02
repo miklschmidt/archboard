@@ -6,7 +6,6 @@ import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { readArchitectureModel } from "@archboard/model/store-read";
-import { aggregateOf } from "#server/rules/pane/legacy-address.ts";
 import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
@@ -108,46 +107,6 @@ function socketsFor(clientId: string): WebSocket[] {
 		}
 	});
 	return found;
-}
-
-/**
- * Send one serialized message to every admitted client of one vault, dropping
- * a client whose socket refuses it.
- * @param vault The vault whose clients hear it.
- * @param data The JSON already serialized for the wire.
- */
-function sendToVaultClients(vault: string, data: string): void {
-	clients.forEach((client) => {
-		if (socketVaults.get(client) !== vault) {
-			return;
-		}
-		try {
-			if (client.readyState === WebSocket.OPEN) {
-				client.send(data);
-			}
-		} catch {
-			logger.warn("Failed to send to client, removing");
-			clients.delete(client);
-		}
-	});
-}
-
-/**
- * Broadcast model news to every client connected for the model's vault.
- *
- * The model key is not optional: a client showing model A has to be able to
- * drop a message about model B rather than merge it into what it is rendering.
- * The vault is not optional either, and it is filtered here: a pane never hears
- * of a model of another vault, even one of the same name (ADR 0049).
- * @param message The message to send.
- * @param vault The vault the model lives in.
- * @param paneKey The pane key the message is about; stamped onto the message.
- */
-function broadcast(message: WebSocketMessage, vault: string, paneKey: string): void {
-	sendToVaultClients(vault, JSON.stringify({ ...message, paneKey }));
-	for (const observer of broadcastObservers) {
-		observer(message, vault, paneKey);
-	}
 }
 
 /**
@@ -488,11 +447,9 @@ function forgetDisplay(): void {
 
 export {
 	acceptedSockets,
-	aggregateOf,
 	paneKeyForNewPane,
 	paneKeyOf,
 	paneKeysOnScreen,
-	broadcast,
 	browserLeaseLedger,
 	clientIds,
 	clients,
@@ -520,28 +477,3 @@ export {
 	socketsFor,
 };
 export type { PendingPaneClose, PendingPaneOpen };
-
-/** Whoever is watching what the panes are told about models. */
-const broadcastObservers = new Set<
-	(message: WebSocketMessage, vault: string, model: string) => void
->();
-
-/**
- * Watch every model announcement this server makes.
- *
- * For a reader that needs to know what the panes were told without being a
- * pane: the agent's context, which must never be able to disagree with what is
- * on screen because both come off the same announcement.
- * @param observer What to tell.
- * @returns Stops watching.
- */
-function onModelBroadcast(
-	observer: (message: WebSocketMessage, vault: string, model: string) => void,
-): () => void {
-	broadcastObservers.add(observer);
-	return (): void => {
-		broadcastObservers.delete(observer);
-	};
-}
-
-export { onModelBroadcast };

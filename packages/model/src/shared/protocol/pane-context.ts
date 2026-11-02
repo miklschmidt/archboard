@@ -41,7 +41,6 @@ const SemanticSubjectKindSchema = z.enum([
 	"walkthrough",
 	"beat",
 ]);
-type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
 
 /**
  * One selected subject.
@@ -62,7 +61,6 @@ const SemanticSubjectRefSchema = z
 		name: z.string().min(1).max(120).optional(),
 	})
 	.strict();
-type SemanticSubjectRef = z.infer<typeof SemanticSubjectRefSchema>;
 
 /** Which model a pane is reading, by the name every command spells it with. */
 const SemanticPaneModelSchema = z
@@ -122,7 +120,6 @@ const SemanticPanePresentationSchema = z
 		answering: z.string().min(1).max(128).nullable(),
 	})
 	.strict();
-type SemanticPanePresentation = z.infer<typeof SemanticPanePresentationSchema>;
 
 /**
  * What the server asks of a pane presenting a walkthrough, over its socket.
@@ -140,7 +137,6 @@ const PanePresentRequestSchema = z
 	})
 	// Not strict: the socket adds the board key every board message carries.
 	.strip();
-type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /**
  * A part of a pane's reading the user can change by hand.
@@ -149,7 +145,6 @@ type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
  * for from one the user chose.
  */
 const SemanticPanePartSchema = z.enum(["model", "variant", "view", "selection"]);
-type SemanticPanePart = z.infer<typeof SemanticPanePartSchema>;
 
 /**
  * What one pane is reading, as the pane last said it.
@@ -221,43 +216,13 @@ const SemanticPaneContextSchema = z
 		sequence: z.int().min(0),
 	})
 	.strict();
-type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
-
-/**
- * Whether two reports are about the same model.
- * @param one A report, or nothing.
- * @param other The other, or nothing.
- * @returns True when both name the same model key, or neither names one.
- */
-function sameSemanticModel(
-	one: SemanticPaneContext | null,
-	other: SemanticPaneContext | null,
-): boolean {
-	return keyOf(one) === keyOf(other);
-}
-
-/**
- * The model key one report names, if it names one.
- * @param report The report, or nothing.
- * @returns The key, or null.
- */
-function keyOf(report: SemanticPaneContext | null): string | null {
-	return report?.model?.key ?? null;
-}
 
 export {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticSubjectKindSchema,
-	type SemanticSubjectKind,
 	SemanticSubjectRefSchema,
-	type SemanticSubjectRef,
 	SemanticPanePartSchema,
-	type SemanticPanePart,
 	SemanticPanePresentationSchema,
-	type SemanticPanePresentation,
 	PanePresentRequestSchema,
-	type PanePresentRequest,
 	SemanticPaneContextSchema,
-	type SemanticPaneContext,
-	sameSemanticModel,
 };

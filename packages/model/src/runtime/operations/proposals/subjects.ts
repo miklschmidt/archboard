@@ -1,4 +1,4 @@
-import { flatSteps, type FlatStep } from "#shared/rules/flow-steps.ts";
+import { flatSteps } from "#shared/rules/flow-steps.ts";
 import type { ArchitectureModel } from "#shared/schemas/model.ts";
 import type { z } from "zod";
 import { ProposalChangeSchema, SubjectKindSchema } from "#shared/schemas/model-proposals.ts";
@@ -341,5 +341,4 @@ export {
 	heldSubjects,
 	type Subjects,
 	type Subject,
-	type FlatStep,
 };

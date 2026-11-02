@@ -58,7 +58,6 @@ const RecordingNarrationSchema = z
 		against: z.string().min(1).max(64).optional(),
 	})
 	.strict();
-type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
 
 /**
  * Where a recording stands.
@@ -72,7 +71,6 @@ type RecordingNarration = z.infer<typeof RecordingNarrationSchema>;
  * - `failed`: nothing usable was recorded; the failure says why.
  */
 const RecordingPhaseSchema = z.enum(["loading", "ready", "recording", "finished", "failed"]);
-type RecordingPhase = z.infer<typeof RecordingPhaseSchema>;
 
 /** What the page says about its recording. */
 const RecordingStateSchema = z
@@ -206,8 +204,6 @@ export {
 	publishRecordingPage,
 	recordingAskedOf,
 	type RecordingContainer,
-	type RecordingNarration,
 	type RecordingPage,
-	type RecordingPhase,
 	type RecordingState,
 };

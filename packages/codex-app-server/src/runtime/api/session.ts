@@ -13,12 +13,6 @@ export {
 export type {
 	SessionUserInput,
 	SupportedLoginAccountParams,
-	ThreadQueueAddParams,
-	ThreadQueueDeleteParams,
-	ThreadQueueListParams,
-	ThreadQueueReorderParams,
-	ThreadQueueStartParams,
-	ThreadQueueUpdateParams,
 } from "#runtime/schemas/session-contract.ts";
 export type {
 	SessionLoadedThreadPageResult,

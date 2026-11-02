@@ -1,10 +1,6 @@
 import type { LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
-import type {
-	DiagnosticSubject,
-	SemanticPolicy,
-	VaultDiagnostic,
-} from "#shared/schemas/semantic-policy.ts";
+import type { DiagnosticSubject, SemanticPolicy } from "#shared/schemas/semantic-policy.ts";
 import { edgeSubjects, nodeSubject } from "#runtime/operations/check/subject.ts";
 
 interface Reference {
@@ -95,29 +91,6 @@ function known(reference: Reference, policy: SemanticPolicy): boolean {
 		: Object.hasOwn(policy[reference.vocabulary], reference.value);
 }
 /**
- * Warn about removed definitions without making existing architecture unreadable.
- * @param model The whole family.
- * @param file The legacy board file.
- * @param policy Current valid policy.
- * @returns Unknown reference diagnostics.
- */
-function semanticVocabularyDiagnostics(
-	model: LegacyBoard,
-	file: string,
-	policy: SemanticPolicy,
-): VaultDiagnostic[] {
-	return unknownVocabularyReferences(model, policy).map((reference) => ({
-		severity: "warning",
-		code: "UNKNOWN_VOCABULARY",
-		file,
-		model: model.name,
-		path: reference.path,
-		...(reference.variant === undefined ? {} : { variant: reference.variant }),
-		...(reference.subject === undefined ? {} : { subject: reference.subject }),
-		message: `${reference.vocabulary} has no definition for ${JSON.stringify(reference.value)}. Add it to .archboard/config.yaml or change this reference to a configured value; existing content remains readable with neutral appearance.`,
-	}));
-}
-/**
  * Retain unknown vocabulary values and source coordinates for migration choices.
  * @param model The complete original family, including reconciliation bases.
  * @param policy The valid authored vocabulary.
@@ -126,36 +99,4 @@ function semanticVocabularyDiagnostics(
 function unknownVocabularyReferences(model: LegacyBoard, policy: SemanticPolicy): Reference[] {
 	return references(model).filter((reference) => !known(reference, policy));
 }
-/**
- * Refuse only newly introduced unknown subject references; retained history remains editable.
- * @param candidate The proposed family.
- * @param before The family before the edit.
- * @param policy Current valid policy.
- * @returns The first newly authored unknown reference, or null.
- */
-function newVocabularyProblem(
-	candidate: LegacyBoard,
-	before: LegacyBoard | null,
-	policy: SemanticPolicy,
-): string | null {
-	const prior = new Set(
-		before === null
-			? []
-			: references(before, false).map(
-					(reference) => `${reference.variant ?? ""}:${reference.key}:${reference.value}`,
-				),
-	);
-	const existing = new Set(before?.variants.map((entry) => entry.id));
-	const unknown = references(candidate, false).find((reference) => {
-		if (known(reference, policy)) return false;
-		let variant = reference.variant;
-		while (variant !== undefined && !existing.has(variant)) {
-			variant = candidate.variants.find((entry) => entry.id === variant)?.parent;
-		}
-		return !prior.has(`${variant ?? ""}:${reference.key}:${reference.value}`);
-	});
-	return unknown === undefined
-		? null
-		: `${unknown.path}: ${JSON.stringify(unknown.value)} is not configured in ${unknown.vocabulary}. Choose a configured value (archboard semantic config) or define it in .archboard/config.yaml.`;
-}
-export { unknownVocabularyReferences, semanticVocabularyDiagnostics, newVocabularyProblem };
+export { unknownVocabularyReferences };

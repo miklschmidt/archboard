@@ -90,13 +90,6 @@ const boundedUtf8Text = (maximum: number) =>
 		});
 
 /**
- * A bounded text field that may also be null.
- * @param maximum - The code-point ceiling.
- * @returns The schema.
- */
-const nullableText = (maximum: number) => boundedText(maximum).nullable();
-
-/**
  * A byte-bounded text field that may also be null.
  * @param maximum - The UTF-8 byte ceiling.
  * @returns The schema.
@@ -108,6 +101,5 @@ export {
 	JsonValueSchema,
 	boundedText,
 	boundedUtf8Text,
-	nullableText,
 	nullableUtf8Text,
 };

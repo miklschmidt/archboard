@@ -28,7 +28,6 @@ import type {
 	RealtimeCorrelation,
 	RealtimeItemId,
 	RealtimeSemanticEvent,
-	RealtimeTranscriptRecord,
 } from "#shared/protocol/realtime-contract.ts";
 import type { DynamicToolRefusalReason } from "#runtime/protocol/coordinator-tool-contract/dynamic-tool-envelopes.ts";
 import type { ResolveSpokenApprovalInput } from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
@@ -174,13 +173,6 @@ class CodexSpokenApprovalError extends Error {
 	}
 }
 
-type SpokenApprovalNotification = Extract<
-	TransportServerNotification["notification"],
-	{ readonly method: "turn/started" | "turn/completed" }
->;
-
-type SpokenApprovalTranscript = RealtimeTranscriptRecord;
-
 export {
 	type SpokenApprovalGateState,
 	type SpokenApprovalFallbackReason,
@@ -193,6 +185,4 @@ export {
 	type CodexSpokenApprovalGate,
 	type CodexSpokenApprovalErrorCode,
 	CodexSpokenApprovalError,
-	type SpokenApprovalNotification,
-	type SpokenApprovalTranscript,
 };

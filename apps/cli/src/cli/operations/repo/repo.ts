@@ -14,9 +14,7 @@ import { commandLine } from "#cli/rules/repo/command-line.ts";
 const tail = z.array(z.string()).default([]);
 
 const RepoNamespaceInputSchema = z.object({ action: z.string().optional(), tail });
-type RepoNamespaceInput = z.infer<typeof RepoNamespaceInputSchema>;
 const RepoNamespaceResultSchema = z.never();
-type RepoNamespaceResult = z.infer<typeof RepoNamespaceResultSchema>;
 const repoContract = defineCommand({
 	path: ["repo"],
 	shared: [],
@@ -75,7 +73,6 @@ const RegisteredRepoResultSchema = z.object({
 	exists: z.boolean().optional(),
 	servers: LanguageServersSchema.optional(),
 });
-type RegisteredRepoResult = z.infer<typeof RegisteredRepoResultSchema>;
 const UntrackedVaultResultSchema = z.object({
 	name: z.string(),
 	root: z.string(),
@@ -83,7 +80,6 @@ const UntrackedVaultResultSchema = z.object({
 	exists: z.boolean().optional(),
 });
 const RepoListInputSchema = z.object({ text: z.boolean().default(false), tail });
-type RepoListInput = z.infer<typeof RepoListInputSchema>;
 const RepoListJsonResultSchema = z.object({
 	success: z.literal(true),
 	registry: z.string(),
@@ -91,9 +87,7 @@ const RepoListJsonResultSchema = z.object({
 	vaults: z.array(UntrackedVaultResultSchema),
 	unchosen: z.array(z.string()),
 });
-type RepoListJsonResult = z.infer<typeof RepoListJsonResultSchema>;
 const RepoListResultSchema = z.union([RepoListJsonResultSchema, z.string()]);
-type RepoListResult = z.infer<typeof RepoListResultSchema>;
 const repoListContract = defineCommand({
 	path: ["repo", "list"],
 	shared: [],
@@ -203,7 +197,6 @@ function listingText(listing: ReturnType<typeof listRegistry>): string {
 }
 
 const RepoAddInputSchema = z.object({ dir: z.string().optional(), tail });
-type RepoAddInput = z.infer<typeof RepoAddInputSchema>;
 const CheckoutDeclaredSchema = z.object({
 	success: z.literal(true),
 	kind: z.literal("checkout"),
@@ -233,7 +226,6 @@ const VaultDeclaredSchema = z.object({
 	registry: z.string(),
 });
 const RepoAddResultSchema = z.union([CheckoutDeclaredSchema, VaultDeclaredSchema]);
-type RepoAddResult = z.infer<typeof RepoAddResultSchema>;
 const dirParameters = [
 	{
 		kind: "positional",
@@ -405,9 +397,7 @@ const repoAddContract = defineCommand({
 });
 
 const RepoUseInputSchema = z.object({ dir: z.string().optional(), tail });
-type RepoUseInput = z.infer<typeof RepoUseInputSchema>;
 const RepoUseResultSchema = CheckoutDeclaredSchema;
-type RepoUseResult = z.infer<typeof RepoUseResultSchema>;
 const repoUseContract = defineCommand({
 	path: ["repo", "use"],
 	shared: [],
@@ -448,7 +438,6 @@ const RepoForgetInputSchema = z.object({
 		.min(1),
 	tail,
 });
-type RepoForgetInput = z.infer<typeof RepoForgetInputSchema>;
 const RepoForgetResultSchema = z.object({
 	success: z.literal(true),
 	/** The directory that was named, as an absolute path. */
@@ -461,7 +450,6 @@ const RepoForgetResultSchema = z.object({
 	unchosen: z.boolean(),
 	registry: z.string(),
 });
-type RepoForgetResult = z.infer<typeof RepoForgetResultSchema>;
 const repoForgetContract = defineCommand({
 	path: ["repo", "forget"],
 	shared: [],
@@ -550,32 +538,20 @@ const repoForgetContract = defineCommand({
 
 export {
 	RepoNamespaceInputSchema,
-	type RepoNamespaceInput,
 	RepoNamespaceResultSchema,
-	type RepoNamespaceResult,
 	repoContract,
 	RegisteredRepoResultSchema,
-	type RegisteredRepoResult,
 	RepoListInputSchema,
-	type RepoListInput,
 	RepoListJsonResultSchema,
-	type RepoListJsonResult,
 	RepoListResultSchema,
-	type RepoListResult,
 	repoListContract,
 	RepoAddInputSchema,
-	type RepoAddInput,
 	RepoAddResultSchema,
-	type RepoAddResult,
 	repoAddContract,
 	RepoUseInputSchema,
-	type RepoUseInput,
 	RepoUseResultSchema,
-	type RepoUseResult,
 	repoUseContract,
 	RepoForgetInputSchema,
-	type RepoForgetInput,
 	RepoForgetResultSchema,
-	type RepoForgetResult,
 	repoForgetContract,
 };

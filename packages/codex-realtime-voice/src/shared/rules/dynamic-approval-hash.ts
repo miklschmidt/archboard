@@ -12,8 +12,6 @@ const ROUND_CONSTANTS = [
 	0x90_be_ff_fa, 0xa4_50_6c_eb, 0xbe_f9_a3_f7, 0xc6_71_78_f2,
 ] as const;
 
-const EFFECT_HASH_PATTERN = /^sha256:[0-9a-f]{64}$/u;
-
 /**
  * Rotates a 32-bit word right, the SHA-256 primitive.
  * @param value - The word.
@@ -101,15 +99,6 @@ function sha256(value: string): string {
 }
 
 /**
- * Tells whether a string is spelled as an effect hash: `sha256:` and a digest.
- * @param value - The string to test.
- * @returns True when it matches the effect hash form.
- */
-function isEffectHash(value: string): boolean {
-	return EFFECT_HASH_PATTERN.test(value);
-}
-
-/**
  * Spells the effect hash of a canonical effect body.
  * @param value - The canonical compact JSON of the effect.
  * @returns The `sha256:`-prefixed digest.
@@ -118,4 +107,4 @@ function effectHashFor(value: string): string {
 	return `sha256:${sha256(value)}`;
 }
 
-export { sha256, isEffectHash, effectHashFor };
+export { sha256, effectHashFor };

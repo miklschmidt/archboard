@@ -24,10 +24,7 @@ import type {
 	CodexRemoteError,
 	CodexRequestFailureReason,
 	CodexRequestOutcome,
-	CodexTransportRequestError,
 	TransportRemoteErrorSummary,
-	CodexTransportRemoteError,
-	CodexTransportWriteError,
 } from "#runtime/clients/transport-errors.ts";
 
 /** The subset of the Node child-process contract that the transport needs. */
@@ -220,7 +217,6 @@ interface TransportIssue {
 	readonly requestId?: string | number;
 }
 
-type LateResponseKind = "result" | "error" | "malformed" | "redacted";
 type LateResponseOutcome = "outcome_unknown" | "duplicate";
 
 type TransportLateResponseContext<Method extends ResponseMethod> = {
@@ -337,11 +333,6 @@ interface CodexTransport {
 	readonly shutdown: () => Promise<void>;
 }
 
-type TransportRequestFailure =
-	| CodexTransportRequestError
-	| CodexTransportRemoteError
-	| CodexTransportWriteError;
-
 interface CodexTransportOptions {
 	readonly child: CodexTransportChild;
 	readonly identity: IdentityAuthority;
@@ -371,7 +362,6 @@ export {
 	type TransportExit,
 	type TransportIssueKind,
 	type TransportIssue,
-	type LateResponseKind,
 	type LateResponseOutcome,
 	type TransportLateMalformedPayload,
 	type TransportLateRedactedPayload,
@@ -386,6 +376,5 @@ export {
 	type CodexTransportRequestParams,
 	type CodexTransportRequest,
 	type CodexTransport,
-	type TransportRequestFailure,
 	type CodexTransportOptions,
 };

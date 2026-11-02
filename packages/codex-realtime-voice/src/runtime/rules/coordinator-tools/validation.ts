@@ -54,14 +54,6 @@ import {
 } from "#runtime/protocol/workhorse-operations/contract.ts";
 import { z } from "zod";
 
-type CoordinatorToolInput =
-	| InspectWorkhorseInput
-	| DelegateToWorkhorseInput
-	| ManageWorkhorseQueueInput
-	| SteerWorkhorseInput
-	| StopWorkhorsesInput
-	| ResolveSpokenApprovalInput;
-
 /** The reviewed namespace role and tool name pair a logical call may carry. */
 const DeclaredToolSchema = z.union([
 	z.object({ role: z.literal("workhorse"), tool: z.enum(WORKHORSE_TOOL_NAMES) }),
@@ -431,7 +423,6 @@ function logicalCallKey(call: LogicalToolCallCorrelation): string {
 }
 
 export {
-	type CoordinatorToolInput,
 	type ValidatedCoordinatorToolCall,
 	type ValidatedOperationCall,
 	type ValidatedStopCall,

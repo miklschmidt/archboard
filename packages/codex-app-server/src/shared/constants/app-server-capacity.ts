@@ -29,5 +29,3 @@ export const CODEX_APP_SERVER_CAPACITY = Object.freeze({
 	}),
 	listenersPerEvent: 1,
 } as const);
-
-export type CodexAppServerCapacity = typeof CODEX_APP_SERVER_CAPACITY;

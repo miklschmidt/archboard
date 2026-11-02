@@ -1,5 +1,3 @@
-export { type ThreadInjectItemsParams } from "#runtime/rules/host/bodies.ts";
-
 export { createTextUserInput } from "#runtime/rules/host/text-input.ts";
 export {
 	ADDITIONAL_CONTEXT_POLICY,

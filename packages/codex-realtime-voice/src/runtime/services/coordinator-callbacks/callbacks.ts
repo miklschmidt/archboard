@@ -472,8 +472,3 @@ export function createCodexCoordinatorCallbacks(
 		},
 	});
 }
-
-export {
-	coordinatorCallbackKey,
-	normalizeCoordinatorCallback,
-} from "#runtime/rules/coordinator-callbacks/normalize.ts";

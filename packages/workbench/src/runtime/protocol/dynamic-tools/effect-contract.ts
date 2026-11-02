@@ -46,19 +46,4 @@ type DynamicImmutableEffect =
 			readonly visualSummary: string;
 	  }>;
 
-/* The effect fields are deliberately repeated in each union member: tool and
- * arguments must narrow together at every remote boundary. */
-type DynamicEffectFields = {
-	readonly callerAuthority: DynamicAuthorityToken;
-	readonly targetAuthority: DynamicAuthorityToken | null;
-	readonly contextAuthority: DynamicAuthorityToken;
-	readonly effectiveBoundary: Readonly<{
-		readonly relation: DynamicRelation;
-		readonly beforeTurnId: string | null;
-	}> | null;
-	readonly mutationOperationId: string;
-	readonly initialTurnOperationId: string | null;
-	readonly visualSummary: string;
-};
-
-export type { DynamicEffectFields, DynamicForkEffectArguments, DynamicImmutableEffect };
+export type { DynamicForkEffectArguments, DynamicImmutableEffect };

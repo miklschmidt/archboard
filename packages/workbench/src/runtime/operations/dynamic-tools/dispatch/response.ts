@@ -128,19 +128,10 @@ function outcomeUnknownDynamicResponse(
 	});
 }
 
-/**
- * The fixed text that accompanies every unknown-outcome result.
- * @returns The reviewed outcome-unknown message.
- */
-function outcomeUnknownMessage(): typeof OUTCOME_UNKNOWN_MESSAGE {
-	return OUTCOME_UNKNOWN_MESSAGE;
-}
-
 export {
 	dynamicResponse,
 	invalidDynamicResponse,
 	refusedDynamicResponse,
 	approvalRequiredDynamicResponse,
 	outcomeUnknownDynamicResponse,
-	outcomeUnknownMessage,
 };

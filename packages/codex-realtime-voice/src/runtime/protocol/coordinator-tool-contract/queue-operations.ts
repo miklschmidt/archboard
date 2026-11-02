@@ -6,12 +6,6 @@ import {
 	ThreadQueueReorderParamsSchema,
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
-	type ThreadQueueAddParams,
-	type ThreadQueueDeleteParams,
-	type ThreadQueueListParams,
-	type ThreadQueueReorderParams,
-	type ThreadQueueStartParams,
-	type ThreadQueueUpdateParams,
 } from "@archboard/codex-app-server/session";
 import { deepFreeze } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import type { QueueOperation } from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
@@ -116,12 +110,6 @@ export {
 	ThreadQueueReorderParamsSchema,
 	ThreadQueueStartParamsSchema,
 	ThreadQueueUpdateParamsSchema,
-	type ThreadQueueAddParams,
-	type ThreadQueueDeleteParams,
-	type ThreadQueueListParams,
-	type ThreadQueueReorderParams,
-	type ThreadQueueStartParams,
-	type ThreadQueueUpdateParams,
 	CODEX_QUEUE_PARAMETER_SCHEMAS,
 	type QueueOperationContract,
 	CODEX_QUEUE_OPERATION_CONTRACTS,

@@ -33,10 +33,7 @@ import {
 } from "#runtime/rules/panes-layout.ts";
 import {
 	HOW_TO_OPEN_A_PANE,
-	MAX_PANES,
 	addressablePanes,
-	panesAddressableFirst,
-	paneWords,
 	resolvePaneSpec,
 	soloPane,
 } from "#runtime/rules/panes-addressing.ts";
@@ -394,23 +391,12 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	};
 }
 
-export type {
-	Arrangement,
-	PaneContext,
-	PaneReading,
-	PaneRegistration,
-	PaneReport,
-	PanesReport,
-	Rect,
-} from "#runtime/rules/panes-layout.ts";
+export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
 export {
 	architectureWords,
 	HOW_TO_OPEN_A_PANE,
-	MAX_PANES,
 	addressablePanes,
-	panesAddressableFirst,
 	buildPanesReport,
-	paneWords,
 	panesInOrder,
 	resolvePaneSpec,
 	soloPane,

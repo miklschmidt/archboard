@@ -118,11 +118,6 @@ interface AddressPlan {
 	readonly focus: string | null;
 }
 
-const EMPTY_ADDRESS: WorkspaceAddress = Object.freeze({
-	panes: Object.freeze([]),
-	activePaneId: null,
-});
-
 /** The plan for an address that asks for nothing. */
 const NOTHING_TO_DO: AddressPlan = Object.freeze({
 	adds: 0,
@@ -357,7 +352,6 @@ function planIsEmpty(plan: AddressPlan): boolean {
 }
 
 export {
-	EMPTY_ADDRESS,
 	withModelAddresses,
 	modelIn,
 	repositoryIn,

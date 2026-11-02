@@ -18,7 +18,6 @@ const VaultConfigurationSchema = createSemanticPolicySchema(
 		{ error: "Use an installed RemixIcon export name, for example RiServerLine" },
 	),
 );
-type VaultConfiguration = SemanticPolicy;
 interface VaultConfigurationRead {
 	readonly ok: boolean;
 	readonly file: string;
@@ -98,35 +97,12 @@ function configurationWarnings(
 			];
 }
 
-/**
- * Seed a new vault without replacing authored configuration.
- * @param root The vault root.
- * @param configuration The initial vocabulary and appearance.
- * @returns Whether a file was created.
- */
-function initializeVaultConfiguration(
-	root: string,
-	configuration: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
-): boolean {
-	const parsed = VaultConfigurationSchema.parse(configuration);
-	const file = vaultConfigurationPath(root);
-	fs.mkdirSync(path.dirname(file), { recursive: true });
-	try {
-		fs.writeFileSync(file, Bun.YAML.stringify(parsed), { encoding: "utf8", flag: "wx" });
-		return true;
-	} catch (error) {
-		if (errnoCode(error) === "EEXIST") return false;
-		throw error;
-	}
-}
 export {
 	VAULT_CONFIGURATION_PATH,
 	VaultConfigurationSchema,
-	type VaultConfiguration,
 	type VaultConfigurationRead,
 	vaultConfigurationPath,
 	readVaultConfiguration,
-	initializeVaultConfiguration,
 };
 
 /**

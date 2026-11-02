@@ -152,13 +152,6 @@ const ProposedFootprintSchema = z
 /** One footprint. */
 const FootprintAnswerSchema = z.union([UnproposedFootprintSchema, ProposedFootprintSchema]);
 
-/** What the route answers and the command prints: the footprint beside the `success` every answer carries. */
-const FootprintReplySchema = z.union([
-	UnproposedFootprintSchema.extend({ success: z.literal(true) }),
-	ProposedFootprintSchema.extend({ success: z.literal(true) }),
-]);
-
-type FootprintReply = z.infer<typeof FootprintReplySchema>;
 type FootprintAnswer = z.infer<typeof FootprintAnswerSchema>;
 type FootprintPart = z.infer<typeof FootprintPartSchema>;
 type FootprintSkip = z.infer<typeof FootprintSkipSchema>;
@@ -168,8 +161,6 @@ type NamedReason = z.infer<typeof NamedReasonSchema>;
 export {
 	FootprintAnswerSchema,
 	type FootprintAnswer,
-	FootprintReplySchema,
-	type FootprintReply,
 	FootprintPartSchema,
 	type FootprintPart,
 	FootprintRepositorySchema,

@@ -30,17 +30,6 @@ function bodyOf(req: Request): JsonRecord {
 }
 
 /**
- * One string field of a request's body.
- * @param req The request.
- * @param key The field.
- * @returns The value, or undefined when it is absent or not a string.
- */
-function bodyString(req: Request, key: string): string | undefined {
-	const value = bodyOf(req)[key];
-	return typeof value === "string" ? value : undefined;
-}
-
-/**
  * One string field of a request's query string.
  * @param req The request.
  * @param key The field.
@@ -60,4 +49,4 @@ function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export { bodyOf, bodyString, isRecord, messageOf, queryString };
+export { bodyOf, isRecord, messageOf, queryString };

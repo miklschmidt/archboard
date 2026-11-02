@@ -5,9 +5,9 @@ import type {
 } from "#runtime/clients/transport-types.ts";
 import type { CodexTransport } from "#runtime/clients/transport-types.ts";
 import type { BedrockSetupParams, LoginAccountParams } from "#runtime/schemas/authored-schemas.ts";
-import type { ClientRequestMethod, ResponseMethod } from "#runtime/protocol/protocol-methods.ts";
+import type { ClientRequestMethod } from "#runtime/protocol/protocol-methods.ts";
 import type { CodexSessionRequestParams } from "#runtime/protocol/client-request-schemas.ts";
-import type { IdentityAuthority, ThreadId, TurnId } from "#shared/rules/workbench-identity.ts";
+import type { IdentityAuthority } from "#shared/rules/workbench-identity.ts";
 import type { SessionResponsePayloads } from "#runtime/schemas/session-responses.ts";
 
 /**
@@ -281,5 +281,3 @@ export interface CodexSession {
 	readonly respondUnsupportedTokenRefresh: (request: SessionTokenRefreshRequest) => Promise<void>;
 	readonly respondUnsupportedAttestation: (request: SessionAttestationRequest) => Promise<void>;
 }
-
-export type { ResponseMethod, ThreadId, TurnId };

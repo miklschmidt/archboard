@@ -296,4 +296,3 @@ const ServerNotificationEnvelopeSchema = z.strictObject({
 });
 
 export { SERVER_NOTIFICATION_SCHEMAS, ServerNotificationEnvelopeSchema };
-export type ServerNotificationSchemas = typeof SERVER_NOTIFICATION_SCHEMAS;

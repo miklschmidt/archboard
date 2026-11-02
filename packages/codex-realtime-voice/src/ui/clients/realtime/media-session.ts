@@ -29,7 +29,6 @@ import type { RunController } from "#ui/clients/realtime/start-support.ts";
 import { createVoiceOutputLevelSource } from "#ui/clients/output-level/level-source.ts";
 
 import {
-	REALTIME_MEDIA_FEATURE,
 	muteTarget,
 	restartRefusal,
 	stopConfirmed,
@@ -38,7 +37,6 @@ import {
 } from "#ui/state/realtime/session-contract.ts";
 import type {
 	FailureState,
-	RealtimeMediaListener,
 	RealtimeMediaSession,
 	RealtimeMediaSessionOptions,
 } from "#ui/state/realtime/session-contract.ts";
@@ -560,9 +558,7 @@ function createRealtimeMediaSession(
 }
 
 export {
-	REALTIME_MEDIA_FEATURE,
 	createRealtimeMediaSession,
-	type RealtimeMediaListener,
 	type RealtimeMediaSession,
 	type RealtimeMediaSessionOptions,
 	type RealtimeMediaSnapshot,

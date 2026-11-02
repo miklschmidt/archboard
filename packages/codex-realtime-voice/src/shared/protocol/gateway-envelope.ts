@@ -86,17 +86,6 @@ const BROWSER_SNAPSHOT_DELTA_KEYS = [
 	"operation",
 ] as const satisfies readonly (keyof BrowserSnapshotDelta)[];
 
-type BrowserSnapshotDeltaKey = (typeof BROWSER_SNAPSHOT_DELTA_KEYS)[number];
-
-/**
- * Adding a field to BrowserSnapshot without listing it above is a type error
- * here, so a new field cannot compile on both sides while the browser rejects
- * every delta that carries it.
- */
-type Unlisted = Exclude<keyof BrowserSnapshotDelta, BrowserSnapshotDeltaKey>;
-type AssertNoUnlistedKey<Key extends never> = Key;
-type BrowserSnapshotDeltaKeysAreExhaustive = AssertNoUnlistedKey<Unlisted>;
-
 interface BrowserGatewayCommandResult {
 	readonly kind: "command_result";
 	readonly commandId: BrowserCommandId | null;
@@ -128,8 +117,6 @@ export {
 	type BrowserGatewayDeltaMessage,
 	type BrowserGatewayMessage,
 	BROWSER_SNAPSHOT_DELTA_KEYS,
-	type BrowserSnapshotDeltaKey,
-	type BrowserSnapshotDeltaKeysAreExhaustive,
 	type BrowserGatewayCommandResult,
 	type BrowserGatewayAccountReadResult,
 };

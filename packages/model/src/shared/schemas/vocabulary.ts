@@ -18,13 +18,11 @@ import { VocabularyNameSchema } from "#shared/schemas/semantic-policy.ts";
  * What an architectural node is, named by the vault vocabulary.
  */
 const NodeKindSchema = VocabularyNameSchema;
-type NodeKind = z.infer<typeof NodeKindSchema>;
 
 /**
  * How one node reaches another.
  */
 const EdgeKindSchema = VocabularyNameSchema;
-type EdgeKind = z.infer<typeof EdgeKindSchema>;
 
 /**
  * How much of the reader's attention a relationship is asking for. This is
@@ -66,7 +64,6 @@ type DiagramGrammar = z.infer<typeof DiagramGrammarSchema>;
  * `return` carries an answer back, and `self` never leaves its sender.
  */
 const MessageKindSchema = z.enum(["sync", "async", "return", "self"]);
-type MessageKind = z.infer<typeof MessageKindSchema>;
 
 /**
  * Where a variant stands. `current` is the architecture that is implemented,
@@ -76,19 +73,14 @@ type MessageKind = z.infer<typeof MessageKindSchema>;
  * name never does (ADR 0023, ADR 0030).
  */
 const VariantLifecycleSchema = z.enum(["current", "draft", "historical", "shelved"]);
-type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
 
 export {
 	DiagramGrammarSchema,
 	type DiagramGrammar,
 	MessageKindSchema,
-	type MessageKind,
 	NodeKindSchema,
-	type NodeKind,
 	EdgeKindSchema,
-	type EdgeKind,
 	EdgeEmphasisSchema,
 	type EdgeEmphasis,
 	VariantLifecycleSchema,
-	type VariantLifecycle,
 };

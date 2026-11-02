@@ -19,7 +19,7 @@ import {
 	type InspectedGroup,
 	type Reading,
 } from "#runtime/rules/outcomes/reading.ts";
-import { CHECK_KINDS, type OutcomeCheck } from "#runtime/schemas/suite.ts";
+import { type OutcomeCheck } from "#runtime/schemas/suite.ts";
 
 /** A render the harness must attempt before the checks run. */
 interface RenderRequest {
@@ -249,11 +249,7 @@ function evaluateOutcomes(checks: readonly OutcomeCheck[], reading: Reading): Ch
 	});
 }
 
-/** The check kinds the dispatcher knows, for the suite's own validation. */
-const KNOWN_CHECKS = CHECK_KINDS;
-
 export {
-	KNOWN_CHECKS,
 	evaluateOutcomes,
 	inspectionRequests,
 	renderRequests,

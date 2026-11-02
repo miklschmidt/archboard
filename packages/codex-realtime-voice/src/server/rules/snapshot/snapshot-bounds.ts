@@ -278,11 +278,3 @@ export function assertBrowserSnapshotBounded(
 	assertBrowserSnapshotBudget(limit);
 	assertBounded(snapshot, limit, "snapshot");
 }
-
-/**
- * Refuse a delta larger than the delta wire-size bound.
- * @param delta The delta to measure.
- */
-export function assertBrowserDeltaBounded(delta: BrowserSnapshotDelta): void {
-	assertBounded(delta, BROWSER_DELTA_MAX_BYTES, "delta");
-}

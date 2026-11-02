@@ -19,7 +19,6 @@ const ReconciliationKindSchema = z.enum([
 	"reference-lost",
 	"left-empty",
 ]);
-type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
 
 /**
  * One field the side that changed a subject moved, and what it moved between.
@@ -138,7 +137,6 @@ const VariantStandingSchema = StandingShapeSchema.refine(
 	(standing) => standing.issues.length > 0 || standing.blockedBy !== undefined,
 	SAYS_SOMETHING,
 );
-type VariantStanding = z.infer<typeof VariantStandingSchema>;
 
 /**
  * The same standing as a reader is told it: everything except the state it was
@@ -165,7 +163,5 @@ export {
 	VariantStandingSchema,
 	type ChangedField,
 	type ReconciliationIssue,
-	type ReconciliationKind,
 	type ToldStanding,
-	type VariantStanding,
 };

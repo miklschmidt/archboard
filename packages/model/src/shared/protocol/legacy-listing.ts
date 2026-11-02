@@ -92,7 +92,6 @@ const LegacyListingSchema = z.object({
 	 */
 	repository: z.string().optional(),
 });
-type LegacyListing = z.infer<typeof LegacyListingSchema>;
 
 /** What reading one board answered, as far as the listing needs it. */
 type ListedRead =
@@ -110,27 +109,6 @@ function comparable(name: string): string {
 
 /** The name a board goes by now, for a name a link spells it with. */
 type AcceptedName = (name: string) => string;
-
-/**
- * The name each board goes by, looked up by any name it answers to: its own,
- * and every one it had before a rename (ADR 0036). A board's own name wins over
- * another board's former one, as it does wherever a name is resolved.
- * @param reads What reading each board answered.
- * @returns The lookup; a name no board answers to is its own answer.
- */
-function acceptedLegacyNames(reads: readonly ListedRead[]): AcceptedName {
-	const boards = reads.flatMap((read) => (read.ok ? [read.board] : []));
-	const byName = new Map<string, string>();
-	for (const board of boards) {
-		for (const former of board.formerNames ?? []) {
-			byName.set(comparable(former), board.name);
-		}
-	}
-	for (const board of boards) {
-		byName.set(comparable(board.name), board.name);
-	}
-	return (name) => byName.get(comparable(name)) ?? name;
-}
 
 /**
  * The drill-downs on one variant, each once, leaving out any back to its own board.
@@ -305,8 +283,6 @@ export {
 	ListedLegacyBoardSchema,
 	type ListedLegacyBoard,
 	LegacyListingSchema,
-	type LegacyListing,
 	type ListedRead,
-	acceptedLegacyNames,
 	listedLegacyBoard,
 };

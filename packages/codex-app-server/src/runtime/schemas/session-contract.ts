@@ -248,12 +248,6 @@ const ThreadQueueStartParamsSchema = z.strictObject({
 	threadId: z.string(),
 	queuedSubmissionId: z.string().nullable().optional(),
 });
-type ThreadQueueAddParams = z.infer<typeof ThreadQueueAddParamsSchema>;
-type ThreadQueueListParams = z.infer<typeof ThreadQueueListParamsSchema>;
-type ThreadQueueUpdateParams = z.infer<typeof ThreadQueueUpdateParamsSchema>;
-type ThreadQueueDeleteParams = z.infer<typeof ThreadQueueDeleteParamsSchema>;
-type ThreadQueueReorderParams = z.infer<typeof ThreadQueueReorderParamsSchema>;
-type ThreadQueueStartParams = z.infer<typeof ThreadQueueStartParamsSchema>;
 
 const ApiKeyLoginSchema = z
 	.object({ type: z.literal("apiKey"), apiKey: boundedText(16_384) })
@@ -314,10 +308,4 @@ export {
 	ThreadQueueUpdateParamsSchema,
 	type SessionUserInput,
 	type SupportedLoginAccountParams,
-	type ThreadQueueAddParams,
-	type ThreadQueueDeleteParams,
-	type ThreadQueueListParams,
-	type ThreadQueueReorderParams,
-	type ThreadQueueStartParams,
-	type ThreadQueueUpdateParams,
 };

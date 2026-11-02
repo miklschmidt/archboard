@@ -58,7 +58,6 @@ const EmbedModelSchema = z.object({ id: z.string(), name: z.string() });
 
 /** What is gone of what a recipe names: the model, its variant, its view, or anything to draw. */
 const MissingSourceSchema = z.enum(["model", "variant", "view", "picture"]);
-type MissingSource = z.infer<typeof MissingSourceSchema>;
 
 const EmbedFindingSchema = z.object({
 	severity: z.enum(["warning", "information"]),
@@ -170,11 +169,4 @@ const EmbedsPartSchema = z.object({
 });
 type EmbedsPart = z.infer<typeof EmbedsPartSchema>;
 
-export {
-	EmbedsPartSchema,
-	type EmbedFinding,
-	type EmbedFix,
-	type EmbedsPart,
-	type EmbedVault,
-	type MissingSource,
-};
+export { EmbedsPartSchema, type EmbedFinding, type EmbedFix, type EmbedsPart, type EmbedVault };

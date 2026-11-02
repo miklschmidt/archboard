@@ -5,20 +5,8 @@ export type {
 	VoiceAgentBrowserPort,
 	VoiceAgentExtensions,
 	VoiceAgentOptions,
-	VoiceAgentStatus,
 } from "#server/services/agent/voice-agent.ts";
-export {
-	DEFAULT_VOICE_AGENT_IDENTITY,
-	type VoiceAgentIdentity,
-} from "#runtime/protocol/host/identity.ts";
-export type { VoiceAgentAttachOptions } from "#server/services/agent/attach.ts";
-export type {
-	ContextAudience,
-	ContextChange,
-	ContextReceipt,
-	ContextReceiptReason,
-	ContextWords,
-} from "#server/protocol/announce/contract.ts";
+export type { ContextChange } from "#server/protocol/announce/contract.ts";
 
 export { parseTabSessionId } from "#server/rules/tab-session/tab-session.ts";
 export type { TabSessionId } from "#server/rules/tab-session/tab-session.ts";

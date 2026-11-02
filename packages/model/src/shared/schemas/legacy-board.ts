@@ -113,7 +113,6 @@ const RepositoryFileSchema = z
 const TrackedEmbedSchema = z
 	.object({ repo: z.string().min(1), path: RepositoryFileSchema })
 	.strict();
-type TrackedEmbed = z.infer<typeof TrackedEmbedSchema>;
 
 const SemanticVersionFieldSchema = z
 	.string()
@@ -137,7 +136,6 @@ const LegacyBoardLevelSchema = z
 		/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/iu,
 		'level must use letters, digits, "-", "_" or "." (the vocabulary in use is system, service, module)',
 	);
-type LegacyBoardLevel = z.infer<typeof LegacyBoardLevelSchema>;
 
 /**
  * One architectural state.
@@ -212,7 +210,6 @@ const AdoptionSchema = z
 		forced: z.literal(true).optional(),
 	})
 	.strict();
-type Adoption = z.infer<typeof AdoptionSchema>;
 
 /**
  * One time a proposal was let go.
@@ -238,7 +235,6 @@ const ShelvingSchema = z
 		reason: DescriptionSchema,
 	})
 	.strict();
-type Shelving = z.infer<typeof ShelvingSchema>;
 
 /**
  * A whole board as it sits on disk.
@@ -290,20 +286,6 @@ const LegacyBoardSchema = z
 	})
 	.strict();
 type LegacyBoard = z.infer<typeof LegacyBoardSchema>;
-
-/**
- * The version a board will carry once the write in flight lands.
- *
- * One owner, because two places need to agree about it and they are not next to
- * each other: a transition records it in whatever it writes down about this
- * moment, and the write boundary stamps it on the document. Two `+ 1`s in
- * different files are two things that can drift apart by one.
- * @param board The board as it stands, or null before there is one.
- * @returns The version the write in flight will produce.
- */
-function nextVersion(board: Pick<LegacyBoard, "version"> | null): number {
-	return (board?.version ?? 0) + 1;
-}
 
 /**
  * The variant a board's `current` designation names.
@@ -514,24 +496,19 @@ function quoted(variants: readonly SemanticVariant[]): string {
 export {
 	AdoptionSchema,
 	ShelvingSchema,
-	type Adoption,
-	type Shelving,
 	LEGACY_BOARD_SCHEMA_VERSION,
 	SUPPORTED_SCHEMA_MAJOR,
 	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
 	type SemanticVariant,
 	LegacyBoardLevelSchema,
-	type LegacyBoardLevel,
 	LegacyBoardSchema,
 	type LegacyBoard,
 	TrackedEmbedSchema,
-	type TrackedEmbed,
 	currentVariant,
 	nothingBuilt,
 	type VariantAddress,
 	addressedVariant,
-	nextVersion,
 	findVariant,
 	variantNamed,
 	resolveVariant,

@@ -2,7 +2,6 @@ import type {
 	BrowserCommand,
 	BrowserCommandLease,
 	BrowserSnapshot,
-	BrowserThreadLink,
 	DeliveryOutcome,
 } from "#shared/schemas/browser/snapshot.ts";
 import type { BrowserDynamicApprovalResponse } from "#shared/schemas/dynamic-approval/approval.ts";
@@ -25,7 +24,6 @@ import type { SupportedLoginAccountParams } from "@archboard/codex-app-server/se
 import type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
-	BrowserGatewayDeltaMessage,
 	BrowserGatewayErrorCode,
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,
@@ -456,7 +454,7 @@ export interface CodexWorkbenchGateway {
 	readonly dispose: () => Promise<void>;
 }
 
-export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLinkBindingSnapshot };
+export type { BrowserCommandLease, BrowserSnapshot, ThreadLinkBindingSnapshot };
 
 /**
  * The gateway envelope is authored once in `shared` so the browser transport
@@ -465,7 +463,6 @@ export type { BrowserCommandLease, BrowserSnapshot, BrowserThreadLink, ThreadLin
 export type {
 	BrowserGatewayAccountReadResult,
 	BrowserGatewayCommandResult,
-	BrowserGatewayDeltaMessage,
 	BrowserGatewayErrorCode,
 	BrowserGatewayMessage,
 	BrowserGatewaySnapshotMessage,

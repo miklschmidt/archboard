@@ -93,7 +93,6 @@ const ActivePermissionProfileSchema = looseObject({
 });
 
 const ThreadHistoryModeSchema = z.enum(["legacy", "paginated"]);
-const ThreadActiveFlagSchema = z.enum(["waitingOnApproval", "waitingOnUserInput"]);
 const ThreadStatusSchema = CodexThreadStatusSchema;
 
 const SubAgentSourceSchema = z.union([
@@ -124,11 +123,6 @@ const ThreadSectionSchema = looseObject({
 	id: z.string(),
 	name: z.string(),
 	appearance: ThreadSectionAppearanceSchema.nullable(),
-});
-const GitInfoSchema = looseObject({
-	sha: z.string().nullable(),
-	branch: z.string().nullable(),
-	originUrl: z.string().nullable(),
 });
 
 const ThreadGoalStatusSchema = z.enum([
@@ -413,12 +407,10 @@ export {
 	SandboxPolicySchema,
 	ActivePermissionProfileSchema,
 	ThreadHistoryModeSchema,
-	ThreadActiveFlagSchema,
 	ThreadStatusSchema,
 	SessionSourceSchema,
 	ThreadSectionAppearanceSchema,
 	ThreadSectionSchema,
-	GitInfoSchema,
 	ThreadGoalStatusSchema,
 	ThreadGoalSchema,
 	TurnStatusSchema,

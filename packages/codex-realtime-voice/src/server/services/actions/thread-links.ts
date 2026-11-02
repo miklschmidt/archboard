@@ -60,40 +60,6 @@ function namedTarget(
 }
 
 /**
- * The thread a workhorse is bound to, only when it is ready and its link
- * can actually run turns.
- * @param snapshot The workhorse snapshot.
- * @returns The target, or null when this workhorse names no exact one.
- */
-function readyWorkhorseTarget(snapshot: WorkhorseSnapshot): ReadyWorkhorseTarget | null {
-	const binding = snapshot.binding;
-	if (snapshot.state !== "ready" || binding?.link.state !== "executable") {
-		return null;
-	}
-	return namedTarget(snapshot, binding);
-}
-
-/**
- * Point the thread-context controller at the thread a ready workhorse holds,
- * so context is published to that thread and to nothing else.
- * @param workhorse What names the thread.
- * @param controller The controller being pointed.
- */
-function bindThreadContextToReadyWorkhorse(
-	workhorse: Pick<CodexWorkhorseStart, "snapshot">,
-	controller: Pick<CodexThreadContextController, "snapshot" | "compareAndSwap">,
-): void {
-	const ready = readyWorkhorseTarget(workhorse.snapshot());
-	if (ready === null) {
-		throw new Error("Thread context can bind only to an exact ready workhorse snapshot.");
-	}
-	controller.compareAndSwap({
-		expected: controller.snapshot().token,
-		next: { linkKey: ready.linkKey, target: ready.target, link: ready.link },
-	});
-}
-
-/**
  * Move the thread-context binding onto one created thread, refusing any link
  * that is not the proof of that exact adoption.
  * @param controller The controller being moved.
@@ -309,8 +275,4 @@ function createServerThreadLinkActions(
 	});
 }
 
-export {
-	bindThreadContextToReadyWorkhorse,
-	clearServerThreadContextForLease,
-	createServerThreadLinkActions,
-};
+export { clearServerThreadContextForLease, createServerThreadLinkActions };

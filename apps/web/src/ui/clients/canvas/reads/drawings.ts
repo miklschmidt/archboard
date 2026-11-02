@@ -16,11 +16,9 @@ import {
 	type NothingDrawn,
 	type OfferedView,
 } from "@archboard/model/render-reply";
-import type { RenderedVariantSchema } from "@archboard/model/render-reply";
 
 type ListedLegacyBoard = z.infer<typeof LegacyListingSchema>["boards"][number];
 
-type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 type LegacyListing = z.infer<typeof LegacyListingSchema>;
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
@@ -36,9 +34,6 @@ type SemanticBox = DiagramBox;
 
 /** Where every subject ended up, keyed by the semantic id an agent can name. */
 type SemanticAtlas = DiagramAtlas;
-
-/** Which variant was drawn, and where it stands. */
-type SemanticVariantRef = RenderedVariant;
 
 /** What a drawn state is waiting on, when it is waiting on anything. */
 type SemanticWaiting = NonNullable<DrawnPicture["waiting"]>;
@@ -273,6 +268,5 @@ export {
 	type SemanticRender,
 	type SemanticOfferedView,
 	type SemanticRenderRequest,
-	type SemanticVariantRef,
 	type SemanticWaiting,
 };

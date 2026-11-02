@@ -6,7 +6,6 @@ import { ServerStateSchema } from "#cli/protocol/contract/schemas.ts";
 const tail = z.array(z.string()).default([]);
 
 const StatusInputSchema = z.object({ tail });
-type StatusInput = z.infer<typeof StatusInputSchema>;
 
 const StaleSourceSchema = z.object({
 	startedAt: z.string(),
@@ -18,12 +17,10 @@ const StaleSourceSchema = z.object({
 const StatusUnavailableResultSchema = ServerStateSchema.extend({
 	running: z.literal(false),
 });
-type StatusUnavailableResult = z.infer<typeof StatusUnavailableResultSchema>;
 
 const StatusForeignServiceResultSchema = StatusUnavailableResultSchema.extend({
 	conflict: z.string(),
 });
-type StatusForeignServiceResult = z.infer<typeof StatusForeignServiceResultSchema>;
 
 const StatusRunningResultSchema = z.looseObject({
 	running: z.literal(true),
@@ -32,14 +29,12 @@ const StatusRunningResultSchema = z.looseObject({
 	browserClients: z.number().int().nonnegative().optional(),
 	stale: StaleSourceSchema.optional(),
 });
-type StatusRunningResult = z.infer<typeof StatusRunningResultSchema>;
 
 const StatusResultSchema = z.union([
 	StatusUnavailableResultSchema,
 	StatusForeignServiceResultSchema,
 	StatusRunningResultSchema,
 ]);
-type StatusResult = z.infer<typeof StatusResultSchema>;
 
 /** A server that answered as itself, as the status operation reports it. */
 type RunningServer = Extract<Awaited<ReturnType<typeof serverStatus>>, { state: "running" }>;
@@ -184,14 +179,9 @@ const statusContract = defineCommand({
 
 export {
 	StatusInputSchema,
-	type StatusInput,
 	StatusUnavailableResultSchema,
-	type StatusUnavailableResult,
 	StatusForeignServiceResultSchema,
-	type StatusForeignServiceResult,
 	StatusRunningResultSchema,
-	type StatusRunningResult,
 	StatusResultSchema,
-	type StatusResult,
 	statusContract,
 };

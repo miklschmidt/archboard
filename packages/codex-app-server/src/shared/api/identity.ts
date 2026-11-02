@@ -29,7 +29,6 @@ export type {
 	BrowserCommandId,
 	ChildEpoch,
 	ChildId,
-	CodexIdentity,
 	DynamicToolCallId,
 	ItemId,
 	JsonRpcRequestId,

@@ -47,7 +47,6 @@ const CATALOGUE_ROWS = [
 	"drillDown",
 	"description",
 ] as const;
-type CatalogueRow = (typeof CATALOGUE_ROWS)[number];
 
 /** Where a batch keeps the candidate skill it ran, relative to the batch root. */
 const BATCH_SKILL_DIRECTORY = "skill";
@@ -264,5 +263,4 @@ export {
 	catalogueRowsOf,
 	citationProblem,
 	headingAnchor,
-	type CatalogueRow,
 };

@@ -209,7 +209,6 @@ const EveryViewCaptureSchema = z
 		views: z.literal("every"),
 	})
 	.strict();
-type EveryViewCapture = z.infer<typeof EveryViewCaptureSchema>;
 
 /** What a scenario asks to see: one named picture, or every view of a board. */
 const CaptureRequestSchema = z.union([CaptureDeclarationSchema, EveryViewCaptureSchema]);
@@ -498,7 +497,6 @@ export {
 	EveryViewCaptureSchema,
 	type CaptureDeclaration,
 	type CaptureRequest,
-	type EveryViewCapture,
 	CoverageSchema,
 	OutcomeCheckSchema,
 	GRADER_NAMES,

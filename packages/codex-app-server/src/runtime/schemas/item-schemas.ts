@@ -1,7 +1,6 @@
 import { z } from "zod";
 
 import {
-	ConversationTextRoleSchema,
 	FunctionCallOutputBodySchema,
 	MessagePhaseSchema,
 	ReasoningEffortSchema,
@@ -264,19 +263,6 @@ const ThreadItemEntrySchema = looseObject({
 	completedAtMs: FiniteNumberSchema.nullable(),
 });
 
-const RealtimeInitialItemSchema = looseObject({
-	role: ConversationTextRoleSchema,
-	text: z.string(),
-});
-
-const RealtimeOutputAudioDeltaSchema = looseObject({
-	data: z.string(),
-	sampleRate: FiniteNumberSchema,
-	numChannels: FiniteNumberSchema,
-	samplesPerChannel: FiniteNumberSchema.nullable(),
-	itemId: z.string().nullable(),
-});
-
 export {
 	CommandActionSchema,
 	FileChangeSchema,
@@ -284,6 +270,4 @@ export {
 	DynamicToolCallOutputContentItemSchema,
 	ThreadItemSchema,
 	ThreadItemEntrySchema,
-	RealtimeInitialItemSchema,
-	RealtimeOutputAudioDeltaSchema,
 };

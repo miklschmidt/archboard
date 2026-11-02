@@ -1,4 +1,4 @@
-import type { ChildEpoch, ChildId, TurnId } from "@archboard/codex-app-server/identity";
+import type { TurnId } from "@archboard/codex-app-server/identity";
 import { CODEX_APPROVAL_MS } from "@archboard/timing";
 import {
 	CodexDynamicToolsError,
@@ -31,11 +31,8 @@ import {
 	createDynamicOperationSettlement,
 	issueMutationOperations,
 	issueReadOperation,
-	operationIdsForRetirement,
 	operationWire,
 	operationWireForIssuedResult,
-	operationWireForResult,
-	terminalizeDynamicOperationId,
 	type DynamicIssuedOperations,
 	type DynamicOperationSettlement,
 } from "#runtime/operations/dynamic-tools/mutation/operation-identity.ts";
@@ -51,12 +48,6 @@ export interface PreparedDynamicMutation {
 	readonly target: DynamicTargetAuthority | null;
 	readonly boundary: TurnId | null;
 }
-
-/** Which child epoch something belongs to. */
-export type DynamicEpochIdentity = Readonly<{
-	readonly childId: ChildId;
-	readonly epoch: ChildEpoch;
-}>;
 
 /** The operation identities a mutation is carried out under, serialized for the wire. */
 interface MutationWireIdentities {
@@ -380,29 +371,6 @@ export function approvalExpiry(request: DynamicToolApprovalRequest, nowMs: numbe
 	return nowMs >= request.expiresAtMs;
 }
 
-/**
- * Whether a decision means the child itself disconnected rather than the approval being
- * answered.
- * @param decision The decision.
- * @returns Whether the child disconnected.
- */
-export function isChildDisconnect(decision: DynamicToolApprovalDecision): boolean {
-	return decision.cause === "child_disconnected";
-}
-
-/**
- * Whether a decision leaves the mutation still needing an approval: nobody answered, so the
- * caller must ask again rather than treat the silence as a refusal.
- * @param decision The decision.
- * @returns Whether an approval is still required.
- */
-export function isApprovalRequired(decision: DynamicToolApprovalDecision): boolean {
-	return (
-		decision.outcome === "cancelled" ||
-		(decision.outcome === "disconnected" && decision.cause === "browser_disconnected")
-	);
-}
-
 export {
 	type DynamicIssuedOperations,
 	type DynamicOperationSettlement,
@@ -411,8 +379,5 @@ export {
 	dynamicEffectHash,
 	issueMutationOperations,
 	issueReadOperation,
-	operationIdsForRetirement,
 	operationWireForIssuedResult,
-	operationWireForResult,
-	terminalizeDynamicOperationId,
 };

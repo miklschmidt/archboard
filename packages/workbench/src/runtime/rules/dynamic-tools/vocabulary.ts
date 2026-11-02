@@ -80,15 +80,6 @@ function isOneOf<const Values extends readonly string[]>(
 }
 
 /**
- * Whether a tool name is one of the three mutation tools.
- * @param value Candidate tool name.
- * @returns Whether the name is a mutation tool.
- */
-function isDynamicMutationToolName(value: unknown): value is DynamicMutationToolName {
-	return isOneOf(DYNAMIC_MUTATION_TOOL_NAMES, value);
-}
-
-/**
  * Whether a value is a reviewed thread ownership word.
  * @param value Candidate of unknown origin.
  * @returns Whether the value is an ownership word.
@@ -113,15 +104,6 @@ function isDynamicEpochState(value: unknown): value is DynamicEpochState {
  */
 function isDynamicStatus(value: unknown): value is DynamicStatus {
 	return isCodexThreadStatusType(value);
-}
-
-/**
- * Whether a value is one of the reviewed refusal reasons.
- * @param value Candidate of unknown origin.
- * @returns Whether the value is a refusal reason.
- */
-function isDynamicRefusalReason(value: unknown): value is DynamicRefusalReason {
-	return isOneOf(DYNAMIC_REFUSAL_REASONS, value);
 }
 
 /**
@@ -172,9 +154,7 @@ export {
 	epochRefusalCode,
 	errorCodeOf,
 	isDynamicEpochState,
-	isDynamicMutationToolName,
 	isDynamicOwnership,
-	isDynamicRefusalReason,
 	isDynamicStatus,
 	isOneOf,
 };

@@ -37,31 +37,13 @@ function forgetLockAnnouncements(): void {
 	watchModelLocks(null);
 }
 
+export { ModelLockCancelledError, holdModel, withLease } from "#runtime/store/lock/acquisition.ts";
+export { ModelHeldError, type Claim, type HolderKind } from "#runtime/store/lock/contracts.ts";
 export {
-	ModelLockCancelledError,
-	holdModel,
-	sleep,
-	withLease,
-} from "#runtime/store/lock/acquisition.ts";
-export { withLeaseIfFreeSync } from "#runtime/store/lock/migration-lease.ts";
-export {
-	ModelHeldError,
-	type Claim,
-	type ClaimEndCause,
-	type ClaimRevocation,
-	type HolderKind,
-	type LockHold,
-	type LockHolder,
-	type LockRequest,
-	type LockSink,
-} from "#runtime/store/lock/contracts.ts";
-export {
-	type LostClaim,
 	claimModel,
 	claimOn,
 	claimWriterId,
 	releaseClaim,
-	takeBackModel,
 	takeClaimRevocation,
 } from "#runtime/store/lock/claims.ts";
 export {
@@ -70,7 +52,5 @@ export {
 	onModelSweep,
 	releaseHold,
 	watchModelLocks,
-	type WatchedModel,
-	type WatchedModels,
 } from "#runtime/store/lock/lease-state.ts";
 export { forgetLockAnnouncements };

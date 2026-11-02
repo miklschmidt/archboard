@@ -12,14 +12,6 @@ type DurableRequest = Extract<
 	{ success: true }
 >["checkpoint"]["request"];
 
-/** The shape every JSON route answers with. */
-interface ApiResponse<T = unknown> {
-	success: boolean;
-	data?: T;
-	error?: string;
-	message?: string;
-}
-
 /** What the server says to a pane. */
 interface WebSocketMessage {
 	type: WebSocketMessageType;
@@ -92,7 +84,6 @@ interface AgentActivityMessage extends WebSocketMessage {
 export {
 	type AgentActivity,
 	type AgentActivityMessage,
-	type ApiResponse,
 	type WebSocketMessage,
 	type WebSocketMessageType,
 };

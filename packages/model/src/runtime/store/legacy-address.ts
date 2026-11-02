@@ -369,15 +369,6 @@ function parsePaneKey(key: string): LegacyIdentity {
 }
 
 /**
- * Whether an address names the scratch board, whichever way it was spelled.
- * @param key A board key as typed.
- * @returns True for the scratch board.
- */
-function isScratchKey(key: string): boolean {
-	return normalizePaneKey(key) === SCRATCH_BOARD;
-}
-
-/**
  * The entry in `dir` whose name is the same as `wanted` once normalised, or
  * null. One readdir per path segment, which is what a case-insensitive
  * filesystem does in the kernel and what archboard has to emulate on a
@@ -542,6 +533,5 @@ export {
 	paneKey,
 	paneAddressKey,
 	parsePaneKey,
-	isScratchKey,
 	vaultPathFor,
 };

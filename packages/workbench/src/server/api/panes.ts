@@ -1,5 +1,3 @@
-// The panes that are open on this server: their sockets, the models they show and what is sent to them, the broadcast that every write announces through, and what the panes say as the workbench reads it. Bun only.
-export { aggregateOf } from "#server/rules/pane/legacy-address.ts";
 export {
 	forgetSemanticPaneContext,
 	forgetSemanticPaneContexts,
@@ -12,7 +10,6 @@ export {
 	paneKeyForNewPane,
 	paneKeyOf,
 	paneKeysOnScreen,
-	broadcast,
 	clientIds,
 	clients,
 	codexSocketInstances,
@@ -21,7 +18,6 @@ export {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	notePaneOpened,
-	onModelBroadcast,
 	paneKeyOfClient,
 	paneKeys,
 	paneFromRequest,

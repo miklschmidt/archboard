@@ -126,18 +126,6 @@ async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument
 	return new Map([[document.name, document]]);
 }
 /**
- * Read the one named canonical model for evaluation.
- * @param cli The isolated CLI context.
- * @param name The expected model name.
- * @returns The derived evaluation evidence.
- */
-async function readDocument(cli: CliContext, name: string): Promise<EvaluatedDocument> {
-	const vault = await readVault(cli);
-	const model = vault.get(name);
-	if (model === undefined) throw new Error(`The model ${name} is unavailable.`);
-	return model;
-}
-/**
  * Read semantic findings through the public CLI adapter.
  * @param cli The isolated CLI context.
  * @returns The model diagnostics.
@@ -270,7 +258,6 @@ export {
 	forgetCheckout,
 	inspectGroup,
 	layFixture,
-	readDocument,
 	readConfigurationText,
 	readPolicy,
 	readVault,

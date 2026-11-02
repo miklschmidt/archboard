@@ -5,10 +5,6 @@ import {
 } from "@archboard/codex-realtime-voice/runtime";
 import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
 type AuthoredInstructionName = keyof VoiceAgentOptions["instructions"];
-interface AuthoredInstructionIntegrity {
-	readonly workhorseSha256: string;
-	readonly coordinatorSha256: string;
-}
 const DOMAIN_DOCUMENTS = Object.freeze({
 	workhorse: "4148e5d057abedea90f6a04582de9ff5c2e83236eb06ec96693eaaef08030907",
 	coordinator: "25f0f2e313c24342ca3eaaeb40f9e33e3f75de49f7238252d5bb9867c09f2b3e",
@@ -33,9 +29,7 @@ const coordinator = composeWorkbenchRoleInstructions(
 	COORDINATOR_DOMAIN_INSTRUCTIONS,
 );
 const WORKHORSE_DEVELOPER_INSTRUCTIONS = workhorse.text;
-const COORDINATOR_DEVELOPER_INSTRUCTIONS = coordinator.text;
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 = workhorse.sha256;
-const COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256 = coordinator.sha256;
 const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
 	workhorse: workhorse.sha256,
 	coordinator: coordinator.sha256,
@@ -55,30 +49,12 @@ function assertCanonicalInstructionBytes(
 		AUTHORED_INSTRUCTION_DIGESTS[name],
 	);
 }
-/**
- * Read and compose both domain documents through the same core instruction owner.
- * @returns The complete role instruction digests.
- */
-function verifyAuthoredInstructionIntegrity(): AuthoredInstructionIntegrity {
-	return Object.freeze({
-		workhorseSha256: composeWorkbenchRoleInstructions("workhorse", domainInstructions("workhorse"))
-			.sha256,
-		coordinatorSha256: composeWorkbenchRoleInstructions(
-			"coordinator",
-			domainInstructions("coordinator"),
-		).sha256,
-	});
-}
 export {
 	WORKHORSE_DOMAIN_INSTRUCTIONS,
 	COORDINATOR_DOMAIN_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
-	COORDINATOR_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	COORDINATOR_DEVELOPER_INSTRUCTIONS_SHA256,
 	AUTHORED_INSTRUCTION_DIGESTS,
 	assertCanonicalInstructionBytes,
-	verifyAuthoredInstructionIntegrity,
 	type AuthoredInstructionName,
-	type AuthoredInstructionIntegrity,
 };

@@ -4,7 +4,7 @@ import { dlopen, type Library } from "bun:ffi";
 
 import { errnoCode } from "@archboard/diagnostics/errno";
 
-import { awaitFrozenGroup, type FrozenGroupSeam } from "#runtime/processes/frozen-group.ts";
+import { awaitFrozenGroup } from "#runtime/processes/frozen-group.ts";
 import { parseLinuxProcessStat } from "#runtime/processes/linux-stat.ts";
 
 type ProcessState = "live" | "stopped" | "zombie";
@@ -521,7 +521,6 @@ function recordedOwnerIsGone(record: string): boolean {
 
 export {
 	awaitFrozenGroup,
-	type FrozenGroupSeam,
 	type ProcessObservation,
 	type ProcessState,
 	readProcessObservation,

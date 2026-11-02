@@ -127,7 +127,6 @@ type WireByMethod<Wire extends { method: string }> = {
 };
 
 type CodexClientRequestParamsByMethod = ParamsByMethod<CodexClientRequest>;
-type CodexClientNotificationParamsByMethod = ParamsByMethod<CodexClientNotification>;
 type CodexServerRequestParamsByMethod = ParamsByMethod<CodexServerRequest>;
 type CodexServerNotificationParamsByMethod = ParamsByMethod<CodexServerNotification>;
 type CodexClientNotificationByMethod = WireByMethod<CodexClientNotification>;
@@ -460,7 +459,6 @@ export {
 	type CodexIngressConformance,
 	type CodexOutputConformance,
 	type CodexClientRequestParamsByMethod,
-	type CodexClientNotificationParamsByMethod,
 	type CodexServerRequestParamsByMethod,
 	type CodexServerNotificationParamsByMethod,
 	type CodexClientNotificationByMethod,

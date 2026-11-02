@@ -66,10 +66,7 @@ const SemanticRasterReceiptSchema = z.object({
 	}),
 });
 
-type SemanticRasterReceipt = z.infer<typeof SemanticRasterReceiptSchema>;
-type SemanticRasterPageSize = SemanticRasterReceipt["diagram"];
-
-export { SemanticRasterReceiptSchema, type SemanticRasterPageSize, type SemanticRasterReceipt };
+export { SemanticRasterReceiptSchema };
 
 const ArchitectureRasterReceiptSchema = ArchitectureRenderResultSchema.options[0]
 	.omit({ svg: true, atlas: true })

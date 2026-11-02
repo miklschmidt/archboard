@@ -404,15 +404,12 @@ const RememberedFindingsSchema = z.object({
 });
 
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
-type RememberedReading = z.infer<typeof RememberedReadingSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
-type CodeCheckDocument = z.infer<typeof CodeCheckDocumentSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
 type ModelBehind = z.infer<typeof ModelBehindSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
-type BehindPart = z.infer<typeof BehindPartSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
 export {
@@ -421,7 +418,6 @@ export {
 	BehindCommitSchema,
 	type BehindCommit,
 	BehindPartSchema,
-	type BehindPart,
 	BehindSkipSchema,
 	type BehindSkip,
 	ModelBehindSchema,
@@ -429,7 +425,6 @@ export {
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
 	CodeCheckDocumentSchema,
-	type CodeCheckDocument,
 	CodeCheckSkipSchema,
 	type CodeCheckSkip,
 	CodeEvidenceSchema,
@@ -439,5 +434,4 @@ export {
 	RememberedFindingsSchema,
 	type RememberedFindings,
 	RememberedReadingSchema,
-	type RememberedReading,
 };

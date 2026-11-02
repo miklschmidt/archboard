@@ -116,61 +116,6 @@ function countFiles(dir: string): number {
 	return count;
 }
 
-/**
- * Resolves a path through symlinks without throwing for a path that does not exist.
- * @param candidate - The path to resolve.
- * @returns The real path, or null when it cannot be resolved.
- */
-function realpathOrNull(candidate: string): string | null {
-	try {
-		return fs.realpathSync(candidate);
-	} catch {
-		return null;
-	}
-}
-
-/**
- * Whether some `archboard` on PATH resolves to one of this checkout's entry points.
- * @param ours - The real paths of this checkout's entry points.
- * @returns True when the name on PATH is this build.
- */
-function archboardOnPath(ours: ReadonlySet<string>): boolean {
-	for (const dir of (process.env["PATH"] ?? "").split(path.delimiter)) {
-		if (!dir) {
-			continue;
-		}
-		const resolved = realpathOrNull(path.join(dir, "archboard"));
-		if (resolved && ours.has(resolved)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
- * How the next agent should type "archboard".
- *
- * The skill's every example says `archboard`, which is a lie in any repo where
- * nobody linked it onto PATH. So check: an `archboard` on PATH counts only
- * when it actually resolves to this build. Otherwise return the absolute
- * path of the entry point that is running right now, which always works.
- * @returns The command to type and whether it is the bare name on PATH.
- */
-function resolveInvocation(): { command: string; onPath: boolean } {
-	const wrapper = path.join(SOURCE_CHECKOUT, "bin", "archboard");
-	const entry = path.join(SOURCE_CHECKOUT, "apps", "cli", "src", "bin.ts");
-	const ours = new Set(
-		[wrapper, entry].map(realpathOrNull).filter((value): value is string => value !== null),
-	);
-	if (archboardOnPath(ours)) {
-		return { command: "archboard", onPath: true };
-	}
-	if (fs.existsSync(wrapper)) {
-		return { command: wrapper, onPath: false };
-	}
-	return { command: `bun ${entry}`, onPath: false };
-}
-
 export {
 	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
@@ -182,5 +127,4 @@ export {
 	resolveAgent,
 	resolveExplicitDir,
 	countFiles,
-	resolveInvocation,
 };

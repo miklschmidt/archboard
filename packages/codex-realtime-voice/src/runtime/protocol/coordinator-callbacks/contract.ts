@@ -3,7 +3,6 @@ import type { SessionParams } from "@archboard/codex-app-server/session";
 import type {
 	CodexThreadLinkClassifier,
 	ThreadLinkBindingSnapshot,
-	ThreadLinkClassification,
 	ThreadLinkTarget,
 } from "#runtime/rules/thread-link/contract.ts";
 import type {
@@ -390,11 +389,6 @@ interface CoordinatorCallbacks {
 	readonly dispose: () => void;
 }
 
-interface CoordinatorCallbackClassification {
-	readonly captured: CoordinatorCallbackLinkCorrelation;
-	readonly live: ThreadLinkClassification;
-}
-
 export {
 	type ContextAnnouncementSource,
 	type CoordinatorCallbackSource,
@@ -424,5 +418,4 @@ export {
 	type CoordinatorCallbackOptions,
 	type CoordinatorCallbackHistory,
 	type CoordinatorCallbacks,
-	type CoordinatorCallbackClassification,
 };

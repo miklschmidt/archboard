@@ -63,7 +63,6 @@ const InstallSkillSetupResultSchema = z.object({
 	vaultIgnored: z.boolean(),
 	removedBlocks: z.array(z.string()),
 });
-type InstallSkillSetupResult = z.infer<typeof InstallSkillSetupResultSchema>;
 
 const SkillFilesSchema = z.number().int().nonnegative();
 
@@ -360,7 +359,6 @@ export {
 	InstallSkillRequestSchema,
 	type InstallSkillRequest,
 	InstallSkillSetupResultSchema,
-	type InstallSkillSetupResult,
 	InstallSkillResultSchema,
 	type InstallSkillResult,
 	installSkillContract,

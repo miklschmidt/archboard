@@ -390,18 +390,6 @@ function architectureClaimsQuery(vault: string) {
 	});
 }
 
-/**
- * Whether this vault still belongs to the legacy reader or has no model.
- * @param error The structured read failure.
- * @returns True when the existing empty-model surface remains appropriate.
- */
-function hasNoCanonicalModel(error: Error | null): boolean {
-	return (
-		error instanceof ArchitectureReadError &&
-		(error.failure.code === "LEGACY_AUTHORITY" || error.failure.code === "MODEL_NOT_FOUND")
-	);
-}
-
 export {
 	readReply,
 	readModel,
@@ -414,7 +402,6 @@ export {
 	architectureClaimsQuery,
 	retainedModuleQuery,
 	ArchitectureReadError,
-	hasNoCanonicalModel,
 	type CheckpointRows,
 	type ModelSummary,
 	type RetainedModule,

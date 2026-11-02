@@ -83,7 +83,6 @@ const RenderedVariantSchema = z.object({
 	name: DisplayNameSchema,
 	lifecycle: VariantLifecycleSchema,
 });
-type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 
 /**
  * One of a model's named views, as a reader needs to know it: enough to put
@@ -122,7 +121,6 @@ const RenderedChangesSchema = z.object({
 	against: RenderedVariantSchema,
 	standing: z.record(z.string(), SubjectStandingSchema),
 });
-type RenderedChanges = z.infer<typeof RenderedChangesSchema>;
 
 /**
  * What every render answer says about what was drawn, before the picture.
@@ -201,7 +199,6 @@ const MarkedSubjectsSchema = z.object({
 	flows: z.array(MarkedSubjectSchema),
 	steps: z.array(MarkedSubjectSchema),
 });
-type MarkedSubjects = z.infer<typeof MarkedSubjectsSchema>;
 
 /**
  * How many subjects a picture marks each way: the counts its key shows beside
@@ -212,7 +209,6 @@ const PictureMarksSchema = z.object({
 	changed: z.int(),
 	removed: z.int(),
 });
-type PictureMarks = z.infer<typeof PictureMarksSchema>;
 
 /**
  * What a drawing command's receipt says about its picture (TASK-496,
@@ -311,7 +307,6 @@ export {
 	type OfferedView,
 	SubjectStandingSchema,
 	RenderedChangesSchema,
-	type RenderedChanges,
 	DiagramThemeSchema,
 	type DiagramTheme,
 	StandaloneThemeSchema,
@@ -326,12 +321,9 @@ export {
 	DiagramAtlasSchema,
 	type DiagramAtlas,
 	RenderedVariantSchema,
-	type RenderedVariant,
 	RenderIdentitySchema,
 	type DrawnSubjects,
-	type MarkedSubjects,
 	PictureMarksSchema,
-	type PictureMarks,
 	PictureReceiptShape,
 	DrawnPictureSchema,
 	type DrawnPicture,

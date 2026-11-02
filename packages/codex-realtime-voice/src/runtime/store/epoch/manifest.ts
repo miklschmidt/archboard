@@ -80,15 +80,6 @@ function manifestBytesHash(raw: string): string {
 }
 
 /**
- * The digest of a manifest's contents, ignoring the integrity section it carries.
- * @param manifest - The manifest.
- * @returns The digest.
- */
-function manifestPayloadHash(manifest: EpochManifest): string {
-	return sha256(`${JSON.stringify(payloadOf(manifest))}\n`);
-}
-
-/**
  * The contents of a manifest without its integrity section.
  * @param manifest - The manifest.
  * @returns The payload.
@@ -185,24 +176,12 @@ function validateManifest(value: unknown): EpochManifest {
 }
 
 export {
-	CODEX_EPOCH_MANIFEST_SCHEMA,
 	operationRequiresThreadProvenance,
 	type ActiveEpoch,
 	type EpochManifest,
-	type EpochManifestPayload,
 	type EpochOperationCorrelation,
-	type EpochOperationDescriptor,
-	type EpochOperationOutcome,
 	type EpochOperationRecord,
-	type EpochOperationStatus,
 	type EpochProvenance,
 } from "#runtime/store/epoch/manifest-contract.ts";
 
-export {
-	emptyManifest,
-	buildManifest,
-	encodeManifest,
-	decodeManifest,
-	manifestBytesHash,
-	manifestPayloadHash,
-};
+export { emptyManifest, buildManifest, encodeManifest, decodeManifest, manifestBytesHash };

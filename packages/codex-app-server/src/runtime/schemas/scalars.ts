@@ -26,7 +26,6 @@ export const boundedText = (maximum: number) =>
  * @returns The bounded text schema widened to accept null and undefined.
  */
 export const optionalNullableText = (maximum: number) => boundedText(maximum).nullable().optional();
-export const StringRecordSchema = z.record(z.string(), z.string());
 /** A JSON object whose keys and values are intentionally supplied by Codex. */
 export const JsonObjectSchema = z.record(z.string(), JsonValueSchema);
 /** A dynamic string-keyed JSON map allowed by the generated contract. */
@@ -41,9 +40,6 @@ export const NullablePageSchema = {
 	cursor: z.string().nullable().optional(),
 	limit: FiniteNumberSchema.nullable().optional(),
 } as const;
-export const NullableStringSchema = z.string().nullable();
-export const NullableNumberSchema = FiniteNumberSchema.nullable();
-export const NullableIntegerSchema = IntegerSchema.nullable();
 
 /**
  * Validate the generated fields while retaining forward-compatible object members.

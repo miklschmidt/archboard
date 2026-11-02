@@ -20,7 +20,6 @@ const PaletteColorSchema = z.enum([
 	"pink",
 	"rose",
 ]);
-type PaletteColor = z.infer<typeof PaletteColorSchema>;
 const VocabularyNameSchema = z
 	.string()
 	.trim()
@@ -219,7 +218,6 @@ const SharedSymbolSchema = z.object({
 	binding: z.object({ repo: z.string(), path: z.string(), symbol: z.string() }),
 	parts: z.tuple([SharedSymbolPartSchema, SharedSymbolPartSchema]),
 });
-type SharedSymbol = z.infer<typeof SharedSymbolSchema>;
 const VaultDiagnosticSchema = z.object({
 	severity: z.enum(["warning", "error"]),
 	code: z.string(),
@@ -267,14 +265,12 @@ const VaultCheckSchema = z.object({
 	fingerprint: z.string(),
 	diagnostics: z.array(VaultDiagnosticSchema),
 });
-type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 export {
 	VocabularyNameSchema,
 	GroupPolicySchema,
 	createSemanticPolicySchema,
 	PaletteColorSchema,
-	type PaletteColor,
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
@@ -283,9 +279,7 @@ export {
 	diagnosticLine,
 	EvidenceKindSchema,
 	type EvidenceKind,
-	type SharedSymbol,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	VaultCheckSchema,
-	type VaultCheck,
 };

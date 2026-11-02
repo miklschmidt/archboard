@@ -30,15 +30,6 @@ const ID_LENGTH = 8;
 const BLOCK_ID_RE = /^[A-Za-z0-9-]{1,8}$/u;
 
 /**
- * Can this id be written as an Obsidian block reference as it stands?
- * @param id - Candidate identifier.
- * @returns Whether the identifier is directly usable as a block reference.
- */
-function isBlockId(id: unknown): boolean {
-	return typeof id === "string" && BLOCK_ID_RE.test(id);
-}
-
-/**
  * The ids already spoken for. A `Set` and a `Map` both satisfy it, so a caller
  * with the model's element map available passes it directly rather than
  * building a copy of the keys.
@@ -75,4 +66,4 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	}
 }
 
-export { BLOCK_ID_RE, isBlockId, type IdsInUse, mintId };
+export { BLOCK_ID_RE, type IdsInUse, mintId };

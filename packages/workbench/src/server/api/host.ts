@@ -10,7 +10,6 @@ export {
 } from "#server/services/host/listener-address.ts";
 export {
 	bodyOf,
-	bodyString,
 	isRecord,
 	messageOf,
 	queryString,

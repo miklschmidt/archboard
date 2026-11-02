@@ -1,11 +1,3 @@
-import { z } from "zod";
-
-const modelRequiredRefusal = {
-	code: "MODEL_REQUIRED",
-	exit: 2,
-	stream: "stderr" as const,
-	description: "A request that needs a model named none.",
-};
 const vaultNotFoundRefusal = {
 	code: "VAULT_NOT_FOUND",
 	exit: 2,
@@ -48,56 +40,7 @@ const doingRefusal = {
 	stream: "stderr" as const,
 	description: "A model write did not declare what it was doing.",
 };
-const modelHeldRefusal = {
-	code: "MODEL_HELD",
-	exit: 5,
-	stream: "stderr" as const,
-	description: "Another writer currently holds the model lease.",
-};
-const modelVersionRefusal = {
-	code: "MODEL_VERSION_CONFLICT",
-	exit: 5,
-	stream: "stderr" as const,
-	description: "The model advanced past expect-version.",
-};
-const claimRevokedRefusal = {
-	code: "CLAIM_REVOKED",
-	exit: 5,
-	stream: "stderr" as const,
-	description:
-		"The claim ended before its release: a person took it back, or its lease went to another process.",
-};
 
-const commonRefusals = [modelRequiredRefusal, serverRefusal] as const;
-const modelWriteRefusals = [
-	modelRequiredRefusal,
-	serverRefusal,
-	doingRefusal,
-	modelHeldRefusal,
-	modelVersionRefusal,
-	claimRevokedRefusal,
-] as const;
-const claimRefusals = [
-	modelRequiredRefusal,
-	serverRefusal,
-	modelHeldRefusal,
-	claimRevokedRefusal,
-] as const;
 const serverBrowserRefusals = [serverRefusal, browserRefusal] as const;
-const tail = z.array(z.string()).default([]);
 
-export {
-	modelRequiredRefusal,
-	serverRefusal,
-	vaultRefusals,
-	browserRefusal,
-	doingRefusal,
-	modelHeldRefusal,
-	modelVersionRefusal,
-	claimRevokedRefusal,
-	commonRefusals,
-	modelWriteRefusals,
-	claimRefusals,
-	serverBrowserRefusals,
-	tail,
-};
+export { serverRefusal, vaultRefusals, browserRefusal, doingRefusal, serverBrowserRefusals };

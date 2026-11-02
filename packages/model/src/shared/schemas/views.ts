@@ -106,7 +106,6 @@ const FlowAlternativeSchema = z.strictObject({
 		return z.array(FlowStepSchema);
 	},
 });
-type FlowAlternative = z.infer<typeof FlowAlternativeSchema>;
 
 /**
  * Where a flow branches: a question, and the labelled answers to it, each with
@@ -230,7 +229,6 @@ export {
 	FlowMessageSchema,
 	type FlowMessage,
 	FlowAlternativeSchema,
-	type FlowAlternative,
 	FlowDecisionSchema,
 	type FlowDecision,
 	FlowLoopSchema,

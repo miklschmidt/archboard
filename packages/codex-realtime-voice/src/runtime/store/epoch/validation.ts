@@ -285,15 +285,8 @@ export {
 } from "#runtime/store/epoch/manifest-relations.ts";
 
 export {
-	boundedToken,
-	canonicalChild,
-	canonicalEpoch,
-	canonicalThread,
-	canonicalTurn,
-	canonicalWorkspaceRoot,
 	epochError,
 	normalizeRoot,
 	prepareReason,
-	sha256Hash,
 	timestamp,
 } from "#runtime/store/epoch/epoch-identity.ts";

@@ -134,14 +134,7 @@ const LocalityAnswerSchema = z
 	})
 	.strict();
 
-/**
- * What the route sends: the answer beside the `success` that every route
- * carries, and what the command prints.
- */
-const LocalityReplySchema = LocalityAnswerSchema.extend({ success: z.literal(true) });
-
 type LocalityAnswer = z.infer<typeof LocalityAnswerSchema>;
-type LocalityReply = z.infer<typeof LocalityReplySchema>;
 type LocalityCommit = z.infer<typeof LocalityCommitSchema>;
 type LocalityPeriod = z.infer<typeof LocalityPeriodSchema>;
 type Hotspot = z.infer<typeof HotspotSchema>;
@@ -159,7 +152,5 @@ export {
 	type LocalityCommit,
 	LocalityPeriodSchema,
 	type LocalityPeriod,
-	LocalityReplySchema,
-	type LocalityReply,
 	PeriodStartSchema,
 };

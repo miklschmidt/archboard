@@ -124,7 +124,6 @@ const UnknownDynamicToolResponseSchema = z
 	});
 
 const DynamicToolResponseSchema = ValidDynamicToolResponseSchema;
-const DynamicToolCallResponseSchema = DynamicToolResponseSchema;
 
 export {
 	DYNAMIC_TOOL_REFUSAL_REASONS,
@@ -142,5 +141,4 @@ export {
 	ValidDynamicToolResponseSchema,
 	UnknownDynamicToolResponseSchema,
 	DynamicToolResponseSchema,
-	DynamicToolCallResponseSchema,
 };

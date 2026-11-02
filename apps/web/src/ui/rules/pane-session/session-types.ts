@@ -127,15 +127,6 @@ export interface LockHolder {
 	claimed?: boolean;
 }
 
-/**
- * Whether a holder is an agent's claim rather than one passing write.
- * @param holder The lock holder, or null while the model is free.
- * @returns The claim, or null when there is nothing to announce.
- */
-export function agentClaim(holder: LockHolder | null): LockHolder | null {
-	return holder?.kind === "agent" && holder.claimed === true ? holder : null;
-}
-
 /** What one pane tells the shell about itself. */
 export interface PaneStatus {
 	paneId: string;

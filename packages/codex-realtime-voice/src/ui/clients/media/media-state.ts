@@ -34,9 +34,6 @@ type BrowserWorkbenchMediaState =
 			readonly message: string;
 	  };
 
-/** The media boundary accepts the shared transport, never a raw socket. */
-type BrowserWorkbenchMediaSource = BrowserWorkbenchTransport;
-
 /** Owns local realtime media while the workbench transport owns the server socket. */
 interface BrowserWorkbenchMediaOwner {
 	readonly attach: (transport: BrowserWorkbenchTransport) => Promise<BrowserWorkbenchMediaState>;
@@ -201,7 +198,6 @@ export {
 	type BrowserAudioElementPort,
 	type BrowserWorkbenchMediaOwner,
 	type BrowserWorkbenchMediaOwnerOptions,
-	type BrowserWorkbenchMediaSource,
 	type BrowserWorkbenchMediaState,
 };
 

@@ -34,9 +34,7 @@ const OnScreenPaneSchema = z.looseObject({
 });
 
 const PaneNamespaceInputSchema = z.object({ tokens });
-type PaneNamespaceInput = z.infer<typeof PaneNamespaceInputSchema>;
 const PaneNamespaceResultSchema = z.never();
-type PaneNamespaceResult = z.infer<typeof PaneNamespaceResultSchema>;
 const browserContract = defineCommand({
 	path: ["browser"],
 	shared: ["url"],
@@ -78,16 +76,13 @@ const browserContract = defineCommand({
 });
 
 const PaneOpenInputSchema = z.object({ tokens });
-type PaneOpenInput = z.infer<typeof PaneOpenInputSchema>;
 const PaneOpenStageSchema = stagedNoFlags;
-type PaneOpenStage = z.infer<typeof PaneOpenStageSchema>;
 const PaneOpenResultSchema = z.looseObject({
 	success: z.literal(true),
 	pane: PaneRefSchema.nullable(),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 });
-type PaneOpenResult = z.infer<typeof PaneOpenResultSchema>;
 const paneOpenContract = defineCommand({
 	path: ["browser", "open"],
 	shared: ["url"],
@@ -148,7 +143,6 @@ const paneOpenContract = defineCommand({
 });
 
 const PaneCloseInputSchema = z.object({ tokens });
-type PaneCloseInput = z.infer<typeof PaneCloseInputSchema>;
 const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 	const spec = values[0];
 	if (!spec) {
@@ -161,14 +155,12 @@ const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 	}
 	return { spec };
 });
-type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
 const PaneCloseResultSchema = z.looseObject({
 	success: z.literal(true),
 	closed: PaneRefSchema.extend({ paneKey: z.string().nullable() }),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 });
-type PaneCloseResult = z.infer<typeof PaneCloseResultSchema>;
 const paneCloseContract = defineCommand({
 	path: ["browser", "close"],
 	shared: ["url"],
@@ -248,7 +240,6 @@ const paneCloseContract = defineCommand({
 });
 
 const PanesInputSchema = z.object({ tokens, text: z.boolean().default(false) });
-type PanesInput = z.infer<typeof PanesInputSchema>;
 const PanesResultSchema = z.looseObject({
 	success: z.literal(true),
 	paneCount: z.number().int().nonnegative(),
@@ -269,7 +260,6 @@ const PanesResultSchema = z.looseObject({
 	summary: z.string(),
 	text: z.string(),
 });
-type PanesResult = z.infer<typeof PanesResultSchema>;
 const panesContract = defineCommand({
 	path: ["browser", "panes"],
 	shared: ["url"],
@@ -379,9 +369,6 @@ const ShowInputSchema = ArchitecturePaneReadingSchema.extend({
 	pane: z.string().optional(),
 	input: z.string().optional(),
 });
-type ShowInput = z.infer<typeof ShowInputSchema>;
-const ShowStageSchema = ShowInputSchema;
-type ShowStage = ShowInput;
 const ShowResultSchema = z.looseObject({
 	success: z.literal(true),
 	model: z.string(),
@@ -394,7 +381,6 @@ const ShowResultSchema = z.looseObject({
 		.optional(),
 	paneId: z.string(),
 });
-type ShowResult = z.infer<typeof ShowResultSchema>;
 const browserShowContract = defineCommand({
 	path: ["browser", "show"],
 	shared: ["url", "directory", "as-session"],
@@ -526,34 +512,20 @@ const browserShowContract = defineCommand({
 
 export {
 	PaneNamespaceInputSchema,
-	type PaneNamespaceInput,
 	PaneNamespaceResultSchema,
-	type PaneNamespaceResult,
 	browserContract,
 	PaneOpenInputSchema,
-	type PaneOpenInput,
 	PaneOpenStageSchema,
-	type PaneOpenStage,
 	PaneOpenResultSchema,
-	type PaneOpenResult,
 	paneOpenContract,
 	PaneCloseInputSchema,
-	type PaneCloseInput,
 	PaneCloseStageSchema,
-	type PaneCloseStage,
 	PaneCloseResultSchema,
-	type PaneCloseResult,
 	paneCloseContract,
 	PanesInputSchema,
-	type PanesInput,
 	PanesResultSchema,
-	type PanesResult,
 	panesContract,
 	ShowInputSchema,
-	type ShowInput,
-	ShowStageSchema,
-	type ShowStage,
 	ShowResultSchema,
-	type ShowResult,
 	browserShowContract,
 };

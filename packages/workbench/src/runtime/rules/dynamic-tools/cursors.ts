@@ -313,15 +313,6 @@ function decodeDynamicCursor(value: string): DynamicCursorBinding {
 }
 
 /**
- * Serialize a query the way cursors bind it.
- * @param value Query value.
- * @returns The canonical JSON text.
- */
-function cursorQuery(value: unknown): string {
-	return canonicalQuery(value);
-}
-
-/**
  * Whether a decoded binding names the paging context the caller is in.
  * @param binding Decoded cursor binding.
  * @param expected The caller's child epoch, method, direction and query.
@@ -363,6 +354,5 @@ export {
 	type DynamicCursorBinding,
 	encodeDynamicCursor,
 	decodeDynamicCursor,
-	cursorQuery,
 	unwrapDynamicCursor,
 };
