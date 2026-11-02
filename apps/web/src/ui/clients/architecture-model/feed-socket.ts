@@ -2,7 +2,7 @@ import {
 	ArchitectureFeedFrameSchema,
 	type ArchitectureEvent,
 	type ArchitectureFeedFrame,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { PANE_MS } from "@archboard/timing";
 
 /** What one vault's feed hears from the socket. */

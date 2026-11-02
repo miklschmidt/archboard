@@ -32,9 +32,9 @@ import type {
 	NamedReason,
 } from "#shared/protocol/footprint.ts";
 import { nodesAtOwnRef } from "#runtime/operations/history-lens/own-ref.ts";
-import { compareVariants } from "@archboard/board/comparison";
-import { emptyContent, type SemanticNode } from "@archboard/board/content";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
+import { compareVariants } from "@archboard/model/comparison";
+import { emptyContent, type SemanticNode } from "@archboard/model/content";
+import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
 
 /**
  * What to read, once the variants are chosen (`footprint-reading.ts`): the

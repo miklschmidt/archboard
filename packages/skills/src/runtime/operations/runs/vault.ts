@@ -1,15 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
-import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/board/content";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
+import { modelContent, inspectGroup as inspectSemanticGroup } from "@archboard/model/content";
 import {
 	DEFAULT_SEMANTIC_POLICY,
 	SemanticPolicySchema,
 	VaultDiagnosticSchema,
 	type SemanticPolicy,
-} from "@archboard/board/policy";
-import type { SemanticVariant } from "@archboard/board/document";
+} from "@archboard/model/policy";
+import type { SemanticVariant } from "@archboard/model/legacy-board";
 import type {
 	EvaluationArchitecture as SemanticBoard,
 	InspectionAttempt,

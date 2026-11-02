@@ -7,10 +7,10 @@ import {
 	currentVariant,
 	type SemanticBoard as LegacyBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
-import type { DiagramTheme } from "@archboard/board/render-reply";
-import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/board/content";
-import type { SemanticPolicy } from "@archboard/board/policy";
+} from "@archboard/model/legacy-board";
+import type { DiagramTheme } from "@archboard/model/render-reply";
+import type { SemanticEdge, SemanticNode, VariantContent } from "@archboard/model/content";
+import type { SemanticPolicy } from "@archboard/model/policy";
 import type { recordingContainerOf } from "@archboard/walkthrough/recorder";
 import type { CaptureAttempt } from "#runtime/operations/runs/captures.ts";
 import {
@@ -19,10 +19,10 @@ import {
 	plausibleSubjects,
 	variantNamed,
 } from "#runtime/rules/outcomes/naming.ts";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import type { VaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
-type Model = Extract<import("@archboard/board/model").ArchitectureModelRead, { success: true }>;
+type Model = Extract<import("@archboard/model/contract").ArchitectureModelRead, { success: true }>;
 type SemanticBoard = Omit<
 	LegacyBoard,
 	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"

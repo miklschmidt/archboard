@@ -59,8 +59,8 @@ import {
 import { readsSameCode, targetIn, type RefCodes } from "#runtime/operations/code-check/ref-code.ts";
 import type { CheckoutSnapshot } from "@archboard/code-binding/resolution";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import type { SemanticNode } from "@archboard/board/content";
-import { describeSubject } from "@archboard/board/policy";
+import type { SemanticNode } from "@archboard/model/content";
+import { describeSubject } from "@archboard/model/policy";
 
 /** The adapters whose anchor may name a declaration that joins two parts and that neither end binds. */
 const JOINED_BY_DECLARATION = new Set<FileFacts["adapter"] | undefined>(["kubernetes"]);

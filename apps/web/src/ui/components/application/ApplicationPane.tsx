@@ -12,7 +12,7 @@ import {
 
 import { useQueryClient } from "@tanstack/react-query";
 import { RecordedModelStage } from "#ui/components/walkthrough-recording/RecordedModelStage.tsx";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { ModelExplanationHost } from "#ui/components/architecture-model/ModelExplanationHost.tsx";
 import { explanationKey } from "#ui/clients/architecture-model/explanations.ts";
 import { tabSessionId } from "#ui/clients/pane-session/tab-session.ts";
@@ -32,7 +32,7 @@ import {
 	type PaneWorkbenchSocketOwner,
 } from "#ui/clients/pane-session/workbench-socket.ts";
 import { ArchitectureModelStage } from "#ui/components/architecture-model/ArchitectureModelStage.tsx";
-import { type WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import { type WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 import {
 	createBrowserWorkbenchTransport,
 	type BrowserWorkbenchTransport,

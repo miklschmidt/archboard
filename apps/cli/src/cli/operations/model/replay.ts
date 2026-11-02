@@ -4,8 +4,8 @@
 
 import { z } from "zod";
 
-import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/board/render-reply";
-import { parseSemanticBoard } from "@archboard/board/document";
+import { DiagramThemeSchema, LayoutEngineSchema } from "@archboard/model/render-reply";
+import { parseSemanticBoard } from "@archboard/model/legacy-board";
 import { ARCHBOARD_URL } from "@archboard/server-lifecycle/config";
 import { TalkFileError, readTalk, renderTalk } from "@archboard/walkthrough/recorder";
 import { CliUsageError, defineCommand } from "#cli/protocol/contract/contract.ts";

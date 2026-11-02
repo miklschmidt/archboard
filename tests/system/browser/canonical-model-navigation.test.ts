@@ -5,7 +5,10 @@ import { join, resolve } from "node:path";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createJsonRequester } from "../support/http.ts";
-import type { ArchitectureModelRead, ArchitectureCheckpointRetain } from "@archboard/board/model";
+import type {
+	ArchitectureModelRead,
+	ArchitectureCheckpointRetain,
+} from "@archboard/model/contract";
 import {
 	browserTestRoots,
 	serverTestEnvironment,

@@ -4,7 +4,7 @@ import {
 	ArchitecturePublicationSchema,
 	type ArchitecturePublicationDestinationSchema,
 	type ArchitecturePublicationRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { inVault, strictReply } from "@archboard/server-requests";
 import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
 

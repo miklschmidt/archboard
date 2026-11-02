@@ -4,14 +4,14 @@
 // Nothing here compares anything: the comparison of the reading says what changed, and its
 // drawing puts back what the proposal removed, so a removed subject has a row and a place.
 
-import { drawingOf, type FieldChange } from "@archboard/board/comparison";
-import { everyStep, stepWords } from "@archboard/board/flow";
+import { drawingOf, type FieldChange } from "@archboard/model/comparison";
+import { everyStep, stepWords } from "@archboard/model/flow";
 import {
 	modelContent,
 	moduleForest,
 	type Model,
 	type SemanticEdge,
-} from "@archboard/board/content";
+} from "@archboard/model/content";
 import {
 	interfaceRows,
 	type InterfaceRow,

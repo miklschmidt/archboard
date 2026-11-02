@@ -6,8 +6,8 @@
 // its top (Board persistence's "Durable write boundary").
 
 import { expect, test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/board/policy";
-import { type LayoutEngineName } from "@archboard/board/render-reply";
+import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/model/policy";
+import { type LayoutEngineName } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import type { StatedStandings } from "#shared/protocol/render-request.ts";
 import { cornersOf, routePoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";

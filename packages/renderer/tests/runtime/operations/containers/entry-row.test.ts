@@ -5,9 +5,9 @@ import { expect, test } from "bun:test";
 import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
 import { interfaceContent } from "#shared/rules/render/drawing-key.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { DiagramAtlas } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { DiagramAtlas } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 // The scheduler is a hidden part that only calls out: nothing holds it below
 // the entry point but the interface, so without it Graphviz stands it on the

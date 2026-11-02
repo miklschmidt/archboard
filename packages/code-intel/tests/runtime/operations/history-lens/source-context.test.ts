@@ -8,7 +8,7 @@ import {
 	currentVariant,
 	SemanticBoardSchema,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 test("bound declarations retain historical C, Objective-C and Nix parser context outside their binding", async () => {
 	const scratch = mkdtempSync(join(tmpdir(), "archboard-source-context-"));

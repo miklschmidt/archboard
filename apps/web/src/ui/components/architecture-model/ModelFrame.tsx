@@ -2,15 +2,15 @@ import { useCallback, useContext } from "react";
 import { useRouter } from "@tanstack/react-router";
 import { ModelPaneContext } from "#ui/state/architecture-model/presentation.ts";
 import type { JSX, ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import { RiRefreshLine } from "@remixicon/react";
 import { Button } from "@archboard/ui-kit/components";
-import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import {
 	PaneHeaderRow,
 	PaneHeaderStart,
 	PaneHeaderEnd,
-} from "#ui/components/semantic-board-canvas/PaneHeaderFrame.tsx";
+} from "#ui/components/canvas/PaneHeaderFrame.tsx";
 
 interface ModelErrorProps {
 	/** Lay the error over a kept picture, which it never moves. */

@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState, type JSX } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import type { CheckpointRows } from "#ui/clients/architecture-model/queries.ts";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { Tree } from "#ui/components/shell/Tree.tsx";
 import { sharedNameTouches } from "#ui/rules/architecture-model/draft-touches.ts";
 import { checkpointTime } from "#ui/rules/architecture-model/history-time.ts";

@@ -17,8 +17,8 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
-import { paneBoardAddress, parseBoardKey } from "@archboard/board/address";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import { paneBoardAddress, parseBoardKey } from "@archboard/model/legacy-address";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import {
 	type Arrangement,

@@ -14,9 +14,9 @@ import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
-import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { type SemanticBoardStageProps } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
+import { type SemanticBoardStageProps } from "#ui/components/canvas/CanvasStage.tsx";
 
 import {
 	pace,

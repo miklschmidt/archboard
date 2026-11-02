@@ -3,15 +3,15 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // semantic endpoints must remain legible even when their geometry coincides.
 
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
-import type { LayoutEngineName } from "@archboard/board/render-reply";
+import type { VariantContent } from "@archboard/model/content";
+import type { LayoutEngineName } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { covering, detached, masking, overlaps } from "#tests/runtime/support/drawn-labels.ts";
 import { routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { distanceToFrame, routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** Each relationship starts and ends at the frame of the subject it names. */
 async function expectReadableRoutes(

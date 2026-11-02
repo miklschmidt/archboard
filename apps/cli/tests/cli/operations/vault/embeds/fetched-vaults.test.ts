@@ -3,7 +3,7 @@
 // not a host and a path on it must never become a URL or a directory outside
 // the cache. A fetch never prompts for credentials, not even through the
 // person's askpass program, and a hook's environment does not stop it. The fetch itself is owned by
-// tests/system/semantic-boards/embeds-fetch.test.ts.
+// tests/system/models/embeds-fetch.test.ts.
 
 import { expect, test } from "bun:test";
 import { spawnSync } from "node:child_process";

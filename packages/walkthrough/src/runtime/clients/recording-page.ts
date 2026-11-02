@@ -1,4 +1,4 @@
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 // Driving one recording page from outside it (TASK-304).
 //
 // The page paces the talk itself; the recorder only follows it. It reads the

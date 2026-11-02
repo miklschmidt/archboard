@@ -49,10 +49,10 @@
 // not at the version it names, with no subject: its `path` names the reference
 // as `variants.<id>.documents.<index>` (ADR 0054).
 
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { CONFIGURABLE_LANGUAGES } from "@archboard/workspace/languages";
 import { z } from "zod";
-import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/board/policy";
+import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/policy";
 
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();

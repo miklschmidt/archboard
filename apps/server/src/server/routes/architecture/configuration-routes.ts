@@ -1,10 +1,10 @@
 import type { Express } from "express";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
 import {
 	readSemanticBoardConfiguration,
 	structureDiagnostics,
-} from "@archboard/board/vault-policy";
+} from "@archboard/model/vault-policy";
 /**
  * Read canonical diagnostics, structure warnings and vocabulary without interpreting legacy boards
  * as live content. A `state` names the draft to check instead of the current architecture.

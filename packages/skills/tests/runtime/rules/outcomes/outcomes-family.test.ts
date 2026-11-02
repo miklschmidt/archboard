@@ -12,7 +12,7 @@ import {
 	type OutcomeCheck,
 } from "#runtime/rules/outcomes/outcomes.ts";
 import { type Reading } from "#runtime/rules/outcomes/reading.ts";
-import { SemanticBoardSchema, type SemanticBoard } from "@archboard/board/document";
+import { SemanticBoardSchema, type SemanticBoard } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { AFTER, BEFORE, passes, READING } from "#tests/runtime/support/reading-fixture.ts";
 

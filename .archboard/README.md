@@ -51,7 +51,7 @@ The existing source owners provide useful starting scopes:
 | CLI                | `vKEsyHFk/vKEsyHFk#TBnOCNx2` | `apps/cli`                      |
 | Server             | `vKEsyHFk/vKEsyHFk#cPOdAA3f` | `apps/server`                   |
 | Browser            | `vKEsyHFk/vKEsyHFk#6nZjwK9W` | `apps/web`                      |
-| Model runtime      | `vKEsyHFk/0T9enjhi#1VHRyajb` | `packages/board`                |
+| Model runtime      | `vKEsyHFk/0T9enjhi#1VHRyajb` | `packages/model`                |
 | Renderer           | `vKEsyHFk/vKEsyHFk#OHywsFXm` | `packages/renderer`             |
 | Core render        | `vKEsyHFk/OjRLKb74#nmyK8UOO` | `crates/archboard-render/src`   |
 | Local workbench    | `vKEsyHFk/vKEsyHFk#sw4oFps0` | `packages/workbench`            |

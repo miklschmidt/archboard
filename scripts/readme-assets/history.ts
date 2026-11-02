@@ -3,7 +3,7 @@
 import {
 	ArchitectureCheckpointRetainSchema,
 	type ArchitectureCheckpointRetain,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 
 import {
 	encodeTake,

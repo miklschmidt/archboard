@@ -1,5 +1,5 @@
 import { test } from "bun:test";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import clearance from "#tests/runtime/support/fixtures/top-port-header-clearance.json";

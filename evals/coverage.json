@@ -10,7 +10,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S00", "S01"],
 					"evidence": "author-run",
-					"owner": "packages/board/tests/runtime/operations/model-edit/structure.test.ts"
+					"owner": "packages/model/tests/runtime/operations/model-edit/structure.test.ts"
 				}
 			]
 		},
@@ -23,7 +23,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S02", "S05"],
 					"evidence": "author-run",
-					"owner": "packages/board/tests/runtime/operations/proposals/lifecycle.test.ts"
+					"owner": "packages/model/tests/runtime/operations/proposals/lifecycle.test.ts"
 				}
 			]
 		},
@@ -36,7 +36,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": ["S03", "S04", "S06"],
 					"evidence": "author-run",
-					"owner": "tests/system/semantic-boards/model-flows.test.ts"
+					"owner": "tests/system/models/model-flows.test.ts"
 				}
 			]
 		},
@@ -62,7 +62,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-preview/installation.test.ts"
+					"owner": "packages/model/tests/runtime/operations/legacy-preview/installation.test.ts"
 				}
 			]
 		},
@@ -75,7 +75,7 @@
 					"expectedUse": "Uses the one canonical model and its public operations without legacy live authoring.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/initialization/initialize.test.ts"
+					"owner": "packages/model/tests/runtime/operations/initialization/initialize.test.ts"
 				}
 			]
 		},
@@ -88,7 +88,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/model-edit/references.test.ts"
+					"owner": "packages/model/tests/runtime/operations/model-edit/references.test.ts"
 				}
 			]
 		},
@@ -114,7 +114,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/model-walkthroughs.test.ts"
+					"owner": "tests/system/models/model-walkthroughs.test.ts"
 				},
 				{
 					"path": "model render, rasterize, record and recipes with no named engine",
@@ -134,7 +134,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/proposals/reconcile.test.ts"
+					"owner": "packages/model/tests/runtime/operations/proposals/reconcile.test.ts"
 				}
 			]
 		},
@@ -147,7 +147,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/proposals/corrections.test.ts"
+					"owner": "packages/model/tests/runtime/operations/proposals/corrections.test.ts"
 				}
 			]
 		},
@@ -160,7 +160,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/history/concurrent-publication.test.ts"
+					"owner": "packages/model/tests/runtime/operations/history/concurrent-publication.test.ts"
 				}
 			]
 		},
@@ -173,7 +173,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "tests/system/semantic-boards/model-portable.test.ts"
+					"owner": "tests/system/models/model-portable.test.ts"
 				}
 			]
 		},
@@ -186,7 +186,7 @@
 					"expectedUse": "Uses the existing public canonical owner and retains exact identity, authority, and recovery outcomes.",
 					"scenarios": [],
 					"evidence": "runtime-owner",
-					"owner": "packages/board/tests/runtime/operations/legacy-preview/readings.test.ts"
+					"owner": "packages/model/tests/runtime/operations/legacy-preview/readings.test.ts"
 				}
 			]
 		}

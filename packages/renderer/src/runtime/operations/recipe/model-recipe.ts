@@ -2,7 +2,7 @@ import type { z } from "zod";
 import type {
 	ArchitectureModelRead,
 	ArchitectureRenderRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { ArchitectureRecipeSchema } from "#runtime/operations/recipe/schema.ts";
 import { inputFingerprint, sha256Of } from "#runtime/operations/recipe/digest.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";

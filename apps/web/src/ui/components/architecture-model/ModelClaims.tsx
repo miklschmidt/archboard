@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { ArchitectureClaim, ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureClaim, ArchitectureModelRead } from "@archboard/model/contract";
 import { Button } from "@archboard/ui-kit/components";
 import { takeBackClaim } from "#ui/clients/architecture-model/claims.ts";
 import {

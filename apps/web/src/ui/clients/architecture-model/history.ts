@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { ArchitectureHistoryResultSchema } from "@archboard/code-intel/history";
 import { inVault } from "@archboard/server-requests";
 import {

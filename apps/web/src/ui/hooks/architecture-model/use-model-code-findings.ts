@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
-import { codeFindingsQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
+import { codeFindingsQuery } from "#ui/clients/canvas/reads/queries.ts";
 
 type ModelCodeReading = NonNullable<RememberedFindings["models"]>[number];
 

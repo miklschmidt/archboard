@@ -11,8 +11,8 @@
 // board the page read from the server and holds as a read-only cache (ADR 0023),
 // so the picture is the server's picture of that board.
 
-import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticPolicy } from "@archboard/board/policy";
+import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { SemanticPolicy } from "@archboard/model/policy";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
 import { scopedRequest } from "#shared/rules/render/drawing-key.ts";
 import type {
@@ -23,7 +23,7 @@ import {
 	renderBoard,
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
-} from "#shared/rules/render/board.ts";
+} from "#shared/rules/render/legacy-board.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
 import { warmPainter } from "#ui/clients/painter.ts";

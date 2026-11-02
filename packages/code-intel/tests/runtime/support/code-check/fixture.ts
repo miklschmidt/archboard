@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { z } from "zod";
 import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
+import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 
 /**
  * Run Git in a checkout with an owner's identity and no configuration of the machine.

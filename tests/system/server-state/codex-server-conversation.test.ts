@@ -15,7 +15,7 @@ import {
 } from "./support/codex-production.ts";
 import { createRequester, waitFor } from "./support/http.ts";
 import { coordinatorModelFixture } from "./fixtures/fake-codex-production-data.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
 import { productionServer } from "./support/production-server.ts";
 
 const executableSource = join(import.meta.dir, "fixtures/fake-codex-production.ts");

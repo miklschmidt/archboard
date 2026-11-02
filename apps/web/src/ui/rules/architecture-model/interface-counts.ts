@@ -1,6 +1,6 @@
-import { interfaceMeasures } from "@archboard/board/container-interface";
+import { interfaceMeasures } from "@archboard/model/container-interface";
 import type { ModuleInterface } from "#ui/rules/architecture-model/selected-subject.ts";
-import type { Wiring } from "#ui/rules/semantic-board-canvas/board/connections.ts";
+import type { Wiring } from "#ui/rules/canvas/reading/connections.ts";
 
 type Interface = Extract<ModuleInterface, { readonly holdsParts: true }>;
 type Parents = ReadonlyMap<string, string | undefined>;

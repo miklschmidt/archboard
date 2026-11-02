@@ -1,4 +1,4 @@
-import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
+import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
 
 /** Supply orders for old fixture arrays; explicit test orders take precedence. */
 function ordered(items: unknown): unknown {

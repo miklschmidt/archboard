@@ -1,5 +1,5 @@
 import { useCallback, useContext, useMemo, useState } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import {
 	NO_CHANGES,

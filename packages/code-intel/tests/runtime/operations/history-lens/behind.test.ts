@@ -12,13 +12,13 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
-import { decodeSemanticBoardDocument } from "@archboard/board/store-read";
+import { decodeSemanticBoardDocument } from "@archboard/model/store-read";
 import { BoardBehindSchema, type BoardBehind } from "#shared/protocol/code-check.ts";
 import {
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
 	type SemanticBoard,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-history-lens-"));

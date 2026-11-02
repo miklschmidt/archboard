@@ -1,4 +1,4 @@
-import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 import { statedJson } from "#cli/operations/model/input.ts";
 import { z } from "zod";
 import {

@@ -31,7 +31,7 @@ import {
 } from "#runtime/operations/code-facts/facts.ts";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
 import type { CodeAnchor } from "@archboard/code-binding/bindings";
-import { describeSubject } from "@archboard/board/policy";
+import { describeSubject } from "@archboard/model/policy";
 
 /** The adapters whose every use names the address it reaches: a Terraform reference, a flake input. */
 const ADDRESSED: ReadonlySet<string> = new Set(["terraform", "nix"]);

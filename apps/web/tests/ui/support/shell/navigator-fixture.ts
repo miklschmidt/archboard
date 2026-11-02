@@ -6,7 +6,7 @@ import { afterAll, afterEach } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import type { Root } from "react-dom/client";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type {
 	ShellActions,
 	ShellPane,

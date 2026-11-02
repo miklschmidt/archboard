@@ -47,19 +47,19 @@
 // those names, or the infrastructure, when the code of the start reads names
 // that nothing the check reads sets for it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import type { ClaimSite } from "#runtime/operations/code-check/claims/claims.ts";
 import type { EnvironmentJoin } from "#runtime/operations/code-check/evidence/environment-join.ts";
 import type { BoardEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import { sideOf, sidesJoined } from "#runtime/operations/code-check/evidence/sides.ts";
 import { differingCode } from "#runtime/operations/code-check/part-code.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/operations/code-check/part-code.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
+import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { messagesOf } from "@archboard/board/flow";
-import type { SemanticEdge } from "@archboard/board/content";
-import { describeSubject, type SemanticPolicy } from "@archboard/board/policy";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import { messagesOf } from "@archboard/model/flow";
+import type { SemanticEdge } from "@archboard/model/content";
+import { describeSubject, type SemanticPolicy } from "@archboard/model/policy";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;

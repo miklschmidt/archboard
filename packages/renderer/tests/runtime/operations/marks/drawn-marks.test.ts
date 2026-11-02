@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import type { DrawnBoard } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import type { DrawnBoard } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { markCounts } from "#shared/rules/render/key-marks.ts";
 import { renderBoard } from "#runtime/operations/render.ts";
-import { type BoardRenderChoices } from "#shared/rules/render/board.ts";
+import { type BoardRenderChoices } from "#shared/rules/render/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 

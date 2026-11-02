@@ -8,7 +8,7 @@
 // gives no verdict, because a model does not hold behavior.
 
 import { z } from "zod";
-import { inspectContainer, interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer, interfaceMeasures } from "@archboard/model/container-interface";
 import {
 	inspectGroup,
 	modelContent,
@@ -16,7 +16,7 @@ import {
 	type SemanticEdge,
 	type SemanticNode,
 	type VariantContent,
-} from "@archboard/board/content";
+} from "@archboard/model/content";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 /** One module as an answer names it: enough to find it in the model. */

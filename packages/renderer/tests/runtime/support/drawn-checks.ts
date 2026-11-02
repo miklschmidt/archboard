@@ -3,7 +3,7 @@
 // label, lines closer than a lane, a line along a container's wall, a label
 // across a container's edge, and a route on a slant.
 
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import {
 	type DrawnPoint,

@@ -24,7 +24,7 @@ use archboard_scene::js;
 use archboard_scene::measure;
 use archboard_scene::request::{Activation, FrameGuard, FrameOperator, Slot};
 
-use crate::board::{Decision, Flow, Loop, Message, Node};
+use crate::content::{Decision, Flow, Loop, Message, Node};
 use crate::sequence::activations::activations_for;
 use crate::sequence::card::{
     Card, card_content_width, card_height, card_notes, card_text_width, mark_room, title_room,

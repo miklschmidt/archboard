@@ -10,7 +10,7 @@ import {
 import { type DevTools } from "#runtime/clients/headless-chromium/devtools.ts";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { VariantContentSchema } from "@archboard/board/content";
+import { VariantContentSchema } from "@archboard/model/content";
 import { themeColor } from "#runtime/store/theme/source.ts";
 import {
 	SEMANTIC_RASTER_CLEANUP_MS,
@@ -20,7 +20,7 @@ import {
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/rasterizer/cold-start-timing.ts";
 import { withFixtureOrders } from "#tests/runtime/services/rasterizer/fixture-orders.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;

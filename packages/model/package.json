@@ -1,0 +1,33 @@
+{
+	"name": "@archboard/model",
+	"version": "0.0.0",
+	"private": true,
+	"description": "The canonical architecture model, shared semantic rules, coherent reader, and durable writer. Legacy decoding supports explicit migration and exact retained originals.",
+	"license": "BUSL-1.1",
+	"type": "module",
+	"imports": {
+		"#*": "./src/*",
+		"#tests/*": "./tests/*"
+	},
+	"exports": {
+		"./migration": "./src/shared/api/migration.ts",
+		"./contract": "./src/shared/api/contract.ts",
+		"./legacy-board": "./src/shared/api/legacy-board.ts",
+		"./content": "./src/shared/api/content.ts",
+		"./flow": "./src/shared/api/flow.ts",
+		"./views": "./src/shared/api/views.ts",
+		"./policy": "./src/shared/api/policy.ts",
+		"./comparison": "./src/shared/api/comparison.ts",
+		"./container-interface": "./src/shared/api/container-interface.ts",
+		"./render-reply": "./src/shared/api/render-reply.ts",
+		"./pane-context": "./src/shared/api/pane-context.ts",
+		"./legacy-listing": "./src/shared/api/legacy-listing.ts",
+		"./reconciliation": "./src/shared/api/reconciliation.ts",
+		"./ids": "./src/shared/api/ids.ts",
+		"./legacy-address": "./src/runtime/api/legacy-address.ts",
+		"./store-read": "./src/runtime/api/store-read.ts",
+		"./vault-policy": "./src/runtime/api/vault-policy.ts",
+		"./lock": "./src/runtime/api/lock.ts",
+		"./store-write": "./src/runtime/api/store-write.ts"
+	}
+}

@@ -1,12 +1,12 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { overdrawnRun } from "#tests/runtime/support/drawn-ink.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import publicApi from "../../../../../../docs/design/wide-board-layout-fixtures/public-api-independent.content.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The gateway lanes that reproduce the live comparison's shared channels. */
 const CHANNEL_EDGE_IDS = [

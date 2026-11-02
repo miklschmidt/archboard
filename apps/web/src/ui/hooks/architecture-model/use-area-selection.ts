@@ -1,8 +1,8 @@
 import { useCallback } from "react";
-import { everyStep } from "@archboard/board/flow";
-import type { DiagramBox } from "@archboard/board/render-reply";
-import type { projectModel } from "@archboard/board/content";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { everyStep } from "@archboard/model/flow";
+import type { DiagramBox } from "@archboard/model/render-reply";
+import type { projectModel } from "@archboard/model/content";
+import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**

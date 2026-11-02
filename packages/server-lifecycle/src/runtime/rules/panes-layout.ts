@@ -5,8 +5,8 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import type { parseBoardKey } from "@archboard/board/address";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { parseBoardKey } from "@archboard/model/legacy-address";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type BoardIdentity = ReturnType<typeof parseBoardKey>;

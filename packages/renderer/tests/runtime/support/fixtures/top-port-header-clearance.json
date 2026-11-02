@@ -62,7 +62,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/board/src/runtime"
+				"path": "packages/model/src/runtime"
 			},
 			"drillDown": {
 				"board": "Board persistence",
@@ -129,7 +129,7 @@
 			"groups": ["writes"],
 			"binding": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/board/src/runtime/store/lock"
+				"path": "packages/model/src/runtime/store/lock"
 			}
 		},
 		{
@@ -432,7 +432,7 @@
 			"emphasis": "normal",
 			"anchor": {
 				"repo": "github.com/miklschmidt/archboard",
-				"path": "packages/board/src/runtime/operations/write/write.ts",
+				"path": "packages/model/src/runtime/operations/write/write.ts",
 				"symbol": "withBoardLock"
 			}
 		},

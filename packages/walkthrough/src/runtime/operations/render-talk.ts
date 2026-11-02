@@ -22,7 +22,7 @@ import { availableParallelism } from "node:os";
 import { dirname, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDER_MS } from "@archboard/timing";
 import type { RecordingContainer } from "#shared/protocol/recording-page.ts";

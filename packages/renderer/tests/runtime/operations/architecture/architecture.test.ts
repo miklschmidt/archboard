@@ -1,6 +1,6 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { describe, expect, test } from "bun:test";
-import type { DiagramBox, DiagramTheme } from "@archboard/board/render-reply";
+import type { DiagramBox, DiagramTheme } from "@archboard/model/render-reply";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { SemanticRenderError, type RenderedDiagram } from "#shared/protocol/render-request.ts";
 import { drawnSpan, drawnTexts, labelPlates, spanFits } from "#tests/runtime/support/drawn-text.ts";
@@ -11,9 +11,9 @@ import {
 	routeEnds,
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { headerCards } from "#tests/runtime/support/drawn-parents.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const policy = DEFAULT_SEMANTIC_POLICY;
 

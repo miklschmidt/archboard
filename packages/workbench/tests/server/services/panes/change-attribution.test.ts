@@ -7,8 +7,8 @@ import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
-import { readArchitectureModel } from "@archboard/board/store-read";
+} from "@archboard/model/store-write";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { semanticChangeFeed } from "#server/services/panes/change-feed.ts";
 const homes: string[] = [];
 afterEach(() => {

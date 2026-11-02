@@ -12,9 +12,9 @@ import { describe, expect, test } from "bun:test";
 import { renderArchitecture, renderSemanticView } from "#runtime/operations/render.ts";
 import { APCA, lightnessContrast, seenIn } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/board/render-reply";
+import type { DiagramTheme } from "@archboard/model/render-reply";
 import { themeColor } from "#runtime/store/theme/source.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** Three neutral lines of each emphasis inside a container, and one exchange. */
 const CONTENT = orderedFixture({

@@ -17,13 +17,13 @@ import { useCallback, useMemo, useSyncExternalStore, type JSX } from "react";
 
 import type { Talk } from "@archboard/walkthrough/talk";
 import { Tooltip } from "@archboard/ui-kit/components";
-import { PaneVaultContext } from "#ui/state/semantic-board-canvas/pane-vault.ts";
+import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
 import { readingOf } from "#ui/rules/application/pane-reading.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { SemanticBoardStage } from "#ui/components/semantic-board-canvas/SemanticBoardStage.tsx";
-import { useOverlayPlace } from "#ui/hooks/semantic-board-canvas/use-overlay-place.ts";
-import { type SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { SemanticBoardStage } from "#ui/components/canvas/CanvasStage.tsx";
+import { useOverlayPlace } from "#ui/hooks/canvas/use-overlay-place.ts";
+import { type SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 import {
 	OrbHost,
 	OrbStageProvider,

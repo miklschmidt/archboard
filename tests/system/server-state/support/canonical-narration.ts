@@ -1,12 +1,12 @@
 import { cpSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
 	retainArchitectureCheckpoint,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import { startOwnedServer } from "../../support/owned-server.ts";
 import { productionServer } from "./production-server.ts";
 import {
@@ -21,7 +21,7 @@ import { createRequester } from "./http.ts";
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	type SemanticPaneContextSchema,
-} from "@archboard/board/pane-context";
+} from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type Report = z.infer<typeof SemanticPaneContextSchema>;

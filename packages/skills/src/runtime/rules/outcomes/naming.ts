@@ -11,7 +11,7 @@ import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/out
 // addressing is the contract this wraps and never replaces, and a fixture's
 // `$node(...)` placeholder names a node the fixture itself wrote.
 
-import { resolveVariant, type SemanticVariant } from "@archboard/board/document";
+import { resolveVariant, type SemanticVariant } from "@archboard/model/legacy-board";
 
 /** How well a candidate name answers the name a check asked for. */
 const NO_MATCH = 0;

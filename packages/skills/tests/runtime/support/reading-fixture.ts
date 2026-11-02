@@ -7,9 +7,9 @@ import {
 	parseSemanticBoard,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	type SemanticBoard,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { evaluateOutcomes, type OutcomeCheck } from "#runtime/rules/outcomes/outcomes.ts";
 import { type Reading } from "#runtime/rules/outcomes/reading.ts";
 

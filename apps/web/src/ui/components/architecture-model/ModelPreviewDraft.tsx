@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type OriginalState = NonNullable<NonNullable<Model["migrationPreview"]>["history"]>[number];
 type Issue = NonNullable<OriginalState["state"]["reconciliation"]>["issues"][number];

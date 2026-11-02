@@ -1,11 +1,11 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { readFileSync, writeFileSync, rmSync } from "node:fs";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 
 import { join } from "node:path";
 import { canonicalNarration } from "./support/canonical-narration.ts";

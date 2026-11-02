@@ -3,7 +3,7 @@
 // block keeps for trunks that do not use it, lines between blocks that turn back on
 // themselves or run along a border, and lines that join on the way to a card and part again.
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	corridorPoints,

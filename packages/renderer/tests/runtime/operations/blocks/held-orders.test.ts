@@ -1,9 +1,9 @@
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { corridorPoints, routesCross } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import boardRequestPath from "#tests/runtime/support/fixtures/board-request-path.json";
+import boardRequestPath from "#tests/runtime/support/fixtures/model-request-path.json";
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
 
 /** The vocabulary of the dogfood vault the fixtures are taken from. */

@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 
-import type { ModelFlow } from "@archboard/board/content";
+import type { ModelFlow } from "@archboard/model/content";
 import { ModelChoiceList } from "#ui/components/architecture-model/ModelChoiceList.tsx";
 
 /** Inputs for the flows. */

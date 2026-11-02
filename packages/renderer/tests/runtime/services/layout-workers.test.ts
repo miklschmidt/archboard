@@ -8,8 +8,8 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { compiledCore } from "#runtime/services/core.ts";
 import { createEnginePool, type EngineWorker } from "#shared/rules/engine/engine-pool.ts";
 import { installRendererHost, rendererHost } from "#shared/rules/render/host.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
-import type { VariantContent } from "@archboard/board/content";
+import { SemanticPolicySchema } from "@archboard/model/policy";
+import type { VariantContent } from "@archboard/model/content";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 const policy = SemanticPolicySchema.parse({

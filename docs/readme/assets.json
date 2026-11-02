@@ -13,7 +13,7 @@
 			],
 			"sources": [
 				"packages/renderer/src",
-				"packages/board/src/shared",
+				"packages/model/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
@@ -194,7 +194,7 @@
 			],
 			"sources": [
 				"packages/renderer/src",
-				"packages/board/src/shared",
+				"packages/model/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",
@@ -341,7 +341,7 @@
 			],
 			"sources": [
 				"packages/renderer/src",
-				"packages/board/src/shared",
+				"packages/model/src/shared",
 				"packages/code-binding/src/shared",
 				"packages/renderer/assets/theme.css",
 				"packages/timing/src",

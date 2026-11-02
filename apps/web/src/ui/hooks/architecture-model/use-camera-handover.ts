@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useRef } from "react";
 import { PRESENTATION_MS } from "@archboard/timing";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import {
 	ModelPaneContext,
 	type CameraHandover,

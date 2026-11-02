@@ -20,7 +20,7 @@ import {
 	BehindPartSchema,
 	BehindSkipSchema,
 } from "#shared/protocol/code-check.ts";
-import { RenderedVariantSchema } from "@archboard/board/render-reply";
+import { RenderedVariantSchema } from "@archboard/model/render-reply";
 
 /**
  * The start of a period: a date, or a date and time with its offset. A date

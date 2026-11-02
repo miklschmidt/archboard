@@ -7,7 +7,7 @@
 import { expect, test } from "bun:test";
 import { recordingPageUrl } from "@archboard/walkthrough/recorder";
 import { recordingAskedOf } from "@archboard/walkthrough/recording";
-import { addressFromSearch, parseWorkspaceSearchString } from "#ui/rules/board-routing/search.ts";
+import { addressFromSearch, parseWorkspaceSearchString } from "#ui/rules/reading-routing/search.ts";
 
 /**
  * The panes the browser opens for a recording page's address.

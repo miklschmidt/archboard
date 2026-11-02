@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import heldLabel from "#tests/runtime/support/fixtures/held-label.json";
 
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */

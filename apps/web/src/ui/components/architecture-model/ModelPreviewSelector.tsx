@@ -1,6 +1,6 @@
 import { useCallback, type JSX } from "react";
 import { Select } from "@archboard/ui-kit/components";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type Preview = NonNullable<Model["migrationPreview"]>;
 const NO_HISTORY: NonNullable<Preview["history"]> = [];

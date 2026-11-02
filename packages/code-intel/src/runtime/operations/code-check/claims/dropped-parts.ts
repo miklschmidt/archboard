@@ -17,7 +17,7 @@
 // lacks, or several refs with none new on the draft, is a skip that names the
 // draft, never a finding.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import {
 	normalized,
 	type Checkout,
@@ -30,8 +30,8 @@ import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import { sourceAt } from "#runtime/clients/history-lens/source-history.ts";
 import type { CodeCheckSkip, CodeFinding } from "#shared/protocol/code-check.ts";
 import { bindingPathOf, filesOfBinding, type CodeBinding } from "@archboard/code-binding/bindings";
-import { draftRefs, type SemanticVariant } from "@archboard/board/document";
-import type { SemanticNode } from "@archboard/board/content";
+import { draftRefs, type SemanticVariant } from "@archboard/model/legacy-board";
+import type { SemanticNode } from "@archboard/model/content";
 
 /** What holding dropped parts to code needs from the pass. */
 interface DroppedContext {

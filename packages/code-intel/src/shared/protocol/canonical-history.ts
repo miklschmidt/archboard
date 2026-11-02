@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 import { LocalityAnswerSchema, PeriodStartSchema } from "#shared/protocol/locality.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 const SelectionSchema = z.strictObject({

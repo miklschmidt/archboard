@@ -3,7 +3,7 @@
 
 import { expect, test } from "bun:test";
 
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
 import { modulePlaces } from "#ui/rules/architecture-model/module-places.ts";
 

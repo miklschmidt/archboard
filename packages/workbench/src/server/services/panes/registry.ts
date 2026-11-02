@@ -5,8 +5,8 @@ import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
 import { addressablePanes, panesInOrder, resolvePane } from "@archboard/server-lifecycle/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { aggregateOf } from "#server/rules/pane/board-key.ts";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import { aggregateOf } from "#server/rules/pane/legacy-address.ts";
 import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 

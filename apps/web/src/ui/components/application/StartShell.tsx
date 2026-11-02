@@ -14,14 +14,14 @@ import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
 import { ModelState } from "#ui/components/architecture-model/ModelState.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
 import { createStartActions } from "#ui/clients/application/start-actions.ts";
-import { repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
+import { repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
 import { useNotices } from "#ui/hooks/application/use-notices.ts";
 import { useTheme } from "#ui/hooks/application/use-theme.ts";
 import { useSlowWait } from "#ui/hooks/architecture-model/use-slow-wait.ts";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { initialPaneList } from "#ui/rules/application/pane-list.ts";
 import { assembleShellView } from "#ui/rules/application/shell-view.ts";
-import type { Start } from "#ui/rules/board-routing/start.ts";
+import type { Start } from "#ui/rules/reading-routing/start.ts";
 import type { SettingsSurface } from "#ui/rules/shell/contracts.ts";
 
 /** Inputs for the start's shell. */

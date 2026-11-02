@@ -1,5 +1,5 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
-import { type ArchitectureModelRead } from "@archboard/board/model";
+import { type ArchitectureModelRead } from "@archboard/model/contract";
 // Recording one walkthrough of a board to a video file, narrated by the Codex
 // voice (TASK-304), in two passes (TASK-381).
 //
@@ -25,8 +25,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { DiagramTheme, LayoutEngineName } from "@archboard/board/render-reply";
-import type { SemanticBoard } from "@archboard/board/document";
+import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
+import type { SemanticBoard } from "@archboard/model/legacy-board";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDER_MS } from "@archboard/timing";
 import {
@@ -54,7 +54,7 @@ import {
 import { renderTalk } from "#runtime/operations/render-talk.ts";
 import { writeSilence } from "#runtime/store/silence.ts";
 import { voiceSamples, writeTalk, type TalkPlace } from "#runtime/store/talk-files.ts";
-import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { VaultCheckSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;

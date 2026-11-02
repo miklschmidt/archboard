@@ -27,7 +27,7 @@ import {
 	tabSessionOf,
 } from "#server/services/panes/tab-sessions.ts";
 import { panes, paneVaults } from "#server/services/panes/registry.ts";
-import { bodyOf } from "#server/services/request/board.ts";
+import { bodyOf } from "#server/services/request/request-fields.ts";
 import { vaultOfRequest } from "#server/services/request/vault.ts";
 
 /** The pane an activation happened in, and the tab it belongs to. */

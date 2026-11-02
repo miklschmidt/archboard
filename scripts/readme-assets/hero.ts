@@ -2,10 +2,13 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ArchitectureModuleEditSchema, ArchitectureModelReadSchema } from "@archboard/board/model";
+import {
+	ArchitectureModuleEditSchema,
+	ArchitectureModelReadSchema,
+} from "@archboard/model/contract";
 
-import { messagesOf } from "@archboard/board/flow";
-import { modelContent, type Model } from "@archboard/board/content";
+import { messagesOf } from "@archboard/model/flow";
+import { modelContent, type Model } from "@archboard/model/content";
 
 import {
 	Terminal,

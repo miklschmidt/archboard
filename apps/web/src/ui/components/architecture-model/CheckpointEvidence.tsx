@@ -1,5 +1,5 @@
 import type { JSX } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 
 interface CheckpointEvidenceProps {
 	model: Extract<ArchitectureModelRead, { success: true }>;

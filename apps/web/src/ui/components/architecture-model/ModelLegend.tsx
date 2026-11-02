@@ -8,19 +8,16 @@ import {
 	type JSX,
 	type ReactNode,
 } from "react";
-import type { Model, ModelFilters, projectModel } from "@archboard/board/content";
+import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
 import { Button, cn } from "@archboard/ui-kit/components";
 import {
 	EmphasisSample,
 	RelationshipSample,
 	TrafficSample,
 	TypeSample,
-} from "#ui/components/semantic-board-canvas/SemanticTypeSamples.tsx";
-import { iconQuery } from "#ui/clients/semantic-board-canvas/reads/queries.ts";
-import type {
-	AppliedAppearance,
-	PictureLegend,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+} from "#ui/components/canvas/SemanticTypeSamples.tsx";
+import { iconQuery } from "#ui/clients/canvas/reads/queries.ts";
+import type { AppliedAppearance, PictureLegend } from "#ui/clients/canvas/reads/drawings.ts";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import {
 	groupRows,
@@ -32,7 +29,7 @@ import {
 	type LegendMark,
 	type LegendRow,
 } from "#ui/rules/architecture-model/legend-rows.ts";
-import { paletteTag } from "#ui/rules/semantic-board-canvas/board/palette.ts";
+import { paletteTag } from "#ui/rules/canvas/reading/palette.ts";
 
 /** How wide every line's sample is, and the box of every mark, so that the names start on one line. */
 const SAMPLE_WIDTH = 22;

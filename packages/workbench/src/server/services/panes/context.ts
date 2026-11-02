@@ -16,11 +16,11 @@ import type { Express, Request, Response } from "express";
 import {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticPaneContextSchema,
-} from "@archboard/board/pane-context";
+} from "@archboard/model/pane-context";
 import { publishPaneContext } from "#server/services/owner/wiring-hooks.ts";
 import { panePresentations } from "#server/services/panes/presentation.ts";
 import { paneVaults, panes } from "#server/services/panes/registry.ts";
-import { bodyOf } from "#server/services/request/board.ts";
+import { bodyOf } from "#server/services/request/request-fields.ts";
 import { requireVault, vaultOfRequest } from "#server/services/request/vault.ts";
 import type { z } from "zod";
 

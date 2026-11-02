@@ -6,9 +6,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { DiagramThemeSchema } from "@archboard/board/render-reply";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { DiagramThemeSchema } from "@archboard/model/render-reply";
 import { FixtureSchema, HomePathSchema, type Fixture } from "#runtime/schemas/fixture.ts";
 import { leakageProblems } from "#runtime/services/leakage.ts";
 import {

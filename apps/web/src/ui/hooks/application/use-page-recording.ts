@@ -10,8 +10,8 @@ import type { PaneOverlay, PaneRecording } from "#ui/hooks/application/use-pane-
 import type { PaneList } from "#ui/rules/application/pane-list.ts";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/state/application/pane-handles.ts";
 import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
-import type { WorkspaceAddress } from "#ui/rules/board-routing/address.ts";
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { WorkspaceAddress } from "#ui/rules/reading-routing/address.ts";
+import { boardAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import { openWalkthroughRecorder } from "#ui/clients/walkthrough-recording/open-recorder.ts";
 import { useWalkthroughRecording } from "#ui/hooks/walkthrough-recording/use-walkthrough-recording.ts";
 import { type WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";

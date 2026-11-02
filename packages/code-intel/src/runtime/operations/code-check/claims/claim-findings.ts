@@ -12,7 +12,7 @@ import type {
 import type { Held } from "#runtime/operations/code-check/claims/symbols.ts";
 import { lastName } from "#runtime/operations/code-facts/text-reading.ts";
 import type { CodeFinding } from "#shared/protocol/code-check.ts";
-import { describeSubject } from "@archboard/board/policy";
+import { describeSubject } from "@archboard/model/policy";
 
 /**
  * A warning about one claim.

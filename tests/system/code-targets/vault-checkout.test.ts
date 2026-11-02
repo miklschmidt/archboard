@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { boundBoard } from "./support/bound-board.ts";
+import { boundBoard } from "./support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,

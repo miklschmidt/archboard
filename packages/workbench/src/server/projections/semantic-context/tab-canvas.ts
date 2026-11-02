@@ -3,7 +3,7 @@
 
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 import { boardForPane, panes } from "#server/services/panes/registry.ts";
-import { aggregateKey } from "#server/projections/semantic-context/board-context.ts";
+import { aggregateKey } from "#server/projections/semantic-context/architecture-context.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { narratedBoardOf } from "#server/projections/semantic-context/walkthrough-narration.ts";

@@ -12,7 +12,7 @@
 
 import { describe, expect, test } from "bun:test";
 
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { TalkSchema, framesOf, voiceLevels, type TalkEvent } from "#shared/protocol/talk.ts";
 
 /** A board of two parts and a walkthrough of two steps, at version 3. */

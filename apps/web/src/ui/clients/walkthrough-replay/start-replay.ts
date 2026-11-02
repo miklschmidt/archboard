@@ -1,9 +1,9 @@
 // Making a page the renderer of a recorded talk.
 
 import { rendererBuild } from "virtual:archboard-renderer";
-import { browserPictureStorage } from "#ui/clients/semantic-board-canvas/reads/picture-cache.ts";
-import { createLocalPictureSource } from "#ui/clients/semantic-board-canvas/reads/local-pictures.ts";
-import { takePicturesFrom } from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
+import { browserPictureStorage } from "#ui/clients/canvas/reads/picture-cache.ts";
+import { createLocalPictureSource } from "#ui/clients/canvas/reads/local-pictures.ts";
+import { takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
 import { publishReplayPage } from "@archboard/walkthrough/talk";
 
 import { WalkthroughReplay } from "#ui/clients/walkthrough-replay/replay-page.ts";

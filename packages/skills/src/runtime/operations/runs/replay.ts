@@ -7,8 +7,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { addressedVariant, type SemanticBoard } from "@archboard/board/document";
-import { DiagramThemeSchema, type DiagramTheme } from "@archboard/board/render-reply";
+import { addressedVariant, type SemanticBoard } from "@archboard/model/legacy-board";
+import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
 import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
 	SAMPLES_PER_FRAME,
@@ -25,7 +25,7 @@ import {
 } from "#runtime/rules/outcomes/reading.ts";
 import type { TalkFixture } from "#runtime/schemas/fixture.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
-import type { VaultCheckSchema } from "@archboard/board/policy";
+import type { VaultCheckSchema } from "@archboard/model/policy";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 

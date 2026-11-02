@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import {
-	useWalkthrough,
-	type DrivenPlace,
-} from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
-import type { Model } from "@archboard/board/content";
+import { useWalkthrough, type DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
+import type { Model } from "@archboard/model/content";
 
 type Playback = NonNullable<Model["playback"]>;
 type Reading = Playback["walkthrough"]["beats"][number]["reading"];

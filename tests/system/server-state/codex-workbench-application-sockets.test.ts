@@ -8,7 +8,7 @@ import { WebSocket } from "ws";
 import { startOwnedServer } from "../support/owned-server.ts";
 import { vaultIn } from "../support/test-vault.ts";
 import { createRequester, onlyVault, waitFor } from "./support/http.ts";
-import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/board/pane-context";
+import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
 
 const repoRoot = resolve(import.meta.dir, "../../..");
 

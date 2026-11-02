@@ -12,7 +12,7 @@ import {
 	type PaneChrome,
 	type PaneColumn,
 	PaneChromeContext,
-} from "#ui/components/semantic-board-canvas/PaneChrome.tsx";
+} from "#ui/components/canvas/PaneChrome.tsx";
 import { PaneControls, PaneLetter } from "#ui/components/shell/PaneControls.tsx";
 import { useKept } from "#ui/hooks/shell/use-kept.ts";
 import type {

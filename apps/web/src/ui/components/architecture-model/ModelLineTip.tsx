@@ -1,8 +1,8 @@
 import type { JSX } from "react";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, projectModel } from "@archboard/model/content";
 import { kindNames, lineEnds } from "#ui/components/architecture-model/ModelConnections.tsx";
-import { TipCard } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
-import type { TipTarget } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { TipCard } from "#ui/components/canvas/SemanticSubjectTip.tsx";
+import type { TipTarget } from "#ui/clients/canvas/subjects/subject-tips.ts";
 
 type Projection = ReturnType<typeof projectModel>;
 

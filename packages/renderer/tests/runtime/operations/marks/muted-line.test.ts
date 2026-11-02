@@ -16,9 +16,9 @@ import {
 	seenIn,
 } from "#tests/runtime/support/drawn-colours.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import type { DiagramTheme } from "@archboard/board/render-reply";
+import type { DiagramTheme } from "@archboard/model/render-reply";
 import { themeColor } from "#runtime/store/theme/source.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** A default and a muted line, neutral and coloured, the muted ones with traffic. */
 const CONTENT = orderedFixture({

@@ -6,7 +6,7 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { boardAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/state/pane-session/pane-deadline.ts";
 import { createReadingPublisher, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
@@ -35,7 +35,7 @@ import type {
 	LockHolder,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { projectModel, type Model } from "@archboard/board/content";
+import { projectModel, type Model } from "@archboard/model/content";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import { useDive, type Destination } from "#ui/hooks/semantic-board-canvas/use-dive.ts";
-import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
+import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { useDive, type Destination } from "#ui/hooks/canvas/use-dive.ts";
+import { useLayoutEngine } from "#ui/hooks/canvas/use-layout-engine.ts";
 import { toggled } from "#ui/rules/architecture-model/expansion.ts";
 import {
 	moveTo,

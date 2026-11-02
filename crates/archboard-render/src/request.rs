@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use archboard_flows::board::Flow;
+use archboard_flows::content::Flow;
 use archboard_flows::flowchart::KindLook;
 use archboard_layout::{Content, Edge, Engine, Node};
 use archboard_scene::request::{

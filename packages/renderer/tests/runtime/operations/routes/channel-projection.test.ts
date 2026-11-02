@@ -2,9 +2,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import fixture from "#tests/runtime/support/fixtures/channel-projection.json";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import type { ChangeKind } from "@archboard/board/comparison";
+import type { ChangeKind } from "@archboard/model/comparison";
 import { corridorPoints, routeLabels, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 // Six real cards retain the incoming/outgoing channel conflict and the
 // diagonal relationship whose reserved label used to add a return loop.

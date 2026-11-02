@@ -4,8 +4,8 @@ import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
 	const before = orderedFixture({

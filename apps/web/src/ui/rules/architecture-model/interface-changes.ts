@@ -3,7 +3,7 @@
 // first. The comparison of the reading says what moved. Nothing here compares anything, combines
 // the counts or ranks a module, and a row wears no standing, because an interface change sets none.
 
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type Comparison = NonNullable<Model["comparison"]>;
 type InterfaceChange = Comparison["interfaceChanges"]["changed"][number];

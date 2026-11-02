@@ -22,7 +22,7 @@ import {
 	BehindPartSchema,
 	BehindSkipSchema,
 } from "#shared/protocol/code-check.ts";
-import { SubjectStandingSchema } from "@archboard/board/render-reply";
+import { SubjectStandingSchema } from "@archboard/model/render-reply";
 
 /** How the comparison marks a part, relationship or step that it names. */
 const NamedStatusSchema = SubjectStandingSchema.exclude(["unchanged"]);

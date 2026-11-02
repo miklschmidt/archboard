@@ -9,9 +9,9 @@ import {
 	SemanticPolicySchema,
 	type SemanticPolicy,
 	DEFAULT_SEMANTIC_POLICY,
-} from "@archboard/board/policy";
-import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+} from "@archboard/model/policy";
+import { LayoutEngineSchema, type LayoutEngineName } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";

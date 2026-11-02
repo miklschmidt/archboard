@@ -10,7 +10,7 @@
 // missing too. A repository this machine has not registered and a ref the
 // checkout cannot resolve are skipped with the reason, as a binding's are.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import { otherRefOf, type Checkout } from "#runtime/operations/code-check/checkouts.ts";
 import {
 	codeFor,

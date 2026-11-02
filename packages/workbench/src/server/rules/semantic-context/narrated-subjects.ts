@@ -7,18 +7,18 @@
 // against that one, as the picture marks it, and a changed one says what moved, so the voice can
 // explain the difference the viewer is looking at.
 
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { StepSubject } from "#runtime/rules/realtime/presentation-mode.ts";
 import {
 	changeOf,
 	compareVariants,
 	type FieldChange,
 	comparedWith,
-} from "@archboard/board/comparison";
-import { everyStep, isMessage, stepWords } from "@archboard/board/flow";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import type { VariantContent } from "@archboard/board/content";
-import type { WalkthroughBeatSchema } from "@archboard/board/content";
+} from "@archboard/model/comparison";
+import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
+import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { VariantContent } from "@archboard/model/content";
+import type { WalkthroughBeatSchema } from "@archboard/model/content";
 import type { z } from "zod";
 
 type VariantComparison = ReturnType<typeof compareVariants>;

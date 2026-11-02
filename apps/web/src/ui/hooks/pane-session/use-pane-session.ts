@@ -19,7 +19,7 @@ import type {
 	DoingEntry,
 	LockHolder,
 } from "#ui/rules/pane-session/session-types.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];

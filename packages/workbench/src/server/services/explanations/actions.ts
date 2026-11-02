@@ -2,7 +2,7 @@ import { aboutOf, releaseCapture, retireCapture } from "#server/services/explana
 import { panes, sendBoardlessToPane } from "#server/services/panes/registry.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
 import { isDeepStrictEqual } from "node:util";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { CODEX_SESSION_MS } from "@archboard/timing";
 import type {

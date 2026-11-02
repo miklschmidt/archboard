@@ -10,7 +10,7 @@ import {
 	ModelDestinationNotice,
 	ModelUnavailableReading,
 } from "#ui/components/architecture-model/ModelDestinationState.tsx";
-import { StageSpinner } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
+import { StageSpinner } from "#ui/components/canvas/SemanticStageStates.tsx";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import type { AcceptedScene, SceneRequest } from "#ui/rules/architecture-model/scene.ts";
 

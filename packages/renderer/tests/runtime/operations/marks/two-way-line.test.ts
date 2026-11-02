@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test("a two-way line ends in the same head at each end, and a one-way line in one", async () => {
 	const authored = orderedFixture({

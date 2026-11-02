@@ -13,8 +13,8 @@
 //   bun packages/renderer/tests/runtime/support/capture-native-fixture.ts
 
 import { readFileSync, writeFileSync } from "node:fs";
-import { projectModel } from "@archboard/board/content";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { projectModel } from "@archboard/model/content";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { iconPaths } from "#runtime/operations/icon-paths.ts";
 import { loadCore } from "#runtime/services/core.ts";
 import { THEME_STYLESHEET } from "#runtime/store/assets.ts";

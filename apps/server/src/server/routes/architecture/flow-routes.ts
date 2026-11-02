@@ -1,11 +1,11 @@
 import type { Express } from "express";
 import { z } from "zod";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	ArchitectureRenderRequestSchema,
 	type ArchitectureModelRead,
-} from "@archboard/board/model";
-import { projectModel, projectFlow, type Model } from "@archboard/board/content";
+} from "@archboard/model/contract";
+import { projectModel, projectFlow, type Model } from "@archboard/model/content";
 import { recordArchitectureRecipe } from "@archboard/renderer/recipe";
 import { vaultIdentity } from "@archboard/code-binding/resolution";
 import { renderArchitecture } from "@archboard/renderer/bun";

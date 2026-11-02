@@ -19,10 +19,10 @@ import {
 } from "#cli/operations/vault/check-help.ts";
 import { checkEmbeds } from "#cli/operations/vault/embeds/embeds-check.ts";
 import { requestJson } from "@archboard/server-lifecycle/server-client";
-import { checkSemanticVaultOnServer } from "#cli/clients/server/semantic-boards.ts";
+import { checkSemanticVaultOnServer } from "#cli/clients/server/vault-check.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { diagnosticLine, VaultCheckSchema } from "@archboard/board/policy";
-import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
+import { SemanticBoardConfigurationSchema } from "@archboard/model/vault-policy";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */

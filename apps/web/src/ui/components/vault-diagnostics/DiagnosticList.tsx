@@ -1,6 +1,6 @@
 import type { JSX } from "react";
-import { describeSubject } from "@archboard/board/policy";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
+import { describeSubject } from "@archboard/model/policy";
+import type { VaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;

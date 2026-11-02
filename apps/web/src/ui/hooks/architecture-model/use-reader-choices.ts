@@ -1,8 +1,8 @@
 import { useCallback, useContext, type RefObject } from "react";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
-import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import type { FindHit } from "#ui/rules/architecture-model/search.ts";
 import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentation.ts";
 

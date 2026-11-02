@@ -4,7 +4,7 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 
-import type { ArchitectureModuleEdit } from "@archboard/board/model";
+import type { ArchitectureModuleEdit } from "@archboard/model/contract";
 
 import {
 	inOrder,

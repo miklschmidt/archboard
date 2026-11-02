@@ -25,20 +25,17 @@ import {
 	type Talk,
 	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
-import { createBoardQueryClient } from "#ui/clients/board-catalog/query-client.ts";
+import { createBoardQueryClient } from "#ui/clients/model-catalog/query-client.ts";
 import {
 	createSteppedClock,
 	driveFramesFrom,
 	type SteppedClock,
 } from "@archboard/ui-kit/frame-clock";
-import { chooseLayoutEngine } from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
-import {
-	pictureSource,
-	takePicturesFrom,
-} from "#ui/clients/semantic-board-canvas/reads/picture-source.ts";
-import { readBoardsFrom } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
-import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
-import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { chooseLayoutEngine } from "#ui/clients/canvas/reads/layout-engine.ts";
+import { pictureSource, takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
+import { readBoardsFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
+import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.ts";

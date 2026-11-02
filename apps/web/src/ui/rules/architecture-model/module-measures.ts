@@ -1,5 +1,5 @@
 import type { LocalityAnswer } from "@archboard/code-intel/history";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, projectModel } from "@archboard/model/content";
 import {
 	interfaceCounts,
 	type InterfaceCount,

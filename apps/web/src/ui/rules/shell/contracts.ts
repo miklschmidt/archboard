@@ -4,8 +4,8 @@
 
 import type { ReactNode } from "react";
 import type { z } from "zod";
-import type { Model } from "@archboard/board/content";
-import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import type { Model } from "@archboard/model/content";
+import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";

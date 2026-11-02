@@ -19,7 +19,7 @@ import {
 	SemanticBoardSchema,
 	currentVariant,
 	type SemanticBoard,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-own-checkout-"));

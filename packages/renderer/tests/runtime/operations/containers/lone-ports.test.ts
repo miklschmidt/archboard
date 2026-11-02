@@ -9,8 +9,8 @@
 // two lines closer than a lane without sharing one stroke.
 
 import { expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { SemanticPolicySchema, DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	cornersOf,
@@ -22,7 +22,7 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import archboard from "#tests/runtime/support/fixtures/archboard.json";
-import readingABoard from "#tests/runtime/support/fixtures/reading-a-board.json";
+import readingABoard from "#tests/runtime/support/fixtures/reading-a-model.json";
 
 /** The room a line's words keep from an unrelated line: archboard_layout::routes::LABEL_ROUTE_CLEARANCE. */
 const LABEL_ROUTE_CLEARANCE = 12;

@@ -9,7 +9,7 @@ import {
 	plausibleSubjects,
 	recordingMatches,
 } from "#runtime/rules/outcomes/naming.ts";
-import { boardCheck } from "#runtime/rules/outcomes/outcomes-board.ts";
+import { boardCheck } from "#runtime/rules/outcomes/outcomes-content.ts";
 import { familyCheck } from "#runtime/rules/outcomes/outcomes-family.ts";
 import { videoRendered } from "#runtime/operations/runs/replay.ts";
 import {

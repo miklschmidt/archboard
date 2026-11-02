@@ -6,7 +6,7 @@ import {
 	type PaneReading,
 } from "#ui/state/pane-session/pane-reading.ts";
 import { PANE_MS } from "@archboard/timing";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;

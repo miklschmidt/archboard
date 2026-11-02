@@ -10,15 +10,15 @@ import {
 import {
 	SemanticPresentation,
 	type SemanticPresentationProps,
-} from "#ui/components/semantic-board-canvas/SemanticPresentation.tsx";
-import { projectModel, type Model } from "@archboard/board/content";
+} from "#ui/components/canvas/SemanticPresentation.tsx";
+import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { useBoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import { useBoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
-import type { DrivenPlace } from "#ui/hooks/semantic-board-canvas/use-walkthrough.ts";
+import type { DrivenPlace } from "#ui/hooks/canvas/use-walkthrough.ts";
 import { useWalkthroughBeat } from "#ui/hooks/architecture-model/use-walkthrough-beat.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 

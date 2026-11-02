@@ -5,16 +5,16 @@ import {
 	snapshotCheckoutAccess,
 	resolveRegisteredCheckout,
 } from "@archboard/code-binding/resolution";
-import { HistoricalRevisionSchema } from "@archboard/board/model";
-import type { SemanticBoard, SemanticVariant } from "@archboard/board/document";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
+import { HistoricalRevisionSchema } from "@archboard/model/contract";
+import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
 import { commitOf } from "#runtime/clients/history-lens/source-history.ts";
-import { messagesOf } from "@archboard/board/flow";
+import { messagesOf } from "@archboard/model/flow";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { gitAnswer } from "#runtime/clients/history-lens/git.ts";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { checkCode, type CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import type { z } from "zod";
 
 type HistoricalRevision = z.infer<typeof HistoricalRevisionSchema>;

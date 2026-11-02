@@ -16,8 +16,8 @@ import {
 	type OwnRef,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
-import type { SemanticNode } from "@archboard/board/content";
+} from "@archboard/model/legacy-board";
+import type { SemanticNode } from "@archboard/model/content";
 
 /**
  * What a ref pinned in a repository is keyed by.

@@ -3,10 +3,10 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 // Live model discovery belongs to the public canonical runtime owner.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { SemanticBoardSchema, type SemanticBoard } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import { SemanticBoardSchema, type SemanticBoard } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 /**
  * Load static evidence fixtures for the language engine.
  * @param vault The fixture directory.

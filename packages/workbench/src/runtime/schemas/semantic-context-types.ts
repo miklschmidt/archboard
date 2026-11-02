@@ -5,12 +5,12 @@ import type {
 	ThreadId,
 	TurnId,
 } from "@archboard/codex-app-server/identity";
-import type { ChangeKind } from "@archboard/board/comparison";
-import type { DiagramGrammar } from "@archboard/board/views";
-import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { ChangeKind } from "@archboard/model/comparison";
+import type { DiagramGrammar } from "@archboard/model/views";
+import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
-import type { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
-import type { ReconciliationKindSchema } from "@archboard/board/reconciliation";
+import type { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
+import type { ReconciliationKindSchema } from "@archboard/model/reconciliation";
 
 type ReconciliationKind = z.infer<typeof ReconciliationKindSchema>;
 type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
@@ -206,7 +206,7 @@ interface SemanticDifferencesInput {
  * One thing somebody has to settle before this proposal is coherent again.
  *
  * `repair` is written where the disagreement is found — the reconciliation in
- * `@archboard/board/reconcile` — and carried verbatim rather than reworded. The
+ * `@archboard/model/reconcile` — and carried verbatim rather than reworded. The
  * same sentence reaches the write answer and the pane, so a person and an agent
  * read one wording of one disagreement; an agent that invents its own there is
  * guessing at a decision it did not make, in words nobody else is using.

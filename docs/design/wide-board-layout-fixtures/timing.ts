@@ -10,12 +10,12 @@
 //   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/board/document";
+import { parseSemanticBoard } from "@archboard/model/legacy-board";
 import { renderArchitecture } from "@archboard/renderer/bun";
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/board/policy";
-import { readSemanticBoardConfiguration } from "@archboard/board/vault-policy";
+import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
+import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";

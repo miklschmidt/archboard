@@ -3,7 +3,7 @@
 // short row above had room, and a block alone on its row stood centred under
 // a wide one, not under the block its line comes from.
 import { expect, test } from "bun:test";
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import {
 	distanceToFrame,
 	routeCrosses,

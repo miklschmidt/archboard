@@ -5,8 +5,8 @@ import {
 	ArchitectureModuleEditSchema,
 	ArchitectureImportRequestSchema,
 	ArchitectureMigrationRequestSchema,
-} from "@archboard/board/model";
-import { SemanticBoardConfigurationSchema } from "@archboard/board/vault-policy";
+} from "@archboard/model/contract";
+import { SemanticBoardConfigurationSchema } from "@archboard/model/vault-policy";
 interface GeneratedSchema {
 	readonly file: string;
 	readonly purpose: string;

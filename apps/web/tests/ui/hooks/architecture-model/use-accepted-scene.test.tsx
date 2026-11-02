@@ -1,7 +1,7 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, afterEach, expect, mock, test } from "bun:test";
 import { createElement, type JSX, type ReactNode } from "react";
-import type { LayoutEngineName } from "@archboard/board/render-reply";
+import type { LayoutEngineName } from "@archboard/model/render-reply";
 import type { SceneRequest } from "#ui/rules/architecture-model/scene.ts";
 import { SHOP, shopRequest } from "#tests/ui/support/architecture-model/scene.ts";
 
@@ -56,8 +56,7 @@ const { QueryClient, QueryClientProvider } = await import("@tanstack/react-query
 const { act, cleanup, renderHook, waitFor } = await import("@testing-library/react");
 const { useAcceptedScene } = await import("#ui/hooks/architecture-model/use-accepted-scene.ts");
 const { modelDrawingQuery } = await import("#ui/clients/architecture-model/drawing.ts");
-const { chooseLayoutEngine } =
-	await import("#ui/clients/semantic-board-canvas/reads/layout-engine.ts");
+const { chooseLayoutEngine } = await import("#ui/clients/canvas/reads/layout-engine.ts");
 const { EMPTY_DRAWING } = await import("#ui/rules/architecture-model/scene.ts");
 
 const NOTHING: ReadonlySet<string> = new Set();

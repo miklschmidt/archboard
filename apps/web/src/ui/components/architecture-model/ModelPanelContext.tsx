@@ -1,5 +1,5 @@
 import { useCallback, useMemo, type JSX, type MouseEvent, type ReactNode } from "react";
-import type { Model, projectModel } from "@archboard/board/content";
+import type { Model, projectModel } from "@archboard/model/content";
 import { ModelPanel } from "#ui/components/architecture-model/ModelPanel.tsx";
 import { flowCollections } from "#ui/rules/architecture-model/flow-reading.ts";
 import { contextOf } from "#ui/rules/architecture-model/relevance.ts";

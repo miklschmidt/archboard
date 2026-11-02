@@ -1,7 +1,7 @@
 // The Modules tree: the forest that the board package lists, indexed so that a reading can
 // find a module's branch, the branches above it and its siblings.
 
-import { moduleForest, type VariantContent } from "@archboard/board/content";
+import { moduleForest, type VariantContent } from "@archboard/model/content";
 
 /** One row of the tree: a module, or a chain that folds into one row. */
 type ModuleBranch = ReturnType<typeof moduleForest>[number];

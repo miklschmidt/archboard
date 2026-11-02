@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
+import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 import { readArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import { serverRefusal } from "#cli/protocol/contract/refusals.ts";

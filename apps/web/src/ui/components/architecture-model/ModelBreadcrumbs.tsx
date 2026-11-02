@@ -1,7 +1,7 @@
 import { RiArrowRightSLine } from "@remixicon/react";
 import { Fragment, useCallback, type JSX } from "react";
 import { Button } from "@archboard/ui-kit/components";
-import type { projectModel } from "@archboard/board/content";
+import type { projectModel } from "@archboard/model/content";
 
 /**
  * The trail describes containment, independently of navigation history. A flow or a walkthrough

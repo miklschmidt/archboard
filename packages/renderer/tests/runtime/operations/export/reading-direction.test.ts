@@ -2,13 +2,13 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // Track reads downward. Blocks also permits a rightward reading within one scope.
 
 import { describe, expect, test } from "bun:test";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import type { VariantContent } from "@archboard/board/content";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import type { VariantContent } from "@archboard/model/content";
 import { fitIn } from "#shared/constants/shell-geometry.ts";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { labelsOffRuns, routesThroughCards } from "#tests/runtime/support/drawn-ink.ts";
 import { readingOf } from "#tests/runtime/support/drawn-reading.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * One hub with a fan of many dependents: a row of them across the page is

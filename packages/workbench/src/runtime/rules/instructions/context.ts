@@ -4,10 +4,10 @@ import {
 	ADDITIONAL_CONTEXT_POLICY,
 	type OperationOutcome,
 } from "@archboard/codex-realtime-voice/runtime";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
-import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
+import { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
 
 /**
  * UTF-8 byte length of a string, the unit every context size limit is written in.

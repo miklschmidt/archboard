@@ -3,12 +3,12 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // A frame and its own part meet at the title divider. The line stays inside
 // the frame, clears its title and touches its child, whichever way the page reads.
 import { expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { headerFoot } from "#tests/runtime/support/drawn-subjects.ts";
 import { routePoints, distanceToFrame, routeCrosses } from "#tests/runtime/support/drawn-routes.ts";
 import { drawnTexts } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const application = orderedFixture({
 	nodes: [

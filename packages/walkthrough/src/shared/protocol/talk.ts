@@ -1,5 +1,5 @@
 import { canonicalReadingProblems } from "#shared/protocol/canonical.ts";
-import { ArchitectureModelReadSchema } from "@archboard/board/model";
+import { ArchitectureModelReadSchema } from "@archboard/model/contract";
 // A talk: what the live pass of a recording heard and did, for the second pass
 // to render frame by frame (TASK-381).
 //
@@ -21,13 +21,13 @@ import {
 	DEFAULT_LAYOUT_ENGINE,
 	DiagramThemeSchema,
 	LayoutEngineSchema,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 import {
 	addressedVariant,
 	type SemanticBoard,
 	parseSemanticBoard,
-} from "@archboard/board/document";
-import { VaultCheckSchema } from "@archboard/board/policy";
+} from "@archboard/model/legacy-board";
+import { VaultCheckSchema } from "@archboard/model/policy";
 import { RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
 
 /** What a talk's file says it is. */

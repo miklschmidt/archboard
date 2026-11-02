@@ -6,7 +6,7 @@
 
 use std::collections::HashSet;
 
-use archboard_flows::board::{Message, MessageKind, messages_of};
+use archboard_flows::content::{Message, MessageKind, messages_of};
 use archboard_layout::Edge;
 use archboard_scene::drawing::Emphasis;
 use archboard_scene::names::word;

@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "@archboard/code-opener/opening";
-import { boundBoard } from "./support/bound-board.ts";
+import { boundBoard } from "./support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,

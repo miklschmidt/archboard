@@ -5,16 +5,16 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expect, test } from "bun:test";
 import frameApproach from "#tests/runtime/support/fixtures/frame-head-approach.json";
 import sideApproach from "#tests/runtime/support/fixtures/side-head-approach.json";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { LayoutEngineSchema, type DiagramBox } from "@archboard/board/render-reply";
+import { LayoutEngineSchema, type DiagramBox } from "@archboard/model/render-reply";
 import {
 	corridorPoints,
 	routeCrosses,
 	routePoints,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** Containment and opposing relationships exercise each endpoint face. */
 const CROWDED: VariantContent = orderedFixture({

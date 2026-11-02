@@ -14,9 +14,9 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { z } from "zod";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { projectModel, projectFlow } from "@archboard/board/content";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import { projectModel, projectFlow } from "@archboard/model/content";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { fitIn } from "@archboard/renderer/shell-geometry";
 /** One drawing under one engine. */

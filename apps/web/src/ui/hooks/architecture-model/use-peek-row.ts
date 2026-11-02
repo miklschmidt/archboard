@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { usePeekControl } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
+import { usePeekControl } from "#ui/hooks/canvas/use-peek.ts";
 
 /**
  * Light a subject on the picture while a row is pointed at.

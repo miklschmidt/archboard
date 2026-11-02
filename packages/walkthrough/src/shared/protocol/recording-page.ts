@@ -1,5 +1,5 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 // A recording of one walkthrough, as the page that records it and the command
 // that drives the page agree on it (TASK-304, TASK-381).
 //

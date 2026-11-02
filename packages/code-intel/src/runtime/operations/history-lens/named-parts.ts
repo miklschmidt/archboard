@@ -10,8 +10,8 @@
 // changed from a part at the far end of a new relationship.
 
 import type { NamedReason } from "#shared/protocol/footprint.ts";
-import { isMessage } from "@archboard/board/flow";
-import type { compareVariants } from "@archboard/board/comparison";
+import { isMessage } from "@archboard/model/flow";
+import type { compareVariants } from "@archboard/model/comparison";
 
 type VariantComparison = ReturnType<typeof compareVariants>;
 

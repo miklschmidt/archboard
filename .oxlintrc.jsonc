@@ -189,7 +189,7 @@
 			// (TASK-381). Nothing here reads the browser's clocks directly.
 			"files": [
 				// The board canvas of apps/web: its folder below each role of the ui area.
-				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/semantic-board-canvas/**",
+				"apps/web/src/ui/{api,clients,components,constants,hooks,rules,state,workers}/canvas/**",
 				"packages/workbench/src/ui/components/subtitles/**",
 				"packages/workbench/src/ui/hooks/subtitles/**",
 				"packages/workbench/src/ui/rules/subtitles/**",

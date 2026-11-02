@@ -5,13 +5,13 @@
 import type { QueryClient } from "@tanstack/react-query";
 import type { useRouter } from "@tanstack/react-router";
 
-import { boardCatalogKeys } from "#ui/clients/board-catalog/queries.ts";
-import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
+import { boardCatalogKeys } from "#ui/clients/model-catalog/queries.ts";
+import { chooseCheckout } from "#ui/clients/model-catalog/repositories.ts";
 import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { failureNotice } from "#ui/rules/application/notices.ts";
 import { PANE_IDS } from "#ui/rules/application/pane-list.ts";
-import { searchOfRepository } from "#ui/rules/board-routing/search.ts";
+import { searchOfRepository } from "#ui/rules/reading-routing/search.ts";
 import type { SettingsSurface, ShellActions, ThemeChoice } from "#ui/rules/shell/contracts.ts";
 
 /** What the actions act on. */

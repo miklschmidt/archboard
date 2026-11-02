@@ -16,12 +16,12 @@ import {
 	type BoardRenderChoices,
 	type BoardRenderOutcome,
 	type DrawnInput,
-} from "#shared/rules/render/board.ts";
-import type { SemanticBoard } from "@archboard/board/document";
-import type { SemanticPolicy } from "@archboard/board/policy";
-import { wasDrawn, type SemanticRenderReply } from "@archboard/board/render-reply";
+} from "#shared/rules/render/legacy-board.ts";
+import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { SemanticPolicy } from "@archboard/model/policy";
+import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
 import { installBunHost } from "#runtime/services/bun-host.ts";
-import { boardRecipe, type RecipeVault } from "#runtime/operations/recipe/board-recipe.ts";
+import { boardRecipe, type RecipeVault } from "#runtime/operations/recipe/legacy-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**

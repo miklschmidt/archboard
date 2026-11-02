@@ -6,7 +6,7 @@
 // route and the box it is checked against are compared in one frame of
 // reference or not at all.
 
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 
 /** A position in the page's own units. */
 interface DrawnPoint {

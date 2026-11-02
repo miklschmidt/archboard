@@ -439,7 +439,7 @@ mod tests {
         }
     }
 
-    const LONG: &str = "apps/web/src/ui/rules/semantic-board-canvas/camera/a-long-way/camera.ts";
+    const LONG: &str = "apps/web/src/ui/rules/canvas/camera/a-long-way/camera.ts";
 
     #[test]
     fn a_path_stands_at_the_foot_as_far_from_it_as_the_capitals_of_the_name_from_the_top() {

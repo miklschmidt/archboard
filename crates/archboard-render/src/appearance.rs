@@ -78,7 +78,7 @@ pub(crate) fn node_appearances(
 }
 
 /// The kind a joined line wears when its relationships differ
-/// (`MIXED_KIND` in `@archboard/board/views`). No vocabulary name holds a space.
+/// (`MIXED_KIND` in `@archboard/model/views`). No vocabulary name holds a space.
 const MIXED_KIND: &str = "mixed kinds";
 
 /// How a line reads: a flow's step dashed with an open head in the neutral

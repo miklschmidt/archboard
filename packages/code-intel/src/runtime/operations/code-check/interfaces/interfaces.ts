@@ -36,7 +36,7 @@
 // outputs, so no entry point of it is judged unexposed, and its container
 // also gets the findings about the module's shape (terraform-modules.ts).
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import type { Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import {
 	ownersAtLine,
@@ -60,12 +60,12 @@ import {
 } from "#runtime/operations/code-facts/modules/module-exposure.ts";
 import { type Definition } from "#runtime/operations/code-facts/facts.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
-import { nodeSubject } from "@archboard/board/vault-policy";
+import { nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeCheckSkip, CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import { inspectContainer } from "@archboard/board/container-interface";
-import type { SemanticNode } from "@archboard/board/content";
-import { describeSubject } from "@archboard/board/policy";
-import type { interfaceMeasures } from "@archboard/board/container-interface";
+import { inspectContainer } from "@archboard/model/container-interface";
+import type { SemanticNode } from "@archboard/model/content";
+import { describeSubject } from "@archboard/model/policy";
+import type { interfaceMeasures } from "@archboard/model/container-interface";
 
 type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
 

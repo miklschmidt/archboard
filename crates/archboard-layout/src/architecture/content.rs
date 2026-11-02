@@ -1,5 +1,5 @@
 //! A board's parts and relationships as the layout reads them from the
-//! board's own JSON (`@archboard/board/content`): what a layout places, and
+//! board's own JSON (`@archboard/model/content`): what a layout places, and
 //! what the painter is told about each of them.
 
 use archboard_scene::drawing::{DoorWay, EdgeFacts, Emphasis, NodeFacts, Toggle, Traffic};

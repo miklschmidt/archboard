@@ -251,7 +251,7 @@ Archboard owns captured architecture context in `workbench` through its `./seman
   `runtime/processes/process.ts` from inside the package. No test outside the package does, so the
   package has no `./testing` export.
 
-The seventh is `board` (`@archboard/board`).
+The seventh is `board` (`@archboard/model`).
 It owns the canonical model contract and its coherent reader and durable writer.
 Its name remains the package identity, not a second board-storage abstraction.
 `shared/` is safe for the browser and imports no Node module.
@@ -435,7 +435,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.
 - `./picture` is what a pane reads of a picture besides its pixels: the words of the key it lists, the inks and marks
   the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
-  subject's appearance arrive with the picture (`@archboard/board/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
+  subject's appearance arrive with the picture (`@archboard/model/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
   `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture.
@@ -677,7 +677,7 @@ Its pane sockets reach the agent through the extension's own browser routing.
 It supplies `ARCHBOARD_URL`, `ARCHBOARD_NO_AUTOSTART`, and its executable path prefix explicitly.
 The Codex SDK supplies none of those application values by default.
 Pane registration, captured model context, and narration remain integration concerns.
-Canonical semantic projections come from `@archboard/board/content`.
+Canonical semantic projections come from `@archboard/model/content`.
 `apps/server` owns HTTP routes, sockets, and application lifetime.
 
 Canonical explanation actions use the existing `./server` operation and shared `./browser-contract` schemas.
@@ -805,7 +805,7 @@ behavior has an index: a caller imports the file that defines a name.
 - `src/ui/` is the `ui` area. Each behavior is a folder under each role it needs.
   `application` owns the root, the pane records and lists, the agent surfaces and the workspace port.
   `shell` owns the frame, navigator and rows. `pane-session` owns one pane's socket, status, reading and registration.
-  `board-routing` owns the workspace address, and `board-catalog` discovers canonical repository models.
+  `reading-routing` owns the workspace address, and `model-catalog` discovers canonical repository models.
   Canonical model components own module navigation, reading controls, claims, and selected-state presentation.
   The existing canvas, walkthrough-recording, and walkthrough-replay owners retain local rendering and playback.
   `rules/` holds pure behavior, `state/` holds state that outlives a render, and `clients/` owns external effects.

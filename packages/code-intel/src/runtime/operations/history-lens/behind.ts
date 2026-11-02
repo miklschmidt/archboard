@@ -36,7 +36,7 @@ import {
 } from "#runtime/operations/history-lens/parts.ts";
 import type { BehindCommit, BoardBehind } from "#shared/protocol/code-check.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { currentVariant, type SemanticBoard } from "@archboard/board/document";
+import { currentVariant, type SemanticBoard } from "@archboard/model/legacy-board";
 
 /** One board to read, as the store read it, and the file it lives in. */
 interface BoardToRead {

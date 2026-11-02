@@ -5,10 +5,10 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // keyed by the step's id lands on its line.
 
 import { describe, expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const NODES = [
 	{ id: "sh", name: "Shell", kind: "external", responsibility: "Invokes the command" },

@@ -23,13 +23,13 @@ import {
 	type GitRunOptions,
 } from "#runtime/clients/history-lens/git.ts";
 import { parseLog } from "#runtime/operations/history-lens/commits.ts";
-import { decodeSemanticBoardDocument } from "@archboard/board/store-read";
-import { compareVariants } from "@archboard/board/comparison";
+import { decodeSemanticBoardDocument } from "@archboard/model/store-read";
+import { compareVariants } from "@archboard/model/comparison";
 import {
 	currentVariant,
 	type SemanticBoard,
 	type SemanticVariant,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 /** Where a board's last change is, or why it cannot be found. */
 type LastChange =

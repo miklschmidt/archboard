@@ -1,4 +1,4 @@
-import { mintId } from "@archboard/board/ids";
+import { mintId } from "@archboard/model/ids";
 // The code check runs on a route of its own, never inside the check that
 // every open canvas polls every 5 seconds (ADR 0045, ADR 0046), and the caller
 // that hangs up cancels it, because it runs as checkout work. A variant that
@@ -18,15 +18,15 @@ import express from "express";
 import type * as ServerModule from "#server/wiring/application/application.ts";
 import type * as RouteModule from "#server/routes/code-check/code-check-route.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 const proposals: string[] = [];
-import { VaultCheckSchema } from "@archboard/board/policy";
+import { VaultCheckSchema } from "@archboard/model/policy";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],

@@ -35,7 +35,7 @@ const RENDERER_SOURCES = [
 	"packages/renderer/src/shared",
 	"packages/renderer/src/ui",
 	"packages/renderer/src/runtime/processes/layout-worker.ts",
-	"packages/board/src/shared",
+	"packages/model/src/shared",
 	"packages/code-binding/src/shared",
 	"packages/timing/src",
 	"node_modules/@chenglou/pretext/package.json",
@@ -186,7 +186,7 @@ const browserTestCache = {
 };
 
 // Corpus rendering and speed gates run only through the uncached benchmark task.
-const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts"];
+const benchmarkTests = ["packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts"];
 
 const capacityTests = [
 	"packages/workbench/tests/runtime/operations/dynamic-tools/wire-capacity.test.ts",
@@ -371,7 +371,7 @@ export default defineConfig({
 					"tests/system/server-state",
 					"tests/system/process-contracts",
 					"tests/system/code-targets",
-					"tests/system/semantic-boards",
+					"tests/system/models",
 				].join(" "),
 				cache: browserTestCache,
 			},
@@ -397,14 +397,14 @@ export default defineConfig({
 					"packages/codex-app-server/tests/runtime/services/executable.test.ts",
 					"packages/server-lifecycle/tests/runtime/store/pidfile.test.ts",
 					"packages/renderer/tests/runtime/processes/headless-chromium/startup.test.ts",
-					"packages/board/tests/runtime/operations/read/model-read.test.ts",
-					"packages/board/tests/runtime/operations/model-edit/structure.test.ts",
+					"packages/model/tests/runtime/operations/read/model-read.test.ts",
+					"packages/model/tests/runtime/operations/model-edit/structure.test.ts",
 					"packages/code-binding/tests/runtime/operations/resolution.test.ts",
 					"packages/workbench/tests/server/services/owner/production-initialization.test.ts",
 					"packages/workbench/tests/server/services/actions/dynamic-approval-sessions.test.ts",
 					"apps/cli/tests/cli/operations/vault/language-server-configuration.test.ts",
-					"tests/system/semantic-boards/model-proposals.test.ts",
-					"tests/system/semantic-boards/model-corrections.test.ts",
+					"tests/system/models/model-proposals.test.ts",
+					"tests/system/models/model-corrections.test.ts",
 					"tests/system/process-contracts/codex-workbench-storage.test.ts",
 				].join(" "),
 				cache: testCache,

@@ -8,7 +8,7 @@ import { createRoot } from "react-dom/client";
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "#ui/components/application/Application.tsx";
 import { applyShellDurations } from "#ui/clients/application/shell-durations.ts";
-import { createBoardRoutingHost } from "#ui/components/board-routing/BoardRoutingHost.tsx";
+import { createBoardRoutingHost } from "#ui/components/reading-routing/ReadingRoutingHost.tsx";
 
 const root = document.getElementById("root");
 if (!root) {

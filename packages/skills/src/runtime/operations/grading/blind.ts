@@ -7,7 +7,7 @@ import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/out
 
 import { createHash } from "node:crypto";
 import path from "node:path";
-import type { DiagramGrammar } from "@archboard/board/views";
+import type { DiagramGrammar } from "@archboard/model/views";
 
 import {
 	exposureCounts,

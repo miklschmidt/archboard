@@ -2,21 +2,21 @@
 // file holds it in its metadata element and a PNG in a text chunk, a reader
 // gets it back from the bytes alone, and the picture digest is of the SVG the
 // renderer drew before the recipe went in. The fingerprint's behaviour under
-// real writes is the system owner's (tests/system/semantic-boards/render-recipe);
+// real writes is the system owner's (tests/system/models/render-recipe);
 // this owner holds that a code citation, which nothing draws, is not in it.
 
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
-import type { SemanticBoard } from "@archboard/board/document";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import type { SemanticBoard } from "@archboard/model/legacy-board";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderBoard } from "#runtime/operations/render.ts";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { embedRecipeInPng } from "#runtime/operations/recipe/png-recipe.ts";
 import { readRenderRecipe, replaceRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
-import { EXPORT_BOARD } from "#tests/runtime/support/export-board.ts";
+import { EXPORT_BOARD } from "#tests/runtime/support/export-picture.ts";
 
 /**
  * The SVG of a board's draft, with or without its recipe.

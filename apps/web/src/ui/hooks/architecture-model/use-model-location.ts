@@ -1,9 +1,9 @@
 import { useCallback, useContext, useMemo } from "react";
 import { ModelExplanationContext } from "#ui/state/architecture-model/explanations.ts";
 import { useRouter, useRouterState } from "@tanstack/react-router";
-import { validateWorkspaceSearch } from "#ui/rules/board-routing/search.ts";
-import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
-import type { Model } from "@archboard/board/content";
+import { validateWorkspaceSearch } from "#ui/rules/reading-routing/search.ts";
+import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
+import type { Model } from "@archboard/model/content";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import { AFTER } from "#ui/rules/architecture-model/comparison-intent.ts";
 

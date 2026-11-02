@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
+import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 import {
 	DiagramThemeSchema,
 	LayoutEngineSchema,
 	DEFAULT_LAYOUT_ENGINE,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 import {
 	DEFAULT_RECORDING_LANGUAGE,
 	RecordingLanguageSchema,

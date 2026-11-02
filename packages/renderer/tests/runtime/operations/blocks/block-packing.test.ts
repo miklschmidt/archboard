@@ -1,10 +1,10 @@
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
 import { labelsOverOwnLine } from "#tests/runtime/support/drawn-checks.ts";
 import { expect, test } from "bun:test";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
+import boardRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
 

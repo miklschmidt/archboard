@@ -22,9 +22,9 @@ import {
 	sendBoardlessToPane,
 } from "#server/services/panes/registry.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePresentation = NonNullable<
 	z.infer<typeof SemanticPaneContextSchema>["presentation"]

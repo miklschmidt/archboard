@@ -9,7 +9,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import sharedSpan from "#tests/runtime/support/fixtures/shared-span.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The narrowest shared span a straight line keeps its nudging distance in. */
 const SHARED_SPAN = 24;

@@ -4,7 +4,7 @@ import {
 	boardAddressOf,
 	boardKeyFor,
 	type SemanticPaneReading,
-} from "#ui/rules/semantic-board-canvas/board/address.ts";
+} from "#ui/rules/canvas/reading/address.ts";
 
 /**
  * What this pane is reading, as the server records it.

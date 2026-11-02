@@ -38,7 +38,7 @@ import {
 	type Checkout,
 	type ReadCheckout,
 } from "#runtime/operations/code-check/checkouts.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import type { AnchorClaim, Claim } from "#runtime/operations/code-check/claims/claims.ts";
 import type { Resolve } from "#runtime/operations/code-check/resolution.ts";
 import { createSourceFacts, type FactsPass } from "#runtime/services/code-facts/reader.ts";

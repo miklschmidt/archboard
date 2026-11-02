@@ -21,9 +21,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { z } from "zod";
-import { LayoutEngineSchema } from "@archboard/board/render-reply";
-import { projectFlow, projectModel, type Model } from "@archboard/board/content";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { LayoutEngineSchema } from "@archboard/model/render-reply";
+import { projectFlow, projectModel, type Model } from "@archboard/model/content";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import { renderArchitecture } from "@archboard/renderer/bun";
 
 /** One drawing of the corpus, as a run recorded it. */

@@ -23,7 +23,7 @@ use archboard_scene::drawing::Emphasis;
 use archboard_scene::paint::design::FLOW_KIND;
 use archboard_scene::request::FlowchartShape;
 
-use crate::board::{Flow, Message, Node, Step};
+use crate::content::{Flow, Message, Node, Step};
 
 /// The kind of a flow's frame.
 /// The kind of a decision, a loop or a terminal, which is drawn by its shape

@@ -8,7 +8,7 @@ import {
 	ArchitectureClaimListSchema,
 	ArchitectureRecoveryResultSchema,
 	type ArchitectureModelRead,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	editArchitectureModuleOnServer,
 	claimArchitectureSubjectsOnServer,

@@ -9,7 +9,7 @@ import {
 } from "@remixicon/react";
 import { buttonVariants, DropdownMenu } from "@archboard/ui-kit/components";
 import type { ExplanationInvocation } from "#ui/clients/architecture-model/explanations.ts";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 
 type Action = ExplanationInvocation["request"]["action"];
 const ACTIONS = {

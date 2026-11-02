@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import type { z } from "zod";
 import type { RepositoryListingSchema } from "@archboard/workspace/repositories";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type PanesReport = ReturnType<typeof buildPanesReport>;
 type PanesBody = Omit<PanesReport, "panes"> & {

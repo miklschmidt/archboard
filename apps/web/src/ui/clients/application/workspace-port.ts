@@ -21,10 +21,10 @@ import type {
 	OpenedBoard,
 	OpenOutcome,
 	WorkspacePort,
-} from "#ui/rules/board-routing/contracts.ts";
-import { modelReading } from "#ui/rules/board-routing/model-address.ts";
-import type { WorkspaceAddress, ModelAddress } from "#ui/rules/board-routing/address.ts";
-import type { WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
+} from "#ui/rules/reading-routing/contracts.ts";
+import { modelReading } from "#ui/rules/reading-routing/model-address.ts";
+import type { WorkspaceAddress, ModelAddress } from "#ui/rules/reading-routing/address.ts";
+import type { WorkspaceAddressing } from "#ui/hooks/reading-routing/use-workspace-address.ts";
 import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 
 /**

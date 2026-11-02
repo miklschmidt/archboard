@@ -3,7 +3,7 @@ import { serverRefusal, doingRefusal } from "#cli/protocol/contract/refusals.ts"
 import {
 	ArchitectureInitializationRequestSchema,
 	ArchitectureModuleEditResultSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { initializeArchitectureModelOnServer } from "#cli/clients/server/architecture-model.ts";
 import { modelArchiveInitContract } from "#cli/operations/model/archive.ts";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";

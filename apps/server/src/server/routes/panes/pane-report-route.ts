@@ -5,12 +5,12 @@ import { tabSessionOf } from "@archboard/workbench/server";
 
 import type { Request, Response } from "express";
 
-import { parseBoardKey } from "@archboard/board/address";
+import { parseBoardKey } from "@archboard/model/legacy-address";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl, statedVault } from "@archboard/workbench/host";
 import { boardForPane, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;

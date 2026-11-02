@@ -14,8 +14,8 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { boardAddressOf, sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import { boardAddressOf, sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticSubjectRef = z.infer<typeof SemanticPaneContextSchema>["selection"][number];

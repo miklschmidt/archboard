@@ -8,11 +8,11 @@
 // would not take.
 
 import { SEMANTIC_CONTEXT_LIMITS } from "#runtime/services/semantic-context-limits.ts";
-import { DiagramGrammarSchema } from "@archboard/board/views";
-import { VariantLifecycleSchema } from "@archboard/board/document";
-import { ReconciliationKindSchema } from "@archboard/board/reconciliation";
-import type { ChangeKind } from "@archboard/board/comparison";
-import { SemanticSubjectKindSchema } from "@archboard/board/pane-context";
+import { DiagramGrammarSchema } from "@archboard/model/views";
+import { VariantLifecycleSchema } from "@archboard/model/legacy-board";
+import { ReconciliationKindSchema } from "@archboard/model/reconciliation";
+import type { ChangeKind } from "@archboard/model/comparison";
+import { SemanticSubjectKindSchema } from "@archboard/model/pane-context";
 import type {
 	SemanticArchitecture,
 	SemanticContextInput,

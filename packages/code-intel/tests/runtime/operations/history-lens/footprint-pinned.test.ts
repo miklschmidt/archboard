@@ -16,7 +16,7 @@ import {
 	SemanticBoardSchema,
 	currentVariant,
 	resolveVariant,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-footprint-pinned-"));

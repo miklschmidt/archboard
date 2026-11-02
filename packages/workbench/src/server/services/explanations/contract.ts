@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import type { readArchitectureModel } from "@archboard/board/store-read";
+import type { readArchitectureModel } from "@archboard/model/store-read";
 import type {
 	ExplanationActionRequestSchema,
 	ExplanationActionResultSchema,

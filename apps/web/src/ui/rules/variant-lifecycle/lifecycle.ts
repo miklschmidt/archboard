@@ -1,4 +1,4 @@
-import type { VariantLifecycleSchema } from "@archboard/board/document";
+import type { VariantLifecycleSchema } from "@archboard/model/legacy-board";
 import type { z } from "zod";
 
 type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;

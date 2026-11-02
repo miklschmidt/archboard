@@ -1,5 +1,5 @@
-import type { Model } from "@archboard/board/content";
-import type { ModelAddress } from "#ui/rules/board-routing/address.ts";
+import type { Model } from "@archboard/model/content";
+import type { ModelAddress } from "#ui/rules/reading-routing/address.ts";
 
 /**
  * Read imported navigation without confusing installed and original authority.

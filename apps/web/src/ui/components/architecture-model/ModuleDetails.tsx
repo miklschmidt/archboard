@@ -1,6 +1,6 @@
 import { AuthoredReference as Reference } from "#ui/components/architecture-model/AuthoredReference.tsx";
 import type { JSX, ReactNode } from "react";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 import type { Connection } from "#ui/rules/architecture-model/selected-subject.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;

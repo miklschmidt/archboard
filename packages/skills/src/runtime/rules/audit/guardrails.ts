@@ -5,7 +5,7 @@ import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/out
 // a read-only task writes nothing.
 
 import path from "node:path";
-import type { SemanticVariant } from "@archboard/board/document";
+import type { SemanticVariant } from "@archboard/model/legacy-board";
 import {
 	checkoutOf,
 	namesVault,

@@ -10,7 +10,7 @@ import { renderArchitecture } from "#runtime/operations/render.ts";
 import { bodyShift, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { groupOf } from "#tests/runtime/support/drawn-subjects.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The well of a port, the first shape of its inside: its outline's top edge, from end to end of its straight run. */
 const WELL = /ab-port"><path d="M(-?[\d.]+),(-?[\d.]+)H(-?[\d.]+)A(-?[\d.]+),/u;

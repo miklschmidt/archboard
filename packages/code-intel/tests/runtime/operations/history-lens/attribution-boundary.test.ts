@@ -11,7 +11,7 @@ import {
 	currentVariant,
 	SEMANTIC_BOARD_SCHEMA_VERSION,
 	SemanticBoardSchema,
-} from "@archboard/board/document";
+} from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
 const scratch = mkdtempSync(join(tmpdir(), "archboard-attribution-boundary-"));

@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { routeLabels, routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import nearby from "#tests/runtime/support/fixtures/reserved-label-near-endpoints.json";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test("an unrelated root card cannot displace a relationship from its reserved label", async () => {
 	// The source formerly exchanged equal-size slots with Captures while its

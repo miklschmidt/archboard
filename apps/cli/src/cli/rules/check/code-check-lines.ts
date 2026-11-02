@@ -4,7 +4,7 @@
 // is behind its code, per board and per part (ADR 0045, ADR 0046).
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
-import { diagnosticLine } from "@archboard/board/policy";
+import { diagnosticLine } from "@archboard/model/policy";
 
 /** How far one board is behind its code. */
 type BoardBehind = CodeCheckAnswer["behind"][number];

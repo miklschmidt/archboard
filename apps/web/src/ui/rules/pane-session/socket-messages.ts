@@ -12,9 +12,9 @@
 import {
 	PanePresentRequestSchema,
 	ArchitecturePaneReadingSchema,
-} from "@archboard/board/pane-context";
-import { announceSemanticBoardChange } from "#ui/state/semantic-board-canvas/board-changes.ts";
-import { boardAddressOf } from "#ui/rules/semantic-board-canvas/board/address.ts";
+} from "@archboard/model/pane-context";
+import { announceSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { boardAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import type {
 	AgentActivityEntry,
 	BoardIdentity,

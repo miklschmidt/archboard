@@ -1,7 +1,7 @@
-import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
+import { ModelArrivalContext } from "#ui/state/reading-routing/model-arrival.ts";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { z } from "zod";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 

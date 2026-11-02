@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import { usePaneChrome } from "#ui/hooks/semantic-board-canvas/use-pane-chrome.ts";
+import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import {
 	changeStep,
 	readerMove,

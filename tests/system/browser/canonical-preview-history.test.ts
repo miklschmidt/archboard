@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { rmSync, writeFileSync } from "node:fs";
-import { readLegacyInventory } from "@archboard/board/store-read";
-import { retainArchitectureCheckpoint } from "@archboard/board/store-write";
+import { readLegacyInventory } from "@archboard/model/store-read";
+import { retainArchitectureCheckpoint } from "@archboard/model/store-write";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
 	browserTestRoots,

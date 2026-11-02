@@ -10,8 +10,8 @@ import {
 import { expect, test } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
-import type { ArchitectureModelRead } from "@archboard/board/model";
-import type { recoverArchitectureModel } from "@archboard/board/store-write";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
+import type { recoverArchitectureModel } from "@archboard/model/store-write";
 import { createJsonRequester } from "../support/http.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
@@ -243,11 +243,11 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 			"--preload",
 			join(
 				import.meta.dir,
-				"../../../packages/board/tests/runtime/operations/model-edit/crash-preload.ts",
+				"../../../packages/model/tests/runtime/operations/model-edit/crash-preload.ts",
 			),
 			join(
 				import.meta.dir,
-				"../../../packages/board/tests/runtime/operations/legacy-preview/installation-crash-runner.ts",
+				"../../../packages/model/tests/runtime/operations/legacy-preview/installation-crash-runner.ts",
 			),
 			fixture.vault,
 			input,

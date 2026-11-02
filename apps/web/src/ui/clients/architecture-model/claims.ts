@@ -1,4 +1,4 @@
-import type { ArchitectureClaimList } from "@archboard/board/model";
+import type { ArchitectureClaimList } from "@archboard/model/contract";
 import { inVault, requestJson } from "@archboard/server-requests";
 
 /**

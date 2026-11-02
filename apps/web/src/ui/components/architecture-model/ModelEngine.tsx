@@ -1,10 +1,7 @@
 import type { JSX } from "react";
 import { ModelSwitch } from "#ui/components/architecture-model/ModelSwitch.tsx";
-import {
-	LAYOUT_ENGINES,
-	chooseLayoutEngine,
-} from "#ui/clients/semantic-board-canvas/reads/layout-engine.ts";
-import { useLayoutEngine } from "#ui/hooks/semantic-board-canvas/use-layout-engine.ts";
+import { LAYOUT_ENGINES, chooseLayoutEngine } from "#ui/clients/canvas/reads/layout-engine.ts";
+import { useLayoutEngine } from "#ui/hooks/canvas/use-layout-engine.ts";
 
 /** The engines as the switch offers them. */
 const ENGINES = LAYOUT_ENGINES.map(({ name, label }) => ({ value: name, label }));

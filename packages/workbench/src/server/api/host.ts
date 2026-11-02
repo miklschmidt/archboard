@@ -15,7 +15,7 @@ export {
 	isRecord,
 	messageOf,
 	queryString,
-} from "#server/services/request/board.ts";
+} from "#server/services/request/request-fields.ts";
 export {
 	namedVault,
 	requireVault,

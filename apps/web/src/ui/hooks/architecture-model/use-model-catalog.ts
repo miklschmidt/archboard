@@ -13,7 +13,7 @@ import {
 	architectureSummaryQuery,
 	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
-import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/board-catalog/queries.ts";
+import { boardCatalogKeys, repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
 
 /** One repository and its current architecture authority. */
 interface RepositoryModel {

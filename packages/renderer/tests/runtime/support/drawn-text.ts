@@ -5,7 +5,7 @@
 // are stretched over, both as the document writes them, not anything the
 // renderer told the test (ADR 0059).
 
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import { bodyShift } from "#tests/runtime/support/drawn-routes.ts";
 
 /** One run of words, as it was written into the document. */

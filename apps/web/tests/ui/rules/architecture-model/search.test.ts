@@ -20,9 +20,9 @@ const PART = {
 const MODEL: Searchable = {
 	...SHOP,
 	modules: [
-		{ ...PART, id: "board", name: "board", binding: { repo: "repo", path: "packages/board" } },
-		{ ...PART, id: "store", name: "Store", binding: { repo: "repo", path: "packages/board/src" } },
-		{ ...PART, id: "worker", name: "Worker", responsibility: "Drains the board queue" },
+		{ ...PART, id: "model", name: "model", binding: { repo: "repo", path: "packages/model" } },
+		{ ...PART, id: "store", name: "Store", binding: { repo: "repo", path: "packages/model/src" } },
+		{ ...PART, id: "worker", name: "Worker", responsibility: "Drains the model queue" },
 	],
 	collections: [
 		{
@@ -30,7 +30,7 @@ const MODEL: Searchable = {
 			id: "orders",
 			name: "Orders",
 			file: "orders.flows.json",
-			flows: [{ id: "flow", name: "Order placed", participants: ["board"], steps: [] }],
+			flows: [{ id: "flow", name: "Order placed", participants: ["model"], steps: [] }],
 		},
 	],
 	walkthroughs: [
@@ -77,8 +77,8 @@ function found(query: string): string[] {
 }
 
 test("an exact path comes first, then a path that holds it, then words that mention it", () => {
-	expect(found("packages/board")).toEqual(["module:board", "module:store"]);
-	expect(found("board")).toEqual(["module:board", "module:store", "module:worker"]);
+	expect(found("packages/model")).toEqual(["module:model", "module:store"]);
+	expect(found("model")).toEqual(["module:model", "module:store", "module:worker"]);
 });
 
 test("flows, walkthroughs, bookmarks and former addresses are all within reach", () => {

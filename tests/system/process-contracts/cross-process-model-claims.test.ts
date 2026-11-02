@@ -7,7 +7,7 @@ import {
 	ArchitectureModelReadSchema,
 	ArchitectureModuleEditResultSchema,
 	type ArchitectureClaim,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-messages";
 import { createRepositoryFixture } from "../cli/support/repository-fixture.ts";
 import { createJsonRequester } from "../support/http.ts";

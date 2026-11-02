@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 

@@ -209,7 +209,7 @@ caller's value out. No CLI case reaches the change-feed settle, so its 1,200 ms
 default costs them nothing. When a test must outwait a product timer, write why
 beside its own literal in `timing.ts`.
 
-The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-boards.test.ts`
+The opt-in benchmark corpus in `packages/renderer/tests/runtime/operations/blocks/wide-pictures.test.ts`
 uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also gets
 60 seconds for a first render. GitHub Actions recorded first renders up to
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
@@ -227,7 +227,7 @@ test owner may import the declaration from
 it feeds measures every owner. A module owner keeps its `TEST_*` bound beside the
 case.
 
-`tests/system/semantic-boards/model-flows.test.ts` owns canonical SVG and bitmap exports
+`tests/system/models/model-flows.test.ts` owns canonical SVG and bitmap exports
 through the CLI and HTTP interfaces.
 It runs `model render` and `model rasterize` against a real Archboard server without a browser client.
 It also reads their exact recipes through `check embeds`.
@@ -296,7 +296,7 @@ system owners keep a plain Node-like global, because a suite-wide `document`
 would change what those owners prove.
 
 Reuse the module's existing rendered-test harness when one exists. Semantic
-board stage tests use `apps/web/tests/ui/support/semantic-board-canvas/stage-harness.tsx`,
+board stage tests use `apps/web/tests/ui/support/canvas/stage-harness.tsx`,
 which owns DOM registration, measured viewport setup, fetch restoration and
 Testing Library cleanup. Other rendered owners use `GlobalRegistrator` from
 `@happy-dom/global-registrator` with React's `act` and `createRoot`, or
@@ -476,14 +476,14 @@ their exhaustive state and failure matrices.
 
 ## Untracked canonical history
 
-`packages/board/tests/runtime/operations/history/private-archive.test.ts` owns private archive setup through the public architecture interface.
+`packages/model/tests/runtime/operations/history/private-archive.test.ts` owns private archive setup through the public architecture interface.
 It uses real files, signed Git checkpoints, and a disposable local remote.
 It proves source preservation, signed structural batches, local-only publication, portable metadata, exact reopening, damaged-storage refusal, and independent vault ownership.
-`packages/board/tests/runtime/operations/model-edit/private-recovery.test.ts` owns an interrupted private relationship transfer through that same interface.
+`packages/model/tests/runtime/operations/model-edit/private-recovery.test.ts` owns an interrupted private relationship transfer through that same interface.
 It reuses the existing crash process and proves complete affected subjects, foreign-content preservation, source-context refusal, recovery, retry, and retention after collection.
 It also publishes the retained candidate during interruption and preserves publication evidence through recovery.
 The existing source-backed owners keep the shared archive and transaction behavior matrices.
-`tests/system/semantic-boards/private-archive.test.ts` proves CLI and HTTP setup agreement and persistence after a server restart.
+`tests/system/models/private-archive.test.ts` proves CLI and HTTP setup agreement and persistence after a server restart.
 The slice adds no browser behavior.
 
 ## Wire and lock checks
@@ -519,18 +519,18 @@ The slice adds no browser behavior.
 - The repository-session owners in `test:system` use RepositoryFixture-owned HOME, XDG state, log,
   registry, and vault paths, isolated from the caller's user configuration.
 
-The canonical independent-flow owner is `packages/board/tests/runtime/operations/model-edit/flows.test.ts`.
+The canonical independent-flow owner is `packages/model/tests/runtime/operations/model-edit/flows.test.ts`.
 It crosses the public architecture read/write interface with real files and Git.
 It owns collection identity, nested placements, alternative renames, complete claims, and same-operation reference repair.
 The flow-repair case in `structure-recovery.test.ts` owns interrupted module and flow installation together.
-`tests/system/semantic-boards/model-flows.test.ts` owns CLI authoring, explicit flow selection, real SVG output, and refused output preservation.
+`tests/system/models/model-flows.test.ts` owns CLI authoring, explicit flow selection, real SVG output, and refused output preservation.
 Existing renderer owners retain sequence and flowchart drawing rules.
 No browser owner is added for this backend delivery.
 
-The canonical reference owner is `packages/board/tests/runtime/operations/model-edit/references.test.ts`.
+The canonical reference owner is `packages/model/tests/runtime/operations/model-edit/references.test.ts`.
 It uses the public architecture operations with real files, signed checkpoints, and disposable Git repositories.
 It covers foreign navigation, immutable foreign pins, unavailable checkpoints, separate ownership, and exact source refusal.
-`tests/system/semantic-boards/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
+`tests/system/models/model-references.test.ts` owns agreement between the CLI and HTTP adapters.
 `tests/system/code-targets/canonical-model.test.ts` owns canonical activation through the existing opener and a real process.
 `canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
 It also covers matching code warnings, diagram marks, selected evidence, and their removal after the architecture revision changes.
@@ -541,13 +541,13 @@ Both browser owners use real files and Git with the existing browser adapter and
 
 ## Compact canonical proposals
 
-`packages/board/tests/runtime/operations/proposals/` owns proposal behavior at the public architecture read/write interface.
+`packages/model/tests/runtime/operations/proposals/` owns proposal behavior at the public architecture read/write interface.
 Its real file and Git cases cover compact deltas, exact materialization, planning roots, siblings, metadata, placements, predecessor refusal, signing, recovery, and private archives.
 Existing history owners retain publication, shallow recovery, source isolation, and linked-worktree coverage.
-`tests/system/semantic-boards/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
+`tests/system/models/model-proposals.test.ts` owns normal CLI and HTTP routing, schema parity, lifecycle metadata, comparison selection, and refusal status.
 These adapters do not repeat the domain matrix.
-`tests/system/semantic-boards/model-inspect.test.ts` owns `model inspect` and the interface sections of `model compare` through the real CLI and server.
-`packages/board/tests/shared/rules/compare/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
+`tests/system/models/model-inspect.test.ts` owns `model inspect` and the interface sections of `model compare` through the real CLI and server.
+`packages/model/tests/shared/rules/compare/interfaces.test.ts` owns the rules of interface changes and side-by-side measures.
 `canonical-model-proposals.test.ts` owns visible state selection, draft lifecycle, flow readings, claims, and live draft refresh.
 `canonical-model-comparison.test.ts` owns the comparison control, a way out of a saved comparison and through a reload, coherent removed definitions, changed fields, refusal, retained recovery, and the interface changes above a proposal's change list, whose rows select their module, also one that the state lacks.
 `interface-changes.test.ts` owns what those rows say.
@@ -559,9 +559,9 @@ No renderer algorithm test or model evaluation belongs to this slice.
 
 ## Canonical explanation actions
 
-`packages/board/tests/runtime/operations/model-edit/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
+`packages/model/tests/runtime/operations/model-edit/explanations.test.ts` owns capture through the public architecture reader with real files and Git.
 It covers stale revisions, stable subjects, relationship intent, and missing-flow investigation.
-The existing retained-comparison case in `packages/board/tests/runtime/operations/proposals/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
+The existing retained-comparison case in `packages/model/tests/runtime/operations/proposals/proposals.test.ts` also owns explanation capture of exact checkpoints and independent comparison revisions.
 `tests/system/server-state/canonical-explanations.test.ts` owns normal CLI and HTTP actions through the controlled production provider.
 It covers concurrent invocation identity, canonical pane reports, tab action discovery, change notices, queue cancellation, exact turn interruption, captured retries, final text, empty answers, and unavailable sign-in.
 `tests/system/server-state/shown-conversation.test.ts` retains ownership of browser activation and tab checkout rules through the same HTTP contract.
@@ -571,7 +571,7 @@ No live model evaluation or extra renderer owner belongs to this slice.
 
 ## Canonical proposal reconciliation
 
-The public architecture operations own reconciliation tests under `packages/board/tests/runtime/operations/proposals/`.
+The public architecture operations own reconciliation tests under `packages/model/tests/runtime/operations/proposals/`.
 The cases use real temporary files and Git through the same reader and writer as CLI and HTTP.
 They reuse the canonical model and independent-flow fixtures beside the existing semantic reconciliation regressions.
 Coverage includes safe inheritance, standing baselines, blocked descendants, and complete settlement.
@@ -579,7 +579,7 @@ Other cases cover retired identities, alternative renames, empty holders, claim 
 The recovery case uses the existing crash fixture after a real atomic file installation.
 It proves that readers block until the exact family installation finishes.
 
-`tests/system/semantic-boards/model-proposals.test.ts` owns CLI and HTTP parity for standing, refusal status, and settlement.
+`tests/system/models/model-proposals.test.ts` owns CLI and HTTP parity for standing, refusal status, and settlement.
 No model evaluation runs as part of these tests.
 
 `canonical-model-reconciliation.test.ts` owns visible inherited content, unresolved values, blocked ancestry, agent settlement refresh, external predecessor refusal, and retained standing.
@@ -590,11 +590,11 @@ The shared model-edit fixture names the repository used by its authored code bin
 
 ## Canonical narrative playback
 
-`packages/board/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
+`packages/model/tests/runtime/operations/model-edit/walkthroughs.test.ts` owns narrative authoring and target resolution through public architecture operations with real files and Git.
 It covers beat identity, claims, stale tokens, exact retry, retained inputs, pinned playback, restart reads, and per-beat missing subjects.
 The proposal owner covers independent compact narrative and beat subjects.
 
-`tests/system/semantic-boards/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
+`tests/system/models/model-walkthroughs.test.ts` owns CLI and HTTP routing, schema agreement, retained selection, and refused output preservation.
 `packages/walkthrough/tests/runtime/store/canonical-talk.test.ts` owns the controlled page load, exact payload storage, and revision refusal through existing recording contracts.
 
 `tests/system/server-state/canonical-walkthrough-replay.test.ts` owns offline canonical replay through the existing Chromium and encoder interface.
@@ -605,10 +605,10 @@ No live voice model or model evaluation runs in these owners.
 
 ## Legacy current preview
 
-`packages/board/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
+`packages/model/tests/runtime/operations/legacy-preview/preview.test.ts` owns composed migration behavior through the public architecture reader and writer.
 Its real files and disposable Git repositories cover semantic preservation, explicit conflict choices, recursive flows, reference mapping, vocabulary, stale source, and incoherent containment.
 The original inventory owner retains its coverage of source capture and plan persistence.
-`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
+`tests/system/models/migration-planning.test.ts` owns CLI and HTTP agreement, explicit preview selection, and structured stale refusal.
 The parent owns visible preview behavior through the existing browser interface.
 
 ## Completed canonical proposals
@@ -631,7 +631,7 @@ It uses real temporary Git repositories and the public HTTP writer for agent dec
 
 ## Canonical historical corrections
 
-The public architecture operations own correction tests under `packages/board/tests/runtime/operations/proposals/`.
+The public architecture operations own correction tests under `packages/model/tests/runtime/operations/proposals/`.
 `corrections.test.ts` owns lasting identity, exact originals, comparison audit, unchanged current content, and adopted successor isolation.
 `correction-family.test.ts` owns repeated audit chains, retained baselines, conflicting following drafts, and blocked descendants.
 `correction-safety.test.ts` owns explicit targets, immutable evidence, empty-change refusal, stale correction checkpoints, and retry identity.
@@ -640,7 +640,7 @@ The public architecture operations own correction tests under `packages/board/te
 `correction-news.test.ts` uses a second process because an archive-only correction changes no current input file.
 The existing news owner keeps its claims, current writes, and external-file observation cases.
 
-`tests/system/semantic-boards/model-corrections.test.ts` owns CLI and HTTP parity for correction, exact retry, comparison audit, and refusal status.
+`tests/system/models/model-corrections.test.ts` owns CLI and HTTP parity for correction, exact retry, comparison audit, and refusal status.
 `tests/system/browser/canonical-model-corrections.test.ts` owns visible correction history through the existing canonical model seam.
 It uses public HTTP fixture edits with real files and Git to prove archive-only live refresh, source evidence, exact original links, comparison audit, and missing-history recovery.
 The existing runtime family owner covers inherited draft facts and unchanged adopted successors.
@@ -655,14 +655,14 @@ The unchanged-byte assertion includes old schema files and catches implicit upgr
 
 ## Legacy history preview and original retention
 
-The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/board/tests/runtime/operations/`.
+The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/model/tests/runtime/operations/`.
 Real legacy files prove original board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
 The existing canonical subject engine owns compact changes.
 Original retention cases prove exact old-schema bytes, unresolved payloads, configured signing refusal, exact retries, source and plan guards, retained ancestry, and unchanged source HEAD and index.
 The signed case reopens original coverage after live files disappear and Git collects unreachable objects.
 The inventory and current preview owners retain their original coverage.
 
-`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP agreement for migration retention and exact original state selection.
+`tests/system/models/migration-planning.test.ts` owns CLI and HTTP agreement for migration retention and exact original state selection.
 It also owns malformed retention input at the HTTP adapter.
 The parent owns visible history acceptance through the existing browser seam.
 No browser evidence is implied by these backend cases.
@@ -680,14 +680,14 @@ The external media and Codex substitutes remain in the existing production voice
 
 ## Portable canonical models
 
-`packages/board/tests/runtime/operations/history/portable*.test.ts` owns portable architecture behavior.
+`packages/model/tests/runtime/operations/history/portable*.test.ts` owns portable architecture behavior.
 The public architecture operations use real temporary files and disposable Git repositories.
 Coverage includes exact identities, completed decisions, corrections, standing conflicts, narrative targets, private archives, and lost-history restoration.
 The same owner covers incomplete closure, destination refusal, signing, interruption, foreign bytes, and exact retry.
 The existing durable crash fixture supplies real interruption points.
 No second installer or history implementation belongs to these tests.
 
-`tests/system/semantic-boards/model-portable.test.ts` owns strict CLI and HTTP routing and refused output preservation.
+`tests/system/models/model-portable.test.ts` owns strict CLI and HTTP routing and refused output preservation.
 The parent owns any visible integration in checkpoint selectors, including a planning checkpoint with no state designation.
 No browser test or model evaluation belongs to the backend slice.
 
@@ -712,7 +712,7 @@ The existing reference owner retains foreign pin and unavailable-history coverag
 `legacy-preview/portable-readings.test.ts` owns composition with portable history.
 It exports and imports a canonical narrative with a retained original target, then reopens its original playback, bookmark, and former address.
 
-`tests/system/semantic-boards/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
+`tests/system/models/migration-planning.test.ts` owns CLI and HTTP selector agreement through retained original playback and bookmarks.
 The parent owns visible converted playback, exact visibility, bookmark navigation, and original address navigation through the existing browser interface.
 These backend cases imply no browser acceptance or migration installation.
 
@@ -740,7 +740,7 @@ The private archive case uses the same installation interface and proves complet
 The history case keeps original standing, blocked ancestry, corrections, and unavailable historical beats.
 Current and draft conversion requires explicit views.
 
-`tests/system/semantic-boards/model-migration.test.ts` owns thin CLI and HTTP agreement.
+`tests/system/models/model-migration.test.ts` owns thin CLI and HTTP agreement.
 It subscribes before cutover and observes the existing feed after durable completion.
 It also covers strict owner intent, explicit vaults, exact retry, operation reuse, and refused legacy authoring.
 The parent owns visible pane transitions, navigation, recovery feedback, and unavailable ownership transfer controls.
@@ -752,28 +752,28 @@ TASK-549.24 retires the live legacy writer and reader paths.
 Their tests retire with those product paths.
 The following continuing owners replace their responsibilities.
 
-| Retired product path                                                                | Continuing owner                                                                                                                                                                       |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Legacy create, edit, branch, adopt, settle, rename, discard, move, and board claims | `packages/board/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                    |
-| Automatic legacy read upgrades                                                      | `packages/board/tests/runtime/store/format/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                               |
-| Legacy CLI and HTTP authoring adapters                                              | `tests/system/semantic-boards/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal. |
-| Board-owned embed tracking and name-based repair                                    | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.                  |
-| Legacy locality and footprint lookup adapters                                       | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                            |
-| Legacy board context and outside-write announcements                                | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                     |
-| Legacy side-by-side variant commands                                                | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                          |
-| Legacy recording setup, start, and replay authoring fixtures                        | Canonical narration, recording, and retained-replay owners cover continuing behavior. Pure retained-talk decoding remains.                                                             |
-| Legacy board lock API and cross-process authoring routes                            | Canonical exclusion, news, and recovery owners exercise the shared lease and claims. Generic process cleanup uses a fixture inside the board module.                                   |
-| Legacy fixed-level evaluation scenarios                                             | Eight canonical scenarios use eight authored fixtures and fourteen coverage parts. Deterministic validation uses public runtime reads. Earlier reports remain historical evidence.     |
+| Retired product path                                                                | Continuing owner                                                                                                                                                                   |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy create, edit, branch, adopt, settle, rename, discard, move, and board claims | `packages/model/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                |
+| Automatic legacy read upgrades                                                      | `packages/model/tests/runtime/store/format/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                           |
+| Legacy CLI and HTTP authoring adapters                                              | `tests/system/models/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal.      |
+| Board-owned embed tracking and name-based repair                                    | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.              |
+| Legacy locality and footprint lookup adapters                                       | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                        |
+| Legacy board context and outside-write announcements                                | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                 |
+| Legacy side-by-side variant commands                                                | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                      |
+| Legacy recording setup, start, and replay authoring fixtures                        | Canonical narration, recording, and retained-replay owners cover continuing behavior. Pure retained-talk decoding remains.                                                         |
+| Legacy board lock API and cross-process authoring routes                            | Canonical exclusion, news, and recovery owners exercise the shared lease and claims. Generic process cleanup uses a fixture inside the board module.                               |
+| Legacy fixed-level evaluation scenarios                                             | Eight canonical scenarios use eight authored fixtures and fourteen coverage parts. Deterministic validation uses public runtime reads. Earlier reports remain historical evidence. |
 
 Generic source discovery, vault selection, origin guards, socket replacement, sign-in, conversation, approval, process cleanup, and opener owners remain.
 Their fixtures now seed canonical architecture or use canonical public operations.
 No deadline, lint rule, type rule, or interface ceiling changes for this transition.
 The parent runs the final complete integration gate and browser acceptance.
 
-The retired `@archboard/board/commands` entry has no live consumers.
+The retired `@archboard/model/commands` entry has no live consumers.
 Canonical flow inputs use the existing model schema owner.
 Semantic content owners retain traffic, responsibility, label, comparison, and reconciliation coverage.
-`HistoricalRevisionSchema` remains under `@archboard/board/model` for exact source evidence.
+`HistoricalRevisionSchema` remains under `@archboard/model/contract` for exact source evidence.
 The board interface narrows to 184 exports, and its ceiling drops to 184.
 
 The repository navigator lists one canonical model per repository.

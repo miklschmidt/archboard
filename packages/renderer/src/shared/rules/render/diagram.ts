@@ -15,8 +15,8 @@
 // (`@archboard/timing`). So one host draws the same content, theme and policy
 // to the same bytes in any order.
 
-import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
-import { DEFAULT_LAYOUT_ENGINE } from "@archboard/board/render-reply";
+import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
+import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import { FAR_VIEW_SWAP_MS, FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import type { RenderHost } from "#shared/protocol/generated/core/archboard_renderer_wasm.js";
 import {

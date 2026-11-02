@@ -1,5 +1,5 @@
 import { transform, type Selector, type StyleRule, type Declaration } from "lightningcss";
-import type { DiagramTheme } from "@archboard/board/render-reply";
+import type { DiagramTheme } from "@archboard/model/render-reply";
 import type { ThemeColors } from "#shared/protocol/generated/core/types.ts";
 import { exportColor } from "#runtime/store/theme/colors.ts";
 

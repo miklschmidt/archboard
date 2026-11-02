@@ -19,7 +19,7 @@
 // environment to read.
 
 // ── The server and its processes ─────────────────────────────────────────
-export { BOARD_LOCK_MS, CLAIM_MS } from "#shared/constants/board-locks.ts";
+export { BOARD_LOCK_MS, CLAIM_MS } from "#shared/constants/model-locks.ts";
 export { SERVER_LIFECYCLE_MS } from "#shared/constants/server-lifecycle.ts";
 export {
 	CLI_INTERRUPT_CLEANUP_MS,

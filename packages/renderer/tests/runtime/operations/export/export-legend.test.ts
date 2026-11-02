@@ -1,9 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
-import type { DrawnBoard } from "@archboard/board/render-reply";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
-import { exported } from "#tests/runtime/support/export-board.ts";
+import type { DrawnBoard } from "@archboard/model/render-reply";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
+import { exported } from "#tests/runtime/support/export-picture.ts";
 
 // A render answers each subject's appearance and the picture's key beside the
 // document, read by the core off its own scene (TASK-520.08); a pane lists its

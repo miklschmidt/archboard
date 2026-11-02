@@ -5,14 +5,14 @@
 // snapshot, and a read of any other board is a failure of the rendering rather
 // than a quiet trip to the server.
 
-import { parseSemanticBoard } from "@archboard/board/document";
+import { parseSemanticBoard } from "@archboard/model/legacy-board";
 import {
 	SemanticBoardError,
 	type SemanticBoardListing,
-} from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+} from "#ui/clients/canvas/reads/drawings.ts";
 import type { Talk } from "@archboard/walkthrough/talk";
-import { sameBoardName } from "#ui/rules/semantic-board-canvas/board/address.ts";
-import { type BoardReads } from "#ui/clients/semantic-board-canvas/reads/board-reads.ts";
+import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { type BoardReads } from "#ui/clients/canvas/reads/retained-reads.ts";
 
 /**
  * Board reads answered from a talk.

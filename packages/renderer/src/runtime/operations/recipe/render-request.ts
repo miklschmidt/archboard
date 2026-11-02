@@ -8,7 +8,7 @@ import type {
 	LayoutEngineName,
 	LegendLayout,
 	StandaloneTheme,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 
 /** The render route's selectors that draw one recipe again, as the route reads them. */

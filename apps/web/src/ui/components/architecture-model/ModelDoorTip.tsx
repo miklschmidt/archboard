@@ -1,12 +1,9 @@
 import type { JSX } from "react";
-import { doorEndpoints } from "@archboard/board/content";
+import { doorEndpoints } from "@archboard/model/content";
 import { moduleName } from "#ui/components/architecture-model/ModelConnections.tsx";
 import { TipRelationships } from "#ui/components/architecture-model/ModelLineTip.tsx";
-import { SubjectTipBox } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
-import type {
-	SubjectTip,
-	TipTarget,
-} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { SubjectTipBox } from "#ui/components/canvas/SemanticSubjectTip.tsx";
+import type { SubjectTip, TipTarget } from "#ui/clients/canvas/subjects/subject-tips.ts";
 import { toggleOf } from "#ui/rules/architecture-model/expansion.ts";
 import { isRemoved, moduleSource } from "#ui/rules/architecture-model/selected-subject.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";

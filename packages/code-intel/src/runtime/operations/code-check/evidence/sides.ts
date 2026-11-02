@@ -2,8 +2,8 @@
 // them. A reading draws a relationship between those two sides, so it stands for
 // every call between them (ADR 0044, ADR 0046).
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
-import { messagesOf } from "@archboard/board/flow";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import { messagesOf } from "@archboard/model/flow";
 
 /** What reading the sides of a board needs. */
 interface Sides {

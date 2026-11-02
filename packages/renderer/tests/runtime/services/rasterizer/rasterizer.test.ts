@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, setDefaultTimeout, test } from "bun:test";
-import { VariantContentSchema, type VariantContent } from "@archboard/board/content";
+import { VariantContentSchema, type VariantContent } from "@archboard/model/content";
 import { withFixtureOrders } from "#tests/runtime/services/rasterizer/fixture-orders.ts";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
@@ -13,7 +13,7 @@ import {
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { TEST_CHROMIUM_COLD_START_CASE_MS } from "#tests/runtime/services/rasterizer/cold-start-timing.ts";
 import { pngRgbCounts } from "#tests/runtime/services/rasterizer/png-colors.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The page tokens a picture paints its ground and its cards' edges in. */
 const PAGE = { background: "var(--background)", slabEdge: "var(--slab-edge)" } as const;

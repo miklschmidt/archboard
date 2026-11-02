@@ -28,7 +28,7 @@
 //
 // Each piece of evidence is the variable's one use: the argument it sets.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import type { RepoCheckout } from "#runtime/operations/code-check/part-code.ts";
 import { siteOf } from "#runtime/operations/code-check/evidence/relationships.ts";
 import { isMetaArgument } from "#runtime/operations/code-facts/terraform/terraform-providers.ts";
@@ -39,10 +39,10 @@ import {
 } from "#runtime/operations/code-facts/facts.ts";
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import { type ModuleExposure } from "#runtime/operations/code-facts/modules/module-exposure.ts";
-import { nodeSubject } from "@archboard/board/vault-policy";
+import { nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeEvidence, CodeFinding } from "#shared/protocol/code-check.ts";
-import type { SemanticNode } from "@archboard/board/content";
-import { describeSubject } from "@archboard/board/policy";
+import type { SemanticNode } from "@archboard/model/content";
+import { describeSubject } from "@archboard/model/policy";
 
 /** One variable a module passes on unchanged, at its one use. */
 interface PassedVariable {

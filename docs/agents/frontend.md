@@ -99,7 +99,7 @@ Each behavior keeps its existing public boundary and one state owner.
   Route composition connects domain interfaces.
   The URL restores each reading and the active pane.
   Selection, the camera, and live voice remain session state.
-- The `board-routing` behavior owns search parameters on the one route at `/`.
+- The `reading-routing` behavior owns search parameters on the one route at `/`.
   Canonical panes use `modelX`, `scopeX`, and `checkpointX` beside `repoX`.
   Each `repoX` names a registered repository identity, never a filesystem path.
   `repoX` alone names a pane in a repository with no model or a legacy model.
@@ -319,7 +319,7 @@ renderer refuses other selectors and rules, `!important` and values that are
 not colors. It also refuses a token that a picture uses but the file does not
 set. A new palette
 name needs its token here and its name in `PaletteColorSchema` in
-`packages/board/src/shared/schemas/semantic-policy.ts`.
+`packages/model/src/shared/schemas/semantic-policy.ts`.
 
 A picture in the page paints with the tokens themselves, so a theme switch
 redraws nothing. A standalone SVG or PNG from `model render` or
@@ -350,7 +350,7 @@ A tag selects what the picture draws of its group through the ordinary selection
 `ModelEngine` stands under the legend on a structural reading. `useAcceptedScene` reads the browser's engine and puts it on the request, so the scene key, the fit and the drawing key all name it.
 A switch is a destination like any other: the last picture stays until the other engine's drawing exists, and the selection holds.
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
-`ModelHoverLight` stands under it. `clients/semantic-board-canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
+`ModelHoverLight` stands under it. `clients/canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
 A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneBoard`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.

@@ -3,14 +3,14 @@
 // and the settings surfaces. Pure composition: no state of its own.
 
 import { NOTICE_ACTIONS, failureNotice } from "#ui/rules/application/notices.ts";
-import type { WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
+import type { WorkspaceAddressing } from "#ui/hooks/reading-routing/use-workspace-address.ts";
 import { paneReady, recordFor } from "#ui/rules/application/pane-records.ts";
 import type { Fullscreen } from "#ui/hooks/application/use-fullscreen.ts";
 import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type { ConversationActivation } from "#ui/clients/application/shown-conversation.ts";
 import { userMoves, type UserMove } from "#ui/rules/application/user-moves.ts";
-import { chooseCheckout } from "#ui/clients/board-catalog/repositories.ts";
+import { chooseCheckout } from "#ui/clients/model-catalog/repositories.ts";
 import { type ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 import { showModel } from "#ui/clients/pane-session/pane-requests.ts";
 import type {

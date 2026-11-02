@@ -15,9 +15,9 @@ import type {
 } from "#ui/rules/pane-session/session-types.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
 import type { PaneWorkbenchSocketOwner } from "#ui/clients/pane-session/workbench-socket.ts";
-import type { PanePresentRequestSchema } from "@archboard/board/pane-context";
+import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;

@@ -6,15 +6,15 @@
 // claims that its file holds its symbol, and that where the symbol is defined
 // in the checkout, the bound code of an end or of a part inside one holds it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
-import { edgeSubjects, nodeSubject } from "@archboard/board/vault-policy";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
-import { messagesOf } from "@archboard/board/flow";
-import type { SemanticNode } from "@archboard/board/content";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import { messagesOf } from "@archboard/model/flow";
+import type { SemanticNode } from "@archboard/model/content";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
-import type { VaultDiagnosticSchema } from "@archboard/board/policy";
-import type { describeSubject } from "@archboard/board/policy";
+import type { VaultDiagnosticSchema } from "@archboard/model/policy";
+import type { describeSubject } from "@archboard/model/policy";
 
 type DiagnosticSubject = Parameters<typeof describeSubject>[0];
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;

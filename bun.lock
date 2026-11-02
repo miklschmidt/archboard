@@ -91,10 +91,6 @@
       "name": "@archboard-app/workbench-example",
       "version": "0.0.0",
     },
-    "packages/board": {
-      "name": "@archboard/board",
-      "version": "0.0.0",
-    },
     "packages/code-binding": {
       "name": "@archboard/code-binding",
       "version": "0.0.0",
@@ -117,6 +113,10 @@
     },
     "packages/diagnostics": {
       "name": "@archboard/diagnostics",
+      "version": "0.0.0",
+    },
+    "packages/model": {
+      "name": "@archboard/model",
       "version": "0.0.0",
     },
     "packages/process": {
@@ -172,8 +172,6 @@
 
     "@archboard-app/workbench-example": ["@archboard-app/workbench-example@workspace:apps/workbench-example"],
 
-    "@archboard/board": ["@archboard/board@workspace:packages/board"],
-
     "@archboard/code-binding": ["@archboard/code-binding@workspace:packages/code-binding"],
 
     "@archboard/code-intel": ["@archboard/code-intel@workspace:packages/code-intel"],
@@ -185,6 +183,8 @@
     "@archboard/codex-realtime-voice": ["@archboard/codex-realtime-voice@workspace:packages/codex-realtime-voice"],
 
     "@archboard/diagnostics": ["@archboard/diagnostics@workspace:packages/diagnostics"],
+
+    "@archboard/model": ["@archboard/model@workspace:packages/model"],
 
     "@archboard/process": ["@archboard/process@workspace:packages/process"],
 

@@ -6,7 +6,7 @@
 // Whatever changes without a mark is told to nobody, which is what keeps a change the canvas or
 // an agent caused from being told to the voice model as the user's.
 
-import type { SemanticPaneContextSchema } from "@archboard/board/pane-context";
+import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];

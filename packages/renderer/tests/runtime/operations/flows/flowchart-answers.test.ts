@@ -8,7 +8,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/operations/render.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import {
 	distanceToOutline,
 	drawnLines,
@@ -17,7 +17,7 @@ import {
 } from "#tests/runtime/support/drawn-flowchart.ts";
 import { corridorPoints, routesCross, routeLabels } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** How near a line's start may be to the outline it leaves. */
 const MEETING = 2.5;

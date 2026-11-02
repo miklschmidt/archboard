@@ -1,8 +1,8 @@
 import type { Request, Response } from "express";
 import { z } from "zod";
-import { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
-import { readArchitectureModel } from "@archboard/board/store-read";
-import { projectModel } from "@archboard/board/content";
+import { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
+import { readArchitectureModel } from "@archboard/model/store-read";
+import { projectModel } from "@archboard/model/content";
 import { publishPaneContext } from "@archboard/workbench/server";
 import {
 	paneFromRequest,

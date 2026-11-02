@@ -15,7 +15,7 @@ import {
 	readBoardsToCheck,
 	readEveryDraftToCheck,
 	type NoSuchDraft,
-} from "#runtime/operations/code-check/boards.ts";
+} from "#runtime/operations/code-check/states.ts";
 import { checkCode } from "#runtime/operations/code-check/check.ts";
 import { readPlans, type PlanRefused } from "#runtime/operations/code-check/plans.ts";
 
@@ -83,7 +83,7 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
  * @returns The canonical finding or retained semantic evidence.
  */
 function canonicalFinding(
-	readings: readonly import("#runtime/operations/code-check/boards.ts").BoardToCheck[],
+	readings: readonly import("#runtime/operations/code-check/states.ts").BoardToCheck[],
 	finding: import("#shared/protocol/code-check.ts").CodeFinding,
 ) {
 	const model = readings.find(
@@ -100,7 +100,7 @@ function canonicalFinding(
  * @returns Its model and state identities.
  */
 function findingIdentity(
-	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+	model: NonNullable<import("#runtime/operations/code-check/states.ts").BoardToCheck["model"]>,
 ) {
 	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
 }
@@ -111,7 +111,7 @@ function findingIdentity(
  * @returns Its authored input path.
  */
 function findingOwner(
-	model: NonNullable<import("#runtime/operations/code-check/boards.ts").BoardToCheck["model"]>,
+	model: NonNullable<import("#runtime/operations/code-check/states.ts").BoardToCheck["model"]>,
 	subject: string | undefined,
 ) {
 	return model.modules.find(

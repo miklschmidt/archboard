@@ -1,11 +1,11 @@
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import {
 	bodyShift,
 	routePoints,
 	routeCrosses,
 	type DrawnPoint,
 } from "#tests/runtime/support/drawn-routes.ts";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 
 /**

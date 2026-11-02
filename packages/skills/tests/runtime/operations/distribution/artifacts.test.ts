@@ -8,7 +8,7 @@ import {
 	ArchitectureInitializationRequestSchema,
 	ArchitectureModuleEditSchema,
 	ArchitectureImportRequestSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import { prepareSkillArtifacts } from "#runtime/operations/distribution/prepare.ts";
 
 test("installed canonical input schemas accept and refuse the same expressible input as the runtime", () => {

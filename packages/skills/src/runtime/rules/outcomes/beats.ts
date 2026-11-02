@@ -7,7 +7,7 @@
 // tells "the context is pushed before dispatch, and here is where" apart from
 // two beats that each describe one side and never say what ordered them.
 
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { namedSubject, namesMatch } from "#runtime/rules/outcomes/naming.ts";
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
 

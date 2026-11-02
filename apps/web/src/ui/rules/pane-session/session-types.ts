@@ -7,7 +7,7 @@ import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-mess
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
 
-import type { SemanticBoardEntry } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+import type { SemanticBoardEntry } from "#ui/clients/canvas/reads/drawings.ts";
 
 /** A board's address: what it is called, and which of its variants is shown. */
 export interface BoardIdentity {
@@ -91,7 +91,7 @@ export type AgentActivityEntry = AgentActivityMessage["activity"][number];
 /**
  * One thing an agent said it was doing to this board (TASK-095).
  *
- * Mirrors `DoingEntry` in `packages/board/src/runtime/store/doing.ts`. It is never board
+ * Mirrors `DoingEntry` in `packages/model/src/runtime/store/doing.ts`. It is never board
  * content and it is nowhere in the board file: it is what somebody said while
  * changing something, and it dies with the server.
  */
@@ -106,7 +106,7 @@ export interface DoingEntry {
 }
 
 /**
- * Who holds a board's mutex. Mirrors `LockHolder` in `packages/board/src/runtime/store/lock/lock.ts`,
+ * Who holds a board's mutex. Mirrors `LockHolder` in `packages/model/src/runtime/store/lock/lock.ts`,
  * which the pane cannot import: that module reads the vault off a filesystem a
  * browser has not got.
  */

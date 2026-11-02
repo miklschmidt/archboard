@@ -3,7 +3,7 @@ import {
 	ArchitectureCheckpointRequestSchema,
 	ArchitectureCheckpointRetainSchema,
 	ArchitectureCheckpointListSchema,
-} from "@archboard/board/model";
+} from "@archboard/model/contract";
 import {
 	listArchitectureCheckpointsOnServer,
 	retainArchitectureCheckpointOnServer,

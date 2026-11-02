@@ -2,7 +2,7 @@
 
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type { z } from "zod";
-import type { ArchitecturePaneReadingSchema } from "@archboard/board/pane-context";
+import type { ArchitecturePaneReadingSchema } from "@archboard/model/pane-context";
 import {
 	SHOWN_CONVERSATION_ROUTE,
 	type ShownConversationReply,

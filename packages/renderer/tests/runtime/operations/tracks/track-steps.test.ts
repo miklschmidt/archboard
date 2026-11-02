@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { type RenderedDiagram } from "#shared/protocol/render-request.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { bodyShift, corridorPoints, type DrawnPoint } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import onePointPort from "#tests/runtime/support/fixtures/one-point-port.json";
-import boardRasterizer from "#tests/runtime/support/fixtures/board-rasterizer.json";
+import boardRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
 import browserApplication from "#tests/runtime/support/fixtures/browser-application.json";
 import codexWorkhorse from "#tests/runtime/support/fixtures/codex-workhorse.json";
 import commandGroups from "#tests/runtime/support/fixtures/command-groups.json";

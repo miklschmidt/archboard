@@ -234,7 +234,7 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		const stubborn = await startOwnedPeer({
 			argv: [
 				process.execPath,
-				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+				join(repoRoot, "packages/model/tests/runtime/support/process-lock.ts"),
 			],
 			env: {
 				...env,
@@ -266,7 +266,7 @@ test("TERM-resistant peer is killed through its handle and its lease is recovera
 		const recovery = await startOwnedPeer({
 			argv: [
 				process.execPath,
-				join(repoRoot, "packages/board/tests/runtime/support/process-lock.ts"),
+				join(repoRoot, "packages/model/tests/runtime/support/process-lock.ts"),
 			],
 			env: {
 				...env,

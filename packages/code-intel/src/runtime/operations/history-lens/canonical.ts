@@ -3,7 +3,7 @@ import {
 	ArchitectureLocalityRequestSchema,
 	ArchitectureFootprintRequestSchema,
 } from "#shared/protocol/canonical-history.ts";
-import { readBoardsToCheck } from "#runtime/operations/code-check/boards.ts";
+import { readBoardsToCheck } from "#runtime/operations/code-check/states.ts";
 import { createLocalityEvidence } from "#runtime/operations/history-lens/locality.ts";
 import { readFootprintEvidence } from "#runtime/operations/history-lens/footprint.ts";
 const locality = createLocalityEvidence();

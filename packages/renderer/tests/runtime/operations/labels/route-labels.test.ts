@@ -7,7 +7,7 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 // together decide where a pill lands.
 
 import { describe, expect, test } from "bun:test";
-import type { VariantContent } from "@archboard/board/content";
+import type { VariantContent } from "@archboard/model/content";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import {
 	routeLabels,
@@ -16,7 +16,7 @@ import {
 	distanceToFrame,
 } from "#tests/runtime/support/drawn-routes.ts";
 import { detached, covering, overlaps, masking } from "#tests/runtime/support/drawn-labels.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
 const PAIRED: VariantContent = orderedFixture({

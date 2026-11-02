@@ -3,7 +3,7 @@
 // caller, then the measures of each state side by side. The read derives both,
 // and this file only says them. A line ranks no state and gives no verdict.
 
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { readingName } from "#cli/rules/model/inspection.ts";
 
 type Comparison = NonNullable<Model["comparison"]>;

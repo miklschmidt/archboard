@@ -35,7 +35,7 @@
 
 import type { Reference } from "#runtime/operations/code-facts/facts.ts";
 import { isEnvironmentArgument } from "#runtime/operations/code-facts/terraform/terraform-environment.ts";
-import type { EvidenceKindSchema } from "@archboard/board/policy";
+import type { EvidenceKindSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;

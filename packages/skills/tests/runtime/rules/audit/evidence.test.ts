@@ -7,7 +7,7 @@
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema } from "@archboard/board/document";
+import { SemanticBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { callUsageFrom, sessionUsage } from "#runtime/protocol/grader-usage.ts";
 import { countDirectBoardWrites } from "#runtime/rules/audit/guardrails.ts";

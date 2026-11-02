@@ -1,7 +1,7 @@
 import { createContext } from "react";
 import type { ModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import type { WalkthroughNarration } from "#ui/rules/semantic-board-canvas/walkthrough/narration.ts";
+import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 
 /** Where a surface of a pane stood when it went out of sight. */
 interface LeftCamera {

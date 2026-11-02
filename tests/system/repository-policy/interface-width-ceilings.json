@@ -1,11 +1,11 @@
 {
-	"board": 184,
 	"code-binding": 18,
 	"code-intel": 16,
 	"code-opener": 13,
 	"codex-app-server": 121,
 	"codex-realtime-voice": 99,
 	"diagnostics": 10,
+	"model": 184,
 	"process": 14,
 	"renderer": 60,
 	"server-lifecycle": 29,

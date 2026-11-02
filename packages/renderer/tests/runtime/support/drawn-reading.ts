@@ -1,6 +1,6 @@
 // Test vocabulary for positions along and across a downward architecture drawing.
 
-import type { DiagramBox } from "@archboard/board/render-reply";
+import type { DiagramBox } from "@archboard/model/render-reply";
 import type { ReadingDirection } from "#shared/protocol/generated/core/types.ts";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 

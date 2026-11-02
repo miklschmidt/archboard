@@ -7,7 +7,7 @@
 import { existsSync, renameSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
-import { ArchitectureCheckpointRetainSchema } from "@archboard/board/model";
+import { ArchitectureCheckpointRetainSchema } from "@archboard/model/contract";
 
 import { readTalk } from "@archboard/walkthrough/recorder";
 import { TALK_SAMPLE_RATE, type Talk } from "@archboard/walkthrough/talk";

@@ -45,7 +45,7 @@ import {
 	bindingPathMissing,
 	bindingSymbolMissing,
 } from "#runtime/operations/code-check/claims/claim-findings.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/boards.ts";
+import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
 import { documentsOf, judgeDocuments } from "#runtime/operations/code-check/claims/documents.ts";
 import {
 	droppedBindings,

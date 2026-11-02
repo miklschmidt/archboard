@@ -5,7 +5,7 @@
 // on two boards, so a pane showing board A has to be able to tell that news
 // about board B is not its business.
 
-import type { ArchitectureClaim, ArchitectureModuleEditResult } from "@archboard/board/model";
+import type { ArchitectureClaim, ArchitectureModuleEditResult } from "@archboard/model/contract";
 
 type DurableRequest = Extract<
 	ArchitectureModuleEditResult,

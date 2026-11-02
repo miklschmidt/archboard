@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 
 import { readingOf } from "#ui/rules/application/pane-reading.ts";
 import { NOTHING_READ } from "#ui/state/pane-session/pane-reading.ts";
-import type { SemanticPaneReading } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import type { SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 
 test("loading a variant does not report its board as the current variant before the drawing resolves", () => {
 	const pending: SemanticPaneReading = {

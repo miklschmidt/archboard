@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 import { renderArchitecture } from "#runtime/operations/render.ts";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 import { labelsAcrossWalls, runsUnderLabels } from "#tests/runtime/support/drawn-checks.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import labelBeside from "#tests/runtime/support/fixtures/relayed-label-beside.json";

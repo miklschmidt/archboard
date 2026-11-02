@@ -1,4 +1,4 @@
-import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/board/model";
+import { ArchitectureModelReadSchema, type ArchitectureModelRead } from "@archboard/model/contract";
 type CanonicalModel = Extract<ArchitectureModelRead, { success: true }>;
 /**
  * Require one complete retained playback before recording or replay.

@@ -1,5 +1,5 @@
-import { ArchitectureRenderResultSchema } from "@archboard/board/model";
-import { StandaloneThemeSchema } from "@archboard/board/render-reply";
+import { ArchitectureRenderResultSchema } from "@archboard/model/contract";
+import { StandaloneThemeSchema } from "@archboard/model/render-reply";
 // The public receipt for one semantic rasterization: the saved board picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
@@ -11,7 +11,7 @@ import {
 	OfferedViewSchema,
 	PictureReceiptShape,
 	RenderedVariantSchema,
-} from "@archboard/board/render-reply";
+} from "@archboard/model/render-reply";
 
 /** The diagram page before bitmap scaling. */
 const SemanticRasterPageSizeSchema = z.object({ width: z.number(), height: z.number() });

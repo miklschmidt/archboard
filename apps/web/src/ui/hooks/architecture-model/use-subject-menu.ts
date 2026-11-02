@@ -6,9 +6,9 @@
 
 import { useCallback, useState, type MouseEvent } from "react";
 
-import { pickedTarget } from "#ui/clients/semantic-board-canvas/picture/picture-pick.ts";
-import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
-import { subjectAt } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
+import { pickedTarget } from "#ui/clients/canvas/picture/picture-pick.ts";
+import type { SemanticAtlas } from "#ui/clients/canvas/reads/drawings.ts";
+import { subjectAt } from "#ui/clients/canvas/subjects/subjects.ts";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
 
 /** Where the menu stands and whether it is open. It keeps its place while it closes. */

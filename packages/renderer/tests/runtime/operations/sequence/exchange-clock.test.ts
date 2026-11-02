@@ -1,7 +1,7 @@
 // An exchange told on one clock (ADR 0027): every message sends its pulse in its
 // turn, at one speed, and waits until the one before it has arrived.
 import { describe, expect, test } from "bun:test";
-import { DEFAULT_TRAFFIC_SPEED } from "@archboard/board/content";
+import { DEFAULT_TRAFFIC_SPEED } from "@archboard/model/content";
 import { FLOW_CYCLE_CAP_MS } from "@archboard/timing";
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { messageBeams, slidingSpeedOf } from "#tests/runtime/support/drawn-traffic.ts";
@@ -13,7 +13,7 @@ import {
 	pulsesOn,
 	variant,
 } from "#tests/runtime/support/pulse-fixtures.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** How fast a pulse flies on a message: twice the pace of a relationship's default traffic. */
 const FLOWN = DEFAULT_TRAFFIC_SPEED * 2;

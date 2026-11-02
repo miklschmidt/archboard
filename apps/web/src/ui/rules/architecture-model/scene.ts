@@ -1,14 +1,14 @@
-import type { Model, ModelFilters, projectModel } from "@archboard/board/content";
-import type { LayoutEngineName } from "@archboard/board/render-reply";
-import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/board/views";
+import type { Model, ModelFilters, projectModel } from "@archboard/model/content";
+import type { LayoutEngineName } from "@archboard/model/render-reply";
+import { DiagramGrammarSchema, type DiagramGrammar } from "@archboard/model/views";
 import type { ModelDrawing } from "#ui/clients/architecture-model/drawing.ts";
 import type {
 	Departure,
 	DepartureSide,
 	DepartureWay,
-} from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
-import type { MovingPicture } from "#ui/clients/semantic-board-canvas/picture/picture-transition.ts";
-import type { SemanticBox } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
+} from "#ui/clients/canvas/picture/picture-departure.ts";
+import type { MovingPicture } from "#ui/clients/canvas/picture/picture-transition.ts";
+import type { SemanticBox } from "#ui/clients/canvas/reads/drawings.ts";
 import { moduleOrder } from "#ui/rules/architecture-model/module-tree.ts";
 
 type Projection = ReturnType<typeof projectModel>;

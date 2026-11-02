@@ -1,5 +1,5 @@
-import { projectModel, type Model } from "@archboard/board/content";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { projectModel, type Model } from "@archboard/model/content";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import type { SceneReading, SceneRequest } from "#ui/rules/architecture-model/scene.ts";
 
 const MODULES = [

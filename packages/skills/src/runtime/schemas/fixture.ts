@@ -3,8 +3,8 @@
 // recording kept may follow them. Parsed strictly, like every canonical input.
 
 import { z } from "zod";
-import { DiagramThemeSchema } from "@archboard/board/render-reply";
-import { SemanticPolicySchema } from "@archboard/board/policy";
+import { DiagramThemeSchema } from "@archboard/model/render-reply";
+import { SemanticPolicySchema } from "@archboard/model/policy";
 
 /** A path in the run's home, spelled as a prompt spells it: `~/` is the author's own HOME. */
 const HomePathSchema = z.string().regex(/^~\/[^/]/u, "a path in the run's home, starting ~/");

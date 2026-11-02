@@ -1,11 +1,7 @@
-import { useAutoFit } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
-import {
-	beatFocus,
-	beatLight,
-	subjectMarks,
-} from "#ui/rules/semantic-board-canvas/walkthrough/narrative.ts";
-import { moveCameraByKey } from "#ui/clients/semantic-board-canvas/picture/camera-keys.ts";
-import { useLighting } from "#ui/hooks/semantic-board-canvas/use-lighting.ts";
+import { useAutoFit } from "#ui/hooks/canvas/use-auto-fit.ts";
+import { beatFocus, beatLight, subjectMarks } from "#ui/rules/canvas/walkthrough/narrative.ts";
+import { moveCameraByKey } from "#ui/clients/canvas/picture/camera-keys.ts";
+import { useLighting } from "#ui/hooks/canvas/use-lighting.ts";
 import {
 	useCallback,
 	useEffect,
@@ -16,47 +12,38 @@ import {
 	type KeyboardEvent,
 	type PointerEvent,
 } from "react";
-import type { DiagramBox } from "@archboard/board/render-reply";
-import type { projectModel } from "@archboard/board/content";
-import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurface.tsx";
-import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
-import {
-	useCameraWith,
-	type BoardCamera,
-} from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
-import { seenFromFar, type FitTarget } from "#ui/rules/semantic-board-canvas/camera/camera.ts";
+import type { DiagramBox } from "@archboard/model/render-reply";
+import type { projectModel } from "@archboard/model/content";
+import { CameraSurface } from "#ui/components/canvas/CameraSurface.tsx";
+import { LeavingPart } from "#ui/components/canvas/LeavingPart.tsx";
+import { useCameraWith, type BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { seenFromFar, type FitTarget } from "#ui/rules/canvas/camera/camera.ts";
 import { ModelDoorTip } from "#ui/components/architecture-model/ModelDoorTip.tsx";
 import { ModelEmptyReading } from "#ui/components/architecture-model/ModelEmptyReading.tsx";
 import { ModelLineTip } from "#ui/components/architecture-model/ModelLineTip.tsx";
-import { useDiagramGestures } from "#ui/hooks/semantic-board-canvas/use-diagram-gestures.ts";
-import { useLeaving } from "#ui/hooks/semantic-board-canvas/use-leaving.ts";
-import { usePeeked } from "#ui/hooks/semantic-board-canvas/use-peek.ts";
-import type { Trace } from "#ui/components/semantic-board-canvas/Peek.tsx";
+import { useDiagramGestures } from "#ui/hooks/canvas/use-diagram-gestures.ts";
+import { useLeaving } from "#ui/hooks/canvas/use-leaving.ts";
+import { usePeeked } from "#ui/hooks/canvas/use-peek.ts";
+import type { Trace } from "#ui/components/canvas/Peek.tsx";
 import { pictureReach } from "#ui/rules/architecture-model/picture-reach.ts";
-import { usePictureTransition } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
-import { useReveal } from "#ui/hooks/semantic-board-canvas/use-reveal.ts";
-import { useStageLook } from "#ui/hooks/semantic-board-canvas/use-stage-look.ts";
-import { useStickyHeads } from "#ui/hooks/semantic-board-canvas/use-sticky-heads.ts";
-import { useSweep } from "#ui/hooks/semantic-board-canvas/use-sweep.ts";
-import { useViewerMarks } from "#ui/hooks/semantic-board-canvas/use-viewer-marks.ts";
-import { markCodeWarnings } from "#ui/clients/semantic-board-canvas/subjects/code-marks.ts";
-import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
-import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
+import { usePictureTransition } from "#ui/hooks/canvas/use-picture-transition.ts";
+import { useReveal } from "#ui/hooks/canvas/use-reveal.ts";
+import { useStageLook } from "#ui/hooks/canvas/use-stage-look.ts";
+import { useStickyHeads } from "#ui/hooks/canvas/use-sticky-heads.ts";
+import { useSweep } from "#ui/hooks/canvas/use-sweep.ts";
+import { useViewerMarks } from "#ui/hooks/canvas/use-viewer-marks.ts";
+import { markCodeWarnings } from "#ui/clients/canvas/subjects/code-marks.ts";
+import { surfaceMarks } from "#ui/clients/canvas/subjects/subjects.ts";
+import { usePresentationArrival } from "#ui/hooks/canvas/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
-import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
-import {
-	SubjectTipBox,
-	TipPlace,
-} from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
-import {
-	subjectTip,
-	type TipTarget,
-} from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
+import { useSubjectTip } from "#ui/hooks/canvas/use-subject-tip.ts";
+import { SubjectTipBox, TipPlace } from "#ui/components/canvas/SemanticSubjectTip.tsx";
+import { subjectTip, type TipTarget } from "#ui/clients/canvas/subjects/subject-tips.ts";
 import { useAreaSelection } from "#ui/hooks/architecture-model/use-area-selection.ts";
 import { useCameraMemory } from "#ui/hooks/architecture-model/use-camera-memory.ts";
 import { useDoorPick } from "#ui/hooks/architecture-model/use-door-pick.ts";
-import type { Departure } from "#ui/clients/semantic-board-canvas/picture/picture-departure.ts";
-import { useGradientsWhileShown } from "#ui/hooks/semantic-board-canvas/use-gradients-while-shown.ts";
+import type { Departure } from "#ui/clients/canvas/picture/picture-departure.ts";
+import { useGradientsWhileShown } from "#ui/hooks/canvas/use-gradients-while-shown.ts";
 import { sceneFit, type AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 import { isDoor } from "#ui/rules/architecture-model/selected-subject.ts";
 

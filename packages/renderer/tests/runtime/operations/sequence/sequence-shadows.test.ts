@@ -7,7 +7,7 @@ import { Window } from "happy-dom";
 
 import { renderSemanticView } from "#runtime/operations/render.ts";
 import { SEQUENCE } from "#tests/runtime/support/sequence-fixture.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
  * One numerical attribute of a painted shape.

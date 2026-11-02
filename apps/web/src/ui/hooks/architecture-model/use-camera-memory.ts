@@ -1,6 +1,6 @@
 import { useCallback, useLayoutEffect, useRef } from "react";
-import type { HeldCamera } from "#ui/hooks/semantic-board-canvas/use-auto-fit.ts";
-import type { BoardCamera } from "#ui/hooks/semantic-board-canvas/use-board-camera.ts";
+import type { HeldCamera } from "#ui/hooks/canvas/use-auto-fit.ts";
+import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**

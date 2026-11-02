@@ -3,10 +3,10 @@ import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/out
 // across the run, versions, variants and their lifecycle, comparison against
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
 
-import { currentVariant, findVariant, type SemanticVariant } from "@archboard/board/document";
-import { messagesOf, type SemanticFlow } from "@archboard/board/flow";
-import type { SemanticView } from "@archboard/board/views";
-import type { SemanticNode, VariantContent } from "@archboard/board/content";
+import { currentVariant, findVariant, type SemanticVariant } from "@archboard/model/legacy-board";
+import { messagesOf, type SemanticFlow } from "@archboard/model/flow";
+import type { SemanticView } from "@archboard/model/views";
+import type { SemanticNode, VariantContent } from "@archboard/model/content";
 import {
 	beatReferences,
 	beatsOf,
@@ -15,7 +15,7 @@ import {
 	singleBeatStanding,
 	walkthroughNamed,
 } from "#runtime/rules/outcomes/beats.ts";
-import { fieldOf } from "#runtime/rules/outcomes/outcomes-board.ts";
+import { fieldOf } from "#runtime/rules/outcomes/outcomes-content.ts";
 import { comparisonStanding } from "#runtime/rules/outcomes/outcomes-comparison.ts";
 import {
 	namedSubject,

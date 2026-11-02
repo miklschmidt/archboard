@@ -1,5 +1,5 @@
 import type { Response } from "express";
-import type { ArchitectureModelRead } from "@archboard/board/model";
+import type { ArchitectureModelRead } from "@archboard/model/contract";
 const failureStatuses: Partial<
 	Record<Extract<ArchitectureModelRead, { success: false }>["code"], number>
 > = {

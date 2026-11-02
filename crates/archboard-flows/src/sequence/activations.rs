@@ -6,7 +6,7 @@ use std::collections::HashSet;
 use archboard_scene::js;
 use archboard_scene::request::Activation;
 
-use crate::board::MessageKind;
+use crate::content::MessageKind;
 use crate::sequence::design::{BAR_OVERHANG, MESSAGE_PITCH};
 use crate::sequence::layout::PlacedStep;
 

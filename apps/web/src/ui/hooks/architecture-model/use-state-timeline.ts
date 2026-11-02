@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Model } from "@archboard/board/content";
+import type { Model } from "@archboard/model/content";
 import { architectureRecordQuery } from "#ui/clients/architecture-model/queries.ts";
 import { stateCatalogue } from "#ui/rules/architecture-model/state-catalogue.ts";
 import { stateTimeline, type StateTimeline } from "#ui/rules/architecture-model/state-timeline.ts";

@@ -1,4 +1,4 @@
-import { ModelArrivalContext } from "#ui/state/board-routing/model-arrival.ts";
+import { ModelArrivalContext } from "#ui/state/reading-routing/model-arrival.ts";
 // The application root: the pane sessions, the listing, the notices, the
 // workbench and the presentation composed over the shell. The sessions, the
 // transport, the runtime and the controllers are the state; this file only
@@ -45,16 +45,16 @@ import { conversationActivation } from "#ui/clients/application/shown-conversati
 import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbench.ts";
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
-import { BoardCatalogProvider } from "#ui/components/board-catalog/BoardCatalogProvider.tsx";
+import { BoardCatalogProvider } from "#ui/components/model-catalog/ModelCatalogProvider.tsx";
 import {
 	useModelCatalog,
 	type ModelCatalog,
 } from "#ui/hooks/architecture-model/use-model-catalog.ts";
-import { useOpeningAddress } from "#ui/hooks/board-routing/use-opening-address.ts";
-import { useLastReading, useStart } from "#ui/hooks/board-routing/use-start.ts";
-import { type WorkspaceAddressing } from "#ui/hooks/board-routing/use-workspace-address.ts";
+import { useOpeningAddress } from "#ui/hooks/reading-routing/use-opening-address.ts";
+import { useLastReading, useStart } from "#ui/hooks/reading-routing/use-start.ts";
+import { type WorkspaceAddressing } from "#ui/hooks/reading-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
-import { boardAddressOf, boardKeyFor } from "#ui/rules/semantic-board-canvas/board/address.ts";
+import { boardAddressOf, boardKeyFor } from "#ui/rules/canvas/reading/address.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
@@ -62,8 +62,8 @@ import { PresentationVoiceKey } from "#ui/components/application/PresentationVoi
 import { SettingsHosts } from "#ui/components/application/SettingsHosts.tsx";
 import { StartShell } from "#ui/components/application/StartShell.tsx";
 import { Shell } from "#ui/components/shell/Shell.tsx";
-import { searchOfRepository } from "#ui/rules/board-routing/search.ts";
-import type { OpenStart } from "#ui/rules/board-routing/start.ts";
+import { searchOfRepository } from "#ui/rules/reading-routing/search.ts";
+import type { OpenStart } from "#ui/rules/reading-routing/start.ts";
 import { ModelDraftContext } from "#ui/state/architecture-model/draft.ts";
 import { useRouter } from "@tanstack/react-router";
 import {

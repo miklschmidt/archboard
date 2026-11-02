@@ -8,11 +8,11 @@
 
 import { expect, test } from "bun:test";
 import { renderSemanticView } from "#runtime/operations/render.ts";
-import { messagesOf } from "@archboard/board/flow";
+import { messagesOf } from "@archboard/model/flow";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups, type DrawnGroup } from "#tests/runtime/support/drawn-subjects.ts";
 import { labelPlates } from "#tests/runtime/support/drawn-text.ts";
-import { DEFAULT_SEMANTIC_POLICY } from "@archboard/board/policy";
+import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** Every `name="number"` attribute of one start tag. */
 const NUMBER = /\s([\w-]+)="(-?[\d.]+)"/g;

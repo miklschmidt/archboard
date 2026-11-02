@@ -1,11 +1,11 @@
 import { expect, test } from "bun:test";
 import { join } from "node:path";
-import { readArchitectureModel } from "@archboard/board/store-read";
+import { readArchitectureModel } from "@archboard/model/store-read";
 import {
 	claimArchitectureSubjects,
 	editArchitectureModule,
 	releaseArchitectureClaim,
-} from "@archboard/board/store-write";
+} from "@archboard/model/store-write";
 import { captureCanonicalWalkthrough } from "../support/canonical-walkthrough.ts";
 import { startOwnedServer } from "../support/owned-server.ts";
 import {
