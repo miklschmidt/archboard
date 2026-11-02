@@ -26,6 +26,25 @@ import { diagramProducer } from "./svg.ts";
 import { takeBack } from "./take-back.ts";
 
 /** The producers, by asset name. */
+/** The programs and external systems of this repository, which the README draws as cards, and its packages as doors. */
+const SYSTEMS = [
+	"vKEsyHFk/vKEsyHFk#TBnOCNx2",
+	"vKEsyHFk/vKEsyHFk#cPOdAA3f",
+	"vKEsyHFk/vKEsyHFk#8XKRkSHl",
+	"vKEsyHFk/vKEsyHFk#6nZjwK9W",
+	"vKEsyHFk/IbGtfJE2#9TIT63Qz",
+	"vKEsyHFk/vKEsyHFk#xr1MHYE7",
+	"vKEsyHFk/IbGtfJE2#1snXnK3G",
+	"vKEsyHFk/0T9enjhi#ffFYC0XR",
+	"vKEsyHFk/IbGtfJE2#I1uPm6KX",
+	"vKEsyHFk/IbGtfJE2#IOCRa8GO",
+	"vKEsyHFk/vKEsyHFk#nugpFSIX",
+	"vKEsyHFk/vKEsyHFk#t7W7wJHv",
+	"vKEsyHFk/OjRLKb74#RvOyWmEb",
+	"vKEsyHFk/XppR9owz#kdK2HT99",
+	"vKEsyHFk/vKEsyHFk#xssnUgIk",
+];
+
 const PRODUCERS: Readonly<Record<string, Producer>> = {
 	banner,
 	hero,
@@ -74,7 +93,7 @@ const PRODUCERS: Readonly<Record<string, Producer>> = {
 	architecture: diagramProducer({
 		name: "architecture",
 		vault: ".archboard/vault",
-		reading: { grammar: "architecture" },
+		reading: { grammar: "architecture", focus: SYSTEMS },
 	}),
 };
 

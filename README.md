@@ -293,7 +293,7 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/readme/architecture-dark.svg">
-  <img alt="Archboard's top-level modules include the browser, Agent CLI, server, architecture inputs, and workspace packages. External systems include Codex, Claude CLI, headless Chromium, ffmpeg, and the Git remotes." src="docs/readme/architecture-light.svg" width="100%">
+  <img alt="Archboard's programs are the browser, Agent CLI, and server, around the architecture inputs, with each workspace package as a door. External systems include Codex, Claude CLI, headless Chromium, ffmpeg, and the Git remotes." src="docs/readme/architecture-light.svg" width="100%">
 </picture>
 
 <p align="center"><sub>Archboard's model from <a href=".archboard/vault"><code>.archboard/vault</code></a>, exported with <code>model render</code>. Git tracks the artifact, and <code>archboard check embeds</code> reports whether its recipe still matches.</sub></p>

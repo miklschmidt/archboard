@@ -363,7 +363,7 @@
 			"command": "bun run readme:assets architecture",
 			"files": ["docs/readme/architecture-light.svg", "docs/readme/architecture-dark.svg"],
 			"sources": ["scripts/readme-assets/svg.ts", "scripts/readme-assets/server.ts"],
-			"hash": "184b056335e4f6ab70194a43e9f653c583d6307dccac6e6278a5ffa7b48aad12"
+			"hash": "10fe53adeb58cf7ecc0b68640a79b75eed74f72f2a0054a797a91eec17bfce30"
 		},
 		{
 			"name": "code-evidence",
