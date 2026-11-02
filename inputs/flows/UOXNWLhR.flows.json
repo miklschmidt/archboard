@@ -17,6 +17,9 @@
         "vKEsyHFk/UOXNWLhR#hc77pwzB",
         "vKEsyHFk/UOXNWLhR#3KtX2jdA"
       ],
+      "formerNames": [
+        "A reader opens a card's board"
+      ],
       "steps": [
         {
           "id": "vKEsyHFk/UOXNWLhR#n32JCa7L",
@@ -292,9 +295,6 @@
             }
           ]
         }
-      ],
-      "formerNames": [
-        "A reader opens a card's board"
       ]
     },
     {

@@ -11,6 +11,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#NM28UA5U",
   "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "formerNames": [
+    "List boards"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -46,8 +49,5 @@
       "id": "vKEsyHFk/0T9enjhi#U5pvwDd7",
       "to": "vKEsyHFk/0T9enjhi#hoh4xPWb"
     }
-  ],
-  "formerNames": [
-    "List boards"
   ]
 }
