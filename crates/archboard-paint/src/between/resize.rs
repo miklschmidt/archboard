@@ -18,30 +18,51 @@ use super::ease::{carried, ease_out, lerp, mix_rect, phase, then};
 use super::found::{Found, Pairing};
 use super::open::{OPENS, Way, edge, under_way, ways, worn_edge};
 
+/// The visible state of a tray, in the last picture's units.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct Tray {
+    whole: Rect,
+    shown: f64,
+    scale: f64,
+    edge: Option<(Rect, f64)>,
+}
+
+impl Tray {
+    pub(super) fn of(found: &Found<'_>, whole: Rect) -> Tray {
+        let outer = found.outer.unwrap_or(Transform::translate(0.0, 0.0));
+        Tray {
+            whole,
+            shown: found.group.opacity.unwrap_or(1.0),
+            scale: then(outer, found.group.transform).scale.unwrap_or(1.0),
+            edge: worn_edge(found.group).map(|(rect, solid)| (carried(rect, outer), solid)),
+        }
+    }
+}
+
 /// One group of a container the last picture also drew, changing its size.
 #[derive(Clone, Debug)]
 pub(super) struct Resizing {
     group: Group,
     /// Where the last picture drew it, in that picture's units.
-    stood: Rect,
+    stood: Tray,
     /// How the last picture's units map onto this picture's.
     carry: Transform,
     to: Rect,
     end: f64,
     /// The well of the container, where an edge lands.
     well: Rect,
-    /// How much of it shows at its start.
-    shown: f64,
     /// Whether the last picture stood inside it, and so leaves inside it.
     pub(super) holds_last: bool,
-    /// The edge an opening left on it: its box, and how solid it stands.
-    edge: Option<(Rect, f64)>,
 }
 
 impl Resizing {
     /// A group of a container that stood in a box of the last picture, where as much
     /// of it showed as `shown` says.
-    pub(super) fn new(found: &Found<'_>, stood: Rect, way: Way, shown: f64) -> Resizing {
+    pub(super) fn new(found: &Found<'_>, mut stood: Tray, way: Way, shown: f64) -> Resizing {
+        stood.shown *= shown;
+        if found.ordinal != 0 {
+            stood.edge = None;
+        }
         Resizing {
             holds_last: false,
             group: found.group.clone(),
@@ -50,8 +71,6 @@ impl Resizing {
             to: way.whole,
             well: way.well,
             end: way.end(),
-            shown,
-            edge: None,
         }
     }
 
@@ -74,7 +93,7 @@ impl Resizing {
     /// The box the container stands in at a moment of the move.
     pub(super) fn held(&self, progress: f64) -> Rect {
         let moved = OPENS.at(phase(progress, 0.0, self.end));
-        mix_rect(carried(self.stood, self.carry), self.to, moved)
+        mix_rect(carried(self.stood.whole, self.carry), self.to, moved)
     }
 
     /// The container at a moment of the move: drawn at its size in the last picture's
@@ -87,7 +106,11 @@ impl Resizing {
         }
         let moved = OPENS.at(here);
         let held = self.held(progress);
-        let scale = lerp(self.carry.scale.unwrap_or(1.0), 1.0, moved);
+        let scale = lerp(
+            self.stood.scale * self.carry.scale.unwrap_or(1.0),
+            1.0,
+            moved,
+        );
         let inner = Rect {
             width: held.width / scale,
             height: held.height / scale,
@@ -98,7 +121,7 @@ impl Resizing {
             held: inner,
         };
         let base = group.opacity.unwrap_or(1.0);
-        group.opacity = Some(lerp(self.shown, base, ease_out(here)));
+        group.opacity = Some(lerp(self.stood.shown, base, ease_out(here)));
         group.items = vec![Item::Viewport(Viewport {
             frame: inner,
             view: inner,
@@ -109,12 +132,15 @@ impl Resizing {
             y: held.y - self.to.y * scale,
             scale: Some(scale),
         };
-        if let Some((stood, solid)) = self.edge {
-            let at = mix_rect(stood, self.well, moved);
-            let (x, y) = (at.x - placed.x, at.y - placed.y);
-            group
-                .items
-                .push(edge(Rect { x, y, ..at }, solid * (1.0 - here).powi(2)));
+        if let Some((stood, solid)) = self.stood.edge {
+            let at = mix_rect(carried(stood, self.carry), self.well, moved);
+            let local = Rect {
+                x: (at.x - placed.x) / scale,
+                y: (at.y - placed.y) / scale,
+                width: at.width / scale,
+                height: at.height / scale,
+            };
+            group.items.push(edge(local, solid * (1.0 - here).powi(2)));
         }
         group.transform = Some(then(placed, group.transform));
         group
@@ -143,15 +169,9 @@ pub(super) fn resumed(
         .into_iter()
         .filter_map(|(last, b)| {
             let stood = under_way(last.group)?;
-            let shown = last.group.opacity.unwrap_or(1.0);
-            let resizing = Resizing::new(&new[b], stood, *ways.get(new[b].id)?, shown);
-            Some((
-                b,
-                Resizing {
-                    edge: worn_edge(last.group),
-                    ..resizing
-                },
-            ))
+            let outer = last.outer.unwrap_or(Transform::translate(0.0, 0.0));
+            let tray = Tray::of(&last, carried(stood, outer));
+            Some((b, Resizing::new(&new[b], tray, *ways.get(new[b].id)?, 1.0)))
         })
         .collect()
 }
@@ -309,7 +329,7 @@ mod tests {
     use super::super::found::found;
     use super::super::open::ways;
     use super::super::testing::{rect, region, scene};
-    use super::Resizing;
+    use super::{Resizing, Tray};
 
     const MIDDLE: Point = Point { x: 200.0, y: 100.0 };
 
@@ -321,7 +341,7 @@ mod tests {
         let board = scene(vec![region("r", tray), region("r", band)], &[]);
         let groups = found(&board);
         let way = ways(&groups, MIDDLE, (0.0, 1.0))["r"];
-        Resizing::new(&groups[1], stood, way, 0.0)
+        Resizing::new(&groups[1], Tray::of(&groups[0], stood), way, 0.0)
     }
 
     /// The box that shows a group, and the box of the first shape in it.
@@ -362,5 +382,32 @@ mod tests {
         assert_eq!(held.x * 2.0 + placed.x, 10.0 * 2.0 + 5.0);
         assert_eq!(held.y * 2.0 + placed.y, 20.0 * 2.0 + 7.0);
         assert_eq!(held.width * 2.0, 106.0 * 2.0);
+    }
+
+    #[test]
+    fn a_carried_edge_stays_on_its_box_under_a_different_camera() {
+        let stood = rect(10.0, 20.0, 106.0, 106.0);
+        let mut band = band_from(stood);
+        band.stood.edge = Some((stood, 0.7));
+        let carry = Transform {
+            x: 5.0,
+            y: 7.0,
+            scale: Some(2.0),
+        };
+        band.rebase(carry);
+        for progress in [0.0, 0.1, 0.4] {
+            let group = band.at(progress);
+            let (edge, _) = super::super::open::worn_edge(&group).unwrap();
+            let moved = super::OPENS.at(progress);
+            let expected = super::mix_rect(super::carried(stood, carry), band.well, moved);
+            for (a, b) in [
+                (edge.x, expected.x),
+                (edge.y, expected.y),
+                (edge.width, expected.width),
+                (edge.height, expected.height),
+            ] {
+                assert!((a - b).abs() < 1e-6, "{edge:?} against {expected:?}");
+            }
+        }
     }
 }

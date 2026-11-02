@@ -9,7 +9,7 @@ use archboard_scene::scene::{Group, Item, Pointer, Role, Transform};
 
 use super::circuit::{Spans, label_span};
 use super::ease::{ease_in_out, ease_out, emphasised, phase, scale_about, then};
-use super::found::{Form, Found};
+use super::found::{Form, Found, Pairing};
 use super::open::{Opening, Way};
 use super::phases::Transition;
 use super::plan::Mover;
@@ -33,6 +33,40 @@ pub(super) const LABEL_GONE_BY: f64 = 0.16;
 
 /// The move that changes nothing.
 const STILL: Transform = Transform::translate(0.0, 0.0);
+
+/// When cards in an edit are ready for lines at their new places. Shared cards
+/// can still be moving or fading, and added cards arrive alone or inside a door.
+pub(super) fn ready_cards<'a>(
+    old: &[Found<'_>],
+    new: &[Found<'a>],
+    pairing: &Pairing,
+    doors: &Doors,
+    phases: Transition,
+) -> HashMap<&'a str, f64> {
+    new.iter()
+        .enumerate()
+        .filter(|(_, card)| card.is_card())
+        .map(|(b, card)| {
+            let old = pairing
+                .shared
+                .iter()
+                .find(|&&(_, at)| at == b)
+                .map(|&(a, _)| &old[a]);
+            let ready = match old {
+                Some(old) => {
+                    let moved =
+                        old.frame != card.frame || old.group.transform != card.group.transform;
+                    let faded = base(old.group) < base(card.group);
+                    let place = if moved { phases.move_end } else { 0.0 };
+                    place.max(if faded { phases.fade_end } else { 0.0 })
+                }
+                None if doors.carrying(card).is_some() => phases.move_end.max(phases.inside_end),
+                None => phases.enter_start + (1.0 - phases.enter_start) * SHOWN_BY,
+            };
+            (card.id, ready)
+        })
+        .collect()
+}
 
 /// How solid a group is drawn, whatever the move does to it.
 fn base(group: &Group) -> f64 {

@@ -17,6 +17,8 @@ mod arrive;
 mod card;
 mod circuit;
 mod content;
+#[cfg(test)]
+mod continuity;
 mod definitions;
 mod departure;
 mod ease;
@@ -47,7 +49,7 @@ use std::collections::{HashMap, HashSet};
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
 
-use arrive::{Ground, LABEL_GONE_BY, Leave, Swap, arriving};
+use arrive::{Ground, LABEL_GONE_BY, Leave, Swap, arriving, ready_cards};
 use card::CardCarry;
 use circuit::{Span, Spans, label_span, length_of, line_spans};
 use content::{is_parked, shell, unpark, unpark_held};
@@ -192,7 +194,10 @@ fn drawn_lines(
         .filter(|&b| new[b].form() == Form::Line && doors.carrying(&new[b]).is_none());
     let drawn: Vec<usize> = changed.chain(added).collect();
     let span = (phases.draw_start, phases.draw_end);
-    line_spans(new, &drawn, scene, span, &|_| 0.0)
+    let ready = ready_cards(old, new, pairing, doors, phases);
+    line_spans(new, &drawn, scene, span, &|id| {
+        ready.get(id).copied().unwrap_or(0.0)
+    })
 }
 
 /// What a move would park, among some items, to any depth: the shadows and the

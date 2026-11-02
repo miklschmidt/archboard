@@ -288,7 +288,7 @@ The more lines run at once, the slower each goes, by the square root of their nu
 | Moment                | Sparks start  | The last spark lands | The rest of the move lands |
 | --------------------- | ------------- | -------------------- | -------------------------- |
 | A first load          | 264 to 492 ms | Up to 2,377 ms       | 760 ms                     |
-| A move on one picture | 269 ms        | 1,920 ms             | 640 ms                     |
+| A move on one picture | 269 to 563 ms | Up to 2,214 ms       | 640 ms                     |
 
 A small board does not stretch to fill this time, and it lands early. A line with a different number of points, or points that move more than 10 units apart, counts as a new shape. A line that keeps its shape rides with its cards.
 
@@ -321,7 +321,17 @@ Films of both directions on the GPU show one tray, a sharp tab, and no pop at th
 
 The film of a tall flowchart showed lines that ran into empty space. The cards come out of the middle, the sparks started at 243 ms, and the top cards showed in full only at 492 ms. Rims waited for their cards, so they lit from the middle out and not along the flow.
 
-The whole drawing now waits until no line leaves or reaches a card that does not show in full. A card shows in full at 60 percent of its arrival, and it stands within a few pixels of its place by then. All lines wait by the same time, so a line still starts as the line that feeds it lands. The wait is at most 249 ms, and each line keeps its pace, so a board ends that much later. A rim lights as its line lands, so on the flowchart the rims now run from the first card to the last.
+The whole drawing waits until both cards of each line show in full before that line starts.
+A dashed line fades along its whole length, so its destination must already stand there when it begins.
+A card shows in full at 60 percent of its arrival, and it stands within a few pixels of its place by then.
+
+All lines wait by the same time, so a line still starts as the line that feeds it lands.
+On a first load, the wait is at most 249 ms, and each line keeps its pace.
+An edit also waits for new cards and for shared cards that still move or fade.
+Its wait is at most 294 ms, as the configured phases give it.
+
+The table above includes these waits.
+A rim lights as its line lands, so on the flowchart the rims run from the first card to the last.
 
 The start and the end of a flow belong to no subject, so they faded in with the frames, as two gold blurs before their container opened. They now come with the last cards.
 
@@ -330,6 +340,12 @@ On the largest board, three runs of a first load gave a mean frame gap of 18.4 m
 ### A move cuts an opening short
 
 A door pressed during an opening showed a second wall. The move cross-faded from what had opened to the frame of the next picture, and the edge of the opening stayed where it stood. A container that a move finds on its way open now goes on from the box that it reached, in the way that a tray resizes, and the edge rides with it and cools. `crates/archboard-paint/src/between/resize.rs` holds this, and tests own the start, the landing, and the edge.
+
+An entrance and an edit capture the same tray state: its visible box, opacity, scale, and edge.
+A second interruption keeps that state, including transforms outside the tray group.
+A clipped box already holds room for its strokes, so another entrance adds no padding to it.
+The edge moves from the old camera into the new scene, then into the tray's local coordinates for drawing.
+Only the frame carries that edge, so its header draws no second wall.
 
 An earlier report named dark card-sized patches after such a press. They are no fault of the move. The pointer stands on the door, so the board dims round it, and a door pressed at rest gives the same picture.
 

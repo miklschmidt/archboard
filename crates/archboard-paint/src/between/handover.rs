@@ -8,6 +8,7 @@ use archboard_scene::scene::{Scene, Transform};
 use super::ease::{carried, then};
 use super::found::{Found, found};
 use super::open::containers;
+use super::resize::Tray;
 
 /// How much bigger or smaller a card can be in the next picture and still fly.
 const MOST_CHANGE: f64 = 2.5;
@@ -35,7 +36,7 @@ fn encloses(outer: Rect, inner: Rect) -> bool {
 #[derive(Default)]
 pub(super) struct Last<'a> {
     stood: HashMap<&'a str, (Rect, f64)>,
-    pub(super) trays: HashMap<&'a str, Rect>,
+    pub(super) trays: HashMap<&'a str, Tray>,
     /// The tray that all of the last picture's cards stood inside, when one did.
     pub(super) holder: Option<&'a str>,
     pub(super) shown: f64,
@@ -65,7 +66,13 @@ impl<'a> Last<'a> {
         });
         Last {
             holder: holder.map(|&(id, ..)| id),
-            trays: boxes.iter().map(|&(id, tray, _)| (id, tray)).collect(),
+            trays: boxes
+                .iter()
+                .filter_map(|&(id, whole, _)| {
+                    let frame = groups.iter().find(|group| group.id == id)?;
+                    Some((id, Tray::of(frame, whole)))
+                })
+                .collect(),
             stood,
             shown: handover.shown,
         }

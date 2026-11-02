@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-02T03:39:00Z'
+updated_date: '2026-11-02T03:50:00Z'
 labels:
   - renderer
   - motion
@@ -45,6 +45,8 @@ The owner tested PR 26 on the largest repository board and found the motion belo
 8. Design the motion for the GPU: a lens at the blit stage, a bloom from the middle, shared subjects that fly across boards, and a door that carries its parts. Judge it against the owner's words, not against the old page.
 
 Review e25501ab2..42923cc56 against the motion contract. Repair verified interruption, reveal, and GPU faults with focused tests and signed commits. Finish with bun run check on the final commit.
+
+Review 451c2c013..a695fd962 along Standards and Spec. Prove interruption and line-order faults with focused Rust regressions, repair verified findings, and commit the fixes. Run build:core and the complete gate on the final commit. These repairs keep the existing painter owners and architecture accurate, so no proposal is needed.
 <!-- SECTION:PLAN:END -->
 
 ## Implementation Notes
@@ -117,4 +119,6 @@ Containers now open on entry. One square front leaves the middle of the picture 
 The owner asked that a change between flowchart and sequence keeps the container. A container that the last picture also drew now resizes from its old box under the old camera, and the tray keeps its corners, walls and tab. The entrance has no lens when a tray stays. The last picture leaves inside the tray that held all its cards. A second change takes the tray from the box that it held. A flow frame now opens as a container on a first load. A rim uses a body that a group draws, which removed the glow up the first column, and a rim waits for its card. Films of both directions on the GPU, reduced motion, and an interrupted switch were looked at. The GPU gave a mean gap of 16.7 ms in three runs of each direction at 60 Hz in headless Chrome. The walkthrough failure came from the lab copy, which has no Git repository and no archive. It is not a product fault in this branch.
 
 The owner asked for the two wrongs of the last report to be fixed before a push. A line reached a card before the card stood there: the whole drawing now waits until no line leaves or reaches a card that does not show in full, by at most 249 ms, and rims then run along the flow from the first card to the last. A door pressed during an opening showed a second wall: a container that a move finds on its way open now goes on from the box it reached, with its edge riding along and cooling. The dark card-sized patches of that report are no fault. The pointer stands on the door, and a door pressed at rest gives the same picture. Two small faults came up in the same films and are fixed: the start and the end of a flow arrived before their container opened, and rims stayed bright round dimmed cards. `bun run check` passed on this code.
+
+Review of 451c2c013..a695fd962: Standards found no independent documented-rule breach. Spec found six faults across interruption and line scheduling. A repeated entrance added clip padding. An entrance lost the opacity and edge of an unfinished opening. A resumed edit lost outer placement and scale. Edge arithmetic mixed scene and local units. Edits skipped card readiness. Dashed routes showed their far end before the destination card arrived. The repairs capture one tray value for both handoff paths and wait for both endpoint cards before a line starts. Seven focused regressions cover these contracts. All 166 painter tests pass. Existing tests still prove pure frames, reduced-motion cuts, and exact landing. The design note records the new timing bounds. These changes stay inside the existing painter architecture, so no proposal is needed. The core build and complete gate run on the review checkpoint. Hyprland and visual acceptance remain untested by this review, so the task stays In Progress.
 <!-- SECTION:NOTES:END -->

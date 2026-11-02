@@ -158,19 +158,21 @@ pub(super) fn containers<'a>(groups: &[Found<'a>]) -> Vec<(&'a str, Rect, Rect)>
             continue;
         };
         let landed = group.atlas.map_or(frame, |atlas| union(atlas, frame));
-        let drawn = cut_short.unwrap_or(landed);
+        // An unfinished clip already includes room for the drawing. Adding it
+        // again makes the tray jump on every interrupted entrance.
+        let drawn = cut_short.unwrap_or(Rect {
+            x: landed.x - ROOM,
+            y: landed.y - ROOM,
+            width: landed.width + ROOM * 2.0,
+            height: landed.height + ROOM * 2.0,
+        });
+        let outer = group.outer.unwrap_or(Transform::translate(0.0, 0.0));
+        let drawn = carried(drawn, outer);
+        let frame = carried(frame, outer);
         match boxes.iter_mut().find(|(id, ..)| *id == group.id) {
             Some((_, whole, _)) => *whole = union(*whole, drawn),
             None => boxes.push((group.id, drawn, frame)),
         }
-    }
-    for (_, whole, _) in &mut boxes {
-        *whole = Rect {
-            x: whole.x - ROOM,
-            y: whole.y - ROOM,
-            width: whole.width + ROOM * 2.0,
-            height: whole.height + ROOM * 2.0,
-        };
     }
     boxes
 }
@@ -438,7 +440,7 @@ mod tests {
         let second = Entrance::new(&tall, &PHASES, Some(handover));
         let start = second.at(0.0);
         let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
-        assert!((held.width - (mid.width + 6.0)).abs() < 1.0);
+        assert!((held.width - mid.width).abs() < 1e-6);
     }
 
     #[test]

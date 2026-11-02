@@ -47,7 +47,15 @@ fn a_carry_finishes_the_rim_after_the_last_line() {
         (0.0, 0.0),
         &PHASES,
     );
-    let after_line = PHASES.transition.draw_end + 0.1;
+    let groups = super::found::found(&scene);
+    let times = super::drawn_lines(
+        (&[], &groups),
+        &super::found::pair(&[], &groups),
+        &super::unfold::Doors::default(),
+        &scene,
+        PHASES.transition,
+    );
+    let after_line = times[0].1.1 + 0.1;
     assert!(between.length() > after_line);
     assert!(
         between

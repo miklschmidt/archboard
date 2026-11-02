@@ -236,7 +236,9 @@ pub(super) fn line_spans(
     let wait = runs
         .iter()
         .zip(&spans)
-        .map(|(run, &(begin, end))| (stands(run.start) - begin).max(stands(run.end) - end))
+        // Dashed routes fade over their whole length, so even their far end
+        // becomes visible as soon as they start.
+        .map(|(run, &(begin, _))| stands(run.start).max(stands(run.end)) - begin)
         .fold(0.0, f64::max);
     drawn
         .iter()
