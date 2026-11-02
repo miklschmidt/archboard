@@ -301,4 +301,5 @@ export {
 	type Connection,
 	type ModuleInterface,
 	type SelectedSubject,
+	type SelectionReading,
 };

@@ -43,7 +43,6 @@ pub(super) fn paint_measured_card(
     let (rect, standing) = (placed.bounds, part.standing);
     let runs = placed_runs(placed);
     let baseline = runs.first().map_or(0.0, |name| name.y);
-    let under = placed.measured.tags_under;
     let near = NearCard {
         chip_x: rect.x + ARCHITECTURE_CARD_PADDING,
         chip_y: rect.y + name_top(placed),
@@ -51,8 +50,7 @@ pub(super) fn paint_measured_card(
         lines: (runs.iter())
             .filter(|run| run.role == TextRole::Title)
             .count(),
-        tag_top: under.unwrap_or_else(|| tag_top(baseline)),
-        tags_under: under.is_some(),
+        tag_top: tag_top(baseline),
     };
     paint_slab_card(ctx, part, palette, cut, near)
 }

@@ -61,7 +61,6 @@ async fn in_free_order<S: Solver>(
             .map(|(id, node)| {
                 let node = MeasuredNode {
                     pointed: None,
-                    tags_under: None,
                     ..node.clone()
                 };
                 (id.clone(), node)

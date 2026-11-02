@@ -96,7 +96,6 @@ fn board() -> (Content, Measured) {
             runs: Vec::new(),
             headers: None,
             pointed: None,
-            tags_under: None,
         },
     );
     (content, measured)
@@ -179,7 +178,6 @@ fn stacking_board() -> (Content, Measured) {
                 runs: Vec::new(),
                 headers: None,
                 pointed: None,
-                tags_under: None,
             },
         );
     }

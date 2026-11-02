@@ -35,8 +35,10 @@ import { useAboutPlace } from "#ui/hooks/architecture-model/use-about-place.ts";
 import { useHistoryOnSelection } from "#ui/hooks/architecture-model/use-history-on-selection.ts";
 import { useModelCodeFindings } from "#ui/hooks/architecture-model/use-model-code-findings.ts";
 import { useModelExplanation } from "#ui/hooks/architecture-model/use-model-explanation.ts";
+import { ModelSubjectMenu } from "#ui/components/architecture-model/ModelSubjectMenu.tsx";
 import { useReaderKeys } from "#ui/hooks/architecture-model/use-reader-keys.ts";
 import type { Reader } from "#ui/hooks/architecture-model/use-reader.ts";
+import { useSubjectMenu } from "#ui/hooks/architecture-model/use-subject-menu.ts";
 import { useShowSubject } from "#ui/hooks/architecture-model/use-show-subject.ts";
 import {
 	flowSubjects,
@@ -338,6 +340,7 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 		);
 	}, [model.relationships, selection.ids, reveal, behavioralIds]);
 	const attach = useReadingKeys(selection, model, setMenu, page === "about");
+	const subjectMenu = useSubjectMenu(reader);
 	useReaderKeys(reader.onMove);
 	const about = aboutKey(reader);
 	const place = useAboutPlace(about);
@@ -355,7 +358,13 @@ function ModelReadingSurface(props: ModelReadingSurfaceProps): JSX.Element {
 				data-grammar={grammar}
 				data-comparison={comparison.status}
 				className="@container/reading relative flex min-h-0 min-w-0 flex-1 flex-col"
+				onContextMenu={subjectMenu.onContextMenu}
 			>
+				<ModelSubjectMenu
+					actions={actions}
+					menu={subjectMenu.menu}
+					onOpenChange={subjectMenu.onOpenChange}
+				/>
 				<ReadingPicture surface={props} warnings={code.warnings}>
 					<ReadingPanel
 						surface={props}
@@ -484,8 +493,8 @@ function soleSelected(ids: ReadonlySet<string>): string | null {
 }
 
 /**
- * Hear the reading's own keys: Escape clears the selection, and the menu key opens its actions.
- * The picture offers them only for a selection, and About offers them always.
+ * Hear the reading's own keys: Escape clears the selection, and the menu key opens its actions,
+ * which the picture offers only for a selection, and About offers always.
  * @param selection The selection.
  * @param model The coherent model.
  * @param openMenu Open or close the action menu.
@@ -509,25 +518,23 @@ function useReadingKeys(
 			 */
 			function keyDown(event: KeyboardEvent): void {
 				if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
-					contextMenu(event);
+					menuKey(event);
 					return;
 				}
 				if (event.key === "Escape" && !event.defaultPrevented) clear();
 			}
 			/**
 			 * Open the shared action menu for the selection already visible in this reading.
-			 * @param event The context request inside this reading.
+			 * @param event The key pressed within the reading.
 			 */
-			function contextMenu(event: Event): void {
+			function menuKey(event: KeyboardEvent): void {
 				if (model.migrationPreview !== undefined || !(selecting || about)) return;
 				event.preventDefault();
 				openMenu(true);
 			}
 			element.addEventListener("keydown", keyDown);
-			element.addEventListener("contextmenu", contextMenu);
 			return (): void => {
 				element.removeEventListener("keydown", keyDown);
-				element.removeEventListener("contextmenu", contextMenu);
 			};
 		},
 		[clear, model.migrationPreview, selecting, about, openMenu],

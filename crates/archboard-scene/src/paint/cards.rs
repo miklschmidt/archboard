@@ -133,7 +133,6 @@ pub(super) fn paint_card(
         },
         lines: 1,
         tag_top: 0.0,
-        tags_under: false,
     };
     paint_slab_card(ctx, &part, palette, None, near)
 }

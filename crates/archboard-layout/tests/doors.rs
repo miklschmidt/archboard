@@ -24,7 +24,6 @@ fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
                 runs: Vec::new(),
                 headers: None,
                 pointed: None,
-                tags_under: None,
             },
         );
     }

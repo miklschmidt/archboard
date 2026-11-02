@@ -1,7 +1,7 @@
 {
   "order": 12002,
   "name": "Skill evaluation",
-  "kind": "service",
+  "kind": "module",
   "responsibility": "Measures one version of the agent skill against another, on real authors and real checkouts",
   "description": "Started by a person, never by the gate: every author run and the grading session call a model.",
   "binding": {

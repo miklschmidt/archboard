@@ -206,7 +206,6 @@ fn measured(graph: &Graph) -> (Measured, BTreeMap<String, Vec<String>>) {
                 runs: Vec::new(),
                 headers: None,
                 pointed: decision.then_some(room),
-                tags_under: None,
             };
             (node.id.clone(), measured)
         })

@@ -1,7 +1,7 @@
 {
   "order": 11000,
   "name": "Workbench browser",
-  "kind": "service",
+  "kind": "ui",
   "responsibility": "Presents the agent, conversation, and voice controls over the browser transport",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
