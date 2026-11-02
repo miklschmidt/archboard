@@ -333,7 +333,11 @@ Its wait is at most 294 ms, as the configured phases give it.
 The table above includes these waits.
 A rim lights as its line lands, so on the flowchart the rims run from the first card to the last.
 
-The start and the end of a flow belong to no subject, so they faded in with the frames, as two gold blurs before their container opened. They now come with the last cards.
+The start and the end of a flow belong to no subject, so they faded in with the frames, as two gold blurs before their container opened. They now come with the last cards. The shadow of a start or an end waits for them too.
+
+The owner saw activation bars arrive before their cards. A participant draws two groups of one id: its lifeline with its bars, and its card. The lifeline took its time and its place from its own largest bar, in the middle of the picture. It then arrived before the card at its head. The lifeline now takes the time, the path and the opacity of its card.
+
+A message that ended inside a decision's frame lit a rim round the whole frame, about two seconds into an entrance. That frame is notation, and no line lands on it, so it takes no rim. A bar still does.
 
 On the largest board, three runs of a first load gave a mean frame gap of 18.4 ms on the GPU, with one gap of 117 ms at its start. Two runs on the flowchart gave 16.7 and 16.9 ms. Two runs of the largest board on the CPU painter gave a mean of 41.7 and 42.7 ms and a longest gap of 117 and 133 ms. One run of the flowchart gave 29.0 ms and 67 ms. All ran in headless Chrome at 60 Hz. With reduced motion, a first load of the flowchart changes no pixel after its first frame.
 
@@ -381,3 +385,41 @@ A move that a walkthrough makes between boards was not filmed in this pass. The 
 The pass over the lines filmed a first load at full pixel scale on both grounds, a door, and a flight into a card, and looked at the frames. It also filmed a first load with `prefers-reduced-motion`, and the diagonal reveal on a first load and a door.
 The final build, measured in three runs of each move in headless Chrome at 60 Hz, gave these medians on the large board. A door drew 104 frames, with a median of 4.6 ms on the main thread for each frame and 8 frames over 25 ms. Its longest gap, 83 ms, follows one main-thread task of 88 ms when the picture arrives. A dive drew 97 frames, with 6 frames over 25 ms and a longest gap of 67 ms.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.
+
+### The last pass on the final code
+
+This pass ran in a copy of the repository's model after the Workspace packages became a group, so the root board holds 32 cards.
+It filmed these moments on the held clock at half scale, and it looked at each contact sheet.
+
+- A first load of the root board, with its sweep and the lines that follow the connections.
+- A door, a toggle, a second toggle during the first, and an undo during a toggle.
+- A dive into a card, and the climb back through a crumb.
+- A change from a sequence to a flowchart, a flow that opens from the root, and a sideways move between two flows.
+- A walkthrough that opens from the root and moves to another board for its first beat.
+- A pinch, the arrow keys, and a fit.
+- A dive with `prefers-reduced-motion`.
+
+The pass found one fault, the rim round a decision's frame. The section on lines that wait for their cards names it.
+After that fix, the film of a sideways move between two flows shows rims on the bars only. No other film showed a decision's frame.
+No other moment showed anything to change.
+With `prefers-reduced-motion`, every frame after the press is the same, so a dive is one cut with no pulses.
+With motion on, a pulse keeps moving on a flow that stands still, so traffic runs at rest.
+
+A page that names a removed subject, such as Workspace packages, says that the subject was removed. It offers the retained reading and the current architecture.
+
+The owner reported that a workspace switch on Hyprland no longer breaks the board. This pass did not test Hyprland.
+A lab script forced two faults during drawing:
+
+- A lost device brought a second GPU device. The page kept the GPU painter and a visible canvas.
+- A broken surface failed the second GPU attempt too. The page then moved to the CPU painter and gave its reason.
+
+No repository test owns these two recoveries.
+
+A first load of the largest board gave these numbers in headless Chrome at 60 Hz. That board is the root with three containers open.
+
+| Painter | Frames | Mean frame gap | Gaps over 25 ms | Longest gap        |
+| ------- | ------ | -------------- | --------------- | ------------------ |
+| GPU     | 54     | 20.1 ms, twice | 4 and 3         | 150.0 ms, twice    |
+| CPU     | 21     | 50.8, 51.6 ms  | 21 and 20       | 166.6 and 183.4 ms |
+
+No film or frame table in this pass ran at 120 Hz, and the owner's display runs at 120 Hz.

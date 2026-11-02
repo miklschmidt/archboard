@@ -182,11 +182,12 @@ fn paint_of(group: &Group) -> Option<Paint> {
 /// The rims of the cards that a spark lands on: each lights once, with the first
 /// line to land there, in that line's colour. A rim goes round a body that a group
 /// draws: the atlas's box of a participant's lifeline holds its whole column. It stands
-/// with its card, so that it dims with it.
+/// with its card, so that it dims with it. A decision's frame is notation round its
+/// messages, and no line lands on it.
 pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> {
     let bodies: Vec<(Rect, &str)> = groups
         .iter()
-        .filter(|group| group.is_card())
+        .filter(|group| group.is_card() && !matches!(group.group.role, Role::Fragment))
         .filter_map(|group| Some((largest_rect(group.group)?, group.id)))
         .collect();
     let cards: Vec<Rect> = bodies.iter().map(|&(card, _)| card).collect();
@@ -374,6 +375,23 @@ mod tests {
             line("m", &[(300.0, 200.0), (50.0, 200.0)]),
         ];
         let board = scene(body, &[("actor", column)]);
+        let groups = found(&board);
+        assert!(rims(&groups, &[(1, (0.0, 1.0))]).is_empty());
+    }
+
+    #[test]
+    fn a_line_inside_a_decision_lights_no_rim_round_its_frame() {
+        let outline = Shape::rect(Purpose::Box, rect(0.0, 0.0, 400.0, 300.0), None);
+        let decision = Group::new(Role::Fragment, vec![Item::Shape(outline)]).drawing(Subject {
+            id: "alt".to_owned(),
+            kind: SubjectKind::Step,
+            standing: None,
+        });
+        let body = vec![
+            Item::Group(decision),
+            line("m", &[(300.0, 150.0), (50.0, 150.0)]),
+        ];
+        let board = scene(body, &[]);
         let groups = found(&board);
         assert!(rims(&groups, &[(1, (0.0, 1.0))]).is_empty());
     }

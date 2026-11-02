@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-02T03:50:00Z'
+updated_date: '2026-11-02T05:12:00Z'
 labels:
   - renderer
   - motion
@@ -26,9 +26,9 @@ The owner tested PR 26 on the largest repository board and found the motion belo
 - [x] #2 The first wheel after a load draws no gap that a reader can see, in an empty browser profile on the largest board
 - [x] #3 Traffic keeps running through a pan, a pinch and a wheel, and the code that holds traffic is gone
 - [x] #4 The near and far views change in real time during a zoom or a flight, and no cut follows the end of a zoom
-- [ ] #5 A workspace switch on Hyprland leaves a correct board, and a painter whose device or surface fails recovers without a reload
-- [ ] #6 A full pass over every moment judges captured frames against the best that the GPU painter can do, not against the old page, and the task notes name what the pass covered
-- [ ] #7 docs/design/vello-painter.md and ADR 0071 state the new behavior and carry no claim that the last pass disproved
+- [x] #5 A workspace switch on Hyprland leaves a correct board, and a painter whose device or surface fails recovers without a reload
+- [x] #6 A full pass over every moment judges captured frames against the best that the GPU painter can do, not against the old page, and the task notes name what the pass covered
+- [x] #7 docs/design/vello-painter.md and ADR 0071 state the new behavior and carry no claim that the last pass disproved
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -121,4 +121,20 @@ The owner asked that a change between flowchart and sequence keeps the container
 The owner asked for the two wrongs of the last report to be fixed before a push. A line reached a card before the card stood there: the whole drawing now waits until no line leaves or reaches a card that does not show in full, by at most 249 ms, and rims then run along the flow from the first card to the last. A door pressed during an opening showed a second wall: a container that a move finds on its way open now goes on from the box it reached, with its edge riding along and cooling. The dark card-sized patches of that report are no fault. The pointer stands on the door, and a door pressed at rest gives the same picture. Two small faults came up in the same films and are fixed: the start and the end of a flow arrived before their container opened, and rims stayed bright round dimmed cards. `bun run check` passed on this code.
 
 Review of 451c2c013..a695fd962: Standards found no independent documented-rule breach. Spec found six faults across interruption and line scheduling. A repeated entrance added clip padding. An entrance lost the opacity and edge of an unfinished opening. A resumed edit lost outer placement and scale. Edge arithmetic mixed scene and local units. Edits skipped card readiness. Dashed routes showed their far end before the destination card arrived. The repairs capture one tray value for both handoff paths and wait for both endpoint cards before a line starts. Seven focused regressions cover these contracts. All 166 painter tests pass. Existing tests still prove pure frames, reduced-motion cuts, and exact landing. The design note records the new timing bounds. These changes stay inside the existing painter architecture, so no proposal is needed. The core build and complete gate run on the review checkpoint. Hyprland and visual acceptance remain untested by this review, so the task stays In Progress.
+
+The owner tested the Hyprland workspace switch on the pushed build and could not reproduce the crash, so criterion 5 is met by that test. The device and surface recovery has its own owner in the painter tests.
+
+The owner then asked for six things. Lifelines and their activation bars now arrive with their cards. The shadow of a flow's start and end waits for its mark. A Dim on hover switch stands beside the layout engine, and the hover light stays on by default. A walkthrough beat that names only cards now lights what they touch at a trace's second strength, in a structural picture and in a sequence, and the camera frames all of it. The replay uses the same rule.
+
+Workspace packages is now a group in the vault policy. The container had no job of its own, and a door names the top ancestor outside the open module, so every app reached one Workspace packages door. The 17 packages are roots, and the module fssx6Gaq is retired. Thirteen relationships that cross a process boundary moved to the program that runs them, and three stay as host wiring: Host wiring to Live panes twice, and Agent dock to Agent actions. The code check refuses an anchor outside the bound code of both ends, so four moved relationships take an anchor in an end, and the three of Eval script have no anchor. Eight dependencies that the container hid are now drawn. This was a direct edit of current, because the code already exists and no unbuilt architecture is proposed. The Vello proposal followed through reconciliation and stays a draft.
+
+The edit found one writer bug: reconcile ordered retired identities differently from the materializer, so a removal refused with MODEL_INVALID on a model with a proposal that had retired identities. That is fixed with a regression test in reconcile-standing.test.ts.
+
+The README diagram now focuses on the programs and the external systems, because the root reading has 32 cards and 97 lines.
+
+Correction to an earlier note. The device and surface recovery has no owner in the painter tests. crates/archboard-painter-wasm/src/gpu.rs holds the callback, and the evidence is the lab's forced-failure script. The code check warns on a mismatched anchor. It does not refuse one.
+
+Last pass on the final code, in the lab copy of the model. Filmed on the held clock and looked at the contact sheets: a first load of the root with its sweep, a door, a toggle, a second toggle during the first, an undo during a toggle, a dive, the climb through a crumb, a sequence changed to a flowchart, a flow that opens from the root, a sideways move between two flows, a walkthrough that opens from the root, a pinch, arrow keys, a fit, and a dive with prefers-reduced-motion. The pass found one fault: a message inside a decision lit a rim round the whole frame. Fragments now take no rim, and a test in spark.rs owns that. No other moment showed anything to change.
+
+Measured with the first-entrance gap script on the largest board in headless Chrome at 60 Hz: GPU 54 frames, mean 20.1 ms twice, 4 and 3 gaps over 25 ms, longest 150.0 ms. CPU 21 frames, mean 50.8 and 51.6 ms, longest 166.6 and 183.4 ms. A forced device loss brought a second GPU device, and the page kept the GPU painter. A broken surface failed the second GPU attempt too, and the page moved to the CPU painter with its reason. No film ran at 120 Hz. This pass did not test Hyprland: that result comes from the owner.
 <!-- SECTION:NOTES:END -->

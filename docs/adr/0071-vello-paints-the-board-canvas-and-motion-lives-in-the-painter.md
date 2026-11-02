@@ -139,6 +139,8 @@ painter to start. The SVG stays the product of an export, a PNG and a README ass
 
 - On the largest board at 120 Hz, a toggle's mean frame gap fell from 31.6 ms to 9.2 ms,
   and its slow frames from 68 to 11. Wheel, pinch, keys and drag have no slow frames.
+  These figures came before the motion work. `docs/design/vello-painter.md` holds the
+  later numbers, which ran at 60 Hz.
 - A person without WebGPU sees a correct board on the CPU painter, but with slower
   frames. Traffic there rests as long as its last frame took. On a small board it takes
   21% of the main thread, against 8% on the old page.
