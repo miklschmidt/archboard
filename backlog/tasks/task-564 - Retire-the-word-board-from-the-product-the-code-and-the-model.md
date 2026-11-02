@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T19:39:00Z'
-updated_date: '2026-11-02T20:10:00Z'
+updated_date: '2026-11-02T22:00:00Z'
 labels:
   - naming
   - refactor
@@ -45,3 +45,9 @@ ADR 0068 retired boards for one canonical model with recursive modules, and CONT
 
 9. After the rename, carry out TASK-565 on this branch in its own commits, then finalize the kept-word list in the ADR, so that the one complete gate and the one review cover both.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Decisions recorded in ADR 0072. Package name: @archboard/model. An unmerged record is not history, so ADR 0071 and docs/design/vello-painter.md were rewritten here and ADR 0071 took a new filename. No proposal was opened for the rename, because the architecture stays accurate, AC 3 names the current model and only the owner can authorize adoption, so the edit targets the current state directly. Proposal JTZvj2vi was settled on the renamed state, renamed, and given the new ADR path. It was not adopted. Three older drafts each lost one sentence that said the word. check code reports 18 warnings: each comes from PR 26's removed files and symbols, which proposal JTZvj2vi owns. README: only the architecture SVGs and the design smells poster show the word.
+<!-- SECTION:NOTES:END -->
