@@ -32,5 +32,19 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [
+    {
+      "order": 1000,
+      "kind": "call",
+      "label": "ask the server about itself",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
+        "symbol": "requestJson"
+      },
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7",
+      "id": "vKEsyHFk#U2DjfZHj"
+    }
+  ]
 }
