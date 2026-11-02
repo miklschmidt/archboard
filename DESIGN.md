@@ -292,7 +292,9 @@ the whole of its top edge, and a lit lip runs along its bottom. Its name stands
 on a tab, a lighter piece raised on that edge. The tab's left side is the well's
 left side, its top corners have the well's radius, and it meets the edge on the
 right in one crisp concave curve. The well's top edge runs on under the tab, so
-a line parts the tab from the floor. The tab hugs its words with 12 units on
+a line parts the tab from the floor. That edge is the rim of the well: it turns
+down into the walls at both top corners, and at the left the tab fills the corner
+above it. The tab hugs its words with 12 units on
 either side, and one outline runs round the tab and the well. The first row of
 cards stands as far under the edge as from the sides and the bottom of the well.
 In a live reader, a door ends with a plus behind a thin rule, and

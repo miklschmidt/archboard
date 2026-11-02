@@ -3,9 +3,10 @@
 //! inside its box, a shaded top wall, a floor a step below and a lit lip at its
 //! foot. Each band thins round a corner into the next, as an inset box shadow
 //! does. The top edge and inner shadow cross the whole width, under the tab too,
-//! so the edge parts the tab from the well. One closed path goes round the tab and
-//! the well, with one radius at every corner, and the tab's left side is the
-//! well's. A tray casts no shadow.
+//! so the edge parts the tab from the well. The rim turns down at both top corners,
+//! and at the left the tab fills the corner above it. One closed path goes round
+//! the tab and the well, with one radius at every corner, and the tab's left side
+//! is the well's. A tray casts no shadow.
 
 use crate::geometry::{Point, Rect, round_coord};
 use crate::paint::build::{Items, lines, point, shape};
@@ -168,11 +169,24 @@ impl Well {
         steps
     }
 
-    /// The well alone, its top edge straight across and its left corner square.
+    /// The rim's start: down the left side, under the tab's corner.
+    fn rim_start(&self) -> Point {
+        point(self.frame.x, self.edge() + BAND_RADIUS)
+    }
+
+    /// The rim's left corner, from its start to the well's top edge.
+    fn rim_corner(&self) -> PathStep {
+        corner(point(self.frame.x + BAND_RADIUS, self.edge()), true)
+    }
+
+    /// The well alone, its top edge straight across between two rounded corners.
     fn well(&self, foot: f64) -> Vec<PathStep> {
-        let mut steps = vec![PathStep::Move {
-            to: point(self.frame.x, self.edge()),
-        }];
+        let mut steps = vec![
+            PathStep::Move {
+                to: self.rim_start(),
+            },
+            self.rim_corner(),
+        ];
         steps.extend(self.round_well(foot));
         steps
     }
@@ -180,19 +194,28 @@ impl Well {
     /// The one line round the tab and the well, with the well's edge under the tab.
     fn line(&self) -> Vec<PathStep> {
         let mut steps = self.silhouette(self.frame.y + self.frame.height);
-        steps.push(PathStep::Move {
-            to: point(self.frame.x, self.edge()),
-        });
-        steps.push(PathStep::Across {
-            x: round_coord(self.foot_end()),
-        });
+        steps.extend([
+            PathStep::Move {
+                to: self.rim_start(),
+            },
+            self.rim_corner(),
+            PathStep::Across {
+                x: round_coord(self.foot_end()),
+            },
+        ]);
         steps
     }
 
-    /// The tab's face, down to the well's edge.
+    /// The tab's face, down to the well's edge and round the rim's corner.
     fn face(&self) -> Vec<PathStep> {
-        let mut steps = self.over_tab(self.edge());
-        steps.push(PathStep::Close);
+        let mut steps = self.over_tab(self.rim_start().y);
+        steps.extend([
+            PathStep::Across {
+                x: round_coord(self.frame.x + BAND_RADIUS),
+            },
+            corner(self.rim_start(), false),
+            PathStep::Close,
+        ]);
         steps
     }
 
@@ -377,11 +400,11 @@ mod tests {
         };
         let well = Well { frame, tab };
         let line = well.line();
-        let [round, edge] = starts(&line)[..] else {
+        let [round, rim] = starts(&line)[..] else {
             panic!("one path round the tab and the well, and the edge under the tab");
         };
         assert_eq!(round.x, frame.x);
-        assert_eq!(edge, point(frame.x, frame.y + tab.height));
+        assert_eq!(rim, point(frame.x, frame.y + tab.height + BAND_RADIUS));
         assert_eq!(
             line.last(),
             Some(&PathStep::Across {
@@ -389,6 +412,43 @@ mod tests {
             })
         );
         // The floor stands inside the well's walls, and its shadow stays on the floor.
-        assert_eq!(well.shade().y, edge.y + TRAY_WALL);
+        assert_eq!(well.shade().y, frame.y + tab.height + TRAY_WALL);
+    }
+
+    #[test]
+    fn the_rim_rounds_at_both_top_corners_and_the_tab_fills_the_left_one() {
+        let frame = Rect {
+            x: 40.0,
+            y: 20.0,
+            width: 500.0,
+            height: 300.0,
+        };
+        let tab = Rect {
+            height: 36.0,
+            width: 200.0,
+            ..frame
+        };
+        let well = Well { frame, tab };
+        let edge = frame.y + tab.height;
+        let left = corner(point(frame.x + BAND_RADIUS, edge), true);
+        let right = corner(point(frame.x + frame.width, edge + BAND_RADIUS), true);
+        let rim = well.well(frame.y + frame.height);
+        assert_eq!(
+            rim[0],
+            PathStep::Move {
+                to: well.rim_start()
+            }
+        );
+        assert_eq!(rim[1], left);
+        assert!(rim.contains(&right));
+        // The tab's foot meets the rim's corner and turns back along it, so no gap stands there.
+        let face = well.face();
+        assert_eq!(
+            face[0],
+            PathStep::Move {
+                to: well.rim_start()
+            }
+        );
+        assert_eq!(face[face.len() - 2], corner(well.rim_start(), false));
     }
 }
