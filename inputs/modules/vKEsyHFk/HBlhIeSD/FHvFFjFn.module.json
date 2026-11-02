@@ -106,7 +106,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-        "symbol": "arrivedOnBoard"
+        "symbol": "arrivedOnModel"
       },
       "id": "vKEsyHFk/Oi6SBIAM#rnMTaURu",
       "to": "vKEsyHFk/Oi6SBIAM#MqTq68P3"

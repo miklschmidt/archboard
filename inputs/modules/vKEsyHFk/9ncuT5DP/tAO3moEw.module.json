@@ -18,32 +18,6 @@
   ],
   "outgoing": [
     {
-      "order": 89000,
-      "kind": "call",
-      "label": "createVoiceAgent, served through bunHandlers",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
-        "symbol": "createVoiceAgent"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#mUABZOPx",
-      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
-    },
-    {
-      "order": 90000,
-      "kind": "call",
-      "label": "createVoiceClient, read through the React hooks",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/workbench-example/src/ui/components/workbench/MountWorkbench.tsx",
-        "symbol": "createVoiceClient"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#qbAR52W1",
-      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
-    },
-    {
       "order": 63000,
       "kind": "dependency",
       "label": "a voice agent and client with its own policy",
@@ -68,6 +42,32 @@
       },
       "id": "vKEsyHFk#YwuotQri",
       "to": "vKEsyHFk#06cbjPhn"
+    },
+    {
+      "order": 89000,
+      "kind": "call",
+      "label": "createVoiceAgent, served through bunHandlers",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/workbench-example/src/server/wiring/application/application.ts",
+        "symbol": "createVoiceAgent"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#mUABZOPx",
+      "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS"
+    },
+    {
+      "order": 90000,
+      "kind": "call",
+      "label": "createVoiceClient, read through the React hooks",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/workbench-example/src/ui/components/workbench/MountWorkbench.tsx",
+        "symbol": "createVoiceClient"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#qbAR52W1",
+      "to": "vKEsyHFk/9ncuT5DP#Lrq90XiL"
     }
   ]
 }
