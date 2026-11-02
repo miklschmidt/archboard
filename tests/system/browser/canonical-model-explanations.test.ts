@@ -230,10 +230,8 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	await browser.run(["click", '[data-slot="explanation-cancel"]']);
 	await actionStatus(browser, "cancelled");
 	await openAbout(browser);
-	await browser.run(["scrollintoview", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
-	await browser.run(["click", '[data-slot="module-list"] [data-module-id="Shop#Worker"]']);
 	const point = await browser.eval<{ x: number; y: number }>(
-		`(() => { const r = document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
+		`(() => { const r = document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
 	);
 	await browser
 		.run(["mouse", "move", String(Math.round(point.x)), String(Math.round(point.y))])
