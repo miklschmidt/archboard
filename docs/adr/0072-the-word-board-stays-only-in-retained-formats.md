@@ -35,6 +35,7 @@ These uses are unrelated to the retired concept:
 - Dashboard, clipboard and keyboard.
 - "Flip board" in `DESIGN.md`, which names a physical display.
 - `backlog board` in `docs/agents/issue-tracker.md`, which is a command of Backlog.md.
+- "Explained to a board" in `shared/schemas/walkthrough.ts`, which names a board of directors.
 
 These uses name a legacy board on purpose:
 
