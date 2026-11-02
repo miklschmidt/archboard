@@ -1,6 +1,6 @@
 // The render recipe in a PNG: one international text chunk (iTXt), right
 // after the header, holding the recipe as UTF-8 JSON. iTXt rather than tEXt,
-// because tEXt is Latin-1 and a board's name need not be.
+// because tEXt is Latin-1 and a document's name need not be.
 
 import { crc32 } from "node:zlib";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";

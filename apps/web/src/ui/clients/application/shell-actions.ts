@@ -39,10 +39,10 @@ interface ShellActionDeps {
 	readonly fullscreen: Fullscreen;
 	readonly openSettings: (surface: SettingsSurface) => void;
 	/**
-	 * Point a pane at a board, injectable for checks.
-	 * @param model The board key.
+	 * Point a pane at a legacy board, injectable for checks.
+	 * @param model The legacy board key.
 	 * @param pane The pane's identity to the server.
-	 * @param vault The vault the board is in, which the pane moves into.
+	 * @param vault The vault the legacy board is in, which the pane moves into.
 	 * @returns What the server says the pane is showing, and the repository it is in.
 	 */
 	readonly show?: (model: string, pane: string, vault: string) => Promise<ShownModel>;
@@ -63,14 +63,14 @@ interface ShellActionDeps {
 	readonly readRepository: (paneId: string, repository: string) => Promise<void>;
 }
 
-/** The board actions. */
+/** The model actions. */
 type ModelActions = Pick<ShellActions, "selectModel" | "refreshModels" | "chooseCheckout">;
 
 /** Every shell action but opening beside, which waits on the panes and is composed over these. */
 type ComposedShellActions = Omit<ShellActions, "openBeside">;
 
 /**
- * The board actions: show a listed board, and read the listing again.
+ * The model actions: show a listed model, and read the listing again.
  * @param deps The owners.
  * @returns Those actions.
  */
@@ -85,10 +85,10 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 		});
 	const { activate } = deps;
 	/**
-	 * Show a listed board in one pane; the outcome is the pane moving, or a notice.
-	 * @param key The board key.
+	 * Show a listed model in one pane; the outcome is the pane moving, or a notice.
+	 * @param key The model key.
 	 * @param inPane Which pane shows it; the active one when none is named.
-	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @param repository The repository the model is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now.
 	 */
 	async function selectModel(key: string, inPane?: string, repository?: string): Promise<boolean> {
@@ -230,10 +230,10 @@ async function choose(deps: ShellActionDeps, repository: string, root: string): 
 }
 
 /**
- * The vault a pane reads a board of a repository from, or why it cannot now.
+ * The vault a pane reads a model of a repository from, or why it cannot now.
  * @param catalog The catalog.
  * @param status The pane.
- * @param repository The repository the board is in; the pane's own when none is named.
+ * @param repository The repository the model is in; the pane's own when none is named.
  * @returns The vault, or the notice that says why there is none.
  */
 function placeFor(
@@ -265,7 +265,7 @@ function placeFor(
 }
 
 /**
- * The vault a repository's boards are read from. A click and a restored address
+ * The vault a repository's models are read from. A click and a restored address
  * both resolve a repository's name here, so they open the same vault.
  * @param catalog The catalog.
  * @param repository The repository's name.

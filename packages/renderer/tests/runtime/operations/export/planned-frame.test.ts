@@ -7,9 +7,9 @@ import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
 
 /**
- * One board holding the same content, built or not.
+ * One document holding the same content, built or not.
  * @param built Whether its variant is current.
- * @returns The board.
+ * @returns The document.
  */
 function documentOf(built: boolean) {
 	return LegacyBoardSchema.parse({
@@ -40,7 +40,7 @@ function documentOf(built: boolean) {
 }
 
 /**
- * Draw a board by its bare name.
+ * Draw a document by its bare name.
  * @param built Whether its variant is current.
  * @returns The drawn reply.
  */
@@ -85,7 +85,7 @@ test("a board nothing is built of is framed as planned, its atlas moved with its
 	}
 
 	// A line read back off the framed drawing stands where the atlas moved it, so the
-	// drawn checks compare a planned board's routes with its cards in one frame.
+	// drawn checks compare a planned document's routes with its cards in one frame.
 	const before = routeEnds(built.svg).get("put")!;
 	const after = routeEnds(planned.svg).get("put")!;
 	expect([after.x - before.x, after.y - before.y]).toEqual([...shift]);

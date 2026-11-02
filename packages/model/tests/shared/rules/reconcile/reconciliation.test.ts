@@ -196,7 +196,7 @@ describe("a real disagreement", () => {
 	test("the removed side's issue says what the predecessor changed the field to", () => {
 		// Settling this is writing the node again with that value, so an issue
 		// that named `description` and stopped would have the sentence copied out
-		// of the board by hand — one line below a near-identical responsibility,
+		// of the model by hand — one line below a near-identical responsibility,
 		// which is how a restored node comes back saying something nobody wrote
 		// (TASK-256.09).
 		const lease = {
@@ -216,9 +216,9 @@ describe("a real disagreement", () => {
 		expect(about(settled.issues, "n3")[0]?.changed).toEqual([
 			{ field: "description", before: lease.description, after: reworded },
 		]);
-		// And it is something a board may hold: a standing is written on the
+		// And it is something a model may hold: a standing is written on the
 		// variant and read back after a restart, so a value the contract refused
-		// would make the board unreadable rather than the disagreement unsettled.
+		// would make the model unreadable rather than the disagreement unsettled.
 		const written = VariantStandingSchema.safeParse({
 			against: "v1",
 			atVersion: 2,

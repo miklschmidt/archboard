@@ -32,7 +32,7 @@ interface DocumentReading {
 
 /**
  * Every document reference of the variants the check reads.
- * @param states The boards, each at the variant the check reads.
+ * @param states The documents, each at the variant the check reads.
  * @returns The references.
  */
 function documentsOf(states: readonly StateToCheck[]): DocumentReference[] {
@@ -41,7 +41,7 @@ function documentsOf(states: readonly StateToCheck[]): DocumentReference[] {
 
 /**
  * The warning for a reference whose file is not at the version it names.
- * @param read The board, at the variant that holds the reference.
+ * @param read The document, at the variant that holds the reference.
  * @param index Where the reference is in the variant's list.
  * @param where The code that was read: the checkout, or a ref in it.
  * @returns The finding.
@@ -70,7 +70,7 @@ type Judged = { readonly finding: CodeFinding } | { readonly skip: CodeCheckSkip
  * The code a reference is read in, or why it is not read: the checkout's
  * files, or the tree of the ref it pins.
  * @param document The reference.
- * @param at The board and variant that hold it, for a skip.
+ * @param at The document and variant that hold it, for a skip.
  * @param reading What the pass read.
  * @returns The code, a skip, or undefined where the checkout is unavailable,
  * which the pass says once for the whole checkout.
@@ -93,7 +93,7 @@ function codeOf(
 
 /**
  * Hold one reference to the file at the version it names.
- * @param read The board, at the variant that holds the reference.
+ * @param read The document, at the variant that holds the reference.
  * @param index Where the reference is in the variant's list.
  * @param document The reference.
  * @param reading What the pass read.
@@ -114,7 +114,7 @@ function judgeDocument(
 
 /**
  * Hold each document reference to the file at the version it names.
- * @param states The boards, each at the variant the check reads.
+ * @param states The documents, each at the variant the check reads.
  * @param reading The registered checkouts, each repository's checkout and the refs read from Git.
  * @returns The findings, and the references that were not read with the reason.
  */

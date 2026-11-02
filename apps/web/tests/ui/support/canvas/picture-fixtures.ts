@@ -1,4 +1,4 @@
-// Pictures of the board `pipeline` as the renderer draws them, for the tests
+// Pictures of the model `pipeline` as the renderer draws them, for the tests
 // that hold a transition or an entrance to what it does with one.
 
 import type { SemanticDrawing } from "#ui/clients/canvas/reads/drawings.ts";
@@ -107,7 +107,7 @@ function trafficMarkup(line: Line): string {
 }
 
 /**
- * One drawn picture of the board `pipeline`.
+ * One drawn picture of the model `pipeline`.
  * @param cards Its cards.
  * @param lines Its lines.
  * @param identity Which variant and view it is of, and on which ground.

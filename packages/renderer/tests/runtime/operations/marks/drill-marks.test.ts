@@ -1,5 +1,5 @@
-// A part that opens another board is marked with which way that board lies,
-// read from the part's kind against the level of the board drawn (ADR 0029),
+// A part that opens another document is marked with which way that document lies,
+// read from the part's kind against the level of the document drawn (ADR 0029),
 // and the mark takes room beside the name without cutting it.
 //
 // What is guarded: the direction each part's mark says, in both grammars and
@@ -29,7 +29,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 const OPENS = { board: "elsewhere", variant: { kind: "current" } };
 
-/** Each part, and the way the board it opens lies from a board at the service level. */
+/** Each part, and the way the document it opens lies from a document at the service level. */
 const PARTS = [
 	{ id: "whole", name: "The platform as a whole", kind: "system", drill: "up" },
 	{ id: "peer", name: "A neighbouring service with a long name", kind: "service", drill: "across" },
@@ -98,7 +98,7 @@ for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	);
 }
 
-/** Each part that opens a board, on a small card and on a large one. */
+/** Each part that opens a document, on a small card and on a large one. */
 const SIZED = PARTS.filter(({ drill }) => drill !== undefined).flatMap(({ id, name, kind }) => [
 	{ id, name: kind, kind },
 	{
@@ -109,7 +109,7 @@ const SIZED = PARTS.filter(({ drill }) => drill !== undefined).flatMap(({ id, na
 	},
 ]);
 
-/** Those parts in a frame that opens a board too, asked along in order. */
+/** Those parts in a frame that opens a document too, asked along in order. */
 const FRAMED = orderedFixture({
 	nodes: [
 		{ id: "frame", name: "What they make up", kind: "system", drillDown: OPENS },

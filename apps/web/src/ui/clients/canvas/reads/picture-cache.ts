@@ -1,15 +1,15 @@
 // Pictures this browser has drawn, kept across page loads (TASK-247).
 //
-// A picture is a reading of one version of a board, under one vault policy,
+// A picture is a reading of one version of a model, under one vault policy,
 // drawn by one build of the renderer. Any of the three moving makes it a
 // picture of something that is no longer there, so each is kept under a key
 // that names all three and a lookup misses unless all three still hold. That
-// keeps the board file the one source of truth (ADR 0023): what is kept here is
-// a cache of what the server's board looked like, and it is never shown without
+// keeps the model file the one source of truth (ADR 0023): what is kept here is
+// a cache of what the server's model looked like, and it is never shown without
 // being checked against what the server says now.
 //
 // Pictures are kept in IndexedDB (TASK-344). localStorage held about 5 MB for
-// the whole page, less than the whole boards and their views, so a store that
+// the whole page, less than the whole models and their views, so a store that
 // overflowed dropped pictures the page had just drawn ahead. A picture takes its
 // theme from the page's CSS (TASK-346), so a reading is kept once, not once per
 // theme.
@@ -37,7 +37,7 @@ import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 
 /** What a cached picture has to agree with to be shown. */
 interface PictureStamp {
-	/** The board's version. */
+	/** The model's version. */
 	readonly version: number;
 	/** The vault policy's fingerprint. */
 	readonly fingerprint: string;
@@ -65,7 +65,7 @@ const ModelDrawingSchema = ArchitectureRenderResultSchema.options[0]
 			.optional(),
 	});
 
-/** The first field of a canonical drawing's key, which no board picture's key starts with. */
+/** The first field of a canonical drawing's key, which no model picture's key starts with. */
 const CANONICAL_KEY = "canonical";
 
 /** How many canonical drawings one browser keeps. Each holds one picture and its atlas. */
@@ -193,9 +193,9 @@ function browserPictureStorage(): PictureStorage | undefined {
 const KEY_FIELDS = 9;
 
 /**
- * The key one render request is kept under, stamped. A picture is of a board of
- * one vault: two repositories can each have a board of the same name.
- * @param request The vault, board, variant and view asked for.
+ * The key one render request is kept under, stamped. A picture is of a model of
+ * one vault: two repositories can each have a model of the same name.
+ * @param request The vault, model, variant and view asked for.
  * @param stamp The version, policy and renderer it was drawn from.
  * @returns The key.
  */
@@ -217,7 +217,7 @@ function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string
  * The picture kept for a request, when it was drawn from what the server says now.
  * @param storage The storage.
  * @param request What is asked for.
- * @param current The board version, policy and renderer build in force now.
+ * @param current The model version, policy and renderer build in force now.
  * @returns The kept picture, or nothing.
  */
 async function readCachedPicture(
@@ -256,13 +256,13 @@ async function writeCachedPicture(
 }
 
 /**
- * Forget every picture of a board of one vault that moved or went away, or that
+ * Forget every picture of a legacy board of one vault that moved or went away, or that
  * another build of the renderer drew, reading only the keys. A picture of
  * another vault is that vault's listing's to judge, and a key an older page
  * wrote is forgotten, because nothing asks for it again.
  * @param storage The storage.
- * @param vault The vault the boards are in.
- * @param models The boards the server lists there, with their versions.
+ * @param vault The vault the legacy boards are in.
+ * @param models The legacy boards the server lists there, with their versions.
  * @param renderer The renderer build in force now.
  */
 async function forgetStalePictures(
@@ -295,9 +295,9 @@ async function forgetStalePictures(
 }
 
 /**
- * Whether a kept key names a board's picture, which a canonical drawing's key does not.
+ * Whether a kept key names a model's picture, which a canonical drawing's key does not.
  * @param key A stored key.
- * @returns True for a board picture's key, or for a key of an older page.
+ * @returns True for a model picture's key, or for a key of an older page.
  */
 function isModelPicture(key: IDBValidKey): key is string {
 	return typeof key === "string" && keyParts(key)[0] !== CANONICAL_KEY;
@@ -306,7 +306,7 @@ function isModelPicture(key: IDBValidKey): key is string {
 /**
  * The fields of a kept key, or none for a key this module did not write.
  * @param key A stored key.
- * @returns Vault, board, variant, view, comparison, engine, version, fingerprint, renderer.
+ * @returns Vault, model, variant, view, comparison, engine, version, fingerprint, renderer.
  */
 function keyParts(key: string): unknown[] {
 	try {

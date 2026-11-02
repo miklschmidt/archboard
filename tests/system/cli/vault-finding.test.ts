@@ -78,7 +78,7 @@ function archboard(
 }
 
 /**
- * List the boards and read the vault the answer names.
+ * List the models and read the vault the answer names.
  * @param cwd Where the command runs.
  * @param args What else the command line holds.
  * @param env What this invocation's environment changes.

@@ -11,11 +11,11 @@ import {
 const LEVELS = ["system", "service", "module"] as const;
 
 /**
- * A board for the outline.
+ * A model for the outline.
  * @param name Its name.
  * @param level Its level.
- * @param links The boards it links to, `^name` for a container link.
- * @returns The board.
+ * @param links The models it links to, `^name` for a container link.
+ * @returns The model.
  */
 function model(name: string, level: string | null, ...links: string[]): OutlineModel {
 	return {

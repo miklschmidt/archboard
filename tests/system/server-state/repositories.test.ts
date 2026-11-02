@@ -1,9 +1,9 @@
 import { canonicalCapture, seedCanonicalFixture } from "../support/canonical-fixture.ts";
 // The repositories the navigator lists, and choosing a checkout from the page
 // (ADR 0050, TASK-472.05). One owned server with a registry of its own knows a
-// repository with two checkouts, each with a vault. A pane shows a board of the
-// chosen checkout; choosing the other moves the pane there with its board, and
-// a show of another vault's board moves a named pane into that vault.
+// repository with two checkouts, each with a vault. A pane shows a model of the
+// chosen checkout; choosing the other moves the pane there with its model, and
+// a show of another vault's model moves a named pane into that vault.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdirSync, realpathSync, symlinkSync } from "node:fs";
@@ -162,7 +162,7 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		resources.defer(() => elsewhere.close());
 
-		// Choosing the worktree moves the pane into its vault and keeps its board,
+		// Choosing the worktree moves the pane into its vault and keeps its model,
 		// which the worktree has not got, and every tab is told to list again.
 		const mark = pane.mark();
 		const elsewhereMark = elsewhere.mark();
@@ -178,7 +178,7 @@ describe.serial("the repositories of the navigator", () => {
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
 
-		// A show names the pane and the vault of another repository's board, and the
+		// A show names the pane and the vault of another repository's model, and the
 		// pane moves into that vault.
 		const beforeShow = pane.mark();
 		const shown = await inServed<{ model: string; repository: string | null }>("/api/panes/show", {
@@ -224,7 +224,7 @@ describe.serial("the repositories of the navigator", () => {
 		expect(chose.status).toBe(200);
 
 		// The page never heard of the move, so its socket comes back naming the vault
-		// it was in. The server puts it where it moved it, on the board it held.
+		// it was in. The server puts it where it moved it, on the model it held.
 		const endpoint = new URL(server.base);
 		endpoint.protocol = "ws:";
 		endpoint.search = new URLSearchParams({
@@ -283,7 +283,7 @@ describe.serial("the repositories of the navigator", () => {
 		await pane.sync();
 		expect(pane.events.slice(mark).filter((event) => event.type === "pane_place")).toEqual([]);
 
-		// With a vault it is chosen, and the pane moves there with its board.
+		// With a vault it is chosen, and the pane moves there with its model.
 		const fixVault = vaultOf(fix);
 		expect((await choose(fix)).status).toBe(200);
 		const moved = await pane.waitFor("pane_place", mark);

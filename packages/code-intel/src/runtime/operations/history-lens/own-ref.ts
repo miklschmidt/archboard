@@ -65,7 +65,7 @@ function pinAway(
  * The parts of a variant as they are read: in a draft, every bound part of a
  * repository at the one ref the draft is read against there, unless it pins a
  * ref that ref does not hold.
- * @param document The board.
+ * @param document The document.
  * @param variant The variant.
  * @param rootOf The checkout of a repository, when this machine has one to read.
  * @param options The caller's signal.

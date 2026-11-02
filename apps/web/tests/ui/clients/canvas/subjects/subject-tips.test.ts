@@ -25,7 +25,7 @@ afterAll(async () => {
 	await GlobalRegistrator.unregister();
 });
 
-/** A variant with a card that opens a board, a container, and a labelled relationship. */
+/** A variant with a card that opens a model, a container, and a labelled relationship. */
 const VARIANT = SemanticVariantSchema.parse(
 	withFixtureOrders({
 		id: "v1",

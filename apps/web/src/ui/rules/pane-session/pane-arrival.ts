@@ -1,6 +1,6 @@
-// A pane arriving where the server points it: a board, the vault it is a board
+// A pane arriving where the server points it: a model, the vault it is a model
 // of, and the repository that vault is listed under (ADR 0050). The pane
-// follows the server, so everything it reads from here on is of the board and
+// follows the server, so everything it reads from here on is of the model and
 // the vault it arrived at.
 
 import type { LivePaneStatus } from "#ui/state/pane-session/pane-status.ts";
@@ -15,9 +15,9 @@ interface PaneArrivalParts {
 	readonly setOpened: (key: string | null) => void;
 	readonly setModel: (model: LegacyIdentity | null) => void;
 	readonly setDoing: (entries: DoingEntry[]) => void;
-	/** The board on screen moved: who holds it and what was reported of it are not known yet. */
+	/** The model on screen moved: who holds it and what was reported of it are not known yet. */
 	readonly forgetModel: () => void;
-	/** The server pointed the pane somewhere other than the board on screen. */
+	/** The server pointed the pane somewhere other than the model on screen. */
 	readonly arrived: (key: string, previousKey: string | null) => void;
 	/** Tell the shell what the pane is now. */
 	readonly publish: () => void;
@@ -26,12 +26,12 @@ interface PaneArrivalParts {
 }
 
 /**
- * Whether the server named a board at all.
+ * Whether the server named a model at all.
  *
- * It says so with a board key or with nothing, and nothing is a real answer:
- * a vault that holds no board yet leaves every pane showing none.
+ * It says so with a model key or with nothing, and nothing is a real answer:
+ * a vault that holds no model yet leaves every pane showing none.
  * @param key What the server sent.
- * @returns True when there is a board to adopt.
+ * @returns True when there is a model to adopt.
  */
 function named(key: string | null | undefined): key is string {
 	return key !== undefined && key !== null && key !== "";
@@ -70,8 +70,8 @@ function createPaneArrival(
 	}
 
 	/**
-	 * Put a board on screen.
-	 * @param key The board key.
+	 * Put a model on screen.
+	 * @param key The model key.
 	 * @param identity Its identity, when the server sent one.
 	 * @param otherVault Whether the pane just moved into another vault.
 	 */
@@ -81,11 +81,11 @@ function createPaneArrival(
 		otherVault: boolean,
 	): void {
 		const previousKey = status.opened;
-		// The board on screen moves, even when the pane is pointed back at the board
-		// it was opened on: a drill-down had put another board there. The same board
-		// of another checkout is another board too: another file, version and writer.
+		// The model on screen moves, even when the pane is pointed back at the model
+		// it was opened on: a drill-down had put another model there. The same model
+		// of another checkout is another model too: another file, version and writer.
 		const moved = otherVault || previousKey !== key || status.paneKey !== key;
-		// Arriving sets both: the pane is showing the board it was pointed at,
+		// Arriving sets both: the pane is showing the model it was pointed at,
 		// and that is also where any later drill starts from.
 		status.opened = key;
 		status.paneKey = key;
@@ -93,7 +93,7 @@ function createPaneArrival(
 		parts.setOpened(key);
 		parts.setModel(status.model);
 		if (moved) {
-			// A different board is a different version and a different writer, and
+			// A different model is a different version and a different writer, and
 			// what an agent said about the last one is not news about this one.
 			status.version = null;
 			status.doing = [];
@@ -104,11 +104,11 @@ function createPaneArrival(
 	}
 
 	/**
-	 * This pane is on a board: the one the server addressed to it.
+	 * This pane is on a model: the one the server addressed to it.
 	 *
-	 * A server that names no board is telling this pane there is nothing to
+	 * A server that names no model is telling this pane there is nothing to
 	 * show yet, which is news worth sending and nothing to adopt.
-	 * @param key The board key, or null when the server named none.
+	 * @param key The model key, or null when the server named none.
 	 * @param identity Its identity, when the server sent one.
 	 * @param place The vault the pane is in now, when the server said.
 	 */

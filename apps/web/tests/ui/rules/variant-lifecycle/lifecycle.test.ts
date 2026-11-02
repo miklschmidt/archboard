@@ -19,7 +19,7 @@ test("a board's variants list the one its name opens, then the live ones, then t
 		"shelf",
 		"first",
 	]);
-	// A board nobody has built opens its first draft; nothing else moves.
+	// A model nobody has built opens its first draft; nothing else moves.
 	expect(variantOrder(variants, "late").map((variant) => variant.id)).toEqual([
 		"late",
 		"draft",

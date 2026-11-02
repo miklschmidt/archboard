@@ -57,7 +57,7 @@ type ScopeChoices = LineChoices & {
 /**
  * Adapt canonical meaning to the existing renderer content contract.
  * @param model The coherent read from the public runtime.
- * @returns Complete semantic content without a board or variant document.
+ * @returns Complete semantic content without a legacy board or variant document.
  */
 function modelContent(model: Model): VariantContent {
 	return {

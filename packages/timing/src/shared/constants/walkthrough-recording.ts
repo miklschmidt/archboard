@@ -20,7 +20,7 @@ const RECORDING_MS = durations({
 	 */
 	voiceStart: 60_000,
 	/**
-	 * How long the board is shown whole once the talk has begun, before the
+	 * How long the model is shown whole once the talk has begun, before the
 	 * first step. The video opens on the overview and glides into the talk,
 	 * rather than beginning mid-flight.
 	 */
@@ -75,11 +75,11 @@ const RECORDING_MS = durations({
 const RECORDER_MS = durations({
 	/**
 	 * How long the page waits, from the moment it is opened, to be ready to
-	 * record: the pane registered and showing the board, the board drawn and at
+	 * record: the pane registered and showing the model, the model drawn and at
 	 * rest, and the agent at a phase from which voice can start.
 	 *
-	 * A cold page fetches the bundle, lays the board out in its worker (Graphviz and
-	 * the renderer core in WebAssembly) and reads the workbench snapshot; a large board
+	 * A cold page fetches the bundle, lays the model out in its worker (Graphviz and
+	 * the renderer core in WebAssembly) and reads the workbench snapshot; a large model
 	 * takes a few seconds. It pulls against an agent that waits this long to be
 	 * told the server cannot record.
 	 */

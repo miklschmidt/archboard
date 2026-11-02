@@ -128,7 +128,7 @@ interface ArmSummary {
 	readonly waived: number;
 	/** Runs whose author read evaluation material or another run's world. */
 	readonly contaminated: number;
-	/** Runs whose author wrote a board file outside the CLI. */
+	/** Runs whose author wrote a document file outside the CLI. */
 	readonly directWrites: number;
 	/** Runs recorded before the harness kept file changes and exposure, which can say neither. */
 	readonly unaudited: number;
@@ -170,7 +170,7 @@ interface ArmSummary {
 	readonly missedUnprompted: number;
 	/**
 	 * Feature findings summed over the arm, by the authority each answers to:
-	 * a departure from the skill, a board the source contradicts, and an
+	 * a departure from the skill, a document the source contradicts, and an
 	 * expectation the skill never taught, which fails no run. A finding citing
 	 * no passage of the skill counts under none of them, and conformance counts
 	 * only departures from a passage the run's own skill carried.
@@ -272,7 +272,7 @@ function didWhatWasAsked(run: RunRecord): boolean {
 /**
  * Whether the grader answered something other than the scenario's checklist.
  * Such a verdict measures the grader, not the author, so the run is set aside
- * the way a contaminated one is: it enters no comparison, and its board is
+ * the way a contaminated one is: it enters no comparison, and its document is
  * neither compliant nor not. What counts as answering off is
  * `checklistStanding`'s to decide, not this.
  * @param run The run.

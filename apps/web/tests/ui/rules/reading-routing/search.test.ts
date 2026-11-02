@@ -11,7 +11,7 @@ import {
 
 /**
  * An address, written the way a test reads.
- * @param panes The panes, as pane id to board key.
+ * @param panes The panes, as pane id to model key.
  * @returns The address.
  */
 function addressOf(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
@@ -92,7 +92,7 @@ test("a search naming no pane is an address with no panes, which asks for nothin
 
 test("a board key that reads as JSON is still a board key through the installed parser", () => {
 	// The router's default parser would take these for a number, a boolean and
-	// nothing at all; each of them is a name a board is allowed to have.
+	// nothing at all; each of them is a name a model is allowed to have.
 	const parsed = parseWorkspaceSearchString("?paneA=2026&paneB=true&pane=A");
 	expect(parsed).toEqual({ paneA: "2026", paneB: "true", pane: "A" });
 	const address = addressFromSearch(validateWorkspaceSearch(parsed));
@@ -116,7 +116,7 @@ test("the view a pane reads a semantic board through survives the address bar", 
 		activePaneId: "A",
 	});
 	expect(search).toEqual({ paneA: "semantic:pipeline", viewA: "k3f9" });
-	// And a reload reads it back as the same reading of the same board.
+	// And a reload reads it back as the same reading of the same model.
 	const back = addressFromSearch(validateWorkspaceSearch(search));
 	expect(back.panes).toEqual([
 		{ paneId: "A", paneKey: "semantic:pipeline", repository: null, view: "k3f9" },

@@ -177,9 +177,9 @@ type ServerError = Error & {
  * The error for an answer that was not ok, carrying the server's own reason
  * and the structured body behind it.
  *
- * Refused board writes are results, not faults. Keeping their body on the
+ * Refused model writes are results, not faults. Keeping their body on the
  * error means the CLI does not have to reconstruct what the server said, or
- * read the board after the refusal.
+ * read the model after the refusal.
  * @param data The answer body.
  * @param response The answer.
  * @returns The error.
@@ -241,7 +241,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 /**
  * One request to the Archboard server, answered as JSON.
  *
- * Every server request carries the board when one was named, and every API
+ * Every server request carries the model when one was named, and every API
  * request carries the vault (ADR 0049). Attached here rather than at 30 call
  * sites, so a route can never be the one that forgot.
  * @param path The request path.

@@ -200,7 +200,7 @@ class TalkCapture {
 		this.#heard.add(stream.id);
 	}
 
-	/** The talk begins now: this is sample nought, with the board and what was said so far. */
+	/** The talk begins now: this is sample nought, with the model and what was said so far. */
 	begin(): void {
 		if (this.#origin !== null) return;
 		this.#origin = this.#now();
@@ -226,7 +226,7 @@ class TalkCapture {
 	}
 
 	/**
-	 * The pane drew the board, at a version.
+	 * The pane drew the legacy board, at a version.
 	 * @param version The version, or zero for a canonical model.
 	 * @param revision The exact canonical revision when present.
 	 */

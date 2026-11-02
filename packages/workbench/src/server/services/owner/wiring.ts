@@ -150,8 +150,8 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 	let active: CodexWorkbenchComponents | null = null;
 	const announcements = createArchboardAnnouncements({
 		/**
-		 * Publish what this tab hears: the changes of the boards of its panes' vaults, each built
-		 * for the workhorse of the board's checkout, and the reports of its panes.
+		 * Publish what this tab hears: the changes of the models of its panes' vaults, each built
+		 * for the workhorse of the model's checkout, and the reports of its panes.
 		 * @param tabSessionId The tab session.
 		 * @returns The publisher options.
 		 */
@@ -163,7 +163,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			feedId: semanticChangeFeed.feedId,
 			fresh: {
 				/**
-				 * A fresh semantic input for the board of the pane the session presents through.
+				 * A fresh semantic input for the model of the pane the session presents through.
 				 * @returns The input.
 				 */
 				read: () => {
@@ -174,7 +174,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 			},
 			/**
 			 * The semantic input for a settled change, under the identity of the workhorse of the
-			 * board's checkout, which is the one told it.
+			 * model's checkout, which is the one told it.
 			 * @param event The settled change.
 			 * @returns The input, at the change's cursor.
 			 */

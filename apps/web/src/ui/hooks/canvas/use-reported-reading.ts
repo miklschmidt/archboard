@@ -7,13 +7,13 @@ import type { PanePresentation, SemanticPaneReading } from "#ui/rules/canvas/rea
 
 /** What the pane has on screen, as it knows it. */
 interface OnScreen {
-	/** The board on screen, which is the drilled-into one when there is one. */
+	/** The model on screen, which is the drilled-into one when there is one. */
 	readonly model: string;
-	/** The server's answer for that board, once there is one. */
+	/** The server's answer for that model, once there is one. */
 	readonly answer: SemanticRender | undefined;
 	/** The view it is being read through, or undefined for the whole variant. */
 	readonly view: string | undefined;
-	/** What is selected on that board, or null when nothing is. */
+	/** What is selected on that model, or null when nothing is. */
 	readonly selection: string | null;
 	/** Where a presented walkthrough has got to, or null when none is presented. */
 	readonly presentation: PanePresentation | null;

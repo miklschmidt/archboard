@@ -1,7 +1,7 @@
 // What a pane says when the picture on it is the last one that loaded.
 //
 // A live architecture viewer's worst failure is a quiet one: somebody looks at
-// a diagram and believes it is what the board says now. So a refresh that
+// a diagram and believes it is what the model says now. So a refresh that
 // fails never takes the diagram away — showing nothing would be worse — and it
 // never passes unmentioned either. The strip below is that disclosure: what is
 // on screen, why it is not current, and the one thing to do about it.

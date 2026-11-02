@@ -2,10 +2,10 @@
 // request in it without waking a browser.
 //
 // The pane is read-only, so this is the whole of what a person contributes to
-// a board's context: which board and variant they are looking at, which named
+// a model's context: which model and variant they are looking at, which named
 // view they are reading it through, and which semantic subjects they picked
 // out. No geometry, no camera, and nothing that could be mistaken for content
-// (ADR 0023) — the board on disk is still the only thing that says what the
+// (ADR 0023) — the model on disk is still the only thing that says what the
 // architecture is.
 //
 // Debounced for the same reason a selection always has been: picking things out
@@ -27,7 +27,7 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 /** What one pane is reading, before its identity, count and moment are stamped on. */
 type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "sequence" | "byUser">;
 
-/** A pane showing nothing: what a pane reports when it leaves a board. */
+/** A pane showing nothing: what a pane reports when it leaves a model. */
 const NOTHING_READ: PaneReading = Object.freeze({
 	model: null,
 	variant: null,
@@ -56,7 +56,7 @@ interface ReadingPublisher {
 	 * @param part The part.
 	 */
 	readonly userChangeFailed: (part: SemanticPanePart) => void;
-	/** Forget what was published and what was read, because the board changed. */
+	/** Forget what was published and what was read, because the model changed. */
 	readonly reset: () => void;
 	/** Send the last reading again, because whoever had it no longer does. */
 	readonly republish: () => void;
@@ -213,8 +213,8 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	/**
 	 * Forget what was published and what was read.
 	 *
-	 * For a pane that has moved to another board: what it was reading names
-	 * subjects of a board it is no longer showing, and saying it again would be
+	 * For a pane that has moved to another model: what it was reading names
+	 * subjects of a model it is no longer showing, and saying it again would be
 	 * saying something that is not true any more.
 	 */
 	function reset(): void {

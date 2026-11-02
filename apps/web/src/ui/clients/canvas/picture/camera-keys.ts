@@ -15,7 +15,7 @@ const ZOOM_KEYS: Readonly<Record<string, number>> = { "+": 1, "=": 1, "-": -1, _
 
 /**
  * Act on a key that moves the camera: the arrows ease it, `+` and `-` ease a
- * zoom about the middle, and `0` glides to the whole board.
+ * zoom about the middle, and `0` glides to the whole model.
  * @param key The key that was pressed.
  * @param camera The camera.
  * @param content How big the diagram is, for the key that fits it.

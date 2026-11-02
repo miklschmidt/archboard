@@ -32,7 +32,7 @@ function answering(body: unknown, status = 200): ReturnType<typeof mock> {
 
 /**
  * Activate a subject's code target, with a spy for what the person is told.
- * @param paneKey The board key the subject is on.
+ * @param paneKey The model key the subject is on.
  * @returns The spy.
  */
 function activate(
@@ -65,7 +65,7 @@ describe("code-target activation", () => {
 		const fetchMock = answering(SUCCESS);
 
 		const onNotice = activate("system/payments");
-		// The browser states which board and which subject; the binding, the
+		// The browser states which model and which subject; the binding, the
 		// checkout registry and the opener are all the server's (ADR 0023).
 		expect(fetchMock).toHaveBeenCalledWith("/api/code-targets/open", {
 			method: "POST",

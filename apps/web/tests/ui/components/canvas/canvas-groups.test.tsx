@@ -39,7 +39,7 @@ function vaultWith(groups: SemanticPolicy["groups"]): Record<string, unknown> {
 	};
 }
 
-/** One node as the board file spells it, as far as these tests need. */
+/** One node as the model file spells it, as far as these tests need. */
 interface Node {
 	readonly id: string;
 	readonly name: string;
@@ -67,7 +67,7 @@ const EDGES = [
 ];
 
 /**
- * One board document, as its route answers with it.
+ * One model document, as its route answers with it.
  * @param nodes The current variant's nodes.
  * @param variants Other variants, when the family has them.
  * @returns The document.
@@ -117,11 +117,11 @@ function placed(ids: readonly string[]): Record<string, typeof BOX> {
 }
 
 /**
- * A picture of the board, drawing every subject except those named.
+ * A picture of the model, drawing every subject except those named.
  *
  * Containers are regions rather than nodes, the way the renderer draws a node
  * with visible children. What is left out stands for what a view hides or a
- * collapsed container swallows: still on the board, not in this picture.
+ * collapsed container swallows: still on the model, not in this picture.
  * @param hidden Subjects this picture does not draw.
  * @returns The render route's success body.
  */
@@ -159,7 +159,7 @@ function picture(hidden: readonly string[] = []): Record<string, unknown> {
 	};
 }
 
-/** Put the board, a picture of it and the vault's groups in front of a pane. */
+/** Put the model, a picture of it and the vault's groups in front of a pane. */
 function serving(): void {
 	server.documents["pipeline"] = documentOf();
 	server.reply = { status: 200, body: picture() };
@@ -167,7 +167,7 @@ function serving(): void {
 }
 
 /**
- * Let every read the pane starts reach the screen: the picture, the board and
+ * Let every read the pane starts reach the screen: the picture, the model and
  * the vault check.
  */
 async function settled(): Promise<void> {
@@ -448,7 +448,7 @@ test("moving to another variant drops the group; changing the view keeps it", as
 	expect(listed()).toBeNull();
 });
 
-/** Put a board whose variant tells one walkthrough, about the gateway, in front of a pane. */
+/** Put a model whose variant tells one walkthrough, about the gateway, in front of a pane. */
 function servingWalkthrough(): void {
 	server.documents["pipeline"] = {
 		...documentOf(),

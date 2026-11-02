@@ -5,9 +5,9 @@
 // How they got there does not matter to somebody answering "what is this?"; where they are does.
 // Names only. An identifier, a pane letter or a line of JSON in a speech model's context is
 // something it will say out loud. Only the parts the pane marked as the user's own are said
-// (ADR 0034), and the board always is, because two panes can be open.
+// (ADR 0034), and the model always is, because two panes can be open.
 //
-// What an agent outside this session does is news too (TASK-293.06): a board it wrote, or a pane
+// What an agent outside this session does is news too (TASK-293.06): a model it wrote, or a pane
 // it pointed somewhere with `browser show`. Neither model asked for it, so the sentence says what
 // changed under them and that an agent did it, never crediting the user.
 
@@ -53,7 +53,7 @@ function selectionClause(event: PaneNewsSource): string {
 }
 
 /**
- * The words for the view the board is read through.
+ * The words for the view the model is read through.
  * @param event - The pane event.
  * @returns The clause, beginning with its own comma.
  */
@@ -66,7 +66,7 @@ function viewClause(event: PaneNewsSource): string {
 
 /**
  * The words for the variant on screen, said when the user chose it, or when they arrived on a
- * board at a state of it that is not the current one.
+ * model at a state of it that is not the current one.
  * @param event - The pane event.
  * @param changed - What the user changed.
  * @returns The clause, or nothing.
@@ -93,7 +93,7 @@ function focusNews(event: PaneFocusEvent): string {
 }
 
 /**
- * What a reading report says: the board, and whichever parts the user changed.
+ * What a reading report says: the model, and whichever parts the user changed.
  * @param event - The selection event.
  * @param changed - What the user changed.
  * @returns The sentence.
@@ -109,8 +109,8 @@ function readingNews(event: PaneSelectionEvent, changed: readonly SemanticUserCh
 
 /**
  * Whether a reading the user changed is a reason to stop a narration (TASK-293.05): they picked
- * something out, or chose a view or a variant, on the board they were on. Clicking empty canvas
- * should not stop a talk, and a board of their choosing ends the walkthrough, which is told as
+ * something out, or chose a view or a variant, on the model they were on. Clicking empty canvas
+ * should not stop a talk, and a model of their choosing ends the walkthrough, which is told as
  * leaving it.
  * @param event - The selection event.
  * @param changed - What the user changed.
@@ -147,10 +147,10 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
 }
 
 /**
- * What an agent pointing a pane at another board is: where the pane was and where it is now,
+ * What an agent pointing a pane at another model is: where the pane was and where it is now,
  * worded so it never credits the user.
  * @param event - The focus event the show published.
- * @param from - The board the pane showed before, by name, or null when it showed none.
+ * @param from - The model the pane showed before, by name, or null when it showed none.
  * @returns The news.
  */
 function agentSwitchNews(event: PaneFocusEvent, from: string | null): CoordinatorPaneNews {

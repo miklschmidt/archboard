@@ -272,12 +272,12 @@ function viewLabel(label: string, view: string, taken: ReadonlySet<string>): str
 }
 
 /**
- * A named capture as the saved boards answer to it: the board, variant and
+ * A named capture as the saved documents answer to it: the document, variant and
  * view the author actually wrote, so a picture the scenario asked for is taken
  * even when the author spelled its name differently. A name nothing answers to
  * is left as written, and the rasterize command refuses it as before.
  * @param request What the scenario asks to see.
- * @param documents The boards as finally saved, by name.
+ * @param documents The documents as finally saved, by name.
  * @returns The declaration the rasterize command is given.
  */
 function resolvedCapture(
@@ -291,9 +291,9 @@ function resolvedCapture(
 }
 
 /**
- * The variant and view of a named capture as the saved board answers to them,
+ * The variant and view of a named capture as the saved document answers to them,
  * and as written when nothing on it does.
- * @param document The board the capture is of.
+ * @param document The document the capture is of.
  * @param request What the scenario asks to see.
  * @returns The selectors, each left out when the request names none.
  */
@@ -308,12 +308,12 @@ function selectorsNamed(
 }
 
 /**
- * One selector under its key: the name the board answers with, the name as
+ * One selector under its key: the name the document answers with, the name as
  * written when nothing on it answers, and nothing at all when the request
  * names no such selector.
  * @param key The selector's key.
  * @param asked The name the request used, if any.
- * @param answer The name the board answers with, asked lazily.
+ * @param answer The name the document answers with, asked lazily.
  * @returns The one-key record, or an empty one.
  */
 function asWritten(
@@ -325,11 +325,11 @@ function asWritten(
 }
 
 /**
- * The pictures a scenario's requests come to once the saved boards are known:
+ * The pictures a scenario's requests come to once the saved documents are known:
  * a named capture as declared, and an every-view capture as one capture per
- * view on its board, in the board's order, drawing each in its own grammar.
+ * view on its document, in the document's order, drawing each in its own grammar.
  * @param requests What the scenario asks to see.
- * @param documents The boards as finally saved, by name.
+ * @param documents The documents as finally saved, by name.
  * @returns The concrete declarations, in request order.
  */
 function expandCaptures(

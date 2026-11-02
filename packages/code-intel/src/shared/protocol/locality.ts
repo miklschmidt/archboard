@@ -1,17 +1,17 @@
 // The answer of `archboard semantic locality` and
 // `GET /api/semantic-boards/locality` (ADR 0045).
 //
-// Locality is where change concentrates in a board's code. The answer reads
-// one variant of one board over a period, through its parts' bindings.
+// Locality is where change concentrates in a document's code. The answer reads
+// one variant of one document over a period, through its parts' bindings.
 // `hotspots` ranks every part the lens read by the commits of the period that
 // changed its bound declarations or paths. `coupling` lists the pairs of those parts that
-// change together, and marks the pairs that nothing on the board joins. Both
+// change together, and marks the pairs that nothing on the document joins. Both
 // read the same walk, the same `commits` and the same `leftOut`.
 //
 // Both readings leave out large commits and say how many (`leftOut`), and both
 // say which parts they did not read and why (`skipped`), so a part that was not
 // read never looks like a part that no commit changed. Nothing in the answer
-// is stored in a board.
+// is stored in a document.
 
 import { z } from "zod";
 import { HistoryAttributionSchema } from "#shared/schemas/history-attribution.ts";
@@ -86,7 +86,7 @@ const CoupledPairSchema = z
 		 * either direction, and neither part is inside the other. A part inside
 		 * an end counts as at that end, and so does a container that holds the
 		 * end (ADR 0045 as amended). An unjoined pair asks
-		 * whether the board misses a dependency, or whether two parts carry one
+		 * whether the document misses a dependency, or whether two parts carry one
 		 * decision.
 		 */
 		unjoined: z.boolean(),
@@ -105,11 +105,11 @@ const LeftOutSchema = z
 	})
 	.strict();
 
-/** What `semantic locality` says about one variant of one board. */
+/** What `semantic locality` says about one variant of one document. */
 const LocalityAnswerSchema = z
 	.object({
 		model: z.string(),
-		/** The board's version the reading was made at. */
+		/** The document's version the reading was made at. */
 		version: z.int().nonnegative(),
 		/** The variant read: the current one, or the draft that was named. */
 		variant: RenderedVariantSchema,

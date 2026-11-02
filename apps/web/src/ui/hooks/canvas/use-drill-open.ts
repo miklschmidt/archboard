@@ -6,7 +6,7 @@
 // so when nothing opens the inspector beside the picture is already saying why.
 //
 // The read answers later. An answer arriving after the reader has moved on,
-// to another board or state, to another double-click or away from the
+// to another model or state, to another double-click or away from the
 // picture, belongs to a card that is no longer there to open, and opens nothing.
 
 import { useCallback, useEffect, useRef } from "react";
@@ -29,9 +29,9 @@ function drillDownOf(reading: VariantReading | null, id: string | null): DrillDo
 }
 
 /**
- * Open the board one level down from a card, when it has one to open.
- * @param reading What the board says about the variant the picture draws, or null.
- * @param onOpenDown Follow a drill-down to a board and one of its variants, when the picture can.
+ * Open the model one level down from a card, when it has one to open.
+ * @param reading What the model says about the variant the picture draws, or null.
+ * @param onOpenDown Follow a drill-down to a model and one of its variants, when the picture can.
  * @returns Open the drill-down of the subject with this id, if it is a card that has one.
  */
 function useDrillOpen(

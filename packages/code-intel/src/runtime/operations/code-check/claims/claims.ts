@@ -20,7 +20,7 @@ type DiagnosticSubject = Parameters<typeof describeSubject>[0];
 type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 
-/** Where a claim sits: the board, its variant, the place in the document and its subject. */
+/** Where a claim sits: the document, its variant, the place in the document and its subject. */
 type ClaimSite = Pick<VaultDiagnostic, "file" | "model" | "variant" | "path"> & {
 	readonly subject: DiagnosticSubject;
 };
@@ -60,7 +60,7 @@ interface ReadVariant {
 }
 
 /**
- * Where a claim sits in its board.
+ * Where a claim sits in its document.
  * @param variant The variant read.
  * @param path The place inside the variant's content.
  * @param subject What the claim is about.
@@ -178,8 +178,8 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
 }
 
 /**
- * Every claim one board makes about code at the variant the check reads.
- * @param read The board, its variant, and whether the variant is the named draft.
+ * Every claim one document makes about code at the variant the check reads.
+ * @param read The document, its variant, and whether the variant is the named draft.
  * @returns The claims, in the variant's order: parts, relationships, then steps.
  */
 function claimsOf(read: StateToCheck): Claim[] {

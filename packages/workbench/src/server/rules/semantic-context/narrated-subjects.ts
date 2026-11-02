@@ -2,7 +2,7 @@
 //
 // A beat names its subjects by id; the voice hears them by name: a part or a sequence by its
 // name, a relationship or a step by its two ends and its label. On a variant read against another
-// — the board's current one, or on a board with none the one it came from, or for a recording
+// — the model's current one, or on a model with none the one it came from, or for a recording
 // made with `--against` the variant it names (TASK-478.01) — each also says how it stands
 // against that one, as the picture marks it, and a changed one says what moved, so the voice can
 // explain the difference the viewer is looking at.
@@ -110,11 +110,11 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
 
 /**
  * What one step highlights, as the voice is told it.
- * @param model The board.
+ * @param model The legacy board.
  * @param variant The variant the walkthrough belongs to.
  * @param beat The step.
  * @param named The id of the variant a recording's frames are drawn against, or null for the
- * usual comparison. A variant the board no longer has leaves nothing to read against.
+ * usual comparison. A variant the legacy board no longer has leaves nothing to read against.
  * @returns Each subject the step names, in its order, with how it stands against the variant this
  * one is read against when there is one.
  */

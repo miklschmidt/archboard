@@ -26,7 +26,7 @@ class RequestFailure extends Error {
 
 /**
  * A request URL that names a vault, as every call does that reads or writes a
- * board (ADR 0049). Each pane names its own: two panes can show two repositories.
+ * model (ADR 0049). Each pane names its own: two panes can show two repositories.
  * @param url The endpoint, with or without a query.
  * @param vault The vault the call is about.
  * @returns The URL with `vault=` on its query.

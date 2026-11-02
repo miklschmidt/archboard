@@ -12,8 +12,8 @@ import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
 import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
 /**
- * The vault's half of the listing of these boards, with the dogfood levels.
- * @param models The boards.
+ * The vault's half of the listing of these legacy boards, with the dogfood levels.
+ * @param models The legacy boards.
  * @returns The half.
  */
 function vault(models: readonly DocumentEntry[]): ReturnType<typeof vaultHalf> {
@@ -114,7 +114,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	expect(listedLegacyKey(listing, "ingest")).toBe("ingest");
 	expect(listedLegacyKey(listing, "ingest@alt")).toBe("ingest@alt");
 	expect(listedLegacyKey(listing, "ingest@current")).toBe("ingest@current");
-	// The board says nothing is built; a board with a current variant, an unreadable one and
+	// The model says nothing is built; a model with a current variant, an unreadable one and
 	// one nobody listed say nothing of the kind.
 	expect(nothingBuiltOn(listing, "Ingest")).toBe(true);
 	const others = composeListing(
@@ -165,7 +165,7 @@ test("an unreadable board stays listed with its error beside the healthy ones", 
 test("the vault and the live panes are listed independently of each other", () => {
 	const both = composeListing(vault(VAULT), PANES);
 	expect(both.models.map((model) => model.key)).toEqual(["checkout", "payments"]);
-	// Every pane still on screen, whether or not two of them share a board.
+	// Every pane still on screen, whether or not two of them share a model.
 	expect(both.onScreen.map((pane) => pane.paneId)).toEqual(["A", "B"]);
 
 	const vaultOnly = composeListing(vault(VAULT), undefined);

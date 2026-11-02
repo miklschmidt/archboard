@@ -1,6 +1,6 @@
 // An author works in a world of its own, and the harness's records of the run
 // are not in it. Reads cannot be forbidden — a workspace-write sandbox
-// restricts writes, not reads — so the board snapshot the checks diff against,
+// restricts writes, not reads — so the document snapshot the checks diff against,
 // the author's own transcript, the verdicts, the bundle the grader reads and
 // the private CODEX_HOME with the operator's credentials sit outside the one
 // directory the author is given. The 2026-09-17 batch showed why: one run read

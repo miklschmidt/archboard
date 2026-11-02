@@ -1,4 +1,4 @@
-// Change coupling: which parts of a board change together (ADR 0045).
+// Change coupling: which parts of a document change together (ADR 0045).
 //
 // Two parts are coupled when the commits of a period that changed both pass
 // code-maat's filters: at least 5 shared commits, and a degree of at least

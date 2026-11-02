@@ -2,7 +2,7 @@
 // parts, or everything that sends to it.
 //
 // Poking a part answers what it is wired to. The next question is how far a
-// change to it reaches, and the board answers that too, with no telemetry and
+// change to it reaches, and the model answers that too, with no telemetry and
 // nothing invented: every relationship has a source and a target, so a walk
 // along them in one direction names every part that can be reached, and how
 // many relationships away each one is. A container is walked as the whole of

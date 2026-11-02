@@ -1,4 +1,4 @@
-// The control that narrates a walkthrough aloud, in the board tab's rows and at the
+// The control that narrates a walkthrough aloud, in the model tab's rows and at the
 // foot of the box of a presented one.
 //
 // What these catch: a Narrate control that is taken out of its row while voice
@@ -39,9 +39,9 @@ function narrating(held: string | null): {
 }
 
 /**
- * Mount a pane over a board that explains itself.
+ * Mount a pane over a model that explains itself.
  * @param narration What the shell offers, or none.
- * @returns Settles once the board tab lists its walkthroughs.
+ * @returns Settles once the model tab lists its walkthroughs.
  */
 async function mountExplained(narration?: WalkthroughNarration): Promise<void> {
 	server.documents["pipeline"] = EXPLAINED_DOCUMENT;

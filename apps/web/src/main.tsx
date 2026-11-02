@@ -18,7 +18,7 @@ if (!root) {
 applyShellDurations(document.documentElement);
 
 // Pictures are drawn here, with the renderer core and a pool of engine
-// workers, from the boards this tab reads (TASK-247). The renderer is its own
+// workers, from the models this tab reads (TASK-247). The renderer is its own
 // chunk, fetched and started while the application boots, so the shell and a
 // kept picture never wait for it.
 const renderer = import("@archboard/renderer/browser").then((module) => {

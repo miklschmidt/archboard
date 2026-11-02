@@ -1,8 +1,8 @@
-// Showing one board's other states: the drafts proposed against the current
+// Showing one model's other states: the drafts proposed against the current
 // architecture, and the states that used to be current.
 //
 // A proposal nobody can reach is a proposal nobody reviews. The navigator offers
-// every state of every board; the sidebar offers none. These check what the pane
+// every state of every model; the sidebar offers none. These check what the pane
 // still owns: the state it is told to show is the one it asks the server for, and
 // moving between states is reading rather than editing, which fits the selected
 // view to the arriving variant.
@@ -24,8 +24,8 @@ import {
 import { cameraNow, pressKey } from "#tests/ui/support/canvas/camera-probes.ts";
 
 /**
- * One board document with a family of variants.
- * @param variants The variants, in the order the board states them.
+ * One model document with a family of variants.
+ * @param variants The variants, in the order the model states them.
  * @returns The document its route answers with.
  */
 function documentOf(variants: readonly Record<string, unknown>[]): Record<string, unknown> {
@@ -61,7 +61,7 @@ const PROPOSED = {
 	content: { nodes: [{ id: "n1", name: "board-io", kind: "module" }], edges: [] },
 };
 
-/** The current state with a path to another board in the same pane. */
+/** The current state with a path to another model in the same pane. */
 const LINKED = {
 	...AS_IT_IS,
 	content: {
@@ -75,7 +75,7 @@ const LINKED = {
 	},
 };
 
-/** Open the selected card's linked board, through the real drill-down control. */
+/** Open the selected card's linked model, through the real drill-down control. */
 async function openArchive(): Promise<void> {
 	await act(async () => {
 		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='semantic-drill-down-open']")!);
@@ -96,8 +96,8 @@ function runFrames(frames: Map<number, FrameRequestCallback>, now: number): void
 }
 
 /**
- * Put a board and a drawing of one of its variants in front of a pane.
- * @param variants The board's variants.
+ * Put a model and a drawing of one of its variants in front of a pane.
+ * @param variants The model's variants.
  * @param shown Which variant the drawing says it is of.
  */
 function serving(variants: readonly Record<string, unknown>[], shown = AS_IT_IS): void {

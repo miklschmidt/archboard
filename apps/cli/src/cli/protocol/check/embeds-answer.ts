@@ -1,6 +1,6 @@
 // The embeds check's part of the answer of `archboard check` (ADR 0057): the
 // checkout it read, the embeds it found there, the tracked embeds of the
-// vault's boards, what it found wrong with them, and what `--fix` rewrote.
+// vault's models, what it found wrong with them, and what `--fix` rewrote.
 // Every file is named as Git names it in the checkout that holds it, and a
 // file of another repository names that repository too, so the answer is the
 // same on every machine.
@@ -12,10 +12,10 @@ import { z } from "zod";
  * information never does.
  *
  * - `EMBED_OUTDATED` (warning): the fingerprint and the picture differ, so the
- *   board says something new.
+ *   model says something new.
  * - `EMBED_RENDERER_CHANGED` (information): only the picture differs, so the
- *   renderer draws the same board differently.
- * - `EMBED_SOURCE_MISSING` (warning): the board, its variant or its view is
+ *   renderer draws the same model differently.
+ * - `EMBED_SOURCE_MISSING` (warning): the model, its variant or its view is
  *   gone, or what the recipe names draws nothing now.
  * - `EMBED_VAULT_UNAVAILABLE` (information): the vault the recipe names cannot
  *   be read: it is in no repository, its registered checkout holds none, its
@@ -25,14 +25,14 @@ import { z } from "zod";
  *   vault, fetching it failed and no copy is cached, so the embed was not checked.
  * - `EMBED_RECIPE_UNREADABLE` (warning): the file carries a recipe that cannot
  *   be read, so nothing can draw it again.
- * - `EMBED_VAULT_MOVED` (warning): a board of this vault tracks the embed and
- *   holds its board, and its recipe names the repository the board moved from
+ * - `EMBED_VAULT_MOVED` (warning): a model of this vault tracks the embed and
+ *   holds its model, and its recipe names the repository the model moved from
  *   (ADR 0051). `--fix` writes the recipe again, naming this vault.
  * - `EMBED_TRACKED_UNREACHABLE` (information): no checkout on this machine
  *   holds the repository of a tracked embed, so it was not read.
- * - `EMBED_TRACKED_MISSING` (information): a board of this vault tracks a file
- *   that is no embed of that board now: it is gone, Git does not track it in
- *   the checkout it was read in, or it carries no recipe of the board.
+ * - `EMBED_TRACKED_MISSING` (information): a model of this vault tracks a file
+ *   that is no embed of that model now: it is gone, Git does not track it in
+ *   the checkout it was read in, or it carries no recipe of the model.
  *
  * A finding about a file of another repository is information whatever its
  * code: a warning would fail the vault's pull request until that repository
@@ -53,10 +53,10 @@ const EMBED_FINDING_CODES = [
 	"EMBED_TRACKED_MISSING",
 ] as const;
 
-/** A board by id, with the name a recipe or the vault gives it. */
+/** A model by id, with the name a recipe or the vault gives it. */
 const EmbedLegacyBoardSchema = z.object({ id: z.string(), name: z.string() });
 
-/** What is gone of what a recipe names: the board, its variant, its view, or anything to draw. */
+/** What is gone of what a recipe names: the model, its variant, its view, or anything to draw. */
 const MissingSourceSchema = z.enum(["board", "variant", "view", "picture"]);
 type MissingSource = z.infer<typeof MissingSourceSchema>;
 
@@ -70,19 +70,19 @@ const EmbedFindingSchema = z.object({
 	 * repository; absent for a file of the checkout that holds the vault.
 	 */
 	embedRepo: z.string().optional(),
-	/** The board as the recipe names it; absent when the recipe cannot be read. */
+	/** The model as the recipe names it; absent when the recipe cannot be read. */
 	paneKey: EmbedLegacyBoardSchema.optional(),
 	model: EmbedLegacyBoardSchema.optional(),
 	message: z.string(),
 	/** For `EMBED_SOURCE_MISSING`: what is gone. */
 	missing: MissingSourceSchema.optional(),
-	/** For a board that is gone: the commit of the vault's history that removed its file. */
+	/** For a model that is gone: the commit of the vault's history that removed its file. */
 	removedIn: z.object({ commit: z.string(), subject: z.string() }).optional(),
-	/** For a board that is gone: the board that holds its name now. */
+	/** For a model that is gone: the model that holds its name now. */
 	nameHeldBy: EmbedLegacyBoardSchema.optional(),
 	/**
-	 * For a board that is gone: the boards its vault lists and cannot read,
-	 * any of which can be the board, because the listing names no id for them.
+	 * For a model that is gone: the models its vault lists and cannot read,
+	 * any of which can be the model, because the listing names no id for them.
 	 */
 	unreadableModels: z.array(z.string()).optional(),
 	/**
@@ -105,13 +105,13 @@ const FixedFileShape = {
 
 /**
  * The repository the recipe named before `--fix` pointed it at this vault,
- * which a board of this vault holds since a move; absent when it named this vault.
+ * which a model of this vault holds since a move; absent when it named this vault.
  */
 const MovedFromShape = { movedFrom: z.string().nullable().optional() };
 
 /** One file `--fix` rewrote, and why. */
 const EmbedFixSchema = z.discriminatedUnion("action", [
-	/** Drawn again from its own recipe: the board or the renderer changed the picture. */
+	/** Drawn again from its own recipe: the model or the renderer changed the picture. */
 	z.object({
 		action: z.literal("drawn"),
 		...FixedFileShape,
@@ -120,7 +120,7 @@ const EmbedFixSchema = z.discriminatedUnion("action", [
 	}),
 	/** The picture is current, and only its recipe was written again. */
 	z.object({ action: z.literal("recipe"), ...FixedFileShape, ...MovedFromShape }),
-	/** Pointed at the board that holds a deleted board's name, and drawn from it. */
+	/** Pointed at the model that holds a deleted model's name, and drawn from it. */
 	z.object({
 		action: z.literal("re-pointed"),
 		...FixedFileShape,
@@ -161,7 +161,7 @@ const EmbedsPartSchema = z.object({
 	checkout: z.string().nullable(),
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
-	/** Every tracked embed of the vault's boards (ADR 0057), in the order the boards list them. */
+	/** Every tracked embed of the vault's models (ADR 0057), in the order the models list them. */
 	tracked: z.array(
 		z.object({ paneKey: EmbedLegacyBoardSchema, repo: z.string(), path: z.string() }),
 	),

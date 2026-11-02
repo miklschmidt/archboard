@@ -102,7 +102,7 @@ const edit = (name: string, times: number): Record<string, string> => ({
 	[name]: `${name} ${times}\n`,
 });
 
-/** A part of the shop's board. */
+/** A part of the shop's document. */
 const part = (id: string, name: string, binding?: object, extra: object = {}) => ({
 	id,
 	name,
@@ -114,10 +114,10 @@ const part = (id: string, name: string, binding?: object, extra: object = {}) =>
 const IN_SHOP = (path: string, extra: object = {}) => ({ repo: SHOP, path, ...extra });
 
 /**
- * A board whose current variant holds every kind of part, and whose draft binds
+ * A document whose current variant holds every kind of part, and whose draft binds
  * one more part.
- * @param version The board's version.
- * @returns The board.
+ * @param version The document's version.
+ * @returns The document.
  */
 function document(version: number): LegacyBoard {
 	const current = [
@@ -152,8 +152,8 @@ function document(version: number): LegacyBoard {
 }
 
 /**
- * One variant of a board.
- * @param value The board.
+ * One variant of a document.
+ * @param value The document.
  * @param id The variant's id.
  * @returns The variant.
  */
@@ -166,7 +166,7 @@ function variantOf(value: LegacyBoard, id: string): SemanticVariant {
 const built = document(1);
 
 /**
- * The hotspots of the shop's board, parsed as the route answers them.
+ * The hotspots of the shop's document, parsed as the route answers them.
  * @param since The start of the period, or undefined for the default.
  * @param variant The variant's id.
  * @returns The answer.
@@ -393,8 +393,8 @@ test("an answer is kept until the board's version, the start of the period or a 
 	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
 		answer.hotspots,
 	);
-	// Two worktrees of one repository hold copies of a board with one id and version, which
-	// each may have changed since (ADR 0049): what one vault's board is read as is not the other's.
+	// Two worktrees of one repository hold copies of a document with one id and version, which
+	// each may have changed since (ADR 0049): what one vault's document is read as is not the other's.
 	const elsewhere = join(scratch, "another-vault");
 	expect(
 		(await reading.read(elsewhere, first, variantOf(first, "v1"), undefined)).hotspots,

@@ -332,7 +332,7 @@ function shallowMessage(
 /**
  * The finding on a container bound to a Terraform module that is shallow, or
  * that passes variables through.
- * @param read The board.
+ * @param read The document.
  * @param container The container.
  * @param shape The module's shape, when it is a Terraform module.
  * @returns The finding, or none.

@@ -2,11 +2,11 @@
 // `GET /api/vault/code-check` (ADR 0046).
 //
 // `timings` records elapsed work for code facts, each language server and
-// history (TASK-436.02). `boards` says which board was read at which variant and
+// history (TASK-436.02). `boards` says which document was read at which variant and
 // version. `findings` says what the code pass found. `skipped` says what the
 // check did not read, with the reason, so a subject that was not read never
 // looks like one with nothing to report. `behind` is the reading of ADR 0045:
-// the commits that changed each board's bound files after the board last
+// the commits that changed each document's bound files after the document last
 // changed. It is information, kept apart from the findings, and never changes
 // the exit status.
 //
@@ -24,7 +24,7 @@
 // does not expose while the code of a caller drawn to it reaches it from a
 // file outside the module; `CALLER_UNDRAWN`, a warning (information on a candidate) on
 // a hidden part whose exposed code a file outside the module uses at run time
-// with no caller on the board; `EXPOSED_UNUSED`, information on the container,
+// with no caller on the document; `EXPOSED_UNUSED`, information on the container,
 // for exposed names no file outside the module uses; and the skip
 // `exposure-unknown`. TASK-368.11 reads a Terraform or OpenTofu module, whose
 // variables and outputs are what it exposes, and adds two information findings
@@ -57,7 +57,7 @@ import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/poli
 /** The part, relationship or step an entry is about, as every diagnostic names it. */
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
 
-/** One board the check read, at the variant it read, and the version it read. */
+/** One document the check read, at the variant it read, and the version it read. */
 const CodeCheckDocumentSchema = z
 	.object({ model: z.string(), variant: z.string(), version: z.int().nonnegative() })
 	.strict();
@@ -135,8 +135,8 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * subject gets no finding and changes no exit status, and it is listed so it
  * never looks like a subject with nothing to report.
  *
- * - `no-current-variant`: a board with nothing built and no draft of the
- *   named variant (ADR 0031). `model-unreadable`: its file is not a board.
+ * - `no-current-variant`: a document with nothing built and no draft of the
+ *   named variant (ADR 0031). `model-unreadable`: its file is not a document.
  * - `repository-unregistered`: a part, relationship or step whose binding or
  *   anchor names a repository this machine has not registered. It stays
  *   silent, and is listed. Also a draft, with no subject, whose dropped parts
@@ -255,7 +255,7 @@ const CodeCheckSkipSchema = z
 	})
 	.strict();
 
-/** One commit that changed a bound file after the board last changed. */
+/** One commit that changed a bound file after the document last changed. */
 const BehindCommitSchema = z
 	.object({
 		repo: z.string(),
@@ -264,7 +264,7 @@ const BehindCommitSchema = z
 		subject: z.string(),
 		/** How many files the commit changed, bound or not. */
 		files: z.int().nonnegative(),
-		/** More than 30 files: kept here, and said, because it can move what a board says. */
+		/** More than 30 files: kept here, and said, because it can move what a document says. */
 		large: z.boolean(),
 	})
 	.strict();
@@ -275,7 +275,7 @@ const BehindPartSchema = z
 		subject: CodeCheckSubjectSchema,
 		repo: z.string(),
 		path: z.string(),
-		/** The commits of the board's `commits` that changed this part, newest first. */
+		/** The commits of the document's `commits` that changed this part, newest first. */
 		commits: z.array(z.string()),
 	})
 	.strict();
@@ -310,7 +310,7 @@ const KnownLastChangeSchema = z.discriminatedUnion("kind", [
 
 /**
  * Why the last change cannot be found: the vault is in no Git repository, or
- * Git ignores the board file. Such a board is never reported as zero commits
+ * Git ignores the document file. Such a document is never reported as zero commits
  * behind.
  */
 const UnknownLastChangeSchema = z
@@ -320,7 +320,7 @@ const UnknownLastChangeSchema = z
 	})
 	.strict();
 
-/** How far one board is behind its code, per board and per part. */
+/** How far one document is behind its code, per document and per part. */
 const ModelBehindSchema = z.union([
 	z
 		.object({
@@ -377,10 +377,10 @@ const CodeCheckAnswerSchema = z.object({
 });
 
 /**
- * What the last pass that read one board at one variant found there, as the
+ * What the last pass that read one document at one variant found there, as the
  * Archboard server remembers it for a pane (TASK-367.24, ADR 0046): the
- * version of the board the pass read, when the pass ran, and its findings on
- * that board. A pane draws them only over the version they were found on.
+ * version of the document the pass read, when the pass ran, and its findings on
+ * that document. A pane draws them only over the version they were found on.
  */
 const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 	checkedAt: z.iso.datetime(),
@@ -388,7 +388,7 @@ const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 }).strict();
 
 /**
- * The answer of `GET /api/vault/code-findings`: one reading for each board and
+ * The answer of `GET /api/vault/code-findings`: one reading for each document and
  * variant that a pass has read since the server started. The route only reads
  * the server's memory and never starts a pass, so it is empty until somebody
  * runs the code check, with `archboard check` or `archboard check code`. The

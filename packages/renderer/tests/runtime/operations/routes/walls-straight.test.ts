@@ -33,7 +33,7 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-// Reduced from a board of a work vault, names replaced: a line out of a
+// Reduced from a document of a work vault, names replaced: a line out of a
 // container by its wall left its card by the bottom and ran along the
 // channel under it, a hook under the card's corner, although nothing stood
 // between the card's side and the wall. Wherever the stores stand, the line
@@ -44,7 +44,7 @@ test("a planned departure crosses its own frame through a clear channel", async 
 	expectDrawingIntact(drawn, content, "blocks");
 });
 
-// Reduced from a board of a work vault, names replaced: the line into the
+// Reduced from a document of a work vault, names replaced: the line into the
 // region's load balancer is joined from pieces routed in two blocks, and
 // where they met it ran down past the region's wall and back up to its card.
 // Once the drawing is joined, the loop is taken out (crates/archboard-layout/src/blocks/steps.rs), clear

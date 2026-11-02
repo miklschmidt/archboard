@@ -66,8 +66,8 @@ export class SemanticContextLifecycleError extends Error {
  * delivery decides it, using the writer identity carried on the change. This
  * function used to approximate it as `origin !== "agent"`, which was the only
  * thread-independent proxy available and was wrong in both directions: it
- * silenced a second agent changing the board underneath a thread, which is
- * exactly the news that thread needs, and once people stopped writing boards
+ * silenced a second agent changing the model underneath a thread, which is
+ * exactly the news that thread needs, and once people stopped writing models
  * (ADR 0023) it silenced everything.
  * @param event - The settled change the feed reported.
  * @returns True when the change should be published.
@@ -103,10 +103,10 @@ function captureAmbiguity(timestampTruncated: boolean, capture: SemanticCapture)
 }
 
 /**
- * The stale reason for a change whose board is not the board its context describes, which means
- * the brief and the change are talking about different boards.
- * @param eventModel - The board the change named.
- * @param contextModel - The board the context names.
+ * The stale reason for a change whose model is not the model its context describes, which means
+ * the brief and the change are talking about different models.
+ * @param eventModel - The model the change named.
+ * @param contextModel - The model the context names.
  * @returns The reasons, which is empty when the two agree.
  */
 function modelMismatchReasons(eventModel: string, contextModel: string): string[] {
@@ -259,7 +259,7 @@ export const SEMANTIC_LISTENER_DIAGNOSTIC_POLICY: SemanticListenerDiagnosticPoli
 });
 
 /**
- * Build the publisher that turns a person's gestures and settled board changes into semantic briefs and hands them to its subscribers. It subscribes to its sources on construction and unsubscribes on dispose; a listener that throws is recorded as a failure rather than allowed to stop delivery to the rest.
+ * Build the publisher that turns a person's gestures and settled model changes into semantic briefs and hands them to its subscribers. It subscribes to its sources on construction and unsubscribes on dispose; a listener that throws is recorded as a failure rather than allowed to stop delivery to the rest.
  * @param options - The feed and pane sources, the context readers, the diagnostics policy and the clock.
  * @returns The publisher.
  */
@@ -466,8 +466,8 @@ export function createSemanticContextPublisher(
 	 * how the coordinator orders this change against the rest of the feed, so a brief without one
 	 * is refused rather than delivered unordered.
 	 * @param event - The settled change the feed reported.
-	 * @param context - The semantic context of the board it changed.
-	 * @param settled - The change's checked cursor, board, timestamp and capture time.
+	 * @param context - The semantic context of the model it changed.
+	 * @param settled - The change's checked cursor, model, timestamp and capture time.
 	 */
 	const publishSettledChange = (
 		event: SettledChangeSourceEvent,
@@ -563,7 +563,7 @@ export function createSemanticContextPublisher(
 
 	return Object.freeze({
 		/**
-		 * Subscribe to settled board changes.
+		 * Subscribe to settled model changes.
 		 * @param listener - The listener to add.
 		 * @returns The unsubscribe.
 		 */

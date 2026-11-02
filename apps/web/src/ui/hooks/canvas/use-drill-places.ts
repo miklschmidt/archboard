@@ -1,18 +1,18 @@
-// The boards above the one on screen, as the header's breadcrumb lists them.
+// The models above the one on screen, as the header's breadcrumb lists them.
 //
 // While nothing has been followed, they are where the navigator places the
-// board on screen. Once the reader has followed a drill-down, they are where
-// the navigator places the first board of the trail, then every board the
+// model on screen. Once the reader has followed a drill-down, they are where
+// the navigator places the first model of the trail, then every model the
 // reader came down through. Each of those is a way back along the drill, not a
-// way to open the board again.
+// way to open the model again.
 //
-// The way back is not read off the navigator's placing of the board on screen.
-// A drill-down can run up a level or across, and a board that several boards
+// The way back is not read off the navigator's placing of the model on screen.
+// A drill-down can run up a level or across, and a model that several models
 // link down to sits under only one of them. That placing can leave out the
-// board the reader came from, and the pane would then offer no way back to it.
+// model the reader came from, and the pane would then offer no way back to it.
 //
-// Each board the reader came through is named as it names itself, with its
-// level, from the document the pane read while that board was on screen, in
+// Each model the reader came through is named as it names itself, with its
+// level, from the document the pane read while that model was on screen, in
 // the vault it is in. A trail can cross repositories (ADR 0050): then the first
 // crumb of each run from one repository names that repository, muted, and the
 // navigator's placing is left out unless the trail starts in the pane's vault.
@@ -26,7 +26,7 @@ import { readDocument } from "#ui/rules/canvas/reading/document.ts";
 import { retainedDocumentQuery, retainedListingQuery } from "#ui/clients/canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 
-/** What a board calls itself, and its level. */
+/** What a model calls itself, and its level. */
 interface Named {
 	readonly name: string;
 	readonly level: string | undefined;
@@ -39,9 +39,9 @@ interface Located {
 }
 
 /**
- * What each board of the trail calls itself.
+ * What each model of the trail calls itself.
  * @param results The trail's documents, in the trail's order.
- * @returns Each board's name and level, or undefined while its document cannot be read.
+ * @returns Each model's name and level, or undefined while its document cannot be read.
  */
 function namesOf(results: readonly { readonly data: unknown }[]): (Named | undefined)[] {
 	return results.map((result) => {
@@ -53,7 +53,7 @@ function namesOf(results: readonly { readonly data: unknown }[]): (Named | undef
 /**
  * Which crumbs name their repository: every first crumb of a run from one
  * vault, and none at all while the whole trail is in one.
- * @param crumbs Every crumb, the board on screen last.
+ * @param crumbs Every crumb, the model on screen last.
  * @returns For each crumb, the repository to name, or undefined.
  */
 function repositoryLabels(crumbs: readonly Located[]): (string | undefined)[] {
@@ -64,12 +64,12 @@ function repositoryLabels(crumbs: readonly Located[]): (string | undefined)[] {
 }
 
 /**
- * The boards above the one on screen, outermost first, each a way to it, and
- * the repository to name on the board on screen.
- * @param placeOf The boards above one as the navigator places them, when the shell can say.
- * @param drill The board on screen, and how the pane got there.
- * @param onBackTo Go back to the board at this depth of the trail.
- * @returns The places, and the repository of the board on screen when it is named.
+ * The models above the one on screen, outermost first, each a way to it, and
+ * the repository to name on the model on screen.
+ * @param placeOf The models above one as the navigator places them, when the shell can say.
+ * @param drill The model on screen, and how the pane got there.
+ * @param onBackTo Go back to the model at this depth of the trail.
+ * @returns The places, and the repository of the model on screen when it is named.
  */
 function useDrillPlaces(
 	placeOf: ((model: string) => readonly CrumbPlace[]) | undefined,
@@ -89,7 +89,7 @@ function useDrillPlaces(
 				name: names[at]?.name ?? stop.model,
 				level: names[at]?.level,
 				vault: stop.vault,
-				/** Go back to this board of the trail. */
+				/** Go back to this model of the trail. */
 				open: (): void => {
 					onBackTo(at);
 				},
@@ -103,10 +103,10 @@ function useDrillPlaces(
 }
 
 /**
- * Where the navigator places the first board of the trail. It places the boards
+ * Where the navigator places the first model of the trail. It places the models
  * of the pane's vault, so a trail that starts in another vault has no such places.
- * @param placeOf The boards above one as the navigator places them, when the shell can say.
- * @param first The first board of the trail, or the board on screen.
+ * @param placeOf The models above one as the navigator places them, when the shell can say.
+ * @param first The first model of the trail, or the model on screen.
  * @param vault The pane's vault.
  * @returns The places, outermost first.
  */
@@ -121,9 +121,9 @@ function navigatorPlaces(
 /**
  * The crumbs, each naming its repository where a run from one vault starts,
  * when the crumbs span more than one.
- * @param ancestors The boards above the one on screen, each with where it is.
- * @param here Where the board on screen is.
- * @returns The places, and the repository of the board on screen when it is named.
+ * @param ancestors The models above the one on screen, each with where it is.
+ * @param here Where the model on screen is.
+ * @returns The places, and the repository of the model on screen when it is named.
  */
 function labelled(
 	ancestors: readonly { readonly place: CrumbPlace; readonly where: Located }[],

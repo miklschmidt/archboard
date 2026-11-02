@@ -13,13 +13,13 @@ interface Reference {
 	value: string;
 	vocabulary: "levels" | "nodeKinds" | "relationshipKinds" | "groups";
 	variant?: string;
-	/** The node or relationship that states it; none for the board's own level. */
+	/** The node or relationship that states it; none for the model's own level. */
 	subject?: DiagnosticSubject;
 }
 
 /**
  * All references, including reconciliation bases that still carry authored meaning.
- * @param model The complete board family.
+ * @param model The complete legacy board family.
  * @param includeBases Whether to include reconciliation snapshots in diagnostics.
  * @returns Every semantic vocabulary reference.
  */
@@ -97,7 +97,7 @@ function known(reference: Reference, policy: SemanticPolicy): boolean {
 /**
  * Warn about removed definitions without making existing architecture unreadable.
  * @param model The whole family.
- * @param file The board file.
+ * @param file The legacy board file.
  * @param policy Current valid policy.
  * @returns Unknown reference diagnostics.
  */

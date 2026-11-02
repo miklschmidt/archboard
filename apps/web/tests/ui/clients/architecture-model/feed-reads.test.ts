@@ -76,12 +76,12 @@ globalThis.fetch = Object.assign(answer, { preconnect: realFetch.preconnect });
 
 readRetainedFrom({
 	/**
-	 * No board is listed here.
-	 * @returns No boards.
+	 * No model is listed here.
+	 * @returns No models.
 	 */
 	listing: async () => ({ levels: [], boards: [] }),
 	/**
-	 * No board is read here.
+	 * No model is read here.
 	 * @returns Nothing.
 	 */
 	document: async () => undefined,

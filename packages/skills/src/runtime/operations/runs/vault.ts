@@ -81,7 +81,7 @@ async function readModel(cli: CliContext, state?: string): Promise<Model> {
 	return model;
 }
 /**
- * Adapt canonical semantic content to existing evaluation comparisons, without a board document or level.
+ * Adapt canonical semantic content to existing evaluation comparisons, without a document document or level.
  * @param model The coherent public model.
  * @returns Its exact state and semantic content.
  */

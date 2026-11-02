@@ -152,7 +152,7 @@ test(
 		}
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
-		// coordinator, and the coordinator is given the board catalogue this voice session
+		// coordinator, and the coordinator is given the model catalogue this voice session
 		// speaks about.
 		const wire = await pollUntil(
 			() => talkWire(records().slice(beforeTalk), "workbench"),

@@ -1,9 +1,9 @@
 // The explanations this variant gives of itself, offered in the sidebar above
-// the board's shared views.
+// the model's shared views.
 //
 // A walkthrough is a reading, like a view: choosing one presents it over the
-// diagram and changes nothing else. No board is written, no version moves, and
-// the other pane showing this board is unaffected (ADR 0023).
+// diagram and changes nothing else. No model is written, no version moves, and
+// the other pane showing this model is unaffected (ADR 0023).
 //
 // It comes before the views because it is the author's way in: a first reader
 // takes the explanation, then reads on their own (TASK-383). A row therefore

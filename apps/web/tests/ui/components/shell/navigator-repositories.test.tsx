@@ -19,7 +19,7 @@ import {
 } from "#tests/ui/support/shell/navigator-fixture.ts";
 import type { AgentActivityEntry } from "#ui/rules/pane-session/session-types.ts";
 
-/** A second repository, with a board of the same name as one of the shop's. */
+/** A second repository, with a model of the same name as one of the shop's. */
 const BILLING = "github.com/acme/billing";
 const BILLING_VAULT = "/work/billing/.archboard/vault";
 const BILLING_MODEL = { ...SHOP_MODEL, id: "Billing", name: "Billing" };
@@ -41,7 +41,7 @@ test("repository rows open each canonical model and mark the panes that read it"
 });
 
 /**
- * An agent's unclaimed write to the payments board.
+ * An agent's unclaimed write to the payments model.
  * @param said What it said it was doing.
  * @returns The activity.
  */

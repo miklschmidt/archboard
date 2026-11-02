@@ -1,8 +1,8 @@
-// What this pane has in front of the human, right now: which board, and where
+// What this pane has in front of the human, right now: which model, and where
 // the pane sits on the display.
 //
 // Nothing about the picture. A semantic pane's camera is presentation state
-// that belongs to the browser (ADR 0023), and the board's content is on disk,
+// that belongs to the browser (ADR 0023), and the model's content is on disk,
 // so what the server needs from a pane is only its identity and its place.
 
 import { loadedBundle, type PaneReport } from "#ui/clients/pane-session/pane-requests.ts";

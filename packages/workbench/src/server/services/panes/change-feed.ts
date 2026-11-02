@@ -1,4 +1,4 @@
-// Every settled change to a board, as one stream.
+// Every settled change to a model, as one stream.
 //
 // A semantic write is already settled when it is announced: it was validated,
 // version-checked, committed atomically and only then broadcast (ADR 0023), so
@@ -8,7 +8,7 @@
 // disagree, because both come off the same announcement.
 //
 // What it exists for is the agent's context: a thread that was told about a
-// board needs to know when what it was told stopped being true, and a cursor
+// model needs to know when what it was told stopped being true, and a cursor
 // it can say it has read up to.
 
 import { mintId } from "@archboard/model/ids";
@@ -25,7 +25,7 @@ interface SettledModelChange extends SettledChangeSourceEvent {
 type SettledChangeListener = (event: SettledModelChange) => void;
 
 /**
- * This process's feed of settled board changes.
+ * This process's feed of settled model changes.
  *
  * The id is minted per process: a cursor is only meaningful against the feed
  * that issued it, and a server that restarted has not got the same one.

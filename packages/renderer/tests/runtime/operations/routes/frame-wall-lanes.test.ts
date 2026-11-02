@@ -1,5 +1,5 @@
 // A line out of a frame once ran down the frame's wall, where the frame edge
-// took the line's colour (a view of a work board, its words scrambled). Kept
+// took the line's colour (a view of a work document, its words scrambled). Kept
 // half a lane off, it still traced the frame's outline; where the passage
 // beside the wall has room, a line keeps a whole lane from it.
 

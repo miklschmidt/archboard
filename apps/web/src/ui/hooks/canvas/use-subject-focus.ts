@@ -1,7 +1,7 @@
 // Bringing one subject into the middle of the picture, close enough to read:
 // the camera glides to fit it. A code warning asks this of its subject, and so
 // does the About page's control that shows a row on the diagram. A subject the
-// view on screen does not draw opens the whole board, and is fitted once that
+// view on screen does not draw opens the whole model, and is fitted once that
 // picture arrives.
 //
 // Whoever asks picks the subject out in the same moment, and a pick moves the
@@ -28,7 +28,7 @@ interface Ask {
  * @param drawing The picture on screen, when one has arrived.
  * @param camera The pane's camera.
  * @param reducedMotion Whether the reader asked for no motion, which lands the camera at once.
- * @param onView Choose a view of the board: null for the whole board.
+ * @param onView Choose a view of the model: null for the whole model.
  * @returns Fit one subject, by its id.
  */
 function useSubjectFocus(
@@ -38,7 +38,7 @@ function useSubjectFocus(
 	onView: (view: string | null) => void,
 ): (id: string) => void {
 	const [ask, setAsk] = useState<Ask | null>(null);
-	// The last ask the camera went to, and the last one the whole board was opened for.
+	// The last ask the camera went to, and the last one the whole model was opened for.
 	const fitted = useRef<Ask | null>(null);
 	const widened = useRef<Ask | null>(null);
 	const focus = useCallback(

@@ -1,5 +1,5 @@
 // The header a semantic pane puts over its reading, assembled from what the
-// stage knows: where the board on screen sits, what the board says of itself,
+// stage knows: where the model on screen sits, what the model says of itself,
 // and the ways to read it.
 
 import { useMemo, type JSX } from "react";
@@ -18,23 +18,23 @@ import type { VariantReading } from "#ui/rules/canvas/reading/document.ts";
 
 /** What the stage hands its header. */
 interface StageHeaderView {
-	/** Pick a warned subject out and show it on the diagram, opening the whole board when a view hides it. */
+	/** Pick a warned subject out and show it on the diagram, opening the whole model when a view hides it. */
 	readonly onShow: (id: string) => void;
-	/** What the board says about itself, or null while it has not arrived. */
+	/** What the model says about itself, or null while it has not arrived. */
 	readonly reading: VariantReading | null;
-	/** The query's answer for the board on screen. */
+	/** The query's answer for the model on screen. */
 	readonly render: { readonly data: SemanticRender | undefined };
-	/** Which board the pane is looking at, and how it got there. */
+	/** Which model the pane is looking at, and how it got there. */
 	readonly drill: Pick<DrillNavigation, "model" | "trail">;
 	/**
-	 * Go back to one of the boards the reader came down through.
-	 * @param depth Where it is in the trail: 0 is its first board.
+	 * Go back to one of the models the reader came down through.
+	 * @param depth Where it is in the trail: 0 is its first model.
 	 */
 	readonly onBackTo: (depth: number) => void;
 	/**
-	 * The boards above one, outermost first, as the navigator places them.
-	 * @param board The board on screen.
-	 * @returns The boards above it.
+	 * The models above one, outermost first, as the navigator places them.
+	 * @param board The model on screen.
+	 * @returns The models above it.
 	 */
 	readonly placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;
 	/** The sidebar, which a control in the header shows and hides. */
@@ -42,10 +42,10 @@ interface StageHeaderView {
 }
 
 /**
- * What the header says of the board from its own document: its level, the
- * variant on screen when the board's name opens another, and whether anything
+ * What the header says of the model from its own document: its level, the
+ * variant on screen when the model's name opens another, and whether anything
  * it describes is built.
- * @param reading What the board says about itself, or null before it arrives.
+ * @param reading What the model says about itself, or null before it arrives.
  * @returns The header's facts.
  */
 function headerFacts(
@@ -63,7 +63,7 @@ function headerFacts(
 }
 
 /**
- * The pane's header: where the board on screen sits.
+ * The pane's header: where the model on screen sits.
  * @param props What the stage knows.
  * @param props.view What the stage knows.
  * @returns The header.

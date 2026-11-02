@@ -1,4 +1,4 @@
-// The desktop shell's fixed geometry and the page shape the renderer lays a board out for. Safe for the browser.
+// The desktop shell's fixed geometry and the page shape the renderer lays a document out for. Safe for the browser.
 export {
 	AGENT_PANEL_WIDTH,
 	CHROME_HEIGHT,

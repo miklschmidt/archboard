@@ -37,7 +37,7 @@ const LOWER_PART = { x: 0, y: PANE.height + STRIP.height - 810, width: 1440, hei
 /** The longest reason the strip quotes whole. */
 const LONGEST_QUOTE = 100;
 
-/** One state of the board on the timeline. */
+/** One state of the model on the timeline. */
 interface Stop {
 	readonly id: string;
 	readonly name: string;
@@ -49,7 +49,7 @@ interface Stop {
 
 /**
  * A reason as the strip quotes it: whole, or cut at a word with an ellipsis.
- * @param reason The reason the board file records.
+ * @param reason The reason the model file records.
  * @returns The quotation.
  */
 function quoted(reason: string): string {

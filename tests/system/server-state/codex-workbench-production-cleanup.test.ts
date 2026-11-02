@@ -188,7 +188,7 @@ describe.serial("production Codex setup cleanup", () => {
 				},
 			});
 			expect(action.value).not.toMatchObject({ outcome: "delivered" });
-			// A board write and a pane move, so the census below is taken after the
+			// A model write and a pane move, so the census below is taken after the
 			// server has actually done work rather than only after it started.
 			seedCanonicalFixture(vault, "scratch", [{ name: "Gateway", kind: "service" }]);
 			expect(

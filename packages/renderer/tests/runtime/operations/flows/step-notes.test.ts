@@ -7,7 +7,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 // A step's note is the caveat a sequence carries on one message: the branch,
 // the loop's condition. A picture that leaves it out tells a reader less than
-// the board says, so it is drawn whole, under its message, and the rest of the
+// the document says, so it is drawn whole, under its message, and the rest of the
 // exchange makes room for it.
 
 const NOTE =

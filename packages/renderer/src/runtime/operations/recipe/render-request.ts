@@ -1,7 +1,7 @@
 // The render route's request that draws a recipe again (ADR 0057): the
 // variant, the view and the variant drawn against by id, and every drawing
-// choice the recipe records. The route finds a board by name, so the caller
-// names the board that now holds the recipe's id; the recipe's own name may be
+// choice the recipe records. The route finds a document by name, so the caller
+// names the document that now holds the recipe's id; the recipe's own name may be
 // an old one.
 
 import type {
@@ -28,7 +28,7 @@ interface RecipeRenderRequest {
 /**
  * How the recipe reads against another variant, as the route asks for it.
  * @param comparison The recipe's comparison.
- * @returns `comparison=off`, the variant to read it against, or nothing for the board's own reading.
+ * @returns `comparison=off`, the variant to read it against, or nothing for the document's own reading.
  */
 function comparisonRequest(
 	comparison: RenderRecipe["comparison"],
@@ -64,7 +64,7 @@ function framingRequest(
  * scale and region are not the route's: the rasterizer applies them to the SVG
  * this request draws.
  * @param recipe The recipe.
- * @returns The selectors, without the board.
+ * @returns The selectors, without the document.
  */
 function recipeRenderRequest(recipe: RenderRecipe): RecipeRenderRequest {
 	return {

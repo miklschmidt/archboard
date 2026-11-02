@@ -1,4 +1,4 @@
-// Behind, footprint and locality read a board against the checkout that holds
+// Behind, footprint and locality read a document against the checkout that holds
 // its vault, for the vault's own repository (ADR 0049, TASK-472.03).
 //
 // The registry holds `shop` on `main`. A second checkout of the same
@@ -90,7 +90,7 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 	return git(root, "rev-parse", "HEAD");
 }
 
-/** A board with one part, pinned to the branch the vault's checkout is on. */
+/** A document with one part, pinned to the branch the vault's checkout is on. */
 const document: LegacyBoard = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
@@ -128,7 +128,7 @@ beforeAll(() => {
 	);
 	repository(shop, "main", { "src/a.ts": "export {};\n" });
 	first = repository(holder, "feature", { "src/a.ts": "export {};\n" });
-	// The board is committed, then the code it describes changes.
+	// The document is committed, then the code it describes changes.
 	mkdirSync(vault, { recursive: true });
 	writeFileSync(join(vault, "Shop.semantic.json"), `${JSON.stringify(document, null, "\t")}\n`);
 	commit(holder, "document", {});

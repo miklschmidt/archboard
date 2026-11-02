@@ -40,7 +40,7 @@ interface BoundaryEdge {
 
 /** Everything one group is, on one variant. */
 interface GroupInspection {
-	/** The group's id, as the board and the vault configuration spell it. */
+	/** The group's id, as the model and the vault configuration spell it. */
 	readonly group: string;
 	/** The explicit members, in document order. */
 	readonly members: readonly SemanticNode[];
@@ -69,7 +69,7 @@ function isMemberOf(node: SemanticNode, group: string): boolean {
 /**
  * Every group id any node of the variant says it is in, once each, in the
  * canonical order. Ids the configuration no longer defines are included,
- * because the board still says them and a reader still has to be able to ask.
+ * because the model still says them and a reader still has to be able to ask.
  * @param content The variant's whole content.
  * @returns The ids in use.
  */

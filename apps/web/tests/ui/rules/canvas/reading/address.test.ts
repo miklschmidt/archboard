@@ -1,8 +1,8 @@
-// How a pane's board key spells which board and which variant it is showing.
+// How a pane's model key spells which model and which variant it is showing.
 //
 // The rule these hold to is one rule: the key a pane reports is the key that
 // reopens it. Anything less and the address bar and the pane fight — the pane
-// says it is showing a proposal, the address says the board, and the next
+// says it is showing a proposal, the address says the model, and the next
 // restore puts the pane somewhere it has never been.
 
 import { expect, test } from "bun:test";
@@ -13,14 +13,14 @@ test("a key naming a variant round-trips through the address and back", () => {
 	const key = paneKeyFor("pipeline", "7c40IV7N");
 	expect(key).toBe("pipeline@7c40IV7N");
 	// Both halves come back as they went in, which is what lets a restore put the
-	// pane on the proposal it was on rather than on the board's current state.
+	// pane on the proposal it was on rather than on the model's current state.
 	expect(paneAddressOf(key)).toEqual({ model: "pipeline", variant: "7c40IV7N" });
 	expect(paneKeyFor("pipeline", paneAddressOf(key)?.variant)).toBe(key);
 });
 
 test("a key naming no variant still means whichever variant is current", () => {
 	// Every address written before variants were addressable says this, and it
-	// has to go on meaning what it meant: the board, as it stands.
+	// has to go on meaning what it meant: the model, as it stands.
 	expect(paneKeyFor("pipeline")).toBe("pipeline");
 	expect(paneAddressOf("pipeline")).toEqual({ model: "pipeline", variant: undefined });
 	expect(paneAddressOf("")).toBeNull();
@@ -28,7 +28,7 @@ test("a key naming no variant still means whichever variant is current", () => {
 });
 
 test("the variant is everything after the first mark, punctuation and all", () => {
-	// A board's own name can never hold an `@` — it is reserved in a name segment
+	// A model's own name can never hold an `@` — it is reserved in a name segment
 	// — and a proposal's name can. So the split is at the FIRST mark and the
 	// variant is the whole of the rest: a proposal called "Queue @ edge" is a
 	// title somebody wrote, and a name a branch accepts that nothing can open
@@ -42,9 +42,9 @@ test("the variant is everything after the first mark, punctuation and all", () =
 });
 
 test("two spellings of one board name are one board", () => {
-	// The server keys a board by a normalised form of its name and reports the
+	// The server keys a model by a normalised form of its name and reports the
 	// name as it was written, so the two reach the browser in different cases and
-	// only a case-insensitive comparison can tell they are one board (ADR 0010).
+	// only a case-insensitive comparison can tell they are one model (ADR 0010).
 	expect(sameModelName("Payments", "payments")).toBe(true);
 	expect(sameModelName("payments", "payments/eu")).toBe(false);
 });

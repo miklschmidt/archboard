@@ -6,7 +6,7 @@
 // 0993b4dec8ae73f5e000370e6a758cdd8aa2bfd0. This package's `NOTICE.md` holds
 // the licence and says what was taken and where it lives now.
 //
-// Agents author meaning, and the core derives presentation for every board
+// Agents author meaning, and the core derives presentation for every document
 // (ADR 0023, ADR 0028): it measures every word, lays the reading out in the
 // solves this host runs, paints it and writes the document. This host gives
 // it what only the place it runs in has (`shared/rules/render/host.ts`): the
@@ -69,7 +69,7 @@ function coreHost(): RenderHost {
  * Two pictures of the same identities: a participant column and an
  * architecture card carry the same node id, and a pane that has selected one
  * has selected the other. Which grammar is chosen is presentation intent the
- * board states; it is never derived from what the content happens to hold.
+ * document states; it is never derived from what the content happens to hold.
  * @param request What to draw, in which grammar, and on which ground.
  * @returns The document, its size, its atlas and its key.
  * @throws {SemanticRenderError} When that grammar has nothing to draw.

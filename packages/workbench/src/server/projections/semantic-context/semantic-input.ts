@@ -79,7 +79,7 @@ function canonicalContextFromBrief(
 			capturedAtMs: brief.freshness.capturedAtMs,
 		},
 		// The summary, not the fitted list: a brief that had to drop its issues
-		// still says there are some, and an agent told `required` reads the board.
+		// still says there are some, and an agent told `required` reads the model.
 		reconciliation: {
 			required: brief.architecture.reconciliation.required,
 			count: brief.architecture.reconciliation.count,

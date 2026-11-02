@@ -1,5 +1,5 @@
 // Where the relay may stand a label box when it lays a line again (visual
-// polish): each case is reduced from a dogfood board. The relay stood a label
+// polish): each case is reduced from a dogfood document. The relay stood a label
 // across a line drawn straight from a card's side to its block's wall, which it
 // did not see, so the line ran under the label (Agent workbench).
 // What this catches: a line drawn straight to a wall under a relaid label.

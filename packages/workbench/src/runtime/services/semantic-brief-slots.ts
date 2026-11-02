@@ -1,7 +1,7 @@
 // The text fields of a brief that can be shortened, and how to put them back.
 //
 // Two tables, in the order room is bought back for them. The identities come
-// first: a brief that cannot say which board, pane or thread it is about is not
+// first: a brief that cannot say which model, pane or thread it is about is not
 // usable at all. The prose comes last, after the lists, because a description
 // can be thousands of bytes and the selection is what the question is usually
 // about — refilling text first would spend the whole budget on prose and hand
@@ -86,7 +86,7 @@ function trimmedIdentity<Identity extends string>(
 /**
  * The text fields that say which thing this is, and how to put them back.
  *
- * Identities first, because a brief that cannot say which board, pane or thread
+ * Identities first, because a brief that cannot say which model, pane or thread
  * it is about is not usable at all. The prose comes later, after the lists.
  * @param context - The context being fitted.
  * @returns The slots, in the order room is given back to them.

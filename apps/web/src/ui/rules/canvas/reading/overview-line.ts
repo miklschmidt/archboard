@@ -23,7 +23,7 @@ interface LineSubject {
 	readonly from: SemanticNode | undefined;
 	/** The drawn part it ends at. */
 	readonly to: SemanticNode | undefined;
-	/** The relationships it joins, in board order, each with the nodes at its own ends. */
+	/** The relationships it joins, in model order, each with the nodes at its own ends. */
 	readonly joins: readonly EdgeSubject[];
 }
 
@@ -76,7 +76,7 @@ function pickedLine(
 
 /**
  * The ends a line runs between, named for reading: each part's name, or the id
- * the board names it by when the variant no longer holds it.
+ * the model names it by when the variant no longer holds it.
  * @param from The part it starts at, when the variant holds it.
  * @param to The part it ends at, when the variant holds it.
  * @param edge The line, for the ids of its ends and whether it runs both ways.

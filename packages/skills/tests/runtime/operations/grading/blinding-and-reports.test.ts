@@ -288,7 +288,7 @@ describe("the grader contract", () => {
 			unmentioned: [],
 			invented: [],
 		});
-		// A name the scenario never declared is the grader's own, not a gap in the board.
+		// A name the scenario never declared is the grader's own, not a gap in the document.
 		const off = { ...verdict, features: [{ ...verdict.features[0]!, feature: "x.y" }] };
 		expect(checklistGaps(SCENARIO.expectedFeatures, off)).toEqual({
 			waived: [],

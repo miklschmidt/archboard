@@ -59,7 +59,7 @@ const TOLD_FIELDS = {
 
 /**
  * One side of a disagreement, in a shape a document can hold: an unwritten
- * field is absent once the board is JSON, and an issue that lost the very field
+ * field is absent once the model is JSON, and an issue that lost the very field
  * it is about would be refused when it was read back.
  * @param value What that side says, or nothing when it says nothing.
  * @returns The value, or null for nothing written.

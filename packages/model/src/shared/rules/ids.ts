@@ -40,7 +40,7 @@ function isBlockId(id: unknown): boolean {
 
 /**
  * The ids already spoken for. A `Set` and a `Map` both satisfy it, so a caller
- * with the board's element map available passes it directly rather than
+ * with the model's element map available passes it directly rather than
  * building a copy of the keys.
  */
 interface IdsInUse {

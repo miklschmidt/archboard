@@ -94,13 +94,13 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 		setConnected: (connected) => {
 			if (connected) accepted.resolve();
 		},
-		/** This fixture has no displayed board. */
+		/** This fixture has no displayed model. */
 		setModel: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		setOpened: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
-		/** No board claim is involved. */
+		/** No model claim is involved. */
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
 		setDoing: (): void => {},
@@ -203,9 +203,9 @@ async function paneOnPayments() {
 				statuses.push(status);
 			},
 			/**
-			 * Record who the pane says holds its board.
+			 * Record who the pane says holds its model.
 			 * @param _paneId The pane.
-			 * @param _model The board.
+			 * @param _model The model.
 			 * @param holder The holder.
 			 */
 			onHolder: (_paneId, _model, holder): void => {
@@ -262,7 +262,7 @@ function registeredReply(): Response {
 }
 
 /**
- * The server moves the pane to the chosen checkout of its repository, keeping its board.
+ * The server moves the pane to the chosen checkout of its repository, keeping its model.
  * @param socket The pane's socket.
  */
 function chooseOtherCheckout(socket: ControlledSocket): void {
@@ -280,7 +280,7 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();
 	try {
-		// The report of arriving on the board is still unanswered when the
+		// The report of arriving on the model is still unanswered when the
 		// repository's chosen checkout changes and the server moves the pane.
 		chooseOtherCheckout(pane.socket);
 		expect(pane.calls.map((each) => each.vault)).toEqual([LEFT_VAULT, LEFT_VAULT, CHOSEN_VAULT]);
@@ -363,7 +363,7 @@ test("news of a board is news of the vault the pane is in, before and after the 
 		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 2 });
 		chooseOtherCheckout(pane.socket);
 		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 7 });
-		// The server sends a pane only its own vault's news, so the board the
+		// The server sends a pane only its own vault's news, so the model the
 		// canvas reads again is the one of the vault it moved to.
 		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);
 	} finally {
@@ -404,13 +404,13 @@ function dialledTabSession(paneId: string): string | null {
 		workbenchSockets: null,
 		/** The socket is never opened here. */
 		setConnected: (): void => {},
-		/** This fixture has no displayed board. */
+		/** This fixture has no displayed model. */
 		setModel: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		setOpened: (): void => {},
-		/** This fixture makes no board navigation. */
+		/** This fixture makes no model navigation. */
 		arrived: (): void => {},
-		/** No board claim is involved. */
+		/** No model claim is involved. */
 		setHeldBy: (): void => {},
 		/** No agent activity is involved. */
 		setDoing: (): void => {},

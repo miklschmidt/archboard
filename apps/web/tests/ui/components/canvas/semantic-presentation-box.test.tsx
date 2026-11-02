@@ -19,7 +19,7 @@ import {
 	press,
 } from "#tests/ui/support/canvas/presentation-probes.ts";
 
-/** A board that tells itself in three steps. */
+/** A model that tells itself in three steps. */
 const THREE_STEPS = {
 	...EXPLAINED_DOCUMENT,
 	variants: [

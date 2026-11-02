@@ -136,7 +136,7 @@ function CodeBlock(props: { readonly code: CodeStanding | null }): JSX.Element |
 			<ul className="flex flex-col gap-2" data-slot="semantic-inspector-findings">
 				{code.findings.map((finding) => (
 					// One subject can carry one code twice: for its binding and for its
-					// anchor, which the place in the board tells apart, or for two
+					// anchor, which the place in the model tells apart, or for two
 					// symbols, which the message names.
 					<Finding key={`${finding.code}|${finding.path}|${finding.message}`} finding={finding} />
 				))}

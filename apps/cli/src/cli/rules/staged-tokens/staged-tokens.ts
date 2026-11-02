@@ -1,4 +1,4 @@
-// Board commands accept their options as staged tokens that are only parsed
+// Model commands accept their options as staged tokens that are only parsed
 // after server contact, so a usage mistake never masks a missing server.
 import { z } from "zod";
 import type { TokenParameter } from "#cli/protocol/contract/contract.ts";

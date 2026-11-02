@@ -33,7 +33,7 @@ import { useTipPlace, type PlacedTip } from "#ui/hooks/canvas/use-tip-place.ts";
  * @param props The part, the reading it is described from and how far away the picture is seen.
  * @param props.target The part whose tip is open, or null.
  * @param props.appearance How the render reply draws the subject under the pointer.
- * @param props.reading What the board says about the variant the picture draws, or null.
+ * @param props.reading What the model says about the variant the picture draws, or null.
  * @param props.far Whether the picture is seen from far away, where a card says only the start of its responsibility.
  * @param props.overview Whether the picture is the overview, whose joined lines are subjects of their own.
  * @returns The tip, or nothing when there is nothing to add.
@@ -150,12 +150,12 @@ function TipLines(props: { readonly tip: SubjectTip; readonly children?: ReactNo
 }
 
 /**
- * What the tip over one part of the picture says, once the board has been read.
+ * What the tip over one part of the picture says, once the model has been read.
  * @param target The part under the pointer.
  * @param appearance How the picture draws that subject, when it names its type.
- * @param reading What the board says about the variant the picture draws, or null.
+ * @param reading What the model says about the variant the picture draws, or null.
  * @param far Whether the picture is seen from far away.
- * @param levels The vault's levels, coarsest first, which place the board a part opens.
+ * @param levels The vault's levels, coarsest first, which place the model a part opens.
  * @param overview Whether the picture is the overview.
  * @returns The tip, or null when there is nothing to add.
  */

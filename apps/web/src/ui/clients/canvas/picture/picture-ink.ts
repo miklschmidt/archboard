@@ -1,6 +1,6 @@
 // A first picture's ink, kept back for a moment while its painter starts, so
 // that the painter brings the picture in. A painter that takes longer finds the
-// SVG standing, a correct board.
+// SVG standing, a correct model.
 
 import { PICTURE_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";

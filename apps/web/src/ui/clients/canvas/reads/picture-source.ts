@@ -12,9 +12,9 @@ import {
 /** A way of getting pictures. */
 interface PictureSource {
 	/**
-	 * One variant of one board, drawn.
-	 * @param request The board, variant and view.
-	 * @param client The tab's cache, for the board and policy it is drawn from.
+	 * One variant of one model, drawn.
+	 * @param request The model, variant and view.
+	 * @param client The tab's cache, for the model and policy it is drawn from.
 	 * @param signal Cancels a read the picture waits on.
 	 * @returns The drawing, or the news that there is nothing to draw.
 	 */
@@ -24,10 +24,10 @@ interface PictureSource {
 		signal: AbortSignal,
 	) => Promise<SemanticRender>;
 	/**
-	 * Told the boards the server lists in one vault, whenever it lists them.
+	 * Told the legacy boards the server lists in one vault, whenever it lists them.
 	 * @param vault The vault.
-	 * @param models The boards, with their versions.
-	 * @param client The tab's cache, for drawing listed boards ahead.
+	 * @param models The legacy boards, with their versions.
+	 * @param client The tab's cache, for drawing listed legacy boards ahead.
 	 */
 	readonly listed?: (vault: string, models: readonly DocumentEntry[], client: QueryClient) => void;
 }

@@ -12,7 +12,7 @@ const NOTICE_ACTIONS = Object.freeze({
 });
 
 /**
- * A board could not be shown in one pane.
+ * A model could not be shown in one pane.
  * @param paneId The pane.
  * @param error The server's refusal.
  * @returns The notice.
@@ -80,9 +80,9 @@ function failureNotice(id: string, title: string, description: string): ShellNot
 }
 
 /**
- * The address named boards that could not be opened (TASK-166). What is on
+ * The address named models that could not be opened (TASK-166). What is on
  * screen is what the panes could reach, and the address bar now says so.
- * @param paneKeys The boards that could not be opened.
+ * @param paneKeys The models that could not be opened.
  * @returns The notice.
  */
 function unreachableModelsNotice(paneKeys: readonly string[]): ShellNotice {
@@ -98,7 +98,7 @@ function unreachableModelsNotice(paneKeys: readonly string[]): ShellNotice {
 }
 
 /**
- * The address named a repository this page cannot read boards of: it lists
+ * The address named a repository this page cannot read models of: it lists
  * no such repository, or the repository's chosen checkout has no vault.
  * @param repository The repository's name.
  * @returns The notice.

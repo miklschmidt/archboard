@@ -32,7 +32,7 @@ interface LineBodyProps {
 }
 
 /**
- * Everything the board says about one joined line.
+ * Everything the model says about one joined line.
  * @param props The line.
  * @returns The body.
  */

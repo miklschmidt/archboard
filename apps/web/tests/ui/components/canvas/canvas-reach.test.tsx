@@ -190,7 +190,7 @@ test("choosing a row brings the part at its other end into view, and moves nothi
 	}
 });
 
-/** The ledger, bigger than the room at any scale the board is fitted at: it is never all in view. */
+/** The ledger, bigger than the room at any scale the model is fitted at: it is never all in view. */
 const BIGGER_THAN_THE_ROOM = { l: { x: -2000, y: -2000, width: 5000, height: 5000 } };
 
 test("a click on the picture leaves the camera where it is, even on a part bigger than the room, and the list still brings that part into view", async () => {

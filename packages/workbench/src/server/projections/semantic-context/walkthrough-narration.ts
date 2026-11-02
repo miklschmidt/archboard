@@ -59,14 +59,14 @@ const listeners = new Set<NarrationListener>();
 /**
  * The walkthrough a voice session is being started to present, written for the start.
  *
- * Read from the board the pane is showing, never taken from the browser: the
+ * Read from the model the pane is showing, never taken from the browser: the
  * browser names a walkthrough and the server says what it says.
  * @param clientId The client id of the pane the start came from.
  * @param walkthroughId The walkthrough the user chose.
  * @param recording For a talk recorded rather than listened to live, the language it is narrated
  *   in and the variant its frames are drawn against, if it names one; null otherwise.
  * @returns The walkthrough, what to call it and, for a recording, its language.
- * @throws {Error} When the pane is not showing a board that states that walkthrough.
+ * @throws {Error} When the pane is not showing a model that states that walkthrough.
  */
 function narrationFor(
 	clientId: string,
@@ -117,7 +117,7 @@ function forgetNarration(clientId: string): void {
 /**
  * What the voice model is told of where a narrated pane's presentation now is.
  * @param change What the pane reported.
- * @returns The change, or null when the step it names is not on that pane's board.
+ * @returns The change, or null when the step it names is not on that pane's legacy board.
  */
 function narrationChangeOf(change: UserPresentationChange): RealtimePresentationChange | null {
 	const said = change.presentation;
@@ -215,9 +215,9 @@ function narrationChangesOf(
 }
 
 /**
- * The board a narration in one of a browser tab's panes is on, read from what that pane shows now.
+ * The model a narration in one of a browser tab's panes is on, read from what that pane shows now.
  * @param tabSessionId The tab.
- * @returns The board's aggregate key, or null when no pane of that tab is narrated.
+ * @returns The model's aggregate key, or null when no pane of that tab is narrated.
  */
 function narratedModelOf(tabSessionId: TabSessionId): string | null {
 	for (const [clientId, narration] of narrated) {

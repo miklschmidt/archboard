@@ -168,7 +168,7 @@ beforeAll(async () => {
 			},
 		},
 	]);
-	// The store bound through its index, drawn with no caller: the board says nothing about its interface.
+	// The store bound through its index, drawn with no caller: the document says nothing about its interface.
 	document(vault, "Store alone", [
 		{
 			id: "v1",
@@ -265,9 +265,9 @@ afterAll(() => {
 });
 
 /**
- * The findings of one code on one board.
+ * The findings of one code on one document.
  * @param code The finding's code.
- * @param boardName The board.
+ * @param boardName The document.
  * @returns Each finding.
  */
 function findings(code: string, documentName: string) {
@@ -315,7 +315,7 @@ test("a hidden part whose exposed code a file no part binds uses at run time is 
 });
 
 test("a use by a part on the board is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
-	// The server, a part on the board, calls Write: RELATIONSHIP_UNDRAWN says so, once.
+	// The server, a part on the document, calls Write: RELATIONSHIP_UNDRAWN says so, once.
 	expect(findings("RELATIONSHIP_UNDRAWN", "Shop").map((each) => each.subject?.id)).toEqual([
 		"Write",
 	]);

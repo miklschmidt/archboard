@@ -89,7 +89,7 @@ const STANDING: StatedStandings = {
 
 /**
  * The architecture, drawn as its caller would.
- * @param unsettled Which subjects the board has not decided, when any.
+ * @param unsettled Which subjects the document has not decided, when any.
  * @param theme Which theme it is shown in.
  * @returns The rendered picture, painted in literals.
  */
@@ -110,7 +110,7 @@ async function architecture(
 
 /**
  * The sequence, drawn as its caller would.
- * @param unsettled Which subjects the board has not decided, when any.
+ * @param unsettled Which subjects the document has not decided, when any.
  * @returns The rendered picture.
  */
 async function sequence(unsettled: readonly string[] = []): Promise<RenderedDiagram> {
@@ -285,7 +285,7 @@ describe("a relationship is drawn in one colour from end to end", () => {
 			}
 		}
 		const drawn = await architecture();
-		// A plain board uses another colour, and two standings do not share one;
+		// A plain document uses another colour, and two standings do not share one;
 		// otherwise three agreeing channels would say nothing.
 		const plain = seenIn(
 			await renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: CONTENT }),
@@ -412,7 +412,7 @@ describe("what nobody has decided is said in its own corner", () => {
 		const card = subject(drawn, "node", "io");
 		const badge = badgeAt(card)!;
 		const pin = /<g transform="translate\(([\d.-]+),([\d.-]+)\)"><circle/.exec(card.markup)!;
-		// Both marks are on the card — a changed node the board has not settled is
+		// Both marks are on the card — a changed node the document has not settled is
 		// two facts, not one — and a reader can tell which is which because they
 		// are never in the same place.
 		expect(Number(pin[1])).toBeLessThan(badge.x);
@@ -451,7 +451,7 @@ describe("what nobody has decided is said in its own corner", () => {
 		const plain = await architecture();
 		const badged = await architecture(["io", "gw", "moved", "gone", "store"]);
 		// The same subjects in the same places against one another: a reflowed
-		// drawing would give two readers of one board two pictures. Only a badge in
+		// drawing would give two readers of one document two pictures. Only a badge in
 		// the page's margin may shift the drawing or widen the page, by under seven.
 		const [was, is] = [arrangementOf(plain), arrangementOf(badged)];
 		expect(is.atlas).toEqual(was.atlas);

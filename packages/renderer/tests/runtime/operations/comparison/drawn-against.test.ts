@@ -1,7 +1,7 @@
 // A picture drawn against a named variant (TASK-478.01).
 //
 // What these catch: a stacked proposal whose picture marks everything the proposals below it
-// added, because it was read against the board's current variant; a picture of unbuilt work
+// added, because it was read against the document's current variant; a picture of unbuilt work
 // that is still framed "Planned"; a name that is not a variant, or is the drawn variant, drawn
 // anyway; and a picture asked for with no variant to read against that no longer draws as it did.
 
@@ -43,7 +43,7 @@ function variantOf(
 /**
  * A stack of three variants, each one part larger than the one it came from.
  * @param built Whether the bottom of the stack is the current architecture.
- * @returns The board.
+ * @returns The document.
  */
 function stack(built: boolean) {
 	return LegacyBoardSchema.parse({

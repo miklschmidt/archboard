@@ -2,7 +2,7 @@
 // pane can be addressed yet, and the commands that move one. Pure composition
 // over the panes and the notices; the router owns neither.
 //
-// Opening a board here is the same command the navigator runs, so a restore
+// Opening a model here is the same command the navigator runs, so a restore
 // and a click go down one path and get the same refusals.
 
 import {
@@ -65,7 +65,7 @@ function addressingOver(binding: LiveBinding<WorkspaceAddressing>): WorkspaceAdd
 			binding.read().expect(intent);
 		},
 		/**
-		 * A person is about to have the shell open a board.
+		 * A person is about to have the shell open a model.
 		 * @param intent What they asked for.
 		 * @returns Where to report the outcome, once the command may be sent.
 		 */
@@ -88,7 +88,7 @@ function announcingViews(readings: PaneReadings, addressing: WorkspaceAddressing
 	return {
 		...readings,
 		/**
-		 * The person chose a way of reading one pane's board.
+		 * The person chose a way of reading one pane's model.
 		 * @param paneId The pane.
 		 * @param view The view's id, or null for the overview.
 		 */
@@ -132,27 +132,27 @@ interface WorkspacePortDeps {
 	/** What each pane is reading; nothing when the caller has no readings. */
 	readonly readings?: PaneReadings;
 	/**
-	 * The vault a repository's boards are read from (ADR 0050), or null before
+	 * The vault a repository's models are read from (ADR 0050), or null before
 	 * the page has read the repositories.
 	 */
 	readonly vaultOf: ((repository: string) => string | null) | null;
 	/**
-	 * Point a pane at a board, injectable for checks.
+	 * Point a pane at a model, injectable for checks.
 	 * @param clientId The pane's identity to the server.
-	 * @param paneKey The board.
-	 * @param vault The vault the board is in.
-	 * @returns The board the server says the pane is on now, and the repository it is in.
+	 * @param paneKey The model.
+	 * @param vault The vault the model is in.
+	 * @returns The model the server says the pane is on now, and the repository it is in.
 	 */
 	readonly show?: (clientId: string, paneKey: string, vault: string) => Promise<OpenedModel>;
 }
 
 /**
- * Point a pane at a board through the server, which is the one owner of which
+ * Point a pane at a model through the server, which is the one owner of which
  * pane holds what.
  * @param clientId The pane's identity to the server.
- * @param paneKey The board.
- * @param vault The vault the board is in.
- * @returns The board key the server says the pane is on, and the repository it is in.
+ * @param paneKey The model.
+ * @param vault The vault the model is in.
+ * @returns The model key the server says the pane is on, and the repository it is in.
  */
 async function showThroughServer(
 	clientId: string,
@@ -181,13 +181,13 @@ function destinationVault(
 /**
  * What the panes are showing, in reading order.
  *
- * Both halves come from the pane itself, and they have to: a board and the view
+ * Both halves come from the pane itself, and they have to: a model and the view
  * it is read through are one answer. The shell remembers which view a person
- * chose for the board it pointed a pane at, but a pane that has followed a link
- * down is reading another board, whose views are its own — an address pairing
- * the level below's board with the level above's remembered view id would name
- * a view that board has not got, and reopening it would fail. So the address
- * records what the pane says is drawn, and a board arriving with nothing chosen
+ * chose for the model it pointed a pane at, but a pane that has followed a link
+ * down is reading another model, whose views are its own — an address pairing
+ * the level below's model with the level above's remembered view id would name
+ * a view that model has not got, and reopening it would fail. So the address
+ * records what the pane says is drawn, and a model arriving with nothing chosen
  * on it simply carries no view.
  * @param panes The panes.
  * @param _readings Unused; the pane is the authority on what it is reading.
@@ -199,7 +199,7 @@ function displayedAddress(panes: Panes, _readings: PaneReadings = NO_READINGS): 
 			const { status } = recordFor(panes.records, entry.paneId);
 			return Object.freeze({
 				paneId: entry.paneId,
-				// The board the pane says it is on, variant and all: the server told
+				// The model the pane says it is on, variant and all: the server told
 				// it, so the address records what is actually on screen rather than
 				// what somebody asked for.
 				paneKey: status.paneKey,
@@ -227,7 +227,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * Whether a pane can be addressed: the server has it.
 		 *
 		 * A live socket is not enough, and the difference is what a direct load
-		 * races. A socket opens, the shell reads an address naming a board, and
+		 * races. A socket opens, the shell reads an address naming a model, and
 		 * the server has no pane to point at yet — so the open is refused and the
 		 * address the person typed is abandoned as unreachable. Waiting for the
 		 * pane the server actually registered costs one report and gets it right.
@@ -240,12 +240,12 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			return paneReady(recordFor(panes.records, paneId).status) && deps.vaultOf !== null;
 		},
 		/**
-		 * Point one pane at one board.
+		 * Point one pane at one legacy board.
 		 * @param paneId The pane.
-		 * @param paneKey The board.
-		 * @param repository The repository the board is in, or null for the pane's own.
+		 * @param paneKey The legacy board.
+		 * @param repository The repository the legacy board is in, or null for the pane's own.
 		 * @param model The complete canonical reading, when this address names one.
-		 * @returns Whether the board was reached.
+		 * @returns Whether the legacy board was reached.
 		 */
 		open: async (
 			paneId: string,
@@ -277,10 +277,10 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			}
 		},
 		/**
-		 * Read the board a pane already shows through one of its views.
+		 * Read the model a pane already shows through one of its views.
 		 * @param paneId The pane.
 		 * @param view The view's id, or null for the overview.
-		 * @returns Whether the pane was reading its board some other way.
+		 * @returns Whether the pane was reading its model some other way.
 		 */
 		read: (paneId: string, view: string | null): boolean => {
 			if (readings.viewOf(paneId) === view) {
@@ -294,10 +294,10 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		closePane: panes.close,
 		selectPane: panes.select,
 		/**
-		 * Boards the address named that no pane could reach. A board of a
+		 * Legacy boards the address named that no pane could reach. A legacy board of a
 		 * repository with no vault to read is named by its repository, because
-		 * the next step is about the repository and not the board.
-		 * @param models The boards, and the repositories the address named.
+		 * the next step is about the repository and not the legacy board.
+		 * @param models The legacy boards, and the repositories the address named.
 		 */
 		reportUnreachable: (models: readonly AskedModel[]): void => {
 			const unread = new Set(

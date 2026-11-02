@@ -43,8 +43,8 @@ function git(...args: string[]): void {
 }
 
 /**
- * Write a board into the vault.
- * @param name The board's name.
+ * Write a document into the vault.
+ * @param name The document's name.
  * @param variants Its variants.
  */
 function document(name: string, variants: readonly FixtureVariant[]): void {
@@ -254,7 +254,7 @@ afterAll(() => {
 /**
  * Read the vault and run the pass.
  * @param variant The draft to read, if any.
- * @returns The boards read and the outcome.
+ * @returns The documents read and the outcome.
  */
 async function pass(variant?: string) {
 	const read = check.readStatesToCheck(vault, variant);

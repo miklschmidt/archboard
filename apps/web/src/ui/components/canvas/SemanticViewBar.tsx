@@ -1,13 +1,13 @@
 // Which way of reading this variant the pane is showing.
 //
-// A board can be explained more than once — the parts and how they are
+// A model can be explained more than once — the parts and how they are
 // wired, one exchange between them in order — over the same nodes. Switching
 // between those is reading, not editing: it changes what this pane asks the
-// server to draw and nothing else. No board is written, no version moves, and
+// server to draw and nothing else. No model is written, no version moves, and
 // the other pane showing the other view is unaffected (ADR 0023).
 //
-// Two readings are on every board, because nobody authors them (ADR 0052).
-// The overview is what a board opens on, and it is first: the parts that work
+// Two readings are on every model, because nobody authors them (ADR 0052).
+// The overview is what a model opens on, and it is first: the parts that work
 // together, with the rest closed. Everything is last and dimmed: it is the way
 // back to every part at once, which no narrow view gives, but it is the
 // reading a person should reach for least.
@@ -33,7 +33,7 @@ import {
 
 /** Inputs for the view bar. */
 interface SemanticViewBarProps {
-	/** Every view this board offers, in the order it states them. */
+	/** Every view this model offers, in the order it states them. */
 	views: readonly SemanticOfferedView[];
 	/** The view on screen, or null when the overview is drawn. */
 	showing: SemanticOfferedView | null;
@@ -46,7 +46,7 @@ interface SemanticViewBarProps {
 	onChoose: (view: string | null) => void;
 }
 
-/** The choice that is not a view: the overview, which the board opens on. */
+/** The choice that is not a view: the overview, which the model opens on. */
 const OVERVIEW: SemanticOfferedView = Object.freeze({
 	id: "",
 	name: "Overview",

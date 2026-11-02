@@ -53,9 +53,9 @@ function codeTargetReply<T>(
 }
 
 /**
- * Ask the server to open the code a board subject is bound to.
+ * Ask the server to open the code a model subject is bound to.
  * @param vault The vault of the pane the subject is in.
- * @param request The board and the subject.
+ * @param request The model and the subject.
  * @returns The typed success or failure.
  */
 function openCodeTarget(

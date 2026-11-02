@@ -1,4 +1,4 @@
-// One synthetic board read with and without its comparison, and what the
+// One synthetic document read with and without its comparison, and what the
 // two drawings must share, for the owners of the comparison toggle.
 
 import { expect } from "bun:test";
@@ -10,7 +10,7 @@ import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-rep
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
- * A board whose draft lacks what its current variant has, drawn with its
+ * A document whose draft lacks what its current variant has, drawn with its
  * comparison and without, in one engine and one view.
  * @param current The current variant's content.
  * @param draft The draft's content.

@@ -1,15 +1,15 @@
 // The workspace as search parameters, and back. One parameter per open pane,
-// named for the pane and carrying the board key exactly as the pane reports it
-// (`payments`, `payments@proposed`), plus `repoA` for the repository the board
+// named for the pane and carrying the model key exactly as the pane reports it
+// (`payments`, `payments@proposed`), plus `repoA` for the repository the model
 // is in (ADR 0050), plus `pane` for the active one when it is not the first,
-// plus `viewA` for a semantic board being read through one of its named views.
+// plus `viewA` for a legacy board being read through one of its named views.
 // A repository is named by its identity or by an untracked vault's registry
 // name, never by a path. Nothing else of the workspace is addressable:
 // selection, the camera, pending edits and live voice are session state and
 // stay out of here.
 //
-// The view is in the address rather than in the board key because it is not
-// part of the board's identity: `semantic:pipeline` is one board however it is
+// The view is in the address rather than in the model key because it is not
+// part of the model's identity: `semantic:pipeline` is one model however it is
 // being explained, and a key that carried the reading would make two of them.
 // It is here at all — rather than left as pane state — because reload, Back and
 // Forward have to come back to the explanation the person was looking at, and a
@@ -37,7 +37,7 @@ type WorkspaceSearch = Readonly<Record<string, string>>;
  *
  * The router's own reader converts what looks like a number or a boolean, so
  * `?paneA=2026` would name the number 2026 and `?paneA=true` a boolean — and
- * every one of `2026`, `true` and `1.5` is a name a board is allowed to have.
+ * every one of `2026`, `true` and `1.5` is a name a model is allowed to have.
  * @param searchStr The query string, with or without its leading question mark.
  * @returns The parameters, all of them strings.
  */
@@ -51,7 +51,7 @@ function parseWorkspaceSearchString(searchStr: string): Record<string, string> {
 
 /**
  * Write the query string back. `/`, `@` and `:` are left as they are: all three
- * are legal in a query string, and a board key is meant to be read in the
+ * are legal in a query string, and a model key is meant to be read in the
  * address bar — `payments@proposed` and `semantic:pipeline` say what they are,
  * and `payments%40proposed` says nothing to anybody.
  * @param search The parameters.
@@ -60,7 +60,7 @@ function parseWorkspaceSearchString(searchStr: string): Record<string, string> {
 function stringifyWorkspaceSearch(search: Record<string, unknown>): string {
 	const params = new URLSearchParams();
 	for (const [key, value] of Object.entries(search)) {
-		// The workspace search is board keys and a pane id; anything else in it
+		// The workspace search is model keys and a pane id; anything else in it
 		// is not this application's and is not written back.
 		if (typeof value === "string") {
 			params.set(key, value);
@@ -77,13 +77,13 @@ function stringifyWorkspaceSearch(search: Record<string, unknown>): string {
 /** Names the active pane; absent means the first open pane. */
 const ACTIVE_PANE_PARAM = "pane";
 
-/** `paneA`, `paneB`: one per open pane, carrying its board key. */
+/** `paneA`, `paneB`: one per open pane, carrying its model key. */
 const PANE_PARAM = /^pane([A-Za-z0-9]+)$/;
 
-/** `viewA`: the view one pane reads its semantic board through. */
+/** `viewA`: the view one pane reads its legacy board through. */
 const VIEW_PARAM = /^view([A-Za-z0-9]+)$/;
 
-/** The repository of one pane's board: `repoA`, `repoB`. */
+/** The repository of one pane's model: `repoA`, `repoB`. */
 const REPO_PARAM = /^repo([A-Za-z0-9]+)$/;
 
 /**
@@ -105,7 +105,7 @@ function viewParam(paneId: string): string {
 }
 
 /**
- * The parameter naming the repository of one pane's board.
+ * The parameter naming the repository of one pane's model.
  * @param paneId The pane.
  * @returns `repo` and the pane's letter.
  */
@@ -145,7 +145,7 @@ function validateWorkspaceSearch(input: Record<string, unknown>): WorkspaceSearc
 	return search;
 }
 
-/** The parameters each pane owns: its board, its view and its board's repository. */
+/** The parameters each pane owns: its model, its view and its model's repository. */
 const PANE_PARAMS: readonly RegExp[] = [
 	PANE_PARAM,
 	VIEW_PARAM,
@@ -165,7 +165,7 @@ function ownedParam(key: string): boolean {
 /**
  * The panes a search names, in the order they are written.
  * @param search The search.
- * @returns The panes and their boards.
+ * @returns The panes and their models.
  */
 function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 	const panes: AddressedPane[] = [];
@@ -180,7 +180,7 @@ function panesFromSearch(search: WorkspaceSearch): readonly AddressedPane[] {
 
 /**
  * One pane a search names. A view or a repository named for a pane that is not
- * open names nothing; a pane on an ordinary board has no views, and its stated
+ * open names nothing; a pane on an ordinary model has no views, and its stated
  * one is ignored the same way.
  * @param search The search.
  * @param paneId The pane.
@@ -259,7 +259,7 @@ function writtenActivePane(address: WorkspaceAddress): string | null {
 }
 
 /**
- * The parameters one pane writes: its board, its board's repository and its
+ * The parameters one pane writes: its model, its model's repository and its
  * view, or nothing while it has not said what it holds.
  * @param pane The pane.
  * @returns Its parameters.
@@ -319,7 +319,7 @@ function modelSearch(pane: AddressedPane): Record<string, string> {
 /**
  * The search that writes an address down. A pane that has not said what it
  * holds is left out: the address is only written once every open pane has a
- * board, so that half a workspace is never published.
+ * model, so that half a workspace is never published.
  * @param address The address.
  * @returns The search.
  */

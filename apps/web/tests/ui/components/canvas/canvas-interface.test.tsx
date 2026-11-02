@@ -15,7 +15,7 @@ import {
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { pick } from "#tests/ui/support/canvas/wiring-fixture.tsx";
 
-/** One node as the board file spells it, as far as these tests need. */
+/** One node as the model file spells it, as far as these tests need. */
 interface Node {
 	readonly id: string;
 	readonly name: string;
@@ -55,7 +55,7 @@ const DRAFT_EDGES = [
 ];
 
 /**
- * The board document: the current variant and the draft the pane shows.
+ * The model document: the current variant and the draft the pane shows.
  * @returns The document.
  */
 function documentOf(): Record<string, unknown> {

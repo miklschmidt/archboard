@@ -29,7 +29,7 @@ const stagedNoFlags = z.array(z.string()).transform((values, context) => {
 const OnScreenPaneSchema = z.looseObject({
 	paneId: z.string(),
 	place: z.string(),
-	/** The board it is showing, or null on a vault that holds none yet. */
+	/** The model it is showing, or null on a vault that holds none yet. */
 	paneKey: z.string().nullable(),
 });
 
@@ -227,7 +227,7 @@ const paneCloseContract = defineCommand({
 		},
 	],
 	/**
-	 * Takes one pane off screen, reminding the user that the board it showed
+	 * Takes one pane off screen, reminding the user that the model it showed
 	 * is still open on the server.
 	 * @param input - The ingress input holding the staged tokens.
 	 * @param context - The command context.

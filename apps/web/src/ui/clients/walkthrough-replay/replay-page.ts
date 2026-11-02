@@ -1,9 +1,9 @@
 // The page that renders a talk frame by frame (TASK-381).
 //
-// Loading a talk points the pane's board reads at the talk, swaps every moving
+// Loading a talk points the pane's model reads at the talk, swaps every moving
 // picture onto a stepped clock and mounts the recording's frame on the talk's
-// board. It then plays the board's entrance through, uncaptured, so the first
-// frame shows the board at rest, as the talk's first moment did.
+// model. It then plays the model's entrance through, uncaptured, so the first
+// frame shows the model at rest, as the talk's first moment did.
 //
 // Each frame is then drawn the same way. The clock moves to the frame's time,
 // running the timers due on the way. What happened by then is shown. The page
@@ -60,7 +60,7 @@ interface Rendering {
 	/** The element the talk is mounted in. */
 	readonly root: HTMLElement;
 	readonly readiness: FrameReadiness;
-	/** Boards read that the talk could not answer. */
+	/** Models read that the talk could not answer. */
 	readonly foreign: string[];
 	/** What the pane last said it is reading. */
 	reading: PaneReading | null;
@@ -92,9 +92,9 @@ function drawAgainst(against: string): void {
 }
 
 /**
- * Whether the pane shows the talk's board as the talk drew it, or what it waits for.
+ * Whether the pane shows the talk's model as the talk drew it, or what it waits for.
  * @param rendering The rendering.
- * @returns What it waits for, in words, or null when the board is drawn.
+ * @returns What it waits for, in words, or null when the model is drawn.
  */
 function modelPending(rendering: Rendering): string | null {
 	const { reading, talk } = rendering;
@@ -134,7 +134,7 @@ function paintersStarting(rendering: Rendering): boolean {
 }
 
 /**
- * What a frame still waits for before it shows the talk's board at its step.
+ * What a frame still waits for before it shows the talk's model at its step.
  * @param rendering The rendering.
  * @returns What it waits for, in words, or null when nothing.
  */
@@ -215,10 +215,10 @@ class WalkthroughReplay {
 	}
 
 	/**
-	 * Put a talk on the page and play the board's entrance through.
+	 * Put a talk on the page and play the model's entrance through.
 	 * @param talk The talk.
 	 * @param options The theme and layout engine to render it in, and how loud its voice is on each frame.
-	 * @throws {Error} When the page already has a talk, or the board never draws.
+	 * @throws {Error} When the page already has a talk, or the model never draws.
 	 */
 	async load(talk: Talk, options: Parameters<ReplayRenderer["load"]>[1]): Promise<void> {
 		if (this.#rendering !== null) throw new Error("This page already has a talk; open it again.");

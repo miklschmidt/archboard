@@ -17,7 +17,7 @@ test("a two-way line ends in the same head at each end, and a one-way line in on
 			{ id: "one", from: "b", to: "c", kind: "call" },
 		],
 	});
-	// A reading words a line two-way, and a board stores no such field.
+	// A reading words a line two-way, and a document stores no such field.
 	const edges = authored.edges.map((edge) => ({ ...edge, twoWay: edge.id === "both" }));
 	const { svg } = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,

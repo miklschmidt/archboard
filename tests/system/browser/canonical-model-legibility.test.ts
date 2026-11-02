@@ -234,7 +234,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 	await switchTheme(browser, "light");
 
-	// The ids the board minted, found the way a viewer finds them.
+	// The ids the model minted, found the way a viewer finds them.
 	const ids = await browser.eval<Record<string, string>>(
 		`(() => {` +
 			` const found = {};` +
@@ -305,7 +305,7 @@ test("a reader sees what changed, what belongs together and what is unsettled", 
 	);
 
 	// The other grammar, told in the same language.
-	// The views are on the board tab, which the pick moved away from.
+	// The views are on the model tab, which the pick moved away from.
 	await openAbout(browser);
 	await chooseFlow(browser, flow);
 	await pollUntil(

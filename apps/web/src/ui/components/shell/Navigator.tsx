@@ -84,7 +84,7 @@ function openRepository(actions: ShellActions, shell: ShellRepository, beside: b
 
 /**
  * Why the navigator cannot show what it should: the repositories or the panes
- * could not be read, or else the first repository whose boards could not be,
+ * could not be read, or else the first repository whose models could not be,
  * named. Its row marks it too; this is where the way to read it again is.
  * @param view The shell view.
  * @returns The reason, or null.
@@ -235,7 +235,7 @@ function ListingState(props: ListingStateProps): JSX.Element | null {
 }
 
 /**
- * The listing's loading state: rows of the shape a board takes, greyed, with
+ * The listing's loading state: rows of the shape a model takes, greyed, with
  * the words for assistive technology.
  * @returns The skeleton.
  */

@@ -1,6 +1,6 @@
-// Times rendering the current variant of every vault board and each wide-board
+// Times rendering the current variant of every vault document and each wide-board
 // fixture, the way a pane's first picture of it is drawn: the engine warmed on
-// another board, no predecessor. Prints the first render, which lays the board
+// another document, no predecessor. Prints the first render, which lays the document
 // out, and the median of the renders after it, which reuse that layout, so a
 // layout change that spends time is seen beside the scorecard that measure.ts
 // prints. The numbers in docs/design/layout-rules.md come from here. A first
@@ -45,7 +45,7 @@ for (const file of fs
 		items.push({ name: parsed.board.name, content: current.content, policy });
 }
 
-// Warm the engine and the measurement caches once, on a board measured nowhere below.
+// Warm the engine and the measurement caches once, on a document measured nowhere below.
 await renderArchitecture({
 	policy: DEFAULT_SEMANTIC_POLICY,
 	content: orderedFixture({

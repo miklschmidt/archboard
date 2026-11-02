@@ -19,7 +19,7 @@ interface HeldOpen {
 /**
  * A shell that behaves the way React and the server do: a pane change is only
  * visible after a render, and an open is answered by the server before the
- * pane is told about its new board. Nothing here happens by itself.
+ * pane is told about its new model. Nothing here happens by itself.
  */
 interface FakeShell {
 	readonly port: WorkspacePort;
@@ -37,7 +37,7 @@ interface FakeShell {
 	readonly render: () => void;
 	/** Answer the oldest outstanding open. */
 	readonly answer: (reached: boolean) => Promise<void>;
-	/** Tell a pane's board over the socket, which is what adoption looks like. */
+	/** Tell a pane's model over the socket, which is what adoption looks like. */
 	readonly adopt: (paneId: string, paneKey: string) => void;
 }
 
@@ -51,7 +51,7 @@ interface FakeOptions {
 
 /**
  * An address, written the way a test reads.
- * @param panes The panes, as pane id to board key.
+ * @param panes The panes, as pane id to model key.
  * @param activePaneId The active pane.
  * @returns The address.
  */
@@ -108,10 +108,10 @@ function fakeShell(options: FakeOptions): FakeShell {
 		 */
 		ready: (paneId: string): boolean => !(options.unready ?? []).includes(paneId),
 		/**
-		 * Point a pane at a board. The answer waits for the test, and the pane is
+		 * Point a pane at a model. The answer waits for the test, and the pane is
 		 * told separately, as the socket tells it.
 		 * @param paneId The pane.
-		 * @param paneKey The board.
+		 * @param paneKey The model.
 		 * @returns The outcome, once the test gives one.
 		 */
 		open: (paneId: string, paneKey: string | null): Promise<OpenOutcome> => {
@@ -121,7 +121,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 			});
 		},
 		/**
-		 * Read a pane's board another way. Only a pane holding a board with views
+		 * Read a pane's model another way. Only a pane holding a model with views
 		 * can, and the shell's own port answers the same way for a canvas.
 		 * @param paneId The pane.
 		 * @param view The view, or null for the whole variant.
@@ -178,8 +178,8 @@ function fakeShell(options: FakeOptions): FakeShell {
 			return true;
 		},
 		/**
-		 * Boards nothing could reach.
-		 * @param models The boards.
+		 * Legacy boards nothing could reach.
+		 * @param models The legacy boards.
 		 */
 		reportUnreachable: (models): void => {
 			unreachable.push(...models.map(({ paneKey }) => paneKey));
@@ -217,8 +217,8 @@ function fakeShell(options: FakeOptions): FakeShell {
 				 * Ask for an open. The hook owns the answer; this owner is about what
 				 * a restore asks for, and in which order.
 				 * @param paneId The pane.
-				 * @param paneKey The board.
-				 * @param repository The repository the board is in, or null for the pane's own.
+				 * @param paneKey The model.
+				 * @param repository The repository the model is in, or null for the pane's own.
 				 */
 				open: (paneId: string, paneKey: string | null, repository: string | null): void => {
 					void port.open(paneId, paneKey, repository);
@@ -236,7 +236,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		},
 		/**
 		 * Answer the oldest outstanding open.
-		 * @param reached Whether the board was there.
+		 * @param reached Whether the model was there.
 		 */
 		answer: async (reached: boolean): Promise<void> => {
 			const open = held.shift();
@@ -250,9 +250,9 @@ function fakeShell(options: FakeOptions): FakeShell {
 			await Promise.resolve();
 		},
 		/**
-		 * The socket told a pane its board.
+		 * The socket told a pane its model.
 		 * @param paneId The pane.
-		 * @param paneKey The board it now shows.
+		 * @param paneKey The model it now shows.
 		 */
 		adopt: (paneId: string, paneKey: string): void => {
 			const pane = pending.panes.find((entry) => entry.paneId === paneId);
@@ -334,7 +334,7 @@ test("a restore waits for a pane that has not reached the server rather than ope
 });
 
 test("an address that asks for another view reads the board again without reopening it", () => {
-	// The pane is already on the board; only the explanation on screen is wrong.
+	// The pane is already on the model; only the explanation on screen is wrong.
 	const shell = fakeShell({
 		panes: [["A", "pipeline"]],
 		wanted: settledAddress({
@@ -352,7 +352,7 @@ test("an address that asks for another view reads the board again without reopen
 });
 
 test("a pane being pointed at another board is not read on the way there", () => {
-	// The view belongs to the board it is going to, and is settled once it lands.
+	// The view belongs to the model it is going to, and is settled once it lands.
 	const shell = fakeShell({
 		panes: [["A", "payments"]],
 		wanted: settledAddress({

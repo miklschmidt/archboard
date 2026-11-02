@@ -1,4 +1,4 @@
-// A board an export draws: a current variant, a draft read against it, an
+// A document an export draws: a current variant, a draft read against it, an
 // architecture view and a sequence view, so a frame around the picture can be
 // held to both grammars and to a comparison.
 
@@ -51,7 +51,7 @@ const DRAFT = {
 	],
 };
 
-/** The board. */
+/** The document. */
 const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
@@ -89,7 +89,7 @@ const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
 });
 
 /**
- * Draw the board as an export draws it: faces embedded, for one theme.
+ * Draw the document as an export draws it: faces embedded, for one theme.
  * @param choices What to draw, beyond the faces.
  * @param policy The vocabulary that the legend describes.
  * @returns The drawn reply.

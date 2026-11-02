@@ -2,7 +2,7 @@
 // that changes it.
 //
 // A tab session shows the conversation of one checkout in every pane. Only the
-// person's own acts in the browser change it: focusing a pane, opening a board,
+// person's own acts in the browser change it: focusing a pane, opening a model,
 // drilling down, or picking a workhorse from the dock's list. Nothing an agent
 // does to a pane changes it, so it never changes while somebody types. The
 // browser names the pane the act happened in, and the server reads the checkout

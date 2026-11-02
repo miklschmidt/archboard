@@ -60,7 +60,7 @@ interface ApplicationPaneProps {
 	recording?: boolean;
 	/**
 	 * Hear what this pane is reading, as well as reporting it (a recording, TASK-304).
-	 * @param reading The board, variant, view, selection and presentation on screen.
+	 * @param reading The model, variant, view, selection and presentation on screen.
 	 */
 	onRecordedReading?: ((reading: PaneReading) => void) | undefined;
 	/** Undefined for ordinary reading, null until a canonical capture loads. */
@@ -173,7 +173,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	useVaultPolicyRefresh(vault);
 	// Registration and departure are two different events, and they are two
 	// effects for that reason. `usePaneSession` hands back a fresh object every
-	// render — its board, its holder and what an agent is doing all change under
+	// render — its model, its holder and what an agent is doing all change under
 	// it — so a single effect with the session in its dependencies would report
 	// the pane gone and back on every ordinary piece of news. The workbench
 	// answers "gone" by tearing down the pane's media and its thread binding, so

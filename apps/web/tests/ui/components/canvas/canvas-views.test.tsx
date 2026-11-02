@@ -1,7 +1,7 @@
-// Reading one board two ways.
+// Reading one model two ways.
 //
 // A view is presentation, not content: choosing one changes what this pane asks
-// the server to draw, and nothing else. Nothing here writes a board, because
+// the server to draw, and nothing else. Nothing here writes a model, because
 // the viewer has no way to.
 
 import { act, cleanup, fireEvent } from "@testing-library/react";
@@ -19,7 +19,7 @@ import {
 	surface,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 
-/** The two views this board offers. */
+/** The two views this model offers. */
 const VIEWS = [
 	{ id: "v1", name: "The parts", grammar: "architecture" },
 	{ id: "v2", name: "One edit, in order", grammar: "sequence" },
@@ -27,7 +27,7 @@ const VIEWS = [
 
 /**
  * A drawing that says which view it is of and what else is on offer.
- * @param version The board version it was drawn from.
+ * @param version The model version it was drawn from.
  * @param view The view it is of, or null for the whole variant.
  * @returns The reply body.
  */
@@ -80,7 +80,7 @@ test("a variant with two views offers both, and says which one is on screen", as
 	});
 	expect(picked).toEqual(["v2"]);
 
-	// Everything is asked for by its own id, and the overview, which a board
+	// Everything is asked for by its own id, and the overview, which a model
 	// opens on, is the absence of a view.
 	act(() => {
 		fireEvent.click(choices()[3]!);
@@ -109,7 +109,7 @@ test("two panes read one board two ways at once", async () => {
 	server.reply = { status: 200, body: drawnAs(1, VIEWS[1]) };
 	mountStage(null, { view: "v2", onViewChange: ignoreChoice });
 	await settle();
-	// Two different pictures of one board, cached apart: the request that fetched
+	// Two different pictures of one model, cached apart: the request that fetched
 	// each one names its own view, so neither pane can be handed the other's.
 	expect(asked.length).toBeGreaterThan(0);
 	expect(server.calls.filter((call) => call.includes("view=v2")).length).toBeGreaterThan(0);
@@ -144,7 +144,7 @@ test("a selected view with no subjects keeps its resolved identity and remains v
 		onViewChange: ignoreChoice,
 		/**
 		 * Record the resolved empty reading used by the address bar.
-		 * @param reading The board reading reported by the stage.
+		 * @param reading The model reading reported by the stage.
 		 */
 		onReading: (reading) => {
 			readings.push(reading);

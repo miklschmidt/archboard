@@ -3,7 +3,7 @@
 // nothing reads the machine's real one.
 //
 // `shop` has `main`, which moves on after the branch left it, and a `feature`
-// branch that is HEAD. `other` is registered too but has no `main`. A board's
+// branch that is HEAD. `other` is registered too but has no `main`. A document's
 // current variant binds parts into both, into a repository that is not
 // registered, and to nothing; a proposal against it adds, changes and removes
 // parts and relationships. The merge base is what keeps the commits of `main`
@@ -112,7 +112,7 @@ const BUILT = [
 ];
 
 /**
- * A node as the board holds it.
+ * A node as the document holds it.
  * @param node What a test says about it.
  * @param index Where it stands.
  * @returns The node.
@@ -122,11 +122,11 @@ function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, inde
 }
 
 /**
- * The board: the built architecture and the proposal that changes it. The
+ * The document: the built architecture and the proposal that changes it. The
  * proposal rewords Ledger, adds Cache, a relationship from Checkout to
  * Payments and a step from Billing to Ledger, removes Legacy, and rewords the
  * stranger's part.
- * @returns The board.
+ * @returns The document.
  */
 function document(): LegacyBoard {
 	const built = BUILT.map(nodeOf);
@@ -176,7 +176,7 @@ function document(): LegacyBoard {
 }
 
 /**
- * Read the footprint of the branch against the board.
+ * Read the footprint of the branch against the document.
  * @param base The ref.
  * @param proposal The proposal's name, when one is named.
  * @param head The ref the commits run up to, when it is not HEAD.

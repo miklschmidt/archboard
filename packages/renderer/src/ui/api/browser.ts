@@ -1,4 +1,4 @@
-// The renderer running in a browser tab: start it once, then draw a board from what the page read. Safe for the browser.
+// The renderer running in a browser tab: start it once, then draw a document from what the page read. Safe for the browser.
 export {
 	drawLegacyBoardHere,
 	prepareContentHere,

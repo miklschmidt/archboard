@@ -3,7 +3,7 @@
 // A mark on a subject's corner may reach past the subject, and where that
 // subject stands on the page's top or left margin the page grows to keep the
 // margin and moves the whole drawing in by the same amount. Two readers of one
-// board still see one arrangement: every subject in the same place against
+// document still see one arrangement: every subject in the same place against
 // every other, and the same room right of and below the drawing. This is the
 // form those tests compare.
 

@@ -25,7 +25,7 @@ type NoSuchDraft = Extract<ArchitectureModelRead, { success: false }>;
  * Supply complete canonical meaning to the existing semantic evidence engine.
  * @param model The coherent canonical state.
  * @param predecessor Its exact comparison base, when available.
- * @returns The engine reading without a board document, level, or authored view.
+ * @returns The engine reading without a document document, level, or authored view.
  */
 function codeReading(model: Model, predecessor?: Model): StateToCheck {
 	const variant: SemanticVariant = {

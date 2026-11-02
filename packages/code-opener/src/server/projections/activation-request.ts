@@ -17,7 +17,7 @@ function parseActivationRequest(request: Request) {
 		};
 	}
 	// The vault the call names is the server's own requirement and is read from the call
-	// before this route runs (ADR 0049); what is left is the board and the element.
+	// before this route runs (ADR 0049); what is left is the model and the element.
 	const { vault: _named, ...link } = typeof request.body === "object" ? (request.body ?? {}) : {};
 	const parsed = CodeTargetOpenRequestSchema.safeParse(link);
 	return parsed.success

@@ -1,15 +1,15 @@
-// Small board documents for the tests of reading a level down: a board of
-// named variants, a board of one card that opens another board, and a board of
-// two cards that open two boards, with the picture the server draws of it.
+// Small model documents for the tests of reading a level down: a model of
+// named variants, a model of one card that opens another model, and a model of
+// two cards that open two models, with the picture the server draws of it.
 
 import { drawing } from "#tests/ui/support/canvas/render-answers.ts";
 
 /**
- * One board document.
- * @param name What the board is called.
+ * One model document.
+ * @param name What the model is called.
  * @param variants Its variants, in the order it states them.
  * @param current Which variant is the current one.
- * @param views The ways this board can be read.
+ * @param views The ways this model can be read.
  * @returns The document.
  */
 function documentOf(
@@ -34,10 +34,10 @@ function documentOf(
 }
 
 /**
- * A card that drills down to another board's current variant.
+ * A card that drills down to another model's current variant.
  * @param id The card's id.
  * @param name What the card is called.
- * @param below The board it opens.
+ * @param below The model it opens.
  * @returns The node.
  */
 function cardOpening(id: string, name: string, below: string): Record<string, unknown> {
@@ -50,9 +50,9 @@ function cardOpening(id: string, name: string, below: string): Record<string, un
 }
 
 /**
- * A board of one card, n1, that drills down to another board's current variant.
- * @param name What the board is called.
- * @param below The board its card opens, or undefined for a card that opens none.
+ * A model of one card, n1, that drills down to another model's current variant.
+ * @param name What the model is called.
+ * @param below The model its card opens, or undefined for a card that opens none.
  * @returns The document.
  */
 function cardDocument(name: string, below: string | undefined): Record<string, unknown> {

@@ -31,7 +31,7 @@ import type { ProbeMode } from "#ui/clients/canvas/subjects/subjects.ts";
 
 /** What decides the lighting. */
 interface LightingInputs {
-	/** What the board says about the variant the picture draws, or null while that is not known. */
+	/** What the model says about the variant the picture draws, or null while that is not known. */
 	readonly content: Wiring | null;
 	/** Where every subject of the picture ended up: only a drawn relationship has anything to light. */
 	readonly atlas: SemanticAtlas;
@@ -161,7 +161,7 @@ function reachBeyond(
 
 /**
  * What the picture lights.
- * @param inputs What the board says, the picture's atlas, the pick, what the sidebar asks, and what else says what the picture is about.
+ * @param inputs What the model says, the picture's atlas, the pick, what the sidebar asks, and what else says what the picture is about.
  * @returns What is lit, how strongly, and the handlers that move it.
  */
 function useLighting(inputs: LightingInputs): Lighting {

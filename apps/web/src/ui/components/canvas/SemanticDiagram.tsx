@@ -1,8 +1,8 @@
-// A drawn semantic board, and the two things the browser owns about it: where
+// A drawn legacy board, and the two things the browser owns about it: where
 // the person is looking, and what they have picked out.
 //
 // Both are session state. The camera and the selection are never written down,
-// never sent to the server and never part of an address; the board on disk is
+// never sent to the server and never part of an address; the model on disk is
 // the only thing that outlives the tab, and this viewer never writes it
 // (ADR 0023). What the server sends is a picture and an atlas, and everything
 // below is about putting the two together.
@@ -48,7 +48,7 @@ import type { OpenDown } from "#ui/rules/canvas/drilling/drill-target.ts";
 
 /**
  * What the stage says about itself, for whoever reads it from outside: which
- * board it is about, and whether it is showing that board or waiting for it.
+ * model it is about, and whether it is showing that model or waiting for it.
  * @param departure Where the reader went, when the picture is leaving.
  * @param drawing The picture on the surface.
  * @param stale Whether a read since the picture loaded has failed.
@@ -81,7 +81,7 @@ function isLeaving(departure: Departure | null): boolean {
 	return departure !== null;
 }
 
-/** Inputs for a drawn board. */
+/** Inputs for a drawn model. */
 interface SemanticDiagramProps {
 	/** The stage owns the camera across picture requests. */
 	readonly camera: PictureCamera;
@@ -97,13 +97,13 @@ interface SemanticDiagramProps {
 	/** Whether the person asked for reduced motion; the shell owns the preference. */
 	reducedMotion: boolean;
 	/**
-	 * What the board says about the variant the picture draws, which its tips
+	 * What the model says about the variant the picture draws, which its tips
 	 * and double-clicks read; null for a picture on its way out.
 	 */
 	reading: VariantReading | null;
 	/**
 	 * Follow a card's drill-down, which a double-click on the card asks for.
-	 * @param board The target board.
+	 * @param board The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpenDown?: OpenDown | undefined;
@@ -126,7 +126,7 @@ interface SemanticDiagramProps {
 	/** How many hops from a presented step's cards what they touch stands. */
 	reach?: ReadonlyMap<string, number> | null;
 	/**
-	 * The picture is on its way out: the reader went to another board, and
+	 * The picture is on its way out: the reader went to another model, and
 	 * this one is kept only to be seen leaving while that one is drawn.
 	 */
 	departure?: Departure | null | undefined;
@@ -136,7 +136,7 @@ interface SemanticDiagramProps {
 	 */
 	heading?: Departure | null | undefined;
 	/**
-	 * This picture is the board a flight arrived at: it takes over from the board
+	 * This picture is the model a flight arrived at: it takes over from the model
 	 * inside its card, in the same place, with no entrance of its own.
 	 */
 	cut?: boolean | undefined;
@@ -171,10 +171,10 @@ function presentationMarks(step: number | null | undefined): {
 }
 
 /**
- * What the board says about the variant the picture on the surface draws. While
+ * What the model says about the variant the picture on the surface draws. While
  * another variant is being drawn the last picture stays up, and its tips and
  * double-clicks must not read the variant that has not arrived.
- * @param reading What the board says about the variant asked for, or null.
+ * @param reading What the model says about the variant asked for, or null.
  * @param drawing The picture on the surface.
  * @returns The reading, when it is of the drawn variant; else null.
  */
@@ -186,7 +186,7 @@ function drawnReading(
 }
 
 /**
- * A drawn semantic board: pan, zoom and selection over the server's picture.
+ * A drawn legacy board: pan, zoom and selection over the server's picture.
  * @param props The drawing, the selection and what to do with a pick.
  * @returns The stage.
  */
@@ -201,7 +201,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	const focus = props.focus ?? NO_FOCUS;
 
 	// The surface stays mounted across pictures and the picture inside it is
-	// written by the transition, which carries one picture of a board into the
+	// written by the transition, which carries one picture of a model into the
 	// next. What comes back is the picture as it is now on the surface, new
 	// each time the markup was written, so the marks below run over the groups
 	// that are actually there.

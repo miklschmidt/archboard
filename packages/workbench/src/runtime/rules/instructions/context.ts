@@ -54,7 +54,7 @@ const DoingSchema = boundedUtf8Text(512, "doing");
 /**
  * What kind of thing a selected identity names.
  *
- * The board contract's own vocabulary, reused rather than restated: an agent
+ * The model contract's own vocabulary, reused rather than restated: an agent
  * handed one of these can put it straight into an edit or a resolution, which is
  * only true while this list and the one commands take are the same list. There
  * is no spelling here for anything that was merely drawn, because there is
@@ -122,7 +122,7 @@ const ArchboardContextRawSchema = z.strictObject({
 	schema: z.literal(1),
 	paneId: NonEmptyStringSchema,
 	model: z.strictObject({
-		/** The name every command spells this board with. */
+		/** The name every command spells this model with. */
 		name: NonEmptyStringSchema,
 		/** Its comparison form, which is what a claim and a broadcast agree on. */
 		key: NonEmptyStringSchema,
@@ -211,7 +211,7 @@ const ArchboardContextRawSchema = z.strictObject({
 	 * the brief had room for. They can disagree — a brief under byte pressure
 	 * drops issues before it drops anything else — and when they do, `required`
 	 * is the one to believe. An agent told `required` with no issues listed reads
-	 * the board; an agent told neither does not know there is work.
+	 * the model; an agent told neither does not know there is work.
 	 */
 	reconciliation: z.strictObject({
 		required: z.boolean(),

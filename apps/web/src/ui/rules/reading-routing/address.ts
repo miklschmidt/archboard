@@ -1,6 +1,6 @@
 // What the address bar says about the workspace: which panes are open, the
-// board each one shows, and which pane is active. Pure. The address is browser
-// display intent and never board authority (ADR 0015, ADR 0020): it records
+// model each one shows, and which pane is active. Pure. The address is browser
+// display intent and never model authority (ADR 0015, ADR 0020): it records
 // what is on screen and asks for what should be, and the note still decides.
 
 /** A canonical reading requested in one pane, including an unavailable reading. */
@@ -23,24 +23,24 @@ interface ModelAddress {
 	/** Set when the reader asked for every line, with any value. */
 }
 
-/** One pane in an address: which pane, the board it shows, and how it reads it. */
+/** One pane in an address: which pane, the model it shows, and how it reads it. */
 interface AddressedPane {
 	readonly paneId: string;
 	readonly model?: ModelAddress | undefined;
-	/** The board key, or null while the pane has not said what it holds. */
+	/** The model key, or null while the pane has not said what it holds. */
 	readonly paneKey: string | null;
 	/**
-	 * The repository the board is in (ADR 0050), by identity or by an untracked
+	 * The repository the model is in (ADR 0050), by identity or by an untracked
 	 * vault's registry name, never by a path; or null when the address does not
 	 * say, which means the repository the pane is in.
 	 */
 	readonly repository: string | null;
 	/**
-	 * The view a semantic board is being read through, or null for the whole
+	 * The view a legacy board is being read through, or null for the whole
 	 * variant. Which explanation is on screen is part of what the pane is
 	 * showing, not a preference about how to show it: a person who lands on a
 	 * sequence and reloads has to get the sequence back, and a link that meant
-	 * "the ordering, on this board" has to still mean that tomorrow.
+	 * "the ordering, on this model" has to still mean that tomorrow.
 	 */
 	readonly view: string | null;
 }
@@ -52,16 +52,16 @@ interface WorkspaceAddress {
 	readonly activePaneId: string | null;
 }
 
-/** One pane whose board must change to reach a wanted address. */
+/** One pane whose model must change to reach a wanted address. */
 interface AddressOpen {
 	readonly paneId: string;
 	readonly paneKey: string | null;
 	readonly model?: ModelAddress;
-	/** The repository the board is in, or null for the one the pane is in. */
+	/** The repository the model is in, or null for the one the pane is in. */
 	readonly repository: string | null;
 }
 
-/** One pane already on the right board, being read the wrong way. */
+/** One pane already on the right model, being read the wrong way. */
 interface AddressRead {
 	readonly paneId: string;
 	/** The view to read it through, or null for the whole variant. */
@@ -87,7 +87,7 @@ function modelOpen(
 }
 
 /**
- * The move a pane that names a board, or only a repository, needs.
+ * The move a pane that names a model, or only a repository, needs.
  * @param displayed What is on screen.
  * @param pane The wanted pane.
  * @returns The move, when the pane has to be pointed there.
@@ -101,7 +101,7 @@ function placeOpen(displayed: WorkspaceAddress, pane: AddressedPane): AddressOpe
 
 /**
  * What has to happen for the displayed workspace to become the wanted one.
- * Ordered as it is applied: panes first, then boards, then focus.
+ * Ordered as it is applied: panes first, then models, then focus.
  */
 interface AddressPlan {
 	/** How many panes the wanted address has that the displayed one has not. */
@@ -109,7 +109,7 @@ interface AddressPlan {
 	readonly closes: readonly string[];
 	readonly opens: readonly AddressOpen[];
 	/**
-	 * Panes showing the right board through the wrong view. Separate from the
+	 * Panes showing the right model through the wrong view. Separate from the
 	 * opens because changing which explanation is on screen takes nothing away:
 	 * no canvas is replaced, so none of these panes is preflighted.
 	 */
@@ -133,17 +133,17 @@ const NOTHING_TO_DO: AddressPlan = Object.freeze({
 });
 
 /**
- * The board one pane shows in an address.
+ * The model one pane shows in an address.
  * @param address The address.
  * @param paneId The pane.
- * @returns The board key, or null when the pane is absent or says nothing.
+ * @returns The model key, or null when the pane is absent or says nothing.
  */
 function modelIn(address: WorkspaceAddress, paneId: string): string | null {
 	return address.panes.find((pane) => pane.paneId === paneId)?.paneKey ?? null;
 }
 
 /**
- * The view one pane is reading its board through in an address.
+ * The view one pane is reading its model through in an address.
  * @param address The address.
  * @param paneId The pane.
  * @returns The view, or null for the whole variant or a pane that is not open.
@@ -176,7 +176,7 @@ function hasAddressedPane(address: WorkspaceAddress, paneId: string): boolean {
  * Whether two addresses say the same thing.
  * @param one An address.
  * @param other The other.
- * @returns True when the panes, their boards and the active pane all match.
+ * @returns True when the panes, their models and the active pane all match.
  */
 function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 	return (
@@ -264,7 +264,7 @@ function withModelAddresses(
 
 /**
  * The address as it should be written down: panes that have not said what they
- * hold carry no board, and an active pane that is not open names nobody.
+ * hold carry no model, and an active pane that is not open names nobody.
  * @param address The address.
  * @returns The address with its active pane checked.
  */
@@ -277,9 +277,9 @@ function settledAddress(address: WorkspaceAddress): WorkspaceAddress {
 }
 
 /**
- * Whether a wanted pane is on another board than the displayed one: another
+ * Whether a wanted pane is on another model than the displayed one: another
  * key, or the same key in another repository. An address that names no
- * repository asks for the board in whichever repository the pane is in.
+ * repository asks for the model in whichever repository the pane is in.
  * @param displayed What is on screen.
  * @param pane The wanted pane.
  * @returns True when the pane has to be pointed somewhere.
@@ -292,8 +292,8 @@ function elsewhere(displayed: WorkspaceAddress, pane: AddressedPane): boolean {
 /**
  * What has to happen for the displayed workspace to become the wanted one.
  *
- * A wanted pane that names no board is a pane that should be open, nothing
- * more: restoring never closes a board a person or an agent has since put
+ * A wanted pane that names no model is a pane that should be open, nothing
+ * more: restoring never closes a model a person or an agent has since put
  * there. A displayed pane the wanted address does not have is closed.
  * @param displayed What is on screen.
  * @param wanted What the address asks for.
@@ -322,9 +322,9 @@ function planFor(
 	const opens = wantedOpen.flatMap((pane) =>
 		pane.model === undefined ? placeOpen(displayed, pane) : modelOpen(displayed, pane, pane.model),
 	);
-	// A pane the address is about to point at another board is not read here as
-	// well: the view it should end up on is a view of the board it is going to,
-	// and the reading is settled once that board is there.
+	// A pane the address is about to point at another model is not read here as
+	// well: the view it should end up on is a view of the model it is going to,
+	// and the reading is settled once that model is there.
 	const moving = new Set(opens.map((open) => open.paneId));
 	const reads = wantedOpen.flatMap((pane) =>
 		!moving.has(pane.paneId) && pane.view !== viewIn(displayed, pane.paneId)

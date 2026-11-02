@@ -152,7 +152,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 				})
 			).status,
 		).toBe(200);
-		// The pick reaches live voice as a sentence that names the board and the subject. An id or
+		// The pick reaches live voice as a sentence that names the model and the subject. An id or
 		// a line of JSON in a speech model's context is something it says out loud.
 		await waitFor(() => appended().length === 1, "the user's pick to reach live voice", {
 			timeoutMs: 2000,

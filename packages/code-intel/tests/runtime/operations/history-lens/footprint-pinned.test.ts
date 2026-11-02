@@ -71,9 +71,9 @@ function part(id: string, order: number, path: string, branch: string) {
 }
 
 /**
- * A board with the variants a test says.
+ * A document with the variants a test says.
  * @param variants The variants.
- * @returns The board.
+ * @returns The document.
  */
 function document(variants: readonly object[]) {
 	return LegacyBoardSchema.parse({
@@ -118,7 +118,7 @@ afterAll(() => {
 
 /**
  * The ids of the parts a footprint lists as changed, and why it skipped the rest.
- * @param value The board.
+ * @param value The document.
  * @param proposal The draft to read, if any.
  * @returns The changed ids, and each skip as its part and reason.
  */

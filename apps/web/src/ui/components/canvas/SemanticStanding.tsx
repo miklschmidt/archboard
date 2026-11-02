@@ -6,7 +6,7 @@
 // decided yet. A picture cannot show that by itself. Drawn plainly it looks
 // settled, which is the one impression it must not give.
 //
-// So the pane says it, in the board's own words: which variant it is waiting
+// So the pane says it, in the model's own words: which variant it is waiting
 // on, what the disagreements are about, and what the reconciliation itself said
 // to do about each one. The words are quoted rather than rewritten here — the
 // thing that found the disagreement is the thing that knows what it is.
@@ -26,7 +26,7 @@ interface SemanticStandingProps {
 	 */
 	nameOf: (id: string) => string;
 	/**
-	 * What one of the board's variants is called.
+	 * What one of the model's variants is called.
 	 *
 	 * A different question from the one above, and it has to be asked of a
 	 * different thing: a blocking ancestor is a state of the architecture, not a
@@ -50,7 +50,7 @@ interface SemanticStandingProps {
  * rather than assembled from a count and a plural suffix, because somebody
  * reading "1 thing(s)" is reading a sentence nobody wrote.
  * @param waiting What this state is waiting on.
- * @param variantNameOf What to call a variant of this board.
+ * @param variantNameOf What to call a variant of this model.
  * @returns The sentence.
  */
 function saying(waiting: SemanticWaiting, variantNameOf: (id: string) => string): string {

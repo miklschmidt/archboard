@@ -10,7 +10,7 @@
 //   the server     read its source once, at start or at the last reload
 //   a browser tab  loaded a built bundle once, when the tab was opened
 //
-// Two commands disagreeing about one board is what that looks like from the
+// Two commands disagreeing about one model is what that looks like from the
 // outside, and it has been diagnosed wrongly more than once (TASK-056).
 //
 // The two halves are measured differently because they are made differently.

@@ -1,7 +1,7 @@
 // What the deterministic checks read: the vault as it stood after the fixtures
 // and as it stands after the author, plus what the harness asked the CLI on
 // the checks' behalf. Gathered once per run by the harness; read by pure
-// functions, so a check is testable against a board built in memory.
+// functions, so a check is testable against a document built in memory.
 
 import {
 	currentVariant,
@@ -80,9 +80,9 @@ interface InspectedGroup {
 
 /** Everything a run's checks can see. */
 interface Reading {
-	/** Every board in the vault after the author ran, by name. */
+	/** Every document in the vault after the author ran, by name. */
 	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
-	/** Every board as the fixtures left it, before the author ran. */
+	/** Every document as the fixtures left it, before the author ran. */
 	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	/** The vault policy as configured after the run. */
 	readonly policy: SemanticPolicy;
@@ -108,12 +108,12 @@ type Finding = Omit<CheckVerdict, "check">;
 
 /**
  * The variant a check names, or the current one. Never a draft in the current
- * one's place: on a board nobody has built there is no current variant, and a
+ * one's place: on a document nobody has built there is no current variant, and a
  * check naming none fails there rather than judging a proposal as the
  * implemented architecture.
- * @param document The board.
+ * @param document The document.
  * @param asked The variant's id or name, when the check names one.
- * @returns The variant, or undefined when the board has no such variant.
+ * @returns The variant, or undefined when the document has no such variant.
  */
 function variantOf(document: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
 	return asked === undefined ? currentVariant(document) : variantNamed(document, asked);
@@ -190,9 +190,9 @@ function finding(passed: boolean, detail: string): Finding {
 }
 
 /**
- * Looks a board and variant up for a check, or says which is missing.
+ * Looks a document and variant up for a check, or says which is missing.
  * @param reading The reading.
- * @param document The board's name.
+ * @param document The document's name.
  * @param variant The variant, when named.
  * @returns The content, or a failed finding.
  */

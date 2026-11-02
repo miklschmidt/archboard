@@ -1,7 +1,7 @@
 // The address `semantic record` opens its page at, as the browser reads it
 // (TASK-472.06, ADR 0050). The recorder writes the address and the browser's
 // workspace address reads it, so this owner holds the two sides together: the
-// page shows the recorded board in pane A, in the repository of the vault the
+// page shows the recorded model in pane A, in the repository of the vault the
 // command found, and with no repository named it opens where a page opens.
 
 import { expect, test } from "bun:test";

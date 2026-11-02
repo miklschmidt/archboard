@@ -1,4 +1,4 @@
-// The picture of a talk as it is rendered: the recording's frame, its one pane on the talk's board
+// The picture of a talk as it is rendered: the recording's frame, its one pane on the talk's model
 // at the talk's step, and the voice over it. It is the frame a recording page puts up around its
 // pane, so the pane and its walkthrough box stand where they stood while the talk was recorded.
 //
@@ -7,7 +7,7 @@
 // the voice's word, and mute and the subtitles control. The voice of a talk is live from its first
 // frame to its last, and on each frame it is as loud as the talk's voice was then. A recording has
 // no dock, so this page hosts the one orb itself, in the box. The box is there once the walkthrough
-// is presented: before the first step a talk shows the whole board. Nobody presses a key in a
+// is presented: before the first step a talk shows the whole model. Nobody presses a key in a
 // video, so the keys are drawn and do nothing. A recording cuts every move of the walkthrough box
 // and of the voice box in it (app.css), so the orb is never flown either: it is in its socket from
 // the first frame the box is shown.
@@ -44,7 +44,7 @@ interface ReplayStageProps {
 	readonly talk: Talk;
 	/** Where the talk stands, played frame by frame. */
 	readonly playback: TalkPlayback;
-	/** The cache the pane reads the talk's board through. */
+	/** The cache the pane reads the talk's model through. */
 	readonly client: QueryClient;
 	/**
 	 * Told what the pane is reading, whenever that changes.
@@ -54,7 +54,7 @@ interface ReplayStageProps {
 }
 
 /**
- * The vault the talk's pane is in: none on a server. A talk carries its board,
+ * The vault the talk's pane is in: none on a server. A talk carries its model,
  * and every read of the pane is answered from the talk (talk-reads), so this
  * only keeps its cached reads apart from any vault's.
  */

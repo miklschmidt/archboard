@@ -1,4 +1,4 @@
-// What the inspector says a subject differs by, once a board has history
+// What the inspector says a subject differs by, once a model has history
 // (decided by the user on 2026-09-27): the current variant is now and says
 // nothing about having changed, and a historical variant is read against it, so
 // what now has and history lacks reads as removed from history's picture.
@@ -34,8 +34,8 @@ const NOW = {
 };
 
 /**
- * A board whose first architecture was superseded by the current one.
- * @returns The document, as the board route answers with it.
+ * A model whose first architecture was superseded by the current one.
+ * @returns The document, as the model route answers with it.
  */
 function superseded(): Record<string, unknown> {
 	return {
@@ -57,7 +57,7 @@ function superseded(): Record<string, unknown> {
 }
 
 /**
- * Put the board in front of a pane showing one of its variants.
+ * Put the model in front of a pane showing one of its variants.
  * @param shown The variant the picture is of.
  * @param shown.id Its id.
  * @param shown.name Its name.

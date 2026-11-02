@@ -71,8 +71,8 @@ const AFTER = {
 };
 
 /**
- * A board holding the state it is in and one proposal derived from it.
- * @returns The document, as the board route answers with it.
+ * A model holding the state it is in and one proposal derived from it.
+ * @returns The document, as the model route answers with it.
  */
 function branched(): Record<string, unknown> {
 	return {
@@ -98,7 +98,7 @@ function branched(): Record<string, unknown> {
  *
  * The reply says which variant it drew, which is how the panel knows what to
  * explain. What it says about the change is here for realism: the panel reads
- * the board rather than this, so that the words beside the picture and the
+ * the model rather than this, so that the words beside the picture and the
  * marks on it come from one comparison of one pair of variants.
  * @returns The render route's success body.
  */
@@ -114,7 +114,7 @@ function proposalDrawn(): Record<string, unknown> {
 }
 
 /**
- * Put the branched board and a picture of its proposal in front of a pane.
+ * Put the branched model and a picture of its proposal in front of a pane.
  * @param selection What the user has picked out.
  */
 function inspecting(selection: string): void {
@@ -124,7 +124,7 @@ function inspecting(selection: string): void {
 }
 
 /**
- * Let the picture, then the board behind it, reach the screen.
+ * Let the picture, then the model behind it, reach the screen.
  * @returns Settles once nothing else is waiting.
  */
 async function settled(): Promise<void> {
@@ -286,7 +286,7 @@ test("a board that came from nothing says nothing about having changed", async (
 	mountStage("io");
 	await settled();
 
-	// The comparison exists only against a predecessor. A board with one state
+	// The comparison exists only against a predecessor. A model with one state
 	// has none, and a panel that invented one would be reporting a change
 	// nobody proposed.
 	expect(inspector()).toContain("board-io");

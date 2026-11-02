@@ -1,6 +1,6 @@
 // The code check reads the build dependencies between the packages of a
 // flake (ADR 0046, TASK-367.22): a package built from another package that
-// the board does not draw is an undrawn dependency, a drawn one is supported,
+// the document does not draw is an undrawn dependency, a drawn one is supported,
 // and a relationship that starts at a package whose build inputs the static
 // reading cannot follow, to another package of the flake, is skipped, never
 // reported unsupported. A relationship to code that holds no output of that
@@ -103,7 +103,7 @@ beforeAll(async () => {
 					part("pS", "api", "api/server.ts"),
 				],
 				edges: [
-					// lib is built from core, and the board says so.
+					// lib is built from core, and the document says so.
 					dependency("e1", "pL", "pC"),
 					// tool's inputs come from a package scope the reading cannot tell.
 					dependency("e2", "pT", "pL"),

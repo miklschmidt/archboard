@@ -12,7 +12,7 @@ import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 // picture marks (TASK-497, TASK-496). A view's reading holds more than its
 // grammar draws: a sequence view keeps the relationships between its
 // participants and draws none, a flowchart draws neither parts nor
-// relationships, and an architecture on a board with relationships draws no
+// relationships, and an architecture on a document with relationships draws no
 // flow. A key that counted the reading said "Changed 3" over a picture that
 // marked one step.
 //

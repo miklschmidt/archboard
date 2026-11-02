@@ -1,4 +1,4 @@
-// The evidence that joins the bound parts of one board, read from the code
+// The evidence that joins the bound parts of one document, read from the code
 // facts of every bound file (ADR 0046).
 //
 // In code, a use at run time of a name that another part defines is a call: a
@@ -28,7 +28,7 @@
 // parts bind two symbols of one file and both use one name, only the part
 // whose definition holds that first line is credited with the use.
 // Evidence never joins a part to a part inside it, and never two parts that
-// bind the same code: the board already says that the one holds the other,
+// bind the same code: the document already says that the one holds the other,
 // and the check cannot tell the code of the two apart. A file read as text
 // gives no evidence.
 //
@@ -67,10 +67,10 @@ import {
 import { type FactsPass } from "#runtime/services/code-facts/reader.ts";
 import type { CodeEvidence } from "#shared/protocol/code-check.ts";
 
-/** One piece of evidence between two parts of a board, by their ids. */
+/** One piece of evidence between two parts of a document, by their ids. */
 type Piece = CodeEvidence & { readonly from: string; readonly to: string };
 
-/** The evidence between the parts of one board, and the files a grammar read. */
+/** The evidence between the parts of one document, and the files a grammar read. */
 interface StateEvidence {
 	readonly pieces: readonly Piece[];
 	/** For each checkout or tree of a ref, by its root, the files the pass read through code facts rather than as text. */
@@ -120,7 +120,7 @@ interface RepoReading {
 
 /**
  * The definition sites each pass has asked for, by checkout, file and name. A
- * site depends on the files alone, so every board of a pass shares them.
+ * site depends on the files alone, so every document of a pass shares them.
  */
 const SITES = new WeakMap<FactsPass, Map<string, Promise<DefinitionSite | undefined>>>();
 
@@ -524,7 +524,7 @@ async function evidenceInRepo(
 }
 
 /**
- * The evidence between the bound parts of one board.
+ * The evidence between the bound parts of one document.
  * @param codes Each part's bound code, by its id.
  * @param reading The pass.
  * @returns The evidence, and the files read through code facts.
@@ -546,7 +546,7 @@ async function evidenceOf(
 	const unfollowed = new Map<string, Map<string, string>>();
 	const values = new Set<Piece>();
 	for (const [tree, parts] of byTree) {
-		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
+		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in document order
 		const read = await evidenceInRepo(parts, reading, lineages, { unfollowed, values });
 		pieces.push(...read.pieces);
 		parsed.set(tree, read.parsed);

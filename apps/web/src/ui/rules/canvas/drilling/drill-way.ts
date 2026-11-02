@@ -1,18 +1,18 @@
 // Which way a drill-down leads, in the words and marks the chrome uses for it:
-// the board's reading of the way, which the renderer draws on the card (a ring
+// the model's reading of the way, which the renderer draws on the card (a ring
 // around an arrow), so the card, its hover tip and Go deeper say one thing. Up
-// opens a coarser board, the whole this one is a part of; down a finer one, the
-// part's inside; across a board at the same level. Pure.
+// opens a coarser model, the whole this one is a part of; down a finer one, the
+// part's inside; across a model at the same level. Pure.
 
 import { drillDirection } from "@archboard/model/policy";
 
-/** Which way the board a part opens lies from the board it is drawn on. */
+/** Which way the model a part opens lies from the model it is drawn on. */
 type DrillWay = Exclude<ReturnType<typeof drillDirection>, "elsewhere">;
 
 /**
- * Which way a board lies from another, by their levels in the vault's order.
- * @param there The level of the board a part opens.
- * @param here The level of the board it is drawn on.
+ * Which way a model lies from another, by their levels in the vault's order.
+ * @param there The level of the model a part opens.
+ * @param here The level of the model it is drawn on.
  * @param levels The vault's levels, coarsest first.
  * @returns The way, or null when either level is not one the vault lists.
  */
@@ -31,8 +31,8 @@ const COUNTS = ["", "One", "Two", "Three", "Four"] as const;
 
 /**
  * Which way and how far, in words: "One level down", "Same level".
- * @param there The level of the board a part opens.
- * @param here The level of the board it is drawn on.
+ * @param there The level of the model a part opens.
+ * @param here The level of the model it is drawn on.
  * @param levels The vault's levels, coarsest first.
  * @returns The words, or null when the way is not known.
  */

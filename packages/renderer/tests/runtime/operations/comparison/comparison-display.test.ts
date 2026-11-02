@@ -223,7 +223,7 @@ test.each([
 	},
 );
 
-// The board's lines come from its flow, which the overview does not draw.
+// The document's lines come from its flow, which the overview does not draw.
 // These stable-position regressions own Track; plain Blocks lays out only visible subjects.
 const EVERY_PART = {
 	layout: "track",

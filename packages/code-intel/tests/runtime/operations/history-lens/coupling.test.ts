@@ -73,7 +73,7 @@ function together(files: readonly string[], times = 1): void {
 	}
 }
 
-/** Every part of the board: its id, name, bound file and what holds it. */
+/** Every part of the document: its id, name, bound file and what holds it. */
 const PARTS = [
 	["pOr", "Orders", "src/orders.ts"],
 	["pBi", "Billing", "src/billing.ts"],
@@ -100,11 +100,11 @@ const PARTS = [
 ] as const;
 
 /**
- * The board: every part bound into the shop, a container that binds nothing,
+ * The document: every part bound into the shop, a container that binds nothing,
  * a relationship from Tracking to Shipping, one from Fraud to the container
  * that holds Gateway, one from Line inside Basket to Tax, and a flow with one
  * step from Mailer to Templates.
- * @returns The board.
+ * @returns The document.
  */
 function document(): LegacyBoard {
 	const nodes = [

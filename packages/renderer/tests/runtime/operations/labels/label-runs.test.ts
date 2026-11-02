@@ -185,7 +185,7 @@ test("a source-owned label keeps a private run clear of cards and other labels",
 	expect(overlaps(drawn, content)).toEqual([]);
 });
 
-// Taken from a board of this repository: moved to the middle of its gap, the
+// Taken from a document of this repository: moved to the middle of its gap, the
 // row holding 'one socket per page' ran into a channel where another line
 // turns beside the row, and the label sat half a lane from that line.
 test("a row of labels moves toward its gap's middle only as far as the lines turning there leave it a lane", async () => {

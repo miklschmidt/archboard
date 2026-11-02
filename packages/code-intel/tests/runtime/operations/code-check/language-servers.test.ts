@@ -8,7 +8,7 @@
 // The checkout `shop` holds an address helper whose two functions are bound
 // as two parts, a ledger, an order that calls the ledger through a parameter
 // typed by a type-only import, a memory interface the order calls through a
-// parameter, and a report the board joins to the order by two anchored
+// parameter, and a report the document joins to the order by two anchored
 // relationships: one names the call to the ledger, one the call to the memory.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";

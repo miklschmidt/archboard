@@ -2,7 +2,7 @@
 //
 // A view names a grammar and a part of the variant; this is where that part is
 // cut out, before anything is drawn. Cutting here rather than in the renderer
-// is what keeps "a view hides a node" from ever being confused with "the board
+// is what keeps "a view hides a node" from ever being confused with "the model
 // lost a node": the variant is untouched, and what comes back is a reading of
 // it (ADR 0023).
 //
@@ -24,8 +24,8 @@
 //   a region drawn with its parts unwired would be the broken drawing again.
 
 //
-// Two readings are nobody's to author (ADR 0052). The overview is what a board
-// opens on: its root parts, with every container closed. The board itself is
+// Two readings are nobody's to author (ADR 0052). The overview is what a model
+// opens on: its root parts, with every container closed. The model itself is
 // the container of its subject, so no part stands for it. Everything is every
 // part and every relationship, asked for as the view of that name.
 
@@ -54,7 +54,7 @@ const RESERVED_VIEW_NAMES: readonly string[] = Object.freeze(["Overview", EVERYT
  * part of, because a card drawn outside the container it belongs to would be
  * telling the reader something untrue about the architecture. A container
  * that holds every part the view asked for is the exception: it separates
- * nothing in the picture, so it is left out, as the board is (ADR 0052).
+ * nothing in the picture, so it is left out, as the model is (ADR 0052).
  * @param content The variant's whole content.
  * @param scope What the reading selects.
  * @returns The content as that reading reads it.
@@ -100,7 +100,7 @@ const MIXED_KIND = "mixed kinds";
 /** The most parts inside a card that a joined line names. */
 const NAMED_PARTS = 2;
 
-/** Relationships that one line joins, in board order. */
+/** Relationships that one line joins, in model order. */
 type JoinedEdges = [SemanticEdge, ...SemanticEdge[]];
 
 /** A drawn line. It says two-way when it holds relationships in both directions. */
@@ -226,7 +226,7 @@ function partsReachedIn(
 interface OverviewLine {
 	/** What the overview draws. */
 	readonly line: DrawnEdge;
-	/** The relationships it joins, in board order, as the variant states them. */
+	/** The relationships it joins, in model order, as the variant states them. */
 	readonly joins: Readonly<JoinedEdges>;
 }
 
@@ -328,12 +328,12 @@ function rootOf(content: VariantContent): (id: string) => string {
  * Relationships between two drawn parts, as one line.
  *
  * A lone relationship is drawn as stated. A joined line keeps the identity of
- * the first relationship in board order, so a comparison marks it, and it runs
+ * the first relationship in model order, so a comparison marks it, and it runs
  * the way that relationship runs. It wears the kind they share, or the neutral
  * mixed kind when they differ, because a majority kind would be a false mark.
  * What only one of them says, its description, emphasis, traffic and anchor,
  * is not said of the line, and {@link wordsOnJoinedLine} decides its words.
- * @param edges The relationships, in board order.
+ * @param edges The relationships, in model order.
  * @param ends The line's drawn ends.
  * @param reached Names the parts inside a card.
  * @returns The line.
@@ -421,11 +421,11 @@ function containersOf(parentOf: ReadonlyMap<string, string | undefined>, id: str
  * A reader who asked for no view is not asking for the first one: that is the
  * overview, and it is the caller's to say so. `Everything` is the whole
  * variant, and no authored view can take that name. Nothing here guesses which
- * explanation was meant — a name fits at most one view, because a board
+ * explanation was meant — a name fits at most one view, because a legacy board
  * holding two views of one name is refused before it is ever read.
- * @param model The board that owns the views.
+ * @param model The legacy board that owns the views.
  * @param asked The view's id or the name it was written under.
- * @returns The view, or undefined when nothing on this board answers to it.
+ * @returns The view, or undefined when nothing on this legacy board answers to it.
  */
 function findView(model: Pick<LegacyBoard, "views">, asked: string): SemanticView | undefined {
 	if (asked === EVERYTHING_VIEW.id) {

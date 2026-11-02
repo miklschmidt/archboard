@@ -1,25 +1,25 @@
 // The trail a pane's reader drilled along, as a pure reducer (ADR 0050).
 //
-// The pane holds one board, the one the shell pointed it at. A drill-down in
-// its own vault stacks another board on top of it, which the pane reads in
+// The pane holds one model, the one the shell pointed it at. A drill-down in
+// its own vault stacks another model on top of it, which the pane reads in
 // place. A drill-down into another repository cannot be read in place: the pane
 // is in one vault at a time and only the server moves it, so the reader asks
-// the shell to show that board there, and the trail waits. When the pane
-// arrives on the board it asked for, the boards it came through are kept
-// before the pane's new board. Any other arrival is somebody else pointing the
+// the shell to show that model there, and the trail waits. When the pane
+// arrives on the model it asked for, the models it came through are kept
+// before the pane's new model. Any other arrival is somebody else pointing the
 // pane, and the trail is a history of a different pane, so it goes.
 //
-// The list of stops is `before`, then the pane's own board, then `above`.
+// The list of stops is `before`, then the pane's own model, then `above`.
 // Every stop of `above` is in the pane's own vault, because leaving it is a
 // move of the pane.
 
-/** One board a pane has been looking at. */
+/** One model a pane has been looking at. */
 interface DrillStop {
-	/** The board name. */
+	/** The model name. */
 	readonly model: string;
-	/** A variant id or name, or undefined for the board's current variant. */
+	/** A variant id or name, or undefined for the model's current variant. */
 	readonly variant: string | undefined;
-	/** The vault the board is in. */
+	/** The vault the model is in. */
 	readonly vault: string;
 	/** The repository identity of that vault, or null when it has none or is not known. */
 	readonly repository: string | null;
@@ -27,28 +27,28 @@ interface DrillStop {
 
 /** A trail, and the dive it is waiting on. */
 interface DrillTrail {
-	/** The boards the reader came through before the pane's own board, from another vault or board. */
+	/** The models the reader came through before the pane's own model, from another vault or model. */
 	readonly before: readonly DrillStop[];
-	/** The boards the reader drilled into on top of the pane's own board, in its vault. */
+	/** The models the reader drilled into on top of the pane's own model, in its vault. */
 	readonly above: readonly DrillStop[];
-	/** The board the reader asked the shell to show, and the stops to keep before it once it is shown. */
+	/** The model the reader asked the shell to show, and the stops to keep before it once it is shown. */
 	readonly pending: { readonly stop: DrillStop; readonly before: readonly DrillStop[] } | null;
 }
 
 /** A trail that has gone nowhere. */
 const NO_TRAIL: DrillTrail = { before: [], above: [], pending: null };
 
-/** A step of the trail, and the board the shell must show for it, if any. */
+/** A step of the trail, and the model the shell must show for it, if any. */
 interface TrailStep {
 	readonly trail: DrillTrail;
-	/** The board to ask the shell to show: the step leaves the pane's vault, or its own board. */
+	/** The model to ask the shell to show: the step leaves the pane's vault, or its own model. */
 	readonly dive: DrillStop | null;
 }
 
 /**
- * Every stop, the pane's own board among them.
+ * Every stop, the pane's own model among them.
  * @param trail The trail.
- * @param own The pane's own board.
+ * @param own The pane's own model.
  * @returns The stops, first to last.
  */
 function stopsOf(trail: DrillTrail, own: DrillStop): readonly DrillStop[] {
@@ -56,11 +56,11 @@ function stopsOf(trail: DrillTrail, own: DrillStop): readonly DrillStop[] {
 }
 
 /**
- * Follow a drill-down from the board on screen.
+ * Follow a drill-down from the model on screen.
  * @param trail The trail.
- * @param own The pane's own board.
- * @param stop The board the drill-down leads to.
- * @returns The trail, and the board to show when it is in another vault.
+ * @param own The pane's own model.
+ * @param stop The model the drill-down leads to.
+ * @returns The trail, and the model to show when it is in another vault.
  */
 function drillInto(trail: DrillTrail, own: DrillStop, stop: DrillStop): TrailStep {
 	if (stop.vault === own.vault) {
@@ -70,11 +70,11 @@ function drillInto(trail: DrillTrail, own: DrillStop, stop: DrillStop): TrailSte
 }
 
 /**
- * Go back to one of the boards the reader came through.
+ * Go back to one of the models the reader came through.
  * @param trail The trail.
- * @param own The pane's own board.
+ * @param own The pane's own model.
  * @param depth Where it is among the stops: 0 is the first.
- * @returns The trail, and the board to show when the stop is before the pane's own board.
+ * @returns The trail, and the model to show when the stop is before the pane's own model.
  */
 function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep {
 	const kept = depth - trail.before.length;
@@ -83,7 +83,7 @@ function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep 
 	}
 	const stop = trail.before[depth];
 	if (stop === undefined) return { trail, dive: null };
-	// A trail that came back to the board the pane holds: the shell would not
+	// A trail that came back to the model the pane holds: the shell would not
 	// move the pane, so nothing would arrive. The pane is there already.
 	if (sameModel(stop, own) && stop.variant === own.variant) {
 		return {
@@ -98,10 +98,10 @@ function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep 
 }
 
 /**
- * The shell pointed the pane at a board. When it is the one the trail asked
+ * The shell pointed the pane at a model. When it is the one the trail asked
  * for, the trail is kept before it; otherwise the trail is somebody else's.
  * @param trail The trail.
- * @param own The board the pane holds now.
+ * @param own The model the pane holds now.
  * @returns The trail.
  */
 function drillArrived(trail: DrillTrail, own: DrillStop): DrillTrail {
@@ -112,22 +112,22 @@ function drillArrived(trail: DrillTrail, own: DrillStop): DrillTrail {
 }
 
 /**
- * Whether two stops are one board in one vault. A board name is matched as the
+ * Whether two stops are one model in one vault. A model name is matched as the
  * server matches it, without case.
  * @param a One stop.
  * @param b The other.
- * @returns Whether they are the same board.
+ * @returns Whether they are the same model.
  */
 function sameModel(a: DrillStop, b: DrillStop): boolean {
 	return a.vault === b.vault && a.model.toLowerCase() === b.model.toLowerCase();
 }
 
 /**
- * The shell could not show a board the trail asked for: the trail stays where
+ * The shell could not show a model the trail asked for: the trail stays where
  * it was. A refusal answers one dive, so a later dive the trail waits on now
  * still waits.
  * @param trail The trail.
- * @param stop The board the refused dive asked for.
+ * @param stop The model the refused dive asked for.
  * @returns The trail, no longer waiting on that dive.
  */
 function drillRefused(trail: DrillTrail, stop: DrillStop): DrillTrail {

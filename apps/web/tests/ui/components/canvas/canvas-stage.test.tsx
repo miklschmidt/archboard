@@ -123,12 +123,12 @@ test("the camera moves with the keyboard and survives the board changing under i
 	expect(isX).toBeCloseTo(wasX, 6);
 	expect(isY).toBeCloseTo(wasY, 6);
 
-	// The board changes, the pane is told, and it asks for a new picture. Where
-	// the person was looking is not the board's business.
+	// The model changes, the pane is told, and it asks for a new picture. Where
+	// the person was looking is not the model's business.
 	const asked = server.calls.length;
 	const transform = surface().style.transform;
 	server.reply = { status: 200, body: drawing(2) };
-	// News of a board of the same name in another repository is not news of this one.
+	// News of a model of the same name in another repository is not news of this one.
 	act(() => announceModelChange("/work/payments/.archboard/vault", "pipeline", 2));
 	await settle();
 	expect(server.calls.length).toBe(asked);
@@ -316,7 +316,7 @@ test("a refresh that fails keeps the diagram, says the picture is old, and retri
 	pressKey("ArrowLeft");
 	const camera = surface().style.transform;
 
-	// The board stops being readable after it had been readable. The picture
+	// The model stops being readable after it had been readable. The picture
 	// stays: showing nothing would be worse than showing something old.
 	server.reply = UNREADABLE;
 	act(() => announceModelChange(PANE_VAULT, "pipeline", 2));
@@ -353,9 +353,9 @@ test("an empty board whose refresh fails says so rather than looking current", a
 	await settle();
 	expect(stageState()).toBe("empty");
 
-	// The board has probably been filled in — that is what the announcement
+	// The model has probably been filled in — that is what the announcement
 	// said — and the read failed. Nothing on screen may go on implying that
-	// this board is still the empty one it was.
+	// this model is still the empty one it was.
 	server.reply = UNREADABLE;
 	act(() => announceModelChange(PANE_VAULT, "pipeline", 4));
 	await settle();
@@ -394,7 +394,7 @@ async function stateOverReply(body: Record<string, unknown>): Promise<string | n
 test("a torn render answer is a failure, and never looks like an empty board", async () => {
 	// The half-answers a bag of optional fields would have accepted: a picture
 	// with no size, a size with no picture, and an identity with neither. A
-	// board with an architecture on it must never be shown as one nobody has
+	// model with an architecture on it must never be shown as one nobody has
 	// started, so every one of these is the pane's failure state.
 	const whole = drawing(1);
 	expect(await stateOverReply({ ...whole, svg: undefined })).toBe("error");

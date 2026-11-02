@@ -15,7 +15,7 @@ import {
 } from "#runtime/store/lock/lease-state.ts";
 
 // Both are keyed by `modelMemoryKey`: one server serves several vaults, and two
-// of them can each hold a board of one name (ADR 0049).
+// of them can each hold a model of one name (ADR 0049).
 const processClaims = new Map<string, ClaimEntry>();
 const processRevocations = new Map<string, ClaimRevocation>();
 
@@ -23,7 +23,7 @@ const processRevocations = new Map<string, ClaimRevocation>();
 // command-lived agent, survives between writes and can renew on its behalf.
 /**
  * One process claim as a caller is told about it.
- * @param model The board key.
+ * @param model The legacy board key.
  * @param entry The claim this server holds.
  * @returns The claim, with its campaign deadline as a timestamp.
  */
@@ -55,13 +55,13 @@ function dropClaim(entry: ClaimEntry): void {
 }
 
 /**
- * The claim this server holds on a board, when it still stands.
+ * The claim this server holds on a legacy board, when it still stands.
  *
  * Claim expiry bounds a live agent or one that walked away, so an expired
  * claim is dropped the moment it is asked about rather than whenever the
  * renewal timer next lands.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @returns The claim, or null when this server has none.
  */
 function liveClaim(vault: string, model: string): ClaimEntry | null {
@@ -86,10 +86,10 @@ function liveClaim(vault: string, model: string): ClaimEntry | null {
  * acquisition, or a later refused renewal after the lease went to somebody
  * else. Only the server that owned this claim records it, and the record is
  * consumed once.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @param lost Who held the claim.
- * @param by Who has the board now, when that is known.
+ * @param by Who has the legacy board now, when that is known.
  * @param cause Why the claim ended.
  */
 function noteClaimRevoked(
@@ -114,8 +114,8 @@ function noteClaimRevoked(
  * Ordinary acquisition is never called here: retaking a free lease would
  * restore a claim the person explicitly took back (ADR 0022), so a refused
  * renewal ends the claim instead.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  */
 function renewClaim(vault: string, model: string): void {
 	const entry = liveClaim(vault, model);
@@ -134,8 +134,8 @@ function renewClaim(vault: string, model: string): void {
 }
 
 /**
- * Why a refused renewal ended the claim, from who has the board now.
- * @param holder Who holds the board's lease now, or null when nobody does.
+ * Why a refused renewal ended the claim, from who has the model now.
+ * @param holder Who holds the model's lease now, or null when nobody does.
  * @returns The cause.
  */
 function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
@@ -152,8 +152,8 @@ function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
  *
  * The short lease bounds a dead server; repeated renewal is what makes a long
  * claim long. This timer never moves the separate claim expiry.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @returns The timer, so the claim can stop it.
  */
 function startRenewing(vault: string, model: string): ReturnType<typeof setInterval> {

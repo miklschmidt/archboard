@@ -1,5 +1,5 @@
-// Where agents are working, whether or not anybody has the board open
-// (ADR 0022): one entry per board an agent claims or has just written, with
+// Where agents are working, whether or not anybody has the model open
+// (ADR 0022): one entry per model an agent claims or has just written, with
 // what it last said it was doing and how long ago. Gathered at the foot of the
 // navigator so the tree above never grows or reorders because of activity.
 // Entries keep the order they arrived in; the block is absent when nothing is
@@ -51,9 +51,9 @@ const DOING_STYLE = { paddingLeft: nameX(0) - markerX(0) } as const;
 /** One entry as the block draws it. */
 interface WorkingEntry {
 	readonly activity: AgentActivityEntry;
-	/** The board's name as the vault lists it, or its key while unlisted. */
+	/** The model's name as the vault lists it, or its key while unlisted. */
 	readonly name: string;
-	/** The repository the board is in (ADR 0050). */
+	/** The repository the model is in (ADR 0050). */
 	readonly repository: string;
 	/** Whether the entry names its repository: the navigator lists more than one. */
 	readonly named: boolean;
@@ -64,12 +64,12 @@ interface WorkingEntry {
 /** Inputs for the block. */
 interface WorkingNowProps {
 	readonly entries: readonly WorkingEntry[];
-	/** Open a board of a repository, in the active pane or beside it. */
+	/** Open a model of a repository, in the active pane or beside it. */
 	readonly onOpen: (model: string, beside: boolean, repository: string) => void;
 }
 
 /**
- * The key an entry is kept by: two repositories can each have a board of one name.
+ * The key an entry is kept by: two repositories can each have a model of one name.
  * @param entry The entry.
  * @returns The key.
  */
@@ -78,7 +78,7 @@ function entryKey(entry: WorkingEntry): string {
 }
 
 /**
- * The boards in the order they first appeared, so a new entry never moves the others.
+ * The models in the order they first appeared, so a new entry never moves the others.
  * @param entries The entries now.
  * @returns The entries in arrival order.
  */
@@ -132,7 +132,7 @@ interface WorkingItemProps {
 }
 
 /**
- * One board an agent works on: its lamp, its name, how long ago the agent
+ * One model an agent works on: its lamp, its name, how long ago the agent
  * spoke, and what it said.
  * @param props The entry, the clock and the open handler.
  * @returns The entry.

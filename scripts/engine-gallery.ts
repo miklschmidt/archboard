@@ -29,7 +29,7 @@ interface Drawn {
 	readonly fit: number;
 }
 
-/** One drawing: a board whole or through one view, under every engine. */
+/** One drawing: a model whole or through one view, under every engine. */
 interface Drawing {
 	readonly model: string;
 	readonly view: string | undefined;

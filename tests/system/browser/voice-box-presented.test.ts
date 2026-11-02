@@ -82,7 +82,7 @@ const PRESENTED = `(() => {
 const presentedNow = (browser: AgentBrowserSession): Promise<Presented> =>
 	browser.eval<Presented>(PRESENTED);
 
-/** A board with a walkthrough of two steps, for the tests of the box a presented one has. */
+/** A model with a walkthrough of two steps, for the tests of the box a presented one has. */
 const TOUR = {
 	...SMALL_PIPELINE,
 	walkthroughs: [

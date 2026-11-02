@@ -24,8 +24,8 @@ type LostClaim = ClaimRevocation & {
 };
 
 /**
- * Claim a board for an agent campaign, or extend this server's existing claim.
- * @param request Board, reason, bounded campaign duration, wait, and cancellation evidence.
+ * Claim a model for an agent campaign, or extend this server's existing claim.
+ * @param request Model, reason, bounded campaign duration, wait, and cancellation evidence.
  * @returns The active claim and whether this call created its holder identity.
  */
 async function claimModel(
@@ -78,9 +78,9 @@ function campaignLength(asked: number | undefined): number {
 
 /**
  * Release this server's claim without treating an already-ended claim as an error.
- * @param vault The vault root the board lives in.
- * @param model Board key or alias.
- * @returns The released process claim, or null when this server retained no claim for the board.
+ * @param vault The vault root the legacy board lives in.
+ * @param model Legacy board key or alias.
+ * @returns The released process claim, or null when this server retained no claim for the legacy board.
  */
 function releaseClaim(vault: string, model: string): Claim | null {
 	// A late release after expiry or take-back is harmless and reports null.
@@ -96,8 +96,8 @@ function releaseClaim(vault: string, model: string): Claim | null {
 
 /**
  * Read this server's live claim, expiring it first when its campaign deadline passed.
- * @param vault The vault root the board lives in.
- * @param model Board key or alias.
+ * @param vault The vault root the legacy board lives in.
+ * @param model Legacy board key or alias.
  * @returns The live claim, or null.
  */
 function claimOn(vault: string, model: string): Claim | null {
@@ -107,9 +107,9 @@ function claimOn(vault: string, model: string): Claim | null {
 }
 
 /**
- * Resolve the holder identity an agent write should reenter for this board.
- * @param vault The vault root the board lives in.
- * @param model Board key or alias.
+ * Resolve the holder identity an agent write should reenter for this legacy board.
+ * @param vault The vault root the legacy board lives in.
+ * @param model Legacy board key or alias.
  * @returns The live claim holder id, or null for an ordinary per-write acquisition.
  */
 function claimWriterId(vault: string, model: string): string | null {
@@ -122,8 +122,8 @@ function claimWriterId(vault: string, model: string): string | null {
 
 /**
  * Consume the one-shot notice that this server's claim was taken back.
- * @param vault The vault root the board lives in.
- * @param model Board key or alias.
+ * @param vault The vault root the legacy board lives in.
+ * @param model Legacy board key or alias.
  * @returns The revocation and why it ended, once, or null after it has been consumed.
  */
 function takeClaimRevocation(vault: string, model: string): LostClaim | null {
@@ -139,15 +139,15 @@ function takeClaimRevocation(vault: string, model: string): LostClaim | null {
 }
 
 /**
- * The person at the canvas takes a board back (ADR 0022).
+ * The person at the canvas takes a model back (ADR 0022).
  *
  * The lease is taken with any claim revoked and given straight back, so the
- * board goes to nobody and the next write takes it as any write does. Nothing
+ * model goes to nobody and the next write takes it as any write does. Nothing
  * already written is undone. It does not wait: an unclaimed writer holding the
- * board at that instant refuses it by name, so the person can ask again (TASK-153).
- * @param request The board, the pane asking for it and the request's cancellation.
- * @param request.vault The vault root the board lives in.
- * @param request.board The board's canonical key.
+ * model at that instant refuses it by name, so the person can ask again (TASK-153).
+ * @param request The model, the pane asking for it and the request's cancellation.
+ * @param request.vault The vault root the model lives in.
+ * @param request.board The model's canonical key.
  * @param request.by The client id of the pane asking.
  * @param request.signal Cancels waiting for the lease when the caller goes.
  * @returns The agent's claim that stood when the person asked, or null when none did.

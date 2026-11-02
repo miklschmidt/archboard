@@ -1,6 +1,6 @@
 // The parts of the pane a flight into a card happens on, and what ends it.
 //
-// While the camera flies into a card the stage draws the board it opens inside
+// While the camera flies into a card the stage draws the model it opens inside
 // the card, and the fades of the flight (ADR 0071).
 
 /** Which way the flight goes. */

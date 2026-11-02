@@ -97,7 +97,7 @@ interface ModelHeaderProps {
 }
 
 /**
- * The model uses the same header frame and pane controls as a board.
+ * The model uses the same header frame and pane controls as a legacy board.
  * @param props The model name and explicit read action.
  * @returns The pane header.
  */

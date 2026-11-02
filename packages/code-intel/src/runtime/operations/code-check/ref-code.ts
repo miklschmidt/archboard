@@ -136,14 +136,14 @@ function anchorPinOf(
 }
 
 /**
- * A board as the check reads it: in a draft, every bound part of a repository
+ * A document as the check reads it: in a draft, every bound part of a repository
  * at the one ref the draft is read against there (`nodesAtOwnRef`), so that in
  * a stack the draft's own branch, which holds the layers below, is the code of
  * all its parts.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @param checkouts Each repository's checkout.
  * @param signal Cancels the reading.
- * @returns The same board with the variant's parts as they are read.
+ * @returns The same document with the variant's parts as they are read.
  */
 async function atOwnRef(
 	read: StateToCheck,

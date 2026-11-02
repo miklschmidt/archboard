@@ -1,4 +1,4 @@
-// The sidebar's board tab: what the board on screen is, how to read it, and
+// The sidebar's model tab: what the model on screen is, how to read it, and
 // the key to what is drawn.
 //
 // The order is the order a reader asks in (TASK-383,
@@ -16,8 +16,8 @@
 // Each part decides for itself whether it has anything to offer, and a region
 // with nothing in it is not drawn.
 //
-// No board's variants are offered here. The navigator lists the variants of
-// every board, the About page of the pane's header lists them with the record
+// No model's variants are offered here. The navigator lists the variants of
+// every model, the About page of the pane's header lists them with the record
 // of each and opens one in this pane, and the header's breadcrumb names the one
 // on screen: a fourth place to make one choice is one too many (TASK-388).
 
@@ -36,11 +36,11 @@ import type { VariantReading } from "#ui/rules/canvas/reading/document.ts";
 import type { GroupChoice } from "#ui/rules/canvas/reading/groups.ts";
 import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 
-/** Inputs for the board tab. */
+/** Inputs for the model tab. */
 interface CanvasPanelProps {
 	/** The render the server gave, or undefined before one has. */
 	answer: SemanticRender | undefined;
-	/** What the board says about itself, or null while it has not arrived. */
+	/** What the model says about itself, or null while it has not arrived. */
 	reading: VariantReading | null;
 	/**
 	 * The person chose a way of reading this level, when there is one to choose.
@@ -74,7 +74,7 @@ interface CanvasPanelProps {
 }
 
 /**
- * What the variant on screen says it is about: the board's scope, in its
+ * What the variant on screen says it is about: the model's scope, in its
  * author's words.
  * @param props What the tab is assembled from.
  * @returns The summary, or null when the variant states none.
@@ -142,7 +142,7 @@ function walkthroughSection(props: CanvasPanelProps): ReactNode {
 }
 
 /**
- * The board's shared views at the level currently being read.
+ * The model's shared views at the level currently being read.
  * @param props What the tab is assembled from.
  * @returns The section, or null when there is no choice to offer here.
  */
@@ -196,7 +196,7 @@ function legend(props: CanvasPanelProps): ReactNode {
 }
 
 /**
- * The board tab.
+ * The model tab.
  * @param props What the tab is assembled from.
  * @returns The tab's content.
  */

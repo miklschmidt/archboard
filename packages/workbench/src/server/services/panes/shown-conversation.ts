@@ -1,6 +1,6 @@
 // The call that changes which checkout's conversation a tab's agent dock shows (ADR 0050).
 //
-// The person's own acts in the browser activate a checkout: focusing a pane, opening a board,
+// The person's own acts in the browser activate a checkout: focusing a pane, opening a model,
 // drilling down, or picking a workhorse from the dock's list. The browser
 // names the pane the act happened in, and the server reads the checkout from the vault that pane
 // is in. A pick from the list names the checkout itself, and is taken only for a checkout the tab

@@ -1,5 +1,5 @@
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-// A flow drawn on the board it lives on: the architecture reading draws each
+// A flow drawn on the document it lives on: the architecture reading draws each
 // message between two participants as a step line unless an authored
 // relationship already joins them, a self step draws nothing, and a standing
 // keyed by the step's id lands on its line.
@@ -31,7 +31,7 @@ const FLOW = {
 };
 
 /**
- * A board holding one exchange and the given relationships.
+ * A document holding one exchange and the given relationships.
  * @param edges The authored relationships.
  * @returns The content.
  */

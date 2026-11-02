@@ -278,7 +278,7 @@ interface ShowChoice {
  * is a known checkout that is not chosen. An untracked vault is always read, and
  * a vault no registered directory holds has no repository to choose for. A move
  * into a checkout chooses it the same way (ADR 0051).
- * @param vault The vault of the board shown, or moved into.
+ * @param vault The vault of the model shown, or moved into.
  * @param act What chose, as the log says it.
  * @returns The choice, or undefined when it changed no choice.
  */
@@ -297,7 +297,7 @@ function chooseShownCheckout(vault: string, act = "A show"): ShowChoice | undefi
 
 /**
  * The pane a show is addressed to, or nothing once the refusal has been sent.
- * @param vault The vault the board is in: an unnamed pane must be one of that vault's.
+ * @param vault The vault the model is in: an unnamed pane must be one of that vault's.
  * @param spec The pane spec the caller stated, if any.
  * @param res The response.
  * @returns The pane, or null.

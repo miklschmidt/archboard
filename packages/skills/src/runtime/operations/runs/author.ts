@@ -232,7 +232,7 @@ function statusOf(result: ProcessResult, failure: string | null): RunStatus {
  * Reads everything the checks need after the author ran.
  * @param world The world.
  * @param scenario The scenario.
- * @param snapshot The boards before the author.
+ * @param snapshot The documents before the author.
  * @param commands What the author ran, whose output holds any receipt a check reads.
  * @returns The reading.
  */

@@ -32,9 +32,9 @@ async function settled(): Promise<void> {
 
 /**
  * A drawn reading.
- * @param model The board on screen.
+ * @param model The legacy board on screen.
  * @param selected The selected subject, or null.
- * @param version The board version drawn.
+ * @param version The legacy board version drawn.
  * @returns The reading.
  */
 function reading(model: string, selected: string | null, version = 1): PaneReading {
@@ -109,7 +109,7 @@ describe("what a report says the user changed", () => {
 		publisher.publish(reading("payments", "lease", 1));
 		await settled();
 
-		// Clicking what is already selected, then an agent's write redraws the board and the
+		// Clicking what is already selected, then an agent's write redraws the model and the
 		// pane's pick goes with it.
 		publisher.userChanged("selection");
 		publisher.publish(reading("payments", "lease", 2));
@@ -135,7 +135,7 @@ describe("what a report says the user changed", () => {
 		await settled();
 		publisher.dispose();
 
-		// The variant kept its id, so only the board is said.
+		// The variant kept its id, so only the model is said.
 		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["model"]]);
 	});
 

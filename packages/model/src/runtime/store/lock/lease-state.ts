@@ -1,5 +1,5 @@
-// The lease on disk that makes one writer at a time per board true (ADR 0016),
-// and the announcements that tell every pane who has the board now.
+// The lease on disk that makes one writer at a time per model true (ADR 0016),
+// and the announcements that tell every pane who has the model now.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -22,13 +22,13 @@ const processWatcher: {
 	timer: ReturnType<typeof setInterval> | null;
 } = { watched: null, timer: null };
 
-/** One board of one vault. */
+/** One model of one vault. */
 interface WatchedModel {
 	readonly vault: string;
 	readonly model: string;
 }
 
-/** The boards a browser has on screen, each with the vault it lives in. */
+/** The models a browser has on screen, each with the vault it lives in. */
 interface WatchedModels {
 	readonly models: () => readonly WatchedModel[];
 }
@@ -55,12 +55,12 @@ function newToken(): string {
 }
 
 /**
- * Where one board's lease lives.
+ * Where one legacy board's lease lives.
  *
- * One percent-encoded filename per normalized board keeps nested board names
+ * One percent-encoded filename per normalized legacy board keeps nested legacy board names
  * from becoming directories and makes this the sole vault lock-path owner.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @returns The lease file's path.
  */
 function lockPathFor(vault: string, model: string): string {
@@ -79,7 +79,7 @@ function lockPathFor(vault: string, model: string): string {
  * reads as free. Treating corruption as held would create the permanent flag
  * the lease design exists to avoid.
  * @param file The lease file's path.
- * @returns The lease, or null when the board is free.
+ * @returns The lease, or null when the model is free.
  */
 function readRecord(file: string): LockRecord | null {
 	let parsed: unknown;
@@ -146,7 +146,7 @@ function liveRecord(record: LockRecord | null): LockRecord | null {
 }
 
 /**
- * The lease as a caller is told about it: who has the board and until when,
+ * The lease as a caller is told about it: who has the model and until when,
  * without the acquisition token, which is the lease's own bookkeeping.
  * @param record The lease.
  * @returns The holder.
@@ -157,10 +157,10 @@ function holderOf(record: LockRecord): LockHolder {
 }
 
 /**
- * Who has one board now.
- * @param vault The vault root the board lives in.
- * @param model The board key.
- * @returns The holder, or null when the board is free.
+ * Who has one legacy board now.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
+ * @returns The holder, or null when the legacy board is free.
  */
 function modelLockState(vault: string, model: string): LockHolder | null {
 	const live = liveRecord(readRecord(lockPathFor(vault, normalizePaneKey(model))));
@@ -169,7 +169,7 @@ function modelLockState(vault: string, model: string): LockHolder | null {
 
 /**
  * Identify visible lease changes without treating renewal as new ownership.
- * @param holder The visible board holder, or absence.
+ * @param holder The visible model holder, or absence.
  * @returns The visible ownership fingerprint.
  */
 function lockFingerprint(holder: LockHolder | null): string {
@@ -179,18 +179,18 @@ function lockFingerprint(holder: LockHolder | null): string {
 }
 
 /**
- * Tell the panes who has a board, unless they have already been told this.
+ * Tell the panes who has a legacy board, unless they have already been told this.
  *
  * Renewal changes `until` but not whether a pane may draw, so expiry is absent
  * from this fingerprint. Holder, start, reason and claim changes remain real
- * news. What was told is remembered per board of a vault, so a board of one
+ * news. What was told is remembered per legacy board of a vault, so a legacy board of one
  * name in two vaults is told twice.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @param holder Who has it, or null when it is free.
  */
 function announce(vault: string, model: string, holder: LockHolder | null): void {
-	// Reserved internal locks are not boards. Their public operation owns its news.
+	// Reserved internal locks are not models. Their public operation owns its news.
 	if (model.startsWith("@")) return;
 	const announced = lockFingerprint(holder);
 	const key = modelMemoryKey(vault, model);
@@ -202,9 +202,9 @@ function announce(vault: string, model: string, holder: LockHolder | null): void
 }
 
 /**
- * Tell the panes a board is held.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * Tell the panes a legacy board is held.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @param holder Who has it.
  */
 function announceHeld(vault: string, model: string, holder: LockHolder): void {
@@ -212,27 +212,27 @@ function announceHeld(vault: string, model: string, holder: LockHolder): void {
 }
 
 /**
- * Tell the panes a board has come free.
+ * Tell the panes a legacy board has come free.
  *
- * Release news goes out at once (TASK-153): a pane left believing a free board
+ * Release news goes out at once (TASK-153): a pane left believing a free legacy board
  * is held is a pane refusing edits for no reason. The lease is re-read rather
- * than assumed, so a board another process has taken meanwhile is announced
+ * than assumed, so a legacy board another process has taken meanwhile is announced
  * held, never falsely free from stale release state.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  */
 function announceFree(vault: string, model: string): void {
 	announce(vault, model, modelLockState(vault, model));
 }
 
 /**
- * Give one board back.
+ * Give one legacy board back.
  *
  * Released only if the lease is still ours: a lapsed one may already belong to
  * a successor, and unlinking that record would admit a third writer. The
  * ordering is deliberate — immediate unlink, then the news.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @param holderId Who is releasing it.
  * @returns True when this holder had it to release.
  */
@@ -263,8 +263,8 @@ function releaseHold(vault: string, model: string, holderId: string): boolean {
  * piece of work runs no timer until it is done, and that pause must not end
  * every claim it renews (TASK-489). A process that takes the lapsed lease in
  * the meantime writes its own record, and the next renewal is refused.
- * @param vault The vault root the board lives in.
- * @param model The board key.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key.
  * @param id Who is renewing.
  * @param leaseMs How much longer to hold it.
  * @returns The renewed holder, or null when the lease is no longer theirs.
@@ -282,7 +282,7 @@ function renewRecord(vault: string, model: string, id: string, leaseMs: number):
 }
 
 /**
- * Look at every board on screen and announce who has it.
+ * Look at every model on screen and announce who has it.
  */
 function sweepModelLocks(): void {
 	if (!processWatcher.watched) {
@@ -293,7 +293,7 @@ function sweepModelLocks(): void {
 		watched.set(modelMemoryKey(vault, model), { vault, model: normalizePaneKey(model) });
 	}
 	for (const { vault, model } of watched.values()) {
-		// The note-watch passenger shares this exact board list and cadence. It runs
+		// The note-watch passenger shares this exact model list and cadence. It runs
 		// first, but its failure must never stop lock observation.
 		try {
 			processSweep.also?.(vault, model);
@@ -307,12 +307,12 @@ function sweepModelLocks(): void {
 }
 
 /**
- * Watch the boards a browser has on screen.
+ * Watch the models a browser has on screen.
  *
  * A lock file cannot call another server, so the state is polled. Polling runs
- * only while a browser supplies boards that are actually on screen; with no
+ * only while a browser supplies models that are actually on screen; with no
  * pane, nobody can be misled.
- * @param watched Which boards are on screen, each with the vault it lives in, or
+ * @param watched Which models are on screen, each with the vault it lives in, or
  *   null to stop watching.
  */
 function watchModelLocks(watched: WatchedModels | null): void {
@@ -337,15 +337,15 @@ function watchModelLocks(watched: WatchedModels | null): void {
 
 /**
  * Ride along with the lock sweep, which is the one poll that already knows
- * which boards are on screen.
- * @param sink What to run for each board of a vault, or null to stop.
+ * which models are on screen.
+ * @param sink What to run for each model of a vault, or null to stop.
  */
 function onBoardSweep(sink: ((vault: string, model: string) => void) | null): void {
 	processSweep.also = sink;
 }
 
 /**
- * Hear who has a board whenever it changes.
+ * Hear who has a model whenever it changes.
  * @param sink Where to send the news, or null to stop.
  */
 function onBoardLockChanged(sink: LockSink | null): void {

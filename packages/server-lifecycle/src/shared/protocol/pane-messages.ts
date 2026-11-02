@@ -1,9 +1,9 @@
 // What the Archboard server sends a pane over its socket, and what a caller gets back
 // from an HTTP route.
 //
-// Every board message carries the board it is about. A tab can have two panes
-// on two boards, so a pane showing board A has to be able to tell that news
-// about board B is not its business.
+// Every model message carries the model it is about. A tab can have two panes
+// on two models, so a pane showing model A has to be able to tell that news
+// about model B is not its business.
 
 import type { ArchitectureClaim, ArchitectureModuleEditResult } from "@archboard/model/contract";
 
@@ -23,7 +23,7 @@ interface ApiResponse<T = unknown> {
 /** What the server says to a pane. */
 interface WebSocketMessage {
 	type: WebSocketMessageType;
-	/** The board it is about; null when the news is that there is no board. */
+	/** The model it is about; null when the news is that there is no model. */
 	paneKey?: string | null;
 	[key: string]: unknown;
 }

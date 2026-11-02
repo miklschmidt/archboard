@@ -18,7 +18,7 @@ const PANES = ["A", "B"] as const;
 
 /**
  * An address, written the way a test reads.
- * @param panes The panes, as pane id to board key.
+ * @param panes The panes, as pane id to model key.
  * @param activePaneId The active pane, or null.
  * @returns The address.
  */
@@ -130,7 +130,7 @@ test("an address that matches what is displayed asks for nothing", () => {
 		["B", "billing"],
 	]);
 	expect(planIsEmpty(planFor(displayed, displayed, PANES))).toBe(true);
-	// A wanted pane naming no board is a pane that should be open, nothing more.
+	// A wanted pane naming no model is a pane that should be open, nothing more.
 	expect(
 		planIsEmpty(
 			planFor(

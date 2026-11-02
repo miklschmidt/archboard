@@ -14,7 +14,7 @@ test("loading a variant does not report its board as the current variant before 
 		presentation: null,
 	};
 	// A loading stage knows no resolved drawing identity. Reporting a bare
-	// board here would replace the requested variant before routing can restore
+	// model here would replace the requested variant before routing can restore
 	// its view. The pane session retains its server-adopted address instead.
 	expect(readingOf(pending, null)).toEqual(NOTHING_READ);
 

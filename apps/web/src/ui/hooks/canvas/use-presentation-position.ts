@@ -29,7 +29,7 @@ interface PresentationPosition {
  *
  * The step, and the picture it is read through: a step told through another
  * view is on its way until that view's picture is the one drawn, and a new
- * version of the board is a new picture to arrive on.
+ * version of the model is a new picture to arrive on.
  * @param narrative What is being read.
  * @param drawn The picture on screen, or null.
  * @param view The view the step asks for, or undefined for the whole variant.

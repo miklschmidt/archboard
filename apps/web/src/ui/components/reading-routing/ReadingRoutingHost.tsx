@@ -5,7 +5,7 @@
 // The application is the route's component, so the panes mount once and a
 // change of search parameters re-renders them where they are. Nothing is
 // loaded here: restoring a workspace asks the server to point a pane at a
-// board, which is a browser operation over the existing command, so the router
+// model, which is a browser operation over the existing command, so the router
 // owns no cache and shares none.
 
 import type { JSX } from "react";
@@ -43,7 +43,7 @@ function createReadingRouter(component: () => JSX.Element | null) {
 	return createRouter({
 		routeTree: rootRoute.addChildren([indexRoute]),
 		history: createBrowserHistory(),
-		// A board key is a string, whatever it is spelled like.
+		// A model key is a string, whatever it is spelled like.
 		parseSearch: parseWorkspaceSearchString,
 		stringifySearch: stringifyWorkspaceSearch,
 	});

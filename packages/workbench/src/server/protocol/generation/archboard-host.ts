@@ -13,7 +13,7 @@ import type { createServerDynamicLifecycleOwner } from "#server/services/generat
 
 /**
  * Everything the production Codex workbench needs from the Archboard server around it:
- * what it may read (panes, boards, selection, locks), where its canonical
+ * what it may read (panes, models, selection, locks), where its canonical
  * context comes from, and how it wires itself into the server's sockets and
  * lifetime. The server provides one of these; the workbench keeps none of it.
  */
@@ -68,7 +68,7 @@ export interface ArchboardWorkbenchServer {
 		tabSessionId: TabSessionId,
 	) => (listener: (change: RealtimePresentationChange) => void) => () => void;
 	/**
-	 * The vault of the pane a tab session presents through, whose boards its voice is told
+	 * The vault of the pane a tab session presents through, whose models its voice is told
 	 * about, or null while none of its panes is open.
 	 */
 	readonly presentingVaultFor: (tabSessionId: TabSessionId) => string | null;

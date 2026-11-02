@@ -3,7 +3,7 @@
 // few points below it, where entering the top takes one bend fewer (Renderer
 // layout's "measure every word", Codex session's "decode parameters and
 // answer"). Two lines down into Former names once hooked into its sides past
-// its top (Board persistence's "Durable write boundary").
+// its top (Document persistence's "Durable write boundary").
 
 import { expect, test } from "bun:test";
 import { DEFAULT_SEMANTIC_POLICY, SemanticPolicySchema } from "@archboard/model/policy";
@@ -51,7 +51,7 @@ function hooksInto(box: Box, route: readonly DrawnPoint[]): boolean {
 
 /**
  * The lines of a finished drawing that hook into a card's side.
- * @param fixture The board, and how its subjects stand in the proposal it draws.
+ * @param fixture The document, and how its subjects stand in the proposal it draws.
  * @param layout The engine that draws it.
  * @returns The ids of the hooked lines, once for each hooked end.
  */

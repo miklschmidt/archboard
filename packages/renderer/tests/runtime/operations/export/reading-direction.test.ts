@@ -14,7 +14,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
  * One hub with a fan of many dependents: a row of them across the page is
  * far wider than the pane, a column of them is not much taller than it.
  * @param count How many dependents.
- * @returns The board.
+ * @returns The document.
  */
 function fan(count: number): VariantContent {
 	const leaves = Array.from({ length: count }, (_, index) => ({
@@ -104,7 +104,7 @@ describe("architecture diagrams read top to bottom", () => {
  * A pipeline of cards, long enough that a column of it is taller than the pane.
  * @param length How many stages.
  * @param framed Whether the stages sit inside one frame.
- * @returns The board.
+ * @returns The document.
  */
 function pipeline(length: number, framed = false): VariantContent {
 	const stages = Array.from({ length }, (_, index) => ({

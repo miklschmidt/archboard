@@ -25,7 +25,7 @@ import {
 
 /**
  * Semantic completeness and readable labels across the measured corpus.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @param content Its authored architecture.
  * @param layout The engine that drew it.
  */

@@ -155,7 +155,7 @@ function holdersIn(content: VariantContent, id: string): ReadonlyMap<string, str
  * A node with no children comes back as holding no parts, which is not an
  * interface of zero entry points. A container that nothing outside reaches has
  * no entry points and no callers: every child is a hidden part, and the empty
- * callers say that the board draws nobody who uses it.
+ * callers say that the model draws nobody who uses it.
  * @param content The variant's whole content, before any view narrows it.
  * @param container A node of that variant.
  * @returns Its interface, or the fact that it holds no parts.

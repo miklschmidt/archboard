@@ -5,7 +5,7 @@ import { createDeliberateNavigation } from "#ui/state/reading-routing/intent.ts"
 
 /**
  * An address, written the way a test reads.
- * @param panes The panes, as pane id to board key.
+ * @param panes The panes, as pane id to model key.
  * @returns The address.
  */
 function address(panes: readonly (readonly [string, string])[]): WorkspaceAddress {
@@ -61,7 +61,7 @@ test("an expectation lives no longer than the next change, met or not", () => {
 });
 
 /**
- * A pane reading one semantic board through one view.
+ * A pane reading one legacy board through one view.
  * @param view The view, or null for the whole variant.
  * @returns The address.
  */

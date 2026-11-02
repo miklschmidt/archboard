@@ -3,7 +3,7 @@ import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules
 // scenario quotes a symbol out of the source and an author writes a display
 // name for the same thing: `run_simple` is drawn as `Werkzeug run_simple` and
 // `DefaultJSONProvider` as `Default JSON provider`. Comparing the strings calls
-// an accurate board wrong, so a check matches on the words of a name and
+// an accurate document wrong, so a check matches on the words of a name and
 // accepts the qualifying words an author added to it.
 //
 // Only the evaluation's own checks read names this way. Identity is compared
@@ -231,7 +231,7 @@ function namedValue<T>(byName: ReadonlyMap<string, T>, asked: string | undefined
  * The variant an address asks for: the product's own addressing first, since
  * `payments@variant` is the contract and a variant id is not a name, and only
  * then the variant whose name reads the same.
- * @param document The board.
+ * @param document The document.
  * @param asked The address.
  * @returns The variant, or undefined.
  */
@@ -246,8 +246,8 @@ function variantNamed(
 }
 
 /**
- * The board view a check names.
- * @param document The board.
+ * The document view a check names.
+ * @param document The document.
  * @param asked The view's name.
  * @returns The view, or undefined.
  */

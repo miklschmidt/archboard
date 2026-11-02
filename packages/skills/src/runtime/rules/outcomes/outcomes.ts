@@ -1,5 +1,5 @@
 // The deterministic outcome checks: what a scenario says must be true of the
-// vault after the author ran, decided from the saved boards, the vault
+// vault after the author ran, decided from the saved documents, the vault
 // configuration, the checker's report, the renders and inspections the
 // harness ran on the checks' behalf, and the videos it looked for. Every
 // verdict carries what was found.

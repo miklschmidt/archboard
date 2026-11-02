@@ -198,9 +198,9 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 }
 
 /**
- * Validates the board block.
- * @param model - The board input.
- * @returns The frozen board with its version.
+ * Validates the legacy board block.
+ * @param model - The legacy board input.
+ * @returns The frozen legacy board with its version.
  */
 function normalizeModel(
 	model: SemanticContextInput["model"],
@@ -286,7 +286,7 @@ function agentSwitchOf(stated: SemanticAgentSwitch | undefined): SemanticAgentSw
 }
 
 /**
- * Validates the claim block; an absent claim means nobody holds the board.
+ * Validates the claim block; an absent claim means nobody holds the model.
  * @param claim - The claim input, if supplied.
  * @returns The frozen claim.
  */

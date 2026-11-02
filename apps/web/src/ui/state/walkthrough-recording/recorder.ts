@@ -1,7 +1,7 @@
 // One recording of one walkthrough, in the page that makes it (TASK-304).
 //
-// The page was opened on one board to record one of its walkthroughs. Until
-// it is started it only says whether it could be: the pane showing that board,
+// The page was opened on one model to record one of its walkthroughs. Until
+// it is started it only says whether it could be: the pane showing that model,
 // drawn, and an agent that can start voice. Started from a user gesture, it
 // listens (`talk-capture.ts`), asks for voice as a recording, and from then on
 // one tick asks the pacing what to do and does it: begin the talk once the
@@ -85,9 +85,9 @@ function placeIn(reading: PaneReading | null, walkthrough: string): PanePlace | 
 }
 
 /**
- * Whether a pane is showing a board, drawn.
+ * Whether a pane is showing a legacy board, drawn.
  * @param reading What the pane last said it is reading, or null.
- * @param model The board, by name.
+ * @param model The legacy board, by name.
  * @returns True once it is.
  */
 function drawnOn(reading: PaneReading | null, model: string | null): boolean {
@@ -290,7 +290,7 @@ class WalkthroughRecorder {
 		const sources = this.#startable();
 		try {
 			this.#capture = await TalkCapture.open();
-			// The board is drawn already, and the talk begins on that picture.
+			// The model is drawn already, and the talk begins on that picture.
 			if (this.#reading !== null) this.reading(this.#reading);
 		} catch (error) {
 			this.#failure = `The page could not listen to the voice: ${words(error)}`;
@@ -342,7 +342,7 @@ class WalkthroughRecorder {
 	}
 
 	/**
-	 * Whether the page could start now: the board drawn and an agent that can start voice.
+	 * Whether the page could start now: the model drawn and an agent that can start voice.
 	 * @returns Ready, loading, or failed with why.
 	 */
 	#couldStart(): Readiness {

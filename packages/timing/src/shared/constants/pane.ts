@@ -18,7 +18,7 @@ const PANE_MS = durations({
 	 */
 	selectionDebounce: 150,
 	/**
-	 * How long the pane waits before reporting where it sits and what of its board
+	 * How long the pane waits before reporting where it sits and what of its model
 	 * is on screen.
 	 *
 	 * It changes on every scroll and zoom, and it is only sent when it has
@@ -32,7 +32,7 @@ const PANE_MS = durations({
 	 * It is also the grace before a pane reads a dropped socket as anything at
 	 * all. A pane stays editable through a socket blip (ADR 0022, TASK-153): lock
 	 * state is broadcast over this socket, but a pane that cannot hear it for a
-	 * moment does not assume the board is held, because a person refused their
+	 * moment does not assume the model is held, because a person refused their
 	 * own edit for a network hiccup is the wall stopping for no reason they can
 	 * see. Only `contactLost` below puts the pane in view mode.
 	 *
@@ -43,13 +43,13 @@ const PANE_MS = durations({
 	socketReconnect: SOCKET_RECONNECT_MS,
 	/**
 	 * How long a pane goes without the server before it treats contact as lost
-	 * and shows the board in view mode.
+	 * and shows the model in view mode.
 	 *
 	 * Two redial intervals, so one failed redial is a blip and a second is loss.
 	 * A redial that succeeds inside the first interval never shows view mode for
 	 * a frame, and a pane that cannot hear lock broadcasts for longer than that
 	 * stops accepting content edits, since it can no longer say whether an agent
-	 * has claimed the board (ADR 0022). Pan and zoom keep working throughout.
+	 * has claimed the model (ADR 0022). Pan and zoom keep working throughout.
 	 */
 	contactLost: 2 * SOCKET_RECONNECT_MS,
 	/**

@@ -1,10 +1,10 @@
-// What a request says about the board it is for, and the two shapes every
+// What a request says about the model it is for, and the two shapes every
 // route reads a body through.
 //
-// Small on purpose. A request names a board, and whether that board exists is
+// Small on purpose. A request names a model, and whether that model exists is
 // the semantic store's question, not this file's: every route asks the store
 // and answers with the store's own refusal, so there is one account of "no
-// such board" rather than one per route.
+// such model" rather than one per route.
 
 import type { Request } from "express";
 

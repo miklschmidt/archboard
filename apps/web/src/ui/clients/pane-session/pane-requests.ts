@@ -16,10 +16,10 @@ interface PaneReport {
 	clientId: string;
 	paneId: string;
 	/**
-	 * The board key this pane is showing: `pipeline`, or `pipeline@variant`;
-	 * null when it is showing none. A pane on a vault that holds no board still
+	 * The model key this pane is showing: `pipeline`, or `pipeline@variant`;
+	 * null when it is showing none. A pane on a vault that holds no model still
 	 * registers, because a pane that did not exist to the server could never be
-	 * shown the first board somebody makes.
+	 * shown the first model somebody makes.
 	 */
 	paneKey: string | null;
 	primary: boolean;
@@ -54,7 +54,7 @@ interface PaneReply {
 }
 
 /**
- * Tell the server what this pane currently shows: which board, and where the
+ * Tell the server what this pane currently shows: which model, and where the
  * pane sits on the display. Registration lives exactly as long as the socket.
  * @param vault The vault the pane is in.
  * @param pane The report.
@@ -103,7 +103,7 @@ function showModel(
 
 /**
  * Say that the person activated a checkout in this tab: the checkout of the
- * pane they focused or opened a board in, or one they picked from the dock's
+ * pane they focused or opened a model in, or one they picked from the dock's
  * list (ADR 0050). Every pane of the tab then shows that checkout's conversation.
  * @param vault The vault the pane is in.
  * @param request The pane, and the checkout of a pick from the list.

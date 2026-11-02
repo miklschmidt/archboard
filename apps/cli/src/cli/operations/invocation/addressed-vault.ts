@@ -2,7 +2,7 @@
 // or reaches a server, named on every server call after that, and named back in
 // the answer. The first command in a checkout or an untracked vault that the
 // registry does not know registers it, and that answer says so. In a checkout
-// with no vault, the refusal names the known vaults whose boards bind its code
+// with no vault, the refusal names the known vaults whose models bind its code
 // (TASK-480).
 
 import type { AnsweredVault, RegisteredVault } from "#cli/protocol/contract/schemas.ts";
@@ -73,9 +73,9 @@ async function addressVault(directory: string | null): Promise<AnsweredVault> {
 /**
  * Find the vault of another directory than the one this invocation addresses,
  * as `-C` finds one, and register what holds it when the registry does not
- * know it: the vault a board moves to, for instance. Every server call still
+ * know it: the vault a model moves to, for instance. Every server call still
  * names the vault this invocation addresses. Its refusal names no vault that
- * binds the directory's code, because a board moves into the directory's own vault.
+ * binds the directory's code, because a model moves into the directory's own vault.
  * @param directory - The directory, relative to the working directory or absolute.
  * @param option - The option that named it, which a refusal names back, such as `--to`.
  * @returns The vault, as an answer names it.

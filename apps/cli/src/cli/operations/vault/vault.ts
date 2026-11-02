@@ -54,8 +54,8 @@ type CodeCheckInput = z.output<typeof CodeCheckInputSchema>;
 /**
  * Run the code check on the Archboard server.
  * @param reading What to read.
- * @param reading.state The draft to read on every board that has one.
- * @param reading.everyDraft Whether to read every draft of every board.
+ * @param reading.state The draft to read on every document that has one.
+ * @param reading.everyDraft Whether to read every draft of every document.
  * @param reading.plan The plan JSON files named, resolved against this directory,
  * because the server runs elsewhere.
  * @param signal Cancels the request, which cancels the check.

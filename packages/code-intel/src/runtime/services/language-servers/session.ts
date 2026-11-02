@@ -3,7 +3,7 @@
 // The pass asks where the name that a file uses on a line is defined. The
 // session starts the server of the file's language in the file's checkout on
 // the first question there, and asks it every later question. Answers are kept
-// for the pass, since the boards of one vault ask about the same files, and
+// for the pass, since the documents of one vault ask about the same files, and
 // never from one pass to the next: an answer depends on every file of the
 // project.
 //

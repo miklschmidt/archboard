@@ -1,13 +1,13 @@
-// The evidence between the parts of one board that Kubernetes manifests join
+// The evidence between the parts of one document that Kubernetes manifests join
 // by labels (ADR 0046, TASK-367.19).
 //
 // A Service's selector is configured-path evidence from the part that owns
 // the Service to each part that owns a workload it picks, and a NetworkPolicy
 // is permission evidence from the part that owns a workload that sends to the
 // part that owns one that receives (kubernetes-links.ts in code facts). Both
-// are read from the manifests beside the files the board binds.
+// are read from the manifests beside the files the document binds.
 //
-// A board usually draws the workloads, not the Services that name them. So a
+// A document usually draws the workloads, not the Services that name them. So a
 // reference from bound code to a Service that no part binds, as its symbol or
 // its file, reaches the workloads the Service picks: `CART_ADDR: cart:7070`
 // in the web Deployment joins the part bound to `Deployment/web` to the part
@@ -144,7 +144,7 @@ function firstOfEach(pieces: readonly Piece[]): Piece[] {
 
 /**
  * The evidence that the Kubernetes manifests beside the files the parts of
- * one board bind give between those parts by labels.
+ * one document bind give between those parts by labels.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
  * @param lineages Each part and the parts that hold it.
@@ -165,7 +165,7 @@ async function kubernetesEvidenceOf(
 	const pieces: Piece[] = [];
 	for (const parts of byTree.values()) {
 		const repo = { parts, owners: ownersOf(parts), facts, lineages };
-		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in board order
+		// oxlint-disable-next-line no-await-in-loop -- one repository at a time, in document order
 		pieces.push(...(await piecesIn(repo)));
 	}
 	return firstOfEach(pieces);

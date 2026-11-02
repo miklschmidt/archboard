@@ -24,7 +24,7 @@ const NOTHING_DRAWN: StageAppearances = { appearances: new Map(), legend: null }
 
 /**
  * The appearances and legend of the picture on screen, or of the one on its way
- * out while the next board is drawn, so the legend does not empty for the length
+ * out while the next model is drawn, so the legend does not empty for the length
  * of a request.
  * @param drawn The picture on screen, or null.
  * @param leaving The picture leaving, or null.

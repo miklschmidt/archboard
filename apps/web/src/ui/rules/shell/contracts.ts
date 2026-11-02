@@ -21,12 +21,12 @@ type ThemeChoice = "light" | "dark";
 /** What a pane opens of a model, when it opens more than its roots. */
 type PaneOpening = Omit<z.input<typeof ArchitecturePaneReadingSchema>, "model" | "beat">;
 
-/** One pane: what it reports about itself, who holds its board, and its mounted stage. */
+/** One pane: what it reports about itself, who holds its model, and its mounted stage. */
 interface ShellPane {
 	status: PaneStatus;
 	/** The pane's mounted stage, owned by the application so it never remounts. */
 	stage: ReactNode;
-	/** The board's current lock holder, or null when nobody is writing it. */
+	/** The model's current lock holder, or null when nobody is writing it. */
 	holder: LockHolder | null;
 }
 
@@ -84,8 +84,8 @@ interface ShellRepository {
 	/** Its vault has not answered yet and nothing of it is in hand. */
 	readonly loading: boolean;
 	/**
-	 * Which of its boards an agent is working on right now, by board key,
-	 * including boards no pane has open (ADR 0022). The navigator marks each one.
+	 * Which of its models an agent is working on right now, by model key,
+	 * including models no pane has open (ADR 0022). The navigator marks each one.
 	 */
 	readonly activity: Readonly<Record<string, AgentActivityEntry>>;
 }
@@ -127,23 +127,23 @@ interface ShellActions {
 	): Promise<boolean>;
 	setTheme(theme: ThemeChoice): void;
 	/**
-	 * Show a board in one pane.
+	 * Show a model in one pane.
 	 *
 	 * The pane is named, never inferred from focus. A person choosing a variant
 	 * in the right-hand pane while the left one is focused means the right-hand
-	 * pane, and a control that read the focus instead would move the board they
+	 * pane, and a control that read the focus instead would move the model they
 	 * were reading and leave the one they clicked alone.
-	 * @param key The board key.
+	 * @param key The model key.
 	 * @param paneId Which pane shows it; the active one when none is named.
-	 * @param repository The repository the board is in; the pane's own when none is named.
+	 * @param repository The repository the model is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now. When it does not, a notice says why.
 	 */
 	selectModel(key: string, paneId?: string, repository?: string): Promise<boolean>;
 	/**
-	 * Show a board beside the one being read: in the pane that is not active,
+	 * Show a legacy board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
-	 * @param key The board key, or null for a repository with no model to read.
-	 * @param repository The repository the board is in.
+	 * @param key The legacy board key, or null for a repository with no model to read.
+	 * @param repository The repository the legacy board is in.
 	 * @param reading What the pane opens, when it opens more than the model's roots.
 	 */
 	openBeside(key: string | null, repository: string, reading?: PaneOpening): void;

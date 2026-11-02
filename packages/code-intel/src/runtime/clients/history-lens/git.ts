@@ -1,7 +1,7 @@
 // Running Git for the history lens.
 //
 // The engine's own `git` keeps at most 64 KB of output, which is right for a
-// probe and far too little for a walk of a year of commits or a batch of board
+// probe and far too little for a walk of a year of commits or a batch of document
 // file versions. So the lens runs its commands here, with the whole output, a
 // caller's signal: a request that hangs up,
 // or a server that stops, ends the command. The lens runs only `git log`,

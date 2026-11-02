@@ -260,7 +260,7 @@ function gradingReasons(run: RunRecord): string[] {
 
 /**
  * Which authority a failed checklist answers to, so a run that departed from
- * the skill never reads like one whose board the source contradicts.
+ * the skill never reads like one whose document the source contradicts.
  * @param run The run.
  * @returns A parenthesis naming the features on each axis, or nothing when no finding was filed.
  */

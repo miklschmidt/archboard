@@ -4,7 +4,7 @@
 import { createHash } from "node:crypto";
 
 /**
- * A value as JSON with every object's keys in order, so two reads of one board
+ * A value as JSON with every object's keys in order, so two reads of one document
  * spell it the same whichever order a file or a schema gave the keys. Arrays
  * keep their order, because the order of parts and relationships is drawn.
  * @param value A JSON value.
@@ -33,7 +33,7 @@ function sha256Of(text: string): string {
 
 /**
  * The fingerprint of what a picture is drawn from.
- * @param input The drawn input that the board answer names.
+ * @param input The drawn input that the document answer names.
  * @returns Its digest.
  */
 function inputFingerprint(input: unknown): string {

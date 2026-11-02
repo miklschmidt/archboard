@@ -16,18 +16,18 @@ type Reply = { readonly status: number; readonly body: unknown } | "pending";
 const NO_FINDINGS = { success: true, readings: [] } as const;
 
 /**
- * The reply the next request gets, every request made so far, and the board
+ * The reply the next request gets, every request made so far, and the model
  * documents inspection reads.
  *
  * Documents are answered by name rather than by turn, because a pane inspecting
- * a drill-down reads two boards at once and which of them answers first is not
+ * a drill-down reads two models at once and which of them answers first is not
  * something a test should have to predict.
  */
 const server: {
 	reply: Reply;
 	calls: string[];
 	documents: Record<string, unknown>;
-	/** Boards whose document is answered only once the promise settles. */
+	/** Models whose document is answered only once the promise settles. */
 	held: Record<string, Promise<unknown>>;
 	/** What the vault checker answers, or undefined for a checker that refuses. */
 	vault: unknown;
@@ -61,7 +61,7 @@ const VAULT_ROUTE = "/api/vault/check";
 /** The route the findings of the last code pass are read from. */
 const FINDINGS_ROUTE = "/api/vault/code-findings";
 
-/** The route a pane reads a whole board through. */
+/** The route a pane reads a whole model through. */
 const DOCUMENT_ROUTE = "retained-document";
 
 /** The route a pane asks for a picture through. */
@@ -70,7 +70,7 @@ const RENDER_ROUTE = "retained-render";
 /**
  * Every picture the pane has asked for, in the order it asked.
  *
- * A pane reads two routes — the picture, and the board itself, for what a
+ * A pane reads two routes — the picture, and the model itself, for what a
  * picture does not carry — so a question about what was drawn is asked of the
  * render requests rather than of whichever request happened to be last.
  * @returns The render requests.
@@ -80,9 +80,9 @@ function renderCalls(): string[] {
 }
 
 /**
- * The board a document request named.
+ * The model a document request named.
  * @param url The request's URL.
- * @returns The board name, or null when the request was for something else.
+ * @returns The model name, or null when the request was for something else.
  */
 function documentAsked(url: string): string | null {
 	return url.startsWith(DOCUMENT_ROUTE)
@@ -139,9 +139,9 @@ function serverReply(url: string): Promise<Response> {
 }
 
 /**
- * What a document request for one board is answered with.
- * @param model The board asked for.
- * @returns The reply, refusing a board the test never put there.
+ * What a document request for one legacy board is answered with.
+ * @param model The legacy board asked for.
+ * @returns The reply, refusing a legacy board the test never put there.
  */
 function documentReply(model: string): StubReply {
 	const held = server.documents[model];
@@ -182,7 +182,7 @@ function answered(reply: StubReply): Promise<Response> {
 
 /**
  * Read a fixture result through the explicit capture boundary.
- * @param resource The fixture resource, never a live board route.
+ * @param resource The fixture resource, never a live model route.
  * @returns The authored fixture body.
  * @throws {ReadingError} When the fixture supplies a refusal.
  */

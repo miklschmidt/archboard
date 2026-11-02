@@ -27,7 +27,7 @@ import twoChains from "#tests/runtime/support/fixtures/two-chains.json";
 import wallPortKinds from "#tests/runtime/support/fixtures/wall-port-kinds.json";
 import workingWithAnAgent from "#tests/runtime/support/fixtures/working-with-an-agent.json";
 
-/** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its boards. */
+/** The vocabulary of the fixtures, in the dogfood vault's order; some are reduced from its documents. */
 const policy = SemanticPolicySchema.parse({
 	levels: ["service"],
 	nodeKinds: {
@@ -207,7 +207,7 @@ test("a reserved trunk stays distinct from its container wall", async () => {
 	expect(inset).toEqual([]);
 });
 
-// Taken from a board of this repository: parting two lines that read as one
+// Taken from a document of this repository: parting two lines that read as one
 // moved only the lanes of one, and the line then ran round the far side of
 // the block, down the container's wall at its inset, where it read as the
 // container's outline.
@@ -310,7 +310,7 @@ test("a line into a block above its source preserves its header and source label
 	expectDrawingIntact(drawn, content, "blocks");
 });
 
-// Reduced from the same board: a container's own port on its wall stood
+// Reduced from the same document: a container's own port on its wall stood
 // level with the middle of the block inside it, not with that block's port
 // on the same wall, so the line out stepped between the two.
 test("a line out of nested containers by their walls runs level between them", async () => {

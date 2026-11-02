@@ -1,18 +1,18 @@
-// A board's last change, found in the board file's own Git history
+// A document's last change, found in the document file's own Git history
 // (ADR 0045).
 //
-// The last change is the last commit that changed the board's current
+// The last change is the last commit that changed the document's current
 // variant: another variant became current, or a part, a relationship, a flow
 // or a step of the current variant was added, changed or removed. A draft
 // edit, a shelving, a rename, a change to the views, a walkthrough edit and a
 // migration write change none of those, so none of them counts. The walk goes
 // newest first, follows the renames of the file, and stops at the first commit
-// that changed the current variant. The commit that created the board changed
+// that changed the current variant. The commit that created the document changed
 // it.
 //
-// A change no commit has yet makes the last change now: the board file holds
+// A change no commit has yet makes the last change now: the document file holds
 // it in the working tree, or Git does not track the file and does not ignore
-// it. If the vault is in no Git repository, or Git ignores the board file, the
+// it. If the vault is in no Git repository, or Git ignores the document file, the
 // last change cannot be found, and the answer says so rather than count zero.
 
 import path from "node:path";
@@ -31,28 +31,28 @@ import {
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 
-/** Where a board's last change is, or why it cannot be found. */
+/** Where a document's last change is, or why it cannot be found. */
 type LastChange =
 	| { readonly kind: "commit"; readonly commit: string; readonly committedAt: number }
 	| { readonly kind: "uncommitted" }
 	| { readonly kind: "unknown"; readonly reason: "vault-outside-git" | "model-file-ignored" };
 
-/** How many commits of a board file's history are read from Git at a time. */
+/** How many commits of a document file's history are read from Git at a time. */
 const VERSIONS_PER_BATCH = 8;
 
 /**
  * The header `git cat-file --batch` writes before an object it found:
  * `<object id> <type> <size>`. For a name it cannot find it writes the name
- * and `missing`, and a name holds every space of its path, as most board
+ * and `missing`, and a name holds every space of its path, as most document
  * names have one, so only this whole shape says that an object follows.
  */
 const FOUND_HEADER = /^[0-9a-f]{40,64} [a-z]+ (\d+)$/u;
 
 /**
- * A board file as a commit holds it, or undefined when it is not a board this
+ * A document file as a commit holds it, or undefined when it is not a document this
  * build reads. Registered migrations are applied in memory and write nothing.
  * @param bytes The file's bytes at that commit.
- * @returns The board, or undefined.
+ * @returns The document, or undefined.
  */
 function documentOf(bytes: Uint8Array | undefined): LegacyBoard | undefined {
 	if (bytes === undefined) return undefined;
@@ -78,7 +78,7 @@ function variantChanged(
 }
 
 /**
- * Whether one version of a board changed its current variant against the
+ * Whether one version of a document changed its current variant against the
  * version before it: another variant became current, or the current one
  * changed. A version that did not exist, or that this build cannot read,
  * counts as a change, because the lens cannot show that the variant stayed the
@@ -130,7 +130,7 @@ async function readBlobs(
 	return wanted.map((spec) => (spec === undefined ? undefined : blobs.shift()));
 }
 
-/** One commit of a board file's history, with where the file was before and after it. */
+/** One commit of a document file's history, with where the file was before and after it. */
 interface FileVersion {
 	readonly commit: string;
 	readonly committedAt: number;
@@ -182,7 +182,7 @@ async function fileHistory(
 }
 
 /**
- * The newest commit of a file's history that changed the board's current variant.
+ * The newest commit of a file's history that changed the document's current variant.
  * @param root The checkout.
  * @param history The file's commits, newest first.
  * @param options The caller's signal.
@@ -199,7 +199,7 @@ async function lastChangingCommit(
 			`${version.commit}:${version.path}`,
 			version.before === undefined ? undefined : `${version.commit}^:${version.before}`,
 		]);
-		// oxlint-disable-next-line no-await-in-loop -- most boards stop in the first batch
+		// oxlint-disable-next-line no-await-in-loop -- most documents stop in the first batch
 		const blobs = await readBlobs(root, specs, options);
 		const at = batch.findIndex((_, index) =>
 			changedCurrent(documentOf(blobs[index * 2 + 1]), documentOf(blobs[index * 2])),
@@ -210,9 +210,9 @@ async function lastChangingCommit(
 }
 
 /**
- * The last change of one board.
- * @param document The board as the store reads it now.
- * @param file The board file.
+ * The last change of one document.
+ * @param document The document as the store reads it now.
+ * @param file The document file.
  * @param vaultRoot The root of the Git checkout that holds the vault, or undefined when there is none.
  * @param options The caller's signal.
  * @returns The last change, or why it cannot be found.

@@ -1,10 +1,10 @@
-// One run of the code check over a vault's boards (ADR 0046), with behind beside it (ADR 0045).
+// One run of the code check over a vault's documents (ADR 0046), with behind beside it (ADR 0045).
 //
-// It reads every board at its current variant, or at the draft `variant`
+// It reads every document at its current variant, or at the draft `variant`
 // names, and gives `boards`, `findings` and `skipped`. `everyDraft` reads every
-// draft of every board instead, and a `variant` beside it is not read
-// (TASK-488). Behind (TASK-369.02) reads the current variant of each board
-// once, whatever the pass reads. A `variant` that names no draft on any board
+// draft of every document instead, and a `variant` beside it is not read
+// (TASK-488). Behind (TASK-369.02) reads the current variant of each document
+// once, whatever the pass reads. A `variant` that names no draft on any document
 // is refused with the drafts that exist. Each plan names a Terraform or
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
@@ -19,19 +19,19 @@ import {
 import { checkCode } from "#runtime/operations/code-check/check.ts";
 import { readPlans, type PlanRefused } from "#runtime/operations/code-check/plans.ts";
 
-/** What one run reads: the vault, the draft to read where a board has one, the plans an agent named, and how to cancel. */
+/** What one run reads: the vault, the draft to read where a document has one, the plans an agent named, and how to cancel. */
 interface CodeCheckRequest {
-	/** The vault whose boards the run reads, and the checkouts it reads them against. */
+	/** The vault whose documents the run reads, and the checkouts it reads them against. */
 	readonly vault: string;
 	readonly variant: string | undefined;
-	/** Read every draft of every board, in place of `variant`. */
+	/** Read every draft of every document, in place of `variant`. */
 	readonly everyDraft: boolean;
 	readonly plans: readonly string[];
 	/** Cancels the run and every Git command it starts. */
 	readonly signal: AbortSignal;
 }
 
-/** Why a run is refused before its pass starts: a draft no board has, or a plan the check does not read. */
+/** Why a run is refused before its pass starts: a draft no document has, or a plan the check does not read. */
 interface CodeCheckRefusal {
 	readonly code: NoSuchDraft["code"] | "PLAN_REFUSED";
 	readonly error: string;
@@ -40,7 +40,7 @@ interface CodeCheckRefusal {
 /** The code check, with the memory of behind that every run shares. */
 interface CodeCheck {
 	/**
-	 * Run the code check over every board of the vault, at its current variant,
+	 * Run the code check over every document of the vault, at its current variant,
 	 * the named draft or every draft, with behind beside it.
 	 * @param request What to read, and the signal that cancels it.
 	 * @returns The answer, or why the run is refused.

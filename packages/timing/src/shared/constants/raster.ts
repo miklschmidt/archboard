@@ -1,5 +1,5 @@
-// Server-owned board rendering (ADR 0020): the private Chromium that draws a
-// board to PNG or SVG, and the native clipboard a CLI copy hands the image to.
+// Server-owned model rendering (ADR 0020): the private Chromium that draws a
+// model to PNG or SVG, and the native clipboard a CLI copy hands the image to.
 //
 // The four renderer bounds keep the flat names the renderer imports while it is
 // rewritten. Group them by their owner when the rewrite lands.
@@ -15,7 +15,7 @@ const SEMANTIC_RASTER_JOB_TIMEOUT_MS = 10_000;
 
 /**
  * Bound for each startup phase of the private Chromium: its control port, then
- * the renderer page. Startup is lazy, so it delays the first Board render only.
+ * the renderer page. Startup is lazy, so it delays the first Model render only.
  * It pulls against how soon an operator learns that Chromium cannot start. Ten
  * seconds completed three cold starts under a half-CPU quota (TASK-162), but
  * hosted Linux cold starts exceeded it in 2 of 5 gate runs (October 2026, TASK-470).
@@ -37,7 +37,7 @@ const SEMANTIC_RASTER_CLEANUP_MS = 1000;
  */
 const HEADLESS_CHROMIUM_CALL_MS = SEMANTIC_RASTER_JOB_TIMEOUT_MS;
 
-/** The CLI's copy of a rendered board to the native clipboard. */
+/** The CLI's copy of a rendered model to the native clipboard. */
 const IMAGE_CLIPBOARD_MS = durations({
 	/** Bounds native clipboard startup after rasterizer teardown; local copies take milliseconds, but a large image gets five seconds. */
 	startup: 5000,

@@ -12,14 +12,14 @@ import type { z } from "zod";
 
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
-/** Where boards are read from. */
+/** Where models are read from. */
 interface RetainedReads {
 	/** List only the original documents supplied by the capture. */
 	readonly listing: (vault: string, signal?: AbortSignal) => Promise<RetainedListing>;
 	/**
-	 * One board's whole document.
-	 * @param vault The vault the board is in.
-	 * @param model The board, by name.
+	 * One legacy board's whole document.
+	 * @param vault The vault the legacy board is in.
+	 * @param model The legacy board, by name.
 	 * @param signal Cancels the read.
 	 * @returns The document, not yet checked.
 	 */
@@ -32,7 +32,7 @@ interface RetainedReads {
 	 */
 	readonly vaultCheck: (vault: string, signal?: AbortSignal) => Promise<VaultCheck>;
 	/**
-	 * What the last code pass found on each board it read. Never a pass.
+	 * What the last code pass found on each model it read. Never a pass.
 	 * @param vault The vault.
 	 * @param signal Cancels the read.
 	 * @returns The remembered readings.
@@ -42,7 +42,7 @@ interface RetainedReads {
 
 /**
  * Retained documents require a capture supplied by replay.
- * @returns An explicit refusal without a live board request.
+ * @returns An explicit refusal without a live model request.
  * @throws {ReadingError} When no retained provider is installed.
  */
 async function captureRequired(): Promise<never> {
@@ -62,7 +62,7 @@ const liveEvidence: RetainedReads = {
 let current: RetainedReads = liveEvidence;
 
 /**
- * Where boards are read from now.
+ * Where models are read from now.
  * @returns The reads.
  */
 function retainedReads(): RetainedReads {
@@ -70,7 +70,7 @@ function retainedReads(): RetainedReads {
 }
 
 /**
- * Read boards from somewhere else from now on.
+ * Read models from somewhere else from now on.
  * @param reads Where.
  */
 function readRetainedFrom(reads: RetainedReads): void {

@@ -24,12 +24,12 @@ interface VariantSpec {
 }
 
 /**
- * A coherent board with the given variants: a variant is a draft unless it
+ * A coherent document with the given variants: a variant is a draft unless it
  * says otherwise, and the one marked current, if any, is designated.
  * @param variants The variants.
  * @param extra Board-level fields.
- * @returns The board.
- * @throws {Error} When the fixture is not a board the store would read.
+ * @returns The document.
+ * @throws {Error} When the fixture is not a document the store would read.
  */
 function document(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
 	const current = variants.find((variant) => variant.lifecycle === "current")?.id;

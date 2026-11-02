@@ -1,11 +1,11 @@
-// How an embed stands against what its board draws now (ADR 0057), and the
+// How an embed stands against what its document draws now (ADR 0057), and the
 // lines `archboard check` writes about it. Pure: the embeds check reads the
 // files and draws them again, and this decides what that means.
 //
 // The fingerprint is of what the picture is drawn from and the picture digest
 // of what the renderer drew. A changed picture with a changed fingerprint is a
-// board that says something new: a warning. A changed picture alone is a
-// renderer that draws the same board differently, which two machines on two
+// document that says something new: a warning. A changed picture alone is a
+// renderer that draws the same document differently, which two machines on two
 // commits of the renderer disagree about: information. A changed fingerprint
 // alone is an edit the picture does not show, such as one outside the view:
 // the embed is current, and `--fix` only writes its new recipe.
@@ -19,8 +19,8 @@ type RenderRecipe = Extract<ReturnType<typeof readRenderRecipe>, { kind: "recipe
  * - `current`: the picture and the recipe are as drawn now.
  * - `recipe-stale`: the picture is as drawn now and the recipe is not, so
  *   `--fix` writes only the new recipe.
- * - `outdated`: the board changed what the picture shows.
- * - `renderer-changed`: the renderer draws the same board differently.
+ * - `outdated`: the document changed what the picture shows.
+ * - `renderer-changed`: the renderer draws the same document differently.
  */
 type EmbedStanding = "current" | "recipe-stale" | "outdated" | "renderer-changed";
 

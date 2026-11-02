@@ -1,5 +1,5 @@
 // Checks about what one variant's content says: nodes, containment, bindings,
-// relationships, groups, traffic and drill-downs. Each reads the saved board
+// relationships, groups, traffic and drill-downs. Each reads the saved document
 // and nothing else, and says what it found either way.
 
 import {
@@ -341,7 +341,7 @@ const nodeFieldEquals: Check = (check, content) =>
  * Whether a drill-down selector is the one the check wants.
  * @param link The node's link.
  * @param check The check.
- * @returns True when board and selector match.
+ * @returns True when document and selector match.
  */
 function drillDownMatches(link: DrillDown | undefined, check: OutcomeCheck): boolean {
 	if (
@@ -354,8 +354,8 @@ function drillDownMatches(link: DrillDown | undefined, check: OutcomeCheck): boo
 }
 
 /**
- * Whether a node links down to the named board and variant selector.
- * @param check The node, board and selector.
+ * Whether a node links down to the named document and variant selector.
+ * @param check The node, document and selector.
  * @param content The content.
  * @returns The finding.
  */

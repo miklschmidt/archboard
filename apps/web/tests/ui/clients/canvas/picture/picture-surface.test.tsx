@@ -1,7 +1,7 @@
 // A pane's surface across pictures: which pictures are carried, which come in
 // part by part and which are cut to, and what a picture arriving in flight does.
 //
-// What these catch: a first picture or another board's that pops in whole, a
+// What these catch: a first picture or another model's that pops in whole, a
 // flight landed by its own picture answered twice, a picture that arrives in
 // flight without landing the last, and traffic that runs in the page.
 

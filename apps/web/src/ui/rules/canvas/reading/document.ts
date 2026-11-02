@@ -1,15 +1,15 @@
-// What the viewer needs from a board that the picture does not carry.
+// What the viewer needs from a model that the picture does not carry.
 //
 // A drawing says what an architecture looks like. It deliberately does not say
 // everything an architecture means: a node's description is not on its card,
-// its code binding is not on its card, and the board one level down from it is
+// its code binding is not on its card, and the model one level down from it is
 // not on its card either. All three are reached by inspecting, and all three
-// come from the board itself.
+// come from the model itself.
 //
-// So this file reads the board document through the same contract the server
+// So this file reads the model document through the same contract the server
 // and the CLI read it through (`@archboard/model`) and answers the three
 // questions inspection asks. Nothing here writes: the browser never states
-// anything about a semantic board (ADR 0023).
+// anything about a legacy board (ADR 0023).
 
 import { addressedVariant, parseLegacyBoard } from "@archboard/model/legacy-board";
 import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
@@ -84,13 +84,13 @@ interface StepSubject {
 	readonly to: SemanticNode | undefined;
 }
 
-/** Whatever the person picked out, as far as the board knows it. */
+/** Whatever the person picked out, as far as the model knows it. */
 type Subject = NodeSubject | EdgeSubject | FlowSubject | StepSubject;
 
 /**
  * The containers above a node, outermost first.
  *
- * Containment is validated acyclic before a board is ever read, so this walk
+ * Containment is validated acyclic before a model is ever read, so this walk
  * terminates; the visited set is a floor under a document that arrived some
  * other way, not a second check.
  * @param node The node.
@@ -194,7 +194,7 @@ function subjectOf(variant: Pick<SemanticVariant, "content">, id: string): Subje
 //
 //   The baseline is the same. `comparedWith` in
 //   `@archboard/model/comparison` is the one rule for it — the
-//   board's current variant, or on a board with none the variant it came from —
+//   model's current variant, or on a model with none the variant it came from —
 //   and the picture and this panel both ask it, so neither can read a variant
 //   against a different one.
 //
@@ -202,14 +202,14 @@ function subjectOf(variant: Pick<SemanticVariant, "content">, id: string): Subje
 //   what counts as a change (ADR 0023), shared by the server, the CLI and this;
 //   a second one here would drift the first time a field was added.
 //
-// Nothing is fetched for it. Every variant of a board lives in the one document
+// Nothing is fetched for it. Every variant of a model lives in the one document
 // the panel already has, so the other side is a lookup rather than a read.
 
 /** How a variant differs, as the panel needs to explain it. */
 interface Depiction {
 	/**
 	 * The variant it is read against, or undefined when there is none: it is
-	 * the current variant, or a first draft on a board with no current one.
+	 * the current variant, or a first draft on a model with no current one.
 	 */
 	readonly against: SemanticVariant | undefined;
 	/**
@@ -244,7 +244,7 @@ function movedOn(comparison: VariantComparison, id: string): readonly FieldChang
 /**
  * What the picture of one variant is of, and how each subject of it stands
  * against the variant it is read against.
- * @param model The board the variant belongs to.
+ * @param model The legacy board the variant belongs to.
  * @param variant The variant being shown.
  * @returns The depiction.
  */
@@ -282,15 +282,15 @@ type DocumentReading =
 	| { readonly ok: false; readonly problem: string };
 
 /**
- * One board document, as the contract reads it.
- * @param document Whatever the board route answered with.
- * @returns The board, or why it is not one.
+ * One model document, as the contract reads it.
+ * @param document Whatever the model route answered with.
+ * @returns The model, or why it is not one.
  */
 function readDocument(document: unknown): DocumentReading {
 	return parseLegacyBoard(document);
 }
 
-/** One of a board's variants, as a picker needs to know it. */
+/** One of a model's variants, as a picker needs to know it. */
 interface OfferedVariant {
 	/** Its lasting id. */
 	readonly id: string;
@@ -306,15 +306,15 @@ interface OfferedVariant {
 
 /** What one variant says about itself beyond the picture drawn of it. */
 interface VariantReading {
-	/** Every variant of the board, in the order the board states them. */
+	/** Every variant of the model, in the order the model states them. */
 	readonly variants: readonly OfferedVariant[];
 	/** Every time the designation of the current architecture moved, oldest first. */
 	readonly adoptions: readonly Adoption[];
 	/** Every time a proposal was let go, oldest first. */
 	readonly shelvings: readonly Shelving[];
 	/**
-	 * Every view of the board, with what each answers, in the order the board
-	 * states them. The board tab reads a view's summary here rather than from the
+	 * Every view of the model, with what each answers, in the order the model
+	 * states them. The model tab reads a view's summary here rather than from the
 	 * render answer: the answer's view is the same shape the `semantic render`
 	 * and `semantic rasterize` receipts print, and a sidebar line is no reason to
 	 * change what those commands answer. The document is read for the
@@ -322,16 +322,16 @@ interface VariantReading {
 	 */
 	readonly views: readonly SemanticView[];
 	/**
-	 * The id of the variant the board's bare name opens: its current variant, or
-	 * on a board nobody has built the draft no other draft came before. Null when
+	 * The id of the variant the model's bare name opens: its current variant, or
+	 * on a model nobody has built the draft no other draft came before. Null when
 	 * the name opens none. Lists of variants put it first.
 	 */
 	readonly opens: string | null;
-	/** The board's level, as the board states it. */
+	/** The model's level, as the model states it. */
 	readonly level: string;
-	/** The one this pane is showing, or null when the board has no such variant. */
+	/** The one this pane is showing, or null when the model has no such variant. */
 	readonly showing: OfferedVariant | null;
-	/** That variant whole, or null when the board has no such variant. */
+	/** That variant whole, or null when the model has no such variant. */
 	readonly variant: SemanticVariant | null;
 	/** Every explanation the variant states, in the order it states them. */
 	readonly walkthroughs: readonly SemanticWalkthrough[];
@@ -432,7 +432,7 @@ function idItself(id: string): string {
 
 /**
  * What one variant says beyond its picture.
- * @param family The board's variants and views, and which variant its name opens.
+ * @param family The model's variants and views, and which variant its name opens.
  * @param variant The variant the pane is showing.
  * @returns Its explanations, and how to name what they are about.
  */
@@ -470,24 +470,24 @@ function readingOf(
 }
 
 /**
- * What one variant of one board says beyond its picture.
+ * What one variant of one model says beyond its picture.
  *
- * Read from the board document rather than from the render, for the reason the
- * inspector reads from it: a picture is a reading of a board and not the board.
+ * Read from the model document rather than from the render, for the reason the
+ * inspector reads from it: a picture is a reading of a model and not the model.
  * A narrative belongs to the variant whichever view is on screen, and a view
  * that narrows what is drawn must not narrow what can be explained.
  *
  * The variant is resolved the way the render route resolves it — the same
  * function over the same document — rather than taken from the picture. A
  * narrative that depended on the picture would go out whenever a render failed,
- * which is precisely when somebody wants to read what the board says. That
- * includes a board nobody has built, whose bare name opens the draft no other
+ * which is precisely when somebody wants to read what the model says. That
+ * includes a model nobody has built, whose bare name opens the draft no other
  * draft came before: asking which variant is current would find none there,
  * and the tab would say nothing about the draft on screen.
- * @param document Whatever the board route answered with.
- * @param asked The variant id or name the pane is showing; the one the board's
+ * @param document Whatever the model route answered with.
+ * @param asked The variant id or name the pane is showing; the one the model's
  *   bare name opens when it names none.
- * @returns The reading, or null when the board or that variant cannot be read.
+ * @returns The reading, or null when the model or that variant cannot be read.
  */
 function readVariant(document: unknown, asked: string | undefined): VariantReading | null {
 	const reading = readDocument(document);
@@ -504,7 +504,7 @@ function readVariant(document: unknown, asked: string | undefined): VariantReadi
 		level: reading.board.level,
 	};
 	const opened = addressedVariant(reading.board, asked);
-	// The board reads even when the variant asked for is not one of its own: the
+	// The model reads even when the variant asked for is not one of its own: the
 	// picker is how somebody recovers from an address naming a variant that has
 	// been renamed, so the choice has to be on screen for them to make it.
 	return opened.ok ? readingOf(family, opened.variant) : { ...family, ...NOTHING_SHOWN };
@@ -524,7 +524,7 @@ function nothingHeld(): SelectedSubject | undefined {
 	return undefined;
 }
 
-/** A reading of a board whose asked-for variant is not one of its own. */
+/** A reading of a model whose asked-for variant is not one of its own. */
 const NOTHING_SHOWN: Omit<
 	VariantReading,
 	"variants" | "adoptions" | "shelvings" | "views" | "opens" | "level"
@@ -541,7 +541,7 @@ const NOTHING_SHOWN: Omit<
  *
  * The kind travels with the id because the id alone does not say what it is,
  * and the name because it is what the person said out loud: a shell reporting a
- * selection to an agent would otherwise need a second read of the board to turn
+ * selection to an agent would otherwise need a second read of the model to turn
  * an id back into the words somebody used.
  * @param variant The variant the selection was made on.
  * @param id The subject's id.

@@ -17,8 +17,8 @@ import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
 import { createIdentityAuthorities } from "@archboard/codex-app-server/identity";
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
 
-// What Archboard announces of a board change and of a pane report (TASK-293, TASK-293.06,
-// TASK-530.05): the words each model is told, whether a board is on screen, whether a narration
+// What Archboard announces of a model change and of a pane report (TASK-293, TASK-293.06,
+// TASK-530.05): the words each model is told, whether a legacy board is on screen, whether a narration
 // stops for it, and the context a workhorse reads. How the voice agent delivers it is its own.
 
 const TAB = parseTabSessionId("tab-1")!;
@@ -26,7 +26,7 @@ const NULL_OPERATION = { id: null, kind: null, rpc: null, outcome: null } as con
 
 const { identity } = createIdentityAuthorities();
 
-/** One board, one pane, read under one workhorse. */
+/** One model, one pane, read under one workhorse. */
 const INPUT: SemanticContextInput = {
 	repository: "archboard",
 	child: { id: identity.validator.childId, epoch: identity.validator.epoch },
@@ -66,7 +66,7 @@ const INPUT: SemanticContextInput = {
 /**
  * A publisher over INPUT, and the settled change it publishes for a write.
  * @param by The thread the write names, or null.
- * @param board The board it wrote.
+ * @param board The model it wrote.
  * @returns The publisher and the change.
  */
 function sources(by: string | null = null, model = "architecture") {
@@ -104,9 +104,9 @@ function sources(by: string | null = null, model = "architecture") {
 }
 
 /**
- * A canvas that shows these boards, narrating one or none.
- * @param narrated The narrated board, or null.
- * @param boards The boards its panes show.
+ * A canvas that shows these models, narrating one or none.
+ * @param narrated The narrated model, or null.
+ * @param boards The models its panes show.
  * @returns The tab and its canvas.
  */
 function tab(
@@ -282,7 +282,7 @@ describe("a settled board change", () => {
 				? change.coordinator.text
 				: "";
 		expect(change.voice).toEqual({ text: sentence, speech: false });
-		// The board by name and what the writer said it was doing; never an id, the envelope, or
+		// The model by name and what the writer said it was doing; never an id, the envelope, or
 		// the user as the one who did it.
 		expect(sentence).toContain("Architecture");
 		expect(sentence).toContain("mapping");

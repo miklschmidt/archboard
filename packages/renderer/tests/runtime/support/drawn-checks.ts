@@ -1,4 +1,4 @@
-// Corpus checks on a drawn board, shared by the wide-board corpus and the
+// Corpus checks on a drawn document, shared by the wide-board corpus and the
 // focused owners of the regressions it found: a run under another line's
 // label, lines closer than a lane, a line along a container's wall, a label
 // across a container's edge, and a route on a slant.
@@ -55,7 +55,7 @@ function runsUnder(pill: DiagramBox, points: readonly DrawnPoint[]): number {
 /**
  * Every straight run of one route through another relationship's label, where
  * a reader would take the route to end at the label it vanishes under.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Each such route and label, named.
  */
 function runsUnderLabels(drawing: RenderedDiagram): string[] {
@@ -69,7 +69,7 @@ function runsUnderLabels(drawing: RenderedDiagram): string[] {
 
 /**
  * Every label with more than one stretch of its own route under it.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Each such relationship, named.
  */
 function labelsOverOwnLine(drawing: RenderedDiagram): string[] {
@@ -124,7 +124,7 @@ function runsOf(routes: ReadonlyMap<string, readonly DrawnPoint[]>): Run[] {
  * trunk: the near-coincident lanes the track engine exists to prevent. Lanes
  * are read without crossing hops: a trunk's drawer rises over a crossing
  * alone, a hop's radius off the ink its trunk mates share and do not show.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The pairs, by relationship ids and their distance.
  */
 function nearLanes(drawing: RenderedDiagram): string[] {
@@ -147,7 +147,7 @@ function nearLanes(drawing: RenderedDiagram): string[] {
 /**
  * Upright runs within half a lane of a frame's side wall,
  * where a line reads as part of the container's border.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Each such run's relationship id and the wall's x.
  */
 function wallHugs(drawing: RenderedDiagram): string[] {
@@ -178,7 +178,7 @@ function wallHugs(drawing: RenderedDiagram): string[] {
 /**
  * The label boxes that stand across a container's edge: over part of a frame
  * without standing wholly inside it, below its top edge.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Each such label's relationship id and the container's corner.
  */
 function labelsAcrossWalls(drawing: RenderedDiagram): string[] {
@@ -214,7 +214,7 @@ function labelsAcrossWalls(drawing: RenderedDiagram): string[] {
 /**
  * The routes that run on a slant anywhere longer than a rounded corner: a
  * route is drawn across and down, and a slant is a route that lost its way.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The slanted routes' relationship ids.
  */
 function slants(drawing: RenderedDiagram): string[] {

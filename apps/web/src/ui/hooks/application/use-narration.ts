@@ -27,7 +27,7 @@ interface NarrationSources {
 /** What every pane is offered. */
 interface Narration {
 	/**
-	 * What one pane is offered: starting voice for that pane's board, which makes
+	 * What one pane is offered: starting voice for that pane's model, which makes
 	 * the pane the active one first. The same object for a pane for as long as
 	 * voice is as it is, so that a pane is not drawn again for being offered it.
 	 * @param paneId The pane.

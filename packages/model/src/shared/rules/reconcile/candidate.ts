@@ -1,4 +1,4 @@
-// Whether a merged candidate is something a board may actually hold, and the
+// Whether a merged candidate is something a model may actually hold, and the
 // largest part of the predecessor's change that is.
 //
 // Reconciliation can compose a state nobody wrote: this proposal's new beat
@@ -22,7 +22,7 @@ import type { ReconciliationIssue } from "#shared/schemas/reconciliation.ts";
 import { same } from "#shared/rules/reconcile/removed.ts";
 
 /**
- * Why a merged candidate is not something a board may hold, if it is not.
+ * Why a merged candidate is not something a model may hold, if it is not.
  *
  * Asked of the canonical checks rather than of a list kept here. Reconciliation
  * can invent a combination nobody wrote — this proposal's new beat about a step
@@ -91,11 +91,11 @@ function danglingIssue(subject: string, problem: string): ReconciliationIssue {
 const COLLECTIONS = ["nodes", "edges", "flows", "walkthroughs"] as const;
 
 /**
- * The merge that takes as much of the predecessor's change as a board may hold.
+ * The merge that takes as much of the predecessor's change as a model may hold.
  *
  * Every subject the predecessor changed starts held back, which is this
  * proposal as it stands and so coherent. Each is then taken, one at a time,
- * when the merge that takes it is still something a board may hold, and the
+ * when the merge that takes it is still something a model may hold, and the
  * walk repeats until a pass takes nothing more: a removal that only stands once
  * something else is removed is taken on the pass after. What is left held back
  * is exactly what the dispute is about, and only that keeps this proposal's
@@ -108,7 +108,7 @@ const COLLECTIONS = ["nodes", "edges", "flows", "walkthroughs"] as const;
  * @param states The base, this proposal, and the predecessor as it stands.
  * @param merge The merge of three states, coherent or not.
  * @param incoherence The selected architecture coherence authority.
- * @returns The merge of the largest part a board may hold.
+ * @returns The merge of the largest part a model may hold.
  */
 function coherentPart(
 	states: ThreeStates,

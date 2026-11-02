@@ -42,7 +42,7 @@ test("independent requests keep a full lane between their ports", async () => {
 		expect(new Set(routes.map((points) => points.at(end)!.x)).size).toBe(content.edges.length);
 });
 
-// Reduced from a real hosting board, names replaced: two mirrored pairs of
+// Reduced from a real hosting document, names replaced: two mirrored pairs of
 // servers, each pair feeding one database through labelled lines. Graphviz
 // left one database anywhere between its two servers.
 test("a card two cards of one rank feed stands midway under them", async () => {
@@ -110,7 +110,7 @@ function dropsStraight(svg: string, id: string): boolean {
 	return points.every((point) => Math.abs(point.x - points[0]!.x) < 0.5);
 }
 
-// Reduced from a board of this repository, names replaced: a wrap stood a
+// Reduced from a document of this repository, names replaced: a wrap stood a
 // card with no line of its own to either end in the column between a card
 // and the card its line drops to, and the line stepped around it.
 test("a wrapped card stands aside from a line that drops straight past it", async () => {

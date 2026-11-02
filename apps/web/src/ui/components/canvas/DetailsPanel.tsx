@@ -1,4 +1,4 @@
-// What the board says about one picked part, set out for reading in the order a
+// What the model says about one picked part, set out for reading in the order a
 // reader asks: what it is (its title, the line it is responsible for and the
 // longer account), where it stands against the variant it is read against (only
 // in a comparison), for a part that holds parts what it offers the parts outside
@@ -226,11 +226,11 @@ interface DetailsPanelProps {
 	readonly onPick: (id: string) => void;
 	readonly onOpen: OpenDown;
 	readonly onOpenCode: ((binding: CodeBinding) => void) | undefined;
-	/** The level of the board the part is drawn on, which places the board it opens. */
+	/** The level of the model the part is drawn on, which places the model it opens. */
 	readonly level: string | undefined;
 	/** Where the part stands, set between what it is and what it is wired to. */
 	readonly children?: ReactNode;
-	/** The board, variant and version on screen, which its history is read at; null for none. */
+	/** The model, variant and version on screen, which its history is read at; null for none. */
 	readonly on: ReadingOnScreen | null;
 }
 

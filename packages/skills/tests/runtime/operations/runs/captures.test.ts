@@ -248,7 +248,7 @@ describe("the visual verdict as it stands", () => {
 	});
 });
 
-/** A saved board holding only the views a capture reads. */
+/** A saved document holding only the views a capture reads. */
 const documentWith = (views: LegacyBoard["views"]) => ({ views }) as unknown as LegacyBoard;
 
 describe("every view of a board", () => {

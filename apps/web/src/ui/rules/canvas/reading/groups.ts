@@ -1,7 +1,7 @@
 // Which groups a pane offers, and what choosing one selects: every member of
 // it, across whatever contains each one.
 //
-// Membership is read from the board (`isMemberOf` in `@archboard/model/content`),
+// Membership is read from the model (`isMemberOf` in `@archboard/model/content`),
 // never inferred from containment or from the regions the picture draws (ADR
 // 0023): a member the view hides is still a member, and simply is not drawn to
 // be seen selected.
@@ -15,7 +15,7 @@ type GroupNames = SemanticPolicy["groups"];
 
 /** One group a pane offers. */
 interface GroupChoice {
-	/** The id boards carry. */
+	/** The id models carry. */
 	readonly id: string;
 	/** What the vault calls it, or the id itself when the vault no longer defines it. */
 	readonly label: string;
@@ -46,7 +46,7 @@ function groupLabel(id: string, names: GroupNames): string {
 /**
  * Every group the variant on screen uses, with its name and colour.
  *
- * An id the vault no longer defines is offered too: the board says it, and a
+ * An id the vault no longer defines is offered too: the model says it, and a
  * reader has to be able to find what carries it, which is how a removed
  * definition is found and repaired.
  * @param content The complete reading, or null while unavailable.

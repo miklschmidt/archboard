@@ -435,7 +435,7 @@ export function createServerDynamicAuthorityAdapters(
 			});
 		},
 		/**
-		 * One reading of the board as the pane shows it, refused if the thread link
+		 * One reading of the model as the pane shows it, refused if the thread link
 		 * moved between the authority being issued and the context being read.
 		 * @param input The authority, the caller, and what the context is for.
 		 * @returns The context.

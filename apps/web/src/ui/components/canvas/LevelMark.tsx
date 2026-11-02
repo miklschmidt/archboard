@@ -1,12 +1,12 @@
 // A level's mark: the icon the vault's vocabulary gives the node kind of that
-// level's name (ADR 0029), which is also what a card standing for a board of
+// level's name (ADR 0029), which is also what a card standing for a model of
 // that level wears on the picture. So a level reads the same in the navigator,
 // in a pane's breadcrumb and on a card. The vocabulary is read through the same
 // cache the picture is drawn from. The icon's path data comes from the same
 // server route the renderer fetches it from, but through this page's query
 // cache: the renderer keeps its own copy in its chunk, which the page loads
 // apart from the shell (apps/web/src/main.tsx). A level the vocabulary gives no icon,
-// or an icon not yet read, shows the plain board mark.
+// or an icon not yet read, shows the plain model mark.
 
 import { RiFlowChart } from "@remixicon/react";
 import { useQuery } from "@tanstack/react-query";
@@ -30,7 +30,7 @@ function iconOf(
 
 /** Inputs for a level's mark. */
 interface LevelMarkProps {
-	/** The level, as a board states it; undefined for a board that states none. */
+	/** The level, as a model states it; undefined for a model that states none. */
 	readonly level: string | undefined;
 	/** The vault whose policy names the level's icon, or null for the plain mark. */
 	readonly vault: string | null;

@@ -4,7 +4,7 @@ import { createShellActions, type ShellActionDeps } from "#ui/clients/applicatio
 import { initialPaneRecord } from "#ui/rules/application/pane-records.ts";
 import type { ShellNotice } from "#ui/rules/shell/contracts.ts";
 
-/** Fail if a board action reaches an unrelated shell owner. */
+/** Fail if a model action reaches an unrelated shell owner. */
 function unrelated(): never {
 	throw new Error("The board action reached an unrelated shell owner.");
 }
@@ -94,7 +94,7 @@ function picker() {
 				move: {
 					/**
 					 * Record the lifecycle event.
-					 * @param model The board navigation reached.
+					 * @param model The legacy board navigation reached.
 					 */
 					done: (model): void => {
 						moved.push(model);
@@ -116,7 +116,7 @@ function picker() {
 			},
 			error: null,
 			loading: false,
-			/** A successful board open invalidates its listing. */
+			/** A successful model open invalidates its listing. */
 			refresh: (): void => {},
 			reload: unrelated,
 			reconnected: unrelated,
@@ -157,9 +157,9 @@ function picker() {
 		},
 		/**
 		 * Emulate the server refusing an unknown pane.
-		 * @param model The board to show.
+		 * @param model The legacy board to show.
 		 * @param clientId The pane being addressed.
-		 * @returns The board, once its pane exists.
+		 * @returns The legacy board, once its pane exists.
 		 */
 		show: async (model, clientId) => {
 			shown.push(clientId);
@@ -216,7 +216,7 @@ test("the board picker does not address a reconnecting pane before registration"
 
 	expect(fixture.shown).toEqual(["A-qz99fo"]);
 	expect(fixture.moved).toEqual(["Payments"]);
-	// The board arrives over the pane's socket looking like one an agent opened, so the picker
+	// The model arrives over the pane's socket looking like one an agent opened, so the picker
 	// says beforehand that this one is the user's.
 	expect(fixture.marked).toEqual(["A"]);
 	// The person opened it, so the dock shows its checkout's conversation, named by the vault it opened in.

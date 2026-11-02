@@ -8,8 +8,8 @@
 // width here as on the server (ADR 0059). It holds no theme colours: a
 // picture drawn here paints with the page's own colour tokens, so it takes
 // whichever theme the page is in (TASK-346). What is drawn comes from the
-// board the page read from the server and holds as a read-only cache (ADR 0023),
-// so the picture is the server's picture of that board.
+// document the page read from the server and holds as a read-only cache (ADR 0023),
+// so the picture is the server's picture of that document.
 
 import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
@@ -102,17 +102,17 @@ function startBrowserRenderer(): void {
 	const core = loadBrowserCore().then((ready) => (loaded = ready));
 	started = core.then(() => undefined);
 	// Start one engine as soon as the core is ready, while the page boots and
-	// reads the board, rather than when the first picture needs it: a worker's
+	// reads the document, rather than when the first picture needs it: a worker's
 	// first solve instantiates its core, and a trivial graph pays that cost here.
 	void core.then(() => solve(WARM_UP_GRAPH)).catch(() => undefined);
 }
 
 /**
- * Draw one variant of a board in this page, once the core has loaded.
- * @param document The board, as the page read it.
+ * Draw one variant of a document in this page, once the core has loaded.
+ * @param document The document, as the page read it.
  * @param choices The variant and view; the picture takes the page's theme.
  * @param policy The vault's presentation policy, as the page read it.
- * @returns The same answer the render route would give for this board.
+ * @returns The same answer the render route would give for this document.
  * @throws {Error} When this page never started the renderer.
  */
 async function drawLegacyBoardHere(

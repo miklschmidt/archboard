@@ -1,6 +1,6 @@
 // Which vault a pane is in, when that changes (ADR 0050). A pane is in one
 // vault at a time, and the server moves it: a show of another repository's
-// board, or a new chosen checkout of the repository it shows. News about the
+// model, or a new chosen checkout of the repository it shows. News about the
 // machine rather than one vault goes to every tab.
 
 import { WebSocket } from "ws";
@@ -37,7 +37,7 @@ function broadcastEverywhere(message: WebSocketMessage): void {
 
 /**
  * Move a pane into another vault (ADR 0050). The server decides which vault a
- * pane is in, as it decides which board it holds: a show into another
+ * pane is in, as it decides which model it holds: a show into another
  * repository moves it, and so does choosing another checkout of the repository
  * it shows. Its sockets carry the news of the new vault from now on, and its
  * registration says the new vault until the pane next reports. What it said it

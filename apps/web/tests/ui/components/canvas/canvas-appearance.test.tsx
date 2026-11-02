@@ -52,7 +52,7 @@ function applied(
  * @param legend The kinds and relationship kinds its key lists.
  * @param legend.kinds The part kinds.
  * @param legend.relationships The relationship kinds.
- * @returns A render answer at the same board version.
+ * @returns A render answer at the same model version.
  */
 function keyed(
 	appearances: AppliedAppearance[],
@@ -64,7 +64,7 @@ function keyed(
 /**
  * A picture whose node is drawn as an API card.
  * @param color The kind's colour.
- * @returns A render answer at the same board version.
+ * @returns A render answer at the same model version.
  */
 function styledDrawing(color: string): Record<string, unknown> {
 	const api = applied("n1", "api", "API", { depiction: "card", typeColor: color });
@@ -167,7 +167,7 @@ test("traffic changes are explained without animation numbers", async () => {
  * A picture whose legend lists three part kinds that share one name and two
  * relationship kinds that share another, one line with a filled head and one
  * with an open head.
- * @returns A render answer at the same board version.
+ * @returns A render answer at the same model version.
  */
 function keyedDrawing(): Record<string, unknown> {
 	const kinds = [

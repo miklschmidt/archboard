@@ -7,7 +7,7 @@ import type { JSX } from "react";
 interface StatusDotProps {
 	/**
 	 * `live` is the acid-lime accent; `idle` is a muted neutral; `warning` is
-	 * the amber of a board that needs a decision, never the destructive red.
+	 * the amber of a model that needs a decision, never the destructive red.
 	 */
 	tone: "live" | "idle" | "warning";
 	className?: string | undefined;

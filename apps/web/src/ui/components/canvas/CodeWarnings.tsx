@@ -5,7 +5,7 @@ import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import type { SemanticRender } from "#ui/clients/canvas/reads/drawings.ts";
 import { useCodeFindings } from "#ui/hooks/canvas/use-code-findings.ts";
 
-/** What the last pass found on one board at one variant. */
+/** What the last pass found on one model at one variant. */
 type RememberedReading = RememberedFindings["readings"][number];
 
 /** The existing pane controls that a warning can use. */

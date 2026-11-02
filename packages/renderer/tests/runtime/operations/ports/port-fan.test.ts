@@ -37,7 +37,7 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-// Taken from a dogfood board: "the pane's agent and media state" and "one per
+// Taken from a dogfood document: "the pane's agent and media state" and "one per
 // socket generation" both come onto Workbench transport from its right, and
 // their arrowheads stood a lane apart near its top-right corner.
 test("lines onto one card face from beyond one end arrive apart", async () => {

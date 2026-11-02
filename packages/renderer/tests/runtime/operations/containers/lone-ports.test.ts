@@ -147,7 +147,7 @@ function runsOf(points: readonly DrawnPoint[]) {
 	});
 }
 
-// Blocks still runs two of this board's lines a part-lane apart.
+// Blocks still runs two of this document's lines a part-lane apart.
 test("no line runs a part-lane beside another", async () => {
 	const content = orderedFixture(readingAModel);
 	const drawn = await renderArchitecture({

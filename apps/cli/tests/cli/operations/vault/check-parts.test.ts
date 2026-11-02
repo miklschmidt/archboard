@@ -3,7 +3,7 @@
 // semantics check and then the code check route and run the embeds check,
 // `check semantics`, `check code` and `check embeds` run one each, the answer
 // holds a part for each check that ran, and only a diagnostic or a warning
-// fails it. Behind is information (ADR 0045), so a board many commits behind
+// fails it. Behind is information (ADR 0045), so a model many commits behind
 // never does. `--state`, `--every-draft` and `--plan` name what the code
 // check reads, and only `check`, `check all` and `check embeds` take `--fix`.
 // Only the Archboard server is a stand-in.

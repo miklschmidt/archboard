@@ -1,12 +1,12 @@
 // What a variant differs from now by, worked out for the picture being drawn.
 //
-// Nothing on a board says a node is new. A variant states its architecture and
+// Nothing on a model says a node is new. A variant states its architecture and
 // how it differs is read against another variant, every time, out of the
 // identities the two share (ADR 0023). Which other variant is the one rule
 // here, decided by the user on 2026-09-27: the current variant is now, and
 // every other variant — history behind it, proposals ahead of it, shelved ones
 // beside it — is read against it, so its marks say how it differs from what
-// exists. The current variant is the reference and carries nothing. A board
+// exists. The current variant is the reference and carries nothing. A model
 // with no current variant has no now to read against, so each of its drafts is
 // read against the one it came from, and its root draft carries nothing.
 // Reconciliation and adoption never read this: they follow the parent.
@@ -15,7 +15,7 @@
 //
 // That reading happens on the way to a picture, so no tombstone is ever
 // written. It is shared because whatever draws — the server's render route,
-// the CLI, or a browser drawing from the board it has read (TASK-247) — has to
+// the CLI, or a browser drawing from the model it has read (TASK-247) — has to
 // give the renderer the same content for the same variant.
 //
 // Restore the comparison before applying the shared view scope. A selected
@@ -86,7 +86,7 @@ function comparedWith(
 
 /**
  * Resolve the comparison of a retained legacy variant.
- * @param model The retained board.
+ * @param model The legacy board.
  * @param variant The selected variant.
  * @returns Its current variant or retained parent.
  */
@@ -159,10 +159,10 @@ function comparedContent(
  *
  * A variant's picture is not simply the variant. What the other side has and
  * this one lacks is half of what a reader came to see, so it is put back here
- * — never on the board, which keeps saying what the architecture is or would
+ * — never on the legacy board, which keeps saying what the architecture is or would
  * be. The renderer is told how each subject stands and draws a restored one as
  * absent rather than as part of the variant.
- * @param model The board.
+ * @param model The legacy board.
  * @param variant The variant being drawn.
  * @param scope The shared reading, applied to both sides of the change.
  * @param named The variant to read it against when the caller named one, in place of
@@ -239,7 +239,7 @@ function against(
 
 /**
  * What a picture draws, named: the subjects of the drawn content that the
- * renderer placed, by kind, in the board's order. Only the renderer knows
+ * renderer placed, by kind, in the model's order. Only the renderer knows
  * which of the content's subjects its grammar draws, so it says which ids it
  * placed and this names them as a person reads them.
  * @param content The content the picture was drawn from.
@@ -251,7 +251,7 @@ function drawnSubjects(content: VariantContent, placed: readonly string[]): Draw
 	const names = new Map(content.nodes.map((node) => [node.id, node.name]));
 	/**
 	 * The placed subjects of one kind, named.
-	 * @param subjects That kind's subjects, in the board's order.
+	 * @param subjects That kind's subjects, in the model's order.
 	 * @param name What a person reads one of them as.
 	 * @returns The placed ones.
 	 */

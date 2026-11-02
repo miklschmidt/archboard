@@ -59,8 +59,8 @@ function noBrowserBody(what: string): Record<string, unknown> {
 
 // ─── Panes ────────────────────────────────────────────────────
 //
-// What the human is currently looking at: which pane holds which board, where
-// it sits on the display, how much of the board is on screen, and what is picked
+// What the human is currently looking at: which pane holds which model, where
+// it sits on the display, how much of the model is on screen, and what is picked
 // in it. View state, never contents — see panes.ts for why that line is
 // worth holding.
 //
@@ -77,7 +77,7 @@ const RectSchema = z.object({
 const PaneSchema = z.object({
 	clientId: z.string().min(1),
 	paneId: z.string().min(1),
-	// The board this pane adopted — what it is actually showing, which is what
+	// The model this pane adopted — what it is actually showing, which is what
 	// makes the report a description of the displayed scene rather than an echo
 	// of what the server thinks it sent.
 	paneKey: z.string().min(1).nullable(),
@@ -252,9 +252,9 @@ function awaitPaneOpen(): { pending: PendingPaneOpen; opened: Promise<PaneRegist
 /**
  * Split the canvas: one more pane, side by side with what is already there.
  *
- * It takes no board. What lands in the new pane is a separate act — `browser
- * show ... --pane <the pane this answered with>` — so that showing a board
- * stays the one thing that decides which board a pane holds (ADR 0009).
+ * It takes no model. What lands in the new pane is a separate act — `browser
+ * show ... --pane <the pane this answered with>` — so that showing a model
+ * stays the one thing that decides which model a pane holds (ADR 0009).
  * @param _req The request.
  * @param res Its response.
  */
@@ -379,8 +379,8 @@ function refuseUnclosable(res: Response, count: number): boolean {
 /**
  * Close one pane, named the way every other pane is named.
  *
- * Always named: unlike opening a board, which can only land somewhere visible
- * and wrong, closing takes a board off the screen, and guessing which one is
+ * Always named: unlike opening a model, which can only land somewhere visible
+ * and wrong, closing takes a model off the screen, and guessing which one is
  * the mistake that costs the human the half they were reading.
  * @param req The request.
  * @param res Its response.
@@ -523,7 +523,7 @@ function noteWhatChanged(
 /**
  * What of a registration the user changed by hand. Which pane they are in moves only by their
  * own hand, because nothing the server sends a browser changes it (ADR 0034); a pane that only
- * moved to another board says so in its reading, which carries its own marks, and a pane that
+ * moved to another model says so in its reading, which carries its own marks, and a pane that
  * has just opened has moved nowhere.
  * @param previous What this pane said last time, or nothing when it is new.
  * @param registration What it says now.
@@ -537,14 +537,14 @@ function focusChange(
 }
 
 /**
- * A pane is on a board, so record it and tell it where that board stands.
+ * A pane is on a model, so record it and tell it where that model stands.
  *
  * Registration is the pane saying what it is showing, and a pane that has just
- * arrived on a board may be arriving into one an agent already holds and is
+ * arrived on a model may be arriving into one an agent already holds and is
  * part way through. Being told outright is what ADR 0016 requires of every
  * arrival; a broadcast only reaches whoever was already there.
  * @param clientId The pane's client id.
- * @param paneKey The board it is now showing.
+ * @param paneKey The model it is now showing.
  */
 function arrivedOnBoard(clientId: string, paneKey: string): void {
 	paneKeys.set(clientId, paneKey);

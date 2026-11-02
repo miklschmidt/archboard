@@ -1,7 +1,7 @@
 // The evidence an author run leaves behind, read the way the batch of
-// 2026-09-14 showed it has to be (TASK-212): a board patched with Codex's own
+// 2026-09-14 showed it has to be (TASK-212): a document patched with Codex's own
 // editing tool is a `file_change` item and no command; a read that names a
-// board file is not a write, whatever it redirects to /dev/null; a `--help`
+// document file is not a write, whatever it redirects to /dev/null; a `--help`
 // is not a write attempt; a read of the scenario, the fixtures or the rubric
 // is recorded as exposure; and a resumed grading call reports the thread's
 // cumulative usage, not its own.

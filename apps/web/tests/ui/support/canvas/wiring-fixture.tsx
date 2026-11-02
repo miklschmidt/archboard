@@ -5,7 +5,7 @@ import { act, fireEvent } from "@testing-library/react";
 
 import { mountStage, server, settle, surface } from "#tests/ui/support/canvas/stage-harness.tsx";
 
-/** One node as the board file spells it, as far as these tests need. */
+/** One node as the model file spells it, as far as these tests need. */
 interface Node {
 	readonly id: string;
 	readonly name: string;
@@ -78,7 +78,7 @@ function trunkMask(id: string): string {
 }
 
 /**
- * One board document, as its route answers with it.
+ * One model document, as its route answers with it.
  * @returns The document.
  */
 function documentOf(): Record<string, unknown> {
@@ -130,7 +130,7 @@ interface PictureOptions {
 }
 
 /**
- * A picture of the board, drawing every subject except those named.
+ * A picture of the model, drawing every subject except those named.
  * @param options What the picture hides, and where some subjects sit.
  * @returns The render route's success body.
  */
@@ -186,12 +186,12 @@ function picture(options: PictureOptions = {}): Record<string, unknown> {
 interface ServedOptions extends PictureOptions {
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean;
-	/** The board document, when it is not the one variant this file draws. */
+	/** The model document, when it is not the one variant this file draws. */
 	readonly document?: Record<string, unknown>;
 }
 
 /**
- * Put the board and a picture of it in front of a pane, and let it arrive.
+ * Put the model and a picture of it in front of a pane, and let it arrive.
  * @param options What the picture hides and where subjects sit, and the person's preference for motion.
  */
 async function served(options: ServedOptions = {}): Promise<void> {

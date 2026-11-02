@@ -287,7 +287,7 @@ function makeLock(lock: string): boolean {
 
 /**
  * Take the lock, waiting while another process holds it. The lock is a lease
- * like a board lock: it lapses after `MODEL_LOCK_MS.lease`, so a process that died
+ * like a model lock: it lapses after `MODEL_LOCK_MS.lease`, so a process that died
  * while it held the lock costs the next change one lease. A waiter asks again
  * every `MODEL_LOCK_MS.poll`.
  * @param lock The lock directory.

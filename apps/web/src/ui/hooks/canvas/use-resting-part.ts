@@ -1,7 +1,7 @@
 // The part of the picture the pointer is resting on.
 //
 // Resting is judged the way a tip is: it takes a moment to start, so crossing
-// the board does not flash, and once a part is resting on the next one is at
+// the model does not flash, and once a part is resting on the next one is at
 // once. Leaving waits a moment too, so crossing the gap between two cards, or
 // the thin width of a line, keeps the part the pointer was on.
 //

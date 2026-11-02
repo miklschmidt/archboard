@@ -70,7 +70,7 @@ function requireWritableDirectory(out: string, file: string): void {
 /**
  * Where the talk is kept: the directory asked for, or a new one in the state directory.
  * @param asked The --talk the command was given, resolved, if any.
- * @param paneKey The board recorded, which names a talk kept in the state directory.
+ * @param paneKey The model recorded, which names a talk kept in the state directory.
  * @returns The place, proven free.
  * @throws {CliUsageError} When the directory asked for exists or cannot be made.
  */

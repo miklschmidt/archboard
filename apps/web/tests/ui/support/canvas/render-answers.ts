@@ -1,15 +1,15 @@
-// What the fake server answers a stage's requests with: one drawn board, the
-// three ways a board can be there without a picture, and a board document that
+// What the fake server answers a stage's requests with: one drawn model, the
+// three ways a model can be there without a picture, and a model document that
 // explains itself twice. The stage harness serves them.
 
 /**
- * One drawn board, with a card and an edge the atlas knows about and one group
+ * One drawn legacy board, with a card and an edge the atlas knows about and one group
  * it does not, so that "the atlas decides what is a subject" is observable.
  * Every subject carries the ring the renderer draws outside it — invisible
  * until a viewer lights it — because lighting it is how the pane says what is
  * selected, what a beat is about, and what is in dispute.
- * @param version The board version this drawing is of.
- * @param model Which board it is of; the pane's own by default.
+ * @param version The legacy board version this drawing is of.
+ * @param model Which legacy board it is of; the pane's own by default.
  * @returns The render route's success body.
  */
 function drawing(version: number, model = "pipeline"): Record<string, unknown> {
@@ -43,7 +43,7 @@ function drawing(version: number, model = "pipeline"): Record<string, unknown> {
 	};
 }
 
-/** A board that is there with nothing on it. */
+/** A model that is there with nothing on it. */
 const NOTHING_DRAWN = {
 	status: 200,
 	body: {
@@ -59,7 +59,7 @@ const NOTHING_DRAWN = {
 	},
 } as const;
 
-/** The vault has no such board. */
+/** The vault has no such model. */
 const NO_SUCH_MODEL = {
 	status: 404,
 	body: {
@@ -69,7 +69,7 @@ const NO_SUCH_MODEL = {
 	},
 } as const;
 
-/** The board was there and has stopped being readable. */
+/** The model was there and has stopped being readable. */
 const UNREADABLE = {
 	status: 422,
 	body: { success: false, code: "BOARD_UNREADABLE", error: "the board file is not valid JSON" },
@@ -89,7 +89,7 @@ function walkthrough(id: string, name: string): Record<string, unknown> {
 	};
 }
 
-/** A board that explains itself twice. */
+/** A model that explains itself twice. */
 const EXPLAINED_DOCUMENT = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",

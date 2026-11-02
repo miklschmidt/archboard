@@ -64,9 +64,9 @@ function runsOf(points: readonly DrawnPoint[]): Run[] {
 
 /**
  * The pairs of unrelated lines a drawing draws on one stroke.
- * @param content The board.
+ * @param content The document.
  * @param layout The engine that draws it.
- * @param options The vocabulary, where the board needs its own.
+ * @param options The vocabulary, where the document needs its own.
  * @param options.policy The policy.
  * @returns One key for every such pair.
  */

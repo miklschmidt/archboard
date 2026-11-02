@@ -148,7 +148,7 @@ beforeAll(async () => {
 					edge("e2", ["pP", "pN"], "call", "nixpkgs"),
 					// The lock pins no such input.
 					edge("e3", ["pP", "pN"], "dependency", "inputs.gone"),
-					// The flake is built from the tools flake, and the board says so.
+					// The flake is built from the tools flake, and the document says so.
 					edge("e4", ["pF", "pT"], "dependency"),
 				],
 			},

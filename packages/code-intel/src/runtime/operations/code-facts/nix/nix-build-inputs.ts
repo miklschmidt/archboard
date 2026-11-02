@@ -138,7 +138,7 @@ function within(leaf: Leaf, nodes: readonly Node[]): Node {
 }
 
 /**
- * Whether two outputs are one package as a board draws it: one value under
+ * Whether two outputs are one package as a document draws it: one value under
  * two names, or one name in two systems.
  * @param left One output.
  * @param right The other.

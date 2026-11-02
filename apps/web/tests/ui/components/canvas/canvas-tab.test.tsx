@@ -1,9 +1,9 @@
-// What the board tab says about the board on screen before anything is chosen
+// What the model tab says about the model on screen before anything is chosen
 // (TASK-383): what the variant is about in its author's words, what the view on
 // screen answers, and what a proposal changes.
 //
-// What these catch: a tab that drops the board's own statement of its scope, a
-// tab that says nothing about the draft on screen of a board nobody has built,
+// What these catch: a tab that drops the model's own statement of its scope, a
+// tab that says nothing about the draft on screen of a model nobody has built,
 // a view's summary shown under the wrong view, a view in which nothing differs
 // taking away the control a reader needs further on, and a key to a proposal's marks
 // that miscounts, keys a standing the proposal does not have, or lists them in
@@ -20,7 +20,7 @@ import {
 	settle,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 
-/** The one view the board below offers, as the render answer lists it. */
+/** The one view the model below offers, as the render answer lists it. */
 const VIEW = { id: "w1", name: "One edit", grammar: "architecture" } as const;
 
 /** What the variant below says it is about. */
@@ -29,7 +29,7 @@ const SUMMARY = "Where an edit goes, and what keeps it.";
 /** What its view says it answers. */
 const VIEW_SUMMARY = "The one path an edit takes.";
 
-/** A board whose variant says what it is about and whose view says what it answers. */
+/** A model whose variant says what it is about and whose view says what it answers. */
 const DESCRIBED = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",

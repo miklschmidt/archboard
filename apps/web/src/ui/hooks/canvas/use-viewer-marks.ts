@@ -1,7 +1,7 @@
 // What the viewer marks on the picture on screen: attention, drawn as the
 // selection ring, and a presented step's veil.
 //
-// Attention only. What the board says nobody has decided is drawn into the
+// Attention only. What the model says nobody has decided is drawn into the
 // picture by the renderer, from the same reconciliation the sentences above it
 // are written from, so it is legible on a pane with nothing selected and no
 // walkthrough open — and a subject that is both attended and unsettled says

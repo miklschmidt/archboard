@@ -1,14 +1,14 @@
 // The address bar over the workspace: it writes down what the panes show, and
 // it restores what a direct load or a Back/Forward asks for.
 //
-// The address follows the note. A user's board open runs the shell's own
-// command, the server answers it, the pane reports its new board, and only
+// The address follows the note. A user's model open runs the shell's own
+// command, the server answers it, the pane reports its new model, and only
 // then is the address written. So a refused open changes no address, because
 // it changed no pane. The address leads in exactly two places — the first
 // load, and a history navigation — and there it asks for the same command the
 // shell does.
 //
-// There is one command slot. Every board open takes it, whoever asked: a
+// There is one command slot. Every model open takes it, whoever asked: a
 // restore's own step and a user's click are the same operation with a
 // different owner. The slot is held through the server's answer AND through
 // the pane being seen to move, and the next command is granted one at a time,
@@ -67,10 +67,10 @@ import {
 import type { OpenedModel, WorkspacePort } from "#ui/rules/reading-routing/contracts.ts";
 import type { modelReading } from "#ui/rules/reading-routing/model-address.ts";
 
-/** What a user's own board open reports back when it is over. */
+/** What a user's own model open reports back when it is over. */
 interface NavigationClaim {
 	/**
-	 * The command finished. The board it opened and the repository it put the
+	 * The command finished. The model it opened and the repository it put the
 	 * pane in are the server's own answer, and are what says whether the pane
 	 * has anything to move to.
 	 */
@@ -96,7 +96,7 @@ interface WorkspaceAddressing {
 	 */
 	readonly expect: (intent: NavigationIntent) => void;
 	/**
-	 * A user is about to have the shell open a board. Ends any restore, waits
+	 * A user is about to have the shell open a model. Ends any restore, waits
 	 * for the command slot, and answers only when it is theirs, so that theirs
 	 * is the last command the server is given.
 	 * @returns Where to report the outcome, once the command may be sent.
@@ -131,9 +131,9 @@ interface Reconciliation {
 }
 
 /**
- * Whether every open pane has said what board it holds. Half a workspace is
+ * Whether every open pane has said what model it holds. Half a workspace is
  * never written down: a pane that has not reached the server yet would be
- * published as a pane on no board.
+ * published as a pane on no model.
  * @param address The displayed address.
  * @returns True when the whole workspace is known.
  */
@@ -167,7 +167,7 @@ function publishAddress(state: Reconciliation): void {
  * @param state The reconciliation.
  * @param operation The operation being answered.
  * @param answer What the server said.
- * @param opened The board it opened and the pane's repository, as the server says, when it opened one.
+ * @param opened The model it opened and the pane's repository, as the server says, when it opened one.
  */
 function answerOperation(
 	state: Reconciliation,
@@ -183,9 +183,9 @@ function answerOperation(
 }
 
 /**
- * An operation is over. A restore's names a board it could not reach; a
+ * An operation is over. A restore's names a model it could not reach; a
  * user's becomes the move the address pushes, but only if its pane moved:
- * opening the board a pane already showed is not a move to record.
+ * opening the model a pane already showed is not a move to record.
  * @param state The reconciliation.
  * @param operation The operation that finished.
  */
@@ -217,8 +217,8 @@ function finishUserOperation(state: Reconciliation, operation: Operation): void 
 }
 
 /**
- * The restore, told how its open ended: a board it could not reach is named,
- * and a board it reached is wanted as the server spells it.
+ * The restore, told how its open ended: a model it could not reach is named,
+ * and a model it reached is wanted as the server spells it.
  * @param restore The restore.
  * @param target The target that asked.
  * @param operation The operation that ended.
@@ -253,7 +253,7 @@ function grantSlot(state: Reconciliation): void {
 		move: {
 			/**
 			 * The command finished.
-			 * @param openedKey The board the server says it opened.
+			 * @param openedKey The model the server says it opened.
 			 * @param repository The repository the server says the pane is in now.
 			 */
 			done: (openedKey: string | null, repository: string | null): void => {
@@ -302,8 +302,8 @@ function commandsOver(state: Reconciliation) {
 		/**
 		 * Take the slot and point a pane at its requested architecture.
 		 * @param paneId The pane.
-		 * @param paneKey The board.
-		 * @param repository The repository the board is in, or null for the pane's own.
+		 * @param paneKey The legacy board.
+		 * @param repository The repository the legacy board is in, or null for the pane's own.
 		 * @param model The complete canonical reading, when this address names one.
 		 */
 		open: (
@@ -489,7 +489,7 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 				deliberate.expect(intent);
 			},
 			/**
-			 * A user is about to have the shell open a board.
+			 * A user is about to have the shell open a model.
 			 * @param intent What they asked for.
 			 * @returns Permission and where to report the outcome, or the refusal.
 			 */

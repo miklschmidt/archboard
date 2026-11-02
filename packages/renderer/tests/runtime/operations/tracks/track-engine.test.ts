@@ -5,7 +5,7 @@
 // column again, or folded into columns that start at different heights, and a
 // container of cards nothing connects drawn as one long row again, a line
 // into a wide container that aims at its middle and comes back to its port,
-// a tall board of containers drawn as one column, or folded through one,
+// a tall document of containers drawn as one column, or folded through one,
 // containers side by side sharing one border, a wrapped rank that sinks a
 // card to a late row of its own, away from the cards it stands with, a deep
 // wrap stepping diagonally, stacked cards out of one column or width, cards
@@ -152,7 +152,7 @@ test.each(["track", "blocks"] as const)(
 	},
 );
 
-// Reduced from a real ingress board, names replaced: a line into a wide container
+// Reduced from a real ingress document, names replaced: a line into a wide container
 // crossed a band of other labels on its way and aimed at the container's middle.
 test("a line into a wide container stays between its ends and its label", async () => {
 	const pool = orderedFixture(containerDetour);
@@ -212,7 +212,7 @@ test("a tall board of containers folds into columns that each hold a container w
 	}
 });
 
-// Two containers side by side at the top of a board once shared one border:
+// Two containers side by side at the top of a document once shared one border:
 // Graphviz held top-level clusters only the root's margin apart, and that was 0.
 test("containers side by side keep an inset between their borders", async () => {
 	const sides = ["left", "right"];
@@ -237,7 +237,7 @@ test("containers side by side keep an inset between their borders", async () => 
 	expect(other!.x - (one!.x + one!.width)).toBeGreaterThanOrEqual(CONTAINER_INSET);
 });
 
-// Reduced from the dogfood Codex session board: a wrap of the hub's wide rank
+// Reduced from the dogfood Codex session document: a wrap of the hub's wide rank
 // stepped each row right of the one above, so the last card stood alone on a
 // late row across an empty strip.
 test("a wrapped rank stands each lowered card under one of its row above", async () => {
@@ -301,7 +301,7 @@ test("two joined cards stacked on one centre take one width", async () => {
 	expect(upper.x + upper.width).toBeCloseTo(lower.x + lower.width, 2);
 });
 
-// Reduced from the dogfood CLI board: laid with its columns free, a wrap into
+// Reduced from the dogfood CLI document: laid with its columns free, a wrap into
 // three or four rows pushed each lowered card aside by the lines to the rows
 // below it, so the cards stepped diagonally down the rows.
 test("a wrap into three rows or more keeps its columns", async () => {
@@ -377,7 +377,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 	expect(ends.get("s")!.y).toBe(ends.get("a")!.y);
 });
 
-// Taken from a board of this repository: a fan too wide for the pane wraps,
+// Taken from a document of this repository: a fan too wide for the pane wraps,
 // and a wrap into two rows and a narrower one into three both fit the pane
 // at full scale. Taking the smaller page stepped the fan down three rows as
 // a staircase, where the wrap into two rows reads worse than the fan in one

@@ -1,5 +1,5 @@
 // A synthetic checkout, made afresh for each evidence take. Its TypeScript and Git commits
-// are real inputs to the CLI; neither the board nor the analysis answers are canned.
+// are real inputs to the CLI; neither the model nor the analysis answers are canned.
 
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";

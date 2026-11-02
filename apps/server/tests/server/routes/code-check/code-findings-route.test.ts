@@ -1,8 +1,8 @@
 // A pane reads what the last code pass found and never starts one (ADR 0046,
 // TASK-367.24). Each pass that finishes leaves its findings in the server's
-// memory, beside the version of each board it read; `GET
+// memory, beside the version of each document it read; `GET
 // /api/vault/code-findings` answers from that memory alone. A later pass
-// replaces the readings of the boards it read and keeps the others, and a pass
+// replaces the readings of the documents it read and keeps the others, and a pass
 // the caller cancelled leaves the memory as it was.
 //
 // A stand-in pass counts how often it runs, so "a read starts no pass" is
@@ -54,10 +54,10 @@ async function listen(app: express.Express): Promise<string> {
 }
 
 /**
- * The answer of a pass over some boards at their current variant, `v1`, with
- * one warning on each board it names in `warned`.
- * @param boards The boards it read, each at version 3.
- * @param warned The boards it found something on.
+ * The answer of a pass over some documents at their current variant, `v1`, with
+ * one warning on each document it names in `warned`.
+ * @param boards The documents it read, each at version 3.
+ * @param warned The documents it found something on.
  * @returns The answer.
  */
 function answerOver(states: readonly string[], warned: readonly string[]): CodeCheckAnswer {
@@ -119,7 +119,7 @@ function named(vault = ownVault): string {
  * What a pane reads.
  * @param base The server.
  * @param vault The vault the pane shows.
- * @returns The remembered readings, by board.
+ * @returns The remembered readings, by document.
  */
 async function readFindings(base: string, vault = ownVault): Promise<Map<string, number>> {
 	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);

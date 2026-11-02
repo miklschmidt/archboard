@@ -33,7 +33,7 @@ const WALKTHROUGH = {
 	],
 };
 
-/** Put a board that explains itself, and a picture of it, in front of a pane. */
+/** Put a model that explains itself, and a picture of it, in front of a pane. */
 function serving(): void {
 	server.documents["pipeline"] = {
 		schemaVersion: "2.0.0",

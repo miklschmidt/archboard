@@ -19,17 +19,17 @@ import { durations } from "#shared/constants/durations.ts";
  */
 const FLOW_CYCLE_CAP_MS = 16_000;
 
-/** One picture of a board turning into the next, arriving, and leaving. */
+/** One picture of a model turning into the next, arriving, and leaving. */
 const PICTURE_MS = durations({
 	/**
-	 * How long a pane takes to turn one picture of a board into the next one of
-	 * the same board — another variant, or the same variant after an edit.
+	 * How long a pane takes to turn one picture of a model into the next one of
+	 * the same model — another variant, or the same variant after an edit.
 	 *
 	 * Shared subjects glide from where they were to where they are; that is what
 	 * lets a reader keep hold of which card became which. Pulls against attention
-	 * two ways: shorter than about half a second and a move across a wide board
+	 * two ways: shorter than about half a second and a move across a wide model
 	 * reads as a jump with a smear on it; longer than about three quarters and the
-	 * board feels like it is waiting for the animation rather than the reader.
+	 * model feels like it is waiting for the animation rather than the reader.
 	 * Everything below is a fraction of this one number, so the whole choreography
 	 * shortens or lengthens together. Sparks that redraw lines run on past it, up to
 	 * `drawEnd` of it, once the rest of the move has landed.
@@ -42,7 +42,7 @@ const PICTURE_MS = durations({
 	shutter: 8,
 	/**
 	 * How long the picture on the stage takes to step back once the next one is on
-	 * its way. A large board takes a moment to lay out, and this answers the click
+	 * its way. A large model takes a moment to lay out, and this answers the click
 	 * at once. A flight then goes on from where this stands.
 	 */
 	awaitIn: 160,
@@ -50,21 +50,21 @@ const PICTURE_MS = durations({
 	awaitOut: 300,
 	/**
 	 * How long a pane takes to bring in a picture it has nothing to carry from:
-	 * the first picture of a page, another board, another view of this one.
+	 * the first picture of a page, another model, another view of this one.
 	 *
 	 * A first picture or another view blooms out of its middle: frames, then cards
 	 * in a wave, then the lines between them drawn on with light at their heads, and
 	 * each label as its line reaches it. A card the last picture also drew flies from
-	 * where it stood. Another board comes in on a passage over the same time, which
+	 * where it stood. Another model comes in on a passage over the same time, which
 	 * takes the reader sideways, in or out along the module tree.
-	 * Pulls against the wait itself: somebody who asked for a board wants to read
+	 * Pulls against the wait itself: somebody who asked for a model wants to read
 	 * it, so the cards land in this time and a card is readable well before the
 	 * last line is drawn. The sparks that draw the lines run on up to `drawEnd` of it.
 	 */
 	entry: 760,
 	/**
 	 * How long the picture a pane is leaving takes to go, when it goes to another
-	 * board or view rather than turning into the next picture. On a passage, this
+	 * model or view rather than turning into the next picture. On a passage, this
 	 * is the time of the first step that answers the click.
 	 *
 	 * Short on purpose: it is only there so the old picture is not snatched away,
@@ -101,13 +101,13 @@ const PICTURE_MS = durations({
 	 * How long a first picture's ink waits for its painter before the SVG shows.
 	 *
 	 * A painter that arrives in time brings the picture in, and otherwise the page has no entrance
-	 * at all. Pulls against a blank board: a painter usually starts within 150 ms of its picture,
+	 * at all. Pulls against a blank model: a painter usually starts within 150 ms of its picture,
 	 * but a browser can take a second to give a GPU, or never give one, and a reader must see
-	 * a correct board.
+	 * a correct model.
 	 */
 	painterGrace: 400,
 	/**
-	 * How soon after one GPU failure a second one leaves the board on the CPU painter.
+	 * How soon after one GPU failure a second one leaves the model on the CPU painter.
 	 *
 	 * A stopped device can come back: a GPU process that restarted gives a new one, so the stage
 	 * starts a GPU painter again without a reload. Pulls against a failure that repeats, which
@@ -160,7 +160,7 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	insideStart: 0.08,
 	insideEnd: 0.46,
 	/**
-	 * A line whose route changes shape does not swing across the board: a board of
+	 * A line whose route changes shape does not swing across the model: a model of
 	 * lines swinging at once is a tangle. It fades out with what leaves, and a spark
 	 * redraws it from here, once the cards are nearly in place.
 	 */
@@ -168,7 +168,7 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 	/**
 	 * The last spark lands by here. This is past 1, because the lines go on after the
 	 * rest of the move has landed. Pulls against a reader who waits for the last line:
-	 * shorter than about a second and a half and a board of lines reads as a flicker;
+	 * shorter than about a second and a half and a model of lines reads as a flicker;
 	 * the cards are in place long before it, so a longer run costs little, but past
 	 * about two seconds it stops being a gesture.
 	 */
@@ -182,7 +182,7 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	/**
 	 * How long the front that opens the containers takes to leave the middle and pass the last
 	 * of them. Pulls against the wave of cards, which must land on a floor: the front runs ahead
-	 * of `cardsStartBy`. Much shorter than this and a well as large as the board reads as a pop.
+	 * of `cardsStartBy`. Much shorter than this and a well as large as the model reads as a pop.
 	 */
 	regionSpan: 0.6,
 	/** The card nearest the middle begins here, and the farthest begins by `cardsStartBy`. */
@@ -194,7 +194,7 @@ const PICTURE_ENTRY_PHASES = Object.freeze({
 	linesStart: 0.32,
 	/**
 	 * The last spark lands by here. This is past 1, because the lines go on after the
-	 * rest of the entrance has landed. A board of a hundred lines drawn in less than a
+	 * rest of the entrance has landed. A model of a hundred lines drawn in less than a
 	 * second is a flash, and sparks that run for much over two seconds hold up a reader
 	 * who is already reading the cards.
 	 */
@@ -219,7 +219,7 @@ const PRESENTATION_MS = durations({
 	 * enough to be followed: it pulls back, crosses, and settles on the step. Pulls
 	 * against the talk itself: a glide much past a second is dead air between two
 	 * sentences, and one shorter than half a second reads as a cut with a blur. A
-	 * step that also changes the view the board is read through moves with the
+	 * step that also changes the view the model is read through moves with the
 	 * picture instead, on `PICTURE_MS.transition`, so the cards and the camera
 	 * arrive together.
 	 */
@@ -254,7 +254,7 @@ const PRESENTATION_MS = durations({
  * and the start of the responsibility), and back. The chip moves and grows into
  * the tile and the words move between their places while they fade (TASK-428).
  * Both views fade over the whole of it, one in as the other goes out, so the
- * words never fade out together. On a painted board the swap starts the moment the
+ * words never fade out together. On a painted model the swap starts the moment the
  * camera crosses the line, so it runs with a zoom or a flight (TASK-562).
  *
  * Pulls against the eye that follows the chip. Shorter than about 200 ms the

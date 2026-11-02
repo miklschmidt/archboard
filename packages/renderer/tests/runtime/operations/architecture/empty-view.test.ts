@@ -4,7 +4,7 @@ import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
-/** A board of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
+/** A document of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
 const DOCUMENT = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",

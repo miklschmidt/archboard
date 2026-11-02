@@ -39,7 +39,7 @@ async function renderArchitecture(
 }
 
 /**
- * One view of a board, in whichever grammar it asks for.
+ * One view of a document, in whichever grammar it asks for.
  * @param request What to draw, in which grammar and on which ground.
  * @returns The document, its size and its atlas.
  */
@@ -49,14 +49,14 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 }
 
 /**
- * Answer a render of one board: the variant and view it names, drawn.
- * @param document The board, as read.
+ * Answer a render of one document: the variant and view it names, drawn.
+ * @param document The document, as read.
  * @param choices The variant, view, theme and faces asked for.
  * @param policy The vault's presentation policy.
- * @param recipe For a board render that stands alone, the vault its recipe names; the SVG then
+ * @param recipe For a document render that stands alone, the vault its recipe names; the SVG then
  * carries its render recipe (ADR 0057).
  * @param recipe.vault The vault.
- * @returns The answer, or which name the board does not have.
+ * @returns The answer, or which name the document does not have.
  */
 async function renderLegacyBoard(
 	document: LegacyBoard,
@@ -76,7 +76,7 @@ async function renderLegacyBoard(
 
 /**
  * A drawn answer whose SVG carries its render recipe.
- * @param document The board, as read.
+ * @param document The document, as read.
  * @param choices What the render asked for.
  * @param reply What the render answered.
  * @param input What the picture was drawn from.

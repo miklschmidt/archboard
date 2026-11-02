@@ -3,7 +3,7 @@ import os from "node:os";
 type HolderKind = "human" | "agent";
 
 /**
- * Who has a board, and until when.
+ * Who has a model, and until when.
  *
  * `id` is a pane id for a user, a per-write id for an ordinary agent write,
  * and the claim id for every write under a claim. That identity makes the lock
@@ -32,7 +32,7 @@ interface LockHold {
 }
 
 interface LockRequest {
-	/** The vault root the board lives in; the lease is a file under it. */
+	/** The vault root the model lives in; the lease is a file under it. */
 	readonly vault: string;
 	/** Normalized by the acquisition owner so aliases name one mutex. */
 	readonly model: string;
@@ -49,14 +49,14 @@ interface LockRequest {
 	/**
 	 * Only the user's explicit take-back sets this (ADR 0022). It ends a
 	 * standing claim and never a per-write hold; a content gesture never sets
-	 * it, because a claimed board is read-only to users until they ask.
+	 * it, because a claimed model is read-only to users until they ask.
 	 */
 	readonly revokeClaim?: boolean;
 	/** Cancels waiting, never a synchronous write already inside the boundary. */
 	readonly signal?: Readonly<AbortSignal>;
 }
 
-/** Hears who holds a board of a vault: the vault comes first because a name alone is ambiguous. */
+/** Hears who holds a model of a vault: the vault comes first because a name alone is ambiguous. */
 type LockSink = (vault: string, model: string, holder: Readonly<LockHolder> | null) => void;
 
 interface Claim {
@@ -71,7 +71,7 @@ interface Claim {
  *
  * - `taken-back`: a person used the take-back control (ADR 0022): on this
  *   server, or on another one while renewal found their take-back holding the lease.
- * - `held-by-another`: renewal found another writer's lease on the board.
+ * - `held-by-another`: renewal found another writer's lease on the model.
  * - `lease-gone`: renewal found no lease at all: another process gave it up or
  *   removed it, such as a take-back through another server, which releases at once.
  */
@@ -85,9 +85,9 @@ interface ClaimRevocation {
 }
 
 interface ClaimEntry {
-	/** The vault the claimed board lives in. */
+	/** The vault the claimed model lives in. */
 	vault: string;
-	/** The claimed board's normalised key. */
+	/** The claimed model's normalised key. */
 	model: string;
 	holder: LockHolder;
 	expires: number;
@@ -96,7 +96,7 @@ interface ClaimEntry {
 
 /**
  * This server, as a lease names it: a host and a pid, so a refusal can say
- * the board is held on another machine.
+ * the model is held on another machine.
  * @returns The process name.
  */
 function processName(): string {
@@ -123,7 +123,7 @@ function clock(iso: string): string {
 }
 
 /**
- * Who is holding the board, in the words a refusal uses: a user, an agent,
+ * Who is holding the model, in the words a refusal uses: a user, an agent,
  * or an agent that has claimed it, with the reason it gave.
  * @param holder The holder.
  * @returns The description.
@@ -145,9 +145,9 @@ function describeWriter(holder: Readonly<LockHolder>): string {
 }
 
 /**
- * The sentence a bounded wait ends with: who has the board, since when, for
+ * The sentence a bounded wait ends with: who has the legacy board, since when, for
  * how long, on which server, and how long this caller waited.
- * @param model The board key.
+ * @param model The legacy board key.
  * @param holder Who has it, when the wait could still see them.
  * @param waitedMs How long this caller waited.
  * @returns The message.
@@ -167,7 +167,7 @@ function describeHold(
 	return `Board "${model}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 
-/** A bounded lock wait ended while another holder still owned the board. */
+/** A bounded lock wait ended while another holder still owned the model. */
 class ModelHeldError extends Error {
 	public readonly code = "MODEL_HELD";
 	public readonly model: string;
@@ -175,8 +175,8 @@ class ModelHeldError extends Error {
 	public readonly waitedMs: number;
 
 	/**
-	 * A refusal naming who has the board and how long this caller waited.
-	 * @param model The board key.
+	 * A refusal naming who has the legacy board and how long this caller waited.
+	 * @param model The legacy board key.
 	 * @param holder Who has it, when the wait could still see them.
 	 * @param waitedMs How long this caller waited.
 	 */

@@ -75,7 +75,7 @@ const UnpromptedFields = {
 };
 /**
  * Which authority a finding answers to, as the rubric's "Findings" section
- * defines them: a departure from the skill, a board the source contradicts,
+ * defines them: a departure from the skill, a document the source contradicts,
  * or an expectation the skill never taught, which fails no run.
  */
 const FINDING_AXES = ["conformance", "truth", "skill"] as const;
@@ -95,7 +95,7 @@ const SOME_TEXT = /\S/u;
 const FindingSchema = z
 	.object({
 		axis: z.enum(FINDING_AXES),
-		/** What the run did, as the board or the commands show it. */
+		/** What the run did, as the document or the commands show it. */
 		did: z.string().regex(SOME_TEXT),
 		/** What the skill told it to do, quoted from the passage. */
 		taught: z.string().regex(SOME_TEXT),

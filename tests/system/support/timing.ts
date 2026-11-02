@@ -87,7 +87,7 @@ const TEST_SERVER_SHUTDOWN_TIMEOUT_MS = 1000;
  * gone, so a healthy proof never waits it out. It clears startup, owner
  * shutdown, and post-`archboard stop` PID observation on a slow hosted runner.
  * A stuck proof therefore fails with its PID and mode instead of hanging the
- * whole board suite.
+ * whole model suite.
  */
 const TEST_SERVER_CHILD_EXIT_TIMEOUT_MS = 20_000;
 
@@ -186,7 +186,7 @@ const TEST_BROWSER_POLL_MS = 50;
 
 /**
  * How long a browser owner waits for the shell to register its panes and draw
- * a board in them: a headless Chromium's load, layout and first report. It is
+ * a model in them: a headless Chromium's load, layout and first report. It is
  * a patience, so the factor applies.
  */
 const TEST_BROWSER_CONDITION_TIMEOUT_MS = TEST_PATIENCE_FACTOR * 1500;

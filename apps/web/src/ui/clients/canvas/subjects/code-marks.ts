@@ -1,9 +1,9 @@
 // The warning the viewer draws on a subject that the code check warns about.
 //
-// The findings of a code pass are not the board's. They come from the code, a
+// The findings of a code pass are not the model's. They come from the code, a
 // pass runs only when somebody asks for one, and the server keeps the last one
 // in memory (ADR 0046). So the renderer never draws them: a picture is drawn
-// from the board alone and is the same bytes in a pane, an export and a
+// from the model alone and is the same bytes in a pane, an export and a
 // recording (ADR 0023). The viewer draws them, in a layer it adds and takes
 // away, as it draws a lit line's ink (ADR 0042).
 //

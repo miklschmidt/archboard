@@ -1,4 +1,4 @@
-// What can be selected on a drawn board, and how a click finds it.
+// What can be selected on a drawn model, and how a click finds it.
 //
 // The atlas decides, not the SVG. The picture carries `data-semantic-id` on
 // every group the renderer drew, but the atlas is what the server says the
@@ -61,7 +61,7 @@ const SELECTED_CLASS = "is-selected";
 // ring, a dashed ring and a dashed outline at once with nothing to say which of
 // the three a reader was looking at. And one map holding one mark per subject
 // meant a subject that was both attended and unsettled lost the dispute
-// entirely — the louder mark simply overwrote it. What the board has not decided
+// entirely — the louder mark simply overwrote it. What the model has not decided
 // is drawn by the thing that draws the picture now, as a badge in the subject's
 // own corner, so the two are independent by construction and neither can hide
 // the other.

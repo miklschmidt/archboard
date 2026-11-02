@@ -1,4 +1,4 @@
-// The board document: its schema and version, the variant address and lifecycle, how a variant is found, the draft references, and the one parse of an untrusted value.
+// The model document: its schema and version, the variant address and lifecycle, how a variant is found, the draft references, and the one parse of an untrusted value.
 export { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 export {
 	addressedVariant,

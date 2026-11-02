@@ -133,7 +133,7 @@ test("the canvas draws a picture's traffic, the page runs none, and a reader who
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["set", "viewport", "1920", "1080"]);
 
-	// Trains on the board, and a pulse a message on its sequence view: every form the renderer writes.
+	// Trains on the model, and a pulse a message on its sequence view: every form the renderer writes.
 	for (const address of [
 		`?modelA=${MODEL}&grammarA=sequence&flowA=${encodeURIComponent(FLOW)}`,
 		`?modelA=${MODEL}`,

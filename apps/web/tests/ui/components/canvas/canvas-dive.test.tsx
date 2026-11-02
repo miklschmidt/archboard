@@ -1,12 +1,12 @@
-// Opening a card's board is a flight into the card, and going back is the same
+// Opening a card's model is a flight into the card, and going back is the same
 // flight the other way.
 //
-// What these catch: a board that opens by cutting when it could have flown, a
-// flight that ends somewhere other than where the board then stands (it would
-// show as a jump the moment the board takes over), a press that falls through
-// to the picture under the flight, a flight that leaves a board half open when
+// What these catch: a model that opens by cutting when it could have flown, a
+// flight that ends somewhere other than where the model then stands (it would
+// show as a jump the moment the model takes over), a press that falls through
+// to the picture under the flight, a flight that leaves a model half open when
 // something stops it, and cards that swap their words for their names, or back,
-// in the middle of a flight or as the board takes over from it.
+// in the middle of a flight or as the model takes over from it.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -28,11 +28,11 @@ import {
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { calls, told } from "#tests/ui/support/canvas/recording-stage.ts";
 
-/** How big the board below is drawn: larger than the board above, so the flight has something to grow. */
+/** How big the model below is drawn: larger than the model above, so the flight has something to grow. */
 const BELOW = { width: 900, height: 600 };
 
 /**
- * The server's picture of the board below: its own markup, since a picture that
+ * The server's picture of the model below: its own markup, since a picture that
  * is the same as the one on the surface is not a new picture at all.
  * @returns The render route's success body.
  */
@@ -42,8 +42,8 @@ function belowPicture(): Record<string, unknown> {
 }
 
 /**
- * One board document.
- * @param name What the board is called.
+ * One model document.
+ * @param name What the model is called.
  * @param nodes Its parts.
  * @returns The document.
  */
@@ -73,7 +73,7 @@ function documentOf(
 	};
 }
 
-/** The board above has one card, which opens the board below. */
+/** The model above has one card, which opens the model below. */
 const ABOVE = documentOf("pipeline", [
 	{
 		id: "n1",
@@ -83,16 +83,16 @@ const ABOVE = documentOf("pipeline", [
 	},
 ]);
 
-/** The board below. */
+/** The model below. */
 const BELOW_PICTURE = documentOf("engine", [{ id: "m1", name: "atomic-write", kind: "module" }]);
 
-/** The navigator's way to a board; going back along the drill never uses it. */
+/** The navigator's way to a model; going back along the drill never uses it. */
 function open(): void {}
 
 /**
- * The boards above a board, as the navigator would place them.
- * @param name The board on screen.
- * @returns The board above it, when it has one.
+ * The models above a model, as the navigator would place them.
+ * @param name The model on screen.
+ * @returns The model above it, when it has one.
  */
 function placesAbove(name: string): { name: string; level: string; open: () => void }[] {
 	return name === "engine" ? [{ name: "pipeline", level: "system", open }] : [];
@@ -104,7 +104,7 @@ interface Size {
 	readonly height: number;
 }
 
-/** A board so large that, fitted to the pane, it is seen from far and its cards draw their names. */
+/** A model so large that, fitted to the pane, it is seen from far and its cards draw their names. */
 const FAR = { width: 4000, height: 3000 };
 
 /** How the pane is set up. */
@@ -113,14 +113,14 @@ interface Setup {
 	readonly reducedMotion?: boolean;
 	/** Whether the first picture has finished coming in; it has by default. */
 	readonly arrived?: boolean;
-	/** How big the board above is drawn, when not its usual size. */
+	/** How big the model above is drawn, when not its usual size. */
 	readonly above?: Size;
-	/** How big the board below is drawn, when not its usual size. */
+	/** How big the model below is drawn, when not its usual size. */
 	readonly below?: Size;
 }
 
 /**
- * Put both boards in front of a pane that has the board above on screen, with
+ * Put both models in front of a pane that has the model above on screen, with
  * its card picked out, on a clock the test runs by hand.
  * @param setup Whether the person asked for no motion, and whether the first picture has come in.
  * @returns The frames in hand, which the test gives back.
@@ -150,7 +150,7 @@ async function openBelow(): Promise<void> {
 	await settle();
 }
 
-/** Go back to the board above, through its place in the header. */
+/** Go back to the model above, through its place in the header. */
 async function goBack(): Promise<void> {
 	await act(async () => {
 		fireEvent.click(
@@ -161,7 +161,7 @@ async function goBack(): Promise<void> {
 }
 
 /**
- * Which board the pane is showing.
+ * Which model the pane is showing.
  * @returns Its name.
  */
 function model(): string | null {
@@ -169,7 +169,7 @@ function model(): string | null {
 }
 
 /**
- * How many boards are inside a card on the stage: one while a flight has it there.
+ * How many models are inside a card on the stage: one while a flight has it there.
  * @returns The count.
  */
 function insets(): number {
@@ -189,13 +189,13 @@ interface Screen {
 	readonly height: number;
 }
 
-/** What a flight tells the stage about where the board stands. */
+/** What a flight tells the stage about where the model stands. */
 const DiveCall = z.object({
 	frame: z.object({ x: z.number(), y: z.number(), width: z.number(), height: z.number() }),
 });
 
 /**
- * Where the board inside its card is on screen, as the camera draws it now.
+ * Where the model inside its card is on screen, as the camera draws it now.
  * @returns The frame's rectangle.
  */
 function insetOnScreen(): Screen {
@@ -249,7 +249,7 @@ test("a card's board opens by flying into the card, and lands where the board st
 	const frames = await aboveOnScreen();
 	try {
 		await openBelow();
-		// The flight is in the air: the board is inside its card, the camera is on its way, and the board above is still the pane's.
+		// The flight is in the air: the model is inside its card, the camera is on its way, and the model above is still the pane's.
 		expect(model()).toBe("pipeline");
 		expect(insets()).toBe(1);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
@@ -262,7 +262,7 @@ test("a card's board opens by flying into the card, and lands where the board st
 		const lastFrame = insetOnScreen();
 		await settle();
 
-		// The board has taken over from the one inside the card, in the same place and with no entrance of its own.
+		// The model has taken over from the one inside the card, in the same place and with no entrance of its own.
 		expect(model()).toBe("engine");
 		expect(insets()).toBe(0);
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
@@ -287,7 +287,7 @@ test("going back flies out of the card that opened the board, and lands on the w
 		const left = pictureOnScreen(BELOW);
 
 		await goBack();
-		// The board is seen where it was, now inside its card on the board above.
+		// The model is seen where it was, now inside its card on the model above.
 		expect(model()).toBe("engine");
 		expect(insets()).toBe(1);
 		expectSamePlace(insetOnScreen(), left);
@@ -308,7 +308,7 @@ interface FarBefore {
 	readonly far: boolean;
 }
 
-/** Which board the stage showed before one change of it. */
+/** Which model the stage showed before one change of it. */
 interface PictureBefore {
 	readonly model: string | null;
 }
@@ -323,7 +323,7 @@ function ofFar(seen: FarBefore | PictureBefore): seen is FarBefore {
 }
 
 /**
- * Whether a change is one of the board on screen.
+ * Whether a change is one of the model on screen.
  * @param seen The change.
  * @returns True when it is.
  */
@@ -336,7 +336,7 @@ function ofModel(seen: FarBefore | PictureBefore): seen is PictureBefore {
  * @param seen Every change, in order, as what each replaced.
  * @param index The change.
  * @param stage The pane's stage.
- * @returns The far view and the board on screen just after it.
+ * @returns The far view and the model on screen just after it.
  */
 function after(
 	seen: readonly (FarBefore | PictureBefore)[],
@@ -351,9 +351,9 @@ function after(
 }
 
 /**
- * Watch every change of the far view on the pane's surface, with the board on
+ * Watch every change of the far view on the pane's surface, with the model on
  * screen when it happened.
- * @returns Stop watching, and say what changed: "<board>: far" or "<board>: near", in order.
+ * @returns Stop watching, and say what changed: "<model>: far" or "<model>: near", in order.
  */
 function watchFarView(): () => string[] {
 	const stage = document.querySelector("[data-slot='canvas-stage']")!;
@@ -476,7 +476,7 @@ for (const input of INPUTS) {
 test("a board opens by flying only when it can be seen in time", async () => {
 	const frames = await aboveOnScreen();
 	try {
-		// The board below has no picture to hand yet: the pane gives the flight up after a moment and opens it the plain way.
+		// The model below has no picture to hand yet: the pane gives the flight up after a moment and opens it the plain way.
 		server.reply = "pending";
 		await openBelow();
 		expect(insets()).toBe(0);
@@ -493,7 +493,7 @@ test("a board opens by flying only when it can be seen in time", async () => {
 });
 
 test("a board does not fly while a picture is still coming in", async () => {
-	// When that picture lands it is written to the surface again, which would take the board inside the card away.
+	// When that picture lands it is written to the surface again, which would take the model inside the card away.
 	const frames = await aboveOnScreen({ arrived: false });
 	try {
 		expect(surface().hasAttribute("data-picture-motion")).toBe(true);

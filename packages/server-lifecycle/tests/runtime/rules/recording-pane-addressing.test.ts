@@ -12,7 +12,7 @@ import { parsePaneKey } from "@archboard/model/legacy-address";
 // A recording page is a headless browser nobody sees, and it presents a pane id like anybody's.
 // What is guarded: no spec but its exact client id, no call that names no pane and no report finds
 // or counts it, and somebody's pane of the same id is found as if the recording were not there.
-// Its client id still names it, because that is how the recording page asks for the board it
+// Its client id still names it, because that is how the recording page asks for the model it
 // records.
 
 /**

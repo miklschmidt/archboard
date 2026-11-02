@@ -100,9 +100,9 @@ function chosenCheckout(): string | undefined {
 }
 
 /**
- * Create a board in a vault.
+ * Create a model in a vault.
  * @param vault The vault.
- * @param board The board.
+ * @param board The model.
  */
 async function createModel(vault: string, model: string): Promise<void> {
 	writeFileSync(
@@ -191,7 +191,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			own: false,
 		});
 		expect(panesFrom(main)["pane-left"]?.own).toBe(true);
-		// What the person picked out on the main checkout's board.
+		// What the person picked out on the main checkout's model.
 		const picked = await createRequester({ ...server, vault: mainVault })(
 			SEMANTIC_PANE_CONTEXT_ROUTE,
 			{
@@ -226,7 +226,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			vault: worktreeVault,
 		});
 		expect(chosenCheckout()).toBe(worktree);
-		// The pane the show did not name follows the choice with its board.
+		// The pane the show did not name follows the choice with its model.
 		expect(await left.waitFor("pane_place", mark)).toMatchObject({
 			paneKey: "payments",
 			vault: worktreeVault,
@@ -237,7 +237,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		for (const paneId of ["pane-left", "pane-right"]) {
 			expect(after[paneId]).toMatchObject({ vault: worktreeVault, checkout: worktree, own: true });
 		}
-		// The pick was of the main checkout's board, so it is not reported as one of the worktree's.
+		// The pick was of the main checkout's model, so it is not reported as one of the worktree's.
 		expect(after["pane-left"]?.reading.selection).toEqual([]);
 
 		// A show from the chosen checkout changes no choice and says nothing of one.

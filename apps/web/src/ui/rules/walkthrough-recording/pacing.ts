@@ -60,7 +60,7 @@ type PaceState =
 			readonly heard: ReadonlySet<string>;
 			/**
 			 * Whether the step has ever finished arriving. Only its first arrival is bounded: a new
-			 * version of the board redraws the picture and the step arrives again, which is no failure.
+			 * version of the model redraws the picture and the step arrives again, which is no failure.
 			 */
 			readonly landed: boolean;
 			/** Since when the step has counted as explained, or null while it does not. */

@@ -200,7 +200,7 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	/**
 	 * The report to send, or null when the pane cannot be measured yet.
 	 *
-	 * A pane showing no board still reports: it is on screen, it has a place,
+	 * A pane showing no model still reports: it is on screen, it has a place,
 	 * and it is the thing a `browser show` will point at.
 	 * @returns The report.
 	 */

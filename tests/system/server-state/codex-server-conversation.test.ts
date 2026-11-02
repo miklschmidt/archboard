@@ -108,7 +108,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		]);
 		const register = async (body: Record<string, unknown>) =>
 			(await request("/api/panes", { method: "POST", doing: false, body })).status;
-		// Tab one shows two panes: A first in reading order, B focused on another board. Tab two
+		// Tab one shows two panes: A first in reading order, B focused on another model. Tab two
 		// shows a pane A of its own.
 		const a = await openApplicationSocket(server.base, "client-a", { tabSession: "tab-one" });
 		resources.defer(() => a.close());
@@ -136,7 +136,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 		expect(await linkOf(b)).toEqual(tabOne);
 		expect((await linkOf(c))["threadId"]).toBeNull();
 
-		// B's typed turn runs on that thread and carries B's own pane and board.
+		// B's typed turn runs on that thread and carries B's own pane and model.
 		const started = await leased(b, "start", {
 			threadId: tabOne["threadId"],
 			prompt: "Talk from the other pane.",

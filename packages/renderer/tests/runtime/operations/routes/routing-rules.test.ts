@@ -58,7 +58,7 @@ async function linesOf(fixture: unknown, layout: "track" | "blocks") {
 	return Object.assign(corridorPoints(drawing.svg), { labels: routeLabels(drawing.svg) });
 }
 
-// Taken from a board of this repository: 'route every relationship' from
+// Taken from a document of this repository: 'route every relationship' from
 // Layout engine drops straight into Obstacle routing once the jog routing
 // left in it is closed again; without that it steps aside and back.
 test("a jog is closed again once routing frees its column", async () => {

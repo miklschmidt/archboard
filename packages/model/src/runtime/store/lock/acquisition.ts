@@ -30,7 +30,7 @@ class ModelLockCancelledError extends Error {
 
 	/**
 	 * A wait given up because the request that was waiting went away.
-	 * @param model The board key.
+	 * @param model The legacy board key.
 	 */
 	constructor(readonly model: string) {
 		super(`Waiting to write "${model}" was canceled because the request disconnected.`);
@@ -48,7 +48,7 @@ function isAlreadyThere(error: unknown): boolean {
 	return isRecord(error) && stringAt(error, "code") === "EEXIST";
 }
 
-/** Who is asking for the board, and whether they are claiming it. */
+/** Who is asking for the model, and whether they are claiming it. */
 type Asker = { id: string; kind: HolderKind; reason?: string; claimed?: boolean };
 
 /**
@@ -71,7 +71,7 @@ function renewedRecord(live: LockRecord, who: Asker, leaseMs: number): LockRecor
 
 /**
  * A new lease for this asker.
- * @param who Who is taking the board.
+ * @param who Who is taking the model.
  * @param leaseMs How long to hold it.
  * @returns The lease.
  */
@@ -106,10 +106,10 @@ function isTakingBack(live: LockRecord, who: Asker, revoke: boolean): boolean {
  * If another process wins between the read and the create, its record is
  * re-read: a live winner is the blocker, while a lapsed or malformed result
  * falls through to the contested steal below.
- * @param vault The vault root the board lives in.
+ * @param vault The vault root the legacy board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
- * @param model The board key.
+ * @param model The legacy board key.
  * @param endsClaimHere Ends a standing claim this acquisition displaced.
  * @returns The settled attempt, or null when the contested path must decide.
  * @throws {Error} When the create fails for any reason but the file existing.
@@ -209,7 +209,7 @@ function sleep(ms: number): Promise<void> {
  * Waiting is filesystem polling because another process has no signal it can
  * send here. Abort removes both the timer and the listener, so a disconnected
  * request does not consume application shutdown time.
- * @param model The board key, for the message a cancelled wait carries.
+ * @param model The legacy board key, for the message a cancelled wait carries.
  * @param ms How long to wait.
  * @param signal Cancels the wait when the request goes away.
  * @returns When the interval is up.
@@ -255,14 +255,14 @@ function waitForLockPoll(model: string, ms: number, signal?: AbortSignal): Promi
 }
 
 /**
- * One try at taking the board.
+ * One try at taking the legacy board.
  *
  * Three ordinary states: the same holder renews; a live rival refuses; absent
  * or lapsed state is acquired. A person's explicit take-back of a claim (ADR
  * 0022) follows the contested lapsed path; a short write is never revoked,
  * and an ordinary human hold is refused by a claim like any other rival.
- * @param vault The vault root the board lives in.
- * @param model The board key, already normalized.
+ * @param vault The vault root the legacy board lives in.
+ * @param model The legacy board key, already normalized.
  * @param who Who is asking, and whether they are claiming it.
  * @param leaseMs How long the lease runs for.
  * @param revoke Whether a person is taking a standing claim back.
@@ -353,12 +353,12 @@ async function takeLapsed(
  *
  * Rename takeover is not settled by the write: two processes can both see an
  * expired lease and both rename. Both pay the steal guard, and then only the
- * one whose token remains in the file believes it owns the board. The
+ * one whose token remains in the file believes it owns the legacy board. The
  * ordinary absent and live-holder paths never pay this delay.
- * @param vault The vault root the board lives in.
+ * @param vault The vault root the legacy board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
- * @param model The board key.
+ * @param model The legacy board key.
  * @param endsClaimHere Ends a standing claim this acquisition displaced.
  * @returns This acquisition, or the writer that won the steal.
  */
@@ -381,16 +381,16 @@ async function stealContested(
 }
 
 /**
- * Take the board, waiting for it where waiting is the right answer.
+ * Take the model, waiting for it where waiting is the right answer.
  *
  * Waiting is for agents. The expected blocker is a person's short gesture
  * hold or another agent's per-write hold, both about to clear, so an agent
  * waits them out rather than failing at once; the cap outlasts a crashed
  * holder's lease. A person never waits: their gesture is refused on the spot
- * when anybody else holds the board (TASK-153). A zero wait asks exactly once.
- * @param request Who is asking, for which board, and how long to wait.
+ * when anybody else holds the model (TASK-153). A zero wait asks exactly once.
+ * @param request Who is asking, for which model, and how long to wait.
  * @returns The hold, saying whether this call created it or joined one.
- * @throws {ModelHeldError} When somebody else still has the board.
+ * @throws {ModelHeldError} When somebody else still has the model.
  * @throws {ModelLockCancelledError} When the request goes away while waiting.
  */
 async function holdModel(request: LockRequest): Promise<LockHold> {
@@ -399,7 +399,7 @@ async function holdModel(request: LockRequest): Promise<LockHold> {
 	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
 	for (;;) {
 		// One try at a time, against one lease file: the whole point of this loop
-		// is that the board admits a single writer, so the attempts cannot overlap.
+		// is that the model admits a single writer, so the attempts cannot overlap.
 		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
 		const result = await attemptOnce(model, request, plan.leaseMs);
 		if (result.ok) {
@@ -440,7 +440,7 @@ interface WaitState {
 type WaitVerdict = "stop" | "retry" | "wait";
 
 /**
- * How long this call holds the board for and how long it waits to get it.
+ * How long this call holds the model for and how long it waits to get it.
  * @param request Who is asking.
  * @returns The plan.
  */
@@ -512,7 +512,7 @@ function givesUp(wait: WaitState): boolean {
  * If cancellation arrives after a successful new acquisition, that
  * acquisition is released; a reentrant hold that belonged to the caller
  * beforehand never is.
- * @param model The board key, already normalized.
+ * @param model The legacy board key, already normalized.
  * @param request Who is asking.
  * @param leaseMs How long the lease runs for.
  * @returns This acquisition, or the live blocker that refused it.
@@ -555,7 +555,7 @@ function refuseIfCancelled(request: LockRequest): void {
  * is not one, because it stands until its holder releases it or a take-back
  * revokes it, so a request that will not revoke learns that now instead of at
  * the deadline.
- * @param blocker Who has the board.
+ * @param blocker Who has the model.
  * @param request Who is asking.
  * @returns True when waiting would not help.
  */
@@ -570,16 +570,16 @@ function refusedOutright(blocker: LockRecord, request: LockRequest): boolean {
 }
 
 /**
- * Hold the board for exactly one write.
+ * Hold the model for exactly one write.
  *
  * `write` is intentionally synchronous. An await inside the note's
  * read-modify-write would admit a second request into the very cycle this
  * mutex protects. The lease is released only when this call created it; a
  * joined human hold or claim must outlive this one write.
- * @param request Who is asking, and for which board.
- * @param write The write, which runs while the board is held.
+ * @param request Who is asking, and for which model.
+ * @param write The write, which runs while the model is held.
  * @returns Whatever the write returned.
- * @throws {ModelHeldError} When somebody else has the board.
+ * @throws {ModelHeldError} When somebody else has the model.
  */
 async function withLease<T>(request: LockRequest, write: () => T): Promise<T> {
 	const hold = await holdModel(request);

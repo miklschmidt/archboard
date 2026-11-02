@@ -154,7 +154,7 @@ async function socketBarrier(socket: WebSocket, clientId: string): Promise<void>
 async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	base: string;
 	clientId: string;
-	/** The vault the pane shows boards of, which its socket names when it connects (ADR 0049). */
+	/** The vault the pane shows models of, which its socket names when it connects (ADR 0049). */
 	vault: string;
 	preferredModel?: string;
 	register: (model: string | null, signal: AbortSignal) => Promise<Response>;
@@ -223,7 +223,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 			response.body["success"] === true &&
 			response.body["registered"] === true
 		) {
-			// The server tells the pane where its board stands before it answers, on the socket.
+			// The server tells the pane where its model stands before it answers, on the socket.
 			await socketBarrier(socket, options.clientId);
 			return;
 		}

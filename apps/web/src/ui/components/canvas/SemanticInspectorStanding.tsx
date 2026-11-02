@@ -1,6 +1,6 @@
 // What the inspector says about where a subject stands: how the variant on
 // screen differs on it from the variant it is read against — the current one,
-// or on a board with none the one it came from — what nobody has decided yet,
+// or on a model with none the one it came from — what nobody has decided yet,
 // and what the last code check found about it.
 //
 // One region of the panel, set right after what the subject is, because for a
@@ -8,7 +8,7 @@
 // the foot of a long list of relationships. A subject that stands unchanged has
 // no such region, and neither has one with nothing open and nothing found.
 //
-// Split out of the panel so the panel stays about what the board says a
+// Split out of the panel so the panel stays about what the model says a
 // subject is, and this stays about how it is standing. Both read the same
 // comparison and the same reconciliation the picture is drawn from.
 

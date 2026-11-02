@@ -3,7 +3,7 @@
 //
 // A footprint reads the commits from the merge base of a named ref and HEAD up
 // to HEAD, or up to a named head ref that need not be checked out, in each
-// checkout, and says which parts of a board's current variant those commits
+// checkout, and says which parts of a document's current variant those commits
 // changed through their bound declarations or paths. With a proposal it sets
 // that against the parts the proposal names, in three lists: named and
 // changed, changed but not named, and named but not changed. The proposal
@@ -123,7 +123,7 @@ const footprintBase = {
 	/**
 	 * The variant the proposal is read against, or the variant itself when no
 	 * proposal is named: the current variant, else the proposal's parent. Null
-	 * for a proposal with no parent on a board with no current variant, which
+	 * for a proposal with no parent on a document with no current variant, which
 	 * is read against nothing, so every part it holds is named.
 	 */
 	against: z.object({ id: z.string(), name: z.string() }).strict().nullable(),

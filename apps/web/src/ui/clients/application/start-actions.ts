@@ -28,7 +28,7 @@ interface StartActionDeps {
 function noPane(): void {}
 
 /**
- * No board opens before a pane exists.
+ * No model opens before a pane exists.
  * @returns That none did.
  */
 function noModel(): Promise<boolean> {

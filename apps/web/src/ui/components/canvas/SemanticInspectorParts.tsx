@@ -3,10 +3,10 @@
 // Its regions and sections are the sidebar's (`SemanticSidebarParts`), so both
 // tabs of one sidebar read alike.
 //
-// These carry no knowledge of what a semantic board is. They are the shapes the
+// These carry no knowledge of what a legacy board is. They are the shapes the
 // panel is built out of, kept together so that a title looks the same whichever
 // sort of subject is being explained — a part, a relationship, an exchange or one
-// message of one — and so that the panel itself is about what the board says
+// message of one — and so that the panel itself is about what the model says
 // rather than about padding and type scales.
 
 import { useCallback, type JSX, type ReactNode } from "react";
@@ -101,14 +101,14 @@ function SubjectTitle(props: SubjectTitleProps): JSX.Element {
 interface SaidProps {
 	/** Where tests and styles find it. */
 	slot: string;
-	/** The words, when the board has some. */
+	/** The words, when the model has some. */
 	text: string | undefined;
 	/** Whether it is the second passage, set quieter than the first. */
 	muted?: boolean | undefined;
 }
 
 /**
- * One passage of what a subject says of itself, or nothing when the board
+ * One passage of what a subject says of itself, or nothing when the model
  * wrote none: a line reporting that there is nothing to read is a line a reader
  * has to read to learn it.
  * @param props The words.
@@ -135,7 +135,7 @@ function Said(props: SaidProps): JSX.Element | null {
  * What a subject says of itself, under its title: the line it is responsible
  * for, then the longer account, which is deliberately not drawn on the card
  * (ADR 0023). A subject with only an account has it in the foreground.
- * @param props The two passages, either of which the board may not have written.
+ * @param props The two passages, either of which the model may not have written.
  * @param props.lead The one line it is responsible for.
  * @param props.detail The longer account.
  * @returns The passages, or nothing.
@@ -180,7 +180,7 @@ interface MembershipProps {
  * reader sees the rest of it across whatever contains each part.
  *
  * Named by what the vault calls it and marked when the vault no longer does:
- * a membership in a group nobody defines is the board saying something the
+ * a membership in a group nobody defines is the model saying something the
  * configuration has stopped saying, and the reader is the one who repairs that.
  * @param props The group and the controls.
  * @returns The control.

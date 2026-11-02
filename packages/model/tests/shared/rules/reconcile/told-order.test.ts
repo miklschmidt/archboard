@@ -195,7 +195,7 @@ describe("a walkthrough", () => {
 
 describe("a disagreement a document has to be able to hold", () => {
 	test("a field one side cleared survives being written down and read back", () => {
-		// `undefined` is simply absent once the board is JSON, so an issue about
+		// `undefined` is simply absent once the model is JSON, so an issue about
 		// somebody clearing a description would come back missing the field it is
 		// about — and be refused by the contract that describes it.
 		const described = { ...API, description: "the front door" };

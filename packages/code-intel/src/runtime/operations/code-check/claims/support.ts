@@ -30,7 +30,7 @@
 // a part bound to an address holds what that address declares in its root
 // module's address space. The check does not judge where a Kubernetes
 // anchor's symbol is declared: a Service, an Ingress, a route or a
-// NetworkPolicy joins two workloads that a board draws, and neither end need
+// NetworkPolicy joins two workloads that a document draws, and neither end need
 // bind it (TASK-367.19).
 
 import { readableOf, type ReadCheckout } from "#runtime/operations/code-check/checkouts.ts";

@@ -252,7 +252,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 		ARRIVAL,
 	);
 
-	// Nothing a person did in the browser wrote a board.
+	// Nothing a person did in the browser wrote a model.
 	const after = await readArchitectureModel(vault);
 	if (!after.success) throw new Error(JSON.stringify(after));
 	expect(after.revision).toEqual(before.revision);

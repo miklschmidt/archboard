@@ -1,4 +1,4 @@
-// One part's share of a board's locality (ADR 0045).
+// One part's share of a model's locality (ADR 0045).
 //
 // The server answers for every part of the variant at once, so a later pick
 // reads its memory. The inspector shows one part: its commits in the period,
@@ -28,7 +28,7 @@ interface Partner {
 	readonly shared: number;
 	/** The shared commits over the mean of the two parts' own, in whole percent. */
 	readonly degree: number;
-	/** Nothing on the board joins the two. */
+	/** Nothing on the model joins the two. */
 	readonly unjoined: boolean;
 }
 
@@ -51,8 +51,8 @@ type PartLocality =
 	| { readonly kind: "absent" };
 
 /**
- * One part's commits and coupled parts, out of the answer for its board.
- * @param answer The board's locality.
+ * One part's commits and coupled parts, out of the answer for its model.
+ * @param answer The model's locality.
  * @param part The part's id.
  * @returns What the answer says about it.
  */

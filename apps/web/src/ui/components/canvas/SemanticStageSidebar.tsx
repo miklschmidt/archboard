@@ -1,9 +1,9 @@
 // The sidebar a semantic pane puts beside its picture, assembled from what the
-// stage knows: the reading of the board for the board tab, and the selection
+// stage knows: the reading of the model for the model tab, and the selection
 // for the other.
 //
 // It is beside every state of the pane, not only a drawn one. An empty view is
-// left by choosing another view, and the board tab is where the views are.
+// left by choosing another view, and the model tab is where the views are.
 
 import { useCallback, useMemo, type JSX } from "react";
 
@@ -31,7 +31,7 @@ interface StageSidebarView extends Omit<
 	readonly group: GroupSelection | null;
 	/** The sidebar's tab, and where it is. */
 	readonly sidebar: Sidebar;
-	/** The query's answer for the board on screen. */
+	/** The query's answer for the model on screen. */
 	readonly render: { readonly data: SemanticRender | undefined };
 	/** The selected subject, or null. */
 	readonly selection: string | null;

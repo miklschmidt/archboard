@@ -132,7 +132,7 @@ interface PlannedSkill {
 
 /**
  * Copies one skill into its staging directory, prepared the way an install carries it: the
- * board skill also gets its generated schemas and portable install manual.
+ * model skill also gets its generated schemas and portable install manual.
  * @param plan - The skill to stage.
  * @param staging - The empty staging directory beside its target.
  */

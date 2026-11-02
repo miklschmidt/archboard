@@ -1,4 +1,4 @@
-// The one column on the right of a semantic diagram: the board, and whatever is
+// The one column on the right of a semantic diagram: the model, and whatever is
 // selected on it. Docked, it takes its width beside the picture;
 // floating, its panel is laid over the picture's edge; away, it is nowhere, and
 // the control in the pane's header brings it back (use-sidebar.ts says when each
@@ -44,7 +44,7 @@ interface SemanticSidebarProps {
 	readonly children: ReactNode;
 	/** Let go of the selection, offered on the selection tab while there is one; null otherwise. */
 	readonly onClearSelection: (() => void) | null;
-	/** The name of the complete reading, while retained legacy panes keep Board. */
+	/** The name of the complete reading, while retained legacy panes keep Model. */
 	readonly overviewLabel?: string;
 	/** Reading controls shared by both tabs. */
 	readonly controls?: ReactNode;

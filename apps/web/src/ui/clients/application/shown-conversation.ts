@@ -1,6 +1,6 @@
 // The person activating a checkout (ADR 0050). The agent dock shows the
 // conversation of the checkout the person last activated: by focusing a pane,
-// by opening a board in one, or by picking a workhorse from the dock's list.
+// by opening a model in one, or by picking a workhorse from the dock's list.
 // What an agent does to a pane never activates anything, so only the places
 // where the person acts call this, and the server keeps the one answer.
 
@@ -9,7 +9,7 @@ import { showConversation } from "#ui/clients/pane-session/pane-requests.ts";
 
 /** What the person activated in one pane: its own checkout, unless they picked one. */
 interface Activated {
-	/** The vault the pane is in now, when the page has not heard it yet: a board just opened moved it. */
+	/** The vault the pane is in now, when the page has not heard it yet: a model just opened moved it. */
 	readonly vault?: string;
 	/** A checkout picked from the dock's list. */
 	readonly checkout?: string;

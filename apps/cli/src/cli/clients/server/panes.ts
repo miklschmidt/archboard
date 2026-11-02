@@ -75,7 +75,7 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
 }
 
 /**
- * Point one pane at one board, as an agent: the shell's own shows come from the page, so a show
+ * Point one pane at one model, as an agent: the shell's own shows come from the page, so a show
  * from here says it is an agent's, and which agent session it is when the invocation named one.
  * The voice and its coordinator are told an agent moved the pane, unless it was their own
  * session (TASK-293.06).

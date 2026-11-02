@@ -21,7 +21,7 @@ let writeSession: string | null = null;
 
 /**
  * The version this invocation states it is writing against: a number, null for
- * "against a board that carries no version", or undefined for "states none".
+ * "against a model that carries no version", or undefined for "states none".
  */
 let expectedVersion: number | null | undefined;
 
@@ -109,10 +109,10 @@ interface InvocationStatement {
 	 * The agent session it writes as, or null. Per invocation, never from the environment: one
 	 * private app-server child serves every thread of a workbench, so a value read out of that
 	 * process's environment would stamp one session's identity on another's writes. It lets that
-	 * session skip the board news it wrote itself, and nothing on a board rests on it.
+	 * session skip the model news it wrote itself, and nothing on a model rests on it.
 	 */
 	readonly session: string | null;
-	/** The version it writes against: null for a board that carries none, undefined for unstated. */
+	/** The version it writes against: null for a model that carries none, undefined for unstated. */
 	readonly expectedVersion: number | null | undefined;
 }
 

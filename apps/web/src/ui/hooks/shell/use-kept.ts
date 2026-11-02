@@ -1,7 +1,7 @@
 // A value that keeps its identity while what it says stays the same.
 //
 // The shell view is new with every piece of pane news, and what the navigator
-// derives from it (which pane shows which board) mostly is not. Kept, it does
+// derives from it (which pane shows which model) mostly is not. Kept, it does
 // not make the rows, their expansion and every row's handlers new (TASK-385.04).
 
 import { useState } from "react";

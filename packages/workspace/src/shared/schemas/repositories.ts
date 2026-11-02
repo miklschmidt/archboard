@@ -2,7 +2,7 @@
 // `GET /api/repositories` (ADR 0050).
 //
 // A repository is named by its identity, or an untracked vault by its registry
-// name. Its boards are read from the vault of its chosen checkout. The vault is
+// name. Its models are read from the vault of its chosen checkout. The vault is
 // the directory the server reads, and the page keeps it only to name it back on
 // a call: it is never shown and never in an address.
 
@@ -17,7 +17,7 @@ const CheckoutEntrySchema = z.object({
 });
 
 /**
- * Why a repository shows boards, or why it shows none: its chosen checkout is
+ * Why a repository shows models, or why it shows none: its chosen checkout is
  * gone, it has no vault, or the repository has no chosen checkout at all.
  */
 const RepositoryStateSchema = z.enum(["ready", "gone", "no-vault", "unchosen"]);

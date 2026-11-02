@@ -20,7 +20,7 @@
 // half of the guarantee a bare rename does not give: a rename is atomic to
 // readers, but a crash before the data has reached the disk can leave the new
 // name pointing at a short or empty file. Under ADR 0015 the note is the only
-// copy of a board, so that is the board, gone. The cost was accepted when
+// copy of a model, so that is the model, gone. The cost was accepted when
 // ADR 0015 was accepted. Nobody should optimise it away without reopening it.
 
 import fs from "node:fs";
@@ -30,9 +30,9 @@ import path from "node:path";
  * The temp file's name, which matters as much as the mechanism.
  *
  * A vault is a directory a human looks at, so the temp file is a dotfile:
- * Obsidian hides it, and a board listing skips every entry starting with a dot
+ * Obsidian hides it, and a model listing skips every entry starting with a dot
  * before it even reaches the suffix test. It also keeps a `.tmp` suffix, so
- * nothing that walks a vault by extension can mistake it for a board. The pid
+ * nothing that walks a vault by extension can mistake it for a model. The pid
  * keeps two processes writing the same path apart.
  * @param file The destination being written.
  * @returns The temp path to write through.
@@ -240,7 +240,7 @@ function unlinkDurably(file: string): void {
  *
  * One `rename`, so a reader finds the file under one name or the other and
  * never under neither; then both directories are synced, because the move is a
- * change to each of them. A board whose name changed moves this way (ADR 0036).
+ * change to each of them. A model whose name changed moves this way (ADR 0036).
  * @param from The file's current path.
  * @param to Where it goes, in a directory that exists.
  * @throws {unknown} Whatever the rename threw.

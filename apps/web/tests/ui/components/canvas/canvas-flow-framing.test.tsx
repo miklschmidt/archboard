@@ -53,10 +53,10 @@ const TALL: Rows = {
 };
 
 /**
- * The board: one flow of four participants, and a walkthrough about one of
+ * The model: one flow of four participants, and a walkthrough about one of
  * its messages and then about the whole flow.
  * @param message The message the first step names.
- * @returns The board document, as its route answers with it.
+ * @returns The model document, as its route answers with it.
  */
 function model(message: string): Record<string, unknown> {
 	const content = {

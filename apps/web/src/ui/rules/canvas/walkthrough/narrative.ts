@@ -1,7 +1,7 @@
 // What a beat of a walkthrough asks the picture to do, as arithmetic.
 //
 // A beat says what it is about. Where that ends up on screen is not on the
-// board and never could be (ADR 0023): every rectangle below comes out of the
+// model and never could be (ADR 0023): every rectangle below comes out of the
 // atlas the server returned with the picture, and nothing here invents, nudges
 // or rounds a coordinate into existence. A beat about nothing the atlas knows
 // produces no rectangle at all, which is the honest answer and the one the rail
@@ -292,7 +292,7 @@ function focusTarget(
  * Which subjects the picture should mark as attended.
  *
  * What the reader picked out, one subject or every member of a group, and what
- * the beat they are reading is about, which are one mark. What the board has not decided is deliberately not here: it is
+ * the beat they are reading is about, which are one mark. What the model has not decided is deliberately not here: it is
  * drawn by the renderer, in the subject's own corner, so a subject that is both
  * attended and unsettled says both instead of one state quietly replacing the
  * other — which is what happened while a single map held one mark per subject.

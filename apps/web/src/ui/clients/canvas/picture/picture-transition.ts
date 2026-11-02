@@ -1,17 +1,17 @@
 // What one picture and the next have in common, and writing a picture into the
 // surface.
 //
-// The renderer draws each picture whole and the pane edits no board content
+// The renderer draws each picture whole and the pane edits no model content
 // (ADR 0023). The stage moves one picture into the next on the canvas
 // (ADR 0071). What stays here is the page's side of that: whether two pictures
-// are one board carried on, how far the cards they share moved, and the markup
+// are one model carried on, how far the cards they share moved, and the markup
 // that holds the words and the marks under the canvas.
 
 import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
 import type { SemanticDrawing } from "#ui/clients/canvas/reads/drawings.ts";
 
 /**
- * What moving one picture into the next reads of a picture. A semantic board's
+ * What moving one picture into the next reads of a picture. A legacy board's
  * drawing is one, and so is a canonical reading's scene: `board` names what the
  * picture is of, and `view` how that is read.
  */
@@ -32,10 +32,10 @@ const NO_SHIFT: Shift = { x: 0, y: 0 };
  * How far the cards two pictures share moved, taken together: the old centre of
  * the shared cards less their new centre.
  *
- * Another variant of a board is often laid out on a page of another size, with
+ * Another variant of a model is often laid out on a page of another size, with
  * a lane or a card added along one edge, and every card that stayed the same
  * then sits somewhere else on the page. A camera that stayed put would carry
- * the whole board across the pane; a camera moved by this keeps what the two
+ * the whole model across the pane; a camera moved by this keeps what the two
  * pictures share where the reader was looking at it, and only what changed
  * moves.
  * @param before The last picture.
@@ -68,8 +68,8 @@ function viewOf(drawing: MovingPicture): string | null {
 /**
  * Whether the next picture is one this pane can move to from the last.
  *
- * Only a picture of the same board, read the same way: another variant of it,
- * or the same variant after an edit. Another board or another view of this one
+ * Only a picture of the same model, read the same way: another variant of it,
+ * or the same variant after an edit. Another model or another view of this one
  * is a different picture with nothing to carry across, and is shown at once.
  * A theme is never a different picture: one picture takes the page's theme.
  * @param before The picture on the surface.
@@ -85,7 +85,7 @@ function continuousPictures(before: MovingPicture, after: MovingPicture): boolea
  *
  * The picture is a string of SVG from `/api/semantic-boards/render`, which is
  * this repository's own renderer: script-free, self-contained, and built from
- * the board's own content rather than from anything a person typed into the
+ * the model's own content rather than from anything a person typed into the
  * browser. It is inserted rather than shown through an `<img>` because the
  * pane has to find its groups, mark them, and keep its words in the page.
  * Nothing else is ever put through this property. It is made away from the

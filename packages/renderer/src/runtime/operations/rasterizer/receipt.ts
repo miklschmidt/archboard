@@ -1,6 +1,6 @@
 import { ArchitectureRenderResultSchema } from "@archboard/model/contract";
 import { StandaloneThemeSchema } from "@archboard/model/render-reply";
-// The public receipt for one semantic rasterization: the saved board picture,
+// The public receipt for one semantic rasterization: the saved document picture,
 // its selectors and dimensions, and the renderer document that produced it.
 // The CLI writes this shape and evaluation tooling parses the same authority.
 
@@ -34,8 +34,8 @@ const SemanticRasterReceiptSchema = z.object({
 	/**
 	 * The variant this picture is drawn against, or null when comparison is disabled or there is nothing
 	 * to read it against — it is the current variant, or a first draft on a
-	 * board with none — and it is therefore drawn plain. Every other variant is
-	 * drawn by default as the comparison with the board's current one (on a board
+	 * document with none — and it is therefore drawn plain. Every other variant is
+	 * drawn by default as the comparison with the document's current one (on a document
 	 * with none, with the one it came from), so the receipt names the other
 	 * side; the bitmap cannot.
 	 */

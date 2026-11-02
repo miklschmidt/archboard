@@ -133,20 +133,20 @@ function openableAt(target: EventTarget | null, clientY: number): string | null 
 	return part?.part === "card" || part?.part === "header" ? part.id : null;
 }
 
-/** Where the board drawn sits among the vault's levels, which places the boards its parts open. */
+/** Where the model drawn sits among the vault's levels, which places the models its parts open. */
 interface TipPlace {
-	/** The board's own level. */
+	/** The model's own level. */
 	readonly here?: string | undefined;
 	/** The vault's levels, coarsest first. */
 	readonly levels?: readonly string[] | undefined;
 }
 
 /**
- * What a double-click on a part does, with which way the board it opens lies,
- * as the mark on the card says it: the part's kind is that board's level (ADR 0029).
+ * What a double-click on a part does, with which way the model it opens lies,
+ * as the mark on the card says it: the part's kind is that model's level (ADR 0029).
  * @param node The part.
- * @param place Where the board drawn sits among the vault's levels.
- * @returns The hint, or nothing for a part that opens no board.
+ * @param place Where the model drawn sits among the vault's levels.
+ * @returns The hint, or nothing for a part that opens no model.
  */
 function openHint(node: SemanticNode, place: TipPlace): string | undefined {
 	if (node.drillDown === undefined) return undefined;
@@ -161,7 +161,7 @@ function openHint(node: SemanticNode, place: TipPlace): string | undefined {
  * @param target The part under the pointer.
  * @param appearance How the render reply says this subject is drawn.
  * @param far Whether the picture is seen from far away, where a card says only the start of its responsibility.
- * @param place Where the board sits among the vault's levels, when known.
+ * @param place Where the model sits among the vault's levels, when known.
  * @param overview Whether the picture is the overview, whose joined lines are subjects of their own.
  * @returns The tip, or null when it would say nothing the picture does not.
  */
@@ -188,7 +188,7 @@ function subjectTip(
  * @param node The node.
  * @param appearance How the picture draws the part, when it names its type.
  * @param far Whether the picture is seen from far away.
- * @param place Where the board sits among the vault's levels, when known.
+ * @param place Where the model sits among the vault's levels, when known.
  * @returns The tip, or null when it would say nothing the picture does not.
  */
 function cardTip(

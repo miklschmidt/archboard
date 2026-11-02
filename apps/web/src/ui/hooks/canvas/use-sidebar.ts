@@ -1,6 +1,6 @@
 // Which tab of a semantic pane's sidebar is open, and where the sidebar is.
 //
-// The sidebar has two tabs: the board — how it is being read, and the key to
+// The sidebar has two tabs: the model — how it is being read, and the key to
 // what is drawn — and the selection. Picking something out of the diagram is a
 // request to be told about it, so it opens the selection tab; letting go of the
 // selection is not a request to keep looking at an empty panel, so it gives

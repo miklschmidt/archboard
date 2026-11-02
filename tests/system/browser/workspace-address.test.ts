@@ -213,7 +213,7 @@ test("canonical workspace history preserves pane identity and isolates proposal 
 const ORDERS = "github.com/acme/orders";
 
 /**
- * Whether one pane's picture says a word: which vault's board it drew.
+ * Whether one pane's picture says a word: which vault's model it drew.
  * @param browser The page.
  * @param letter The pane's letter.
  * @param word What the picture should say.
@@ -311,7 +311,7 @@ test("a plain address waits for a choice and returns to it, and choosing a check
 
 	const before = await addressSearch(browser);
 	// The switcher finds the repository's checkouts; choosing the worktree moves
-	// the pane that read the main checkout, and it keeps its board.
+	// the pane that read the main checkout, and it keeps its model.
 	await browser.run(["click", '[data-slot="repository-switcher"]']);
 	await browser.run([
 		"fill",

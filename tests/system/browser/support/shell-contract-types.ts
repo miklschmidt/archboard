@@ -45,12 +45,12 @@ type ThemeSnapshot = {
 	modelIdentity: string;
 	/** The name of the variant the header says is shown. */
 	stateName: string;
-	/** The board the navigator marks as the one being read. */
+	/** The model the navigator marks as the one being read. */
 	selectedRepository: string | null;
 	focusedPaneCount: number;
 	/** Visible connection warnings in the pane header; none while the socket is up. */
 	connectionTrouble: number;
-	/** The board's name sits before the pane's controls, centred on one line with them. */
+	/** The model's name sits before the pane's controls, centred on one line with them. */
 	headerSectionsAligned: boolean;
 	fontChecks: boolean[];
 	fontResources: string[];

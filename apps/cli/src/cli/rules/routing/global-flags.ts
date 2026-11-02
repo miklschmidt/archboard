@@ -45,12 +45,12 @@ function takeDirectoryFlag(argv: string[]): string | null {
  * And `--doing "..."`, for the same reason (TASK-095).
  *
  * Global because a command may make several requests and each of them is the
- * same act: `import` clears the board and then batches the scene in, and both
+ * same act: `import` clears the model and then batches the scene in, and both
  * are "restoring the payment path from the export". Stripped before the
  * command's own parser sees it, so no command declares it and none can be the
  * one that dropped it.
  *
- * Not refused here. The server knows which routes are board writes and it is
+ * Not refused here. The server knows which routes are model writes and it is
  * the only side that should; a second list on this side would be a second
  * answer to the same question, and the two would drift.
  * @param argv - The arguments after the command name; the flag is spliced out.
@@ -70,7 +70,7 @@ function takeDoingFlag(argv: string[]): string | null {
  * stamp one session's identity onto another's writes.
  *
  * Never required and never refused. What it is for is letting a session skip the
- * board news it wrote itself; a write that states nothing is delivered to
+ * model news it wrote itself; a write that states nothing is delivered to
  * everybody, its own author included, which is redundancy rather than silence.
  * @param argv - The arguments after the command name; the flag is spliced out.
  * @returns The session writing, or null when none was passed.
@@ -83,13 +83,13 @@ function takeSessionFlag(argv: string[]): string | null {
  * And `--expect-version <n>`, which says what the writer was editing (TASK-091).
  *
  * Global for the same reason: a command that makes several requests is making
- * them about one board, so the expectation belongs to the invocation rather
+ * them about one model, so the expectation belongs to the invocation rather
  * than to whichever request happens to be the write.
  *
  * A number here and refused if it is not, because a mistyped precondition that
  * was quietly dropped would leave the writer believing it had one.
  * @param argv - The arguments after the command name; the flag is spliced out.
- * @returns The expected board version, or null when none was passed.
+ * @returns The expected model version, or null when none was passed.
  */
 function takeExpectVersionFlag(argv: string[]): number | null {
 	const raw = takeGlobalFlag(argv, "--expect-version");

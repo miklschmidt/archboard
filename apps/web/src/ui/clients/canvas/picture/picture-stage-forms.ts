@@ -27,7 +27,7 @@ interface StageShift {
 	readonly y: number;
 }
 
-/** A flight between a board and the board inside its card. */
+/** A flight between a model and the model inside its card. */
 interface StageDive {
 	readonly way: DiveWay;
 	readonly card: string;

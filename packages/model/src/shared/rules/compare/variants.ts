@@ -126,7 +126,7 @@ interface VariantComparison {
  * `groups` is in the node list, and belongs there: moving a part into or out
  * of an effort is a statement about the architecture, not about how it is
  * drawn. What a group is called is not compared, because the name is not on
- * the board — it is in the vault policy under the id — so renaming a group can
+ * the model — it is in the vault policy under the id — so renaming a group can
  * never make a variant read as changed.
  *
  * `order` and `emphasis` are deliberately absent from the relationship list.
@@ -136,7 +136,7 @@ interface VariantComparison {
  * is the explicit exception: ADR 0027 makes enabling or
  * retuning ongoing flow a connection change, compared as one normalized field.
  * Views are absent from the comparison entirely: naming a second way to read a
- * board is not a redesign of it.
+ * model is not a redesign of it.
  *
  * `anchor` is absent from the relationship and step lists: it is bookkeeping,
  * the author's citation of the code that proves the mechanism, so a proposal

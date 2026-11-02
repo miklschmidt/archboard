@@ -19,8 +19,8 @@ type MigrationHold<T> =
 	| { readonly acquired: false };
 
 /**
- * Run a synchronous migration only when the board's lease is available.
- * @param request The board and holder for this migration.
+ * Run a synchronous migration only when the model's lease is available.
+ * @param request The model and holder for this migration.
  * @param migrate The conversion to commit while held.
  * @returns Its result, or a pending indication.
  */

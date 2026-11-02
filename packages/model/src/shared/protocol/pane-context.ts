@@ -2,19 +2,19 @@ import {
 	ExplanationRequestSchema,
 	ReadingSelectionSchema,
 } from "#shared/schemas/model-explanation.ts";
-// What one pane is looking at, in the board's own words.
+// What one pane is looking at, in the model's own words.
 //
 // ADR 0023 leaves the browser owning presentation and nothing else: the camera,
 // the active view, the walkthrough position and what the person picked out are
 // session state, never content. But an agent asked "what does this do?" has to
 // be told which *this*, and the only place that fact exists is the pane. So a
-// pane says what it is reading — board, variant, view — and which subjects of
+// pane says what it is reading — model, variant, view — and which subjects of
 // it are selected, and says it in semantic identities rather than in anything
 // drawn: a node id, an edge id, a step of a flow. No coordinates, no element
 // ids, nothing about the picture.
 //
-// This is a report, not a write. Nothing here reaches a board file, and a pane
-// that reports is not claiming anything; two panes reading one board two ways
+// This is a report, not a write. Nothing here reaches a model file, and a pane
+// that reports is not claiming anything; two panes reading one model two ways
 // is the ordinary case and both reports stand.
 
 import { z } from "zod";
@@ -47,7 +47,7 @@ type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
  * One selected subject.
  *
  * The id is the whole of what a pane has to know. What kind of thing that id
- * names, and what it is called, are facts about the board — and the board is
+ * names, and what it is called, are facts about the model — and the model is
  * being read by the reader anyway, which is the side that cannot be out of date
  * about it. So a pane may state them and does not have to: a stated kind is a
  * second opinion about a document somebody else is holding open, and the reader
@@ -56,18 +56,18 @@ type SemanticSubjectKind = z.infer<typeof SemanticSubjectKindSchema>;
 const SemanticSubjectRefSchema = z
 	.object({
 		id: z.string().min(1).max(64),
-		/** What the pane believes it is, when it knows; resolved from the board regardless. */
+		/** What the pane believes it is, when it knows; resolved from the model regardless. */
 		kind: SemanticSubjectKindSchema.optional(),
-		/** What the pane drew it as, when it knows; resolved from the board regardless. */
+		/** What the pane drew it as, when it knows; resolved from the model regardless. */
 		name: z.string().min(1).max(120).optional(),
 	})
 	.strict();
 type SemanticSubjectRef = z.infer<typeof SemanticSubjectRefSchema>;
 
-/** Which board a pane is reading, by the name every command spells it with. */
+/** Which model a pane is reading, by the name every command spells it with. */
 const SemanticPaneModelSchema = z
 	.object({
-		/** The board's name as typed, which is what the CLI and the routes take. */
+		/** The model's name as typed, which is what the CLI and the routes take. */
 		name: z.string().min(1).max(200),
 		/** Its comparison form (ADR 0010), for matching one report against another. */
 		key: z.string().min(1).max(200),
@@ -127,7 +127,7 @@ type SemanticPanePresentation = z.infer<typeof SemanticPanePresentationSchema>;
 /**
  * What the server asks of a pane presenting a walkthrough, over its socket.
  *
- * Addressed to the board the pane is showing, like every board message, so a
+ * Addressed to the model the pane is showing, like every model message, so a
  * pane that has moved on ignores it.
  */
 const PanePresentRequestSchema = z
@@ -155,7 +155,7 @@ type SemanticPanePart = z.infer<typeof SemanticPanePartSchema>;
  * What one pane is reading, as the pane last said it.
  *
  * Every part of it but the pane itself is nullable, and deliberately: a pane is
- * mounted before its first drawing answers, and a pane whose board was closed
+ * mounted before its first drawing answers, and a pane whose model was closed
  * has to be able to say so. "Board X, nothing drawn yet" and "nothing at all"
  * are both true things a pane can be, and a report that could not express them
  * would leave the last true-looking answer standing after it stopped being true.
@@ -185,7 +185,7 @@ const SemanticPaneContextSchema = z
 		view: SemanticPaneViewSchema.nullable(),
 		/** The subjects the person has picked out; empty for none. */
 		selection: z.array(SemanticSubjectRefSchema).max(128),
-		/** The board version the pane drew, when it drew one. */
+		/** The model version the pane drew, when it drew one. */
 		version: z.int().min(1).nullable(),
 		/** Where a presented walkthrough has got to; null or absent when none is. */
 		presentation: SemanticPanePresentationSchema.nullable().optional(),
@@ -214,7 +214,7 @@ const SemanticPaneContextSchema = z
 		 * and a tie is exactly the case the ordering has to decide.
 		 *
 		 * A pane starts at 0 and counts up for the life of one socket, never going
-		 * back, including across a board change. A reconnect or a remount mints a
+		 * back, including across a model change. A reconnect or a remount mints a
 		 * new client id, whose reports are a new count, so a counter never has to
 		 * survive anything.
 		 */
@@ -224,10 +224,10 @@ const SemanticPaneContextSchema = z
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /**
- * Whether two reports are about the same board.
+ * Whether two reports are about the same model.
  * @param one A report, or nothing.
  * @param other The other, or nothing.
- * @returns True when both name the same board key, or neither names one.
+ * @returns True when both name the same model key, or neither names one.
  */
 function sameSemanticModel(
 	one: SemanticPaneContext | null,
@@ -237,7 +237,7 @@ function sameSemanticModel(
 }
 
 /**
- * The board key one report names, if it names one.
+ * The model key one report names, if it names one.
  * @param report The report, or nothing.
  * @returns The key, or null.
  */

@@ -1,17 +1,17 @@
-// How far each board is behind its code (ADR 0045).
+// How far each document is behind its code (ADR 0045).
 //
-// A board is behind by the commits that changed a part's bound files after its
+// A document is behind by the commits that changed a part's bound files after its
 // last change. The last change carries into each bound repository in one of
-// two ways. If the checkout has that commit, the board is behind by the
+// two ways. If the checkout has that commit, the document is behind by the
 // commits on its HEAD that are not in the commit's history: a vault in the
-// repository it describes reads it this way, and a commit that carries a board
+// repository it describes reads it this way, and a commit that carries a document
 // change with its code counts for nothing. Otherwise it is behind by the
 // commits on HEAD committed after the time of that commit, because time is the
 // only order two repositories share.
 //
-// One walk of each repository serves every board of one request. The answer is
+// One walk of each repository serves every document of one request. The answer is
 // kept in memory, keyed on everything it derives from: the version of each
-// board, each checkout with its HEAD, and the HEAD of the vault's checkout.
+// document, each checkout with its HEAD, and the HEAD of the vault's checkout.
 // Nothing is written anywhere, and the memory goes with the process.
 
 import fs from "node:fs";
@@ -38,13 +38,13 @@ import type { BehindCommit, ModelBehind } from "#shared/protocol/code-check.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { currentVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 
-/** One board to read, as the store read it, and the file it lives in. */
+/** One document to read, as the store read it, and the file it lives in. */
 interface StateToRead {
 	readonly document: LegacyBoard;
 	readonly file: string;
 }
 
-/** One board on its way to an answer. */
+/** One document on its way to an answer. */
 interface StateInProgress {
 	readonly document: LegacyBoard;
 	readonly variant: string;
@@ -52,15 +52,15 @@ interface StateInProgress {
 	readonly parts: PartReading;
 }
 
-/** What the boards of one request read in one repository. */
+/** What the documents of one request read in one repository. */
 interface RepositoryRead {
 	readonly root: string;
 	readonly paths: Set<string>;
-	/** Each distinct last change of a board that reads the repository, with its time. */
+	/** Each distinct last change of a document that reads the repository, with its time. */
 	readonly lastChanges: Map<string, number>;
 }
 
-/** One repository, walked once for every board of a request. */
+/** One repository, walked once for every document of a request. */
 interface WalkedRepository {
 	readonly commits: ReadonlyMap<string, WalkedCommit>;
 	readonly byPath: ReadonlyMap<string, readonly string[]>;
@@ -102,8 +102,8 @@ async function countedAfter(
 }
 
 /**
- * What the boards read in each repository.
- * @param states The boards, with their last changes and parts.
+ * What the documents read in each repository.
+ * @param states The documents, with their last changes and parts.
  * @returns Each repository by identity.
  */
 function repositoriesOf(states: readonly StateInProgress[]): Map<string, RepositoryRead> {
@@ -125,8 +125,8 @@ function repositoriesOf(states: readonly StateInProgress[]): Map<string, Reposit
 }
 
 /**
- * Walk one repository once, over every commit any board counts there.
- * @param read What the boards read there.
+ * Walk one repository once, over every commit any document counts there.
+ * @param read What the documents read there.
  * @param hasHead Whether its checkout has a commit out at all.
  * @param options The caller's signal.
  * @returns The walk.
@@ -160,8 +160,8 @@ async function walkRepository(
 }
 
 /**
- * Walk every repository the boards read, each once and all at the same time.
- * @param states The boards.
+ * Walk every repository the documents read, each once and all at the same time.
+ * @param states The documents.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
  * @returns Each repository's walk, by identity.
@@ -185,7 +185,7 @@ async function walkRepositories(
  * The commits that count against one part, newest first.
  * @param walk The walk of its repository.
  * @param part The part.
- * @param lastChange The commit of the board's last change, or undefined when no commit holds it yet.
+ * @param lastChange The commit of the document's last change, or undefined when no commit holds it yet.
  * @returns The commits.
  */
 function countedAgainst(
@@ -201,10 +201,10 @@ function countedAgainst(
 }
 
 /**
- * One board's answer, from the walks.
- * @param document The board on its way.
+ * One document's answer, from the walks.
+ * @param document The document on its way.
  * @param walks Every repository's walk.
- * @returns How far it is behind, per board and per part.
+ * @returns How far it is behind, per document and per part.
  */
 function answerFor(
 	document: StateInProgress,
@@ -257,12 +257,12 @@ async function vaultCheckoutOf(vault: string, options: GitRunOptions): Promise<s
 }
 
 /**
- * Read how far boards are behind, with every Git command this needs.
- * @param states The boards, each with a current variant.
+ * Read how far documents are behind, with every Git command this needs.
+ * @param states The documents, each with a current variant.
  * @param vaultRoot The vault's checkout, or undefined.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
- * @returns One answer per board, in the order given.
+ * @returns One answer per document, in the order given.
  */
 async function readBehind(
 	states: readonly StateToRead[],
@@ -295,7 +295,7 @@ async function readBehind(
 
 /**
  * Every binding of the current variants, so one snapshot holds their paths.
- * @param states The boards.
+ * @param states The documents.
  * @returns The bindings.
  */
 function bindingsOf(states: readonly StateToRead[]): CodeBinding[] {
@@ -307,9 +307,9 @@ function bindingsOf(states: readonly StateToRead[]): CodeBinding[] {
 }
 
 /**
- * Everything an answer derives from: the version of each board, each checkout
+ * Everything an answer derives from: the version of each document, each checkout
  * with its HEAD, and the HEAD of the vault's checkout.
- * @param states The boards.
+ * @param states The documents.
  * @param vaultRoot The vault's checkout.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
@@ -336,18 +336,18 @@ async function memoryKey(
 /** The reading of behind, with the memory of its last answer. */
 interface BehindReading {
 	/**
-	 * How far each board is behind its code.
+	 * How far each document is behind its code.
 	 * @param vault The vault directory.
-	 * @param states The boards to read, each with a current variant.
+	 * @param states The documents to read, each with a current variant.
 	 * @param signal Cancels the reading and every Git command it runs.
-	 * @returns One answer per board with a current variant, in the order given.
+	 * @returns One answer per document with a current variant, in the order given.
 	 */
 	read(vault: string, states: readonly StateToRead[], signal?: AbortSignal): Promise<ModelBehind[]>;
 }
 
 /**
  * A reading of behind that keeps its last answer while nothing it derives
- * from has moved: no board's version, no checkout or its HEAD, and not the
+ * from has moved: no document's version, no checkout or its HEAD, and not the
  * HEAD of the vault's checkout.
  * @returns The reading.
  */
@@ -357,9 +357,9 @@ function createBehindReading(): BehindReading {
 		/**
 		 * Read, or answer from memory when nothing the answer derives from moved.
 		 * @param vault The vault directory.
-		 * @param states The boards to read.
+		 * @param states The documents to read.
 		 * @param signal Cancels the reading.
-		 * @returns One answer per board with a current variant.
+		 * @returns One answer per document with a current variant.
 		 */
 		async read(vault, states, signal) {
 			const options = { signal };

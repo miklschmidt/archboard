@@ -1,7 +1,7 @@
 import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The comparison of a proposal against the variant its picture is drawn
-// against and `semantic compare` reads it against by default — the board's
-// current one, or on a board with none its direct predecessor — as a check
+// against and `semantic compare` reads it against by default — the document's
+// current one, or on a document with none its direct predecessor — as a check
 // reads it: over every kind of subject together, and over the nodes alone.
 // A scenario that replaces a node also replaces the relationships that touched
 // it, so "two nodes removed" and "four subjects removed" describe the same
@@ -44,7 +44,7 @@ function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): 
  * of subject together, and over the nodes alone. A scenario that replaces a
  * node also replaces the relationships that touched it, so "two nodes
  * removed" and "four subjects removed" describe the same proposal.
- * @param document The board.
+ * @param document The document.
  * @param variant The variant.
  * @returns The counts, or undefined when there is nothing to read it against.
  */
@@ -79,7 +79,7 @@ function standingCounts(
  * Whether a proposal reads as the stated removals and additions against the
  * variant it is read against: `removed`/`addedAtLeast` count every kind of subject,
  * `removedNodes`/`addedNodesAtLeast` the nodes alone.
- * @param check The board, variant and counts.
+ * @param check The document, variant and counts.
  * @param reading The reading.
  * @returns The finding.
  */

@@ -12,7 +12,7 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
  * Source blocks of two cards each, every card's line joining on its way into
  * one card of another block.
  * @param sources The source blocks.
- * @param tag Words that keep this board's layouts apart from another test's.
+ * @param tag Words that keep this document's layouts apart from another test's.
  * @returns The content.
  */
 function joining(sources: readonly string[], tag: string): VariantContent {

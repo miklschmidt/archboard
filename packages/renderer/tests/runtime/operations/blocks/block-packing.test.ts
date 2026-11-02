@@ -54,7 +54,7 @@ test("blocks read forward across a row or down the page", async () => {
 	expect(target.y >= source.y + source.height || target.x >= source.x + source.width).toBe(true);
 });
 
-// Reduced from a board of a work vault, letters replaced: a chain of cards
+// Reduced from a document of a work vault, letters replaced: a chain of cards
 // above a wide pool its last line enters. Neither centring the chain nor
 // sliding it in line with the line may leave a step in that line.
 test("a chain reaches a wide container through its reserved channels", async () => {

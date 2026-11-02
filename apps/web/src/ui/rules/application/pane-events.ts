@@ -54,7 +54,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			}
 		},
 		/**
-		 * A board could not be shown.
+		 * A model could not be shown.
 		 * @param paneId The pane.
 		 * @param error The refusal.
 		 */
@@ -62,10 +62,10 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			notices.raise(modelErrorNotice(paneId, error));
 		},
 		/**
-		 * The server moved a pane onto another board or variant.
+		 * The server moved a pane onto another model or variant.
 		 * @param paneId The pane.
-		 * @param paneKey The board key it adopted.
-		 * @param previousKey The board key it left, or null on first adoption.
+		 * @param paneKey The model key it adopted.
+		 * @param previousKey The model key it left, or null on first adoption.
 		 */
 		onBoardAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
 			owners.readings.modelChanged(paneId, paneKey, previousKey);
@@ -95,7 +95,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 			catalog.reconnected();
 		},
 		/**
-		 * Which boards an agent is working on in one vault.
+		 * Which models an agent is working on in one vault.
 		 * @param vault The vault.
 		 * @param snapshot The whole snapshot.
 		 */

@@ -99,7 +99,7 @@ const KEYS: Readonly<Record<string, { readonly code: string; readonly keyCode: n
 const MODIFIERS = { alt: 1, ctrl: 2, meta: 4, shift: 8 } as const;
 
 /**
- * An expression that is true once the nth board stage's picture is drawn and still: no picture
+ * An expression that is true once the nth model stage's picture is drawn and still: no picture
  * in flight and no camera gliding.
  * @param nth Which stage, counted from nought.
  * @returns The expression.
@@ -173,7 +173,7 @@ class Page {
 	}
 
 	/**
-	 * Wait until a board stage's picture is drawn and still, and its fonts are ready.
+	 * Wait until a model stage's picture is drawn and still, and its fonts are ready.
 	 * @param nth Which stage, counted from nought.
 	 */
 	async atRest(nth = 0): Promise<void> {

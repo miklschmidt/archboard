@@ -1,4 +1,4 @@
-// Restoring a workspace: the address asks for panes and boards, and each step
+// Restoring a workspace: the address asks for panes and models, and each step
 // is applied through the commands the shell already uses.
 //
 // Three rules keep a restore honest about a workspace it cannot change itself.
@@ -48,7 +48,7 @@ interface Restore {
 	readonly target: number;
 	/** The steps applied for this target. */
 	readonly attempted: Set<string>;
-	/** The boards this target asked for and could not reach. */
+	/** The models this target asked for and could not reach. */
 	readonly unreachable: readonly AskedModel[];
 	/** Whether this target has settled. */
 	readonly done: boolean;
@@ -92,13 +92,13 @@ function abandonRestore(restore: Restore): Restore {
 }
 
 /**
- * Remember a board this target asked for and could not reach, so it can be
+ * Remember a model this target asked for and could not reach, so it can be
  * named. An answer to a target that has been replaced says nothing about where
  * the person is now, so it is not recorded.
  * @param restore The restore.
  * @param target The target that asked.
- * @param asked The board that could not be reached, and the repository the address named.
- * @returns The restore, with that board named when it is still this target's.
+ * @param asked The model that could not be reached, and the repository the address named.
+ * @returns The restore, with that model named when it is still this target's.
  */
 function modelUnreachable(restore: Restore, target: number, asked: AskedModel): Restore {
 	return target === restore.target
@@ -107,16 +107,16 @@ function modelUnreachable(restore: Restore, target: number, asked: AskedModel): 
 }
 
 /**
- * Take the server's spelling of a board this target opened. An address may name
- * a board in another case, by `current`, or by a former name, and the pane
+ * Take the server's spelling of a model this target opened. An address may name
+ * a model in another case, by `current`, or by a former name, and the pane
  * reports it as the server keys it (ADR 0010, ADR 0036). Planned against the
  * spelling that was asked, the pane would never look as if it had arrived, and
  * the view the address names would never be read. An answer to a target that
  * has been replaced is not recorded.
  * @param restore The restore.
  * @param target The target that asked.
- * @param paneId The pane that was pointed at the board.
- * @param openedKey The board the server says that pane is on.
+ * @param paneId The pane that was pointed at the model.
+ * @param openedKey The model the server says that pane is on.
  * @returns The restore, wanting that pane on the server's spelling.
  */
 function modelOpened(restore: Restore, target: number, paneId: string, openedKey: string): Restore {
@@ -166,7 +166,7 @@ function openStepKey(step: Extract<RestoreStep, { kind: "open" }>): string {
 /**
  * Everything a plan asks for, in the order it is applied.
  *
- * Panes before boards before focus, and a pane is added before another is
+ * Panes before models before focus, and a pane is added before another is
  * closed: going from pane A alone to pane B alone has to have B before A can
  * go, since the last pane cannot be closed and closing A would be refused.
  * @param plan What the address asks for.
@@ -176,8 +176,8 @@ function stepsOf(plan: AddressPlan): readonly RestoreStep[] {
 	const adds = plan.adds > 0 ? [{ kind: "add" } as const] : [];
 	const closes = plan.closes.map((paneId) => ({ kind: "close", paneId }) as const);
 	const opens = plan.opens.map((open) => ({ kind: "open", ...open }) as const);
-	// After the boards: a pane about to be pointed somewhere else is not read
-	// here at all, and one that stays put is read once its board is settled.
+	// After the models: a pane about to be pointed somewhere else is not read
+	// here at all, and one that stays put is read once its model is settled.
 	const reads = plan.reads.map((read) => ({ kind: "read", ...read }) as const);
 	const focus = plan.focus === null ? [] : [{ kind: "focus", paneId: plan.focus } as const];
 	return [...adds, ...closes, ...opens, ...reads, ...focus];
@@ -242,7 +242,7 @@ function restoreOutcome(
 
 /**
  * Say how a restore ended, when there is anything to say: a finished one names
- * the boards it could not reach, which the address is about to be corrected to
+ * the models it could not reach, which the address is about to be corrected to
  * leave out.
  * @param port The workspace.
  * @param restore The restore that ended.
@@ -260,7 +260,7 @@ interface RestoreCommands {
 	 * @returns Whether the workspace changed.
 	 */
 	readonly apply: (step: RestoreStep) => boolean;
-	/** Take the command slot and point a pane at a board of a repository, or of its own. */
+	/** Take the command slot and point a pane at a model of a repository, or of its own. */
 	readonly open: (
 		paneId: string,
 		paneKey: string | null,

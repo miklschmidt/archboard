@@ -2,7 +2,7 @@
 //
 // Each is a state of its own rather than a shared placeholder, because they
 // are three different pieces of news: the server has not answered yet, the
-// board is there and empty, and the board could not be drawn. A person acting
+// model is there and empty, and the model could not be drawn. A person acting
 // on the wrong one of those wastes their afternoon.
 
 import { RiLoader4Line } from "@remixicon/react";
@@ -14,9 +14,9 @@ import { ReadingError } from "#ui/clients/canvas/reads/drawings.ts";
 /** The classes every state of the stage fills its pane with. */
 const STAGE_CLASS = "bg-background relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden";
 
-/** Inputs shared by the states that name their board. */
+/** Inputs shared by the states that name their model. */
 interface SemanticStateProps {
-	/** The board the pane was asked for. */
+	/** The model the pane was asked for. */
 	model: string;
 }
 
@@ -44,8 +44,8 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
  * What the pane shows while the picture is being drawn.
  *
  * Nothing but a spinner in the middle, and only once the draw has taken a
- * while; the pane says nothing about the shape of a board it has not seen.
- * @param props The board being drawn.
+ * while; the pane says nothing about the shape of a model it has not seen.
+ * @param props The model being drawn.
  * @returns The waiting pane.
  */
 function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
@@ -65,7 +65,7 @@ function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 	);
 }
 
-/** An empty board, and whatever the last refresh has to disclose about it. */
+/** An empty model, and whatever the last refresh has to disclose about it. */
 interface SemanticEmptyProps extends SemanticStateProps {
 	/** The shared view, when this is a narrowed reading. */
 	view: SemanticOfferedView | null;
@@ -76,13 +76,13 @@ interface SemanticEmptyProps extends SemanticStateProps {
 }
 
 /**
- * What the pane shows for a board that is there and has nothing on it yet.
+ * What the pane shows for a model that is there and has nothing on it yet.
  *
- * It carries the same disclosure a drawn board does. An empty answer whose
- * refresh failed is the case that would otherwise look current: a board
+ * It carries the same disclosure a drawn model does. An empty answer whose
+ * refresh failed is the case that would otherwise look current: a model
  * somebody has since filled in still reads as empty, and nothing on screen
  * would say the answer is old.
- * @param props The board and the refresh disclosure.
+ * @param props The model and the refresh disclosure.
  * @returns The empty state.
  */
 function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
@@ -143,9 +143,9 @@ interface SemanticStageProblemProps extends SemanticStateProps {
 }
 
 /**
- * What the pane shows when the board could not be drawn: the refusals the
+ * What the pane shows when the model could not be drawn: the refusals the
  * routes answer with, and a request that never arrived.
- * @param props The board and what went wrong.
+ * @param props The model and what went wrong.
  * @returns The failure state.
  */
 function SemanticStageProblem(props: SemanticStageProblemProps): JSX.Element {

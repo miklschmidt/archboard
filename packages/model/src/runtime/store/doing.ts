@@ -1,4 +1,4 @@
-// What an agent said it was doing, per board of each vault.
+// What an agent said it was doing, per model of each vault.
 //
 // A person at the wall sees boxes move. Without this they infer the intent
 // afterwards, if they can — which is the connection between a creator and what
@@ -8,15 +8,15 @@
 //
 // ── This is not the change feed ───────────────────────────────────
 //
-// The feed reports what the board BECAME, computed by diffing it against the
+// The feed reports what the model BECAME, computed by diffing it against the
 // last state anybody was told about. This is what somebody SAID they were
 // doing, which is a claim about intent no diff can recover: a move that changes
 // nothing nameable still has one, and a line that turns out to be wrong is
 // still what was said. Neither is routed through the other.
 //
-// ── And it is not board content ───────────────────────────────────
+// ── And it is not model content ───────────────────────────────────
 //
-// It never reaches the note. It is not what is on the board, it is what
+// It never reaches the note. It is not what is on the model, it is what
 // somebody said while changing it, so it dies with the server — the same
 // carve-out ADR 0015 draws for sockets, panes and what a person has selected.
 // The requirement rides as a query parameter for that reason as much as for
@@ -39,11 +39,11 @@ import type { HolderKind } from "#runtime/store/lock/lock.ts";
  * Not a truncation: a caller that writes past it is refused, because being made
  * to write the sentence is the point and a silently clipped sentence teaches
  * nothing. Long enough for "rerouting orders through the new payment queue",
- * short enough that four of them fit in the corner of a board.
+ * short enough that four of them fit in the corner of a model.
  */
 const DOING_MAX_CHARS = 140;
 
-/** How many are kept per board. The last few actions, not a transcript. */
+/** How many are kept per model. The last few actions, not a transcript. */
 const DOING_KEPT = 5;
 
 /** One thing somebody said they were doing, and who said it. */
@@ -56,7 +56,7 @@ interface DoingEntry {
 	 * Whose it is: the lock holder id of the writer.
 	 *
 	 * Kept because "whose descriptions are whose" is the question ADR 0005 makes
-	 * load-bearing, and because two agents on one board otherwise read as one.
+	 * load-bearing, and because two agents on one model otherwise read as one.
 	 */
 	by: string;
 	kind: HolderKind;
@@ -108,7 +108,7 @@ function checkDoing(raw: unknown): DoingCheck {
  * Remember what was said, newest last, oldest dropped.
  *
  * One thing said twice running is one line, not two. A single intent can be
- * several writes — `import` clears the board, batches the scene in and posts
+ * several writes — `import` clears the legacy board, batches the scene in and posts
  * its images, all under the one sentence the caller wrote — and a list showing
  * that sentence three times has spent three of its five lines saying one thing.
  * The newest timestamp wins, so the line stays current while it repeats.
@@ -116,13 +116,13 @@ function checkDoing(raw: unknown): DoingCheck {
  * On the words alone, and not on the writer, because an unclaimed agent gets a
  * fresh id per request — that id is what makes the lock reentrant, not who
  * anybody is, so keying on it would mean never coalescing. Two agents saying
- * the same sentence about one board inside five writes therefore read as one
+ * the same sentence about one legacy board inside five writes therefore read as one
  * line. That is the cheaper of the two mistakes: the other one is a list that
  * is the same sentence five times, which is what this is for.
- * @param vault The vault the board lives in.
- * @param model Which board it was said about.
+ * @param vault The vault the legacy board lives in.
+ * @param model Which legacy board it was said about.
  * @param entry What was said, and who said it.
- * @returns The board's lines, oldest first.
+ * @returns The legacy board's lines, oldest first.
  */
 function recordDoing(vault: string, model: string, entry: DoingEntry): DoingEntry[] {
 	const key = modelMemoryKey(vault, model);
@@ -136,9 +136,9 @@ function recordDoing(vault: string, model: string, entry: DoingEntry): DoingEntr
 }
 
 /**
- * The last few things said about this board, oldest first.
- * @param vault The vault the board lives in.
- * @param model Which board.
+ * The last few things said about this legacy board, oldest first.
+ * @param vault The vault the legacy board lives in.
+ * @param model Which legacy board.
  * @returns The lines.
  */
 function recentDoing(vault: string, model: string): DoingEntry[] {
@@ -146,14 +146,14 @@ function recentDoing(vault: string, model: string): DoingEntry[] {
 }
 
 /**
- * Forget a board's lines.
+ * Forget a legacy board's lines.
  *
  * Nothing calls this on the ordinary path — the list is meant to outlive the
  * work it describes for as long as somebody might still be looking at the
- * board. It exists for the checks, which run several boards through one server.
- * @param which The vault and board, or every board of every vault when omitted.
- * @param which.vault The vault the board lives in.
- * @param which.model Which board.
+ * legacy board. It exists for the checks, which run several legacy boards through one server.
+ * @param which The vault and legacy board, or every legacy board of every vault when omitted.
+ * @param which.vault The vault the legacy board lives in.
+ * @param which.model Which legacy board.
  */
 function forgetDoing(which?: { readonly vault: string; readonly model: string }): void {
 	const { byModel } = store();

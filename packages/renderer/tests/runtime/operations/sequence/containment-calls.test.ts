@@ -35,14 +35,14 @@ const application = orderedFixture({
 	],
 });
 
-/** The same board read through a view that keeps the frame, its part and a sibling. */
+/** The same document read through a view that keeps the frame, its part and a sibling. */
 const overview = orderedFixture({
 	nodes: application.nodes.filter((node) => node.id !== "run"),
 	edges: application.edges.filter((edge) => edge.id === "d"),
 });
 
 /**
- * The same frame with enough parts fanned inside it that the board reads
+ * The same frame with enough parts fanned inside it that the document reads
  * left to right, so the frame's own call has to come in past the title band
  * from the frame's left edge rather than down through it.
  */
@@ -71,7 +71,7 @@ const wide = orderedFixture({
  * Whether a point lies past a frame's title band: below every heading the
  * frame draws, so a line from there cannot run across the title.
  * @param point The point.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @param frame The frame's id.
  * @returns True when the point is below the title.
  */

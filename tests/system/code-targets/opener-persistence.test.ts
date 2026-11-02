@@ -49,7 +49,7 @@ describe("machine-wide opener persistence", () => {
 					vault,
 					// The real binding lookup, against the real store: what is being
 					// checked is that a node's binding survives a restart, and a stub
-					// standing in for the board would check the stub instead.
+					// standing in for the model would check the stub instead.
 					defaultDependencies: true,
 					routeDependencies: {
 						launch: async (command) => {
@@ -59,7 +59,7 @@ describe("machine-wide opener persistence", () => {
 					},
 				});
 				resources.defer(() => fixture.dispose());
-				// One board with one bound node, written through the store every other
+				// One model with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
 				const { boundFixture } = await import("./support/bound-model.ts");
 				const bound = await boundFixture(vault, fixture.repository, "src/index.ts");

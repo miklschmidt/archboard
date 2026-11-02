@@ -6,7 +6,7 @@
 // C++ file owns its pair too, where no part binds that file itself
 // (TASK-367.09). A definition that a file passes on, as an `index.ts` passes
 // on a re-export, belongs to the part bound to that file where no part binds
-// the defining file. The evidence of each board (evidence.ts), the
+// the defining file. The evidence of each document (evidence.ts), the
 // infrastructure's (terraform-evidence.ts, kubernetes-evidence.ts) and the
 // interface judgement (interfaces.ts) go between these owners.
 
@@ -150,7 +150,7 @@ function ownersOfSite(
 
 /**
  * Each part and every part that holds it, the part first.
- * @param codes The board's parts.
+ * @param codes The document's parts.
  * @returns For each part's id, the ids of it and its containers.
  */
 function lineagesOf(codes: ReadonlyMap<string, PartCode>): Map<string, Set<string>> {

@@ -47,7 +47,7 @@ interface PictureMotion {
 	/** Whether the person asked for no motion; then every picture is a cut. */
 	readonly reducedMotion: boolean;
 	/**
-	 * Told, before the next picture of the same board is first painted, how far
+	 * Told, before the next picture of the same model is first painted, how far
 	 * the cards the two share moved on the page, so the camera can move with
 	 * them and keep them where the reader was looking.
 	 */
@@ -56,12 +56,12 @@ interface PictureMotion {
 	readonly heading?: Departure | null | undefined;
 	/**
 	 * Whether a walkthrough is being presented. A step read through another view
-	 * of the same board is then carried into, not brought in afresh, and the
+	 * of the same model is then carried into, not brought in afresh, and the
 	 * camera glides to the step instead of following the shared cards.
 	 */
 	readonly presenting?: boolean | undefined;
 	/**
-	 * The picture is the one a flight arrived at, which has already put the board
+	 * The picture is the one a flight arrived at, which has already put the model
 	 * where it belongs: it is put up as it is, with no entrance and nothing of
 	 * the last picture carried into it.
 	 */
@@ -85,9 +85,9 @@ interface PictureStore {
  * Whether the next picture is the last one carried on, rather than another.
  * @param last The picture on the surface.
  * @param next The picture that arrived.
- * @param presenting Whether a walkthrough is presented, which carries across views of one board.
- * @returns True when the two are pictures of one board read one way, or of one
- * board in one presentation, and differ.
+ * @param presenting Whether a walkthrough is presented, which carries across views of one model.
+ * @returns True when the two are pictures of one model read one way, or of one
+ * model in one presentation, and differ.
  */
 function carriedOn(last: MovingPicture, next: MovingPicture, presenting = false): boolean {
 	if (last.svg === next.svg) {
@@ -118,8 +118,8 @@ function carriesOn(
 
 /**
  * Whether the next picture comes in part by part: one with nothing on this
- * surface to be carried from — the first, or another board or view. A picture
- * of the same board read the same way is carried instead. A theme switch is no
+ * surface to be carried from — the first, or another model or view. A picture
+ * of the same model read the same way is carried instead. A theme switch is no
  * new picture at all: the one on the surface takes the page's colours, and an
  * empty reading has no parts to bring in.
  * @param last What the surface was last given, if anything.
@@ -166,12 +166,12 @@ function fly(duration: number, onLanded: () => void): Flight {
 
 /**
  * How far the cards the last picture and the next share moved, when the next is
- * the same board carried on, with or without motion.
+ * the same model carried on, with or without motion.
  * @param last What the surface was showing, if anything.
  * @param surface The surface.
  * @param drawing The next picture.
  * @param presenting Whether a walkthrough is presented, when the camera goes to the step instead.
- * @returns The shift, or nothing when the next picture is another board or reading.
+ * @returns The shift, or nothing when the next picture is another model or reading.
  */
 function shiftFrom(
 	last: Shown | null,
@@ -256,7 +256,7 @@ function arrive(next: NextPicture, shift: Shift): number | null {
 }
 
 /**
- * Put the next picture on the surface. A picture of the same board tells the
+ * Put the next picture on the surface. A picture of the same model tells the
  * camera how far the shared cards moved before anything is painted.
  * @param next What to show, where, and how it may move.
  * @param onLanded What to do once a flight has landed.
@@ -297,7 +297,7 @@ function standsOn(last: Shown | null, surface: HTMLElement, drawing: MovingPictu
 
 /**
  * Keep the surface showing the drawing, carrying it from the last one when
- * the two are pictures of one board read the same way.
+ * the two are pictures of one model read the same way.
  * @param surface The element the picture goes in, or null before it exists.
  * @param drawing The picture to show.
  * @param motion How pictures move, and what the camera is told as they do.

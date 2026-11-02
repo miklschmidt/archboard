@@ -62,7 +62,7 @@ function SlowRead(props: {
 }
 
 /**
- * A repository that stores boards keeps them until an owner approves a migration.
+ * A repository that stores models keeps them until an owner approves a migration.
  * @returns What it needs and the way to its preview.
  */
 function ModelMigrationRequired(): JSX.Element {

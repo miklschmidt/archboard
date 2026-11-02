@@ -1,12 +1,12 @@
-// Which board a level is, and how it is read, once the pane has moved between
+// Which model a level is, and how it is read, once the pane has moved between
 // repositories (ADR 0050).
 //
 // What these catch: a pane that arrives in another repository drawing, for one
-// frame, a board of the vault it left, read in the vault it arrived in; and a
-// view chosen on one repository's board carried to a board of the same name,
+// frame, a model of the vault it left, read in the vault it arrived in; and a
+// view chosen on one repository's model carried to a model of the same name,
 // at the same depth, in another repository, where its id names nothing; and a
 // drill asked for before somebody pointed the pane elsewhere, as a flight that
-// lands late, opening its board over the board the pane holds now.
+// lands late, opening its model over the model the pane holds now.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
@@ -32,13 +32,13 @@ afterAll(async () => {
 
 /**
  * Nothing to do: the moves are not what this reads.
- * @returns That the board on screen did not change.
+ * @returns That the model on screen did not change.
  */
 function nowhere(): boolean {
 	return false;
 }
 
-/** A pane one level down its own board, on a board called api, in whichever vault it is in. */
+/** A pane one level down its own model, on a model called api, in whichever vault it is in. */
 const DOWN_IN_API: Parameters<typeof useLevelReading>[0] = {
 	model: "api",
 	variant: undefined,
@@ -48,7 +48,7 @@ const DOWN_IN_API: Parameters<typeof useLevelReading>[0] = {
 	backTo: nowhere,
 };
 
-/** What the shell says about the pane's own board: nothing this test reads. */
+/** What the shell says about the pane's own model: nothing this test reads. */
 const SHELL = { view: undefined, onView: undefined, onVariant: undefined };
 
 /**
@@ -57,7 +57,7 @@ const SHELL = { view: undefined, onView: undefined, onVariant: undefined };
  */
 function Probe(): JSX.Element {
 	const reading = useLevelReading(DOWN_IN_API, SHELL);
-	/** Choose a view of the board on screen. */
+	/** Choose a view of the model on screen. */
 	const choose = (): void => {
 		reading.onView?.("sv1");
 	};
@@ -93,7 +93,7 @@ test("a view chosen a level down stays with that repository's board", () => {
 	expect(viewRead()).toBe("sv1");
 
 	// The pane moved to another repository, and the reader went down into its
-	// board of the same name, as deep.
+	// model of the same name, as deep.
 	rerender(paneIn("/payments"));
 	expect(viewRead()).toBe("");
 });
@@ -104,7 +104,7 @@ interface Pointed {
 	readonly vault: string;
 	readonly arrival: number;
 	/**
-	 * The board on screen was drawn.
+	 * The model on screen was drawn.
 	 * @param where Its vault and name.
 	 */
 	readonly onDrawn: (where: string) => void;
@@ -124,7 +124,7 @@ function useHandedMoves(drill: ReturnType<typeof useDrillDown>): void {
 }
 
 /**
- * Where the pane is, drawn: each board it has on screen is reported once drawn.
+ * Where the pane is, drawn: each model it has on screen is reported once drawn.
  * @param props Where the shell pointed it, and who hears what it drew.
  * @returns Nothing to see.
  */
@@ -144,7 +144,7 @@ function DrillProbe(props: Pointed): null {
 test("a pane that dives into another repository never draws a board of the vault it left there", () => {
 	const drawn: string[] = [];
 	/**
-	 * The board on screen was drawn.
+	 * The model on screen was drawn.
 	 * @param where Its vault and name.
 	 */
 	const onDrawn = (where: string): void => {
@@ -153,7 +153,7 @@ test("a pane that dives into another repository never draws a board of the vault
 	const { rerender } = render(
 		createElement(DrillProbe, { model: "shop", vault: "/shop", arrival: 0, onDrawn }),
 	);
-	// Down a level in the pane's own vault, then into a board of another repository.
+	// Down a level in the pane's own vault, then into a model of another repository.
 	act(() => {
 		moves.current?.open("cart", undefined);
 	});
@@ -170,7 +170,7 @@ test("a pane that dives into another repository never draws a board of the vault
 test("a drill asked for before the pane was pointed elsewhere opens nothing over the new board", () => {
 	const drawn: string[] = [];
 	/**
-	 * The board on screen was drawn.
+	 * The model on screen was drawn.
 	 * @param where Its vault and name.
 	 */
 	const onDrawn = (where: string): void => {
@@ -179,9 +179,9 @@ test("a drill asked for before the pane was pointed elsewhere opens nothing over
 	const { rerender } = render(
 		createElement(DrillProbe, { model: "shop", vault: "/shop", arrival: 0, onDrawn }),
 	);
-	// The reader asked for a card's board, and its flight is still in the air.
+	// The reader asked for a card's model, and its flight is still in the air.
 	const asked = moves.current;
-	// Somebody else pointed the pane at another repository's board meanwhile.
+	// Somebody else pointed the pane at another repository's model meanwhile.
 	rerender(createElement(DrillProbe, { model: "ledger", vault: "/payments", arrival: 1, onDrawn }));
 	act(() => {
 		asked?.open("cart", undefined);

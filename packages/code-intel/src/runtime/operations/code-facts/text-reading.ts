@@ -10,7 +10,7 @@
 // the file holds. A grammar's adapter replaces this reading for its language
 // (TypeScript and TSX from TASK-367.06), and it stays for every other file.
 
-/** What separates the names of a qualified symbol, in the languages and tools a board binds. */
+/** What separates the names of a qualified symbol, in the languages and tools a document binds. */
 const NAME_SEPARATOR = /::|[./#]/u;
 
 /** A character that continues an identifier, so a name beside one is part of a longer word. */

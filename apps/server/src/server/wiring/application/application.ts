@@ -73,7 +73,7 @@ app.get("/assets/diagram-icons/:name", (req, res) => {
 	res.set("Cache-Control", "no-cache").json({ paths });
 });
 
-// Every route that reads or writes a board names the vault it means (ADR 0049).
+// Every route that reads or writes a model names the vault it means (ADR 0049).
 // The routes of this server mount that requirement themselves; this one belongs to
 // the code opener, whose router does not know the server.
 app.post("/api/code-targets/open", requireVault);
@@ -115,8 +115,8 @@ mountSemanticPaneContextRoutes(app);
 mountVoiceStartTraceRoute(app);
 
 // A vault can be open in more than one server, and the lease says who may write
-// rather than who has been told. Watching the boards on screen is what keeps a
-// pane from reading a board another writer replaced under it.
+// rather than who has been told. Watching the models on screen is what keeps a
+// pane from reading a model another writer replaced under it.
 
 mountServiceRoutes(app);
 

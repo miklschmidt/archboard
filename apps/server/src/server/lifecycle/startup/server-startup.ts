@@ -279,7 +279,7 @@ function buildLifetime(http: HttpOwnership, handlers: ProcessHandlers): ServerLi
 			},
 			{
 				name: "engine-state",
-				/** Nothing to bring up: a board is read when somebody asks for one. */
+				/** Nothing to bring up: a model is read when somebody asks for one. */
 				start: () => {
 					// The vault is read on demand; this process holds nothing of it.
 				},

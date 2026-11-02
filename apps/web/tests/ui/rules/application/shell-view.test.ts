@@ -69,7 +69,7 @@ test("the shell view names the active pane's board and carries its mounted panes
 		notices: [],
 		agentActivity: {},
 	});
-	// Pane B is focused after being added; it shows no board.
+	// Pane B is focused after being added; it shows no model.
 	expect(view.activePaneId).toBe("B");
 	expect(view.panes.map((pane) => [pane.status.paneId, pane.stage])).toEqual([
 		["A", "pane-a"],
@@ -129,7 +129,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 		});
 	expect(viewWith(VAULT).repositories[0]?.activity).toEqual({ Checkout: entry });
 	// Every pane hears every vault's account (ADR 0022), so the navigator marks a
-	// board an agent has in a repository no pane is reading.
+	// model an agent has in a repository no pane is reading.
 	expect(viewWith("/work/blog/.archboard/vault").repositories[0]?.activity).toEqual({
 		Checkout: entry,
 	});
@@ -149,7 +149,7 @@ test("pane news keeps the repositories the navigator lists", () => {
 		agentActivity: {},
 	} as const;
 	const before = assembleShellView(inputs).repositories;
-	// An agent claims pane A's board: the view is assembled again, and nothing
+	// An agent claims pane A's model: the view is assembled again, and nothing
 	// the navigator lists changed, so it keeps its rows as they were.
 	const claimed = patchRecord(records, "A", {
 		holder: { id: "agent-1", kind: "agent", since: "", until: "", process: "codex" },

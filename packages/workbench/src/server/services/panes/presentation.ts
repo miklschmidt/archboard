@@ -34,7 +34,7 @@ type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
 
 /** Why a pane could not be shown the step it was asked for. */
 type PresentRefusal =
-	/** No live pane has that id, or it is showing no board. */
+	/** No live pane has that id, or it is showing no model. */
 	| "no_pane"
 	/** A later request for the same pane replaced this one. */
 	| "superseded"
@@ -90,16 +90,16 @@ interface Pending {
 /** Where a live pane is, as the presentation port needs to know it. */
 interface PresentablePane {
 	readonly clientId: string;
-	/** The board key the pane is showing, which its socket messages are addressed by. */
+	/** The model key the pane is showing, which its socket messages are addressed by. */
 	readonly model: string | null;
 }
 
 /** What the port needs of the server around it. */
 interface PanePresentationParts {
 	/**
-	 * The live pane with that client id, showing a board.
+	 * The live pane with that client id, showing a model.
 	 * @param clientId The pane's client id.
-	 * @returns The pane, or null when it has gone or shows no board.
+	 * @returns The pane, or null when it has gone or shows no model.
 	 */
 	readonly paneFor: (clientId: string) => PresentablePane | null;
 	/**
@@ -387,7 +387,7 @@ const panePresentations = createPanePresentations({
 	// browser, "the only pane on screen" is not that pane once it has gone, and a second
 	// browser's pane of the same shell id is not it either.
 	/**
-	 * The live pane with that client id, showing a board.
+	 * The live pane with that client id, showing a model.
 	 * @param clientId The pane's client id.
 	 * @returns The pane, or null.
 	 */

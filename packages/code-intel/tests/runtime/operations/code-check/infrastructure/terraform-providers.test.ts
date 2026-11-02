@@ -1,9 +1,9 @@
 // The code check under the Terraform rules of the providers the user named
-// (ADR 0046, TASK-367.18): one root module per provider, each with a board.
+// (ADR 0046, TASK-367.18): one root module per provider, each with a document.
 // A joining declaration gives evidence between the two parts it joins, never
 // between itself and each end, and an anchor may name it. A provisioning
 // reference, such as the role a function runs as, and a grant are never a
-// relationship the board does not draw.
+// relationship the document does not draw.
 
 import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdtempSync, rmSync } from "node:fs";
@@ -199,7 +199,7 @@ function edge(id: string, ends: [string, string], kind: string, anchor?: [string
 }
 
 /**
- * Write a board with one current variant.
+ * Write a document with one current variant.
  * @param name Its name.
  * @param nodes Its parts.
  * @param edges Its relationships.
@@ -317,9 +317,9 @@ function pieces(finding: CodeFinding): string[] {
 }
 
 /**
- * The findings on one board, each as its code, subject, severity and the
+ * The findings on one document, each as its code, subject, severity and the
  * pieces of its evidence.
- * @param name The board.
+ * @param name The document.
  * @returns The findings, sorted.
  */
 function found(name: string): string[] {

@@ -10,7 +10,7 @@
 // choice — reaches an author.
 //
 // The world is a directory of its own under the run, and the harness's records
-// are not in it: the board snapshot the checks diff against, the author's
+// are not in it: the document snapshot the checks diff against, the author's
 // transcript, the verdicts, the bundle the grader reads and the private
 // CODEX_HOME with the operator's credentials all sit beside it, above the only
 // directory the author can write. Reads cannot be forbidden — a workspace-write

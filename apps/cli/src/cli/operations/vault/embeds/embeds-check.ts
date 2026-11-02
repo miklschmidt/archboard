@@ -206,7 +206,7 @@ async function inspect(
 	return inspectPicture(embed, recipe, fresh, options, cached);
 }
 /**
- * Resolve and inspect one artifact without a live board lookup or tracking list.
+ * Resolve and inspect one artifact without a live document lookup or tracking list.
  * @param embed The artifact found through Git.
  * @param reader The existing checkout and fetched-vault resolver.
  * @param options The repair intent and cancellation signal.

@@ -14,18 +14,18 @@ export interface CoordinatorPaneNews {
 	 */
 	readonly by: "user" | "agent" | "external";
 	/**
-	 * For a board an outside agent wrote, its aggregate key: the write is told only while a pane of
-	 * this canvas shows that board. It never interrupts captured narration. Null for anything else.
+	 * For a model an outside agent wrote, its aggregate key: the write is told only while a pane of
+	 * this canvas shows that model. It never interrupts captured narration. Null for anything else.
 	 */
 	readonly model: string | null;
 }
 
 /** What the canvas of this tab session holds now, read when a callback is delivered. */
 export interface CoordinatorCallbackCanvas {
-	/** The boards its panes show, by aggregate key. */
+	/** The models its panes show, by aggregate key. */
 	readonly models: readonly string[];
 	/**
-	 * The board a live narration in one of its panes is on, by aggregate key, or null when none is
+	 * The model a live narration in one of its panes is on, by aggregate key, or null when none is
 	 * under way. A recording is no narration: nobody is listening to stop for.
 	 */
 	readonly narrated: string | null;

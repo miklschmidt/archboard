@@ -51,11 +51,11 @@ interface RenderView extends CanvasStageProps {
 	readonly onComparisonChange: (enabled: boolean) => void;
 	/** Camera retained while a different variant is being drawn. */
 	readonly camera: PictureCamera;
-	/** The cache's answer for this board, variant and view. */
+	/** The cache's answer for this model, variant and view. */
 	readonly render: UseQueryResult<SemanticRender>;
 	/** Ask the server for the picture again. */
 	readonly onRetry: () => void;
-	/** Which board the pane is actually looking at, and the way back. */
+	/** Which model the pane is actually looking at, and the way back. */
 	readonly drill: DrillNavigation;
 	/**
 	 * The person picked a subject out, reported as what it is.
@@ -71,15 +71,15 @@ interface RenderView extends CanvasStageProps {
 	/** Follow a drill-down, clearing the selection it was made from. */
 	readonly onOpenDown: OpenDown;
 	/**
-	 * Go back to one of the boards the reader came down through, clearing the selection made below it.
-	 * @param depth Where it is in the trail: 0 is its first board.
+	 * Go back to one of the models the reader came down through, clearing the selection made below it.
+	 * @param depth Where it is in the trail: 0 is its first model.
 	 */
 	readonly onBackTo: (depth: number) => void;
-	/** The picture on screen is the board a flight arrived at: it took over from the board inside its card with no entrance. */
+	/** The picture on screen is the model a flight arrived at: it took over from the model inside its card with no entrance. */
 	readonly cut: boolean;
-	/** The last board's picture, on its way out while this one is drawn; null otherwise. */
+	/** The last model's picture, on its way out while this one is drawn; null otherwise. */
 	readonly leaving: Leaving | null;
-	/** Where the reader went from the last board, until this board's picture is up; null otherwise. */
+	/** Where the reader went from the last model, until this model's picture is up; null otherwise. */
 	readonly heading: Departure | null;
 	/** What this variant explains about itself, and what is being read. */
 	readonly narrative: WalkthroughReading;
@@ -89,9 +89,9 @@ interface RenderView extends CanvasStageProps {
 	readonly narration: WalkthroughNarration | undefined;
 	/** What the shell lays over the picture, or nothing. */
 	readonly overlay: ReactNode;
-	/** How the board on screen is being read, at whatever level it is. */
+	/** How the model on screen is being read, at whatever level it is. */
 	readonly level: PaneReading;
-	/** What the board says about itself, or null while it has not arrived. */
+	/** What the model says about itself, or null while it has not arrived. */
 	readonly reading: VariantReading | null;
 	/** What the beat being read asks of the picture. */
 	readonly focus: BeatFocus;
@@ -124,11 +124,11 @@ interface RenderView extends CanvasStageProps {
 }
 
 /**
- * What to call one of this board's variants.
+ * What to call one of this model's variants.
  *
- * The board's own family, which the pane already has in hand for the variant
+ * The model's own family, which the pane already has in hand for the variant
  * bar. A variant it does not know — one renamed out from under a reader, or one
- * of another board after a drill-down — is named by its id, which is worse than
+ * of another model after a drill-down — is named by its id, which is worse than
  * a name and better than a blank.
  * @param view What the stage is assembled from.
  * @returns A function from a variant id to what it is called.
@@ -142,7 +142,7 @@ function variantNamer(view: RenderView): (id: string) => string {
  * The disclosure over a diagram whose refresh failed, when one did.
  *
  * Any failure counts, whatever its kind: a request that never arrived, a
- * refusal from the route, or a board that became unreadable after having been
+ * refusal from the route, or a model that became unreadable after having been
  * readable. What matters to the person is the same in every case — the picture
  * they are looking at is not known to be current.
  * @param view The query's answer and the retry.
@@ -163,7 +163,7 @@ function refreshDisclosure(view: RenderView): ReactNode {
 
 /**
  * Whichever of the four states is true.
- * @param view The board, the query's answer, the selection and the retry.
+ * @param view The model, the query's answer, the selection and the retry.
  * @returns The picture, or the news that there is not one.
  */
 function stageBody(view: RenderView): JSX.Element {
@@ -178,8 +178,8 @@ function stageBody(view: RenderView): JSX.Element {
 		);
 	}
 	// The disclosure is decided before the two shapes divide, because an empty
-	// board whose refresh failed is exactly the case that would otherwise look
-	// current: a board somebody has since filled in still reads as empty, and
+	// model whose refresh failed is exactly the case that would otherwise look
+	// current: a model somebody has since filled in still reads as empty, and
 	// nothing on screen would say the picture is old.
 	const notice = refreshDisclosure(view);
 	const answer = render.data;
@@ -227,7 +227,7 @@ function waitingOn(answer: SemanticRender | undefined): SemanticWaiting | null {
 /**
  * The whole pane: its header with the way back and the ways of reading, then
  * the reading itself, with the sidebar on the right of it.
- * @param view The board, the query's answer, the selection and the retry.
+ * @param view The model, the query's answer, the selection and the retry.
  * @returns The stage.
  */
 function SemanticStageView(view: RenderView): JSX.Element {

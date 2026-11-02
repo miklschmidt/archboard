@@ -1,5 +1,5 @@
 // The desktop frame, in columns: the navigator (the brand at its top, the
-// boards, and the agent at its foot), the conversation beside it while open,
+// models, and the agent at its foot), the conversation beside it while open,
 // with a handle to resize it, and the pane centre, composed from typed inputs
 // and typed actions. There is
 // no row across the whole frame: each column's top row is its own header, and

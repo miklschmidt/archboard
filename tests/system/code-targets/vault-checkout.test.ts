@@ -1,4 +1,4 @@
-// Opening the code of a part on a board of a worktree's vault (ADR 0049,
+// Opening the code of a part on a model of a worktree's vault (ADR 0049,
 // TASK-472.03): a binding into the vault's own repository opens the file in
 // the worktree that holds the vault, though the registry chose another
 // checkout of that repository.

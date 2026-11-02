@@ -5,7 +5,7 @@
 //
 // What this catches: a head made longer than that run, for any weight and
 // either head form, and a line drawn with a shorter last run, in either
-// engine. The boards are small ones that draw hero, default and muted heads,
+// engine. The documents are small ones that draw hero, default and muted heads,
 // filled and open, and the two approaches that once came up short.
 
 import { expect, test } from "bun:test";

@@ -1,8 +1,8 @@
-// A talk's board and policy, read the way a pane reads them from the server.
+// A talk's model and policy, read the way a pane reads them from the server.
 //
-// The picture is rendered from the board the voice spoke over, whatever the
-// board says now or whether it still exists. So the pane reads the talk's
-// snapshot, and a read of any other board is a failure of the rendering rather
+// The picture is rendered from the model the voice spoke over, whatever the
+// model says now or whether it still exists. So the pane reads the talk's
+// snapshot, and a read of any other model is a failure of the rendering rather
 // than a quiet trip to the server.
 
 import { parseLegacyBoard } from "@archboard/model/legacy-board";
@@ -12,9 +12,9 @@ import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import { type RetainedReads } from "#ui/clients/canvas/reads/retained-reads.ts";
 
 /**
- * Board reads answered from a talk.
+ * Model reads answered from a talk.
  * @param talk The talk.
- * @param foreign Told of a read of another board, which the talk cannot answer.
+ * @param foreign Told of a read of another model, which the talk cannot answer.
  * @returns The reads.
  */
 function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads {
@@ -25,11 +25,11 @@ function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads 
 		 */
 		listing: async () => retainedListing(talk),
 		/**
-		 * The talk's board, and no other, whichever vault the pane names.
+		 * The talk's legacy board, and no other, whichever vault the pane names.
 		 * @param _vault The pane's vault, which a talk has no use for.
-		 * @param model The board asked for.
+		 * @param model The legacy board asked for.
 		 * @returns The talk's document.
-		 * @throws {Error} When another board is asked for.
+		 * @throws {Error} When another legacy board is asked for.
 		 */
 		document: async (_vault, model) => {
 			if (sameModelName(model, talk.board.name)) return talk.document;
@@ -37,12 +37,12 @@ function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads 
 			throw new Error(`The talk is of ${talk.board.name}; ${model} was read while rendering it.`);
 		},
 		/**
-		 * The policy the talk's board was drawn under.
+		 * The policy the talk's model was drawn under.
 		 * @returns The vault check the talk kept.
 		 */
 		vaultCheck: async () => talk.policy,
 		/**
-		 * No findings: a recording draws the board the voice spoke over, never
+		 * No findings: a recording draws the model the voice spoke over, never
 		 * what a code pass left in some server's memory.
 		 * @returns No readings.
 		 */
@@ -51,7 +51,7 @@ function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads 
 }
 
 /**
- * Describe the captured original without discovering live boards.
+ * Describe the captured original without discovering live models.
  * @param talk The immutable recording.
  * @returns The one available original document.
  * @throws {ReadingError} When the retained document is invalid.

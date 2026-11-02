@@ -4,7 +4,7 @@
 //
 // The row is the key to the group's colour on the picture as well as the way
 // to its members, which is why the chip is drawn the way the picture draws the
-// group. A variant with no memberships offers no list, as a board with no views
+// group. A variant with no memberships offers no list, as a model with no views
 // or no walkthroughs offers none of those (TASK-383).
 
 import { useCallback, type JSX } from "react";

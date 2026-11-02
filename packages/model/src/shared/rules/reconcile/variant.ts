@@ -23,7 +23,7 @@
 //   reported against the subject it is about, and the draft keeps its own side
 //   of that subject, rather than being left half-merged. Everything else the
 //   predecessor changed still arrives, as long as the result is a document a
-//   board may hold.
+//   model may hold.
 //
 //   Order is meaning. Two sides moving the same step or the same beat to
 //   different places is a conflict like any other; picking the earlier index, or
@@ -424,7 +424,7 @@ function reconcileVariant(states: ThreeStates, incoherence = incoherenceOf): Rec
 }
 
 /**
- * The merge of three states, subject by subject, whether a board may hold it
+ * The merge of three states, subject by subject, whether a model may hold it
  * or not.
  * @param states The base, this proposal, and the predecessor as it stands.
  * @returns The merged content, what is left to settle, and what was inherited.

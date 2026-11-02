@@ -3,17 +3,17 @@
 //
 // Both are session state, in the same class as the camera and the selection:
 // choosing a walkthrough is reading, not editing. Nothing is written, no
-// version moves, and the other pane showing the same board carries on showing
+// version moves, and the other pane showing the same model carries on showing
 // whatever it was showing (ADR 0023). Two people can read two explanations of
 // one architecture at the same time, and neither can tell.
 //
-// The explanations themselves are handed in rather than read here: the board
+// The explanations themselves are handed in rather than read here: the model
 // they come from is one read that answers several of the pane's questions at
 // once (`use-variant-reading`), and this hook owns only where the reader has
 // got to in one of them.
 //
-// Where the reader is, is kept beside which board they are reading it on, and
-// compared rather than reset: a pane pointed at another board is a pane whose
+// Where the reader is, is kept beside which model they are reading it on, and
+// compared rather than reset: a pane pointed at another model is a pane whose
 // place in a narrative no longer means anything, and deriving that is one
 // comparison instead of an effect that copies state about.
 
@@ -28,17 +28,17 @@ type SemanticWalkthrough = VariantContent["walkthroughs"][number];
 
 type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
-/** Which board and variant a pane is reading. */
+/** Which model and variant a pane is reading. */
 interface WalkthroughSource {
-	/** The board on screen. */
+	/** The model on screen. */
 	readonly model: string;
 	/** The variant on screen: an id or name, or undefined for the current one. */
 	readonly variant: string | undefined;
 }
 
-/** Where a reader is: which explanation, of what board, and how far in. */
+/** Where a reader is: which explanation, of what model, and how far in. */
 interface NarrativePlace {
-	/** The board it is an explanation of. */
+	/** The model it is an explanation of. */
 	readonly model: string;
 	/** The walkthrough being read. */
 	readonly walkthrough: string;
@@ -185,7 +185,7 @@ function unspent(driven: DrivenPlace | null | undefined, standing: Standing): Dr
 /**
  * Where a request puts the reader.
  * @param asked The request.
- * @param model The board on screen.
+ * @param model The legacy board on screen.
  * @returns The standing that answers it.
  */
 function standingAsked(asked: DrivenPlace, model: string): Standing {
@@ -206,8 +206,8 @@ function byHand(current: Standing, place: NarrativePlace | null): Standing {
 
 /**
  * The explanations one variant offers, and which of them is being read.
- * @param source The board and variant on screen.
- * @param reading What the board says, or null while it has not arrived.
+ * @param source The model and variant on screen.
+ * @param reading What the model says, or null while it has not arrived.
  * @param driven A place somebody driving the presentation asked for, or null.
  * @returns What is offered, what is open, and the two ways a reader moves.
  */

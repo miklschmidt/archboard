@@ -1,4 +1,4 @@
-// How far a board is behind its code (ADR 0045), on Git repositories this
+// How far a document is behind its code (ADR 0045), on Git repositories this
 // owner builds for itself, with its own checkout registry through
 // ARCHBOARD_REPOS so nothing reads the machine's real one.
 //
@@ -98,7 +98,7 @@ function repository(root: string, identity: string): void {
 	git(root, "remote", "add", "origin", `https://${identity}.git`);
 }
 
-/** The parts every board of this owner starts from. */
+/** The parts every document of this owner starts from. */
 const PARTS = [
 	{ id: "pA", name: "Checkout", kind: "module", binding: { repo: SHOP, path: "src/a.ts" } },
 	{ id: "pD", name: "Payments", kind: "module", binding: { repo: SHOP, path: "src/dir/" } },
@@ -124,11 +124,11 @@ const PARTS = [
 ];
 
 /**
- * A board with one current variant and one draft.
- * @param version The board's version.
+ * A document with one current variant and one draft.
+ * @param version The document's version.
  * @param extra Parts the current variant has beyond the first ones.
  * @param draftNote What the draft's summary says, which no reading of behind looks at.
- * @returns The board.
+ * @returns The document.
  */
 function document(
 	version: number,
@@ -165,8 +165,8 @@ function document(
 const documentFile = join(shop, "vault", "Shop.semantic.json");
 
 /**
- * Write a board into the shop's vault.
- * @param value The board.
+ * Write a document into the shop's vault.
+ * @param value The document.
  * @param file Where.
  */
 function writeDocument(value: LegacyBoard, file = documentFile): void {
@@ -175,12 +175,12 @@ function writeDocument(value: LegacyBoard, file = documentFile): void {
 }
 
 /**
- * How far one board is behind, read the way the server reads it.
- * @param value The board as it stands.
+ * How far one document is behind, read the way the server reads it.
+ * @param value The document as it stands.
  * @param reading The reading to ask, when a test holds its memory.
- * @param file The board's file.
+ * @param file The document's file.
  * @param vault The vault directory.
- * @returns The answer for that board.
+ * @returns The answer for that document.
  */
 async function behind(
 	value: LegacyBoard,
@@ -194,7 +194,7 @@ async function behind(
 
 /**
  * The commits one part is behind by, by the subjects a test gave them.
- * @param answer The board's answer.
+ * @param answer The document's answer.
  * @param id The part.
  * @returns The subjects, newest first, or undefined when the part was not read.
  */
@@ -255,7 +255,7 @@ beforeAll(async () => {
 	git(shop, "rm", "-q", "src/coupons.ts");
 	commit(shop, "delete the coupons");
 	write(shop, { "src/a.ts": "4\n" });
-	// A tracked embed is the board's, not the current variant's (ADR 0057).
+	// A tracked embed is the document's, not the current variant's (ADR 0057).
 	writeDocument({
 		...document(2, [], "a draft edit"),
 		trackedEmbeds: [{ repo: OTHER, path: "docs/shop.svg" }],
@@ -363,7 +363,7 @@ test("a board file Git does not track is a change no commit holds, and one Git i
 	const fresh = join(shop, "vault", "Fresh.semantic.json");
 	writeDocument(document(1), fresh);
 	expect((await behind(document(1), undefined, fresh)).lastChange.kind).toBe("uncommitted");
-	// A space in the name, as most board names have one, must not change what Git answers.
+	// A space in the name, as most document names have one, must not change what Git answers.
 	write(shop, { ".gitignore": "vault/Ignored board.semantic.json\n" });
 	const ignored = join(shop, "vault", "Ignored board.semantic.json");
 	writeDocument(document(1), ignored);

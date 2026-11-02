@@ -107,7 +107,7 @@ function sceneModel(reading: SceneReading): string {
 }
 
 /**
- * How a picture is narrowed. As with a view of a board, a focus starts a picture afresh.
+ * How a picture is narrowed. As with a view of a model, a focus starts a picture afresh.
  * @param reading The address fields.
  * @returns The focus as a view, or null for the whole scope.
  */
@@ -284,11 +284,11 @@ function cardToward(scene: AcceptedScene, model: Model, scope: string | null): s
 }
 
 /**
- * The card a board stands for on a board above it: the module directly under
- * that board on the way to this one.
+ * The card a legacy board stands for on a legacy board above it: the module directly under
+ * that legacy board on the way to this one.
  * @param model The modules.
  * @param scope The scope left.
- * @param to The board above, or null for the roots.
+ * @param to The legacy board above, or null for the roots.
  * @returns The card, or null when the destination does not hold the scope.
  */
 function cardAbove(model: Model, scope: string | null, to: string | null): string | null {
@@ -398,7 +398,7 @@ type Move =
 /**
  * Which flight, if any, a move to a module can make. The camera flies when it has
  * a card to fly through: into the nearest card that holds a deeper module, or out
- * of the card that holds this board on a board above it. Any other move changes
+ * of the card that holds this model on a model above it. Any other move changes
  * the picture the plain way, which the painter makes a passage of.
  * @param scene The scene on screen.
  * @param next The module, or null for the roots.

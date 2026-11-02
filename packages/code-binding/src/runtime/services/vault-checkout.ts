@@ -76,7 +76,7 @@ function checkoutsReadFrom(vault: string | null): ReturnType<typeof chosenChecko
 /**
  * The repository identity of the checkout that holds a vault: the identity
  * `checkoutsReadFrom` reads in the vault's own checkout. A drill-down that
- * names it opens a board of the vault itself (ADR 0049).
+ * names it opens a model of the vault itself (ADR 0049).
  * @param vault The vault directory.
  * @returns The identity, or undefined for an untracked vault or a Git that did not answer.
  */

@@ -1,10 +1,10 @@
 // The query keys and options for what the browser reads back about which
-// boards exist and which panes are holding them. The options live here rather
+// models exist and which panes are holding them. The options live here rather
 // than at the call sites so a hook and an invalidation always name the same
 // cache entry, and so each resource's freshness contract is written in one
 // place.
 //
-// The vault's boards are not read here: that listing belongs to the viewer
+// The vault's models are not read here: that listing belongs to the viewer
 // module that also draws them, and this catalog subscribes to it rather than
 // keeping a second copy under a second key.
 
@@ -30,7 +30,7 @@ const modelCatalogKeys = {
 /**
  * What the live panes hold, across every tab this server serves. Separate from
  * the vault on purpose: a pane inventory that cannot be read must not take the
- * listed boards down with it.
+ * listed models down with it.
  *
  * Read again every time the tab comes back, stale or not. A pane belonging to
  * another tab can be closed while this one is in the background, and nothing

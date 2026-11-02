@@ -1,5 +1,5 @@
-// Putting the two halves of the listing together: the boards the vault holds
-// and the boards the live panes hold. They are read separately so that one of
+// Putting the two halves of the listing together: the models the vault holds
+// and the models the live panes hold. They are read separately so that one of
 // them failing leaves the other on screen, and this is the only place they
 // meet. Pure: no React, no fetching.
 
@@ -16,17 +16,17 @@ import type {
 /** The listing before either half has been read. */
 const EMPTY_LISTING: LegacyListing = Object.freeze({ models: [], levels: [], onScreen: [] });
 
-/** The vault's half of the listing: its boards as the shell lists them, and its levels. */
+/** The vault's half of the listing: its models as the shell lists them, and its levels. */
 type VaultHalf = Omit<LegacyListing, "onScreen">;
 
 /** The vault's half while it is unread. */
 const NO_MODELS: VaultHalf = Object.freeze({ models: [], levels: [] });
 
 /**
- * One board as the shell lists it: every variant carries the key a pane opens
- * it by, bare for the variant the board's name opens.
- * @param model The board as the vault lists it.
- * @returns The listed board.
+ * One legacy board as the shell lists it: every variant carries the key a pane opens
+ * it by, bare for the variant the legacy board's name opens.
+ * @param model The legacy board as the vault lists it.
+ * @returns The listed legacy board.
  */
 function catalogModel(model: DocumentEntry): CatalogModel {
 	return {
@@ -41,10 +41,10 @@ function catalogModel(model: DocumentEntry): CatalogModel {
 /**
  * The listing the shell reads, from whichever halves have been read. An unread
  * vault is not an empty one, which is why the navigator asks the query whether
- * it is pending rather than reading anything into a vault with no boards.
+ * it is pending rather than reading anything into a vault with no models.
  *
  * The vault's half comes in already made, so a caller that keeps it while only
- * the panes move hands on the same boards: every pane reads them, and new ones
+ * the panes move hands on the same models: every pane reads them, and new ones
  * would draw every pane again for a move in another pane.
  * @param vault The vault's half, or undefined while unread.
  * @param panes The live panes, or undefined while unread.
@@ -61,9 +61,9 @@ function composeListing(
 }
 
 /**
- * The vault's half: its boards, each variant with the key a pane opens it by, and its levels.
+ * The vault's half: its models, each variant with the key a pane opens it by, and its levels.
  * @param vault The vault's listing.
- * @returns The boards and levels.
+ * @returns The models and levels.
  */
 function vaultHalf(vault: RetainedListing): VaultHalf {
 	return { models: vault.boards.map(catalogModel), levels: vault.levels };
@@ -92,7 +92,7 @@ function failureMessage(failure: unknown): string {
  *
  * The vault's failure is the one that matters and keeps its long-standing
  * words. A pane inventory that failed on its own is reported separately and
- * only while nothing of it is left to show: the vault's boards are still
+ * only while nothing of it is left to show: the vault's models are still
  * listed, and what is missing is which of them a pane has open.
  * @param vault What the vault read threw, or null.
  * @param panes What the pane read threw, or null.
@@ -110,10 +110,10 @@ function listingError(vault: unknown, panes: unknown, panesRead: boolean): strin
 }
 
 /**
- * The listed board a name or key names.
+ * The listed legacy board a name or key names.
  * @param listing The listing.
- * @param model The board's name or key.
- * @returns The board, or undefined when it is not listed.
+ * @param model The legacy board's name or key.
+ * @returns The legacy board, or undefined when it is not listed.
  */
 function listedLegacyBoard(listing: LegacyListing, model: string): CatalogModel | undefined {
 	return listing.models.find((entry) => sameModelName(entry.name, model));
@@ -122,7 +122,7 @@ function listedLegacyBoard(listing: LegacyListing, model: string): CatalogModel 
 /**
  * The listed variant a pane address shows: the one the bare name opens, the
  * current one for `current`, or the one named by id or name.
- * @param model The listed board.
+ * @param model The listed legacy board.
  * @param wanted The variant the address asks for, or undefined for the bare name.
  * @returns The variant, or undefined when none matches.
  */
@@ -158,11 +158,11 @@ function listedLegacyKey(listing: LegacyListing, key: string | null): string | n
 }
 
 /**
- * Whether a listed board says nothing it describes is built: it lists variants and none of
- * them is current (ADR 0031). A board that is not listed, or could not be read, says nothing.
+ * Whether a listed legacy board says nothing it describes is built: it lists variants and none of
+ * them is current (ADR 0031). A legacy board that is not listed, or could not be read, says nothing.
  * @param listing The listing.
- * @param model The board's name.
- * @returns True when the board has variants and no current one.
+ * @param model The legacy board's name.
+ * @returns True when the legacy board has variants and no current one.
  */
 function nothingBuiltOn(listing: LegacyListing, model: string): boolean {
 	const variants = listedLegacyBoard(listing, model)?.variants ?? [];

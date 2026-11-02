@@ -1,6 +1,6 @@
 // The one thing the address bar is waiting on.
 //
-// Every board open goes through here, whoever asked for it: a restore's own
+// Every model open goes through here, whoever asked for it: a restore's own
 // step and a user's click are the same operation with a different owner, so
 // there is one lifecycle to reason about and one thing outstanding at a time.
 // That is what makes the last thing somebody asked for the last thing the
@@ -12,8 +12,8 @@
 // It is over when the pane has been seen to move — or when that pane is out of
 // contact, since nothing better is coming.
 //
-// Where a pane is means its board and the repository the board is in: the same
-// key in another repository is another board (ADR 0050), so a pane moving
+// Where a pane is means its model and the repository the model is in: the same
+// key in another repository is another model (ADR 0050), so a pane moving
 // between them has moved.
 
 import { modelIn, repositoryIn, type WorkspaceAddress } from "#ui/rules/reading-routing/address.ts";
@@ -27,25 +27,25 @@ type Operator = { readonly kind: "restore"; readonly target: number } | { readon
 /** What the server said, once it has said anything. */
 type OperationAnswer = "opened" | "unreachable";
 
-/** One board open, from the moment it is asked for until its pane has moved. */
+/** One model open, from the moment it is asked for until its pane has moved. */
 interface Operation {
 	readonly operator: Operator;
 	readonly paneId: string;
-	/** The board a restore asked for, so one it cannot reach can be named. */
+	/** The model a restore asked for, so one it cannot reach can be named. */
 	readonly asked: AskedModel | null;
 	/** What that pane was showing when it was asked, so its move is observable. */
 	readonly from: string | null;
-	/** The repository of that board, when it was asked. */
+	/** The repository of that model, when it was asked. */
 	readonly fromRepository: string | null;
 	/** The server's answer, or null while it has not given one. */
 	readonly answer: OperationAnswer | null;
 	/**
-	 * The board the server says it opened, as the server keys it. Its own answer
+	 * The model the server says it opened, as the server keys it. Its own answer
 	 * rather than the request: an address may be spelled several ways, and only
-	 * the vault knows which board a spelling resolves to (ADR 0004).
+	 * the vault knows which model a spelling resolves to (ADR 0004).
 	 */
 	readonly openedKey: string | null;
-	/** The repository the server says the pane is in with that board. */
+	/** The repository the server says the pane is in with that model. */
 	readonly openedRepository: string | null;
 	/**
 	 * What the user asked for, when this is theirs. The operation owns it, so
@@ -61,7 +61,7 @@ interface Operation {
  * Begin an operation.
  * @param operator Who asked.
  * @param paneId The pane to move.
- * @param asked The board it is being pointed at, when a restore asked for one.
+ * @param asked The model it is being pointed at, when a restore asked for one.
  * @param displayed What is on screen, for what that pane shows now.
  * @param intent What the user asked for, when this is theirs.
  * @returns The operation.
@@ -91,7 +91,7 @@ function startOperation(
  * Take the server's answer.
  * @param operation The operation.
  * @param answer What the server said.
- * @param opened The board it opened and the repository it put the pane in, when it opened one.
+ * @param opened The model it opened and the repository it put the pane in, when it opened one.
  * @returns The operation, answered.
  */
 function operationAnswered(
@@ -108,7 +108,7 @@ function operationAnswered(
 }
 
 /**
- * Whether the operation is over: the server has answered, and a board it said
+ * Whether the operation is over: the server has answered, and a model it said
  * it opened is being shown by the pane that asked for it. A pane out of
  * contact is not waited on, because nothing more is coming to it.
  * @param operation The operation.
@@ -130,10 +130,10 @@ function operationSettled(
 	if (!ready(operation.paneId)) return true;
 	if (canonicalDestination(operation) !== undefined) return operation.modelArrived;
 	// That the pane moved at all is what says the open arrived. A pane already
-	// showing the board the server opened, in the repository the server put it
-	// in, has nothing to wait for: that is a user opening the board their pane
+	// showing the model the server opened, in the repository the server put it
+	// in, has nothing to wait for: that is a user opening the model their pane
 	// was on, which moves nothing and is still over. Every key and repository
-	// here comes from the server, so the same board is the same string however
+	// here comes from the server, so the same model is the same string however
 	// the request spelled the address.
 	return operationMovedPane(operation, displayed) || atOpenedDestination(operation, displayed);
 }
@@ -141,7 +141,7 @@ function operationSettled(
 /**
  * Whether the pane this operation moved is showing something else now. False
  * for an operation that succeeded without moving anything, which is a user
- * opening the board their pane was already on.
+ * opening the model their pane was already on.
  * @param operation The operation.
  * @param displayed What is on screen now.
  * @returns True when the pane moved.
@@ -173,7 +173,7 @@ function canonicalDestination(operation: Operation) {
 }
 
 /**
- * An already displayed board needs no later arrival.
+ * An already displayed model needs no later arrival.
  * @param operation The answered open.
  * @param displayed The current workspace.
  * @returns Whether the opened destination already matches.

@@ -2,7 +2,7 @@
 //
 // One server serves several vaults and has no working directory, so it cannot
 // know which vault a call means. The call says: `?vault=<directory>` on a
-// request, or a `vault` field in its JSON body, exactly as it names its board.
+// request, or a `vault` field in its JSON body, exactly as it names its model.
 // There is no default. A call that names none is refused with how to name one,
 // and a vault the server cannot read is refused before anything is created.
 //
@@ -144,7 +144,7 @@ function requireVault(req: Request, res: Response, next: NextFunction): void {
 
 /**
  * The vault a request names, when it names one the server can read, for a
- * route that reads no board and answers either way.
+ * route that reads no model and answers either way.
  * @param req The request.
  * @returns The canonical vault, or null when the request names none that can be read.
  */
@@ -154,7 +154,7 @@ function statedVault(req: Request): string | null {
 }
 
 /**
- * The vault a request named. Every route that reads or writes a board mounts
+ * The vault a request named. Every route that reads or writes a model mounts
  * `requireVault` before its handler, so a request that reaches one has named a vault.
  * @param req The request.
  * @returns The canonical vault.

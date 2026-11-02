@@ -3,23 +3,23 @@
 //
 // A pane never starts a pass: a pass reads code and Git and takes seconds, and
 // every open canvas would start one. So the server remembers what the last pass
-// found, and a pane reads that. The memory holds one reading for each board and
-// variant a pass has read: the version of the board it read, when it ran, and
-// what it found on that board. A pass replaces the readings of the boards it
+// found, and a pane reads that. The memory holds one reading for each document and
+// variant a pass has read: the version of the document it read, when it ran, and
+// what it found on that document. A pass replaces the readings of the documents it
 // read and leaves the others, so a pass over a named draft does not forget what
 // the last pass found on the current variants. A reading belongs to the vault
-// the pass read (ADR 0049): a board of one name in two vaults has two.
+// the pass read (ADR 0049): a document of one name in two vaults has two.
 //
-// It lives in memory and nowhere else. Nothing writes a finding into a board,
+// It lives in memory and nowhere else. Nothing writes a finding into a document,
 // the vault or any file (ADR 0015), and the memory goes with the process: a
 // restarted server knows nothing until somebody runs the code check, with
 // `archboard check` or `archboard check code`.
-// It is no copy of a board either: it answers what the code said, never what is
-// on a board, and a pane shows it only over the version it was found on.
+// It is no copy of a document either: it answers what the code said, never what is
+// on a document, and a pane shows it only over the version it was found on.
 
 import type { CodeCheckAnswer, RememberedFindings } from "@archboard/code-intel/code-check";
 
-/** What the last pass found on one board at one variant. */
+/** What the last pass found on one document at one variant. */
 type RememberedReading =
 	| RememberedFindings["readings"][number]
 	| NonNullable<RememberedFindings["models"]>[number];
@@ -28,7 +28,7 @@ type RememberedReading =
 interface CodeFindingsMemory {
 	/**
 	 * Keep what one finished pass found, in place of what any earlier pass found
-	 * on the same boards at the same variants.
+	 * on the same documents at the same variants.
 	 * @param vault The vault the pass read.
 	 * @param answer The pass's answer.
 	 * @param checkedAt When the pass ran.
@@ -37,15 +37,15 @@ interface CodeFindingsMemory {
 	/**
 	 * Everything remembered of one vault.
 	 * @param vault The vault.
-	 * @returns One reading for each board and variant a pass has read there.
+	 * @returns One reading for each document and variant a pass has read there.
 	 */
 	recall(vault: string): RememberedFindings;
 }
 
 /**
  * The key one reading is kept under.
- * @param vault The vault the board lives in.
- * @param document The board's name.
+ * @param vault The vault the document lives in.
+ * @param document The document's name.
  * @param variant The variant's id.
  * @returns The key.
  */
@@ -60,7 +60,7 @@ function keyOf(vault: string, document: string, variant: string): string {
 function createCodeFindingsMemory(): CodeFindingsMemory {
 	const readings = new Map<string, { vault: string; reading: RememberedReading }>();
 	/**
-	 * Keep what one finished pass found on each board it read.
+	 * Keep what one finished pass found on each document it read.
 	 * @param vault The vault the pass read.
 	 * @param answer The pass's answer.
 	 * @param checkedAt When the pass ran.
@@ -94,7 +94,7 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 	/**
 	 * Everything remembered of one vault.
 	 * @param vault The vault.
-	 * @returns One reading for each board and variant a pass has read there.
+	 * @returns One reading for each document and variant a pass has read there.
 	 */
 	function recall(vault: string): RememberedFindings {
 		return {

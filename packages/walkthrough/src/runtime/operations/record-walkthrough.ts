@@ -1,20 +1,20 @@
 import { canonicalRecordingModel } from "#shared/protocol/canonical.ts";
 import { type ArchitectureModelRead } from "@archboard/model/contract";
-// Recording one walkthrough of a board to a video file, narrated by the Codex
+// Recording one walkthrough of a document to a video file, narrated by the Codex
 // voice (TASK-304), in two passes (TASK-381).
 //
 // The recorder first proves it has an ffmpeg that can encode the file (ARCHBOARD_FFMPEG, else
 // PATH, else nixpkgs' through Nix), so a machine that cannot refuses before any voice
 // session or browser starts.
 //
-// Pass one is the talk. The Archboard server's own page, opened on the board in a private
+// Pass one is the talk. The Archboard server's own page, opened on the document in a private
 // headless Chromium the recorder owns, shows the one pane and paces the talk by the voice. It
 // keeps the voice and what happened while the voice spoke. The recorder starts the browser the
 // way the page needs it (a window exactly the reference size, audio allowed to play, a silent
 // microphone granted), drives the page through the shared recording contract, takes the talk
 // out and tears the browser down, whatever happened. It runs against the server the CLI talks
 // to, because that server owns the Codex sign-in the voice needs. The talk is kept with the
-// board and vault check it was drawn from.
+// document and vault check it was drawn from.
 //
 // Pass two renders the picture from the kept talk frame by frame (`render-talk.ts`), with no
 // voice at all. A render that fails keeps the talk, so it can be rendered again with
@@ -63,14 +63,14 @@ type VaultCheck = z.infer<typeof VaultCheckSchema>;
 interface RecordingOptions {
 	/** The server the page is served by. */
 	readonly serverUrl: string;
-	/** The vault check the board is drawn under, which the talk keeps. */
+	/** The vault check the document is drawn under, which the talk keeps. */
 	readonly policy: VaultCheck;
 	/** The variant asked for, by id, or null for the one that is current. */
 	readonly variant: string | null;
 	/** The variant every picture of the talk is read against, by id, or null for the usual one. */
 	readonly against: string | null;
 	/**
-	 * The repository the board is in, as the browser names it (ADR 0050): an
+	 * The repository the document is in, as the browser names it (ADR 0050): an
 	 * identity or an untracked vault's registry name. Null opens the page in the
 	 * vault the server opens a page in.
 	 */
@@ -127,7 +127,7 @@ interface RecordedWalkthrough {
 }
 
 /**
- * What the recording page's address names: the board in pane A, the repository
+ * What the recording page's address names: the document in pane A, the repository
  * it is in, the walkthrough, the language and the variant it is read against. It is read by the browser's own
  * workspace address, so it is the contract between the recorder and the page.
  */
@@ -354,12 +354,12 @@ async function talkedWith(
 }
 
 /**
- * The talk a recording page kept, with the board and vault check it was drawn from.
+ * The talk a recording page kept, with the document and vault check it was drawn from.
  * @param request What was recorded.
  * @param log What the page kept.
  * @param steps How many steps the talk went through.
  * @returns The talk.
- * @throws {WalkthroughRecordingError} When it cannot be rendered: most often a board that changed
+ * @throws {WalkthroughRecordingError} When it cannot be rendered: most often a document that changed
  *   while it was recorded, which no one picture is of.
  */
 function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: number): Talk {
@@ -379,7 +379,7 @@ function talkOf(request: WalkthroughRecordingRequest, log: TalkLog, steps: numbe
 	);
 }
 /**
- * Keep one captured subject without converting a model into a board.
+ * Keep one captured subject without converting a model into a document.
  * @param request The requested recording.
  * @param steps The completed beat count.
  * @returns Talk metadata and its one architecture payload.

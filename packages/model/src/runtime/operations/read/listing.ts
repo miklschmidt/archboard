@@ -1,15 +1,15 @@
-// Which semantic boards a vault holds.
+// Which legacy boards a vault holds.
 //
 // The walk looks for this module's own suffix and nothing else, so a vault full
-// of somebody else's notes lists as no semantic boards rather than as a pile of
+// of somebody else's notes lists as no legacy boards rather than as a pile of
 // unreadable ones. Dotfiles are skipped, which is what keeps an in-flight atomic
-// write's temp file from being listed as a board, and what keeps archboard's own
-// `.archboard` state directory out of somebody's board list.
+// write's temp file from being listed as a model, and what keeps archboard's own
+// `.archboard` state directory out of somebody's model list.
 //
-// Directories are walked, because a board name may carry `/` and a board called
+// Directories are walked, because a model name may carry `/` and a model called
 // `services/payments` is a file in a directory. Links are not followed: a link
 // inside a vault can point anywhere, and a listing that walked one would report
-// somebody's home directory as boards.
+// somebody's home directory as models.
 
 import fs from "node:fs";
 import path from "node:path";
@@ -19,15 +19,15 @@ import {
 	type LegacyBoardLocation,
 } from "#runtime/store/location.ts";
 
-/** How deep a vault is walked. A board address nests; a vault is not a tree. */
+/** How deep a vault is walked. A model address nests; a vault is not a tree. */
 const MAX_DEPTH = 8;
 
 /**
- * Every board file under one directory, as names relative to the vault.
+ * Every model file under one directory, as names relative to the vault.
  * @param at The directory to read.
  * @param prefix What to prepend to the names found there.
  * @param depth How far down this already is.
- * @returns The board names.
+ * @returns The model names.
  */
 function namesUnder(at: string, prefix: string, depth: number): string[] {
 	let entries: fs.Dirent[];
@@ -44,13 +44,13 @@ function namesUnder(at: string, prefix: string, depth: number): string[] {
 }
 
 /**
- * What one directory entry contributes to the listing: a board's name, the
+ * What one directory entry contributes to the listing: a model's name, the
  * names inside it, or nothing at all.
  * @param at The directory it was found in.
  * @param prefix What to prepend to names found there.
  * @param depth How far down that directory already is.
  * @param entry The entry.
- * @returns The board names it contributes.
+ * @returns The model names it contributes.
  */
 function namesIn(at: string, prefix: string, depth: number, entry: fs.Dirent): string[] {
 	if (entry.name.startsWith(".") || entry.isSymbolicLink()) {
@@ -65,10 +65,10 @@ function namesIn(at: string, prefix: string, depth: number, entry: fs.Dirent): s
 }
 
 /**
- * The board name a file contributes, when it is a board file.
+ * The model name a file contributes, when it is a model file.
  * @param prefix What to prepend to the name.
  * @param file The file's own name.
- * @returns The board name, or nothing.
+ * @returns The model name, or nothing.
  */
 function modelName(prefix: string, file: string): string[] {
 	return file.endsWith(LEGACY_BOARD_FILE_SUFFIX)
@@ -77,9 +77,9 @@ function modelName(prefix: string, file: string): string[] {
 }
 
 /**
- * Every semantic board in the vault, by name.
+ * Every legacy board in the vault, by name.
  * @param root The vault root.
- * @returns The boards, sorted by key.
+ * @returns The models, sorted by key.
  */
 function listLegacyBoards(root: string): LegacyBoardLocation[] {
 	const found: LegacyBoardLocation[] = [];
@@ -87,7 +87,7 @@ function listLegacyBoards(root: string): LegacyBoardLocation[] {
 		try {
 			found.push(locateLegacyBoard(name, root));
 		} catch {
-			// A file whose name is not a board address is not a board. It is
+			// A file whose name is not a model address is not a model. It is
 			// somebody's file that happens to end in our suffix, and the listing
 			// says nothing about it rather than refusing to list the vault.
 			continue;

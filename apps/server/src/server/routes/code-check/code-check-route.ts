@@ -9,11 +9,11 @@
 // cancels it, and a stop cancels it and waits for it to settle, so a stop
 // never refuses because of it. A pass changes nothing, so the route is a GET.
 //
-// The code pass (`packages/code-intel/src/runtime/operations/code-check`) reads every board at its current
+// The code pass (`packages/code-intel/src/runtime/operations/code-check`) reads every document at its current
 // variant, or at the draft `variant` names, and gives `boards`, `findings` and
-// `skipped`. `every-draft=true` reads every draft of every board instead, and
+// `skipped`. `every-draft=true` reads every draft of every document instead, and
 // a `variant` beside it is not read (TASK-488). Behind (ADR 0045, TASK-369.02)
-// reads the current variant of each board once, whatever the pass reads. A `variant` that names no draft on any board
+// reads the current variant of each document once, whatever the pass reads. A `variant` that names no draft on any document
 // is refused with the drafts that exist. Each `plan` names a Terraform or
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan
@@ -44,7 +44,7 @@ interface CodeCheckRouteDependencies {
 		name: string,
 		work: (signal: AbortSignal) => Promise<T>,
 	): Promise<T>;
-	/** Run the code check, or say that no board has the named draft or that a plan is refused. */
+	/** Run the code check, or say that no document has the named draft or that a plan is refused. */
 	readonly check: ReturnType<typeof createCodeCheck>["run"];
 	/** What the finished passes found, which the panes read. */
 	readonly memory: CodeFindingsMemory;

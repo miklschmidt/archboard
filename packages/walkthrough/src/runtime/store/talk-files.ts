@@ -28,13 +28,13 @@ import {
 	type TalkParts,
 } from "#shared/protocol/talk.ts";
 
-/** The file that holds a talk's events, board and policy. */
+/** The file that holds a talk's events, document and policy. */
 const TALK_FILE = "talk.json";
 
 /** How many talks the state directory keeps: the newest, before the oldest are removed. */
 const KEPT_TALKS = 10;
 
-/** What a talk directory named for its moment and its board is called. */
+/** What a talk directory named for its moment and its document is called. */
 const STATE_TALK_NAME = /^\d{8}T\d{6}Z-/;
 
 /** The bytes of a WAV file's header for 16-bit mono PCM: RIFF, `fmt ` and the `data` chunk's start. */
@@ -61,8 +61,8 @@ interface TalkPlace {
 }
 
 /**
- * What a board's name becomes in a directory name.
- * @param document The board's name.
+ * What a document's name becomes in a directory name.
+ * @param document The document's name.
  * @returns Lowercase letters, digits and dashes, or "board" for a name with none.
  */
 function slugOf(document: string): string {
@@ -75,9 +75,9 @@ function slugOf(document: string): string {
 }
 
 /**
- * The state directory's place for a board's talk, named for the moment it was recorded, so that
+ * The state directory's place for a document's talk, named for the moment it was recorded, so that
  * names sort in the order the talks were made.
- * @param document The board's name.
+ * @param document The document's name.
  * @param now When it was recorded.
  * @returns The place.
  */
@@ -119,10 +119,10 @@ function requireFreshPlace(place: TalkPlace): void {
 }
 
 /**
- * Where a board's talk is kept, proven free before anything starts: the directory asked for, or a
+ * Where a document's talk is kept, proven free before anything starts: the directory asked for, or a
  * new one in the state directory, named for the moment it was recorded.
  * @param asked The directory asked for, absolute, if any.
- * @param document The board recorded, which names a talk kept in the state directory.
+ * @param document The document recorded, which names a talk kept in the state directory.
  * @param now When it is recorded.
  * @returns The place.
  * @throws {TalkFileError} When the directory asked for exists or has no directory to be made in.

@@ -22,13 +22,13 @@ import {
 } from "./support/canonical-page.ts";
 import { initializeSource } from "./support/canonical-model.ts";
 
-// The canvas draws its pictures in the page (TASK-247): the board it read, laid
+// The canvas draws its pictures in the page (TASK-247): the model it read, laid
 // out by engine workers in this browser, measured by this browser's canvas.
 // What only a real page can show is that the whole of that happens here — no
 // picture is asked of the server, the icons a picture names arrive, a picture
 // this browser already drew is shown again without laying anything out, a
 // theme switch recolours the picture on screen without drawing another, and a
-// change to the board is drawn again.
+// change to the model is drawn again.
 
 /** Short on purpose: each wait names itself well inside the owner's budget. */
 const WAIT = { timeoutMs: 8_000 } as const;
@@ -151,7 +151,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	).toBeTrue();
 	expect(await keptPictures(browser)).toEqual(keptBefore);
 
-	// The board changes: the pane is told, and the new version is drawn here.
+	// The model changes: the pane is told, and the new version is drawn here.
 	await editCanonicalModel(request, vault, "draw-ledger", [
 		{ type: "add-module", module: { name: "Ledger", kind: "datastore", order: 2 } },
 	]);

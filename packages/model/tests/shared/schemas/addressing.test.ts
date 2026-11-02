@@ -10,7 +10,7 @@ import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 type Lifecycle = LegacyBoard["variants"][number]["lifecycle"];
 
 /**
- * A board document holding the stated variants, designating `current` when given.
+ * A model document holding the stated variants, designating `current` when given.
  * @param variants Each variant's id, lifecycle and predecessor.
  * @param current The designated variant, if any.
  * @returns The document.
@@ -42,7 +42,7 @@ const model = (
 /**
  * Parse a document that must be coherent.
  * @param value The document.
- * @returns The board.
+ * @returns The model.
  */
 const parsed = (value: unknown): LegacyBoard => {
 	const result = parseLegacyBoard(value);
@@ -124,7 +124,7 @@ describe("what an address that names no variant opens", () => {
 
 	test("asking for the current variant by its word opens no draft in its place", () => {
 		// Which variant is implemented is a different question from which to open,
-		// and on this board its truthful answer is none.
+		// and on this model its truthful answer is none.
 		expect(opens(model([["v1", "draft"]]), "current")).toBeNull();
 	});
 });

@@ -73,7 +73,7 @@ interface ModelStageProps
 /**
  * A canonical model occupies a pane that holds no legacy board.
  * @param props The vault and the existing empty-model fallback.
- * @returns A model reader, or the existing board surface.
+ * @returns A model reader, or the existing legacy board surface.
  */
 function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 	const reading = useModelVault(props.vault, props.paneId);

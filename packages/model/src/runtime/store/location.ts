@@ -1,24 +1,24 @@
-// Where a semantic board lives.
+// Where a legacy board lives.
 //
-// A board is one JSON document under `.semantic.json` (ADR 0023). The suffix is
+// A model is one JSON document under `.semantic.json` (ADR 0023). The suffix is
 // part of a file's name, so a vault may hold anything else beside it without
 // either one being mistaken for the other: nothing in this module opens a file
-// that is not a semantic board.
+// that is not a legacy board.
 //
 // Addressing is shared rather than reinvented. `vaultPathFor` already knows how
-// to find a board case-insensitively, create it case-preservingly, and refuse a
+// to find a model case-insensitively, create it case-preservingly, and refuse a
 // name that would resolve outside the vault; it takes the suffix as an argument
-// so that there is one answer to "where does this board live" rather than one
+// so that there is one answer to "where does this model live" rather than one
 // per file kind.
 //
 // Two things are this module's own. The first is that the key is computed
-// without touching the filesystem, so a writer can take the board's lease
+// without touching the filesystem, so a writer can take the model's lease
 // before anything looks at a directory: on a case-sensitive filesystem two
 // processes creating `Payments` and `payments` would otherwise each resolve an
 // absent path of their own, take the same lease in turn, and leave two files
-// for one board. The second is that containment is checked against the real
+// for one model. The second is that containment is checked against the real
 // path rather than the written one, because a lexical check passes straight
-// through a symlinked directory and a board is not allowed to be written
+// through a symlinked directory and a model is not allowed to be written
 // outside the vault whatever the vault's own directories point at.
 
 import fs from "node:fs";
@@ -30,10 +30,10 @@ import {
 	vaultPathFor,
 } from "#runtime/store/legacy-address.ts";
 
-/** What a semantic board's aggregate is stored under, inside the vault. */
+/** What a legacy board's aggregate is stored under, inside the vault. */
 const LEGACY_BOARD_FILE_SUFFIX = ".semantic.json";
 
-/** A board's name and the key every writer, lock and broadcast agrees on. */
+/** A model's name and the key every writer, lock and broadcast agrees on. */
 interface LegacyBoardAddress {
 	/** The name as the caller spelled it, validated and trimmed. */
 	readonly name: string;
@@ -48,15 +48,15 @@ interface LegacyBoardLocation extends LegacyBoardAddress {
 }
 
 /**
- * The address of the board a caller asked for, without reading a directory.
+ * The address of the model a caller asked for, without reading a directory.
  *
- * A semantic board has no variant in its address: its variants live inside the
+ * A legacy board has no variant in its address: its variants live inside the
  * one document, which is the point of the aggregate. So the address is a name,
- * and asking for `payments@proposed` is asking for a board called that, not for
+ * and asking for `payments@proposed` is asking for a model called that, not for
  * a variant of `payments`.
- * @param asked The board name as typed.
+ * @param asked The model name as typed.
  * @returns The name and the key.
- * @throws {Error} When the name is not usable as a board name.
+ * @throws {Error} When the name is not usable as a model name.
  */
 function legacyBoardAddress(asked: string): LegacyBoardAddress {
 	const identity = makeIdentity({ board: asked });
@@ -71,10 +71,10 @@ function legacyBoardAddress(asked: string): LegacyBoardAddress {
  *
  * The lexical check in `vaultPathFor` stops a name from spelling its way out
  * with `..`. It cannot stop a directory inside the vault from being a symlink
- * to somewhere else, and a board written through one is a file this program
+ * to somewhere else, and a model written through one is a file this program
  * put outside the vault it was given. The deepest existing ancestor is the one
- * that can be resolved: the board's own file usually does not exist yet.
- * @param file The board file.
+ * that can be resolved: the model's own file usually does not exist yet.
+ * @param file The model file.
  * @param root The vault root.
  * @returns True when the file would be written inside the vault.
  */
@@ -105,10 +105,10 @@ function insideVault(file: string, root: string): boolean {
 }
 
 /**
- * Where the board a caller asked for lives.
- * @param asked The board name as typed.
+ * Where the model a caller asked for lives.
+ * @param asked The model name as typed.
  * @param root The vault root.
- * @returns Where that board is.
+ * @returns Where that model is.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
 function locateLegacyBoard(asked: string, root: string): LegacyBoardLocation {

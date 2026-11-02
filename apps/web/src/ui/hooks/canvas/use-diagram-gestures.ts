@@ -309,7 +309,7 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 		[onSelect, atlas],
 	);
 
-	// A double-click on a card, or a container's header, opens the board one
+	// A double-click on a card, or a container's header, opens the model one
 	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: ReactMouseEvent<HTMLElement>): void => {

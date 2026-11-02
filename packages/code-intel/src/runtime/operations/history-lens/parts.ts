@@ -3,7 +3,7 @@
 //
 // It reads a part bound into a repository this machine has registered, at the
 // HEAD of that checkout. It skips a part with no binding, and a part that
-// carries a drill-down: the board it opens carries its history, and a card
+// carries a drill-down: the document it opens carries its history, and a card
 // that binds a whole directory otherwise adds hundreds of commits. It skips a
 // repository this machine has not registered, which stays silent, and a part
 // pinned to a branch or a commit that its checkout does not have out: the

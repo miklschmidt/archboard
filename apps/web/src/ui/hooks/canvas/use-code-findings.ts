@@ -1,9 +1,9 @@
-// What the last code pass found on the board on screen.
+// What the last code pass found on the model on screen.
 //
-// The server remembers the findings of the last pass that read each board at
-// each variant, with the version of the board it read (ADR 0046). A pane shows
-// them only over that version of that variant. A board that moved since the
-// pass is a board the pass did not read: a right change to it must clear what
+// The server remembers the findings of the last pass that read each model at
+// each variant, with the version of the model it read (ADR 0046). A pane shows
+// them only over that version of that variant. A model that moved since the
+// pass is a model the pass did not read: a right change to it must clear what
 // the pass said, and it does, at once. The next pass that somebody runs speaks
 // for the new version.
 
@@ -14,12 +14,12 @@ import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import { codeFindingsQuery } from "#ui/clients/canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 
-/** What the last pass found on one board at one variant. */
+/** What the last pass found on one model at one variant. */
 type RememberedReading = RememberedFindings["readings"][number];
 
-/** One board as it is on screen: its name, the variant drawn, by id, and the version drawn. */
+/** One model as it is on screen: its name, the variant drawn, by id, and the version drawn. */
 interface ReadingOnScreen {
-	/** The vault the board is in. */
+	/** The vault the model is in. */
 	readonly vault: string;
 	readonly model: string;
 	readonly variant: string;
@@ -27,7 +27,7 @@ interface ReadingOnScreen {
 }
 
 /**
- * The reading of the last pass over the board, variant and version on screen,
+ * The reading of the last pass over the model, variant and version on screen,
  * in the pane's own vault.
  * @param on What is on screen, or null when nothing is.
  * @returns The reading, or null when no pass read exactly that.

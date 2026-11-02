@@ -1,23 +1,23 @@
-// A pane's one header row, the top row of its column: where the board on
+// A pane's one header row, the top row of its column: where the model on
 // screen sits at the start, and at the end the ways to read it and the shell's
 // controls, a rule between them.
 //
 //   [A] ◇ Archboard › ▣ Archboard server › ◷ TASK-373          Diagram About | [▯] [⛶] [×]
 //
 // The pane's letter (while two panes share the centre) and its controls are
-// the shell's (`usePaneChrome`); the rest is the board's. Where the board sits
-// is one breadcrumb: the boards above, each with its level's mark and each a
-// way to it in this pane, then the board in bold, full ink, then the variant
-// when it is not the one the name opens. The boards above are the navigator's
-// own placing of the board, and after a drill-down they end with the boards the
+// the shell's (`usePaneChrome`); the rest is the model's. Where the model sits
+// is one breadcrumb: the models above, each with its level's mark and each a
+// way to it in this pane, then the model in bold, full ink, then the variant
+// when it is not the one the name opens. The models above are the navigator's
+// own placing of the model, and after a drill-down they end with the models the
 // reader came down through, each a way back (`use-drill-places.ts`).
 // The two tabs switch what the area under the row shows: the picture, or the
-// About page, which is everything the board says about itself on one page
+// About page, which is everything the model says about itself on one page
 // (TASK-475). While the row is narrow (two panes), the tab that is not open
 // keeps only its mark and the middle of the breadcrumb folds behind one
-// control, never the board itself. The first of the controls at the end is the
+// control, never the model itself. The first of the controls at the end is the
 // pane's: it shows and hides the sidebar, which is the pane's too. A pane the
-// server has pointed at no board keeps the same row: it says so, and keeps the
+// server has pointed at no model keeps the same row: it says so, and keeps the
 // shell's letter, controls and notice.
 
 import { RiArrowRightSLine, RiMoreLine } from "@remixicon/react";
@@ -37,7 +37,7 @@ import type { Sidebar } from "#ui/hooks/canvas/use-sidebar.ts";
 import type { OfferedVariant } from "#ui/rules/canvas/reading/document.ts";
 import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
 
-/** A board above the one on screen, as the navigator places it or as the reader came down from it. */
+/** A model above the one on screen, as the navigator places it or as the reader came down from it. */
 interface CrumbPlace {
 	readonly name: string;
 	/** Its level, as it states it. */
@@ -53,8 +53,8 @@ interface CrumbPlace {
 /**
  * The repository a crumb names, muted, where a trail across repositories enters
  * it: on GitHub by its owner and name beside GitHub's mark. It gives way before
- * the board's name does, its whole name shows on hover, and assistive
- * technology hears it whole and apart from the board's name.
+ * the model's name does, its whole name shows on hover, and assistive
+ * technology hears it whole and apart from the model's name.
  * @param props The repository.
  * @param props.repository Its name, or undefined when the crumb names none.
  * @returns The name, or nothing.
@@ -77,17 +77,17 @@ function RepositoryOf(props: { readonly repository: string | undefined }): JSX.E
 interface PaneHeaderProps {
 	/** A board-specific control between the breadcrumb and the page tabs. */
 	readonly children?: ReactNode;
-	/** The board on screen. */
+	/** The model on screen. */
 	readonly name: string;
-	/** Its level, when the board states one. */
+	/** Its level, when the model states one. */
 	readonly level: string | undefined;
 	/** Its repository, named where a trail across repositories enters it. */
 	readonly repository?: string;
-	/** The boards above it, outermost first. */
+	/** The models above it, outermost first. */
 	readonly ancestors: readonly CrumbPlace[];
-	/** The variant on screen, when it is not the one the board's name opens. */
+	/** The variant on screen, when it is not the one the model's name opens. */
 	readonly variant: OfferedVariant | null;
-	/** Nothing the board describes is built: it has no current variant. */
+	/** Nothing the model describes is built: it has no current variant. */
 	readonly unbuilt: boolean;
 	/** The pane's sidebar, which the first of the controls at the end shows and hides. */
 	readonly sidebar: Sidebar;
@@ -101,7 +101,7 @@ interface KeyedPlace {
 
 /**
  * The places of the breadcrumb, each with a key of its own. A reader can pass
- * one board more than once on the way down, so a name does not tell its places
+ * one model more than once on the way down, so a name does not tell its places
  * apart: the key also counts how often the name came before.
  * @param places The places, outermost first.
  * @returns The places, keyed.
@@ -126,10 +126,10 @@ function Step(): JSX.Element {
 }
 
 /**
- * One board above the one on screen: its level's mark and its name, which
+ * One model above the one on screen: its level's mark and its name, which
  * shows it in this pane.
- * @param props The board, and whether it gives way while the header is narrow.
- * @param props.place The board.
+ * @param props The model, and whether it gives way while the header is narrow.
+ * @param props.place The model.
  * @param props.middle Whether it is one of the middle places, which a narrow header folds away.
  * @returns The place, with the step after it.
  */
@@ -150,7 +150,7 @@ function Ancestor(props: { readonly place: CrumbPlace; readonly middle: boolean 
 				title={place.level === undefined ? place.name : `${place.name} · ${place.level}`}
 				className={cn(
 					"text-muted-foreground hover:text-foreground hover:bg-sidebar-accent text-control rounded-control -mx-1 flex h-7 min-w-0 items-center gap-1.5 px-1 font-medium",
-					// A crumb that names its repository keeps room for the board's name too.
+					// A crumb that names its repository keeps room for the model's name too.
 					place.repository === undefined ? "max-w-44" : "max-w-96",
 				)}
 			>
@@ -166,7 +166,7 @@ function Ancestor(props: { readonly place: CrumbPlace; readonly middle: boolean 
 /**
  * The middle places, folded behind one control while the header is narrow.
  * @param props The folded places.
- * @param props.places Every board above the nearest one, the outermost included.
+ * @param props.places Every model above the nearest one, the outermost included.
  * @returns The fold, or nothing when there is nothing to fold.
  */
 function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element | null {
@@ -197,10 +197,10 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
 }
 
 /**
- * Where the pane is, as one breadcrumb: the boards above, each with its
- * level's mark and each a way to it; the board on screen in bold, full ink
+ * Where the pane is, as one breadcrumb: the models above, each with its
+ * level's mark and each a way to it; the model on screen in bold, full ink
  * with its level's mark; and the variant on screen with its lifecycle's mark
- * when it is not the one the board's name opens. The board and the variant are
+ * when it is not the one the model's name opens. The model and the variant are
  * where the pane is, not links.
  * @param props The header's inputs.
  * @returns The breadcrumb.
@@ -251,7 +251,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 
 /**
  * The header of one pane, and under it what the shell says about the pane.
- * @param props The board and where the reader came from.
+ * @param props The model and where the reader came from.
  * @returns The header row.
  */
 function PaneHeader(props: PaneHeaderProps): JSX.Element {
@@ -273,7 +273,7 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
 }
 
 /**
- * The header of a pane the server has pointed at no board, as in a vault with
+ * The header of a pane the server has pointed at no model, as in a vault with
  * none: it says so, and keeps the shell's controls and what the shell says.
  * @returns The header row.
  */

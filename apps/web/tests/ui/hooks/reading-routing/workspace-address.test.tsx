@@ -28,9 +28,9 @@ function noop(): void {
 interface FakePane {
 	paneId: string;
 	paneKey: string | null;
-	/** The repository the board is in, or null for the pane's own. */
+	/** The repository the model is in, or null for the pane's own. */
 	repository: string | null;
-	/** The view a semantic board is being read through, or null. */
+	/** The view a legacy board is being read through, or null. */
 	view: string | null;
 }
 
@@ -43,7 +43,7 @@ interface HeldOpen {
 }
 
 /**
- * The board the server says it opened. A test that wants an address spelled
+ * The model the server says it opened. A test that wants an address spelled
  * one way and resolved another says so; otherwise it answers with what it was
  * asked for.
  */
@@ -70,7 +70,7 @@ interface FakeShell {
 	readonly render: () => Promise<void>;
 	/** Answer the oldest open the server was given. */
 	readonly answer: (answer: boolean | FakeOpenAnswer) => Promise<void>;
-	/** The socket told a pane its board, and the shell rendered. */
+	/** The socket told a pane its model, and the shell rendered. */
 	readonly adopt: (paneId: string, paneKey: string, repository?: string | null) => Promise<void>;
 	readonly port: () => WorkspacePort;
 }
@@ -78,7 +78,7 @@ interface FakeShell {
 /**
  * A shell that answers the address bar the way the real one does: pane changes
  * are visible after a render, and an open is answered by the server before the
- * pane is told about its board.
+ * pane is told about its model.
  * @param panes What the panes show to begin with.
  * @param activePaneId The focused pane.
  * @returns The fake.
@@ -114,7 +114,7 @@ function fakeShell(
 		},
 		/**
 		 * Answer the oldest open.
-		 * @param answer Whether the board was there, and which board it resolved to.
+		 * @param answer Whether the model was there, and which model it resolved to.
 		 */
 		answer: async (answer: boolean | FakeOpenAnswer): Promise<void> => {
 			const open = shell.opens.shift();
@@ -133,9 +133,9 @@ function fakeShell(
 			});
 		},
 		/**
-		 * The socket told a pane its board.
+		 * The socket told a pane its model.
 		 * @param paneId The pane.
-		 * @param paneKey The board it now shows.
+		 * @param paneKey The model it now shows.
 		 * @param repository The repository it is in now; where it was when not said.
 		 */
 		adopt: async (paneId: string, paneKey: string, repository?: string | null): Promise<void> => {
@@ -162,9 +162,9 @@ function fakeShell(
 			 */
 			ready: (): boolean => true,
 			/**
-			 * Point a pane at a board; the answer waits for the test.
+			 * Point a pane at a model; the answer waits for the test.
 			 * @param paneId The pane.
-			 * @param paneKey The board.
+			 * @param paneKey The model.
 			 * @param repository The repository it is in, or null for the pane's own.
 			 * @returns The outcome, once the test gives one.
 			 */
@@ -177,7 +177,7 @@ function fakeShell(
 					shell.opens.push({ paneId, paneKey, repository, answer: resolve });
 				}),
 			/**
-			 * Read a pane's board another way.
+			 * Read a pane's model another way.
 			 * @param paneId The pane.
 			 * @param view The view, or null for the whole variant.
 			 * @returns Whether the reading changed.
@@ -229,8 +229,8 @@ function fakeShell(
 				return true;
 			},
 			/**
-			 * Boards nothing could reach.
-			 * @param models The boards.
+			 * Legacy boards nothing could reach.
+			 * @param models The legacy boards.
 			 */
 			reportUnreachable: (models): void => {
 				shell.unreachable.push(...models.map(({ paneKey }) => paneKey));
@@ -374,7 +374,7 @@ test("a user's open pushes a history entry only when it moved the pane", async (
 	mounted = await mount(shell, "?paneA=payments");
 	await settle();
 	const before = window.history.length;
-	// Opening the board the pane already shows is not a move to record.
+	// Opening the model the pane already shows is not a move to record.
 	const noMove = await shell.addressing?.claim({
 		kind: "model",
 		paneId: "A",
@@ -406,7 +406,7 @@ test("an open that had nothing to move gives the slot back rather than holding i
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments");
 	await settle();
-	// Opening the board the pane already shows moves nothing, so there is
+	// Opening the model the pane already shows moves nothing, so there is
 	// nothing to wait for; whoever asked next must not be left holding on.
 	const first = await shell.addressing?.claim({
 		kind: "model",
@@ -430,8 +430,8 @@ test("an address spelled one way and resolved another still gives the slot back"
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments");
 	await settle();
-	// `payments@current` and `payments` are one board; only the server knows
-	// that, so it is the board it says it opened that decides whether the pane
+	// `payments@current` and `payments` are one model; only the server knows
+	// that, so it is the model it says it opened that decides whether the pane
 	// has anything to move to.
 	const first = await shell.addressing?.claim({
 		kind: "model",
@@ -455,7 +455,7 @@ test("a restore whose board resolves to another spelling settles on what the pan
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments@current");
 	expect(shell.opens.map((open) => open.paneKey)).toEqual(["payments@current"]);
-	// The server resolves the alias to the board the pane is already on, so
+	// The server resolves the alias to the model the pane is already on, so
 	// there is nothing to adopt and the address settles on what is shown.
 	await shell.answer({ reached: true, openedKey: "payments" });
 	await settle();
@@ -464,7 +464,7 @@ test("a restore whose board resolves to another spelling settles on what the pan
 
 test("a restore reads the view it names once the server says how it spells the board", async () => {
 	const shell = fakeShell([["A", "payments"]]);
-	// `Engine@current` and `engine` are one board and one variant, and only the
+	// `Engine@current` and `engine` are one model and one variant, and only the
 	// server knows it (ADR 0010, the `current` designation, a former name).
 	mounted = await mount(shell, "?paneA=Engine@current&viewA=v1");
 	await shell.answer({ reached: true, openedKey: "engine" });
@@ -491,7 +491,7 @@ test("a person opening the same board in another repository has moved, and it wa
 		permission.move.done("payments", "github.com/acme/billing");
 	}
 	await settle();
-	// The server answered, but the pane is still on the shop's board.
+	// The server answered, but the pane is still on the shop's model.
 	expect(new URLSearchParams(shownSearch()).get("repoA")).toBe("github.com/acme/shop");
 	await shell.adopt("A", "payments", "github.com/acme/billing");
 	expect(new URLSearchParams(shownSearch()).get("repoA")).toBe("github.com/acme/billing");
@@ -506,7 +506,7 @@ test("a restore of the same board in another repository reads its view once the 
 	expect(shell.opens.map((open) => open.repository)).toEqual(["lab"]);
 	await shell.answer(true);
 	await settle();
-	// Not over yet: the pane has not reached the lab's board.
+	// Not over yet: the pane has not reached the lab's model.
 	expect(shownSearch()).toBe("paneA=pipeline&repoA=lab&viewA=v1");
 	await shell.adopt("A", "pipeline", "lab");
 	await settle();

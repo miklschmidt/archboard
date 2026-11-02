@@ -7,12 +7,12 @@ import {
 } from "#ui/state/architecture-model/presentation.ts";
 
 /**
- * Carry the camera between the reader and a presentation of one board. Each has its own
+ * Carry the camera between the reader and a presentation of one legacy board. Each has its own
  * surface and keeps its own camera, so the one that comes into sight starts where the
- * other stood and glides to its own rest. Another board has no such correspondence,
+ * other stood and glides to its own rest. Another legacy board has no such correspondence,
  * and the change stays plain.
  * @param camera The camera of this surface.
- * @param model The board on this surface.
+ * @param model The legacy board on this surface.
  * @param reducedMotion Whether the person asked for no motion.
  */
 function useCameraHandover(camera: PictureCamera, model: string, reducedMotion: boolean): void {
@@ -38,9 +38,9 @@ function useCameraHandover(camera: PictureCamera, model: string, reducedMotion: 
 }
 
 /**
- * Start from the camera another surface left, when it stood on this board.
+ * Start from the camera another surface left, when it stood on this legacy board.
  * @param handover The pane's handover.
- * @param model The board on this surface.
+ * @param model The legacy board on this surface.
  * @param camera The camera of this surface.
  */
 function startFrom(handover: CameraHandover, model: string, camera: PictureCamera): void {

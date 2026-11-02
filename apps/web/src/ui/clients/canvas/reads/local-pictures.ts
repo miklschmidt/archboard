@@ -1,28 +1,28 @@
 // Pictures drawn in this page (TASK-247).
 //
-// A picture is drawn from the board document and the vault policy this tab has
+// A picture is drawn from the model document and the vault policy this tab has
 // read, both through the same cache the rest of the pane reads them through, so
-// a picture and the panel beside it are always of the same version. The board
+// a picture and the panel beside it are always of the same version. The model
 // is a read-only cache of the server's (ADR 0023): nothing here edits it, and a
 // kept picture is shown only when it was drawn from the version the server
-// says the board is at now.
+// says the model is at now.
 //
 // Two things the server route never did:
 //
 //   Kept pictures. A picture is kept in the browser's IndexedDB, stamped with
-//   the board version, the policy fingerprint and the renderer build
-//   (`picture-cache.ts`), so opening a board this browser has drawn before shows
-//   it without laying it out again. When the server lists its boards, pictures
-//   of boards that moved or went away are forgotten.
+//   the model version, the policy fingerprint and the renderer build
+//   (`picture-cache.ts`), so opening a model this browser has drawn before shows
+//   it without laying it out again. When the server lists its models, pictures
+//   of models that moved or went away are forgotten.
 //
-//   Drawing ahead. When the page loads and the server lists its boards, every
-//   listed board is drawn in the background, one at a time: the variant its name
-//   opens, whole. A board with a kept picture of its version comes out of
+//   Drawing ahead. When the page loads and the server lists its models, every
+//   listed model is drawn in the background, one at a time: the variant its name
+//   opens, whole. A model with a kept picture of its version comes out of
 //   storage without being laid out, so this costs nothing once the pictures are
-//   kept; after a new renderer build or a cleared cache it means a board is
+//   kept; after a new renderer build or a cleared cache it means a model is
 //   ready before anybody opens it (TASK-341). And when the server announces that
-//   a board changed, its variants are drawn again in the views this tab has
-//   been reading. A board somebody opens is drawn by the pane itself, on another
+//   a model changed, its variants are drawn again in the views this tab has
+//   been reading. A model somebody opens is drawn by the pane itself, on another
 //   of the renderer's workers, so neither waits for it.
 //
 // A picture is drawn once for both themes: it paints with the page's colour
@@ -65,7 +65,7 @@ import {
 import { cachedReadings } from "#ui/clients/canvas/reads/read-keys.ts";
 import { modelGoneStale } from "#ui/clients/canvas/reads/read-refresh.ts";
 
-/** Draws one board in this page. */
+/** Draws one model in this page. */
 type DrawLegacyBoard = typeof drawLegacyBoardHere;
 
 /** What drawing in this page needs. */
@@ -79,12 +79,12 @@ interface LocalPictureSetup {
 }
 
 /**
- * The board a request is about, as this tab read it.
+ * The legacy board a request is about, as this tab read it.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board name.
- * @returns The board.
- * @throws {ReadingError} When what the server sent is not a coherent board.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board name.
+ * @returns The legacy board.
+ * @throws {ReadingError} When what the server sent is not a coherent legacy board.
  */
 async function modelFor(client: QueryClient, vault: string, model: string): Promise<LegacyBoard> {
 	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, model)));
@@ -99,7 +99,7 @@ async function modelFor(client: QueryClient, vault: string, model: string): Prom
  * @param client The tab's cache.
  * @param drawing The pictures being laid out now, by request and stamp.
  * @returns The drawing, or the news that there is nothing to draw.
- * @throws {ReadingError} When the board has no such variant or view, or cannot be read.
+ * @throws {ReadingError} When the model has no such variant or view, or cannot be read.
  */
 async function drawHere(
 	setup: LocalPictureSetup,
@@ -121,8 +121,8 @@ async function drawHere(
 			? undefined
 			: await readCachedPicture(setup.storage, request, stamp);
 	// The same picture asked for again while it is still being laid out — a
-	// pane reading its board again as the first read lands — waits for that
-	// drawing rather than laying the board out a second time.
+	// pane reading its model again as the first read lands — waits for that
+	// drawing rather than laying the model out a second time.
 	const key = JSON.stringify([
 		request.vault,
 		request.model,
@@ -143,8 +143,8 @@ async function drawHere(
  * Lay a picture out once, keep it when it is done, and let anyone asking for
  * the same picture meanwhile wait for it.
  * @param setup The renderer and the storage.
- * @param what The board, request, stamp and policy to draw with.
- * @param what.model The board.
+ * @param what The legacy board, request, stamp and policy to draw with.
+ * @param what.model The legacy board.
  * @param what.request What is asked for.
  * @param what.stamp What the picture is kept under.
  * @param what.policy The vault policy.
@@ -177,11 +177,11 @@ function startDrawing(
 /**
  * Lay a request out and draw it.
  * @param setup The renderer.
- * @param model The board.
+ * @param model The legacy board.
  * @param request What is asked for.
  * @param policy The vault policy.
  * @returns The render answer.
- * @throws {ReadingError} When the board has no such variant or view.
+ * @throws {ReadingError} When the legacy board has no such variant or view.
  */
 async function drawn(
 	setup: LocalPictureSetup,
@@ -205,10 +205,10 @@ async function drawn(
 }
 
 /**
- * What this tab has been reading of one board: the name it asks its pictures by, and the views.
+ * What this tab has been reading of one legacy board: the name it asks its pictures by, and the views.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board that changed.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board that changed.
  * @returns How to ask for its pictures again.
  */
 function readingsOf(
@@ -226,10 +226,10 @@ function readingsOf(
 }
 
 /**
- * Every picture of a changed board this tab is likely to show next.
+ * Every picture of a changed legacy board this tab is likely to show next.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board that changed.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board that changed.
  * @returns The requests, current variant first.
  */
 async function picturesToDrawAhead(
@@ -238,12 +238,12 @@ async function picturesToDrawAhead(
 	model: string,
 ): Promise<SemanticRenderRequest[]> {
 	const reading = readingsOf(client, vault, model);
-	// Marked stale without reading anything yet: a pane showing the board reads
+	// Marked stale without reading anything yet: a pane showing the model reads
 	// its own again, and the drawing below reads the rest.
 	await modelGoneStale(client, vault, reading.name);
 	const document = await modelFor(client, vault, reading.name);
-	// The About page asks for the variant the board's name opens by no name, and any other by
-	// id. A board whose name opens nothing, because it has several drafts and no current variant,
+	// The About page asks for the variant the model's name opens by no name, and any other by
+	// id. A model whose name opens nothing, because it has several drafts and no current variant,
 	// is asked for by id throughout.
 	const opened = addressedVariant(document);
 	const bare = opened.ok ? opened.variant.id : undefined;
@@ -263,11 +263,11 @@ async function picturesToDrawAhead(
 }
 
 /**
- * Draw a changed board's pictures ahead, one at a time. A failure to draw one
+ * Draw a changed legacy board's pictures ahead, one at a time. A failure to draw one
  * ahead is left for the pane that asks for it to report.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board that changed.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board that changed.
  */
 async function drawAhead(client: QueryClient, vault: string, model: string): Promise<void> {
 	const requests = await picturesToDrawAhead(client, vault, model);
@@ -278,13 +278,13 @@ async function drawAhead(client: QueryClient, vault: string, model: string): Pro
 }
 
 /**
- * Draw every listed board ahead, one at a time: the variant its name opens,
- * whole. A kept picture of the board's version comes out of storage without a
+ * Draw every listed legacy board ahead, one at a time: the variant its name opens,
+ * whole. A kept picture of the legacy board's version comes out of storage without a
  * layout. A failure to draw one ahead is left for the pane that asks for it to
  * report.
  * @param client The tab's cache.
- * @param vault The vault the boards are in.
- * @param models The boards the server lists.
+ * @param vault The vault the legacy boards are in.
+ * @param models The legacy boards the server lists.
  */
 async function drawListedAhead(
 	client: QueryClient,
@@ -293,9 +293,9 @@ async function drawListedAhead(
 ): Promise<void> {
 	for (const entry of models) {
 		// Asked by its key, as a pane and an address ask for it, so the picture
-		// lands where the pane that opens the board looks for it.
+		// lands where the pane that opens the model looks for it.
 		const { name } = readingsOf(client, vault, entry.key);
-		// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
+		// oxlint-disable-next-line no-await-in-loop -- one model at a time, so drawing ahead never takes more than one of the renderer's workers
 		await client.prefetchQuery(
 			semanticRenderQuery({ vault, model: name, layout: layoutEngineNow() }),
 		);
@@ -317,8 +317,8 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	const drawing = new Map<string, Promise<SemanticRenderReply>>();
 	return {
 		/**
-		 * Draw a picture here; the first one also starts drawing changed boards ahead.
-		 * @param request The board, variant and view.
+		 * Draw a picture here; the first one also starts drawing changed models ahead.
+		 * @param request The model, variant and view.
 		 * @param client The tab's cache.
 		 * @returns The drawing, or the news that there is nothing to draw.
 		 */
@@ -332,11 +332,11 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 			return drawHere(setup, request, client, drawing);
 		},
 		/**
-		 * Forget kept pictures of boards that moved or went away, and draw the
-		 * listed boards ahead after any other vault's sweep, unless this vault's
+		 * Forget kept pictures of legacy boards that moved or went away, and draw the
+		 * listed legacy boards ahead after any other vault's sweep, unless this vault's
 		 * is already waiting or under way.
-		 * @param vault The vault the boards are in.
-		 * @param models The boards the server lists.
+		 * @param vault The vault the legacy boards are in.
+		 * @param models The legacy boards the server lists.
 		 * @param client The tab's cache.
 		 */
 		listed: (vault, models, client) => {

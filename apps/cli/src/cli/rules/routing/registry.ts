@@ -61,7 +61,7 @@ function usesBrowserSession(command: AnyCommandContract): boolean {
 
 /**
  * Finds the first way a command breaks the architecture rule: browser-session work lives only
- * in the browser namespace, and the browser namespace never writes a board note.
+ * in the browser namespace, and the browser namespace never writes a model note.
  * @param entry - The registry entry to check.
  * @returns The violation message, or null when the command is placed correctly.
  */

@@ -46,7 +46,7 @@ interface Narrator {
 	 */
 	readonly sync: (state: ShellState) => void;
 	/**
-	 * Narrate one walkthrough of one pane's board. Nothing starts while voice runs.
+	 * Narrate one walkthrough of one pane's model. Nothing starts while voice runs.
 	 * @param paneId The pane.
 	 * @param walkthrough The walkthrough's id.
 	 */

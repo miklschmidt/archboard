@@ -1,4 +1,4 @@
-// How a pane hears that the semantic board it is showing has changed.
+// How a pane hears that the legacy board it is showing has changed.
 //
 // The server announces a semantic write on the existing pane socket, as
 // `{ type: "model_note", semantic: true, board, version }`, to every socket
@@ -9,14 +9,14 @@
 // What the socket cannot do is reach the cache. A pane's message handler is
 // not a React component, so it cannot read the query client out of the
 // context the cache lives in. This is the seam between the two: the message
-// handler announces the board by vault and name, and whichever panes are showing that
-// board answer by invalidating their own drawing through the cache they are
+// handler announces the model by vault and name, and whichever panes are showing that
+// model answer by invalidating their own drawing through the cache they are
 // already subscribed to. One announcement, no cache reference outside React,
 // and nothing to unwind when a pane and its socket go.
 
 /**
- * What a listener is told: which board of which vault moved, and to which
- * version. Two repositories can each have a board of the same name, and news of
+ * What a listener is told: which model of which vault moved, and to which
+ * version. Two repositories can each have a model of the same name, and news of
  * one is not news of the other.
  */
 type ModelChangeListener = (vault: string, model: string, version: number) => void;
@@ -24,10 +24,10 @@ type ModelChangeListener = (vault: string, model: string, version: number) => vo
 const listeners = new Set<ModelChangeListener>();
 
 /**
- * Tell every pane that a semantic board has a new version.
+ * Tell every pane that a legacy board has a new version.
  * @param vault The vault of the socket the news came on.
- * @param model The board key the server announced.
- * @param version The version the board is at now.
+ * @param model The legacy board key the server announced.
+ * @param version The version the legacy board is at now.
  */
 function announceModelChange(vault: string, model: string, version: number): void {
 	for (const listener of listeners) {
@@ -36,7 +36,7 @@ function announceModelChange(vault: string, model: string, version: number): voi
 }
 
 /**
- * Hear semantic board changes until the returned function is called.
+ * Hear legacy board changes until the returned function is called.
  * @param listener What to tell.
  * @returns Stops listening.
  */

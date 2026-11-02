@@ -45,7 +45,7 @@ interface StepFigureProps {
 
 /**
  * The number of the step shown, and how many steps there are. The numbers roll like the digits of
- * a flip board: the one before leaves upwards and the next rises in, and stepping back runs it the
+ * a flip model: the one before leaves upwards and the next rises in, and stepping back runs it the
  * other way.
  * @param props The walkthrough, the step shown and what places the cell.
  * @returns The figure.

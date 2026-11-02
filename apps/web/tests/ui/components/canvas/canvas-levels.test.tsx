@@ -1,14 +1,14 @@
-// Reading the board a level down.
+// Reading the model a level down.
 //
-// A drill-down opens another board in the same pane. It is not addressed — the
+// A drill-down opens another model in the same pane. It is not addressed — the
 // trail is local and the address still names where the reader started — but it
-// is still a board somebody is reading, so it offers what any board offers:
+// is still a model somebody is reading, so it offers what any model offers:
 // its own ways of being read, in the sidebar. What it must not offer is the
-// level above's: a view id belongs to one board, so the reading starts again at
+// level above's: a view id belongs to one model, so the reading starts again at
 // each level.
 //
 // The pane is mounted with motion off throughout: these are about what a level
-// reads, and a board that opens by flying into its card is the dive's tests.
+// reads, and a model that opens by flying into its card is the dive's tests.
 
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
@@ -28,16 +28,16 @@ import {
 	twoCardPipeline,
 } from "#tests/ui/support/canvas/legacy-documents.ts";
 
-/** The two ways the board below can be read. */
+/** The two ways the model below can be read. */
 const ENGINE_VIEWS = [
 	{ id: "ev1", name: "The parts", grammar: "architecture" },
 	{ id: "ev2", name: "One write, in order", grammar: "sequence" },
 ] as const;
 
-/** The one way the board above can be read. */
+/** The one way the model above can be read. */
 const PIPELINE_VIEW = { id: "pv1", name: "Where writes go", grammar: "architecture" } as const;
 
-/** The current state of the board the pane is opened on: one node, with a link to the level below. */
+/** The current state of the model the pane is opened on: one node, with a link to the level below. */
 const PIPELINE_CURRENT = {
 	id: "v1",
 	name: "as it is",
@@ -55,7 +55,7 @@ const PIPELINE_CURRENT = {
 	},
 } as const;
 
-/** The board the pane is opened on. */
+/** The model the pane is opened on. */
 const PIPELINE = documentOf("pipeline", [PIPELINE_CURRENT], "v1", [
 	{ ...PIPELINE_VIEW, scope: { kind: "all" } },
 ]);
@@ -82,7 +82,7 @@ const AS_BUILT = {
 	},
 };
 
-/** The state the board below says is implemented. */
+/** The state the model below says is implemented. */
 const SHIPPED = {
 	id: "e2",
 	name: "shipped",
@@ -90,10 +90,10 @@ const SHIPPED = {
 	content: { nodes: [{ id: "m1", name: "atomic-write", kind: "module" }], edges: [] },
 };
 
-/** The views the board below offers, scoped as its document states them. */
+/** The views the model below offers, scoped as its document states them. */
 const ENGINE_SCOPES = ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } }));
 
-/** The board below: two states, two ways of reading it. */
+/** The model below: two states, two ways of reading it. */
 const ENGINE = documentOf("engine", [AS_BUILT, SHIPPED], "e2", ENGINE_SCOPES);
 
 /**
@@ -137,7 +137,7 @@ test("a board a level down offers its own views and its own states", async () =>
 	await settle();
 	await openDown();
 
-	// The target's own views, not the ones from the board above: a view id is a
+	// The target's own views, not the ones from the model above: a view id is a
 	// subject of one variant's content and means nothing here.
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
 		"Overview",
@@ -194,7 +194,7 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 	await act(async () => {
 		fireEvent.doubleClick(document.querySelector("#card")!);
 	});
-	// The reader moves to another state of this board before the board below answers.
+	// The reader moves to another state of this model before the model below answers.
 	server.reply = {
 		status: 200,
 		body: {
@@ -209,12 +209,12 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 		engineRead.resolve();
 	});
 	await settle();
-	// The pane never asks for a picture of the board below.
+	// The pane never asks for a picture of the model below.
 	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 });
 
 test("a newer double-click wins over an older one whose board answers first", async () => {
-	// Two cards, each opening a different board.
+	// Two cards, each opening a different model.
 	server.documents["pipeline"] = twoCardPipeline();
 	server.documents["engine"] = cardDocument("engine", undefined);
 	server.documents["store"] = cardDocument("store", undefined);
@@ -237,7 +237,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	});
 	const stage = document.querySelector("[data-slot='canvas-stage']");
 
-	// The older double-click's board answers while the newer one's is still being
+	// The older double-click's model answers while the newer one's is still being
 	// read. The reader has asked for something else since, so it opens nothing.
 	await act(async () => {
 		engineRead.resolve();
@@ -246,7 +246,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	expect(stage?.getAttribute("data-model")).toBe("pipeline");
 	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 
-	// The newer one's board then answers, and is the one that opens and stays open.
+	// The newer one's model then answers, and is the one that opens and stays open.
 	server.reply = { status: 200, body: drawing(1, "store") };
 	await act(async () => {
 		storeRead.resolve();
@@ -273,11 +273,11 @@ test("while the board below is drawn, the board above stays on the pane only to 
 	});
 	await settle();
 	const stage = document.querySelector("[data-slot='canvas-stage']");
-	// The pane is waiting on the board below, and says so, under that board's name.
+	// The pane is waiting on the model below, and says so, under that model's name.
 	expect(stage?.getAttribute("data-state")).toBe("loading");
 	expect(stage?.getAttribute("aria-busy")).toBe("true");
 	expect(stage?.getAttribute("aria-label")).toContain("engine");
-	// What it shows is the board above, which cannot be reached into.
+	// What it shows is the model above, which cannot be reached into.
 	const viewport = document.querySelector("[data-slot='canvas-viewport']");
 	expect(viewport?.querySelector("g[data-semantic-id='n1']")).not.toBeNull();
 	expect(viewport?.hasAttribute("inert")).toBe(true);
@@ -329,7 +329,7 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='pane-crumb']")!);
 	});
 	await settle();
-	// The level below's choice went with the level; the pane's own board is read
+	// The level below's choice went with the level; the pane's own model is read
 	// the way the shell says it is, which is where the address carries it.
 	const stage = document.querySelector("[data-slot='canvas-stage']");
 	expect(stage?.getAttribute("data-model")).toBe("pipeline");
@@ -344,9 +344,9 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 });
 
 /**
- * Open the board the card drills down to, as a double-click on it does.
- * @param model The board it opens, which the next picture is of.
- * @returns Settles once that board is on screen.
+ * Open the legacy board the card drills down to, as a double-click on it does.
+ * @param model The legacy board it opens, which the next picture is of.
+ * @returns Settles once that legacy board is on screen.
  */
 async function doubleClickInto(model: string): Promise<void> {
 	server.reply = { status: 200, body: drawing(1, model) };
@@ -418,7 +418,7 @@ test("the pane says which board it is actually reading, not the one it was opene
 	expect(readings.at(-1)?.model).toBe("pipeline");
 
 	await openDown();
-	// A shell told "pipeline" here would say an agent is looking at a board
+	// A shell told "pipeline" here would say an agent is looking at a model
 	// nobody has on screen, and would open the code of a node from the wrong one.
 	expect(readings.at(-1)?.model).toBe("engine");
 
@@ -440,7 +440,7 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	});
 	await settle();
 	await openDown();
-	// The link named "as built", which is not the board below's current state.
+	// The link named "as built", which is not the model below's current state.
 	expect(renderCalls().at(-1)).toContain("variant=e1");
 
 	await act(async () => {

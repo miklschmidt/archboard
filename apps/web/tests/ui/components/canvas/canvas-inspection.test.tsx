@@ -3,10 +3,10 @@
 //
 // The card in the picture carries a name, a kind and one line. More of what
 // an architecture says about a node — the longer description, where its code
-// is, and the board under it — is reached by inspecting, and that
+// is, and the model under it — is reached by inspecting, and that
 // is what these check. They read the rendered panel rather than the module's
 // internals, because "a person can find this out" is the claim being made.
-// The code and the board under it are the panel's foot, where a part's ways
+// The code and the model under it are the panel's foot, where a part's ways
 // deeper are.
 
 import { expect, test } from "bun:test";
@@ -23,12 +23,12 @@ import {
 	settle,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 
-/** One node of a board document, as the board file spells it. */
+/** One node of a model document, as the model file spells it. */
 type Node = Record<string, unknown>;
 
 /**
- * One board document, as its route answers with it.
- * @param name What the board is called.
+ * One model document, as its route answers with it.
+ * @param name What the model is called.
  * @param nodes Its nodes.
  * @param variants Its variants beyond the current one, if any.
  * @param edges The current variant's relationships.
@@ -58,7 +58,7 @@ function documentOf(
 	};
 }
 
-/** The nodes of the board the pane is opened on. */
+/** The nodes of the model the pane is opened on. */
 const NODES: readonly Node[] = [
 	{ id: "svc", name: "Board Runtime", kind: "service", responsibility: "Owns every write" },
 	{
@@ -80,7 +80,7 @@ const NODES: readonly Node[] = [
 ];
 
 /**
- * One endpoint a predecessor took away, as the board holds the disagreement.
+ * One endpoint a predecessor took away, as the model holds the disagreement.
  *
  * Two of these on one relationship is the case that matters: the same kind, no
  * field on either, and nothing to tell them apart but what they say.
@@ -113,8 +113,8 @@ function record(binding: CodeBinding): void {
 }
 
 /**
- * Put a board of nodes and a drawing of it in front of a pane.
- * @param nodes The board's nodes.
+ * Put a model of nodes and a drawing of it in front of a pane.
+ * @param nodes The model's nodes.
  */
 function serving(nodes: readonly Node[] = NODES): void {
 	server.reply = { status: 200, body: drawing(1) };
@@ -124,8 +124,8 @@ function serving(nodes: readonly Node[] = NODES): void {
 /**
  * Let every read the pane starts reach the screen.
  *
- * Inspection is three reads deep: the picture, then the board it is of, then —
- * when the picked node names one — the board below it. Each is only asked for
+ * Inspection is three reads deep: the picture, then the model it is of, then —
+ * when the picked node names one — the model below it. Each is only asked for
  * once the one before it has landed, so settling once is not enough.
  * @returns Settles once nothing else is waiting.
  */
@@ -174,7 +174,7 @@ test("an unbound node with nothing written says nothing of what it does not have
 	await settled();
 
 	// A part may be implemented and simply not bound yet, and "planned" would be
-	// the panel guessing at the work from the board. A way to code that is not
+	// the panel guessing at the work from the model. A way to code that is not
 	// there is not drawn, and no line says so: a line over an absence is a line
 	// to read in order to learn there is nothing to read.
 	expect(slot("semantic-inspector-code")).toBeNull();
@@ -289,7 +289,7 @@ test("a drill-down whose board the vault has not got names the board rather than
 
 test("following a drill-down shows the target board and offers the way back", async () => {
 	serving();
-	// The way back is named as the board is, not as its key is spelled.
+	// The way back is named as the model is, not as its key is spelled.
 	server.documents["pipeline"] = documentOf("Pipeline Board", NODES);
 	server.documents["engine"] = documentOf(
 		"engine",
@@ -315,7 +315,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("engine");
 	expect(server.calls.some((url) => url.includes("model=engine"))).toBe(true);
 	// The pane says where it came from and how to get back, with no navigator to
-	// place the board: the address still names the board the pane was opened on,
+	// place the model: the address still names the model the pane was opened on,
 	// so the way back has to be in the pane's own breadcrumb.
 	expect(slot("pane-crumb")?.textContent).toContain("Pipeline Board");
 
@@ -406,7 +406,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	await settled();
 	expect(slot("semantic-drill-down-open")?.getAttribute("data-variant-lifecycle")).toBe("current");
 
-	// The target board adopts something else. A preview pinned for the life of
+	// The target model adopts something else. A preview pinned for the life of
 	// the tab would go on calling the old state current and open it.
 	server.documents["engine"] = {
 		...documentOf("engine", []),
@@ -493,7 +493,7 @@ test("a subject held up by two disagreements of one kind says both", async () =>
 });
 
 test("a board the inspector cannot read says so rather than reading forever", async () => {
-	// Nothing was put in `server.documents`, so the board route refuses.
+	// Nothing was put in `server.documents`, so the model route refuses.
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage("n1");
 	await settled();
@@ -511,7 +511,7 @@ test("a selection the board no longer holds says so instead of showing a blank p
 });
 
 test("picking a joined line of the overview shows its drawn ends and every relationship it joins", async () => {
-	// Two parts of Board Runtime reach the Voice Bridge, so the overview joins them into e1.
+	// Two parts of Model Runtime reach the Voice Bridge, so the overview joins them into e1.
 	const edges = [
 		{ id: "e1", from: "n1", to: "n3", kind: "call", label: "reads notes" },
 		{ id: "e2", from: "n2", to: "n3", kind: "call", label: "takes the lease" },

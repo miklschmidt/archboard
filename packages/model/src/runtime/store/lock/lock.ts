@@ -1,16 +1,16 @@
-// One writer at a time, per board (ADR 0016).
+// One writer at a time, per model (ADR 0016).
 //
 // This public module remains the stable lock API. Private owners separate the
 // vault lease, acquisition, process-local claim lifecycle, and claim commands.
 //
-// A board is a note, and two writers to one note lose each other's work. The
-// public question stays deliberately small: ask to write a board, and either
+// A model is a note, and two writers to one note lose each other's work. The
+// public question stays deliberately small: ask to write a model, and either
 // write it exclusively or learn who holds it. Callers must not reconstruct
 // acquisition, renewal, expiry, waiting, or pane announcements themselves.
 //
 // The lock lives beside the note in the vault rather than in this process, so
 // every server serving the vault observes the same exclusion. It is a lease,
-// not a flag: a dead holder costs one lease rather than wedging the board.
+// not a flag: a dead holder costs one lease rather than wedging the model.
 // Ordinary reads never take this lock; note writes are atomic. A store read
 // that must rewrite an obsolete document uses a nonblocking migration lease.
 //
@@ -27,7 +27,7 @@ import { forgetClaimState } from "#runtime/store/lock/claim-state.ts";
 import { forgetLockState, watchModelLocks } from "#runtime/store/lock/lease-state.ts";
 
 /**
- * Forget what this process remembers about who has which board, and stop
+ * Forget what this process remembers about who has which model, and stop
  * watching. Process-memory cleanup only: it deliberately does not modify the
  * authoritative vault leases; releasing one is `releaseHold`.
  */

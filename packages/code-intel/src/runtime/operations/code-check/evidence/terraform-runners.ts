@@ -7,7 +7,7 @@
 // archive and a container's image are built elsewhere. So a resource runs the
 // code of the parts drawn inside a part bound to its address, or to an
 // address that holds it, such as the module call `module.worker`. The check
-// reads the root modules that the board's parts bind, as the Terraform
+// reads the root modules that the document's parts bind, as the Terraform
 // evidence does.
 //
 // A value a resource sets reaches what its references reach, through every
@@ -54,7 +54,7 @@ async function namesSet(
  * The runners of one root module.
  * @param codes Each part's bound code, by its id.
  * @param configuration The root module's address space.
- * @param parts The read parts of the board in its checkout.
+ * @param parts The read parts of the document in its checkout.
  * @param facts The pass.
  * @returns One runner per resource that sets an environment value.
  */
@@ -98,7 +98,7 @@ async function runnersIn(
 }
 
 /**
- * The runners the root modules that the parts of a board bind declare.
+ * The runners the root modules that the parts of a document bind declare.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
  * @returns The runners.

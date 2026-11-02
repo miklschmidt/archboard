@@ -6,7 +6,7 @@
 // second one. The work stops only when every request that waits for it has
 // gone: a caller that hangs up must not cancel the answer of another. The
 // memory holds a few answers, the oldest leaving first, and goes with the
-// process. It answers no question about what is on a board, so it is not a
+// process. It answers no question about what is on a document, so it is not a
 // second copy of one.
 
 /** One answer being made, and who waits for it. */

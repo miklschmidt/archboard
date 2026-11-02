@@ -1,7 +1,7 @@
 // A camera travelling from one view of a diagram to another, as arithmetic.
 //
 // A straight interpolation of position and scale is the wrong path for a long
-// move: zooming in while crossing a wide board sweeps the destination past the
+// move: zooming in while crossing a wide model sweeps the destination past the
 // reader faster than they can follow, and the middle of the move shows nothing
 // they know. The smooth and efficient path of van Wijk and Nuij (2003) pulls
 // back as far as the distance needs, crosses, and comes in again, so the start

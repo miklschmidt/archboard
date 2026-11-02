@@ -5,14 +5,14 @@
 // the directory that `-C` names, or else from its working directory. Inside a
 // git checkout only the vault at the checkout root counts: a vault above the
 // root belongs to another repository, or to none, and using it would put this
-// repository's boards somewhere its clones never see. Outside any checkout the
+// repository's models somewhere its clones never see. Outside any checkout the
 // nearest enclosing directory that holds a vault is an untracked vault.
 //
 // A checkout with no vault of its own can have its architecture in another
 // repository's vault, whose canonical models bind its code. A command can give the search
 // a lookup of those vaults, and the refusal then names each one as the `-C` to
-// give (TASK-480). The lookup reads boards, which this module cannot import:
-// the registry imports it, and the board store imports the registry.
+// give (TASK-480). The lookup reads models, which this module cannot import:
+// the registry imports it, and the model store imports the registry.
 
 import fs from "fs";
 import path from "path";
@@ -32,7 +32,7 @@ interface VaultSearch {
 	readonly directory: string | null;
 	/**
 	 * The option that named the directory, as a refusal names it back: `-C`
-	 * unless said, or `--to` for the vault a board moves to.
+	 * unless said, or `--to` for the vault a model moves to.
 	 */
 	readonly option?: string;
 	/** The working directory, which a relative `-C` resolves against. */
@@ -82,7 +82,7 @@ interface VaultNotFound {
 	readonly checkoutRoot?: string;
 	/**
 	 * The repository of a checkout with no vault, and the known vaults whose
-	 * boards bind it, when the search was given a lookup and it found some.
+	 * models bind it, when the search was given a lookup and it found some.
 	 */
 	readonly boundElsewhere?: {
 		readonly repository: string;
@@ -220,12 +220,12 @@ function notFoundMessage(
 	);
 }
 
-/** How many board names a refusal gives for one vault. It counts the rest. */
+/** How many model names a refusal gives for one vault. It counts the rest. */
 const NAMED_MODELS = 5;
 
 /**
  * One vault a refusal names, in words.
- * @param vault The vault and its boards that bind the repository.
+ * @param vault The vault and its models that bind the repository.
  * @returns The phrase.
  */
 function holdsPhrase(vault: BoundVault): string {

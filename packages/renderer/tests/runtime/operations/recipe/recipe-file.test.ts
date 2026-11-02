@@ -1,4 +1,4 @@
-// A board render's recipe as a file carries it (ADR 0057): an SVG drawn for a
+// A document render's recipe as a file carries it (ADR 0057): an SVG drawn for a
 // file holds it in its metadata element and a PNG in a text chunk, a reader
 // gets it back from the bytes alone, and the picture digest is of the SVG the
 // renderer drew before the recipe went in. The fingerprint's behaviour under
@@ -19,9 +19,9 @@ import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 import { EXPORT_DOCUMENT } from "#tests/runtime/support/export-picture.ts";
 
 /**
- * The SVG of a board's draft, with or without its recipe.
+ * The SVG of a document's draft, with or without its recipe.
  * @param recipe Whether the render carries one.
- * @param board The board; the export board when absent.
+ * @param board The document; the export document when absent.
  * @param view The view drawn.
  * @returns The document.
  */

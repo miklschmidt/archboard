@@ -49,19 +49,19 @@ type AppliedAppearance = DrawnPicture["appearances"][number];
 /** What the picture's key lists: one sample of each kind it draws. */
 type PictureLegend = NonNullable<DrawnPicture["legend"]>;
 
-/** One view the board offers, as a switcher needs to know it. */
+/** One view the model offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
 
-/** One board the vault holds, as the listing reports it. */
+/** One model the vault holds, as the listing reports it. */
 type DocumentEntry = ListedLegacyBoard;
 
-/** What the listing says: the configured levels, coarsest first, and every board. */
+/** What the listing says: the configured levels, coarsest first, and every model. */
 type RetainedListing = Pick<LegacyListing, "levels" | "boards" | "repository">;
 
 /** A variant with something on it, drawn, as the viewer carries it. */
 type SemanticDrawing = DrawnPicture & { readonly kind: "drawn" };
 
-/** A board that is there and has nothing on it yet, as the viewer carries it. */
+/** A model that is there and has nothing on it yet, as the viewer carries it. */
 type SemanticNothingDrawn = NothingDrawn & { readonly kind: "empty" };
 
 /**
@@ -73,15 +73,15 @@ type SemanticRender = SemanticDrawing | SemanticNothingDrawn;
 
 /** What a render request names. */
 interface SemanticRenderRequest {
-	/** The vault the board is in, as the server names it (ADR 0049). */
+	/** The vault the model is in, as the server names it (ADR 0049). */
 	readonly vault: string;
 	readonly model: string;
-	/** A variant id or name; the board's current variant when absent. */
+	/** A variant id or name; the model's current variant when absent. */
 	readonly variant?: string | undefined;
 	/**
 	 * A view id or name; the whole variant when absent.
 	 *
-	 * Which view a pane is reading is the browser's, never the board's: it rides
+	 * Which view a pane is reading is the browser's, never the model's: it rides
 	 * in the request and in the address, and no answer to it writes anything.
 	 */
 	readonly view?: string | undefined;
@@ -98,7 +98,7 @@ interface SemanticRenderRequest {
 }
 
 /**
- * How a request is compared, as a picture is kept: plain, compared with what the board
+ * How a request is compared, as a picture is kept: plain, compared with what the model
  * ordinarily reads the variant against, or compared with the variant it names.
  * @param request What is asked for.
  * @returns The part of the key that says so.
@@ -236,7 +236,7 @@ async function fetchVaultCheck(vault: string, signal?: AbortSignal): Promise<Vau
 const CODE_FINDINGS_URL = "/api/vault/code-findings";
 
 /**
- * What the last code pass found on each board it read, as the server remembers
+ * What the last code pass found on each model it read, as the server remembers
  * it. The route reads the server's memory and never starts a pass (ADR 0046),
  * so asking it costs a read of memory however often a pane asks.
  * @param vault The vault.

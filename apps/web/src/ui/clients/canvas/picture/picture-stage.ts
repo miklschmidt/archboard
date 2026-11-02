@@ -5,7 +5,7 @@
 // from the frame clock only while something moves, so a stepped clock records
 // them one by one. Until the painter's first frame the surface shows the SVG
 // with its ink, and a painter that cannot start leaves it so: the reader sees
-// a correct board either way. The SVG under the canvas keeps its words and its
+// a correct model either way. The SVG under the canvas keeps its words and its
 // marks for search, copy, screen readers and the viewer.
 
 import { PICTURE_MS } from "@archboard/timing";
@@ -178,8 +178,8 @@ class PictureStage {
 	}
 
 	/**
-	 * Put a board inside its card and start the fades of the flight.
-	 * @param painting The board's painting, or nothing when it has none.
+	 * Put a model inside its card and start the fades of the flight.
+	 * @param painting The model's painting, or nothing when it has none.
 	 * @param dive The flight.
 	 * @param ms How long the flight takes.
 	 */
@@ -190,7 +190,7 @@ class PictureStage {
 		});
 	}
 
-	/** Take the board inside a card away. */
+	/** Take the model inside a card away. */
 	endDive(): void {
 		this.#tell((painter) => {
 			painter.endDive();
@@ -503,7 +503,7 @@ class PictureStage {
 			const { startPainter } = await import("@archboard/renderer/browser");
 			next = await startPainter(this.#canvas, pageIsDark(), failure);
 		} catch (cause) {
-			// No painter at all: the SVG stays, a correct board, and says why.
+			// No painter at all: the SVG stays, a correct model, and says why.
 			this.#retire(cause);
 			return;
 		} finally {

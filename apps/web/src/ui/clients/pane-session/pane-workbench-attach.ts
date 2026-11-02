@@ -1,5 +1,5 @@
 // Attaching a pane's workbench owner to a freshly registered socket. Split
-// from the pane core so the core stays about the board conversation; this is
+// from the pane core so the core stays about the model conversation; this is
 // about the one socket generation the workbench rides.
 
 import type {

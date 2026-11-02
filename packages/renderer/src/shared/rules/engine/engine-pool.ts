@@ -10,7 +10,7 @@
 // another worker stood idle (TASK-377). The pool starts a worker only when a
 // solve finds every running one busy and none of them still starting, up to
 // one fewer than the cores the place reports (under Bun, also no more than
-// its fast WebAssembly memories allow, `bun-host.ts`), so a small board starts one and
+// its fast WebAssembly memories allow, `bun-host.ts`), so a small document starts one and
 // a wide one spreads its candidates out without starting a dozen workers at
 // once. A worker is starting until it says its core is instantiated, not
 // until it answers its first solve: a first render waited for that whole
@@ -55,9 +55,9 @@ interface EngineAnswer {
 
 /**
  * The most text the pool remembers of solves, graphs and answers together, in
- * characters: 16 Mi. The first render of a wide board, such as Agent
+ * characters: 16 Mi. The first render of a wide document, such as Agent
  * workbench, solves about 0.5 M of it, so it holds the solves of some thirty
- * wide boards. Past it, the solves remembered first are forgotten first; a
+ * wide documents. Past it, the solves remembered first are forgotten first; a
  * forgotten solve is laid out again, to the same answer.
  */
 const REMEMBERED_SOLVES = 16 * 1024 * 1024;

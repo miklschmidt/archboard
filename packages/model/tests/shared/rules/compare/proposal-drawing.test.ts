@@ -18,9 +18,9 @@ const parseModel = (value: unknown): LegacyBoard =>
 	LegacyBoardSchema.parse(withFixtureOrders(value));
 
 /**
- * A board with a baseline and one proposal derived from it.
+ * A model with a baseline and one proposal derived from it.
  * @param proposed What the proposal says its architecture is.
- * @returns The board.
+ * @returns The model.
  */
 const documentWith = (proposed: Record<string, unknown>): LegacyBoard =>
 	parseModel({
@@ -269,8 +269,8 @@ describe("what a whole picture owes a reader", () => {
 	const FLOW = { id: "f1", name: "Posting", participants: ["gw", "lg", "ld"], steps: STEPS };
 
 	/**
-	 * A board whose proposal dropped the whole exchange.
-	 * @returns The board.
+	 * A model whose proposal dropped the whole exchange.
+	 * @returns The model.
 	 */
 	const droppedFlow = (): LegacyBoard =>
 		parseModel({
@@ -335,9 +335,9 @@ describe("a sequence read through a view that dropped a participant", () => {
 	};
 
 	/**
-	 * A board whose proposal routes around the legacy intake, which is still on
-	 * the board but no longer part of the exchange.
-	 * @returns The board.
+	 * A model whose proposal routes around the legacy intake, which is still on
+	 * the model but no longer part of the exchange.
+	 * @returns The model.
 	 */
 	const rerouted = (): LegacyBoard =>
 		parseModel({

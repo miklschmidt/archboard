@@ -8,7 +8,7 @@ interface WalkthroughNarration {
 	/** Why a narration cannot start now, or null when one can. */
 	readonly held: string | null;
 	/**
-	 * Start voice to narrate one walkthrough of this pane's board, from its first
+	 * Start voice to narrate one walkthrough of this pane's model, from its first
 	 * step. The pane is made the active one first, when it is not, and nothing
 	 * starts while voice is running.
 	 * @param walkthrough The walkthrough's id.

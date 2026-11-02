@@ -1,7 +1,7 @@
 // The control that switches the layout engine every pane draws with (TASK-348).
 //
-// A preference of this browser rather than a fact about the board on screen,
-// so it is the last row of the board tab, under its own rule, and says in one
+// A preference of this browser rather than a fact about the model on screen,
+// so it is the last row of the model tab, under its own rule, and says in one
 // line what it sets (TASK-383). Its list is the shared select's, in the
 // theme's own surface, in place of the system's. Its label is above it and it
 // takes the width of the column, so that the longest engine's name is read whole.
@@ -17,7 +17,7 @@ import { LAYOUT_ENGINES, chooseLayoutEngine } from "#ui/clients/canvas/reads/lay
 const ENGINE_ITEMS = LAYOUT_ENGINES.map(({ name, label }) => ({ value: name, label }));
 
 /**
- * Choose the engine every pane lays its board out with.
+ * Choose the engine every pane lays its model out with.
  * @returns The control, with its label.
  */
 function SemanticEngineBar(): JSX.Element {

@@ -38,7 +38,7 @@ interface ShellViewInputs {
 
 /**
  * One repository as the shell lists it.
- * @param entry The repository and its boards.
+ * @param entry The repository and its models.
  * @param activity What agents are doing, by vault.
  * @returns The shell's repository.
  */

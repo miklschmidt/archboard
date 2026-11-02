@@ -3,7 +3,7 @@
 // What is guarded: the current variant is now and is drawn with no comparison;
 // every other variant — history behind it, a proposal ahead of it even when that
 // proposal stands on history — is drawn as how it differs from the current one;
-// and a board with no current variant has no now, so its drafts keep being read
+// and a model with no current variant has no now, so its drafts keep being read
 // against the one they came from.
 
 import { describe, expect, test } from "bun:test";
@@ -53,10 +53,10 @@ const HISTORY = [
 ];
 
 /**
- * A board holding these variants.
+ * A model holding these variants.
  * @param variants Its variants.
  * @param current The one it designates current, if any.
- * @returns The board.
+ * @returns The model.
  */
 function documentOf(variants: readonly Record<string, unknown>[], current?: string): LegacyBoard {
 	return LegacyBoardSchema.parse(
@@ -76,8 +76,8 @@ function documentOf(variants: readonly Record<string, unknown>[], current?: stri
 }
 
 /**
- * One variant of a board, by id.
- * @param board The board.
+ * One variant of a model, by id.
+ * @param board The model.
  * @param id The variant's id.
  * @returns The variant.
  */

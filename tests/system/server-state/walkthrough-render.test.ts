@@ -21,7 +21,7 @@ let server: ReturnType<typeof Bun.serve>;
 let failAt: number | null = null;
 let asked: number[] = [];
 
-/** A board of one part with a walkthrough of two steps: all the talk's schema asks of a board. */
+/** A model of one part with a walkthrough of two steps: all the talk's schema asks of a model. */
 const MODEL = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",

@@ -1,17 +1,17 @@
-// How the pane is reading whichever board it is actually looking at.
+// How the pane is reading whichever model it is actually looking at.
 //
 // Two cases, and they differ in who owns the answer rather than in what it
-// means. The pane's own board is read the way the shell says: which variant and
-// which view belong in the address, two panes can read one board two ways, and
+// means. The pane's own model is read the way the shell says: which variant and
+// which view belong in the address, two panes can read one model two ways, and
 // a reload keeps both — so the shell holds them and hands them down.
 //
-// A board somebody drilled into is not addressed at all. The trail is local on
+// A model somebody drilled into is not addressed at all. The trail is local on
 // purpose and the address still names where the reader started, so there is
 // nothing above to hold the level's view and this holds it instead. It is reset
 // whenever the level changes, because the ids do not carry: a view is a subject
-// of one board, so what was being read a level up means nothing here. What
-// replaces it is the target's own views, because a board one level down is still
-// a board somebody is reading, and hiding its controls left a reader unable to
+// of one model, so what was being read a level up means nothing here. What
+// replaces it is the target's own views, because a model one level down is still
+// a model somebody is reading, and hiding its controls left a reader unable to
 // switch grammar. The variant is the one the link that led here asked for.
 
 import { useCallback, useMemo, useState } from "react";
@@ -23,24 +23,24 @@ import type { z } from "zod";
 
 type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["byUser"]>[number];
 
-/** What the shell says about the pane's own board. */
+/** What the shell says about the pane's own model. */
 interface OwnReading {
-	/** The view the pane was told to read its own board through, if any. */
+	/** The view the pane was told to read its own model through, if any. */
 	readonly view: string | undefined;
 	/**
-	 * The person chose a way of reading the pane's own board.
+	 * The person chose a way of reading the pane's own model.
 	 * @param view The view's id, or null for the whole variant.
 	 */
 	readonly onView: ((view: string | null) => void) | undefined;
 	/**
-	 * The user changed, by hand, how a board they walked down into is read. The shell hears of
-	 * a choice about the pane's own board through the one above, and of this no other way.
+	 * The user changed, by hand, how a model they walked down into is read. The shell hears of
+	 * a choice about the pane's own model through the one above, and of this no other way.
 	 * @param part What their choice was about.
 	 */
 	readonly onUserChanged?: ((part: SemanticPanePart) => void) | undefined;
 }
 
-/** How the board on screen is being read, whoever owns the answer. */
+/** How the model on screen is being read, whoever owns the answer. */
 interface PaneReading extends OwnReading {
 	/** The variant to ask for: an id or name, or undefined for the current one. */
 	readonly variant: string | undefined;
@@ -50,10 +50,10 @@ interface PaneReading extends OwnReading {
 interface LevelPlace {
 	/** How deep the trail was; a different depth is a different level. */
 	readonly depth: number;
-	/** The board at that level. */
+	/** The model at that level. */
 	readonly model: string;
 	/**
-	 * The vault it is in: two repositories can each hold a board of one name,
+	 * The vault it is in: two repositories can each hold a model of one name,
 	 * and the ids of one mean nothing in the other.
 	 */
 	readonly vault: string;
@@ -65,7 +65,7 @@ interface LevelPlace {
  * The remembered reading, when it is this level's.
  * @param place What was last chosen, or null when nothing has been.
  * @param depth How deep the trail is now.
- * @param model The board on screen now.
+ * @param model The legacy board on screen now.
  * @param vault The vault it is in.
  * @returns The place, or null when it belongs to a level the pane has left.
  */
@@ -82,9 +82,9 @@ function placeAt(
 }
 
 /**
- * How the board on screen is being read, and how a person changes it.
+ * How the model on screen is being read, and how a person changes it.
  * @param drill Where the pane is looking, and how deep.
- * @param own What the shell says about the pane's own board.
+ * @param own What the shell says about the pane's own model.
  * @returns The variant and view to ask for, and what a choice does.
  */
 function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
@@ -103,8 +103,8 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 		[model, depth, vault, onUserChanged],
 	);
 
-	// The pane's own board is read as the shell says; a trail kept across a dive
-	// into another repository puts boards before it (ADR 0050).
+	// The pane's own model is read as the shell says; a trail kept across a dive
+	// into another repository puts models before it (ADR 0050).
 	const ownDepth = drill.own;
 	return useMemo(() => {
 		if (depth === ownDepth) {

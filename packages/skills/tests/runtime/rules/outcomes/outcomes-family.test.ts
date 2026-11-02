@@ -30,7 +30,7 @@ function beat(id: string, subjects: readonly string[]): Beats[number] {
 }
 
 /**
- * The standard reading with the board explaining itself in the given walkthroughs.
+ * The standard reading with the document explaining itself in the given walkthroughs.
  * @param walkthroughs The walkthroughs, on every variant.
  * @returns The reading.
  */

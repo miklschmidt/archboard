@@ -1,7 +1,7 @@
 // The centre: one or two panes side by side. Each pane draws one header row,
 // and the shell hands it what the shell owns of that row: the pane's letter
 // while there are two, the pane's own controls, and under the row the claim
-// banner while an agent claims the board. The same element is the fullscreen
+// banner while an agent claims the model. The same element is the fullscreen
 // root: presenting a pane hides the others rather than remounting anything,
 // so a pane's session never restarts.
 

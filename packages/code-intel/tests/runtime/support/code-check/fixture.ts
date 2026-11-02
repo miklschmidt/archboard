@@ -1,5 +1,5 @@
 // What the code check's owners build for themselves: files, a Git checkout
-// with its own identity and configuration, and boards in a vault.
+// with its own identity and configuration, and documents in a vault.
 
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -41,7 +41,7 @@ function write(root: string, files: Record<string, string>): void {
 	}
 }
 
-/** One variant of a fixture board: its name, lifecycle and content. */
+/** One variant of a fixture document: its name, lifecycle and content. */
 interface FixtureVariant {
 	readonly id: string;
 	readonly name: string;
@@ -54,9 +54,9 @@ interface FixtureVariant {
 }
 
 /**
- * Write a board into a vault.
+ * Write a document into a vault.
  * @param vault The vault.
- * @param name The board's name.
+ * @param name The document's name.
  * @param variants Its variants; the current one, if any, is the one so marked.
  */
 function document(vault: string, name: string, variants: readonly FixtureVariant[]): void {

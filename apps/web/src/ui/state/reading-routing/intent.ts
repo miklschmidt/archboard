@@ -24,11 +24,11 @@ type NavigationIntent =
 			/** The canonical destination whose arrival completes this user open. */
 			readonly destination?: { readonly model: string; readonly repository: string };
 			readonly paneId: string;
-			/** The board that pane showed when the gesture was made. */
+			/** The model that pane showed when the gesture was made. */
 			readonly from: string | null;
 			/**
-			 * The repository of that board: the same key in another repository is
-			 * another board (ADR 0050).
+			 * The repository of that model: the same key in another repository is
+			 * another model (ADR 0050).
 			 */
 			readonly repository: string | null;
 	  }
@@ -68,13 +68,13 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	if (intent.kind === "panes") {
 		return address.panes.length === intent.count;
 	}
-	// Choosing another explanation of the same board is a move a person made and
+	// Choosing another explanation of the same model is a move a person made and
 	// expects Back to undo, so it earns a history entry of its own — the same way
-	// opening a board does, and unlike the board changing under them.
+	// opening a model does, and unlike the model changing under them.
 	if (intent.kind === "view") {
 		return viewIn(address, intent.paneId) !== intent.from;
 	}
-	// The pane the person asked to move has moved. A board open is expected only
+	// The pane the person asked to move has moved. A model open is expected only
 	// once its own command has been seen through, so there is no window in which
 	// somebody else's change could be taken for theirs.
 	return (

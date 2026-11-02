@@ -1,4 +1,4 @@
-// The bound code of each part on one board, as the code pass reads it
+// The bound code of each part on one document, as the code pass reads it
 // (ADR 0046).
 //
 // The bound code of a part is the definition its symbol names, else the whole
@@ -26,7 +26,7 @@
 // A part bound to a ref its checkout does not have out is read from that ref's
 // tree in Git (ref-code.ts), so its code is the ref's, not the working tree's.
 //
-// A part the pass cannot read says why where the reason is the board's or this
+// A part the pass cannot read says why where the reason is the document's or this
 // machine's to fix: a repository this machine has not registered, a ref its
 // checkout cannot resolve, a path Git ignores or one the pass never reads.
 // A checkout that is unavailable is said once for the whole checkout, a bound
@@ -330,8 +330,8 @@ function pairsOf(parts: readonly ReadPart[]): Map<string, ReadPart[]> {
 }
 
 /**
- * The bound code of every part of one board.
- * @param nodes The board's parts.
+ * The bound code of every part of one document.
+ * @param nodes The document's parts.
  * @param reading The pass.
  * @returns Each part's code, by its id.
  */
@@ -341,7 +341,7 @@ async function partCodesOf(
 ): Promise<Map<string, PartCode>> {
 	const codes = new Map<string, PartCode>();
 	for (const node of nodes) {
-		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the pass's reads in board order, and a file one part reads is cached for the next
+		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the pass's reads in document order, and a file one part reads is cached for the next
 		codes.set(node.id, await partCodeOf(node, reading));
 	}
 	return codes;
@@ -351,7 +351,7 @@ async function partCodesOf(
  * The skip of each part with no binding, because the pass has no code to read for it. The answer
  * says how many, so that a model that binds nothing is not mistaken for code that agrees.
  * @param codes Each part's code, by its id.
- * @param site The board and the variant the codes were read at.
+ * @param site The document and the variant the codes were read at.
  * @param site.model The name of the model.
  * @param site.variant The variant's id.
  * @returns One skip for each unbound part.

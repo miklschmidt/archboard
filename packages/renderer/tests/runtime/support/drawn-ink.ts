@@ -28,7 +28,7 @@ interface Reach {
 	 * The worst of those distances as a share of the way between the two cards
 	 * the line joins: half is a label at the midpoint of a straight route, and
 	 * anything near one is a label stranded away from both of its cards. Unlike
-	 * the distance itself, this does not grow with the board.
+	 * the distance itself, this does not grow with the document.
 	 */
 	readonly strand: number;
 }
@@ -47,15 +47,15 @@ interface Corridor {
  * How near two routes have to be drawn to read as one corridor rather than as
  * two lines going the same way. The engine spaces parallel routes 20 apart
  * (`elk.spacing.edgeEdge`) and snapping moves a run up to a unit, so 20 and 21
- * are what it deliberately draws; the next separation any board uses is 26.
+ * are what it deliberately draws; the next separation any document uses is 26.
  */
 const SIDE_BY_SIDE = 24;
 
 /**
  * How long a corridor has to be before a reader has to count across it to tell
- * two routes apart. No two routes on any board the vault holds share more than
+ * two routes apart. No two routes on any document the vault holds share more than
  * 382 units (docs/design/layout-rules.md section 25), so a corridor this long
- * is already longer than anything on a board a reader reads today.
+ * is already longer than anything on a document a reader reads today.
  */
 const CORRIDOR_RUN = 400;
 
@@ -77,7 +77,7 @@ const CORNER = 16;
  * Every straight run of every route, with the id of the route that drew it.
  * Bridges are removed: a bridge lifts one route over another and is not a
  * place either of them goes.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The runs.
  */
 function runsOf(drawing: Pick<RenderedDiagram, "svg">): Run[] {
@@ -88,7 +88,7 @@ function runsOf(drawing: Pick<RenderedDiagram, "svg">): Run[] {
 
 /**
  * A drawing's fit in the reference pane.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The scale that shows it whole, capped at one.
  */
 function fitOf(drawing: RenderedDiagram): number {
@@ -98,7 +98,7 @@ function fitOf(drawing: RenderedDiagram): number {
 /**
  * The cards of a drawing: its nodes less the frames, which a route inside
  * them or entering them crosses by design.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Each card's box by id.
  */
 function cardsOf(drawing: RenderedDiagram): [string, DiagramBox][] {
@@ -107,8 +107,8 @@ function cardsOf(drawing: RenderedDiagram): [string, DiagramBox][] {
 
 /**
  * The routes that pass through a card that is neither of their ends.
- * @param drawing The rendered board.
- * @param content The board.
+ * @param drawing The rendered document.
+ * @param content The document.
  * @returns "edge through card" for each offence.
  */
 function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): string[] {
@@ -129,8 +129,8 @@ function routesThroughCards(drawing: RenderedDiagram, content: VariantContent): 
  * How many routes leave each card by each of its flanks: the left and right
  * faces when the page reads down, the top and bottom when it reads left to
  * right. A flank rule can put skips on either (layout-rules.md section 21).
- * @param drawing The rendered board.
- * @param content The board.
+ * @param drawing The rendered document.
+ * @param content The document.
  * @returns The largest count over the cards and flanks: a fan of routes down one flank.
  */
 function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
@@ -151,7 +151,7 @@ function flankFanOf(drawing: RenderedDiagram, content: VariantContent): number {
  * The share of route ink in runs along the reading beside no card, which is
  * a lane down a margin rather than a route between rows, and the bends per
  * route.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Corridor ink over all ink, and bends per route.
  */
 function inkOf(drawing: RenderedDiagram): Ink {
@@ -216,7 +216,7 @@ function onStraightRun(
 /**
  * The labelled relationships whose label does not sit on a straight run of
  * its own route.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns Their ids.
  */
 function labelsOffRuns(drawing: RenderedDiagram): string[] {
@@ -234,7 +234,7 @@ function labelsOffRuns(drawing: RenderedDiagram): string[] {
  * how far a reader tracing that line from either card goes before meeting its
  * words. Measured from the badge's centre, the point the engines place a
  * label by.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The farthest and the middle distance, in page units.
  */
 function labelReachOf(drawing: RenderedDiagram): Reach {
@@ -339,7 +339,7 @@ function bundleAt(run: Run, runs: readonly Run[]): number {
  * are drawn side by side, the most routes side by side over such a stretch,
  * and the share of all route ink that has another route beside it. A reader
  * can follow one line out of such a corridor only by counting lines across it.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @returns The longest shared stretch, the widest bundle and the share of ink drawn beside another route.
  */
 function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
@@ -369,7 +369,7 @@ function sharedCorridorOf(drawing: RenderedDiagram): Corridor {
  * line: parallel, and so close across their lane that a reader sees a single
  * line rather than two. Where routes share a corridor a reader can still count
  * across it; where they are overdrawn there is nothing to count.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @param ids The routes a reader must be able to tell apart.
  * @returns The longest such stretch, zero when none of them is overdrawn.
  */
@@ -388,7 +388,7 @@ function overdrawnRun(drawing: RenderedDiagram, ids: readonly string[]): number 
 
 /**
  * Shared ink that loses which source reaches which target.
- * @param drawing The rendered board.
+ * @param drawing The rendered document.
  * @param content The relationships whose ends a reader must distinguish.
  * @returns The unrelated relationship pairs drawn on one trunk.
  */

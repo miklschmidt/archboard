@@ -5,13 +5,13 @@
 // screen and what the user has selected. That is spatial deixis, and it
 // is the whole justification for this module.
 //
-// So this reports VIEW STATE, never board contents. It is meant to be called on
+// So this reports VIEW STATE, never model contents. It is meant to be called on
 // every turn, which it can only be if it stays small: inlining the architecture
 // "to save a round trip" would make it expensive, which would make it uncallable
 // every turn, which defeats the point. `semantic show` reports contents; this
 // reports where the panes are, which model and state each holds, how it
 // is read, and what is picked in each — bounded no matter how big the
-// board is.
+// model is.
 //
 // A pane is known to the server only while its socket is open (see server.ts):
 // a closed tab or an unsplit takes its registration with it, so there are no
@@ -114,7 +114,7 @@ function emptyReport(arrangement: Arrangement, context: PaneContext): PanesRepor
  * @param pane The pane.
  * @param index Where it sits in reading order.
  * @param place The phrase that names where it is.
- * @param context Where to read its board and selection from.
+ * @param context Where to read its model and selection from.
  * @returns The pane's entry.
  */
 function paneReport(
@@ -146,9 +146,9 @@ function paneReport(
 }
 
 /**
- * What board a pane is on, when it is on one.
- * @param paneKey The board key the pane reported, or null.
- * @param context Where board keys are resolved.
+ * What legacy board a pane is on, when it is on one.
+ * @param paneKey The legacy board key the pane reported, or null.
+ * @param context Where legacy board keys are resolved.
  * @returns The legacy identity, or null for a canonical model or empty pane.
  */
 function identityOf(paneKey: string | null, context: PaneContext): LegacyIdentity | null {
@@ -355,9 +355,9 @@ function paneLine(pane: PaneReport): string {
 
 /**
  * Build the read-out. Cost is one pass over the registry: what each pane is
- * reading is what that pane itself reported, so nothing here reads a board.
+ * reading is what that pane itself reported, so nothing here reads a model.
  * @param registrations The panes on screen, of which only the addressable ones are reported.
- * @param context Where to read board identities, readings and the server URL from.
+ * @param context Where to read model identities, readings and the server URL from.
  * @returns The report, and the text an agent reads out.
  */
 function buildPanesReport(registrations: PaneRegistration[], context: PaneContext): PanesReport {
@@ -372,7 +372,7 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	);
 	// One model, whichever states of it are on screen. Two panes comparing a
 	// proposal against what is current are reading one document, and a command
-	// that names no board is not ambiguous between them — it is the comparison
+	// that names no model is not ambiguous between them — it is the comparison
 	// this tool exists for.
 	const samePaneKey =
 		new Set(panes.map((p) => p.architecture?.model ?? p.identity?.board ?? p.paneKey)).size === 1;

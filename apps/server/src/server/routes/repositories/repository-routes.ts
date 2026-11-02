@@ -2,12 +2,12 @@
 // repository this machine reads (ADR 0050).
 //
 // The navigator lists every repository identity with a known checkout that has a
-// vault, and every untracked vault, each with the boards of its chosen
+// vault, and every untracked vault, each with the models of its chosen
 // checkout's vault. The registry is the one account of that, and every pane
 // follows it: when it changes, a pane in the vault of a checkout that is not
-// chosen moves to the chosen one, keeping its board, every other pane hears the
+// chosen moves to the chosen one, keeping its model, every other pane hears the
 // name its repository goes by now, and every tab is told to read the list again.
-// A pane whose board the new checkout has not got says so, because the board it
+// A pane whose model the new checkout has not got says so, because the model it
 // asks for is not there.
 //
 // The registry is one file that every server on the machine reads. This server
@@ -156,7 +156,7 @@ function registerReadableVaults(): void {
 /**
  * Bring every pane in line with the registry as it is now (ADR 0050). A pane in
  * the vault of a checkout that is not chosen, including one that is gone, moves
- * to the vault of the chosen checkout, keeping its board, and its board is read
+ * to the vault of the chosen checkout, keeping its model, and its model is read
  * again there. Every other pane is told where it is again, with the name its
  * repository goes by now, which a forgotten checkout or a renamed untracked
  * vault changes. Then every tab is told to read the list of repositories again.
@@ -239,7 +239,7 @@ function moveCanonicalPane(
 	arrivedOnBoard(clientId, key);
 }
 /**
- * Move one pane into another checkout's vault, keeping its board.
+ * Move one pane into another checkout's vault, keeping its model.
  * @param clientId The pane.
  * @param to The vault it moves into.
  * @param repository The name of the repository it is in.

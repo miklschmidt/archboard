@@ -93,7 +93,7 @@ interface Asked {
 	readonly chosen: string[];
 }
 
-/** The workspace a test states: the shop's boards and activity, or every repository itself. */
+/** The workspace a test states: the shop's models and activity, or every repository itself. */
 interface Workspace extends Partial<ShellView> {
 	readonly model?: Model["manifest"];
 	readonly agentActivity?: Readonly<Record<string, AgentActivityEntry>>;
@@ -151,10 +151,10 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 			return Promise.resolve(true);
 		},
 		/**
-		 * Record a board opened in the active pane.
-		 * @param key The board key.
+		 * Record a model opened in the active pane.
+		 * @param key The model key.
 		 * @param _paneId The pane, which the navigator never names.
-		 * @param repository The repository the board is in.
+		 * @param repository The repository the model is in.
 		 * @returns That the pane shows it.
 		 */
 		selectModel: (key, _paneId, repository) => {
@@ -163,9 +163,9 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 			return Promise.resolve(true);
 		},
 		/**
-		 * Record a board opened beside.
-		 * @param key The board key.
-		 * @param repository The repository the board is in.
+		 * Record a model opened beside.
+		 * @param key The model key.
+		 * @param repository The repository the model is in.
 		 */
 		openBeside: (key, repository) => {
 			asked.beside.push(key ?? repository);
@@ -192,7 +192,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 	const container = document.createElement("div");
 	document.body.append(container);
 	root = createRoot(container);
-	// A board's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
+	// A model's mark is its level's, drawn from the vault vocabulary the shell reads through its query cache.
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	/**
 	 * Draw the shell over a view.

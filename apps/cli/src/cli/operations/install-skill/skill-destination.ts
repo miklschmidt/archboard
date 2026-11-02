@@ -6,7 +6,7 @@ import os from "node:os";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
-/** The skill that authors boards; its installed copy also carries the generated schemas and manual. */
+/** The skill that authors models; its installed copy also carries the generated schemas and manual. */
 const CONSUMER_SKILL = "archboard";
 
 /** Every skill an install ships, each into its own directory of the skills root. */

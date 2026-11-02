@@ -24,9 +24,9 @@ const ARCHITECTURE = {
 const VIEWS = [{ id: "vw", name: "The parts", grammar: "architecture" }];
 
 /**
- * A board that is coherent, so each case can break exactly one thing.
+ * A model that is coherent, so each case can break exactly one thing.
  * @param content What is on its one variant.
- * @returns The board document.
+ * @returns The model document.
  */
 const model = (content: Record<string, unknown>) => ({
 	schemaVersion: "2.0.0",

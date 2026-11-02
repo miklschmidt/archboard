@@ -43,7 +43,7 @@ interface SessionState {
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	openedKey: string | null;
 	setOpened: (key: string | null) => void;
-	/** How many times the server pointed the pane somewhere other than the board on screen. */
+	/** How many times the server pointed the pane somewhere other than the model on screen. */
 	arrivals: number;
 	arrived: () => void;
 	heldBy: LockHolder | null;
@@ -66,7 +66,7 @@ function useSessionState(openingVault: string): SessionState {
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
 	// It starts as somebody else's until the server says otherwise: a pane that
-	// has not been told does not read the board as free (ADR 0016).
+	// has not been told does not read the model as free (ADR 0016).
 	const [heldBy, setHeldBy] = useState<LockHolder | null>(UNKNOWN_HOLDER);
 	const [doing, setDoing] = useState<DoingEntry[]>([]);
 	const [vault, setVault] = useState(openingVault);

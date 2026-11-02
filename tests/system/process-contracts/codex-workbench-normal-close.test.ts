@@ -134,7 +134,7 @@ describe.serial("composed Codex normal-close lifecycle", () => {
 			blocker.end(blockerBody.slice(-1));
 			expect(await blockerResponse).toBe(200);
 
-			// The board came through the whole close untouched: the writes that
+			// The model came through the whole close untouched: the writes that
 			// landed stand, and the one that arrived too late changed nothing.
 			const afterRace = await request("/api/architecture/model");
 			expect(afterRace.body).toMatchObject({ success: true, revision: seeded.revision });

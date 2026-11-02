@@ -1,8 +1,8 @@
-// What the lifecycle asks a running Archboard server about itself, and how a refused board
+// What the lifecycle asks a running Archboard server about itself, and how a refused model
 // request is shown.
 //
 // One request goes through `server-client-transport.ts`, which owns the identity gate and the
-// error shapes; what this invocation says about itself — which board, what it is doing, which
+// error shapes; what this invocation says about itself — which model, what it is doing, which
 // version it believes it is editing — lives in `state/server-client-session.ts` and rides on every
 // request from there rather than from every call site.
 

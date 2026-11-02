@@ -1,5 +1,5 @@
 // Writes the fixture of the core's native render test
-// (`crates/archboard-render/tests/native.rs`): one corpus board drawn by the
+// (`crates/archboard-render/tests/native.rs`): one corpus document drawn by the
 // WebAssembly core, with the request this host wrote, the icons the core was
 // given, and the document the core wrote. The native test draws the same
 // request with a native build of the core, Graphviz included, and holds it to

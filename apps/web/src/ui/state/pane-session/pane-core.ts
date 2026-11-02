@@ -1,9 +1,9 @@
 // One pane's entire conversation with the server, wired without React; the hook
 // in `use-pane-session.ts` owns the React state and hands this the setters.
 //
-// A semantic pane never sends board content. It says what it is showing and
-// what the person is reading, and hears back which board it is on, who is
-// writing it and that the board has moved (ADR 0023). The picture itself is a
+// A semantic pane never sends model content. It says what it is showing and
+// what the person is reading, and hears back which model it is on, who is
+// writing it and that the model has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
 import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
@@ -61,7 +61,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly setVault: (vault: string) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	readonly setOpened: (key: string | null) => void;
-	/** The server pointed the pane somewhere other than the board on screen. */
+	/** The server pointed the pane somewhere other than the model on screen. */
 	readonly arrived: () => void;
 	readonly setHeldBy: (holder: LockHolder | null) => void;
 	readonly setDoing: (entries: DoingEntry[]) => void;
@@ -77,7 +77,7 @@ interface PaneCore<Transport extends WorkbenchTransportPort> {
 	readonly paneElementChanged: () => void;
 	/**
 	 * What the person is reading in this pane changed.
-	 * @param reading The board, variant, view and selection.
+	 * @param reading The model, variant, view and selection.
 	 */
 	readonly readingChanged: (reading: PaneReading) => void;
 	/** Await the latest reading before starting an action that consumes it. */
@@ -152,7 +152,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * The board this pane holds.
+	 * The model this pane holds.
 	 * @returns Its key, or null.
 	 */
 	function paneKey(): string | null {
@@ -160,7 +160,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * Who holds the board when it is not this pane.
+	 * Who holds the model when it is not this pane.
 	 * @param holder The holder, or null when free or ours.
 	 * @param _mine Whether this pane is the holder, which changes nothing here.
 	 */
@@ -242,17 +242,17 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		setOpened: ports.setOpened,
 		setModel: ports.setModel,
 		setDoing: ports.setDoing,
-		/** Forget who holds the board on screen and what was reported of it. */
+		/** Forget who holds the model on screen and what was reported of it. */
 		forgetModel: (): void => {
-			// The board we are arriving at is somebody else's until we are told it
-			// is not; the server sends that immediately behind the board (ADR 0016).
+			// The model we are arriving at is somebody else's until we are told it
+			// is not; the server sends that immediately behind the model (ADR 0016).
 			setHolder(UNKNOWN_HOLDER);
 			reading.reset();
 		},
 		/**
-		 * Tell the shell the pane arrived at another board.
-		 * @param key The board it shows now.
-		 * @param previousKey The board it was pointed at before, or null.
+		 * Tell the shell the pane arrived at another model.
+		 * @param key The model it shows now.
+		 * @param previousKey The model it was pointed at before, or null.
 		 */
 		arrived: (key: string, previousKey: string | null): void => {
 			ports.options().onBoardAdopted?.(paneId, key, previousKey);
@@ -266,7 +266,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	});
 
 	/**
-	 * The board this pane is showing has a new version.
+	 * The model this pane is showing has a new version.
 	 * @param version The version it is at now.
 	 */
 	function noteChange(version: number | null): void {
@@ -315,7 +315,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 			return ports.options().onModelRequest;
 		},
 		/**
-		 * Where a board refusal goes; read live.
+		 * Where a model refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
 		get onBoardError() {
@@ -469,7 +469,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	/**
 	 * What the person is reading in this pane changed.
-	 * @param next The board, variant, view and selection.
+	 * @param next The model, variant, view and selection.
 	 */
 	function readingChanged(next: PaneReading): void {
 		if (next.model === null) {
@@ -483,11 +483,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * The board on screen is being read through this view, or through none.
+	 * The model on screen is being read through this view, or through none.
 	 *
 	 * Said by the pane rather than remembered by the shell, because the shell's
-	 * memory is about the board it pointed this pane at and the pane may be a
-	 * level below that. A board arriving with nothing chosen on it clears this,
+	 * memory is about the model it pointed this pane at and the pane may be a
+	 * level below that. A model arriving with nothing chosen on it clears this,
 	 * which is what keeps a view id from outliving the variant it names.
 	 * @param view The view's id, or null for the whole variant.
 	 */
@@ -500,37 +500,37 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	}
 
 	/**
-	 * The pane is showing this board now.
+	 * The pane is showing this model now.
 	 *
-	 * Following a drill-down puts another board on screen without anybody
-	 * pointing the pane at it, and that board is what this pane IS showing: its
+	 * Following a drill-down puts another model on screen without anybody
+	 * pointing the pane at it, and that model is what this pane IS showing: its
 	 * lock, the code a subject opens, what an agent is told, the address and the
-	 * inventory are all about the board somebody is looking at. The pane says so
+	 * inventory are all about the model somebody is looking at. The pane says so
 	 * and the server follows it, rather than a second store disagreeing with the
-	 * first about which board this pane holds.
-	 * @param key The board on screen, or null when there is none.
+	 * first about which model this pane holds.
+	 * @param key The model on screen, or null when there is none.
 	 */
 	function showing(key: string | null): void {
 		if (key === null || status.paneKey === key) {
 			return;
 		}
 		status.paneKey = key;
-		// And what that board IS, so the shell names what is on screen rather than
-		// the board somebody started from.
+		// And what that model IS, so the shell names what is on screen rather than
+		// the model somebody started from.
 		const address = paneAddressOf(key);
 		status.model =
 			address === null
 				? status.model
 				: { model: address.model, variant: address.variant ?? "current" };
 		ports.setModel(status.model);
-		// A different board is a different version and a different writer.
+		// A different model is a different version and a different writer.
 		status.version = null;
 		status.doing = [];
 		ports.setDoing([]);
 		setHolder(UNKNOWN_HOLDER);
 		publishStatus();
 		// Immediately, not on the debounce: the pane inventory is read every turn,
-		// and a pane reporting the board it came from sends an agent to the wrong
+		// and a pane reporting the model it came from sends an agent to the wrong
 		// one.
 		schedulePaneReport(true);
 	}

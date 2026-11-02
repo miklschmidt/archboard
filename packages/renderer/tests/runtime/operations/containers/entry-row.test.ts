@@ -40,9 +40,9 @@ function standsBelow(atlas: DiagramAtlas, upper: string, lower: string): boolean
 }
 
 /**
- * A board whose current variant is the service, with a view and a draft.
+ * A document whose current variant is the service, with a view and a draft.
  * @param draft The draft's content.
- * @returns The board.
+ * @returns The document.
  */
 function documentOf(draft: unknown) {
 	return LegacyBoardSchema.parse({
@@ -77,8 +77,8 @@ function documentOf(draft: unknown) {
 }
 
 /**
- * The atlas of one rendered board picture.
- * @param board The board.
+ * The atlas of one rendered document picture.
+ * @param board The document.
  * @param choices The variant and view.
  * @param choices.variant The variant.
  * @param choices.view The view, if any.

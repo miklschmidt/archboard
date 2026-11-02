@@ -35,7 +35,7 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Whether the code names a refused board write: the note stays unwritten, whether another
+ * Whether the code names a refused model write: the note stays unwritten, whether another
  * holder, a revoked claim or a moved version stopped it.
  * @param code - The error code, if any.
  * @returns True for a board-write refusal.
@@ -47,7 +47,7 @@ function isModelRefusalCode(code: string | undefined): boolean {
 const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
 	SERVER_UNREACHABLE: 3,
 	BROWSER_REQUIRED: 4,
-	// A missing board is a mistake at the keyboard, like any other usage error.
+	// A missing model is a mistake at the keyboard, like any other usage error.
 	MODEL_REQUIRED: 2,
 	// The same for a vault: finding and naming one is the caller's to fix (ADR 0049).
 	VAULT_NOT_FOUND: 2,
@@ -74,7 +74,7 @@ function declaredExit(
 /**
  * Maps a failure to the process exit code: 2 for usage, the contract's declared exit for a
  * refusal it lists, then the fixed codes for an unreachable server, a missing browser tab, a
- * refused board write and a missing board, and 1 for everything else.
+ * refused model write and a missing model, and 1 for everything else.
  * @param error - The thrown value.
  * @param command - The command that ran, when one was selected.
  * @returns The exit code.
@@ -88,7 +88,7 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 	if (declared !== undefined) {
 		return declared;
 	}
-	// Every refusal leaves the board unwritten, so they share the exit status a
+	// Every refusal leaves the model unwritten, so they share the exit status a
 	// script already watches for. The attached body says whether another holder,
 	// a revoked claim, a moved version or a changed note stopped it.
 	if (isModelRefusalCode(code)) {
@@ -98,7 +98,7 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 }
 
 /**
- * Writes the failure to stderr: the message (or the formatted board refusal), then, when a
+ * Writes the failure to stderr: the message (or the formatted model refusal), then, when a
  * refused write left work held on the server, what happens to everything drawn from here on.
  * @param error - The thrown value.
  * @param usage - The usage line to print after a usage error.

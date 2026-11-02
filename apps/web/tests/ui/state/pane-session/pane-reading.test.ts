@@ -27,7 +27,7 @@ async function settled(): Promise<void> {
 }
 
 /**
- * A reading of one board with one subject picked out.
+ * A reading of one model with one subject picked out.
  * @param id The selected subject.
  * @returns The reading.
  */
@@ -181,7 +181,7 @@ describe("a pane whose socket came back", () => {
 		publisher.publish(reading("a"));
 		await settled();
 
-		// The subjects it had picked out are subjects of a board it is no longer
+		// The subjects it had picked out are subjects of a model it is no longer
 		// showing, so repeating them would be saying something untrue.
 		publisher.reset();
 		publisher.republish();

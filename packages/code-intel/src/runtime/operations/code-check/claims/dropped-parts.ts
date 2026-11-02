@@ -82,7 +82,7 @@ interface Judged {
 
 /**
  * The variant a read draft was branched from, when it is a draft that has one.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @returns The variant before it, or undefined.
  */
 function predecessorOf(read: StateToCheck): SemanticVariant | undefined {
@@ -93,7 +93,7 @@ function predecessorOf(read: StateToCheck): SemanticVariant | undefined {
 /**
  * The bound parts the variant before a read draft holds and the draft lacks,
  * by repository.
- * @param read The board, at the variant the check reads.
+ * @param read The document, at the variant the check reads.
  * @returns One drop for each repository.
  */
 function dropsOf(read: StateToCheck): Drop[] {
@@ -112,7 +112,7 @@ function dropsOf(read: StateToCheck): Drop[] {
 /**
  * The bindings of every part a read draft dropped, so the pass captures their
  * checkouts.
- * @param reads The boards, each at the variant the check reads.
+ * @param reads The documents, each at the variant the check reads.
  * @returns Each binding.
  */
 function droppedBindings(reads: readonly StateToCheck[]): CodeBinding[] {
@@ -260,7 +260,7 @@ async function judgeDrop(drop: Drop, context: DroppedContext, judged: Judged): P
 		return;
 	}
 	for (const node of drop.nodes) {
-		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the findings in board order, and a file one part reads is cached for the next
+		// oxlint-disable-next-line no-await-in-loop -- one part at a time keeps the findings in document order, and a file one part reads is cached for the next
 		const held = await heldPart(node, code);
 		if (held !== undefined) judged.findings.push(droppedFinding(drop, node, code, held));
 	}
@@ -268,7 +268,7 @@ async function judgeDrop(drop: Drop, context: DroppedContext, judged: Judged): P
 
 /**
  * Hold every part a read draft dropped to the code the draft describes.
- * @param reads The boards, each at the variant the check reads.
+ * @param reads The documents, each at the variant the check reads.
  * @param context The pass.
  * @returns The findings, and the drafts whose code could not be read.
  */
@@ -278,7 +278,7 @@ async function judgeDroppedParts(
 ): Promise<Judged> {
 	const judged: Judged = { findings: [], skipped: [] };
 	for (const drop of reads.flatMap(dropsOf)) {
-		// oxlint-disable-next-line no-await-in-loop -- one draft at a time keeps the findings in board order
+		// oxlint-disable-next-line no-await-in-loop -- one draft at a time keeps the findings in document order
 		await judgeDrop(drop, context, judged);
 	}
 	return judged;

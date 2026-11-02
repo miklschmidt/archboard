@@ -1,6 +1,6 @@
 // What a node's drill-down leads into, in the words the canvas and the
 // application share: the repositories this machine lists, the other
-// repository a board can lie in, and the act of opening one. Where one
+// repository a model can lie in, and the act of opening one. Where one
 // drill-down leads is read by `use-drill-target.ts`.
 
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
@@ -25,8 +25,8 @@ interface OtherRepository {
 }
 
 /**
- * Open a drill-down's board.
- * @param board The target board.
+ * Open a drill-down's model.
+ * @param board The target model.
  * @param variant The variant to open, by id.
  * @param there The other repository's vault it is in, when it is not in the pane's own.
  */

@@ -61,7 +61,7 @@ interface PartHistoryProps {
 /**
  * Show the selected module's commits, coupled modules, or explicit source limitation.
  * @param props The coherent analysis and subject identities.
- * @returns Source evidence without any architecture reads or fabricated board metadata.
+ * @returns Source evidence without any architecture reads or fabricated model metadata.
  */
 function PartHistory(props: PartHistoryProps): JSX.Element {
 	const { answer, subject } = props;
@@ -98,7 +98,7 @@ function Unread(props: {
 	}
 	const { skip } = reading;
 	// What the reason rests on, where it rests on a fact: the repository, the
-	// refs, what the checkout said. A part that is unbound or opens a board of
+	// refs, what the checkout said. A part that is unbound or opens a model of
 	// its own needs none.
 	const said = skip.reason !== "unbound" && skip.reason !== "drill-down";
 	const facts = [
@@ -123,7 +123,7 @@ function Unread(props: {
 
 /**
  * How many large commits the answer left out of every count, when it left any
- * out. The answer counts them for the whole board and not for each part, so
+ * out. The answer counts them for the whole model and not for each part, so
  * the line says that before it gives the number.
  * @param props The count.
  * @param props.count How many.
@@ -256,7 +256,7 @@ interface PartnerRowProps {
 /**
  * One part that changes with this one, as the choice that picks it out: its
  * name with the number of shared commits at the end of the line, how much of
- * their change that is, and whether nothing on the board joins the two.
+ * their change that is, and whether nothing on the model joins the two.
  * Pointing at it, or focusing it, lights the part on the picture.
  * @param props The part and what to do with a pick.
  * @returns The row.

@@ -3,7 +3,7 @@ import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import { buildPanesReport, type PaneRegistration } from "#runtime/rules/panes.ts";
 
-// A pane that shows a canonical model reports no board key at all. What it shows is the model
+// A pane that shows a canonical model reports no legacy board key at all. What it shows is the model
 // reading it reported, so the report must say that and not that nothing is drawn.
 
 const pane: PaneRegistration = {

@@ -2,17 +2,17 @@
 // for the double-click on the card.
 //
 // The reading has two steps, taken in this order by both of its adapters. The
-// first finds the vault the target board is in (ADR 0050): a link that names a
+// first finds the vault the target model is in (ADR 0050): a link that names a
 // repository is compared with the repository of the vault it is drawn in, so
 // that vault's listing is read first. When that listing cannot be read, the link
 // leads nowhere: no other vault is guessed for it. The second reads the target
-// board in that vault and picks the variant the link names, by a name it has or
+// model in that vault and picks the variant the link names, by a name it has or
 // had (ADR 0036). A named variant that is not there is reported, never quietly
-// swapped for whichever variant happens to be current. The two boards are two
+// swapped for whichever variant happens to be current. The two models are two
 // independent histories, and a link that landed on a different architecture
 // from the one it named would be worse than a link that refuses (ADR 0023).
 //
-// The inspector subscribes to the reading, so it follows the board's news under
+// The inspector subscribes to the reading, so it follows the model's news under
 // the name it goes by now. The double-click asks once and gets a promise; the
 // gesture decides whether its answer still counts.
 
@@ -75,7 +75,7 @@ type Read<T> =
 	| { readonly kind: "failed"; readonly problem: string }
 	| { readonly kind: "read"; readonly value: T };
 
-/** The vault the target board is in: the link's own, or another repository's. */
+/** The vault the target model is in: the link's own, or another repository's. */
 type Place = { readonly kind: "readable"; readonly there: OtherRepository | undefined };
 
 /**
@@ -85,13 +85,13 @@ type Place = { readonly kind: "readable"; readonly there: OtherRepository | unde
 const NOT_ASKED: Read<never> = { kind: "reading" };
 
 /**
- * Where a drill-down's board lies. A link that names no repository, or the
+ * Where a drill-down's model lies. A link that names no repository, or the
  * repository of the vault it is drawn in, is a link within that vault. Another
- * repository's board is read in the vault of its chosen checkout.
+ * repository's model is read in the vault of its chosen checkout.
  * @param target What the node's drill-down names.
  * @param listing The listing of the vault the link is drawn in, as far as it is read.
  * @param places The repositories this machine lists.
- * @returns Where the board is, or why it cannot be read yet or at all.
+ * @returns Where the model is, or why it cannot be read yet or at all.
  */
 function placeOf(
 	target: DrillDown,
@@ -108,7 +108,7 @@ function placeOf(
 }
 
 /**
- * Where a listed repository's board lies.
+ * Where a listed repository's model lies.
  * @param repo The repository identity.
  * @param place Its chosen checkout's vault, and whether that is ready.
  * @returns Its vault, or why it cannot be read.
@@ -125,10 +125,10 @@ function placeIn(
 }
 
 /**
- * Which variant of the target board a drill-down opens, once the board is read.
+ * Which variant of the target model a drill-down opens, once the model is read.
  * @param target What the node's drill-down names.
- * @param there The other repository the board is in, if any.
- * @param document The target board, as its route answered in its vault, as far as it is read.
+ * @param there The other repository the model is in, if any.
+ * @param document The target model, as its route answered in its vault, as far as it is read.
  * @returns The destination, or why there is none.
  */
 function destinationOf(
@@ -145,10 +145,10 @@ function destinationOf(
 }
 
 /**
- * The variant of the target board a drill-down opens.
+ * The variant of the target legacy board a drill-down opens.
  * @param target What the node's drill-down names.
- * @param model The target board.
- * @param there The other repository the board is in, if any.
+ * @param model The target legacy board.
+ * @param there The other repository the legacy board is in, if any.
  * @returns The destination, or why there is none.
  */
 function variantOf(
@@ -201,11 +201,11 @@ async function settled<T>(asked: Promise<T>): Promise<Read<T>> {
 }
 
 /**
- * The name the target board goes by now: what the link names, unless the board
+ * The name the target model goes by now: what the link names, unless the model
  * was renamed since and answered to the name it had (ADR 0036).
  * @param target What the node's drill-down names.
- * @param document The target board, as its route answered, or undefined before it has.
- * @returns The board's own name once it has been read, else the link's.
+ * @param document The target model, as its route answered, or undefined before it has.
+ * @returns The model's own name once it has been read, else the link's.
  */
 function nameNow(target: DrillDown, document: unknown): string {
 	if (document === undefined) return target.board;
@@ -215,7 +215,7 @@ function nameNow(target: DrillDown, document: unknown): string {
 
 /**
  * Where a drill-down drawn in this pane's vault leads, kept up to date: the
- * target board is heard under the name it goes by now, so a state superseded
+ * target model is heard under the name it goes by now, so a state superseded
  * since the link was written is never offered as though it were current.
  * @param target What the node's drill-down names.
  * @returns Where it leads, or why it leads nowhere yet.

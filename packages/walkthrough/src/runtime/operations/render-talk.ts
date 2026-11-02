@@ -59,7 +59,7 @@ interface RenderTalkRequest {
 	readonly container: RecordingContainer;
 	/** Which palette the page draws in. */
 	readonly theme: DiagramTheme;
-	/** Which layout engine the page lays the board out with. */
+	/** Which layout engine the page lays the document out with. */
 	readonly layout: LayoutEngineName;
 	/** The file to write, absolute. */
 	readonly out: string;

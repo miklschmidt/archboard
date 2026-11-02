@@ -82,7 +82,7 @@ const CONTENT = {
 const VIEWS = [{ ...VIEW, scope: { kind: "selection", nodes: ["n1"], edges: [], flows: [] } }];
 
 /**
- * One board document, as its route answers with it.
+ * One model document, as its route answers with it.
  * @param content What its one variant says.
  * @returns The document.
  */
@@ -94,8 +94,8 @@ function documentOf(content: Record<string, unknown>): Record<string, unknown> {
 const CURRENT_VARIANT = { id: "v1", name: "as it is", lifecycle: "current", content: CONTENT };
 
 /**
- * One board document holding a family of variants.
- * @param variants The variants, in the order the board states them.
+ * One model document holding a family of variants.
+ * @param variants The variants, in the order the model states them.
  * @returns The document.
  */
 function withVariants(variants: readonly Record<string, unknown>[]): Record<string, unknown> {
@@ -115,10 +115,10 @@ function withVariants(variants: readonly Record<string, unknown>[]): Record<stri
 }
 
 /**
- * Put a board that explains itself, and a picture of it, in front of a pane.
+ * Put a model that explains itself, and a picture of it, in front of a pane.
  *
  * The picture draws `n1` and `e1` and not `n2`, which is what a narrowed
- * reading of a variant looks like: the board holds the node, this drawing does
+ * reading of a variant looks like: the model holds the node, this drawing does
  * not show it.
  * @param content What the variant says; the explained one by default.
  */
@@ -498,7 +498,7 @@ test("Escape leaves, and gives the reader back the camera and the view they had"
 	await settle();
 	expect(document.querySelector("[data-slot='semantic-presentation']")).toBeNull();
 	expect(part("canvas-stage").hasAttribute("data-presentation-step")).toBe(false);
-	// The step read the board through its view; the reader never chose one.
+	// The step read the model through its view; the reader never chose one.
 	expect(views).toContain(VIEW.id);
 	expect(views.at(-1)).toBeNull();
 	expect(unveiled()).toEqual([]);
@@ -558,13 +558,13 @@ test("the subjects a disagreement is about are marked in the picture", async () 
 	// about: the case a single mark per subject used to lose.
 	mountStage("n1");
 	await settle();
-	// A dispute is a fact about the board rather than something the reader is
+	// A dispute is a fact about the model rather than something the reader is
 	// doing, so it is said whatever the reader is looking at — and it is said in
 	// words somebody can act on, not only as a mark.
 	expect(document.querySelector("[data-slot='semantic-standing']")?.textContent).toContain(
 		"say which name stands",
 	);
-	// The viewer draws none of it. What the board has not decided is drawn into
+	// The viewer draws none of it. What the model has not decided is drawn into
 	// the picture by the renderer, from the same reconciliation these words come
 	// from, so the pane writes nothing onto the markup it was handed.
 	const written = [...surface().querySelectorAll(".ab-halo")].map((halo) =>

@@ -7,7 +7,7 @@ import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
 
 // One server renews every claim it holds from timers, and a timer cannot run
 // while the server does one long synchronous piece of work, such as drawing a
-// board. Jumping the clock without running timers is that pause (TASK-489).
+// model. Jumping the clock without running timers is that pause (TASK-489).
 
 let vault = "";
 
@@ -43,8 +43,8 @@ function stallServer(): void {
 }
 
 /**
- * One write by the agent holding the board's claim, as the write path makes it.
- * @param board The board.
+ * One write by the agent holding the model's claim, as the write path makes it.
+ * @param board The model.
  * @returns When the write has landed.
  */
 async function writeUnderClaim(model: string): Promise<void> {

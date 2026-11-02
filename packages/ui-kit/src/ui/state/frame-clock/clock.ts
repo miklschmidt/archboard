@@ -1,4 +1,4 @@
-// The clock that moves what a board's pane draws over time.
+// The clock that moves what a model's pane draws over time.
 //
 // A camera glide, a picture's flight, a subtitle that lingers and a picture's
 // traffic all move with time. In the page they run on the browser's clocks. A

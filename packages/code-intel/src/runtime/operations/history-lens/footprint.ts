@@ -42,11 +42,11 @@ import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board
  * against.
  */
 interface VariantFootprintRequest {
-	/** The vault directory the board is in: its own checkout is read for its own repository. */
+	/** The vault directory the document is in: its own checkout is read for its own repository. */
 	readonly vault: string;
 	readonly document: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
 	/**
-	 * The variant the proposal is read against: the board's current variant by
+	 * The variant the proposal is read against: the document's current variant by
 	 * default. Undefined only with a proposal, which is then read against
 	 * nothing, so it names every part it holds.
 	 */
@@ -412,7 +412,7 @@ type FootprintEvidence = FootprintAnswer extends infer T
 		: never
 	: never;
 /**
- * Read the footprint of a range of commits against a board's current variant,
+ * Read the footprint of a range of commits against a document's current variant,
  * and against a proposal when one is named.
  * @param request What to read.
  * @returns The footprint.

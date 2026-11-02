@@ -2,7 +2,7 @@
 // and the workloads its selector picks, and the workloads a NetworkPolicy
 // lets talk. A selector names no address, so these joins are not references
 // of one file: the code check reads them from the manifests beside the files
-// that a board binds, and the workloads a selector picks are found as the
+// that a document binds, and the workloads a selector picks are found as the
 // resolver finds an address (kubernetes-resolution.ts). The cluster picks a
 // pod by exactly these labels, so a join is resolved, not a candidate.
 //
@@ -47,7 +47,7 @@ interface Reading {
 	readonly links: Map<string, readonly KubernetesLink[]>;
 }
 
-/** Each pass's readings, by checkout. Manifests depend on the files alone, so every board of a pass shares them. */
+/** Each pass's readings, by checkout. Manifests depend on the files alone, so every document of a pass shares them. */
 const READINGS = new WeakMap<FactsPass, Map<string, Reading>>();
 
 /**

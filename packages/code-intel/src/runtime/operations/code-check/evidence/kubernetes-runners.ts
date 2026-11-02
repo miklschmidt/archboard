@@ -208,7 +208,7 @@ async function runnerOf(reading: Reading, part: ReadPart): Promise<Runner | unde
 }
 
 /**
- * The runners of the workloads that the parts of a board bind.
+ * The runners of the workloads that the parts of a document bind.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.
  * @returns One runner per part bound to a workload that sets environment values.
@@ -221,7 +221,7 @@ async function kubernetesRunners(
 	for (const parts of partsByRepo(codes)) {
 		const reading = { codes, parts, owners: ownersOf(parts), facts };
 		for (const part of parts) {
-			// oxlint-disable-next-line no-await-in-loop -- one part at a time, in board order
+			// oxlint-disable-next-line no-await-in-loop -- one part at a time, in document order
 			const runner = await runnerOf(reading, part);
 			if (runner !== undefined) runners.push(runner);
 		}

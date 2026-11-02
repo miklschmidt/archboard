@@ -1,4 +1,4 @@
-// The content checks decide from saved boards alone and say what they found:
+// The content checks decide from saved documents alone and say what they found:
 // a rename that minted a new id fails identity, traffic reads as off, default
 // or stated, and a relationship landing on a container fails the receiver rule.
 
@@ -159,11 +159,11 @@ describe("content checks", () => {
 });
 
 /**
- * The board with more nodes on its current variant, so two of them can answer
+ * The document with more nodes on its current variant, so two of them can answer
  * to one name.
- * @param board The board.
+ * @param board The document.
  * @param names The names to add.
- * @returns The board, its current variant that much larger.
+ * @returns The document, its current variant that much larger.
  */
 function alsoNamed(document: LegacyBoard, names: readonly string[]): LegacyBoard {
 	const [first, ...rest] = document.variants;

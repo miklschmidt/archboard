@@ -28,7 +28,7 @@
 // French. A live narration names none: it speaks the user's language, as a conversation does.
 //
 // A step is handed over with what it highlights on screen, named in words, and on a variant read
-// against another — the board's current one, or on a board with none the one it came from — how
+// against another — the model's current one, or on a model with none the one it came from — how
 // each of those stands against it (TASK-309): the picture marks what was added and changed, and
 // the voice can only explain what it is told.
 
@@ -64,7 +64,7 @@ interface RealtimePresentation {
 
 /**
  * The walkthrough's name as a start carries it.
- * @param name The name as the board states it.
+ * @param name The name as the model states it.
  * @returns The name, cut when it is longer than a start carries.
  */
 function presentationName(name: string): string {
@@ -171,7 +171,7 @@ function subjectSpeech(subject: StepSubject): string {
 /**
  * What the voice model is handed, as speech, when a narrated walkthrough's step lands on screen
  * or the pane leaves it. Leaving names nobody: the user pressing Escape and an agent's
- * `browser show` putting another board in the pane look the same (TASK-293.06).
+ * `browser show` putting another legacy board in the pane look the same (TASK-293.06).
  *
  * In a full-duplex session appended text is quiet context whatever role it carries, and nothing
  * asks for a response (Codex 0.160.0, `conversation_item_create_message`). What the voice model

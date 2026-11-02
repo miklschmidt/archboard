@@ -40,7 +40,7 @@ test("a block's ports keep the order its parent settles without crossing nested 
 			expect(routesCross(routes.get(id)!, routes.get(other)!), `${id} ${other}`).toBe(false);
 });
 
-// Taken from a board of this repository: two lines join on their way to Board
+// Taken from a document of this repository: two lines join on their way to Document
 // routes. Held in order with the join parted, the parted drawing crossed less
 // and was chosen, and one of its lines ran up and round Semantic renderer.
 test("a held order does not part lines joined on their way to a card", async () => {

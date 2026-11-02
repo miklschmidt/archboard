@@ -1,7 +1,7 @@
 // The trail a drill-down into another repository leaves. Where the link leads
 // is read by canonical model references; canonical-model-references.test.ts owns it.
 //
-// What these catch: a dive that forgets the boards the reader came through once
+// What these catch: a dive that forgets the models the reader came through once
 // the pane arrives, and a trail kept after somebody else pointed the pane
 // somewhere else.
 
@@ -39,11 +39,11 @@ describe("the drill trail", () => {
 	test("a dive into another vault keeps the trail before the board it arrives on", () => {
 		const down = drillInto(drillInto(NO_TRAIL, SHOP, CART).trail, SHOP, LEDGER);
 		expect(down.dive).toEqual(LEDGER);
-		// The shell moved the pane: the server announces the board, whose name may differ in case.
+		// The shell moved the pane: the server announces the model, whose name may differ in case.
 		const arrived = drillArrived(down.trail, { ...LEDGER, model: "Ledger" });
 		expect(stopsOf(arrived, LEDGER)).toEqual([SHOP, CART, LEDGER]);
 
-		// Down a level in place there, and back to the pane's own board, which is no move.
+		// Down a level in place there, and back to the pane's own model, which is no move.
 		const journal = { ...LEDGER, model: "journal" };
 		const up = drillBack(drillInto(arrived, LEDGER, journal).trail, LEDGER, 2);
 		expect(up.dive).toBeNull();
@@ -59,7 +59,7 @@ describe("the drill trail", () => {
 		const there = drillArrived(drillInto(NO_TRAIL, SHOP, LEDGER).trail, LEDGER);
 		const home = drillArrived(drillInto(there, LEDGER, SHOP).trail, SHOP);
 		expect(stopsOf(home, SHOP)).toEqual([SHOP, LEDGER, SHOP]);
-		// The shell would not move a pane to the board it holds, so no arrival would answer a dive.
+		// The shell would not move a pane to the model it holds, so no arrival would answer a dive.
 		const back = drillBack(home, SHOP, 0);
 		expect(back.dive).toBeNull();
 		expect(stopsOf(back.trail, SHOP)).toEqual([SHOP]);

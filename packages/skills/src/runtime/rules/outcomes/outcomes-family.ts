@@ -38,7 +38,7 @@ type Check = (check: OutcomeCheck, reading: Reading) => Finding;
 type Located = { readonly document: EvaluatedDocument; readonly variant: SemanticVariant };
 
 /**
- * Runs a check that needs the board and variant it names.
+ * Runs a check that needs the document and variant it names.
  * @param check The check.
  * @param reading The reading.
  * @param judge What to conclude once located.
@@ -54,10 +54,10 @@ function onLocated(
 }
 
 /**
- * Runs a check that needs only the board it names.
+ * Runs a check that needs only the document it names.
  * @param check The check.
  * @param reading The reading.
- * @param judge What to conclude from the board.
+ * @param judge What to conclude from the document.
  * @returns The finding.
  */
 function onBoard(
@@ -74,7 +74,7 @@ function onBoard(
 /**
  * The named variant's content as the fixtures left it.
  * @param reading The reading.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @returns The content, or undefined when the snapshot lacks it.
  */
 function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent | undefined {
@@ -87,7 +87,7 @@ function snapshotContent(reading: Reading, check: OutcomeCheck): VariantContent 
  * was there, else on any variant of the snapshot, since a node restored from a
  * predecessor keeps the id the predecessor gave it.
  * @param reading The reading.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @returns The id, or undefined when the snapshot never held the name.
  */
 function snapshotId(reading: Reading, check: OutcomeCheck): string | undefined {
@@ -105,7 +105,7 @@ function snapshotId(reading: Reading, check: OutcomeCheck): string | undefined {
 
 /**
  * Whether a node kept the id the fixtures gave it.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -121,7 +121,7 @@ const nodeIdRetained: Check = (check, reading) =>
 /**
  * The named node as the fixtures left it on the named variant.
  * @param reading The reading.
- * @param check The board, variant and node.
+ * @param check The document, variant and node.
  * @returns The node, or undefined.
  */
 function nodeBefore(reading: Reading, check: OutcomeCheck): SemanticNode | undefined {
@@ -131,7 +131,7 @@ function nodeBefore(reading: Reading, check: OutcomeCheck): SemanticNode | undef
 
 /**
  * Whether a node's listed fields still say what they said before the run.
- * @param check The board, variant, node and fields.
+ * @param check The document, variant, node and fields.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -152,7 +152,7 @@ const nodeFieldRetained: Check = (check, reading) =>
 
 /**
  * Whether every relationship that existed before still has its id.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -170,7 +170,7 @@ const edgeIdsRetained: Check = (check, reading) =>
 	});
 
 /**
- * Whether the vault holds exactly the stated number of boards.
+ * Whether the vault holds exactly the stated number of documents.
  * @param check The expected count.
  * @param reading The reading.
  * @returns The finding.
@@ -193,7 +193,7 @@ function lifecycleMatches(variant: SemanticVariant, check: OutcomeCheck): boolea
 
 /**
  * Whether a variant exists, in the stated lifecycle.
- * @param check The board, variant and lifecycle.
+ * @param check The document, variant and lifecycle.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -220,7 +220,7 @@ function isNamed(variant: SemanticVariant | undefined, asked: string | undefined
 
 /**
  * Whether the current variant is the named one.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -232,7 +232,7 @@ const currentIs: Check = (check, reading) =>
 
 /**
  * The current variant's content as JSON, for equality.
- * @param document The board, if any.
+ * @param document The document, if any.
  * @returns The JSON text.
  */
 function currentJson(document: EvaluatedDocument | undefined): string {
@@ -241,13 +241,13 @@ function currentJson(document: EvaluatedDocument | undefined): string {
 
 /**
  * Whether the current variant's content is byte-for-byte what the fixtures left.
- * @param check The board.
+ * @param check The document.
  * @param reading The reading.
  * @returns The finding.
  */
 const currentUntouched: Check = (check, reading) =>
 	onBoard(check, reading, (document) => {
-		// Two absences are not two equal architectures: a board with no current
+		// Two absences are not two equal architectures: a document with no current
 		// variant has nothing for this check to hold still, and passing it would
 		// say the author left alone something that was never there.
 		if (currentVariant(document) === undefined) {
@@ -262,7 +262,7 @@ const currentUntouched: Check = (check, reading) =>
 
 /**
  * Whether a variant holds no open disagreement.
- * @param check The board and variant.
+ * @param check The document and variant.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -273,8 +273,8 @@ const reconciliationSettled: Check = (check, reading) =>
 	});
 
 /**
- * Whether the board records the stated number of adoptions, with reasons when asked.
- * @param check The board, count and reason requirement.
+ * Whether the document records the stated number of adoptions, with reasons when asked.
+ * @param check The document, count and reason requirement.
  * @param reading The reading.
  * @returns The finding.
  */
@@ -370,7 +370,7 @@ function viewMatches(view: SemanticView, check: OutcomeCheck): boolean {
 }
 
 /**
- * Whether a board view exists with the stated grammar and selection shape.
+ * Whether a document view exists with the stated grammar and selection shape.
  * @param check The view, grammar and selection sizes.
  * @param reading The reading.
  * @returns The finding.
@@ -410,7 +410,7 @@ const walkthroughBeatReferences: Check = (check, reading) =>
 
 /**
  * Whether a walkthrough kept every beat id it had, in the same order.
- * @param check The board and walkthrough.
+ * @param check The document and walkthrough.
  * @param reading The reading.
  * @returns The finding.
  */

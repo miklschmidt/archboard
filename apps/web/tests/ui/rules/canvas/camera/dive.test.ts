@@ -1,9 +1,9 @@
-// Where a board sits inside the card that opens it, and where the camera has to
+// Where a model sits inside the card that opens it, and where the camera has to
 // be to see it there.
 //
 // What these catch: an inset that overflows its card or is not centred in it,
-// a flight that ends somewhere other than where the board itself stands, which
-// would show as a jump the moment the board takes over, and a flight that takes
+// a flight that ends somewhere other than where the model itself stands, which
+// would show as a jump the moment the model takes over, and a flight that takes
 // a camera something else moved for one that arrived.
 
 import { describe, expect, test } from "bun:test";
@@ -54,7 +54,7 @@ describe("the camera at the inset", () => {
 		const own = { x: 120, y: 60, scale: 0.9 };
 		const inset = insetOf(CARD, CHILD);
 		const over = cameraAtInset(inset, CHILD, own);
-		// The corners of the inset, over the parent, land on the corners of the board.
+		// The corners of the inset, over the parent, land on the corners of the model.
 		const insetCorner = onScreen(over, inset.x, inset.y);
 		const insetFar = onScreen(over, inset.x + inset.width, inset.y + inset.height);
 		const pictureCorner = onScreen(own, 0, 0);
@@ -90,7 +90,7 @@ describe("the flight between a board and its card", () => {
 	test("goes into the card, to where the board stands once it is opened and fitted", () => {
 		const leg = legInto(PARENT, "card", { ...CHILD, atlas: PARENT.atlas }, ROOM);
 		expect(leg).not.toBeNull();
-		// Seen through the camera the leg ends at, the board is where its own fit puts it.
+		// Seen through the camera the leg ends at, the model is where its own fit puts it.
 		const inset = leg!.inset;
 		const end = leg!.to;
 		const corner = onScreen(end, inset.x, inset.y);

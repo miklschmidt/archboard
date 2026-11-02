@@ -1,14 +1,14 @@
 // What a variant changes, for a reader of any variant that is read against
-// another: every variant but the current one, and on a board with no current
+// another: every variant but the current one, and on a model with no current
 // variant every draft that came from another (ADR 0023).
 //
 // The marks on the picture are why somebody looks at a proposal, so their key
-// sits at the top of the board tab, under the board's summary, rather than at
+// sits at the top of the model tab, under the model's summary, rather than at
 // the foot of the legend where a reader had to scroll to it (TASK-383). A row
 // is drawn for each standing that occurs, with the pin the picture draws on the
 // corner of such a subject and how many subjects stand so: colouring what was
 // added and removed is what lets a reader count a change without error, and a
-// count says at once whether a change is one part or half the board.
+// count says at once whether a change is one part or half the model.
 //
 // The counts are of what the picture draws: the render answer keeps its
 // standing to the subjects the renderer placed (TASK-497). Every reading draws

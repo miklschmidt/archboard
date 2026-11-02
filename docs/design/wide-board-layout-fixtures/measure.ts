@@ -1,4 +1,4 @@
-// Measures every fixture and every vault board on the scorecard a layout change
+// Measures every fixture and every vault document on the scorecard a layout change
 // is judged by (packages/renderer/tests/runtime/support/drawn-scorecard.ts): fit,
 // page area, how much of the page is card, route length, bends, crossings,
 // margin-lane ink, flank fan, how far a label sits from the line it names, the
@@ -12,8 +12,8 @@
 //
 // SAVE=run.json      also write this run's scorecards
 // AGAINST=run.json   compare this run with a saved one, measure by measure
-// ALL=1              measure every variant of every board, not only the current one
-// ENGINE=track       lay every board out with this engine, not the default one
+// ALL=1              measure every variant of every document, not only the current one
+// ENGINE=track       lay every document out with this engine, not the default one
 // PICTURES=1         write a PNG of each drawing to outdir (default .skill-evals/repro)
 //
 // A layout experiment is compared by saving a run on the tree as it is, then
@@ -45,16 +45,16 @@ const rasterizer = pictures
 	? (await import("@archboard/renderer/rasterizer")).createSemanticRasterizer({})
 	: null;
 
-/** One thing to measure: a board's variant, or a fixture. */
+/** One thing to measure: a document's variant, or a fixture. */
 interface Item {
 	readonly name: string;
 	readonly variant: string;
 	readonly content: unknown;
-	/** The vault's policy, which names the groups the board draws; a fixture has none of its own. */
+	/** The vault's policy, which names the groups the document draws; a fixture has none of its own. */
 	readonly policy: SemanticPolicy;
 }
 
-/** One board's saved result. */
+/** One document's saved result. */
 interface Result {
 	readonly page: string;
 	readonly reads: string;

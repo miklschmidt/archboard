@@ -1,4 +1,4 @@
-// The evidence between the parts of one board that infrastructure joins
+// The evidence between the parts of one document that infrastructure joins
 // (ADR 0046, TASK-367.17): the references of a Terraform or OpenTofu root
 // module, read as one address space.
 //
@@ -95,7 +95,7 @@ function holdsDeclarationAt(
 /**
  * Who owns each declaration of one root module.
  * @param configuration The root module's address space.
- * @param parts The read parts of the board in the root's checkout.
+ * @param parts The read parts of the document in the root's checkout.
  * @returns The owners of an address.
  */
 function ownershipIn(
@@ -144,7 +144,7 @@ function endOf(declaration: Declaration, ends: Reached, end: "from" | "to"): str
  * they reach nothing for being the declaration itself.
  * @param declaration The declaration.
  * @param reached What it reaches.
- * @param reading The root module's owners, the board's lineages and the repository.
+ * @param reading The root module's owners, the document's lineages and the repository.
  * @returns The pieces; none for a declaration that joins nothing.
  */
 function joinedBy(declaration: Declaration, reached: Reached, reading: RootReading): Piece[] {
@@ -172,9 +172,9 @@ function joinedBy(declaration: Declaration, reached: Reached, reading: RootReadi
 }
 
 /**
- * The evidence one root module gives between the parts of a board.
+ * The evidence one root module gives between the parts of a document.
  * @param configuration The root module's address space.
- * @param parts The read parts of the board in its checkout.
+ * @param parts The read parts of the document in its checkout.
  * @param lineages Each part and the parts that hold it.
  * @returns The pieces.
  */
@@ -227,7 +227,7 @@ function firstPerPair(pieces: readonly Piece[]): Piece[] {
 
 /**
  * The evidence the Terraform and OpenTofu root modules that the parts of one
- * board bind give between those parts.
+ * document bind give between those parts.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass, with the plans an agent named.
  * @param lineages Each part and the parts that hold it.

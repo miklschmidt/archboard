@@ -85,7 +85,7 @@ class TalkPlayback {
 	 * A talk, played to before its first frame.
 	 * @param talk The talk.
 	 * @param talk.events What happened, in order.
-	 * @param talk.board The board, with the walkthrough presented.
+	 * @param talk.board The model, with the walkthrough presented.
 	 * @param levels How loud the voice is on each frame, from frame nought.
 	 */
 	constructor(

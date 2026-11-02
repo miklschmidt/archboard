@@ -7,7 +7,7 @@
 // that no longer exists. So the stage fits itself again every time its size
 // changes, and stops the moment a person pans or zooms: from then on the camera
 // is theirs, and widening the pane leaves it exactly where they put it. A new
-// board, variant or view starts the whole arrangement over, fitting the entire
+// model, variant or view starts the whole arrangement over, fitting the entire
 // selected reading rather than zooming to the subjects a proposal changed.
 //
 // A walkthrough step is a new subject in exactly that sense. What the pane is
@@ -223,7 +223,7 @@ function keepFitted(
 
 /**
  * Keep the stage camera fitted across loading, empty and drawn states. Variants
- * share presentation state; another board, variant, view or walkthrough focus fits afresh.
+ * share presentation state; another model, variant, view or walkthrough focus fits afresh.
  * @param camera The stage camera.
  * @param drawing The resolved drawing, or null while no picture is available.
  * @param focus The walkthrough's focus, when one is being read.

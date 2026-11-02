@@ -88,9 +88,9 @@ function portOver(vaultOf: ((repository: string) => string | null) | null) {
 		/**
 		 * Record a show the port sent.
 		 * @param _clientId The pane.
-		 * @param paneKey The board.
+		 * @param paneKey The model.
 		 * @param vault The vault it was sent to.
-		 * @returns The board, as the server would answer.
+		 * @returns The model, as the server would answer.
 		 */
 		show: async (_clientId: string, paneKey: string, vault: string) => {
 			shownIn.push(vault);

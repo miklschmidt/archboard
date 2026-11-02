@@ -10,15 +10,15 @@ import { aggregateOf } from "#server/rules/pane/legacy-address.ts";
 import { PANE_MS } from "@archboard/timing";
 import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server";
 
-// WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the board file
-// is the board and the server holds no copy of one (ADR 0015, ADR 0023).
+// WHAT THIS PROCESS IS STILL ALLOWED TO HOLD, and why, because the model file
+// is the model and the server holds no copy of one (ADR 0015, ADR 0023).
 //
 // Session and display state answers "what is on this screen, now": the sockets
 // below, `clientIds`, `panes`, `paneKeys`, the `pending*` sets and the Codex
-// wiring. None of it can live in a board file, all of it dies with the tab, and
+// wiring. None of it can live in a model file, all of it dies with the tab, and
 // a reading of ADR 0015 that forbade it would be unimplementable.
 //
-// Nothing else. Anything that answers "what is on this board" is the file.
+// Nothing else. Anything that answers "what is on this model" is the file.
 
 /** Sockets admitted to broadcasts: the ones that have received their initial scene. */
 const clients = new Set<WebSocket>();
@@ -29,7 +29,7 @@ const acceptedSockets = new Set<WebSocket>();
 // Client id per socket, from the ?clientId= connect param. Every selection
 // post sends it too, so a disconnect retires that client's selection.
 const clientIds = new Map<WebSocket, string>();
-// The vault each socket named when it connected (ADR 0049). A board's news goes
+// The vault each socket named when it connected (ADR 0049). A model's news goes
 // only to the sockets of its own vault.
 const socketVaults = new Map<WebSocket, string>();
 // The vault each pane belongs to, by client id. Like `paneKeys` it outlives the socket.
@@ -50,7 +50,7 @@ const browserLeaseLedger: BrowserLeaseLedger = createBrowserLeaseLedger();
 // longer in front of anybody. Empty is the normal headless state.
 const panes = new Map<string, PaneRegistration>();
 
-// Which board each pane has been pointed at, keyed by client id.
+// Which model each pane has been pointed at, keyed by client id.
 //
 // This is the *authority*: what the server has decided a pane holds. The
 // registration above carries what the pane says it is rendering, which is the
@@ -59,25 +59,25 @@ const panes = new Map<string, PaneRegistration>();
 // this map.
 //
 // Entries outlive the socket on purpose. A dropped connection reconnects with
-// the same client id, and a pane that came back showing a different board than
+// the same client id, and a pane that came back showing a different model than
 // it had a second ago would undo a user's scene arrangement.
 const paneKeys = new Map<string, string>();
 
 /**
- * The board a pane is authoritatively showing: the server's decision where it
+ * The model a pane is authoritatively showing: the server's decision where it
  * has made one, the pane's own report otherwise.
  * @param pane The pane registration being asked about.
- * @returns The board key that pane holds, or null when it holds none.
+ * @returns The model key that pane holds, or null when it holds none.
  */
 function paneKeyOf(pane: PaneRegistration): string | null {
 	return paneKeys.get(pane.clientId) ?? pane.paneKey;
 }
 
 /**
- * The board one pane is on, by client id, for a reader that has no
+ * The model one pane is on, by client id, for a reader that has no
  * registration in hand.
  * @param clientId The pane's client id.
- * @returns The board key, or null when that pane is on none.
+ * @returns The model key, or null when that pane is on none.
  */
 function paneKeyOfClient(clientId: string): string | null {
 	return paneKeys.get(clientId) ?? null;
@@ -85,7 +85,7 @@ function paneKeyOfClient(clientId: string): string | null {
 
 /**
  * What each pane holds, in reading order.
- * @returns One entry per pane with its place on screen and its board.
+ * @returns One entry per pane with its place on screen and its model.
  */
 function paneKeysOnScreen(): Array<{ paneId: string; place: string; model: string | null }> {
 	return panesInOrder(addressablePanes([...panes.values()])).map((entry) => ({
@@ -133,14 +133,14 @@ function sendToVaultClients(vault: string, data: string): void {
 }
 
 /**
- * Broadcast board news to every client connected for the board's vault.
+ * Broadcast model news to every client connected for the model's vault.
  *
- * The board key is not optional: a client showing board A has to be able to
- * drop a message about board B rather than merge it into what it is rendering.
+ * The model key is not optional: a client showing model A has to be able to
+ * drop a message about model B rather than merge it into what it is rendering.
  * The vault is not optional either, and it is filtered here: a pane never hears
- * of a board of another vault, even one of the same name (ADR 0049).
+ * of a model of another vault, even one of the same name (ADR 0049).
  * @param message The message to send.
- * @param vault The vault the board lives in.
+ * @param vault The vault the model lives in.
  * @param paneKey The pane key the message is about; stamped onto the message.
  */
 function broadcast(message: WebSocketMessage, vault: string, paneKey: string): void {
@@ -171,9 +171,9 @@ function deliverToPane(clientId: string, data: string): boolean {
 }
 
 /**
- * Send board news to one pane, named by client id.
+ * Send model news to one pane, named by client id.
  *
- * A board switch is the message this exists for: it replaces the receiving
+ * A model switch is the message this exists for: it replaces the receiving
  * pane's whole scene, so sending it to every socket is how one pane's `board
  * open` used to drag the other pane along with it.
  * @param clientId The pane's client id.
@@ -186,11 +186,11 @@ function sendToPane(clientId: string, message: WebSocketMessage, paneKey: string
 }
 
 /**
- * Send one pane something about the pane itself rather than about a board:
- * open another one, close this one, or, for a pane on no board, the vault it
- * has just been moved into. None of it is board news, so stamping a board key on it
+ * Send one pane something about the pane itself rather than about a model:
+ * open another one, close this one, or, for a pane on no model, the vault it
+ * has just been moved into. None of it is model news, so stamping a model key on it
  * would be inventing one. Kept separate from `sendToPane` so that omitting the
- * board stays a deliberate act rather than a missing argument.
+ * model stays a deliberate act rather than a missing argument.
  * @param clientId The pane's client id.
  * @param message The keyless message to send.
  * @returns Whether the pane received it.
@@ -200,7 +200,7 @@ function sendKeylessToPane(clientId: string, message: WebSocketMessage): boolean
 }
 
 /**
- * The boards on screen, as the aggregates their panes show, each in the
+ * The models on screen, as the aggregates their panes show, each in the
  * vault its pane belongs to.
  * @returns Their vaults and keys.
  */
@@ -228,7 +228,7 @@ function referencePane(vault: string): PaneRegistration | null {
  * deliberately.
  * @param clientId The client id of the arriving pane.
  * @param vault The vault the arriving pane named.
- * @returns The board key that pane starts on, or null when the vault is empty.
+ * @returns The model key that pane starts on, or null when the vault is empty.
  */
 function paneKeyForNewPane(clientId: string, vault: string): string | null {
 	for (const candidate of copyableModels(clientId, vault)) {
@@ -236,32 +236,32 @@ function paneKeyForNewPane(clientId: string, vault: string): string | null {
 			return candidate;
 		}
 	}
-	// Nothing to copy: the vault's first board, so a tab opened on an empty
+	// Nothing to copy: the vault's first model, so a tab opened on an empty
 	// address shows an architecture rather than an empty frame. A vault with no
-	// board at all leaves the pane on none, and the navigator says so.
+	// model at all leaves the pane on none, and the navigator says so.
 	return null;
 }
 
 /**
- * Whether a pane key still names something: the board, and the variant of it
+ * Whether a pane key still names something: the model, and the variant of it
  * the key names.
  *
- * A pane key carries the variant after the last `@` (ADR 0009) and a board is
+ * A pane key carries the variant after the last `@` (ADR 0009) and a model is
  * addressed by name alone — the whole family is in the one document — so the
  * key has to be taken apart before either half is looked up. Reading the key
  * whole refuses every proposal a pane was showing, and the pane comes back on
- * the current variant of the first board in the vault: not what it was looking
+ * the current variant of the first model in the vault: not what it was looking
  * at, and quietly so.
- * @param vault The vault the board lives in.
+ * @param vault The vault the model lives in.
  * @param _key The opaque presentation key.
- * @returns True when that board is still there and has the variant the key states.
+ * @returns True when that model is still there and has the variant the key states.
  */
 function stillThere(vault: string, _key: string): boolean {
 	return readArchitectureModel(vault).success;
 }
 
 /**
- * The boards a new pane would take over from, in order of preference: the one
+ * The models a new pane would take over from, in order of preference: the one
  * it was showing before its socket dropped, then whatever is already in front
  * of the human.
  * @param clientId The client id of the arriving pane.
@@ -283,18 +283,18 @@ function copyableModels(clientId: string, vault: string): string[] {
 }
 
 /**
- * The pane a board request is addressed to.
+ * The pane a model request is addressed to.
  *
  * A named pane is taken literally. An unnamed one is only allowed where it
  * cannot be wrong: one pane on screen means that pane, no pane on screen means
- * the board is loaded without being shown, and two panes means say which
- * (packages/server-lifecycle/src/runtime/rules/panes.ts). The response always names where the board landed.
- * A named pane may show another repository's board now, and the show moves it
- * into the board's vault (ADR 0050). An unnamed one is only one of the board's
- * own vault, so a board is never put in front of a pane nobody pointed at it.
- * @param vault The vault the board lives in.
+ * the model is loaded without being shown, and two panes means say which
+ * (packages/server-lifecycle/src/runtime/rules/panes.ts). The response always names where the model landed.
+ * A named pane may show another repository's model now, and the show moves it
+ * into the model's vault (ADR 0050). An unnamed one is only one of the model's
+ * own vault, so a model is never put in front of a pane nobody pointed at it.
+ * @param vault The vault the model lives in.
  * @param spec The pane spec the caller sent, if any.
- * @returns The pane, or null when the board is loaded without being shown.
+ * @returns The pane, or null when the model is loaded without being shown.
  */
 function paneFromRequest(vault: string, spec: unknown): PaneRegistration | null {
 	if (typeof spec === "string" && spec.trim()) {
@@ -313,16 +313,16 @@ function panesOfVault(vault: string): PaneRegistration[] {
 }
 
 /**
- * The pane that answers a request addressed to "the browser" and to no board.
+ * The pane that answers a request addressed to "the browser" and to no model.
  *
  * Image export and viewport control name a pane or take this one, and neither
- * of them names a board: a picture is of whatever is on that half of the
- * screen. So there is nothing here to resolve a board against, and nothing
+ * of them names a model: a picture is of whatever is on that half of the
+ * screen. So there is nothing here to resolve a model against, and nothing
  * that could resolve to the wrong one — the caller either says which pane or
  * gets the first.
  *
- * An operation that *does* name a board must not come through here. Use
- * `paneFromRequest`: the board it was given already settles which pane, so
+ * An operation that *does* name a model must not come through here. Use
+ * `paneFromRequest`: the model it was given already settles which pane, so
  * taking the first one instead would answer a different question than the one
  * asked.
  * @returns The primary pane, else the first, else null with nothing on screen.
@@ -350,9 +350,9 @@ function paneRef(pane: PaneRegistration): Record<string, unknown> {
 }
 
 /**
- * Where a board landed, for the caller who did not say.
+ * Where a model landed, for the caller who did not say.
  * @param pane The pane it landed in, or null when no pane showed it.
- * @returns The `pane` field of a board answer.
+ * @returns The `pane` field of a model answer.
  */
 function paneResponse(pane: PaneRegistration | null): Record<string, unknown> {
 	return { pane: pane ? paneRef(pane) : null };
@@ -521,13 +521,13 @@ export {
 };
 export type { PendingPaneClose, PendingPaneOpen };
 
-/** Whoever is watching what the panes are told about boards. */
+/** Whoever is watching what the panes are told about models. */
 const broadcastObservers = new Set<
 	(message: WebSocketMessage, vault: string, model: string) => void
 >();
 
 /**
- * Watch every board announcement this server makes.
+ * Watch every model announcement this server makes.
  *
  * For a reader that needs to know what the panes were told without being a
  * pane: the agent's context, which must never be able to disagree with what is

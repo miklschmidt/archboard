@@ -3,11 +3,11 @@
 // The card in the picture says a node's name, its kind and, when it has one,
 // the single line it is responsible for. That is all a card can carry and stay
 // readable, and ADR 0023 makes the rest reachable rather than drawn: the longer
-// description, the one optional primary code binding, the board one level down,
+// description, the one optional primary code binding, the model one level down,
 // and what the last code check found about it.
 //
-// Everything here comes from the board document rather than from the picture.
-// The atlas decides what can be picked out of the drawing on screen; the board
+// Everything here comes from the model document rather than from the picture.
+// The atlas decides what can be picked out of the drawing on screen; the model
 // decides what that thing is. Keeping those apart is what lets a narrowed view
 // draw fewer subjects without the inspector losing the ability to explain the
 // ones it does draw.
@@ -59,14 +59,14 @@ import type { z } from "zod";
 
 type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
 
-/** What the last pass found on one board at one variant. */
+/** What the last pass found on one model at one variant. */
 type RememberedReading = RememberedFindings["readings"][number];
 
 /**
- * What a part is called, or the id the board names it by when the variant no
+ * What a part is called, or the id the model names it by when the variant no
  * longer holds it.
  * @param node The part, when the variant still holds it.
- * @param id The id the board names it by.
+ * @param id The id the model names it by.
  * @returns The name.
  */
 function nameOf(node: SemanticNode | undefined, id: string): string {
@@ -82,7 +82,7 @@ interface FlowBodyProps {
 }
 
 /**
- * Everything the board says about one exchange.
+ * Everything the model says about one exchange.
  * @param props The flow.
  * @returns The body.
  */
@@ -131,7 +131,7 @@ function stepSort(step: FlowStep): string {
 }
 
 /**
- * Everything the board says about one step of an exchange.
+ * Everything the model says about one step of an exchange.
  *
  * Where it comes is part of what it means, which is why the comparison treats a
  * step's position as one of its own fields.
@@ -191,7 +191,7 @@ interface EdgeBodyProps {
 }
 
 /**
- * Everything the board says about one relationship.
+ * Everything the model says about one relationship.
  * @param props The relationship.
  * @returns The body.
  */
@@ -221,7 +221,7 @@ function EdgeBody(props: EdgeBodyProps): JSX.Element {
 /**
  * Whichever of the other bodies the selected subject calls for. A part
  * has its own panel, `DetailsPanel`.
- * @param subject What the board says the selection is.
+ * @param subject What the model says the selection is.
  * @param look How the vault's kinds look.
  * @param standing Where the subject stands, which each body sets after what it is.
  * @returns The body.
@@ -259,7 +259,7 @@ interface BodyProps {
 	 * @param binding Where the code is.
 	 */
 	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-	/** What the board says the selection is, or undefined while that is not known. */
+	/** What the model says the selection is, or undefined while that is not known. */
 	subject: Subject | LineSubject | undefined;
 	/** What to say when there is no subject: still reading, or a reason. */
 	notice: string;
@@ -270,8 +270,8 @@ interface BodyProps {
 	/** What the last code check found about this subject, or null for nothing. */
 	code: CodeStanding | null;
 	/**
-	 * Open the board one level down.
-	 * @param board The target board.
+	 * Open the model one level down.
+	 * @param board The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: OpenDown;
@@ -279,9 +279,9 @@ interface BodyProps {
 	groups: GroupControls;
 	/** The state that holds the subject: its relationships are read there. */
 	held: SemanticVariant | undefined;
-	/** The level of the board drawn, which places the boards its parts open. */
+	/** The level of the model drawn, which places the models its parts open. */
 	level: string | undefined;
-	/** The board, variant and version on screen, which a part's history is read at. */
+	/** The model, variant and version on screen, which a part's history is read at. */
 	on: ReadingOnScreen | null;
 	/** How the vault's kinds look. */
 	look: KindLook;
@@ -330,9 +330,9 @@ function InspectorBody(props: BodyProps): JSX.Element {
 	return bodyFor(subject, props.look, standing);
 }
 
-/** What the board turned out to say about the selection, and what to say instead. */
+/** What the model turned out to say about the selection, and what to say instead. */
 interface Explanation {
-	/** The subject, when the board holds one under that id. */
+	/** The subject, when the model holds one under that id. */
 	readonly subject: Subject | LineSubject | undefined;
 	/** What to say when it does not. */
 	readonly notice: string;
@@ -344,9 +344,9 @@ interface Explanation {
 	readonly held: SemanticVariant | undefined;
 	/** The ids the selection stands for: every relationship a joined line joins, else the picked id. */
 	readonly ids: readonly string[];
-	/** The board's level, once it is read. */
+	/** The model's level, once it is read. */
 	readonly level?: string | undefined;
-	/** The board, variant and version the subject was read from, for the code check's findings. */
+	/** The model, variant and version the subject was read from, for the code check's findings. */
 	readonly on: ReadingOnScreen | null;
 }
 
@@ -366,7 +366,7 @@ interface Explanation {
  * added step would be third of three in a flow of one, and a removed step second of
  * three in an exchange that only ever had two. A removed subject is read where
  * it lived, so it is counted among the things it lived with.
- * @param model The board the variant belongs to.
+ * @param model The legacy board the variant belongs to.
  * @param shown The variant the picture is of.
  * @param selection The picked semantic id.
  * @returns The subject and how it stands, or neither.
@@ -396,17 +396,17 @@ function comparedSubject(
 }
 
 /**
- * What the board says about one selected id.
+ * What the model says about one selected id.
  *
  * Every way this can come up empty is a different piece of news, and each says
- * so: the read failed, the board has not arrived yet, the board is unreadable,
+ * so: the read failed, the model has not arrived yet, the model is unreadable,
  * the variant on screen is gone, or the subject itself is gone. A person who
  * acts on the wrong one of those goes looking for the wrong thing — and the
  * worst of the five to get wrong is a failure shown as waiting, because waiting
  * for something that is never coming looks exactly like a panel that is slow.
- * @param vault The vault the board is in.
- * @param read How the board's own read went.
- * @param read.data The board document, when it has arrived.
+ * @param vault The vault the model is in.
+ * @param read How the model's own read went.
+ * @param read.data The model document, when it has arrived.
  * @param read.error Why the read failed, when it did.
  * @param variant The id of the variant the drawing is of.
  * @param selection The picked semantic id.
@@ -479,7 +479,7 @@ function openOn(shown: SemanticVariant, ids: readonly string[]): readonly Reconc
 
 /**
  * What the last code check found about one subject, warnings first.
- * @param reading What the pass found on the board on screen, or null.
+ * @param reading What the pass found on the model on screen, or null.
  * @param ids The ids the selection stands for.
  * @returns Its findings and when the pass ran, or null when there are none.
  */
@@ -499,7 +499,7 @@ interface SemanticInspectorProps {
 	 * @param binding Where the code is.
 	 */
 	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-	/** The board on screen. */
+	/** The model on screen. */
 	model: string;
 	/** The id of the variant the drawing is of. */
 	variant: string;
@@ -508,8 +508,8 @@ interface SemanticInspectorProps {
 	/** Whether the drawing is the overview (ADR 0052), whose joined lines are subjects of their own. */
 	overview: boolean;
 	/**
-	 * Open the board one level down.
-	 * @param board The target board.
+	 * Open the model one level down.
+	 * @param board The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: OpenDown;
@@ -525,16 +525,16 @@ interface SemanticInspectorProps {
 }
 
 /**
- * What the board says about whatever the person picked out.
- * @param props The board, the variant, the selection and what can be opened from it.
+ * What the model says about whatever the person picked out.
+ * @param props The model, the variant, the selection and what can be opened from it.
  * @returns The inspector, as the sidebar's selection panel.
  */
 function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	const vault = usePaneVault();
 	const document = useQuery(retainedDocumentQuery(vault, props.model));
-	// Read on the same terms as the picture — no timer, fresh when the board
+	// Read on the same terms as the picture — no timer, fresh when the model
 	// announces a new version — and subscribed here rather than relied on from
-	// above, under the same spelling of the board name that the read used. A
+	// above, under the same spelling of the model name that the read used. A
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
 	useModelChanges(vault, props.model);

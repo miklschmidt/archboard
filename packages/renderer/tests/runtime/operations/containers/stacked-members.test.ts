@@ -7,7 +7,7 @@ import heldLabel from "#tests/runtime/support/fixtures/held-label.json";
 /** The room a container keeps round its members: archboard_layout::constants::CONTAINER_INSET. */
 const CONTAINER_INSET = 20;
 
-/** Six kinds of card and four of line, as the reduced board below draws them. */
+/** Six kinds of card and four of line, as the reduced document below draws them. */
 const plain = SemanticPolicySchema.parse({
 	levels: ["k0"],
 	nodeKinds: Object.fromEntries(
@@ -24,7 +24,7 @@ const plain = SemanticPolicySchema.parse({
 	),
 });
 
-// Reduced from a real board, names replaced: a line from another container
+// Reduced from a real document, names replaced: a line from another container
 // enters a frame into a card a line inside the frame also leads into.
 test("a frame's members an entering label is held above stand on one column", async () => {
 	const content = orderedFixture(heldLabel);

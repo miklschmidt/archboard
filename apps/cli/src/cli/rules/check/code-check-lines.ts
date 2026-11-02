@@ -1,12 +1,12 @@
 // The lines `archboard check code` writes beside its JSON answer: each
 // finding as a diagnostic line with the evidence it rests on, what the code
-// check skipped, one line for each reason with a count, and how far each board
-// is behind its code, per board and per part (ADR 0045, ADR 0046).
+// check skipped, one line for each reason with a count, and how far each document
+// is behind its code, per document and per part (ADR 0045, ADR 0046).
 
 import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/model/policy";
 
-/** How far one board is behind its code. */
+/** How far one document is behind its code. */
 type ModelBehind = CodeCheckAnswer["behind"][number];
 
 /** One subject the code check skipped, and why. */
@@ -36,15 +36,15 @@ function plural(count: number, noun: string): string {
 	return `${count} ${noun}${count === 1 ? "" : "s"}`;
 }
 
-/** Why the last change of a board cannot be found, in words. */
+/** Why the last change of a document cannot be found, in words. */
 const UNKNOWN_REASON = {
 	"vault-outside-git": "the vault is in no Git repository",
 	"model-file-ignored": "Git ignores the board file",
 } as const;
 
 /**
- * The lines about how far one board is behind.
- * @param document One board's reading.
+ * The lines about how far one document is behind.
+ * @param document One document's reading.
  * @returns Its lines.
  */
 function behindLines(document: ModelBehind): string[] {
@@ -85,7 +85,7 @@ function findingLines(finding: CodeFinding): string[] {
 }
 
 /**
- * What a skip is about: a subject, a whole draft, a whole board, a whole
+ * What a skip is about: a subject, a whole draft, a whole document, a whole
  * checkout, or a whole language that no checkout names.
  * @param skip The skip.
  * @returns The noun.
@@ -102,8 +102,8 @@ function skippedNoun(skip: CodeCheckSkip): string {
  * reason can be said once for each project of a checkout, such as a Swift
  * package with no index; or each language with why. A checkout with no server
  * for a language says which language and what configures one, since that is
- * its whole answer. A draft is named with its board, its repository and why,
- * since which drafts were not read is the answer. Skips of subjects and boards
+ * its whole answer. A draft is named with its document, its repository and why,
+ * since which drafts were not read is the answer. Skips of subjects and documents
  * name nothing.
  * @param same The skips of one reason.
  * @param noun What they are about.

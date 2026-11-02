@@ -9,7 +9,7 @@ import type {
 } from "#ui/rules/reading-routing/address.ts";
 
 /**
- * Where the server says it put a pane: the key it resolved the board to, which
+ * Where the server says it put a pane: the key it resolved the model to, which
  * is the only spelling that can be compared with what a pane reports, and the
  * repository the pane is in now, which is what the pane reports beside it.
  */
@@ -19,10 +19,10 @@ interface OpenedModel {
 	readonly repository: string | null;
 }
 
-/** A board an address asked for, and the repository it named, or null for the pane's own. */
+/** A model an address asked for, and the repository it named, or null for the pane's own. */
 type AskedModel = Pick<AddressOpen, "paneKey" | "repository" | "model">;
 
-/** How pointing one pane at one board ended. */
+/** How pointing one pane at one model ended. */
 type OpenOutcome = ({ readonly kind: "opened" } & OpenedModel) | { readonly kind: "unreachable" };
 
 /** The workspace the address bar reads and addresses. */
@@ -32,10 +32,10 @@ interface WorkspacePort {
 	/** Whether a pane can be addressed yet: it has reached the server. */
 	readonly ready: (paneId: string) => boolean;
 	/**
-	 * Point one pane at one board, through the application's open command.
+	 * Point one pane at one model, through the application's open command.
 	 * @param paneId The pane.
-	 * @param paneKey The board.
-	 * @param repository The repository the board is in, or null for the one the pane is in.
+	 * @param paneKey The model.
+	 * @param repository The repository the model is in, or null for the one the pane is in.
 	 */
 	readonly open: (
 		paneId: string,
@@ -44,7 +44,7 @@ interface WorkspacePort {
 		model?: ModelAddress,
 	) => Promise<OpenOutcome>;
 	/**
-	 * Read the board one pane is already showing through one of its views, or
+	 * Read the model one pane is already showing through one of its views, or
 	 * through none for the whole variant. Nothing is opened and nothing is taken
 	 * away, so this is not an operation the command slot carries.
 	 * @returns True when the pane was reading it some other way.
@@ -65,7 +65,7 @@ interface WorkspacePort {
 	readonly addPane: () => boolean;
 	readonly closePane: (paneId: string) => boolean;
 	readonly selectPane: (paneId: string) => boolean;
-	/** A restore could not reach these boards; the workspace is what is shown. */
+	/** A restore could not reach these models; the workspace is what is shown. */
 	readonly reportUnreachable: (models: readonly AskedModel[]) => void;
 }
 

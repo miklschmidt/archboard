@@ -1,7 +1,7 @@
 import { tabSessionOf } from "@archboard/workbench/server";
 // What every pane on screen is showing and reading: the answer `browser panes`
 // is read from, every turn, so it is built from what the panes reported and the
-// registry, and never reads a board.
+// registry, and never reads a model.
 
 import type { Request, Response } from "express";
 
@@ -16,17 +16,17 @@ import type { z } from "zod";
 type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 
 /**
- * What one pane last said it was reading, when that is still about the board
+ * What one pane last said it was reading, when that is still about the model
  * it is now showing.
  *
  * A move and a report cross: the server points a pane at B and the pane's last
  * report still names A, which arrived while it was there and was true then.
  * Reported under B it would say that somebody has picked out subjects of B — by
  * ids that belong to A, and which may name something else entirely on B. The
- * board's own answer stands; what the person picked out does not, until the
+ * model's own answer stands; what the person picked out does not, until the
  * pane says what it is reading now, which it does on its next render.
  * @param clientId The pane's client id.
- * @returns The reading, or null when it is about another board.
+ * @returns The reading, or null when it is about another model.
  */
 function readingAboutPaneKey(clientId: string): SemanticPaneContext | null {
 	const context = semanticPaneContextFor(clientId);
@@ -51,8 +51,8 @@ function getPanesRoute(req: Request, res: Response): void {
 		caller: statedVault(req),
 		whereabouts: placeOfVault,
 		/**
-		 * The identity a board key spells.
-		 * @param key The board key.
+		 * The identity a model key spells.
+		 * @param key The model key.
 		 * @returns The identity.
 		 */
 		identity: (key) => parsePaneKey(key),

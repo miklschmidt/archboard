@@ -10,7 +10,7 @@ const PROCESS_GROUP_OBSERVATION_POLL_MS = 10;
 const GIT_MS = durations({
 	/**
 	 * Outer bound for one Git identity probe while an operation captures its checkout snapshot. Snapshot
-	 * work runs before a board lock or synchronous note write, so this never extends either critical
+	 * work runs before a model lock or synchronous note write, so this never extends either critical
 	 * section. It is longer than the server mutation-drain refusal window: stop may refuse and keep the
 	 * application intact while a slow probe is still cancellable by its request or application owner.
 	 * The exception is code-target's probe of the checkout that holds a vault: its Git calls, at most

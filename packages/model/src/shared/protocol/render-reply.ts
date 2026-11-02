@@ -1,4 +1,4 @@
-// What a drawn board looks like on the wire.
+// What a drawn model looks like on the wire.
 //
 // Three things consume a render: the server that produces it, the command that
 // writes it to a file, and the pane that shows it. They are in three areas of
@@ -12,8 +12,8 @@
 // draw, and those are different answers. A shape that made `svg` and `empty`
 // independently optional would accept both halves of a torn one — a size with
 // no picture, a picture with no size, neither, or both — and the only thing a
-// viewer could do with that is show "this board is empty" for what is actually
-// a protocol failure. A board with things on it looking like a board nobody has
+// viewer could do with that is show "this model is empty" for what is actually
+// a protocol failure. A model with things on it looking like a model nobody has
 // started is the worst confusion this contract can cause, so it is unspellable.
 
 import { z } from "zod";
@@ -64,7 +64,7 @@ type DiagramBox = z.infer<typeof DiagramBoxSchema>;
 
 /**
  * Where every semantic subject the renderer drew ended up, keyed by the id the
- * board gave it.
+ * model gave it.
  *
  * Only the renderer knows where anything landed, and it knows while it is
  * drawing, so the geometry travels with the picture rather than being measured
@@ -86,9 +86,9 @@ const RenderedVariantSchema = z.object({
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
 
 /**
- * One of a board's named views, as a reader needs to know it: enough to put
+ * One of a model's named views, as a reader needs to know it: enough to put
  * it in a switcher and ask for it, and nothing about what is inside it. Every
- * id is minted, except Everything's, which every board has (ADR 0052).
+ * id is minted, except Everything's, which every model has (ADR 0052).
  */
 const OfferedViewSchema = z.object({
 	id: z.union([SemanticIdSchema, z.literal(EVERYTHING_VIEW.id)]),
@@ -108,11 +108,11 @@ const SubjectStandingSchema = z.enum(["added", "removed", "changed", "unchanged"
  * the view's reading holds and its grammar does not draw is not here, so a
  * count of these is a count of marks the picture shows (TASK-497).
  *
- * Derived on every render rather than stored. Nothing on a board says "this node
+ * Derived on every render rather than stored. Nothing on a model says "this node
  * is new": a variant states its architecture, and how it differs is read
- * against the board's current variant — or, on a board with none, the variant
+ * against the model's current variant — or, on a model with none, the variant
  * it came from — every time, out of the identities the two share (ADR 0023).
- * The current variant, and a first draft on a board with none, carry none of
+ * The current variant, and a first draft on a model with none, carry none of
  * this, because there is nothing to read them against.
  *
  * By subject id rather than nested by kind, because that is how the comparison
@@ -127,7 +127,7 @@ type RenderedChanges = z.infer<typeof RenderedChangesSchema>;
 /**
  * What every render answer says about what was drawn, before the picture.
  *
- * Every answer carries the board's whole list of views, because a pane that
+ * Every answer carries the model's whole list of views, because a pane that
  * has just been given a picture is exactly the thing that needs to offer the
  * others, and a second round trip to find out what they are would be a second
  * chance for the two to disagree.
@@ -139,7 +139,7 @@ const RenderIdentitySchema = z.object({
 	variant: RenderedVariantSchema,
 	/** The view this picture is of, or null when it is of the overview. */
 	view: OfferedViewSchema.nullable(),
-	/** Every board view, in its authored order. */
+	/** Every model view, in its authored order. */
 	views: z.array(OfferedViewSchema),
 	/**
 	 * What this variant changed about the one it came from, or null when it came
@@ -172,10 +172,10 @@ const DrawnSubjectSchema = z.object({
 });
 
 /**
- * What a picture draws, by kind of subject, in the board's order: only what
+ * What a picture draws, by kind of subject, in the model's order: only what
  * the renderer placed. A view's reading holds more than its grammar draws (a
  * sequence draws no relationship, a flowchart no part, an architecture no flow
- * on a board with relationships), so this is read off the drawing, never off
+ * on a model with relationships), so this is read off the drawing, never off
  * the reading (TASK-496).
  */
 const DrawnSubjectsSchema = z.object({
@@ -254,7 +254,7 @@ const PictureLegendSchema = z.object({
 	relationships: z.array(AppliedAppearanceSchema).readonly(),
 });
 
-/** A board that was drawn. */
+/** A model that was drawn. */
 const DrawnPictureSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
 	/**
@@ -283,7 +283,7 @@ const NothingDrawnReasonSchema = z.enum(["NOTHING_TO_RENDER", "VIEW_EMPTY_ON_VAR
 type NothingDrawnReason = z.infer<typeof NothingDrawnReasonSchema>;
 
 /**
- * A board that exists and has nothing to draw. Not a failure: it is a board
+ * A model that exists and has nothing to draw. Not a failure: it is a model
  * somebody has just made, or a view that names nothing the variant holds, and
  * the viewer says so in its own words.
  */

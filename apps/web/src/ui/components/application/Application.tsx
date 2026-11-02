@@ -240,7 +240,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const paneReadings = usePaneReadings();
 	const [addressBinding] = useState(() => new LiveBinding<WorkspaceAddressing>());
 	const addressing = useMemo(() => addressingOver(addressBinding), [addressBinding]);
-	// Choosing a way of reading a board is the person's own move, so it is
+	// Choosing a way of reading a model is the person's own move, so it is
 	// announced and the address bar keeps it.
 	const readings = useMemo(
 		() => announcingViews(paneReadings, addressing),
@@ -330,8 +330,8 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		() => ({ ...composed, openBeside }),
 		[composed, openBeside],
 	);
-	// Which variant of its board a pane shows is part of the board key, so
-	// asking for another one is asking the shell to show a different board. It
+	// Which variant of its model a pane shows is part of the model key, so
+	// asking for another one is asking the shell to show a different model. It
 	// reads the records and the actions when it is asked, so one identity serves
 	// every render: a pane's news changes both, and a pane must not be rebuilt for it.
 	const [variantSources] = useState(
@@ -344,7 +344,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 			const address = paneAddressOf(recordFor(records, paneId).status.paneKey);
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
-				// the board in front of them, and focus follows the pointer.
+				// the model in front of them, and focus follows the pointer.
 				void shell.selectModel(paneKeyFor(address.model, variant), paneId);
 			}
 		},
@@ -504,7 +504,7 @@ function ApplicationStart(): JSX.Element {
 }
 
 /**
- * The root component. The board cache is above everything that reads a board
+ * The root component. The model cache is above everything that reads a model
  * resource, and is made once for the life of the tab (TASK-167).
  * @returns The shell inside its providers, with the workbench.
  */

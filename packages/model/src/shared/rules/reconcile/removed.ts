@@ -3,7 +3,7 @@
 // The one disagreement no choice of side can answer: `mine` keeps the removal,
 // but taking the other side means writing the subject again, which is an
 // ordinary edit rather than a choice — so the issue has to carry what that edit
-// is written out of. A field name alone sends its reader to the board's JSON to
+// is written out of. A field name alone sends its reader to the model's JSON to
 // copy a sentence out by hand, one line below a near-identical neighbour, which
 // is how a restored node comes back saying something nobody wrote (TASK-256.09).
 //
@@ -17,7 +17,7 @@ import type { ChangedField, ReconciliationIssue } from "#shared/schemas/reconcil
 /**
  * One side of a disagreement, in a shape a document can hold.
  *
- * An unwritten field is `undefined` in memory and simply absent once the board
+ * An unwritten field is `undefined` in memory and simply absent once the model
  * is JSON on disk — so an issue about somebody clearing a description would come
  * back from a restart missing the very field it is about, and be refused by the
  * contract that describes it. Absence is therefore stated rather than implied.
@@ -51,7 +51,7 @@ function fieldOf(entity: object, field: string): unknown {
  *
  * A disagreement between a removal and a change is settled by stating the
  * subject again, and that is written out of values rather than field names: an
- * issue that said only `changed description` would send its reader to the board
+ * issue that said only `changed description` would send its reader to the model
  * for the sentence, one line below a near-identical `responsibility`, to be
  * copied out by hand (TASK-256.09).
  * @param was The subject as the two sides had it when they last agreed.

@@ -67,7 +67,7 @@ const STANDING: StatedStandings = {
 };
 
 /**
- * One node, drawn with nothing else on the board standing for anything.
+ * One node, drawn with nothing else on the document standing for anything.
  * @param standing How that node stands.
  * @returns Its drawn group.
  */
@@ -110,7 +110,7 @@ function drawn(standing?: StatedStandings, layout?: LayoutEngineName): Promise<R
 
 describe("a picture nobody stated a standing for", () => {
 	test("is drawn exactly as it was before standings existed", async () => {
-		// The whole proof that adding comparison to the renderer left a plain board
+		// The whole proof that adding comparison to the renderer left a plain document
 		// alone: the two spellings of "say nothing" agree, and nothing a standing
 		// can put on the page appears anywhere in the document.
 		expect((await drawn()).svg).toBe((await drawn(undefined)).svg);

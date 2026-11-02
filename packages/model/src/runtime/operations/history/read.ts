@@ -306,7 +306,7 @@ async function exactReading(
  * @param captured Exact retained inputs.
  * @param record The immutable checkpoint record.
  * @param checkpoint Its exact identity.
- * @param legacyState Optional original board coverage.
+ * @param legacyState Optional original model coverage.
  * @param legacyAddress Optional captured original address.
  * @returns Complete canonical meaning or retained original evidence.
  */

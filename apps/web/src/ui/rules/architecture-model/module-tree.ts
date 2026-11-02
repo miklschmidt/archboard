@@ -1,4 +1,4 @@
-// The Modules tree: the forest that the board package lists, indexed so that a reading can
+// The Modules tree: the forest that the model package lists, indexed so that a reading can
 // find a module's branch, the branches above it and its siblings.
 
 import { moduleForest, type VariantContent } from "@archboard/model/content";

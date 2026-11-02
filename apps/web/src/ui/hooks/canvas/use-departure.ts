@@ -1,9 +1,9 @@
-// Keeping the last picture on the pane while the next board is being drawn, so
+// Keeping the last picture on the pane while the next model is being drawn, so
 // it can leave the way the reader went rather than vanish at the click.
 //
-// The render query already keeps the last picture of the same board while
+// The render query already keeps the last picture of the same model while
 // another variant or view of it is drawn; what it cannot keep is a picture of
-// another board, because its answer would be about the wrong board. That
+// another model, because its answer would be about the wrong model. That
 // picture is not an answer here either: it is held only to be seen leaving,
 // and nothing can be picked out of it or read from it.
 
@@ -25,7 +25,7 @@ interface Leaving {
 
 /** What the stage is told about a departure. */
 interface DepartureState {
-	/** The picture on its way out, while the next board has nothing to show; null otherwise. */
+	/** The picture on its way out, while the next model has nothing to show; null otherwise. */
 	readonly leaving: Leaving | null;
 	/**
 	 * Where the reader went, until the first picture they went to is on screen;
@@ -127,7 +127,7 @@ function useHeading(
 /**
  * Hold the last picture drawn, and where the reader is going from it.
  * @param drawn The picture the pane has now, or null.
- * @param model The board being drawn.
+ * @param model The legacy board being drawn.
  * @param render The query for its picture.
  * @returns The departure, if one is under way, and the way to announce one.
  */

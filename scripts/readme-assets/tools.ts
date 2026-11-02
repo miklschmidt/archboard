@@ -84,7 +84,7 @@ async function run(argv: readonly string[], options: RunOptions = {}): Promise<R
 /**
  * Run a step for each item, one after another, and collect what each step returned. Every
  * sequence in the kit goes through here: each step acts on what the one before left (a page, a
- * board's version, the machine kept quiet for a take), so the steps never overlap.
+ * model's version, the machine kept quiet for a take), so the steps never overlap.
  * @param items The items, in order.
  * @param step What is done with one item and its place.
  * @returns What each step returned, in order.

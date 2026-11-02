@@ -4,11 +4,11 @@
 // memory and never starts a pass. A warning puts the picture's own warning
 // triangle on its subject, where the picture puts it for a subject nobody has
 // decided; information draws nothing; findings about another version of the
-// board draw nothing; and the selection tab lists the findings of the subject
+// model draw nothing; and the selection tab lists the findings of the subject
 // picked out, warnings first.
 //
 // What these catch: a mark on the wrong subject or in another place than the
-// picture's own badge, a mark for information, a mark that outlives the board
+// picture's own badge, a mark for information, a mark that outlives the model
 // version it was found on, a pane that asks for a pass, and a selection tab that
 // does not list what the mark stands for.
 
@@ -64,8 +64,8 @@ function nodeOrEdge(id: string): { id: string; kind: "node" | "edge" } {
 }
 
 /**
- * What the server remembers of one pass over the pane's board.
- * @param version The version of the board the pass read.
+ * What the server remembers of one pass over the pane's model.
+ * @param version The version of the model the pass read.
  * @param findings What it found.
  * @returns The route's answer.
  */
@@ -84,7 +84,7 @@ function remembered(version: number, findings: readonly Record<string, unknown>[
 	};
 }
 
-/** One board document with the subjects of the fake drawing. */
+/** One model document with the subjects of the fake drawing. */
 const DOCUMENT = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
@@ -129,7 +129,7 @@ function centreOf(markup: string | Element): string | null {
 }
 
 /**
- * Serve the fake drawing of version 1 and its board, with what the last pass left.
+ * Serve the fake drawing of version 1 and its model, with what the last pass left.
  * @param findings The route's answer.
  */
 function serving(findings: unknown): void {
@@ -139,7 +139,7 @@ function serving(findings: unknown): void {
 }
 
 /**
- * Let the picture, the board and the findings arrive.
+ * Let the picture, the model and the findings arrive.
  */
 async function settled(): Promise<void> {
 	await settle();

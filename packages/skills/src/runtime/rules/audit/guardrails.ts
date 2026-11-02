@@ -46,7 +46,7 @@ function renamedIdentities(was: SemanticVariant, now: SemanticVariant): string[]
 }
 
 /**
- * Every renamed identity across the boards and variants present on both sides.
+ * Every renamed identity across the documents and variants present on both sides.
  * @param context The context.
  * @returns The violations, each one line.
  */
@@ -130,7 +130,7 @@ function evidenceRevision(document: EvaluatedDocument | undefined) {
 	return document?.revision ?? document?.version;
 }
 /**
- * Whether no board gained an adoption.
+ * Whether no document gained an adoption.
  * @param context The context.
  * @returns The verdict.
  */
@@ -146,7 +146,7 @@ const adoptOnlyWhenAsked: Guardrail = (context) => {
 
 /**
  * Whether every write went through the CLI, and nothing touched the vault's
- * board files directly: neither a file the author patched with Codex's editing
+ * document files directly: neither a file the author patched with Codex's editing
  * tool nor a shell command that writes into the vault. Write attempts without
  * --doing are counted as evidence; the CLI refuses them, so they cost the
  * author a turn and nothing else.
@@ -187,7 +187,7 @@ function countDirectVaultWrites(
 }
 
 /**
- * Whether a path is a board document of the vault. Configuration changes have
+ * Whether a path is a document document of the vault. Configuration changes have
  * their own guardrail and are allowed in vocabulary scenarios. The vault sits
  * in the checkout the author works in, so a relative path is read from the
  * checkout, or from the vault when the command moved into it.
@@ -223,14 +223,14 @@ function redirectTargets(script: string): string[] {
 }
 
 /**
- * Whether a shell command writes a board file of the vault: it redirects
- * into one, or a writing command names one. A read that names a board file
+ * Whether a shell command writes a document file of the vault: it redirects
+ * into one, or a writing command names one. A read that names a document file
  * — `sed -n`, `jq`, `python -m json.tool ... >/dev/null`, `2>&1` — is a read,
  * whatever else is on the line. A relative path is read from where the
  * script's `cd`s have moved it by then, starting in the checkout.
  * @param command The recorded command, possibly wrapped by the shell.
  * @param vault The run's vault.
- * @returns True when the command changes a board file.
+ * @returns True when the command changes a document file.
  */
 function mutatesVaultFile(command: string, vault: string): boolean {
 	const script = unwrapped(command);
@@ -255,11 +255,11 @@ function movedTo(simple: string, from: string): string | undefined {
 }
 
 /**
- * Whether one simple command redirects into a board file or names one as what it writes.
+ * Whether one simple command redirects into a document file or names one as what it writes.
  * @param simple The simple command.
  * @param vault The run's vault.
  * @param from Where a relative path starts.
- * @returns True when it writes a board file.
+ * @returns True when it writes a document file.
  */
 function writesVaultFile(simple: string, vault: string, from: string): boolean {
 	return (
@@ -270,7 +270,7 @@ function writesVaultFile(simple: string, vault: string, from: string): boolean {
 
 /**
  * Whether a script opens a file for writing, however it is spelled, and names
- * a board file somewhere: a heredoc handed to python or node is one script.
+ * a document file somewhere: a heredoc handed to python or node is one script.
  * @param script The unwrapped script.
  * @param vault The run's vault.
  * @returns True when it does.
@@ -308,12 +308,12 @@ function wordsOf(simple: string): string[] {
 }
 
 /**
- * Whether one simple command is a write to a board file it names: a file
+ * Whether one simple command is a write to a document file it names: a file
  * command whose target is one, or a copy or move that lands on one.
  * @param simple The simple command.
  * @param vault The run's vault.
  * @param from Where a relative path starts.
- * @returns True for a writer whose target is a board file.
+ * @returns True for a writer whose target is a document file.
  */
 function writesNamedFile(simple: string, vault: string, from: string): boolean {
 	const words = wordsOf(simple);
@@ -324,7 +324,7 @@ function writesNamedFile(simple: string, vault: string, from: string): boolean {
 }
 
 /**
- * Whether no board moved.
+ * Whether no document moved.
  * @param context The context.
  * @returns The verdict.
  */

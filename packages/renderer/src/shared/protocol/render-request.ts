@@ -12,7 +12,7 @@ import type { Drawn, ExportFrame, NothingDrawn } from "#shared/protocol/generate
 type SubjectStanding = ChangeKind;
 
 /**
- * What every subject of a picture states, by the id the board gave it. An id
+ * What every subject of a picture states, by the id the document gave it. An id
  * the map does not mention stands unchanged.
  */
 type StatedStandings = Readonly<Record<string, SubjectStanding>>;
@@ -57,7 +57,7 @@ interface DiagramRenderRequest {
 	readonly content: VariantContent;
 	/**
 	 * The vault's presentation, shared by every variant: its groups, kinds and
-	 * line looks. Required, so a caller drawing a vault board cannot leave out
+	 * line looks. Required, so a caller drawing a vault document cannot leave out
 	 * the groups it draws; a drawing with no vault names `DEFAULT_SEMANTIC_POLICY`.
 	 */
 	readonly policy: SemanticPolicy;
@@ -71,8 +71,8 @@ interface DiagramRenderRequest {
 	/**
 	 * How each subject of this picture stands against the variant it is read against.
 	 *
-	 * The caller derives it by reading this variant against the board's current
-	 * variant (or, on a board with none, its predecessor) on every render. It
+	 * The caller derives it by reading this variant against the document's current
+	 * variant (or, on a document with none, its predecessor) on every render. It
 	 * keeps differently standing relationships on distinct channels, even when
 	 * their marks are hidden. Absent means there is nothing to read it against;
 	 * an id the map does not mention stands unchanged. Nothing about it is
@@ -105,7 +105,7 @@ interface DiagramRenderRequest {
 	 */
 	readonly variant?: InterfaceContent | undefined;
 	/**
-	 * Which of this variant's subjects the board says nobody has decided yet.
+	 * Which of this variant's subjects the document says nobody has decided yet.
 	 *
 	 * Derived on every render exactly as the standings are, from the same
 	 * reconciliation the words beside the picture are written from, and stored
@@ -116,15 +116,15 @@ interface DiagramRenderRequest {
 	 */
 	readonly unsettled?: readonly string[] | undefined;
 	/**
-	 * Whether the board says nothing it describes is built: it has no current variant
-	 * (ADR 0031). The page is then framed as planned. A fact about the board, so every
-	 * variant and view of such a board is framed alike.
+	 * Whether the document says nothing it describes is built: it has no current variant
+	 * (ADR 0031). The page is then framed as planned. A fact about the document, so every
+	 * variant and view of such a document is framed alike.
 	 */
 	readonly unbuilt?: boolean | undefined;
 	/**
-	 * The level of the board drawn. A part that opens another board is marked
-	 * with which way that board lies, read from the part's kind against this
-	 * level (ADR 0029); absent, the mark says only that it opens another board.
+	 * The level of the document drawn. A part that opens another document is marked
+	 * with which way that document lies, read from the part's kind against this
+	 * level (ADR 0029); absent, the mark says only that it opens another document.
 	 */
 	readonly level?: string | undefined;
 	/** Which engine lays the architecture out; the default one when absent (TASK-348). */

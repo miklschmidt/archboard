@@ -1,8 +1,8 @@
-// A board write the Archboard server turned away, and how a caller recognises one.
+// A model write the Archboard server turned away, and how a caller recognises one.
 //
-// A refusal is a result, not a fault: it carries the board as the server
+// A refusal is a result, not a fault: it carries the model as the server
 // holds it and the version the writer should have been working from, so the
-// CLI can answer without reading the board again.
+// CLI can answer without reading the model again.
 
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 
@@ -10,7 +10,7 @@ interface ModelRefusal {
 	success: false;
 	code: string;
 	error: string;
-	/** The version the board is actually at, so the next write can state it. */
+	/** The version the model is actually at, so the next write can state it. */
 	version: number | null;
 	[key: string]: unknown;
 }
@@ -18,7 +18,7 @@ interface ModelRefusal {
 const MODEL_REFUSAL_CODES = new Set(["MODEL_HELD", "MODEL_VERSION_CONFLICT", "CLAIM_REVOKED"]);
 
 /**
- * Whether an answer is a refused board write, which is decided by the shape
+ * Whether an answer is a refused model write, which is decided by the shape
  * the write boundary promises rather than by the code it carries.
  * @param data Anything the server answered with.
  * @returns True when the answer is a refusal.
@@ -37,7 +37,7 @@ function isModelRefusal(data: unknown): data is ModelRefusal {
 }
 
 /**
- * Whether a value is a board version: a number, or null for a board whose
+ * Whether a value is a model version: a number, or null for a model whose
  * note carries none.
  * @param value The value.
  * @returns True when it is one.

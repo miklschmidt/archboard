@@ -11,7 +11,7 @@ import { terraformRunners } from "#runtime/operations/code-check/evidence/terraf
 import type { FactsPass } from "#runtime/services/code-facts/reader.ts";
 
 /**
- * The runners every infrastructure reader finds for one board: compose
+ * The runners every infrastructure reader finds for one document: compose
  * services, Terraform and OpenTofu resources, then Kubernetes workloads.
  * @param codes Each part's bound code, by its id.
  * @param facts The pass.

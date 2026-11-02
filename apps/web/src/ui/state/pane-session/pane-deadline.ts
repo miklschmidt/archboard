@@ -2,10 +2,10 @@
 // server what it is showing.
 //
 // A pane report is what the server answers `browser panes` from, so it must be
-// current; it is also raised by every resize, focus change and board move, so
+// current; it is also raised by every resize, focus change and model move, so
 // sending one per event would be a request per animation frame. The debounce is
 // the compromise, and `immediate` is the escape for the one case that cannot
-// wait — a pane arriving on a board, which the next CLI turn reads.
+// wait — a pane arriving on a model, which the next CLI turn reads.
 
 import { PANE_MS } from "@archboard/timing";
 

@@ -1,6 +1,6 @@
 // What a module exposes (ADR 0044, ADR 0046): the code's side of a
 // container's interface, which the code check holds against the interface a
-// board derives.
+// document derives.
 //
 // Each language says what its module is: a directory, the file that stands
 // for it, and the root files callers may use. TypeScript's root files are

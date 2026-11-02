@@ -1,14 +1,14 @@
 // What a pane has picked out: one subject, or one group's members, never both.
 //
-// Which group is selected is this pane's, kept on the board and the resolved
-// variant it was chosen on: a walk into another board, or to another state of
+// Which group is selected is this pane's, kept on the model and the resolved
+// variant it was chosen on: a walk into another model, or to another state of
 // this one, drops it, while a change of view keeps it. Selecting a group
 // replaces what was picked out and leaves any guided reading; picking anything
 // out lets the group go, and so does an explanation opening, whoever opens it.
 //
 // What was picked out is reported as what it is, not only as an id. The pane is
-// the one place that knows: it has the board open and has just drawn the thing.
-// A shell told only "sTn4eQ" would need a second read of the board to tell a
+// the one place that knows: it has the model open and has just drawn the thing.
+// A shell told only "sTn4eQ" would need a second read of the model to tell a
 // step from the flow that holds it, or to say out loud what a person just
 // clicked on.
 
@@ -21,9 +21,9 @@ import type { GroupChoice, GroupSelection } from "#ui/rules/canvas/reading/group
 
 /** What picking is made from. */
 interface PickingInputs {
-	/** The board on screen. */
+	/** The model on screen. */
 	readonly model: string;
-	/** What the board says about itself, or null while it has not arrived. */
+	/** What the model says about itself, or null while it has not arrived. */
 	readonly reading: VariantReading | null;
 	/** Whether a walkthrough is being read. */
 	readonly presenting: boolean;
@@ -35,7 +35,7 @@ interface PickingInputs {
 	/**
 	 * Tell the shell what was picked out, or that nothing is.
 	 * @param id The semantic id, or null.
-	 * @param subject What it is, when the board says.
+	 * @param subject What it is, when the model says.
 	 */
 	readonly onSelect: (id: string | null, subject?: SelectedSubject) => void;
 }
@@ -62,7 +62,7 @@ interface Picking {
 
 /**
  * What the pane picks out, a subject or a group.
- * @param inputs The board on screen, what it says, and who hears of a pick.
+ * @param inputs The model on screen, what it says, and who hears of a pick.
  * @returns The picks, and the group selected.
  */
 function usePicking(inputs: PickingInputs): Picking {

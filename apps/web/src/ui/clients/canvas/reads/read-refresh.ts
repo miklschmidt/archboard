@@ -1,17 +1,17 @@
 import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
-// What makes this tab read a board again, and in what order (ADR 0023).
+// What makes this tab read a model again, and in what order (ADR 0023).
 //
-// Callers report what happened: a board changed, boards of a vault were
+// Callers report what happened: a model changed, models of a vault were
 // written or let go, a listing may have moved, a vault's policy changed, the
 // socket came back or a person asked for everything again. This module alone
 // decides which readings that makes stale, under which of the names the tab
-// asked a board by (ADR 0036), in which vault (ADR 0049), and in what order the
+// asked a model by (ADR 0036), in which vault (ADR 0049), and in what order the
 // reads in flight are cancelled, the readings marked stale and read again.
 //
 // The order is the whole of the contract. A read already on the wire carries
 // an answer the server decided before the event, so it is cancelled first and
-// never lands as fresh. A board's document is marked before its pictures,
-// because a picture reads its board the moment it is asked for again and a
+// never lands as fresh. A model's document is marked before its pictures,
+// because a picture reads its model the moment it is asked for again and a
 // document not yet marked is the one from before the write.
 //
 // `modelsListed` and `modelGoneStale` serve the module's own listing query and
@@ -47,8 +47,8 @@ async function readAgain(client: QueryClient, queryKeys: readonly QueryKey[]): P
 }
 
 /**
- * The names a cached reading says its board has: a document's name and former
- * names, and the board a picture was drawn of.
+ * The names a cached reading says its model has: a document's name and former
+ * names, and the model a picture was drawn of.
  * @param data What the cache holds.
  * @returns The names, possibly none.
  */
@@ -62,11 +62,11 @@ function namesIn(data: unknown): string[] {
 }
 
 /**
- * Every name this tab asked one board of one vault by: another spelling of it,
- * or a name the board's own reading says it has had or has now.
+ * Every name this tab asked one legacy board of one vault by: another spelling of it,
+ * or a name the legacy board's own reading says it has had or has now.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board, by any of its names.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board, by any of its names.
  * @returns The names, as they were asked.
  */
 function namesAskedFor(client: QueryClient, vault: string, model: string): string[] {
@@ -80,8 +80,8 @@ function namesAskedFor(client: QueryClient, vault: string, model: string): strin
 }
 
 /**
- * Every reading of these boards, by the names they were asked by: the documents before the pictures.
- * @param vault The vault the boards are in.
+ * Every reading of these models, by the names they were asked by: the documents before the pictures.
+ * @param vault The vault the models are in.
  * @param names The names.
  * @returns The keys.
  */
@@ -93,11 +93,11 @@ function readingsOf(vault: string, names: readonly string[]): QueryKey[] {
 }
 
 /**
- * One board of one vault moved to a new version: its document and every picture
+ * One legacy board of one vault moved to a new version: its document and every picture
  * of it are read again, under every name this tab asked it by.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board, by any of its names, or a board key naming a variant.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board, by any of its names, or a legacy board key naming a variant.
  * @returns Settles once the fresh reads have been asked for.
  */
 function modelChanged(client: QueryClient, vault: string, model: string): Promise<void> {
@@ -106,12 +106,12 @@ function modelChanged(client: QueryClient, vault: string, model: string): Promis
 }
 
 /**
- * These boards of one vault have been written, or stopped being worked on:
+ * These legacy boards of one vault have been written, or stopped being worked on:
  * the vault's listing and which pane holds what are read again either way, and
- * each named board as `modelChanged` reads it.
+ * each named legacy board as `modelChanged` reads it.
  * @param client The tab's cache.
- * @param vault The vault the boards are in.
- * @param models The board keys, which may be none. A key that names a variant is of the whole board.
+ * @param vault The vault the legacy boards are in.
+ * @param models The legacy board keys, which may be none. A key that names a variant is of the whole legacy board.
  * @returns Settles once the fresh reads have been asked for.
  */
 async function modelsChanged(
@@ -127,7 +127,7 @@ async function modelsChanged(
 
 /**
  * Something may have moved what every vault lists or what the panes hold: a
- * board command, a pane report. The repositories are not read: only a chosen
+ * model command, a pane report. The repositories are not read: only a chosen
  * checkout moves those, and it is announced.
  * @param client The tab's cache.
  * @returns Settles once the fresh reads have been asked for.
@@ -137,7 +137,7 @@ function listingsChanged(client: QueryClient): Promise<void> {
 }
 
 /**
- * A checkout was chosen somewhere: the repositories are read again, and with them their boards.
+ * A checkout was chosen somewhere: the repositories are read again, and with them their models.
  * @param client The tab's cache.
  * @returns Settles once the fresh reads have been asked for.
  */
@@ -148,7 +148,7 @@ function repositoriesChanged(client: QueryClient): Promise<void> {
 /**
  * A vault's policy changed, or was read for the first time: every picture of
  * the vault is drawn again under it. No document is read again: the policy is
- * not part of a board.
+ * not part of a model.
  * @param client The tab's cache.
  * @param vault The vault.
  * @returns Settles once the fresh reads have been asked for.
@@ -159,11 +159,11 @@ function policyChanged(client: QueryClient, vault: string): Promise<void> {
 
 /**
  * Read the repositories, the listings, the panes, and every document and
- * picture of every board again: what a reconnected socket needs, since
+ * picture of every model again: what a reconnected socket needs, since
  * whatever moved while it was down moved unheard, and the one control a person
  * has when something the shell reads has gone wrong. The documents matter as
  * much as the pictures: the inspector and the variant controls are built from
- * them, and a fresh picture beside a document of before would explain a board
+ * them, and a fresh picture beside a document of before would explain a model
  * as it used to be.
  * @param client The tab's cache.
  * @returns Settles once the fresh reads have been asked for.
@@ -177,12 +177,12 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
 }
 
 /**
- * Mark a board's readings stale without reading anything, documents first,
+ * Mark a legacy board's readings stale without reading anything, documents first,
  * under every name this tab asked it by: for the module's own drawing ahead,
  * which reads what it needs itself.
  * @param client The tab's cache.
- * @param vault The vault the board is in.
- * @param model The board, by any of its names.
+ * @param vault The vault the legacy board is in.
+ * @param model The legacy board, by any of its names.
  */
 async function modelGoneStale(client: QueryClient, vault: string, model: string): Promise<void> {
 	for (const queryKey of readingsOf(vault, namesAskedFor(client, vault, model))) {
@@ -202,24 +202,24 @@ function versionOf(data: unknown): number | undefined {
 }
 
 /**
- * The server listed one vault's boards: every reading this tab holds there of
- * a board at another version than listed is read again, whichever of the
- * board's names it was asked by.
+ * The server listed one vault's legacy boards: every reading this tab holds there of
+ * a legacy board at another version than listed is read again, whichever of the
+ * legacy board's names it was asked by.
  *
- * A pane hears of a write only to a board of the vault it is in, so nothing
- * else tells this tab about a vault none of its panes is in: a board drawn
+ * A pane hears of a write only to a legacy board of the vault it is in, so nothing
+ * else tells this tab about a vault none of its panes is in: a legacy board drawn
  * ahead from the navigator's listing, or left behind when a pane moved to
  * another checkout. The readings are marked stale at once, so that the drawing
  * ahead that follows this listing draws them again rather than keeping them.
  * @param client The tab's cache.
  * @param vault The vault.
- * @param models The boards listed there, with their versions.
+ * @param models The legacy boards listed there, with their versions.
  */
 function modelsListed(client: QueryClient, vault: string, models: readonly DocumentEntry[]): void {
 	const moved = new Set(
 		cachedReadings(client, vault).flatMap(({ asked, data }) => {
 			const held = versionOf(data);
-			// A reading asked by a former name is listed under the name its board
+			// A reading asked by a former name is listed under the name its model
 			// goes by now, which only the reading itself says (ADR 0036).
 			const names = [asked, ...namesIn(data)];
 			const listed = models.find((entry) =>

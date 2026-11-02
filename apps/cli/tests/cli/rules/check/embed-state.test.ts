@@ -2,7 +2,7 @@
 // picture is outdated when the fingerprint moved too and a renderer change
 // when it did not; a changed fingerprint alone is current, with a recipe
 // `--fix` writes again; and only a recipe of the current variant's overview or
-// Everything, read against nothing, can follow a deleted board's name.
+// Everything, read against nothing, can follow a deleted document's name.
 
 import { expect, test } from "bun:test";
 import type { readRenderRecipe } from "@archboard/renderer/recipe";

@@ -2,7 +2,7 @@
 //
 // The state lives here rather than in the stage so that a refetch cannot
 // disturb it. A new drawing arriving is a new prop, not a new component, and
-// this hook holds nothing derived from the drawing's content — so a board that
+// this hook holds nothing derived from the drawing's content — so a model that
 // changes under somebody leaves them looking exactly where they were. That is
 // also why a fit is told the diagram's size rather than remembering it: the
 // camera knows where the person is looking and nothing about what they see.
@@ -133,7 +133,7 @@ interface PictureCamera {
 	 */
 	readonly handled: () => boolean;
 	/**
-	 * Move with the picture: when the next picture of a board places the cards
+	 * Move with the picture: when the next picture of a model places the cards
 	 * the last one shared elsewhere on its page, the camera moves by as much,
 	 * at once, so those cards stay where the reader was looking. Nobody moved
 	 * the camera, so this hands nothing back and leaves a fit free to happen.

@@ -1,6 +1,6 @@
 // What a semantic pane does with what the server answers: the four states it
 // can be in, the selection a click makes, and the camera — which neither a
-// board changing under the person nor a failed refresh may disturb.
+// model changing under the person nor a failed refresh may disturb.
 
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -94,7 +94,7 @@ function Cache(children: ReactNode): JSX.Element {
 
 /**
  * The stage's own props a test may state as they are: a driven step, what is
- * laid over the picture, the boards above the one on screen, the shell's
+ * laid over the picture, the models above the one on screen, the shell's
  * narration, and what the shell hears the person changed.
  */
 type StagePassThrough = Pick<
@@ -103,14 +103,14 @@ type StagePassThrough = Pick<
 >;
 /** What else a mounted pane may be told, beyond what it is showing. */
 interface MountOptions extends StagePassThrough {
-	/** Which view the pane reads its board through. */
+	/** Which view the pane reads its model through. */
 	readonly view?: string | undefined;
 	/**
-	 * The pane offered a different way of reading the board.
+	 * The pane offered a different way of reading the model.
 	 * @param view The view's id, or null for the whole variant.
 	 */
 	readonly onViewChange?: ((view: string | null) => void) | undefined;
-	/** Which variant of its board the pane is showing. */
+	/** Which variant of its model the pane is showing. */
 	readonly variant?: string | undefined;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean | undefined;
@@ -122,7 +122,7 @@ interface MountOptions extends StagePassThrough {
 	readonly live?: boolean | undefined;
 	/**
 	 * What the pane says it is reading, whenever that changes.
-	 * @param reading The board, variant, view and selection on screen.
+	 * @param reading The model, variant, view and selection on screen.
 	 */
 	readonly onReading?: ((reading: SemanticPaneReading) => void) | undefined;
 	/**
@@ -150,7 +150,7 @@ const READING_PROPS = [
 ] as const satisfies readonly (keyof MountOptions)[];
 
 /**
- * How the pane was told to read its board, as props the stage takes: assembled
+ * How the pane was told to read its model, as props the stage takes: assembled
  * once, so the two mount paths cannot differ in what they hand the stage.
  * @param options What the test asked for.
  * @returns The reading props, leaving out whatever was not asked for.
@@ -186,7 +186,7 @@ const shellHold: {
 };
 
 /**
- * Show another state of the held pane's board, as choosing it in the navigator does.
+ * Show another state of the held pane's model, as choosing it in the navigator does.
  * @param variant The variant's id, or undefined for whichever is current.
  */
 function chooseVariantInShell(variant: string | undefined): void {

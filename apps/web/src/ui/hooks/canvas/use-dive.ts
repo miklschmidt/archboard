@@ -1,11 +1,11 @@
-// Flying into the board a card opens, and back out of it.
+// Flying into the model a card opens, and back out of it.
 //
-// Opening a card's board is not a cut to another picture. The board's picture
-// is put inside the card, the camera flies into the card, and the board grows
+// Opening a card's model is not a cut to another picture. The model's picture
+// is put inside the card, the camera flies into the card, and the model grows
 // from the size of the card to the size of the pane; going back out runs the
 // same flight the other way. The flight is the camera's own glide, so it runs on
 // the frame clock. At its end the pane does what it has always done to open the
-// board, and the board's own picture takes over from the one inside the card in
+// model, and the model's own picture takes over from the one inside the card in
 // the same commit, in the same place, with no entrance and no glide of its own
 // (`cut`).
 //
@@ -41,8 +41,8 @@ interface DiveInputs {
 	/** The picture on screen, or null. */
 	readonly drawn: MovingPicture | null;
 	/**
-	 * Ask for the picture of a board.
-	 * @param to The board, and how the pane will read it.
+	 * Ask for the picture of a model.
+	 * @param to The model, and how the pane will read it.
 	 * @returns The picture, or null when there is none to fly to.
 	 */
 	readonly draw: (to: Destination) => Promise<MovingPicture | null>;
@@ -53,8 +53,8 @@ interface DiveInputs {
 }
 
 /**
- * Which board a flight goes to, and the variant and view the pane will read it
- * through. Going back, a reader that knows which card opens the board on screen
+ * Which model a flight goes to, and the variant and view the pane will read it
+ * through. Going back, a reader that knows which card opens the model on screen
  * says so. Otherwise it is the card that the flight in went through.
  */
 type Destination = Pick<SemanticRenderRequest, "model" | "variant" | "view"> & {
@@ -63,18 +63,18 @@ type Destination = Pick<SemanticRenderRequest, "model" | "variant" | "view"> & {
 
 /** What the pane can be asked to fly. */
 interface Flier {
-	/** Whether the picture on screen is the one a flight arrived at: it took over from the board inside the card, with no entrance of its own. */
+	/** Whether the picture on screen is the one a flight arrived at: it took over from the model inside the card, with no entrance of its own. */
 	readonly cut: boolean;
 	/**
-	 * Open the board a card opens, flying into the card when that can be done.
+	 * Open the model a card opens, flying into the card when that can be done.
 	 * @param card The card, or null when the opening is not from one.
-	 * @param to The board and the variant it is opened at.
-	 * @param proceed What opens the board the plain way, which the flight ends with.
+	 * @param to The model and the variant it is opened at.
+	 * @param proceed What opens the model the plain way, which the flight ends with.
 	 */
 	readonly into: (card: string | null, to: Destination, proceed: () => void) => void;
 	/**
-	 * Go back to the board above, flying out of the card that opened this one when that can be done.
-	 * @param to The board above, and how the pane will read it.
+	 * Go back to the model above, flying out of the card that opened this one when that can be done.
+	 * @param to The model above, and how the pane will read it.
 	 * @param proceed What goes back the plain way, which the flight ends with.
 	 */
 	readonly out: (to: Destination, proceed: () => void) => void;
@@ -94,9 +94,9 @@ interface Run {
 	stop: () => void;
 }
 
-/** What a flight is made of, once the other board's picture is to hand. */
+/** What a flight is made of, once the other model's picture is to hand. */
 interface Plan {
-	/** The card the board is inside. */
+	/** The card the model is inside. */
 	readonly card: string;
 	readonly leg: Leg;
 	/** The picture that sits inside the card. */
@@ -112,7 +112,7 @@ interface Trip {
 	readonly to: Destination;
 	/**
 	 * Work out the flight.
-	 * @param other The picture of the board flown to.
+	 * @param other The picture of the model flown to.
 	 * @param room How big the pane's window on the diagram is.
 	 * @param seen Where the camera is.
 	 * @returns The plan, or null when the card is not drawn.
@@ -169,17 +169,17 @@ function putUp(surface: HTMLElement, picture: MovingPicture | null): void {
 }
 
 /**
- * Put the board inside its card and fly the camera to the end of the flight.
+ * Put the model inside its card and fly the camera to the end of the flight.
  *
  * The camera counts as the reader's while it flies, so the pane does not fit it
  * again when its size changes on the way. If something moves it off its course
- * anyway, the flight is given up and the board opens the plain way.
+ * anyway, the flight is given up and the model opens the plain way.
  *
  * The flight holds the camera's rest from takeoff (TASK-406). The far view of
  * the surface stays as it was, so no card swaps its words for its name, or
- * back, in the air. The board inside the card is drawn the same way, and so is
- * the board that takes over from it. The hold ends once the pane has taken over,
- * and the far view then follows the board's own fit, once.
+ * back, in the air. The model inside the card is drawn the same way, and so is
+ * the model that takes over from it. The hold ends once the pane has taken over,
+ * and the far view then follows the model's own fit, once.
  * @param takeoff The flight, and what it flies over.
  * @param land Hand the pane over, once the camera has arrived, with the hold to let go once the pane has taken over.
  * @param giveUp End the flight the plain way, when the camera did not arrive.
@@ -235,9 +235,9 @@ function fly(
 }
 
 /**
- * The picture of a board, when it is to hand within a moment.
+ * The picture of a model, when it is to hand within a moment.
  * @param draw How the pane asks for it.
- * @param to The board, and how the pane will read it.
+ * @param to The model, and how the pane will read it.
  * @returns The picture, or null.
  */
 async function pictureOf(draw: DiveInputs["draw"], to: Destination): Promise<MovingPicture | null> {
@@ -282,9 +282,9 @@ function groundOf(now: DiveInputs): Ground | null {
 }
 
 /**
- * The key a card is remembered under: the board above it and the board it opens.
- * @param parent The board the card is in.
- * @param child The board it opens.
+ * The key a card is remembered under: the model above it and the model it opens.
+ * @param parent The model the card is in.
+ * @param child The model it opens.
  * @returns The key, the same for any spelling of the two names.
  */
 function keyOf(parent: string, child: string): string {
@@ -317,7 +317,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	// A flight that has arrived holds the camera's rest until the pane has taken
 	// over from the picture it flew over: what lets the hold go, and that picture.
 	let landing: { readonly letGo: () => void; readonly from: MovingPicture | null } | null = null;
-	// Which card of a board opened which board, so that going back knows what to fly out of.
+	// Which card of a model opened which model, so that going back knows what to fly out of.
 	const cards = new Map<string, string>();
 
 	/** Let go of the hold of a flight that has arrived, if one is still held. */
@@ -378,10 +378,10 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	}
 
 	/**
-	 * What a flight is made of, when the other board's picture is to hand and the pane is as the request found it.
+	 * What a flight is made of, when the other model's picture is to hand and the pane is as the request found it.
 	 * @param mine The request.
 	 * @param trip What to fly.
-	 * @param other The picture of the board flown to, or null when it was not to hand.
+	 * @param other The picture of the model flown to, or null when it was not to hand.
 	 * @returns The flight and what it flies over, or null when it cannot be made.
 	 */
 	function takeoffFor(mine: Run, trip: Trip, other: MovingPicture | null): Takeoff | null {
@@ -399,7 +399,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	 * Take off, when the flight can be made.
 	 * @param mine The request.
 	 * @param trip What to fly.
-	 * @param other The picture of the board flown to, or null when it was not to hand.
+	 * @param other The picture of the model flown to, or null when it was not to hand.
 	 * @returns How to give the surface back, or null when the flight cannot be made.
 	 */
 	function takeOff(mine: Run, trip: Trip, other: MovingPicture | null): (() => void) | null {
@@ -418,7 +418,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	}
 
 	/**
-	 * Fly, once the other board's picture is to hand.
+	 * Fly, once the other model's picture is to hand.
 	 * @param mine The request.
 	 * @param trip What to fly.
 	 */
@@ -451,10 +451,10 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	}
 
 	/**
-	 * Open the board a card opens, flying into the card when that can be done.
+	 * Open the model a card opens, flying into the card when that can be done.
 	 * @param card The card, or null when the opening is not from one.
-	 * @param to The board and the variant it is opened at.
-	 * @param proceed What opens the board the plain way.
+	 * @param to The model and the variant it is opened at.
+	 * @param proceed What opens the model the plain way.
 	 */
 	function into(card: string | null, to: Destination, proceed: () => void): void {
 		const at = pane.drawn;
@@ -464,8 +464,8 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 		}
 		cards.set(keyOf(at.model, to.model), card);
 		/**
-		 * The flight into the card, once the board's picture is to hand.
-		 * @param child The picture of the board the card opens.
+		 * The flight into the card, once the model's picture is to hand.
+		 * @param child The picture of the model the card opens.
 		 * @param room How big the pane's window on the diagram is.
 		 * @returns The plan, or null when the card is not drawn.
 		 */
@@ -477,8 +477,8 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	}
 
 	/**
-	 * Go back to the board above, flying out of the card that opened this one when that can be done.
-	 * @param to The board above, and how the pane will read it.
+	 * Go back to the model above, flying out of the card that opened this one when that can be done.
+	 * @param to The model above, and how the pane will read it.
 	 * @param proceed What goes back the plain way.
 	 */
 	function out(to: Destination, proceed: () => void): void {
@@ -489,8 +489,8 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 			return;
 		}
 		/**
-		 * The flight out of the card, once the picture of the board above is to hand.
-		 * @param parent The picture of the board above.
+		 * The flight out of the card, once the picture of the model above is to hand.
+		 * @param parent The picture of the model above.
 		 * @param room How big the pane's window on the diagram is.
 		 * @param seen Where the camera is.
 		 * @returns The plan, or null when the card is not drawn.
@@ -505,7 +505,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	/**
 	 * Take the pane as it is after a render. A flight over a picture that is gone
 	 * ends where it is, and a flight that has arrived lets go of the camera's rest
-	 * once the pane shows another picture: the board it flew to, fitted.
+	 * once the pane shows another picture: the model it flew to, fitted.
 	 * @param inputs The latest inputs.
 	 */
 	function update(inputs: DiveInputs): void {
@@ -534,7 +534,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 /** The pane has taken over from a flight: from which picture, and which it arrived at. */
 interface Handover {
 	readonly from: MovingPicture | null;
-	/** The picture of the board flown to, once it is on screen; undefined until then. */
+	/** The picture of the model flown to, once it is on screen; undefined until then. */
 	readonly to?: MovingPicture | null;
 }
 
@@ -556,7 +556,7 @@ function followed(handover: Handover | null, drawn: MovingPicture | null): Hando
 }
 
 /**
- * Fly into the board a card opens, and out of it again.
+ * Fly into the model a card opens, and out of it again.
  * @param inputs The camera, the picture's area, the picture on screen and how pictures are asked for.
  * @returns Whether the next picture takes over from a flight, and the two flights.
  */
@@ -567,7 +567,7 @@ function useDive(inputs: DiveInputs): Flier {
 			setHandover({ from });
 		}),
 	);
-	// The board flown to takes over from the flight in the commit it is first drawn in, and later pictures arrive the plain way.
+	// The model flown to takes over from the flight in the commit it is first drawn in, and later pictures arrive the plain way.
 	const current = followed(handover, inputs.drawn);
 	if (current !== handover) setHandover(current);
 	// The pane as it is, for a flight asked for between renders; a picture that changed under a flight ends it.

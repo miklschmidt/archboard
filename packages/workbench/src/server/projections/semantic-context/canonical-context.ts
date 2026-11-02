@@ -24,7 +24,7 @@ function requiresCapture(model: ArchitectureModel, report: Report): boolean {
 	return selectionRequiresCapture(model, architecture.selection ?? {});
 }
 /**
- * Read canonical authority before consulting a former board or its claim.
+ * Read canonical authority before consulting a former model or its claim.
  * @param vault The addressed vault.
  * @param clientId The pane that reports its reading.
  * @returns Canonical context, or absence for an unmigrated vault.

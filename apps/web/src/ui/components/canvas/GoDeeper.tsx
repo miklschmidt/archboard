@@ -1,5 +1,5 @@
 // The foot of the details panel: the ways to go deeper from a picked part. One
-// opens the board the part leads to, with the mark the card wears on the
+// opens the model the part leads to, with the mark the card wears on the
 // picture (a ring around an arrow up, down or across) and the same words the
 // card's hover tip uses for which way it lies; it is the panel's primary
 // action, in gold. The other views the part's code through the shell's own
@@ -114,21 +114,21 @@ const WAY_ICONS: Readonly<Record<DrillWay, RemixiconComponentType>> = {
 	across: RiArrowRightCircleLine,
 };
 
-/** Inputs for the way down, once the board it leads to has been resolved. */
+/** Inputs for the way down, once the model it leads to has been resolved. */
 interface OpenModelProps {
 	/** What the part's drill-down names. */
 	readonly target: DrillDown;
-	/** The board it leads to. */
+	/** The model it leads to. */
 	readonly model: LegacyBoard;
 	/** The variant of it that it opens. */
 	readonly variant: SemanticVariant;
-	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	/** The part's kind, which is the level of the model it opens (ADR 0029). */
 	readonly kind: string;
-	/** The level of the board the part is drawn on. */
+	/** The level of the model the part is drawn on. */
 	readonly here: string | undefined;
-	/** Open the board one level down. */
+	/** Open the model one level down. */
 	readonly onOpen: OpenDown;
-	/** The other repository the board is in, when it is not in the pane's own. */
+	/** The other repository the model is in, when it is not in the pane's own. */
 	readonly there: OtherRepository | undefined;
 }
 
@@ -157,7 +157,7 @@ function stateOf(variant: SemanticVariant): readonly string[] {
 
 /**
  * Where the way down goes, in words: which way and how far, the level of the
- * board it opens, and the state it opens when that is not the current architecture.
+ * model it opens, and the state it opens when that is not the current architecture.
  * @param props What the way down opens.
  * @param levels The vault's levels, coarsest first, once read.
  * @returns The words.
@@ -170,7 +170,7 @@ function standingOf(props: OpenModelProps, levels: readonly string[] | undefined
 }
 
 /**
- * The way down: opens the board the part drills into, naming it and the level
+ * The way down: opens the model the part drills into, naming it and the level
  * it sits at.
  * @param props What the way down opens.
  * @returns The primary action.
@@ -203,18 +203,18 @@ function OpenModel(props: OpenModelProps): JSX.Element {
 /** Inputs for the way down. */
 interface WayDownProps {
 	readonly target: DrillDown;
-	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	/** The part's kind, which is the level of the model it opens (ADR 0029). */
 	readonly kind: string;
-	/** The level of the board the part is drawn on. */
+	/** The level of the model the part is drawn on. */
 	readonly here: string | undefined;
-	/** Open the board one level down. */
+	/** Open the model one level down. */
 	readonly onOpen: OpenDown;
 }
 
 /** Why a drill-down leads nowhere, or not yet. */
 type Unresolved = Exclude<DrillTarget, { readonly kind: "ready" }>;
 
-/** What the way down says when the board is in a repository this machine cannot read. */
+/** What the way down says when the model is in a repository this machine cannot read. */
 const UNREACHABLE_WORDS: Readonly<
 	Record<Extract<Unresolved, { readonly kind: "unreachable" }>["state"], string>
 > = {
@@ -227,7 +227,7 @@ const UNREACHABLE_WORDS: Readonly<
  * Why a target cannot be opened, in words that name the thing that is missing
  * and, where there is one, what to do.
  * @param unresolved Why the drill-down leads nowhere, or not yet.
- * @param model The board the link names.
+ * @param model The legacy board the link names.
  * @returns The sentence.
  */
 function unresolvedWords(unresolved: Unresolved, model: string): string {
@@ -244,9 +244,9 @@ function unresolvedWords(unresolved: Unresolved, model: string): string {
 }
 
 /**
- * Why the target board, read in its vault, opens nothing, or not yet.
- * @param unresolved What reading the board answered.
- * @param model The board the link names.
+ * Why the target legacy board, read in its vault, opens nothing, or not yet.
+ * @param unresolved What reading the legacy board answered.
+ * @param model The legacy board the link names.
  * @returns The sentence.
  */
 function modelWords(
@@ -267,7 +267,7 @@ function modelWords(
 /**
  * The way down, or the reason there is none. A target that cannot be opened
  * says why, in its place: it is never swapped for a state the link did not ask
- * for (ADR 0023). A board of another repository is read in that repository's
+ * for (ADR 0023). A model of another repository is read in that repository's
  * vault (ADR 0050). Which way it lies is measured in the levels of the vault the
  * part is drawn in, as the card on the picture measures it.
  * @param props The target and how to open it.
@@ -447,15 +447,15 @@ function ViewInCode(props: ViewInCodeProps): JSX.Element | null {
 interface GoDeeperProps extends ViewInCodeProps {
 	/** What the part drills into, when it does. */
 	readonly target: DrillDown | undefined;
-	/** The part's kind, which is the level of the board it opens (ADR 0029). */
+	/** The part's kind, which is the level of the model it opens (ADR 0029). */
 	readonly kind: string;
-	/** The level of the board the part is drawn on. */
+	/** The level of the model the part is drawn on. */
 	readonly here: string | undefined;
 	readonly onOpen: OpenDown;
 }
 
 /**
- * Whether the part leads anywhere: to a board, or to code the shell can open.
+ * Whether the part leads anywhere: to a model, or to code the shell can open.
  * @param props What the part leads to.
  * @returns Whether it does.
  */
@@ -466,7 +466,7 @@ function leadsAnywhere(props: GoDeeperProps): boolean {
 }
 
 /**
- * The foot of the panel: open the board the part drills into, and view its code.
+ * The foot of the panel: open the model the part drills into, and view its code.
  * @param props What the part leads to and how to follow it.
  * @returns The block, or nothing for a part that leads nowhere.
  */

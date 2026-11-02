@@ -1,11 +1,11 @@
-// One pane showing one semantic board, read-only.
+// One pane showing one legacy board, read-only.
 //
 // A pane can be in four states, and each is its own piece of news rather than
 // one placeholder with a flag on it:
 //
 //   loading  the server has not answered yet and there is nothing to show;
-//   empty    the board is there and has nothing on it;
-//   error    the board could not be drawn and there is nothing to show;
+//   empty    the model is there and has nothing on it;
+//   error    the model could not be drawn and there is nothing to show;
 //   stale    a picture is on screen and the read since then failed.
 //
 // A failed refresh keeps the last picture with a disclosure and retry. Query
@@ -55,7 +55,7 @@ type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Inputs for a semantic pane. */
 interface CanvasStageProps {
-	/** The board name, as the address names it. */
+	/** The model name, as the address names it. */
 	model: string;
 	/**
 	 * Open the code a node is bound to, when the shell around the pane can.
@@ -67,25 +67,25 @@ interface CanvasStageProps {
 	 * @param binding Where the code is.
 	 */
 	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
-	/** A variant id or name; the board's current variant when absent. */
+	/** A variant id or name; the model's current variant when absent. */
 	variant?: string | undefined;
 	/**
-	 * Which time the pane has been pointed at a board, when the shell counts. A
-	 * new count leaves a drill-down even when the board and the variant did not
-	 * change: the pane was pointed back at the board it was opened on.
+	 * Which time the pane has been pointed at a model, when the shell counts. A
+	 * new count leaves a drill-down even when the model and the variant did not
+	 * change: the pane was pointed back at the model it was opened on.
 	 */
 	arrival?: number | undefined;
 	/**
-	 * Which of the board's named views to read it through, or nothing for the
+	 * Which of the model's named views to read it through, or nothing for the
 	 * whole variant. Reading is not writing: this changes what the pane asks the
-	 * server to draw and touches no board.
+	 * server to draw and touches no model.
 	 */
 	view?: string | undefined;
 	/**
 	 * The person chose a different way of reading this variant.
 	 *
 	 * Owned above the stage, because the choice belongs in the address: two
-	 * panes can read one board two ways, and a reload keeps both.
+	 * panes can read one model two ways, and a reload keeps both.
 	 * @param view The view's id, or null for the whole variant.
 	 */
 	onViewChange?: ((view: string | null) => void) | undefined;
@@ -93,13 +93,13 @@ interface CanvasStageProps {
 	 * What this pane is actually reading, whenever that changes.
 	 *
 	 * The pane's address says what it was opened on; this says what is on
-	 * screen. Following a drill-down puts another board there, at a variant the
+	 * screen. Following a drill-down puts another model there, at a variant the
 	 * address never named, and a beat of a walkthrough reads its variant through
 	 * a view nobody chose. Anything the shell does on the pane's behalf — saying
 	 * what an agent is looking at, opening the code a subject is bound to,
-	 * reporting what was picked out — is about the board on screen, and only the
+	 * reporting what was picked out — is about the model on screen, and only the
 	 * pane knows which one that is.
-	 * @param reading The board, variant, view and selection on screen.
+	 * @param reading The model, variant, view and selection on screen.
 	 */
 	onReading?: ((reading: SemanticPaneReading) => void) | undefined;
 	/** The selected semantic id, or null for none. */
@@ -127,14 +127,14 @@ interface CanvasStageProps {
 	/** What the shell lays over the picture, such as subtitles of a voice: low in the frame, or at the foot of a presented walkthrough's box, where the camera keeps the picture clear of it. */
 	overlay?: ReactNode;
 	/**
-	 * The boards above one, outermost first, as the navigator places them, each
+	 * The models above one, outermost first, as the navigator places them, each
 	 * a way to it in this pane: the header's breadcrumb.
-	 * @param board The board on screen.
-	 * @returns The boards above it.
+	 * @param board The model on screen.
+	 * @returns The models above it.
 	 */
 	placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;
 	/**
-	 * Show a board of another vault in this pane: a drill-down into another
+	 * Show a model of another vault in this pane: a drill-down into another
 	 * repository, or back along a trail that came from one (ADR 0050). Without
 	 * it, such a drill-down opens nothing.
 	 */
@@ -161,7 +161,7 @@ function sidebarWidth(): number {
 
 /**
  * The relationships of the variant on screen.
- * @param reading What the board says about it, when that is known.
+ * @param reading What the model says about it, when that is known.
  * @returns Its relationships, or none.
  */
 function drawnEdges(reading: ReturnType<typeof useVariantReading>) {
@@ -193,14 +193,14 @@ function drawingIn(answer: SemanticRender | undefined): SemanticDrawing | null {
 }
 
 /**
- * A read-only semantic board in one pane.
+ * A read-only legacy board in one pane.
  *
  * The shell's parts of the pane's header change with every piece of news about
- * the pane: who holds the board, what an agent says it is doing, whether the
+ * the pane: who holds the model, what an agent says it is doing, whether the
  * socket is up. The header reads them for itself. The reading needs only to
  * know whether another pane shares the centre, so news about anything else
  * draws none of it again (TASK-385.05).
- * @param props The board, the variant, the selection and the pick.
+ * @param props The model, the variant, the selection and the pick.
  * @returns Whichever of the four states is true.
  */
 function CanvasStage(props: CanvasStageProps): JSX.Element {
@@ -208,14 +208,14 @@ function CanvasStage(props: CanvasStageProps): JSX.Element {
 	return <DocumentReading {...props} resting={shared} />;
 }
 
-/** Inputs for the reading of a pane's board. */
+/** Inputs for the reading of a pane's model. */
 interface DocumentReadingProps extends CanvasStageProps {
 	/** Whether the sidebar stays away unless the person docks it: while two panes share the centre. */
 	readonly resting: boolean;
 }
 
 /**
- * The reading of the board in one pane: its state, and what it draws.
+ * The reading of the model in one pane: its state, and what it draws.
  * @param props The pane's inputs, and whether another pane shares the centre.
  * @returns Whichever of the four states is true.
  */
@@ -229,15 +229,15 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 		{ model, variant, arrival: props.arrival, vault, repository },
 		props.onDive,
 	);
-	// How the board on screen is read: the shell's answer for the pane's own
-	// board, and this pane's own for a level somebody drilled into, where there
+	// How the model on screen is read: the shell's answer for the pane's own
+	// model, and this pane's own for a level somebody drilled into, where there
 	// is no address to hold it and the ids from the level above mean nothing.
 	const level = useLevelReading(drill, {
 		view: props.view,
 		onView: props.onViewChange,
 		onUserChanged,
 	});
-	// The explanations belong to the board on screen, so drilling into another
+	// The explanations belong to the model on screen, so drilling into another
 	// one closes whatever was being read: the beats were about a different
 	// architecture.
 	const reading = useVariantReading(drill.model, level.variant);
@@ -262,7 +262,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 			layout,
 		}),
 	);
-	// The board on screen, not the pane's own: a change to the board somebody is
+	// The model on screen, not the pane's own: a change to the model somebody is
 	// actually reading is the one that has to reach them.
 	useModelChanges(vault, drill.model);
 
@@ -310,7 +310,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 		cut: dive.cut,
 	});
 	// A subject is named to a reader by its name. Which ones the picture could
-	// not find is settled against the atlas; what to call them is the board's.
+	// not find is settled against the atlas; what to call them is the model's.
 	const { choose, nameOf } = narrative;
 	const missing = useMemo(() => focus.undrawn.map(nameOf), [focus, nameOf]);
 	const onCloseNarrative = useCallback((): void => {
@@ -344,8 +344,8 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	const onRetry = useCallback((): void => {
 		void refetch();
 	}, [refetch]);
-	// A selection names a subject of the board it was made on, so moving between
-	// levels clears it rather than carrying an id to a board that never had it.
+	// A selection names a subject of the model it was made on, so moving between
+	// levels clears it rather than carrying an id to a model that never had it.
 	//
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
@@ -365,7 +365,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	const { appearances, legend } = useStageAppearances(drawn, departure.leaving);
 	const look = useKindLook(appearances);
 	// The stage fits the subject, not the code warning that asks: a subject the
-	// view on screen does not draw is fitted only once the whole board's picture
+	// view on screen does not draw is fitted only once the whole model's picture
 	// arrives.
 	const fitSubject = useSubjectFocus(render.data, camera, reducedMotion, onChooseView);
 	const onShow = useCallback(
