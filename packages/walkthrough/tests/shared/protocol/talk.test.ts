@@ -13,7 +13,13 @@
 import { describe, expect, test } from "bun:test";
 
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { TalkSchema, framesOf, voiceLevels, type TalkEvent } from "#shared/protocol/talk.ts";
+import {
+	TalkSchema,
+	framesOf,
+	voiceLevels,
+	type Talk,
+	type TalkEvent,
+} from "#shared/protocol/talk.ts";
 
 /** A board of two parts and a walkthrough of two steps, at version 3. */
 const BOARD = {
@@ -157,6 +163,30 @@ describe("a talk", () => {
 		expect(TalkSchema.parse(talk({ layout: "blocks" })).layout).toBe("blocks");
 		expect(TalkSchema.parse(talk({ layout: "track" })).layout).toBe("track");
 		expect(TalkSchema.parse(talk()).layout).toBe("blocks");
+	});
+
+	test("keeps the original diagnostic keys in a recorded policy", () => {
+		const policy: Talk["policy"] = {
+			...TalkSchema.parse(talk()).policy,
+			diagnostics: [
+				{
+					severity: "warning",
+					code: "SHARED_SYMBOL",
+					file: "Pipeline.semantic.json",
+					board: "Pipeline",
+					variant: "v1",
+					message: "Two parts bind the same symbol.",
+					sharedSymbol: {
+						binding: { repo: "example/project", path: "src/api.ts", symbol: "serve" },
+						parts: [
+							{ board: "Pipeline", id: "cli", name: "CLI", variants: ["v1"] },
+							{ board: "Pipeline", id: "srv", name: "Server", variants: ["v1"] },
+						],
+					},
+				},
+			],
+		};
+		expect(TalkSchema.parse(talk({ policy })).policy).toEqual(policy);
 	});
 });
 

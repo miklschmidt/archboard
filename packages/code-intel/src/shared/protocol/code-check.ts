@@ -118,7 +118,7 @@ const DroppedPartSchema = z
  * that side's: where the value is set, or the first read of each name that
  * nothing sets.
  */
-const CodeFindingSchema = VaultDiagnosticSchema.extend({
+const CodeFindingSchema = VaultDiagnosticSchema.omit({ board: true }).extend({
 	model: z.string().optional(),
 	state: z.string().nullable().optional(),
 	severity: z.enum(["warning", "information"]),

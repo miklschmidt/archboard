@@ -19,8 +19,8 @@ const sharedSymbol: NonNullable<
 > = {
 	binding: { repo: "github.com/test/orders", path: "src/ledger.ts", symbol: "post" },
 	parts: [
-		{ model: "Orders", id: "AbCd", name: "Ledger", variants: ["v1"] },
-		{ model: "Billing", id: "EfGh", name: "Ledger copy", variants: ["v2", "v3"] },
+		{ board: "Orders", id: "AbCd", name: "Ledger", variants: ["v1"] },
+		{ board: "Billing", id: "EfGh", name: "Ledger copy", variants: ["v2", "v3"] },
 	],
 };
 const check: VaultCheck = {
@@ -34,7 +34,7 @@ const check: VaultCheck = {
 			code: "BINDING_PATH_MISSING",
 			file: "/vault/Orders.semantic.json",
 			path: "variants.v1.content.nodes.AbCd.binding",
-			model: "Orders",
+			board: "Orders",
 			variant: "v1",
 			subject: ledger,
 			message: "Bound to a file that is gone.",
@@ -43,7 +43,7 @@ const check: VaultCheck = {
 			severity: "warning",
 			code: "SHARED_SYMBOL",
 			file: "/vault/Orders.semantic.json",
-			model: "Orders",
+			board: "Orders",
 			variant: "v1",
 			sharedSymbol,
 			message: "Two parts bind one symbol.",

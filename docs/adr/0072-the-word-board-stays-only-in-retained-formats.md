@@ -52,6 +52,7 @@ These uses are persisted or published formats, so a retained original keeps read
 - The migration keys `board`, `plannedBoards` and `boards[].source`, in `migration.json`, `migration-readings.ts` and `model-definitions.ts`.
 - The qualified identity spellings `model[/original-board]#local-id` and `origin/original-board-id#local-id`.
 - The talk keys `board` and `TalkBoardSchema`, and the talk file fallback in `talk-files.ts`.
+- The diagnostic `board` key and `sharedSymbol.parts[].board` in `semantic-policy.ts`, which recorded talk policies retain.
 - The recipe `board` key in `recipe/schema.ts` and `recipe/legacy-recipe.ts`.
 - The listing keys `board` and `boards` in `shared/protocol/legacy-listing.ts`, and the `board` of a parsed document.
 - The legacy code opener request `{ board, element }`.

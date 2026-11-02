@@ -205,7 +205,7 @@ type DiagnosticSubject = z.infer<typeof DiagnosticSubjectSchema>;
  * name, and the ids of the live variants of that model that carry it.
  */
 const SharedSymbolPartSchema = z.object({
-	model: z.string(),
+	board: z.string(),
 	id: z.string(),
 	name: z.string(),
 	variants: z.array(z.string()),
@@ -223,7 +223,7 @@ const VaultDiagnosticSchema = z.object({
 	code: z.string(),
 	file: z.string(),
 	path: z.string().optional(),
-	model: z.string().optional(),
+	board: z.string().optional(),
 	variant: z.string().optional(),
 	subject: DiagnosticSubjectSchema.optional(),
 	sharedSymbol: SharedSymbolSchema.optional(),
