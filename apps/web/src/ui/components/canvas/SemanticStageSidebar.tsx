@@ -100,7 +100,7 @@ function SelectionPanel(props: { readonly view: StageSidebarView }): JSX.Element
 	}
 	return (
 		<SemanticInspector
-			board={answer.board}
+			model={answer.model}
 			variant={answer.variant.id}
 			selection={selection}
 			overview={answer.view === null}
@@ -131,7 +131,7 @@ function SemanticStageSidebar(props: {
 	}, [onPick]);
 	return (
 		<SemanticSidebar sidebar={view.sidebar} onClearSelection={selection === null ? null : clear}>
-			<SidebarPanel tab="board">
+			<SidebarPanel tab="model">
 				<CanvasPanel
 					answer={view.render.data}
 					reading={view.reading}

@@ -14,7 +14,7 @@ const LEGACY = { id: "lg", name: "Legacy intake", kind: "module", parent: "pl" }
 const LEDGER = { id: "ld", name: "Ledger", kind: "service" };
 const OLD_WIRE = { id: "e1", from: "gw", to: "lg", kind: "call" };
 const KEPT_WIRE = { id: "e2", from: "gw", to: "ld", kind: "call" };
-const parseBoard = (value: unknown): LegacyBoard =>
+const parseModel = (value: unknown): LegacyBoard =>
 	LegacyBoardSchema.parse(withFixtureOrders(value));
 
 /**
@@ -23,7 +23,7 @@ const parseBoard = (value: unknown): LegacyBoard =>
  * @returns The board.
  */
 const documentWith = (proposed: Record<string, unknown>): LegacyBoard =>
-	parseBoard({
+	parseModel({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
@@ -71,11 +71,11 @@ describe("the picture drawn for a proposal", () => {
 		],
 		edges: [KEPT_WIRE],
 	});
-	const board = documentWith(PROPOSED);
-	const proposal = board.variants[1]!;
+	const model = documentWith(PROPOSED);
+	const proposal = model.variants[1]!;
 
 	test("puts back what the change took away, and says how each subject stands", () => {
-		const drawing = drawingOf(board, proposal);
+		const drawing = drawingOf(model, proposal);
 		expect(drawing.changes?.against.id).toBe("v1");
 		// The removed module is drawn again, as context for what the change did.
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual([
@@ -97,14 +97,14 @@ describe("the picture drawn for a proposal", () => {
 	});
 
 	test("the proposal itself still says only what it proposes", () => {
-		drawingOf(board, proposal);
+		drawingOf(model, proposal);
 		expect(PROPOSED.nodes.map((node) => node.id)).not.toContain("lg");
-		expect(board.variants[1]?.content.nodes.map((node) => node.id)).not.toContain("lg");
+		expect(model.variants[1]?.content.nodes.map((node) => node.id)).not.toContain("lg");
 	});
 
 	test("a variant that came from nothing changed nothing, and is drawn as it is", () => {
-		const baseline = board.variants[0]!;
-		const drawing = drawingOf(board, baseline);
+		const baseline = model.variants[0]!;
+		const drawing = drawingOf(model, baseline);
 		expect(drawing.changes).toBeNull();
 		expect(drawing.content).toBe(baseline.content);
 	});
@@ -115,7 +115,7 @@ describe("what a narrower reading is allowed to say", () => {
 		// The proposal dropped a module inside the platform and a whole service
 		// elsewhere; this view is only about the ledger.
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
-		const board = parseBoard({
+		const model = parseModel({
 			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -145,7 +145,7 @@ describe("what a narrower reading is allowed to say", () => {
 			],
 		});
 		const scope = { kind: "selection" as const, nodes: ["ld"], edges: [], flows: [] };
-		const drawing = drawingOf(board, board.variants[1]!, scope);
+		const drawing = drawingOf(model, model.variants[1]!, scope);
 		// Neither removal has context here: one hangs off a container this view
 		// does not draw, the other was a root the view never showed.
 		expect(drawing.content.nodes.map((node) => node.id)).toEqual(["ld"]);
@@ -155,9 +155,9 @@ describe("what a narrower reading is allowed to say", () => {
 
 	test("a view that selects a deleted module shows it with its container", () => {
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
-		const board = documentWith(proposed);
+		const model = documentWith(proposed);
 		const scope = { kind: "selection" as const, nodes: ["pl", "gw", "lg"], edges: [], flows: [] };
-		const drawing = drawingOf(board, board.variants[1]!, scope);
+		const drawing = drawingOf(model, model.variants[1]!, scope);
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual(["gw", "lg", "pl"]);
 		expect(drawing.changes?.standing["lg"]).toBe("removed");
 		// The relationship comes with it, because both its ends are drawn.
@@ -165,12 +165,12 @@ describe("what a narrower reading is allowed to say", () => {
 	});
 
 	test("a selected deleted edge excludes other deleted edges between the same nodes", () => {
-		const board = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY, LEDGER], edges: [] });
-		board.variants[0]!.content.edges.push({
-			...board.variants[0]!.content.edges[0]!,
+		const model = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY, LEDGER], edges: [] });
+		model.variants[0]!.content.edges.push({
+			...model.variants[0]!.content.edges[0]!,
 			id: "parallel",
 		});
-		const drawing = drawingOf(board, board.variants[1]!, {
+		const drawing = drawingOf(model, model.variants[1]!, {
 			kind: "selection",
 			nodes: [],
 			edges: ["e1"],
@@ -183,8 +183,8 @@ describe("what a narrower reading is allowed to say", () => {
 
 	test("a removed container brings its removed contents back with it", () => {
 		const proposed = content({ nodes: [LEDGER], edges: [] });
-		const board = documentWith(proposed);
-		const drawing = drawingOf(board, board.variants[1]!);
+		const model = documentWith(proposed);
+		const drawing = drawingOf(model, model.variants[1]!);
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual([
 			"gw",
 			"ld",
@@ -209,7 +209,7 @@ describe("a sequence a proposal cut into", () => {
 			edges: [KEPT_WIRE],
 			flows: [{ ...FLOW, steps: [STEPS[1]] }],
 		});
-		const board = parseBoard({
+		const model = parseModel({
 			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -239,7 +239,7 @@ describe("a sequence a proposal cut into", () => {
 				},
 			],
 		});
-		const drawing = drawingOf(board, board.variants[1]!);
+		const drawing = drawingOf(model, model.variants[1]!);
 		expect(drawing.content.flows[0]?.steps.map((step) => step.id)).toEqual(["s1", "s2"]);
 		expect(drawing.changes?.standing["s1"]).toBe("removed");
 		// The step that survived says nothing about the one that went: where a step
@@ -254,8 +254,8 @@ describe("a view that selects everything", () => {
 		// A named `all` view and no view at all are the same reading, so a root
 		// the proposal deleted has to appear in both or in neither.
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [] });
-		const board = documentWith(proposed);
-		const named = drawingOf(board, board.variants[1]!, { kind: "all" });
+		const model = documentWith(proposed);
+		const named = drawingOf(model, model.variants[1]!, { kind: "all" });
 		expect(named.content.nodes.map((node) => node.id)).toContain("ld");
 		expect(named.changes?.standing["ld"]).toBe("removed");
 	});
@@ -273,7 +273,7 @@ describe("what a whole picture owes a reader", () => {
 	 * @returns The board.
 	 */
 	const droppedFlow = (): LegacyBoard =>
-		parseBoard({
+		parseModel({
 			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -305,9 +305,9 @@ describe("what a whole picture owes a reader", () => {
 		});
 
 	test("a whole conversation the proposal dropped is drawn, steps and all", () => {
-		const board = droppedFlow();
-		const proposal = board.variants[1]!;
-		const drawing = drawingOf(board, proposal);
+		const model = droppedFlow();
+		const proposal = model.variants[1]!;
+		const drawing = drawingOf(model, proposal);
 		expect(drawing.content.flows.map((flow) => flow.id)).toEqual(["f1"]);
 		expect(drawing.content.flows[0]?.steps.map((step) => step.id)).toEqual(["s1", "s2"]);
 		expect(drawing.changes?.standing["f1"]).toBe("removed");
@@ -340,7 +340,7 @@ describe("a sequence read through a view that dropped a participant", () => {
 	 * @returns The board.
 	 */
 	const rerouted = (): LegacyBoard =>
-		parseBoard({
+		parseModel({
 			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
@@ -376,11 +376,11 @@ describe("a sequence read through a view that dropped a participant", () => {
 		});
 
 	test("brings back the participant its removed steps were addressed to", () => {
-		const board = rerouted();
+		const model = rerouted();
 		// The view is about the exchange: it keeps the flow and the two columns
 		// the proposal's own steps need, and nothing else.
 		const scope = { kind: "selection" as const, nodes: [], edges: [], flows: ["f1"] };
-		const drawing = drawingOf(board, board.variants[1]!, scope);
+		const drawing = drawingOf(model, model.variants[1]!, scope);
 		const flow = drawing.content.flows[0];
 		// Neither old call survives, so the removed run follows the proposal.
 		expect(flow?.steps.map((step) => step.id)).toEqual(["s3", "s1", "s2"]);
@@ -397,7 +397,7 @@ describe("a sequence read through a view that dropped a participant", () => {
 });
 
 test("a shared scope preserves its deleted exchange without unrelated deletions", () => {
-	const board = documentWith({
+	const model = documentWith({
 		nodes: [PLATFORM, GATEWAY, LEDGER],
 		edges: [KEPT_WIRE],
 		flows: [
@@ -409,7 +409,7 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 			},
 		],
 	});
-	board.variants[0]!.content = content({
+	model.variants[0]!.content = content({
 		nodes: [
 			PLATFORM,
 			GATEWAY,
@@ -433,9 +433,9 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 			},
 		],
 	});
-	const proposal = board.variants[1]!;
+	const proposal = model.variants[1]!;
 	const scope = { kind: "selection" as const, nodes: [], edges: [], flows: ["oldflow", "newflow"] };
-	const drawing = drawingOf(board, proposal, scope);
+	const drawing = drawingOf(model, proposal, scope);
 	expect(drawing.content.flows.map((flow) => flow.id).toSorted()).toEqual(["newflow", "oldflow"]);
 	expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual(["gw", "ld", "lg", "pl"]);
 	expect(drawing.changes?.standing).toMatchObject({
@@ -447,7 +447,7 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 	expect(drawing.changes?.standing["outside"]).toBeUndefined();
 	expect(drawing.changes?.standing["other"]).toBeUndefined();
 	// A proposal-only selection still has nothing to show on the initial variant.
-	const initial = drawingOf(board, board.variants[0]!, { ...scope, flows: ["newflow"] });
+	const initial = drawingOf(model, model.variants[0]!, { ...scope, flows: ["newflow"] });
 	expect(initial.content.nodes).toEqual([]);
 	expect(initial.content.flows).toEqual([]);
 	expect(initial.changes).toBeNull();
@@ -455,8 +455,8 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 
 describe("the overview of a proposal", () => {
 	test("marks what the proposal removed, as every reading does", () => {
-		const board = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
-		const drawn = drawingOf(board, board.variants[1]!, { kind: "overview" });
+		const model = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
+		const drawn = drawingOf(model, model.variants[1]!, { kind: "overview" });
 		// The ledger is a root part and the line to it is drawn from the closed
 		// platform; the wire inside the platform is the platform's own business.
 		expect(drawn.changes?.standing).toEqual({ pl: "unchanged", ld: "removed", e2: "removed" });

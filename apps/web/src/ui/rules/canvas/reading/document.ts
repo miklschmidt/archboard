@@ -244,12 +244,12 @@ function movedOn(comparison: VariantComparison, id: string): readonly FieldChang
 /**
  * What the picture of one variant is of, and how each subject of it stands
  * against the variant it is read against.
- * @param board The board the variant belongs to.
+ * @param model The board the variant belongs to.
  * @param variant The variant being shown.
  * @returns The depiction.
  */
-function depictionOf(board: LegacyBoard, variant: SemanticVariant): Depiction {
-	const against = comparedWith(board, variant);
+function depictionOf(model: LegacyBoard, variant: SemanticVariant): Depiction {
+	const against = comparedWith(model, variant);
 	// Compared whole, before any view narrowed it, exactly as the server compares
 	// it: a view that hides a node is a narrower reading of the variant, never a
 	// variant that lost one.

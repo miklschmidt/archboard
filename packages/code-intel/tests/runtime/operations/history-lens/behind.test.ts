@@ -130,7 +130,11 @@ const PARTS = [
  * @param draftNote What the draft's summary says, which no reading of behind looks at.
  * @returns The board.
  */
-function board(version: number, extra: readonly object[] = [], draftNote = "first"): LegacyBoard {
+function document(
+	version: number,
+	extra: readonly object[] = [],
+	draftNote = "first",
+): LegacyBoard {
 	const nodes = [...PARTS, ...extra].map((node, index) =>
 		Object.assign({ order: (index + 1) * 1000 }, node),
 	);
@@ -158,14 +162,14 @@ function board(version: number, extra: readonly object[] = [], draftNote = "firs
 	});
 }
 
-const boardFile = join(shop, "vault", "Shop.semantic.json");
+const documentFile = join(shop, "vault", "Shop.semantic.json");
 
 /**
  * Write a board into the shop's vault.
  * @param value The board.
  * @param file Where.
  */
-function writeBoard(value: LegacyBoard, file = boardFile): void {
+function writeDocument(value: LegacyBoard, file = documentFile): void {
 	mkdirSync(join(file, ".."), { recursive: true });
 	writeFileSync(file, `${JSON.stringify(value, null, "\t")}\n`);
 }
@@ -181,10 +185,10 @@ function writeBoard(value: LegacyBoard, file = boardFile): void {
 async function behind(
 	value: LegacyBoard,
 	reading = lens.createBehindReading(),
-	file = boardFile,
+	file = documentFile,
 	vault = join(shop, "vault"),
 ): Promise<ModelBehind> {
-	const [answer] = await reading.read(vault, [{ board: value, file }]);
+	const [answer] = await reading.read(vault, [{ document: value, file }]);
 	return ModelBehindSchema.parse(answer);
 }
 
@@ -236,7 +240,7 @@ beforeAll(async () => {
 	});
 	commit(shop, "code before the board");
 	write(shop, { "src/a.ts": "2\n" });
-	writeBoard(board(1));
+	writeDocument(document(1));
 	subjects["created"] = commit(shop, "create the board, with a change to a.ts");
 	write(other, { "lib.ts": "2\n" });
 	commit(other, "other after the board");
@@ -252,8 +256,8 @@ beforeAll(async () => {
 	commit(shop, "delete the coupons");
 	write(shop, { "src/a.ts": "4\n" });
 	// A tracked embed is the board's, not the current variant's (ADR 0057).
-	writeBoard({
-		...board(2, [], "a draft edit"),
+	writeDocument({
+		...document(2, [], "a draft edit"),
 		trackedEmbeds: [{ repo: OTHER, path: "docs/shop.svg" }],
 	});
 	commit(shop, "edit the draft and a.ts, and track an embed");
@@ -275,7 +279,7 @@ afterAll(() => {
 });
 
 test("a board is behind by the commits to each part's bound files after its last change, and a draft edit or a tracked embed is no change", async () => {
-	const answer = await behind(board(2, [], "a draft edit"));
+	const answer = await behind(document(2, [], "a draft edit"));
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: subjects["created"] });
 	expect(partSubjects(answer, "pA")).toEqual([
 		"a large commit",
@@ -288,7 +292,7 @@ test("a board is behind by the commits to each part's bound files after its last
 });
 
 test("a binding to a directory counts every file below it, and a part that drills into another board is skipped", async () => {
-	const answer = await behind(board(2, [], "a draft edit"));
+	const answer = await behind(document(2, [], "a draft edit"));
 	expect(partSubjects(answer, "pD")).toEqual(["change a file deep below the bound directory"]);
 	expect(partSubjects(answer, "pX")).toBeUndefined();
 	if (!("skipped" in answer)) throw new Error("the last change was not found");
@@ -297,7 +301,7 @@ test("a binding to a directory counts every file below it, and a part that drill
 });
 
 test("a renamed file keeps the history it had under its former name, and a deleted file is read up to its deletion", async () => {
-	const answer = await behind(board(2, [], "a draft edit"));
+	const answer = await behind(document(2, [], "a draft edit"));
 	expect(partSubjects(answer, "pR")).toEqual([
 		"rename the ledger",
 		"change the ledger under its former name",
@@ -306,7 +310,7 @@ test("a renamed file keeps the history it had under its former name, and a delet
 });
 
 test("an unregistered repository stays silent, and a part pinned to a ref its checkout does not have out is skipped", async () => {
-	const answer = await behind(board(2, [], "a draft edit"));
+	const answer = await behind(document(2, [], "a draft edit"));
 	if (!("skipped" in answer)) throw new Error("the last change was not found");
 	expect(partSubjects(answer, "pS")).toBeUndefined();
 	expect(answer.skipped.find((skip) => skip.subject.id === "pS")).toMatchObject({
@@ -326,7 +330,7 @@ test("an unregistered repository stays silent, and a part pinned to a ref its ch
 
 test("a checkout without the last change's commit counts the commits after its time, and its next commit reaches a remembered answer", async () => {
 	const reading = lens.createBehindReading();
-	const current = board(2, [], "a draft edit");
+	const current = document(2, [], "a draft edit");
 	expect(partSubjects(await behind(current, reading), "pO")).toEqual(["other after the board"]);
 	write(other, { "lib.ts": "3\n" });
 	commit(other, "other later");
@@ -338,9 +342,11 @@ test("a checkout without the last change's commit counts the commits after its t
 
 test("an edit in place moves the last change, and the commit that carries it with code counts for nothing", async () => {
 	const reading = lens.createBehindReading();
-	expect(partSubjects(await behind(board(2, [], "a draft edit"), reading), "pA")).toHaveLength(3);
-	const edited = board(3, [{ id: "pN", name: "Refunds", kind: "module" }], "a draft edit");
-	writeBoard(edited);
+	expect(partSubjects(await behind(document(2, [], "a draft edit"), reading), "pA")).toHaveLength(
+		3,
+	);
+	const edited = document(3, [{ id: "pN", name: "Refunds", kind: "module" }], "a draft edit");
+	writeDocument(edited);
 	expect((await behind(edited, reading)).lastChange.kind).toBe("uncommitted");
 	expect(partSubjects(await behind(edited, reading), "pA")).toEqual([]);
 	write(shop, { "src/a.ts": "6\n" });
@@ -355,47 +361,47 @@ test("an edit in place moves the last change, and the commit that carries it wit
 
 test("a board file Git does not track is a change no commit holds, and one Git ignores or outside Git cannot be read", async () => {
 	const fresh = join(shop, "vault", "Fresh.semantic.json");
-	writeBoard(board(1), fresh);
-	expect((await behind(board(1), undefined, fresh)).lastChange.kind).toBe("uncommitted");
+	writeDocument(document(1), fresh);
+	expect((await behind(document(1), undefined, fresh)).lastChange.kind).toBe("uncommitted");
 	// A space in the name, as most board names have one, must not change what Git answers.
 	write(shop, { ".gitignore": "vault/Ignored board.semantic.json\n" });
 	const ignored = join(shop, "vault", "Ignored board.semantic.json");
-	writeBoard(board(1), ignored);
-	const ignoredAnswer = await behind(board(1), undefined, ignored);
+	writeDocument(document(1), ignored);
+	const ignoredAnswer = await behind(document(1), undefined, ignored);
 	expect(ignoredAnswer.lastChange).toEqual({ kind: "unknown", reason: "model-file-ignored" });
 	expect("commits" in ignoredAnswer).toBe(false);
 	const loose = join(outside, "vault", "Loose.semantic.json");
-	writeBoard(board(1), loose);
-	const looseAnswer = await behind(board(1), undefined, loose, join(outside, "vault"));
+	writeDocument(document(1), loose);
+	const looseAnswer = await behind(document(1), undefined, loose, join(outside, "vault"));
 	expect(looseAnswer.lastChange).toEqual({ kind: "unknown", reason: "vault-outside-git" });
 	expect("commits" in looseAnswer).toBe(false);
 });
 
 test("Behind migrates historical bytes without writing and a schema-only migration commit is no semantic last change", async () => {
-	const legacy = JSON.parse(JSON.stringify(board(1)));
+	const legacy = JSON.parse(JSON.stringify(document(1)));
 	legacy.schemaVersion = "2.2.0";
 	for (const variant of legacy.variants) {
 		for (const node of variant.content.nodes) delete node.order;
 	}
-	writeFileSync(boardFile, JSON.stringify(legacy));
+	writeFileSync(documentFile, JSON.stringify(legacy));
 	const created = commit(shop, "create a board in an old schema");
 	write(shop, { "src/a.ts": "a source change after the old board\n" });
 	commit(shop, "change code before the migration");
-	const bytes = readFileSync(boardFile, "utf8");
-	const modified = statSync(boardFile).mtimeMs;
+	const bytes = readFileSync(documentFile, "utf8");
+	const modified = statSync(documentFile).mtimeMs;
 	const decoded = decodeLegacyBoard(bytes);
 	if (!decoded.ok) throw new Error(decoded.problem);
 	const inMemory = await behind(decoded.board);
 	expect(inMemory.lastChange).toMatchObject({ kind: "commit", commit: created });
 	expect(partSubjects(inMemory, "pA")).toEqual(["change code before the migration"]);
-	expect(readFileSync(boardFile, "utf8")).toBe(bytes);
-	expect(statSync(boardFile).mtimeMs).toBe(modified);
+	expect(readFileSync(documentFile, "utf8")).toBe(bytes);
+	expect(statSync(documentFile).mtimeMs).toBe(modified);
 	const migrated = {
 		...decoded.board,
 		version: decoded.board.version + 1,
 		updatedAt: "2026-10-07T00:00:00.000Z",
 	};
-	writeBoard(migrated);
+	writeDocument(migrated);
 	commit(shop, "migrate the board schema only");
 	const answer = await behind(migrated);
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: created });

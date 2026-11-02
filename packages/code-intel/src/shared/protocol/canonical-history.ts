@@ -26,15 +26,15 @@ const ArchitectureHistoryRequestSchema = z.discriminatedUnion("analysis", [
 	ArchitectureFootprintRequestSchema.extend({ analysis: z.literal("footprint") }),
 ]);
 const ArchitectureHistoryResultSchema = z.union([
-	LocalityAnswerSchema.omit({ board: true, version: true, variant: true }).extend({
+	LocalityAnswerSchema.omit({ model: true, version: true, variant: true }).extend({
 		...IdentitySchema.shape,
 		analysis: z.literal("locality"),
 	}),
 	FootprintAnswerSchema.options[0]
-		.omit({ board: true, version: true })
+		.omit({ model: true, version: true })
 		.extend({ ...IdentitySchema.shape, analysis: z.literal("footprint") }),
 	FootprintAnswerSchema.options[1]
-		.omit({ board: true, version: true })
+		.omit({ model: true, version: true })
 		.extend({ ...IdentitySchema.shape, analysis: z.literal("footprint") }),
 	ArchitectureModelReadSchema.options[1],
 ]);

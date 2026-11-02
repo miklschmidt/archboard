@@ -210,7 +210,7 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 	});
 	await settle();
 	// The pane never asks for a picture of the board below.
-	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
+	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 });
 
 test("a newer double-click wins over an older one whose board answers first", async () => {
@@ -244,7 +244,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	});
 	await settle();
 	expect(stage?.getAttribute("data-model")).toBe("pipeline");
-	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
+	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 
 	// The newer one's board then answers, and is the one that opens and stays open.
 	server.reply = { status: 200, body: drawing(1, "store") };
@@ -253,7 +253,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	});
 	await settle();
 	expect(stage?.getAttribute("data-model")).toBe("store");
-	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
+	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 });
 
 test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
@@ -305,7 +305,7 @@ test("choosing at the level below asks for that reading of the board below", asy
 	});
 	await settle();
 	const asked = renderCalls().at(-1) ?? "";
-	expect(asked).toContain("board=engine");
+	expect(asked).toContain("model=engine");
 	expect(asked).toContain("view=ev2");
 });
 
@@ -345,11 +345,11 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 
 /**
  * Open the board the card drills down to, as a double-click on it does.
- * @param board The board it opens, which the next picture is of.
+ * @param model The board it opens, which the next picture is of.
  * @returns Settles once that board is on screen.
  */
-async function doubleClickInto(board: string): Promise<void> {
-	server.reply = { status: 200, body: drawing(1, board) };
+async function doubleClickInto(model: string): Promise<void> {
+	server.reply = { status: 200, body: drawing(1, model) };
 	await act(async () => {
 		fireEvent.doubleClick(document.querySelector("#card")!);
 	});
@@ -386,18 +386,18 @@ test("a crumb two levels up goes straight back to its board, as one change by ha
 		"pipeline",
 	);
 	expect(buttons("pane-crumb")).toEqual([]);
-	expect(changed).toEqual(["board"]);
+	expect(changed).toEqual(["model"]);
 });
 
 /** What the pane said it was reading, as these tests read it back. */
-type Reading = { board: string; variant: string | null; view: string | null };
+type Reading = { model: string; variant: string | null; view: string | null };
 
 /**
  * Keep what the pane said it was reading.
  * @param reading What it is reading now.
  */
 function report(reading: Reading): void {
-	readings.push({ board: reading.board, variant: reading.variant, view: reading.view });
+	readings.push({ model: reading.model, variant: reading.variant, view: reading.view });
 }
 
 /** Everything the pane has said it was reading, in order. */
@@ -415,18 +415,18 @@ test("the pane says which board it is actually reading, not the one it was opene
 	});
 	await settle();
 	// Before anything is followed, the pane is reading what it was opened on.
-	expect(readings.at(-1)?.board).toBe("pipeline");
+	expect(readings.at(-1)?.model).toBe("pipeline");
 
 	await openDown();
 	// A shell told "pipeline" here would say an agent is looking at a board
 	// nobody has on screen, and would open the code of a node from the wrong one.
-	expect(readings.at(-1)?.board).toBe("engine");
+	expect(readings.at(-1)?.model).toBe("engine");
 
 	await act(async () => {
 		fireEvent.click(buttons("semantic-view-choice")[2]!);
 	});
 	await settle();
-	expect(readings.at(-1)).toMatchObject({ board: "engine", view: "ev2" });
+	expect(readings.at(-1)).toMatchObject({ model: "engine", view: "ev2" });
 });
 
 test("choosing a way of reading a level does not change which state it is", async () => {
@@ -451,7 +451,7 @@ test("choosing a way of reading a level does not change which state it is", asyn
 	// named state here would show the current architecture under a link that
 	// asked for what was built.
 	const asked = renderCalls().at(-1) ?? "";
-	expect(asked).toContain("board=engine");
+	expect(asked).toContain("model=engine");
 	expect(asked).toContain("variant=e1");
 });
 

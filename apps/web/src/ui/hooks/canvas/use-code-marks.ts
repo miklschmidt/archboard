@@ -21,7 +21,7 @@ import { markCodeWarnings } from "#ui/clients/canvas/subjects/code-marks.ts";
  */
 function useCodeMarks(picture: StagedPicture | null, drawing: SemanticDrawing): void {
 	const reading = useCodeFindings({
-		board: drawing.board,
+		model: drawing.model,
 		variant: drawing.variant.id,
 		version: drawing.version,
 	});

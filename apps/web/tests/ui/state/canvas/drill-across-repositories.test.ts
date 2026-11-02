@@ -20,10 +20,10 @@ import {
 const OWN = "github.com/acme/shop";
 const OTHER = "github.com/acme/payments";
 
-const SHOP: DrillStop = { board: "shop", variant: undefined, vault: "/shop", repository: OWN };
-const CART: DrillStop = { board: "cart", variant: "v1", vault: "/shop", repository: OWN };
+const SHOP: DrillStop = { model: "shop", variant: undefined, vault: "/shop", repository: OWN };
+const CART: DrillStop = { model: "cart", variant: "v1", vault: "/shop", repository: OWN };
 const LEDGER: DrillStop = {
-	board: "ledger",
+	model: "ledger",
 	variant: undefined,
 	vault: "/payments",
 	repository: OTHER,
@@ -40,11 +40,11 @@ describe("the drill trail", () => {
 		const down = drillInto(drillInto(NO_TRAIL, SHOP, CART).trail, SHOP, LEDGER);
 		expect(down.dive).toEqual(LEDGER);
 		// The shell moved the pane: the server announces the board, whose name may differ in case.
-		const arrived = drillArrived(down.trail, { ...LEDGER, board: "Ledger" });
+		const arrived = drillArrived(down.trail, { ...LEDGER, model: "Ledger" });
 		expect(stopsOf(arrived, LEDGER)).toEqual([SHOP, CART, LEDGER]);
 
 		// Down a level in place there, and back to the pane's own board, which is no move.
-		const journal = { ...LEDGER, board: "journal" };
+		const journal = { ...LEDGER, model: "journal" };
 		const up = drillBack(drillInto(arrived, LEDGER, journal).trail, LEDGER, 2);
 		expect(up.dive).toBeNull();
 		expect(stopsOf(up.trail, LEDGER)).toEqual([SHOP, CART, LEDGER]);
@@ -79,7 +79,7 @@ describe("the drill trail", () => {
 
 	test("a dive refused after the reader asked for another leaves the later one waiting", () => {
 		const first = drillInto(NO_TRAIL, SHOP, LEDGER);
-		const journal = { ...LEDGER, board: "journal" };
+		const journal = { ...LEDGER, model: "journal" };
 		const second = drillInto(first.trail, SHOP, journal);
 		const refused = drillRefused(second.trail, LEDGER);
 		expect(stopsOf(drillArrived(refused, journal), journal)).toEqual([SHOP, journal]);

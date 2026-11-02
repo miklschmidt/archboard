@@ -22,7 +22,7 @@ interface Departure {
 	/** Which way along the module tree a board at the same depth stands. */
 	readonly side?: DepartureSide | undefined;
 	/** The board being drawn next. */
-	readonly board: string;
+	readonly model: string;
 }
 
 export type { Departure, DepartureSide, DepartureWay };

@@ -6,7 +6,7 @@ import { expect } from "bun:test";
 import { renderLegacyBoard } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DrawnBoard, LayoutEngineName } from "@archboard/model/render-reply";
+import type { DrawnPicture, LayoutEngineName } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /**
@@ -23,11 +23,11 @@ async function bothModes(
 	current: unknown,
 	draft: unknown,
 	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
-): Promise<{ compared: DrawnBoard; plain: DrawnBoard }> {
-	const board = LegacyBoardSchema.parse({
+): Promise<{ compared: DrawnPicture; plain: DrawnPicture }> {
+	const document = LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Removals",
 		level: "system",
 		version: 1,
@@ -49,8 +49,8 @@ async function bothModes(
 	const ask = { variant: "draft", layout: how.layout } as const;
 	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
-		renderLegacyBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
-		renderLegacyBoard(board, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
+		renderLegacyBoard(document, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
+		renderLegacyBoard(document, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
 	]);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
 		throw new Error("Expected two drawn proposals");
@@ -67,7 +67,7 @@ async function bothModes(
  * @param removed The ids that stand removed.
  */
 function expectSamePlaces(
-	{ compared, plain }: { compared: DrawnBoard; plain: DrawnBoard },
+	{ compared, plain }: { compared: DrawnPicture; plain: DrawnPicture },
 	removed: readonly string[],
 ): void {
 	for (const kind of ["nodes", "edges", "regions"] as const) {

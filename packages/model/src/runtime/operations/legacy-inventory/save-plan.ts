@@ -38,7 +38,7 @@ async function saveLegacyMappingPlan(
 		return await withLease(
 			{
 				vault,
-				board: "@migration-plan",
+				model: "@migration-plan",
 				holder: { id: mintId(), kind: "agent", reason: description.doing },
 				waitMs: 0,
 			},

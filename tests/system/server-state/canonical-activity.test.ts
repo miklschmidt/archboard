@@ -92,7 +92,7 @@ test("every pane receives concurrent canonical claims on startup and reconnect",
 		expect(await activity(pane)).toMatchObject({
 			vault,
 			activity: [
-				{ board: "model:Shop", model: "Shop", claims: [first.claim, second.claim], doing: null },
+				{ paneKey: "model:Shop", model: "Shop", claims: [first.claim, second.claim], doing: null },
 			],
 		});
 		await pane.close();

@@ -116,7 +116,7 @@ function trafficMarkup(line: Line): string {
 function picture(
 	cards: readonly Card[],
 	lines: readonly Line[],
-	identity: Partial<Pick<SemanticDrawing, "board" | "variant" | "view" | "width" | "height">> = {},
+	identity: Partial<Pick<SemanticDrawing, "model" | "variant" | "view" | "width" | "height">> = {},
 ): SemanticDrawing {
 	const width = identity.width ?? 600;
 	const height = identity.height ?? 400;
@@ -129,7 +129,7 @@ function picture(
 	return {
 		kind: "drawn",
 		success: true,
-		board: "pipeline",
+		model: "pipeline",
 		version: 1,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
 		view: null,

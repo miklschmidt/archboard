@@ -44,17 +44,17 @@ function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): 
  * of subject together, and over the nodes alone. A scenario that replaces a
  * node also replaces the relationships that touched it, so "two nodes
  * removed" and "four subjects removed" describe the same proposal.
- * @param board The board.
+ * @param document The board.
  * @param variant The variant.
  * @returns The counts, or undefined when there is nothing to read it against.
  */
 function standingCounts(
-	board: EvaluatedDocument,
+	document: EvaluatedDocument,
 	variant: SemanticVariant,
 ):
 	| { readonly against: string; readonly all: ChangeCounts; readonly nodes: ChangeCounts }
 	| undefined {
-	const against = comparedWith(board, variant);
+	const against = comparedWith(document, variant);
 	if (against === undefined) return undefined;
 	const comparison = compareVariants(against.content, variant.content);
 	const nodes = countChanges(comparison.nodes);
@@ -86,7 +86,7 @@ function standingCounts(
 const comparisonStanding: Check = (check, reading) => {
 	const at = located(reading, check.board, check.variant);
 	if (isFinding(at)) return at;
-	const counts = standingCounts(at.board, at.variant);
+	const counts = standingCounts(at.document, at.variant);
 	if (counts === undefined)
 		return finding(false, `"${check.variant}" has nothing to be read against`);
 	return finding(

@@ -62,11 +62,11 @@ interface TalkPlace {
 
 /**
  * What a board's name becomes in a directory name.
- * @param board The board's name.
+ * @param document The board's name.
  * @returns Lowercase letters, digits and dashes, or "board" for a name with none.
  */
-function slugOf(board: string): string {
-	const slug = board
+function slugOf(document: string): string {
+	const slug = document
 		.toLowerCase()
 		.replaceAll(/[^a-z0-9]+/g, "-")
 		.replaceAll(/^-|-$/g, "")
@@ -77,14 +77,14 @@ function slugOf(board: string): string {
 /**
  * The state directory's place for a board's talk, named for the moment it was recorded, so that
  * names sort in the order the talks were made.
- * @param board The board's name.
+ * @param document The board's name.
  * @param now When it was recorded.
  * @returns The place.
  */
-function stateTalkPlace(board: string, now: Date): TalkPlace {
+function stateTalkPlace(document: string, now: Date): TalkPlace {
 	const stamp = now.toISOString().replaceAll(/[-:]|\.\d+/g, "");
 	return {
-		directory: join(stateDir(), "recordings", `${stamp}-${slugOf(board)}`),
+		directory: join(stateDir(), "recordings", `${stamp}-${slugOf(document)}`),
 		prune: true,
 	};
 }
@@ -122,13 +122,13 @@ function requireFreshPlace(place: TalkPlace): void {
  * Where a board's talk is kept, proven free before anything starts: the directory asked for, or a
  * new one in the state directory, named for the moment it was recorded.
  * @param asked The directory asked for, absolute, if any.
- * @param board The board recorded, which names a talk kept in the state directory.
+ * @param document The board recorded, which names a talk kept in the state directory.
  * @param now When it is recorded.
  * @returns The place.
  * @throws {TalkFileError} When the directory asked for exists or has no directory to be made in.
  */
-function freshTalkPlace(asked: string | undefined, board: string, now: Date): TalkPlace {
-	const place = asked === undefined ? stateTalkPlace(board, now) : askedTalkPlace(asked);
+function freshTalkPlace(asked: string | undefined, document: string, now: Date): TalkPlace {
+	const place = asked === undefined ? stateTalkPlace(document, now) : askedTalkPlace(asked);
 	requireFreshPlace(place);
 	return place;
 }

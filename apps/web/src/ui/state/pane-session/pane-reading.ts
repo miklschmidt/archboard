@@ -29,7 +29,7 @@ type PaneReading = Omit<SemanticPaneContext, "paneId" | "clientId" | "at" | "seq
 
 /** A pane showing nothing: what a pane reports when it leaves a board. */
 const NOTHING_READ: PaneReading = Object.freeze({
-	board: null,
+	model: null,
 	variant: null,
 	view: null,
 	selection: [],

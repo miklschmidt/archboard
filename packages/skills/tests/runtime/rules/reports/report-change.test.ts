@@ -282,7 +282,7 @@ const answer = (...features: string[]): RunVerdict => ({
 	features: features.map((feature) => ({
 		feature,
 		verdict: "pass" as const,
-		evidence: "board",
+		evidence: "document",
 		reason: "seen",
 	})),
 });

@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import {
-	board as fixtureDocument,
+	document as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -125,13 +125,13 @@ afterAll(() => {
  */
 async function everyDraft() {
 	const read = check.readEveryDraftToCheck(vault);
-	const outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 	return { read, outcome };
 }
 
 test("every draft of a board is read, and no current, shelved or historical variant", async () => {
 	const { read } = await everyDraft();
-	expect(read.boards.map((one) => [one.variant.id, one.named])).toEqual([
+	expect(read.states.map((one) => [one.variant.id, one.named])).toEqual([
 		["v1", true],
 		["v2", true],
 		["v3", true],
@@ -157,7 +157,7 @@ test("a dropped part whose bound path and symbol the draft's ref still holds is 
 	]);
 	const ledger = dropped[0];
 	expect(ledger?.severity).toBe("warning");
-	expect(ledger?.board).toBe("Shop");
+	expect(ledger?.model).toBe("Shop");
 	expect(ledger?.subject).toEqual({ kind: "node", id: "pL", name: "Ledger" });
 	expect(ledger?.dropped).toEqual({
 		from: "v0",
@@ -201,7 +201,7 @@ test("a draft whose ref the checkout lacks, or that names several refs, is skipp
 test("a draft named with --variant is held to what it dropped too", async () => {
 	const read = check.readStatesToCheck(vault, "draft v1");
 	if (!read.ok) throw new Error("no draft v1");
-	const outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 	expect(
 		outcome.findings
 			.filter((one) => one.code === "INHERITED_PART_DROPPED")

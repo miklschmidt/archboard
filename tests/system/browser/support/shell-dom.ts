@@ -58,7 +58,7 @@ const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ??
  * @param browser The page.
  * @returns The board name, or null before a board is shown.
  */
-function boardName(browser: PageEvaluator): Promise<string | null> {
+function modelName(browser: PageEvaluator): Promise<string | null> {
 	return browser.eval<string | null>(PANE_NAME_EXPRESSION);
 }
 
@@ -180,7 +180,7 @@ export {
 	SHELL_NOTICES,
 	STAGE_ROOT,
 	THEME_EXPRESSION,
-	boardName,
+	modelName,
 	clickNavigatorRow,
 	currentTheme,
 	dismissNotice,

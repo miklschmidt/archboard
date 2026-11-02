@@ -230,10 +230,10 @@ function fakeShell(
 			},
 			/**
 			 * Boards nothing could reach.
-			 * @param boards The boards.
+			 * @param models The boards.
 			 */
-			reportUnreachable: (boards): void => {
-				shell.unreachable.push(...boards.map(({ paneKey }) => paneKey));
+			reportUnreachable: (models): void => {
+				shell.unreachable.push(...models.map(({ paneKey }) => paneKey));
 			},
 		}),
 	};
@@ -326,7 +326,7 @@ test("a user's gesture during a restore waits for the slot and is never stranded
 	// the restore must not stop the address bar watching what it left running.
 	let granted: Permission | null = null;
 	const claimed = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
+		?.claim({ kind: "model", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			granted = permission;
 			return permission;
@@ -344,13 +344,13 @@ test("the slot is given to one waiting gesture at a time", async () => {
 	mounted = await mount(shell, "?paneA=billing");
 	const order: string[] = [];
 	const first = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
+		?.claim({ kind: "model", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			order.push("first");
 			return permission;
 		});
 	const second = shell.addressing
-		?.claim({ kind: "board", paneId: "A", from: "payments", repository: null })
+		?.claim({ kind: "model", paneId: "A", from: "payments", repository: null })
 		.then((permission) => {
 			order.push("second");
 			return permission;
@@ -376,7 +376,7 @@ test("a user's open pushes a history entry only when it moved the pane", async (
 	const before = window.history.length;
 	// Opening the board the pane already shows is not a move to record.
 	const noMove = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: null,
@@ -409,7 +409,7 @@ test("an open that had nothing to move gives the slot back rather than holding i
 	// Opening the board the pane already shows moves nothing, so there is
 	// nothing to wait for; whoever asked next must not be left holding on.
 	const first = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: null,
@@ -418,7 +418,7 @@ test("an open that had nothing to move gives the slot back rather than holding i
 		first.move.done("payments", null);
 	}
 	const second = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: null,
@@ -434,7 +434,7 @@ test("an address spelled one way and resolved another still gives the slot back"
 	// that, so it is the board it says it opened that decides whether the pane
 	// has anything to move to.
 	const first = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: null,
@@ -443,7 +443,7 @@ test("an address spelled one way and resolved another still gives the slot back"
 		first.move.done("payments", null);
 	}
 	const second = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: null,
@@ -482,7 +482,7 @@ test("a person opening the same board in another repository has moved, and it wa
 	await settle();
 	const before = window.history.length;
 	const permission = await shell.addressing?.claim({
-		kind: "board",
+		kind: "model",
 		paneId: "A",
 		from: "payments",
 		repository: "github.com/acme/shop",

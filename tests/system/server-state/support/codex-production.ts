@@ -305,6 +305,6 @@ export const productionPane = (
 	paneId,
 	primary,
 	focused,
-	board: "scratch",
+	paneKey: "scratch",
 	rect: { x: focused ? 640 : 0, y: 0, width: 640, height: 800 },
 });

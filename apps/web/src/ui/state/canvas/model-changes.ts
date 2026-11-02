@@ -19,19 +19,19 @@
  * version. Two repositories can each have a board of the same name, and news of
  * one is not news of the other.
  */
-type ModelChangeListener = (vault: string, board: string, version: number) => void;
+type ModelChangeListener = (vault: string, model: string, version: number) => void;
 
 const listeners = new Set<ModelChangeListener>();
 
 /**
  * Tell every pane that a semantic board has a new version.
  * @param vault The vault of the socket the news came on.
- * @param board The board key the server announced.
+ * @param model The board key the server announced.
  * @param version The version the board is at now.
  */
-function announceModelChange(vault: string, board: string, version: number): void {
+function announceModelChange(vault: string, model: string, version: number): void {
 	for (const listener of listeners) {
-		listener(vault, board, version);
+		listener(vault, model, version);
 	}
 }
 

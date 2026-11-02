@@ -111,7 +111,7 @@ const bindings = [
 	),
 ] as const;
 
-const board = LegacyBoardSchema.parse({
+const document = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board1",
@@ -322,12 +322,12 @@ beforeAll(async () => {
 	for (let at = 0; at < 31; at += 1) write(`bulk/${at}.txt`, "bulk\n");
 	large = commit("change second resource in a large commit");
 	const lens: typeof LensModule = await import("#tests/runtime/support/history-lens/lens.ts");
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	locality = LocalityAnswerSchema.parse(
-		await lens.createVariantLocality().read(scratch, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(scratch, document, current, new Date("2000-01-01")),
 	);
-	const request = { vault: scratch, board, against: current, base };
+	const request = { vault: scratch, document, against: current, base };
 	const answer = FootprintAnswerSchema.parse(await lens.readVariantFootprint(request));
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	footprint = answer.changed;

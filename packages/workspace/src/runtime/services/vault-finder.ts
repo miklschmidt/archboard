@@ -221,7 +221,7 @@ function notFoundMessage(
 }
 
 /** How many board names a refusal gives for one vault. It counts the rest. */
-const NAMED_BOARDS = 5;
+const NAMED_MODELS = 5;
 
 /**
  * One vault a refusal names, in words.
@@ -229,7 +229,7 @@ const NAMED_BOARDS = 5;
  * @returns The phrase.
  */
 function holdsPhrase(vault: BoundVault): string {
-	const named = vault.models.slice(0, NAMED_BOARDS).map((board) => JSON.stringify(board));
+	const named = vault.models.slice(0, NAMED_MODELS).map((model) => JSON.stringify(model));
 	const more = vault.models.length - named.length;
 	return `${vault.holder} holds ${named.join(", ")}${more > 0 ? ` and ${String(more)} more` : ""}.`;
 }

@@ -61,7 +61,7 @@ function namesIn(at: string, prefix: string, depth: number, entry: fs.Dirent): s
 			? namesUnder(path.join(at, entry.name), `${prefix}${entry.name}/`, depth + 1)
 			: [];
 	}
-	return entry.isFile() ? boardName(prefix, entry.name) : [];
+	return entry.isFile() ? modelName(prefix, entry.name) : [];
 }
 
 /**
@@ -70,7 +70,7 @@ function namesIn(at: string, prefix: string, depth: number, entry: fs.Dirent): s
  * @param file The file's own name.
  * @returns The board name, or nothing.
  */
-function boardName(prefix: string, file: string): string[] {
+function modelName(prefix: string, file: string): string[] {
 	return file.endsWith(LEGACY_BOARD_FILE_SUFFIX)
 		? [`${prefix}${file.slice(0, -LEGACY_BOARD_FILE_SUFFIX.length)}`]
 		: [];

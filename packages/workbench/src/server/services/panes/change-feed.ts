@@ -47,7 +47,7 @@ function changed(message: ArchitectureEvent): void {
 	const event: SettledModelChange = {
 		cursor,
 		vault: message.vault,
-		board: `model:${message.model}`,
+		model: `model:${message.model}`,
 		at: new Date().toISOString(),
 		significance: "structural",
 		text: `Architecture ${message.model} changed at revision ${message.revision.digest}`,

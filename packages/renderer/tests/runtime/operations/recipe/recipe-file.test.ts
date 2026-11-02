@@ -27,11 +27,11 @@ import { EXPORT_DOCUMENT } from "#tests/runtime/support/export-picture.ts";
  */
 async function drawnSvg(
 	recipe: boolean,
-	board = EXPORT_DOCUMENT,
+	document = EXPORT_DOCUMENT,
 	view = "intake",
 ): Promise<string> {
 	const outcome = await renderLegacyBoard(
-		board,
+		document,
 		{ theme: "light", variant: "draft", view, legend: "vertical" },
 		DEFAULT_SEMANTIC_POLICY,
 		recipe ? { vault: { repo: "github.com/example/vault" } } : undefined,

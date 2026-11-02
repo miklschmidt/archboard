@@ -125,7 +125,9 @@ for (const item of items) {
 	const page = `${Math.round(drawn.width)}x${Math.round(drawn.height)}`;
 	results[key] = { page, reads, measures };
 	if (!header) {
-		console.log(["board", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "));
+		console.log(
+			["document", "reads", "page", ...measures.map((measure) => measure.name)].join(" | "),
+		);
 		header = true;
 	}
 	console.log([key, reads, page, ...measures.map(shown)].join(" | "));

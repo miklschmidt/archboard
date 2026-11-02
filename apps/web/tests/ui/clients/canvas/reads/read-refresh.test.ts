@@ -36,14 +36,14 @@ const SHOP = "/work/shop/.archboard/vault";
 const BILLING = "/work/billing/.archboard/vault";
 
 /** The one board each vault holds, as the fake server has it now. */
-interface Board {
+interface Model {
 	readonly name: string;
 	readonly formerNames: readonly string[];
 	version: number;
 }
 
 /** What the fake server holds, by vault. */
-const server = new Map<string, Board>();
+const server = new Map<string, Model>();
 /** Every document read the server was asked for, as `vault|name`. */
 const asked: string[] = [];
 /** Every other request the server was asked, as `path`, or `path|vault` in a vault. */
@@ -104,12 +104,12 @@ function said(data: unknown): { name: string | undefined; version: number | unde
 
 /**
  * Whether a name opens the vault's board: its name or a former one, in any case.
- * @param board The board.
+ * @param model The board.
  * @param name The name asked for.
  * @returns True when it opens it.
  */
-function opens(board: Board, name: string): boolean {
-	return [board.name, ...board.formerNames].some((one) => one.toLowerCase() === name.toLowerCase());
+function opens(model: Model, name: string): boolean {
+	return [model.name, ...model.formerNames].some((one) => one.toLowerCase() === name.toLowerCase());
 }
 
 /**
@@ -121,11 +121,11 @@ function opens(board: Board, name: string): boolean {
  */
 function readDocument(vault: string, name: string, signal?: AbortSignal): Promise<unknown> {
 	asked.push(`${vault}|${name}`);
-	const board = server.get(vault);
-	if (board === undefined || !opens(board, name)) {
+	const model = server.get(vault);
+	if (model === undefined || !opens(model, name)) {
 		return Promise.reject(new Error(`no board ${name}`));
 	}
-	const answer = { ...board };
+	const answer = { ...model };
 	const { promise, resolve, reject } = Promise.withResolvers<unknown>();
 	signal?.addEventListener("abort", function cancelled() {
 		reject(new Error("cancelled"));
@@ -149,15 +149,15 @@ function answerRoute(input: string | URL | Request): Promise<Response> {
 	const url = new URL(input instanceof Request ? input.url : String(input), "http://archboard");
 	const vault = url.searchParams.get("vault");
 	requested.push(vault === null ? url.pathname : `${url.pathname}|${vault}`);
-	const board = vault === null ? undefined : server.get(vault);
-	const boards =
-		board === undefined
+	const model = vault === null ? undefined : server.get(vault);
+	const models =
+		model === undefined
 			? []
 			: [
 					{
-						name: board.name,
-						key: board.name.toLowerCase(),
-						version: board.version,
+						name: model.name,
+						key: model.name.toLowerCase(),
+						version: model.version,
 						opens: "v1",
 						variants: [],
 						links: [],
@@ -165,7 +165,7 @@ function answerRoute(input: string | URL | Request): Promise<Response> {
 					},
 				];
 	return Promise.resolve(
-		new Response(JSON.stringify({ success: true, levels: ["system"], boards }), {
+		new Response(JSON.stringify({ success: true, levels: ["system"], boards: models }), {
 			headers: { "Content-Type": "application/json" },
 		}),
 	);
@@ -201,13 +201,13 @@ async function drawFromDocument(
 	client: QueryClient,
 ): Promise<SemanticRender> {
 	const document = said(
-		await client.fetchQuery(retainedDocumentQuery(request.vault, request.board)),
+		await client.fetchQuery(retainedDocumentQuery(request.vault, request.model)),
 	);
 	drawn.push(request.vault);
 	return {
 		kind: "drawn",
 		success: true,
-		board: document.name ?? request.board,
+		model: document.name ?? request.model,
 		version: document.version ?? 0,
 		variant: { id: "v1", name: "state", lifecycle: "current" },
 		view: null,
@@ -268,7 +268,7 @@ function pane(
 	name: string,
 ): { versions: () => (number | undefined)[]; close: () => void } {
 	const document = new QueryObserver(client, retainedDocumentQuery(vault, name));
-	const picture = new QueryObserver(client, semanticRenderQuery({ vault, board: name }));
+	const picture = new QueryObserver(client, semanticRenderQuery({ vault, model: name }));
 	const stops = [document.subscribe(ignore), picture.subscribe(ignore)];
 	/**
 	 * The versions of the document and the picture on screen.
@@ -391,13 +391,13 @@ test("a listing reads again a board this tab drew ahead at another version, by a
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	// Drawn ahead at version 1 in both vaults, with no pane showing either, the
 	// shop's board asked by another spelling than the key it is listed under.
-	await client.fetchQuery(semanticRenderQuery({ vault: SHOP, board: "PAYMENTS" }));
-	await client.fetchQuery(semanticRenderQuery({ vault: BILLING, board: "payments" }));
+	await client.fetchQuery(semanticRenderQuery({ vault: SHOP, model: "PAYMENTS" }));
+	await client.fetchQuery(semanticRenderQuery({ vault: BILLING, model: "payments" }));
 
 	// Listed at the version it was drawn at, it is not read again.
 	await client.fetchQuery(retainedListingQuery(SHOP));
 	asked.length = 0;
-	await client.fetchQuery(semanticRenderQuery({ vault: SHOP, board: "PAYMENTS" }));
+	await client.fetchQuery(semanticRenderQuery({ vault: SHOP, model: "PAYMENTS" }));
 	expect(asked).toEqual([]);
 
 	server.get(SHOP)!.version = 2;
@@ -406,9 +406,9 @@ test("a listing reads again a board this tab drew ahead at another version, by a
 
 	// Opening the shop's board shows the version listed; the billing board,
 	// whose vault was not listed, is still the one drawn ahead.
-	const opened = await client.fetchQuery(semanticRenderQuery({ vault: SHOP, board: "PAYMENTS" }));
+	const opened = await client.fetchQuery(semanticRenderQuery({ vault: SHOP, model: "PAYMENTS" }));
 	expect(opened.version).toBe(2);
-	const other = await client.fetchQuery(semanticRenderQuery({ vault: BILLING, board: "payments" }));
+	const other = await client.fetchQuery(semanticRenderQuery({ vault: BILLING, model: "payments" }));
 	expect(other.version).toBe(1);
 	client.clear();
 });

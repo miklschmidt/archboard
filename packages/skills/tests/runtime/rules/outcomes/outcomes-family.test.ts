@@ -35,9 +35,9 @@ function beat(id: string, subjects: readonly string[]): Beats[number] {
  * @returns The reading.
  */
 function explaining(walkthroughs: Walkthroughs): Reading {
-	const board = structuredClone(AFTER);
-	for (const variant of board.variants) variant.content.walkthroughs = walkthroughs;
-	return { ...READING, boards: new Map([["Flask", board]]) };
+	const document = structuredClone(AFTER);
+	for (const variant of document.variants) variant.content.walkthroughs = walkthroughs;
+	return { ...READING, documents: new Map([["Flask", document]]) };
 }
 
 describe("family checks", () => {
@@ -181,7 +181,7 @@ describe("family checks", () => {
 				flow.steps = flow.steps.filter((step) => step.id !== "s3");
 			}
 		}
-		const reading: Reading = { ...READING, boards: new Map([["Flask", after]]) };
+		const reading: Reading = { ...READING, documents: new Map([["Flask", after]]) };
 		const verdicts = evaluateOutcomes(
 			[
 				{ check: "comparison-standing", board: "Flask", variant: "No provider", removed: 4 },
@@ -208,7 +208,7 @@ describe("family checks", () => {
 		const reading = {
 			...READING,
 			snapshot: new Map([["Flask", planned]]),
-			boards: new Map([["Flask", planned]]),
+			documents: new Map([["Flask", planned]]),
 		};
 		expect(
 			passes(
@@ -250,8 +250,8 @@ describe("vault-level checks", () => {
 		];
 		expect(passes(checks)).toEqual([true, false, true, false, true, true, false]);
 		expect(renderRequests(checks)).toEqual([
-			{ board: "Flask", variant: undefined, view: "Session path" },
-			{ board: "Flask", variant: "No provider", view: "Session path" },
+			{ document: "Flask", variant: undefined, view: "Session path" },
+			{ document: "Flask", variant: "No provider", view: "Session path" },
 		]);
 		expect(inspectionRequests(checks)).toHaveLength(2);
 	});
@@ -299,7 +299,7 @@ describe("guardrails", () => {
 	];
 	const context = {
 		snapshot: READING.snapshot,
-		boards: READING.boards,
+		documents: READING.documents,
 		configBefore: "a",
 		configAfter: "a",
 		commands,
@@ -333,7 +333,7 @@ describe("guardrails", () => {
 		const verdict = evaluateGuardrails(["ids-stable"], {
 			...context,
 			snapshot: new Map([["Flask", BEFORE]]),
-			boards: new Map([["Flask", after]]),
+			documents: new Map([["Flask", after]]),
 		})[0];
 		expect(verdict?.passed).toBe(true);
 		expect(verdict?.detail).not.toContain("Dispatch");
@@ -392,7 +392,7 @@ describe("guardrails", () => {
 	test("removing a board violates a read-only scenario even when no remaining board version moved", () => {
 		const verdicts = evaluateGuardrails(["no-writes"], {
 			...context,
-			boards: new Map(),
+			documents: new Map(),
 		});
 		expect(verdicts[0]?.passed).toBe(false);
 	});
@@ -432,7 +432,7 @@ describe("relationship identity", () => {
 	const judge = (after: LegacyBoard) =>
 		evaluateGuardrails(["ids-stable"], {
 			snapshot: new Map([["Flask", before]]),
-			boards: new Map([["Flask", after]]),
+			documents: new Map([["Flask", after]]),
 			configBefore: "a",
 			configAfter: "a",
 			commands: [],

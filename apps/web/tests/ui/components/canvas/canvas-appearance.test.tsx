@@ -72,7 +72,7 @@ function styledDrawing(color: string): Record<string, unknown> {
 }
 
 /** A readable architecture whose applied appearance the legend explains. */
-const BOARD = {
+const MODEL = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "b1",
@@ -101,11 +101,11 @@ const BOARD = {
 
 test("the legend explains the picture and survives a policy-only restyle", async () => {
 	server.reply = { status: 200, body: styledDrawing("green") };
-	server.documents["pipeline"] = BOARD;
+	server.documents["pipeline"] = MODEL;
 	mountStage("n1");
 	await settle();
 	await settle();
-	openSidebarTab("board");
+	openSidebarTab("model");
 	expect(part("semantic-legend").textContent).toContain("API");
 	pressKey("ArrowLeft");
 	act(() => {
@@ -137,7 +137,7 @@ test("traffic changes are explained without animation numbers", async () => {
 	];
 	const edge = { id: "e1", from: "n1", to: "n2", kind: "event", traffic: { speed: 47, volume: 3 } };
 	server.documents["pipeline"] = {
-		...BOARD,
+		...MODEL,
 		variants: [
 			{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes, edges: [edge] } },
 			{

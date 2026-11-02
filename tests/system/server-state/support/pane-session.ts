@@ -4,7 +4,7 @@ import type { CapturedResponse, RequestOptions } from "./http.ts";
 
 export interface PaneEvent {
 	type: string;
-	board?: string;
+	model?: string;
 	requestId?: string;
 	[key: string]: unknown;
 }
@@ -23,8 +23,8 @@ export interface PaneSession {
 	readonly events: PaneEvent[];
 	readonly registration: Record<string, unknown>;
 	mark(): number;
-	board(): string | undefined;
-	register(board?: string | null): Promise<void>;
+	model(): string | undefined;
+	register(model?: string | null): Promise<void>;
 	sync(): Promise<void>;
 	waitFor(type: string, start?: number, timeoutMs?: number): Promise<PaneEvent | undefined>;
 	close(): Promise<void>;
@@ -36,7 +36,7 @@ export async function openPaneSession(
 	options: {
 		clientId: string;
 		x?: number;
-		board?: string;
+		model?: string;
 		primary?: boolean;
 		focused?: boolean;
 	},
@@ -53,11 +53,11 @@ export async function openPaneSession(
 		base,
 		clientId: options.clientId,
 		vault: requireVault(request.vault),
-		...(options.board === undefined ? {} : { preferredModel: options.board }),
-		register: (board, signal) =>
+		...(options.model === undefined ? {} : { preferredModel: options.model }),
+		register: (model, signal) =>
 			request("/api/panes", {
 				method: "POST",
-				body: { ...registration, board },
+				body: { ...registration, paneKey: model },
 				doing: false,
 				signal,
 			}),
@@ -69,8 +69,8 @@ export async function openPaneSession(
 		events: pane.events,
 		registration,
 		mark: () => pane.events.length,
-		board: pane.board,
-		register: async (board = options.board ?? pane.board() ?? null) => pane.register(board),
+		model: pane.model,
+		register: async (model = options.model ?? pane.model() ?? null) => pane.register(model),
 		sync: pane.sync,
 		waitFor: (type, start, timeoutMs) =>
 			pane.waitFor((event) => event.type === type, start, timeoutMs),

@@ -154,7 +154,7 @@ test(
 		);
 		await pollUntil(
 			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
-			(board) => board === "fixedpoint",
+			(shown) => shown === "fixedpoint",
 			"fixedpoint to become the visible board",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);

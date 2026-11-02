@@ -64,7 +64,7 @@ test("the existing agent feed attributes durable canonical edits without legacy 
 		expect.arrayContaining([
 			expect.objectContaining({
 				vault,
-				board: `model:${model.manifest.id}`,
+				model: `model:${model.manifest.id}`,
 				by: "thread-42",
 				origin: "agent",
 				doing: "Plan the initial state",

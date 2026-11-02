@@ -22,12 +22,12 @@ interface UserMove {
 function userMoves(handles: PaneHandles, paneId: string): UserMove {
 	const session = handles.session(paneId);
 	// Both: which of the two really changes is what the pane's next reading says.
-	session?.userChanged("board");
+	session?.userChanged("model");
 	session?.userChanged("variant");
 	return {
 		/** The server refused the move. */
 		failed: (): void => {
-			session?.userChangeFailed("board");
+			session?.userChangeFailed("model");
 			session?.userChangeFailed("variant");
 		},
 	};

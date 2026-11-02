@@ -265,7 +265,7 @@ async function requireCheckout(
 function modelLease(vault: string) {
 	return {
 		vault: dirname(dirname(modelStatePath(vault, ""))),
-		board: `${MODEL_LOCK}-${operationKey(resolve(vault))}`,
+		model: `${MODEL_LOCK}-${operationKey(resolve(vault))}`,
 	};
 }
 
@@ -296,13 +296,13 @@ async function withModelLock<T>(
 		throw error;
 	}
 	const timer = setInterval(
-		() => renewRecord(lease.vault, lease.board, id, MODEL_LOCK_MS.lease),
+		() => renewRecord(lease.vault, lease.model, id, MODEL_LOCK_MS.lease),
 		MODEL_LOCK_MS.renew,
 	);
 	timer.unref();
 	try {
 		return await work(() => {
-			if (modelLockState(lease.vault, lease.board)?.id !== id)
+			if (modelLockState(lease.vault, lease.model)?.id !== id)
 				throw new ArchiveError(
 					"MODEL_BUSY",
 					"The installation lease was lost. Retry through recovery.",
@@ -310,7 +310,7 @@ async function withModelLock<T>(
 		});
 	} finally {
 		clearInterval(timer);
-		releaseHold(lease.vault, lease.board, id);
+		releaseHold(lease.vault, lease.model, id);
 	}
 }
 /**
@@ -333,7 +333,7 @@ function modelBoundaryFailure(
 				recovery: recoveryDetails(journal),
 			};
 		const lease = modelLease(vault);
-		if (modelLockState(lease.vault, lease.board) !== null)
+		if (modelLockState(lease.vault, lease.model) !== null)
 			return blockedRead(
 				"MODEL_BUSY",
 				"An architecture operation is in progress.",

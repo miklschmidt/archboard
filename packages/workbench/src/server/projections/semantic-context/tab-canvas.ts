@@ -18,7 +18,7 @@ function reportedKey(clientId: string): string | null {
 	const report = semanticPaneContextFor(clientId);
 	if (report === null) return null;
 	if (report.architecture != null) return `model:${report.architecture.model}`;
-	return report.board?.name ?? null;
+	return report.model?.name ?? null;
 }
 /**
  * What one tab's canvas holds now, read at the moment it is asked: a pane moves, and leaving a
@@ -29,16 +29,16 @@ function reportedKey(clientId: string): string | null {
  * @returns The boards its panes show and the narrated one, each by aggregate key.
  */
 function canvasOf(tabSessionId: TabSessionId): CoordinatorCallbackCanvas {
-	const boards = [...panes.values()].flatMap((pane) => {
+	const models = [...panes.values()].flatMap((pane) => {
 		if (tabSessionOf(pane.clientId) !== tabSessionId) {
 			return [];
 		}
 		const said = reportedKey(pane.clientId);
-		return [paneKeyOf(pane), said].flatMap((board) =>
-			board === null ? [] : [aggregateKey(board)],
+		return [paneKeyOf(pane), said].flatMap((model) =>
+			model === null ? [] : [aggregateKey(model)],
 		);
 	});
-	return { boards, narrated: narratedModelOf(tabSessionId) };
+	return { models, narrated: narratedModelOf(tabSessionId) };
 }
 
 export { canvasOf };

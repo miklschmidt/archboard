@@ -76,8 +76,8 @@ function variantClause(event: PaneNewsSource, changed: readonly SemanticUserChan
 	if (variant === null) {
 		return "";
 	}
-	const chosen = changed.includes("variant") && !changed.includes("board");
-	const arrivedElsewhere = changed.includes("board") && variant.lifecycle !== "current";
+	const chosen = changed.includes("variant") && !changed.includes("model");
+	const arrivedElsewhere = changed.includes("model") && variant.lifecycle !== "current";
 	return chosen || arrivedElsewhere ? `, variant "${variant.name}"` : "";
 }
 
@@ -88,8 +88,8 @@ function variantClause(event: PaneNewsSource, changed: readonly SemanticUserChan
  */
 function focusNews(event: PaneFocusEvent): string {
 	return event.focus.focused
-		? `The user is now in the pane showing board "${event.board.name}" (data).`
-		: `The user is now in another pane, not the one showing board "${event.board.name}" (data).`;
+		? `The user is now in the pane showing board "${event.model.name}" (data).`
+		: `The user is now in another pane, not the one showing board "${event.model.name}" (data).`;
 }
 
 /**
@@ -104,7 +104,7 @@ function readingNews(event: PaneSelectionEvent, changed: readonly SemanticUserCh
 		changed.includes("view") ? viewClause(event) : "",
 		changed.includes("selection") ? selectionClause(event) : "",
 	];
-	return `The user is now looking at board "${event.board.name}"${clauses.join("")} (data).`;
+	return `The user is now looking at board "${event.model.name}"${clauses.join("")} (data).`;
 }
 
 /**
@@ -120,7 +120,7 @@ function stopsNarration(
 	event: PaneSelectionEvent,
 	changed: readonly SemanticUserChange[],
 ): boolean {
-	if (changed.includes("board")) {
+	if (changed.includes("model")) {
 		return false;
 	}
 	const picked = changed.includes("selection") && event.architecture.selection.count > 0;
@@ -138,11 +138,11 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
 	const by = event.change.origin === "agent" ? "agent" : "external";
 	const writer = by === "agent" ? "by another agent" : "outside this session";
 	return {
-		sentence: `Board "${event.board.name}" was just changed ${writer}${doing} (data).`,
+		sentence: `Board "${event.model.name}" was just changed ${writer}${doing} (data).`,
 		// Narration retains its source and target snapshots. Live edits only update context.
 		stops: false,
 		by,
-		board: event.change.board,
+		model: event.change.model,
 	};
 }
 
@@ -154,14 +154,14 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
  * @returns The news.
  */
 function agentSwitchNews(event: PaneFocusEvent, from: string | null): CoordinatorPaneNews {
-	const now = `board "${event.board.name}"`;
+	const now = `board "${event.model.name}"`;
 	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
-	if (from === event.board.name) {
+	if (from === event.model.name) {
 		sentence = `The pane showing ${now} now shows another reading of it; an agent put it there (data).`;
 	} else if (from !== null) {
 		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
 	}
-	return { sentence, stops: true, by: "agent", board: null };
+	return { sentence, stops: true, by: "agent", model: null };
 }
 
 /**
@@ -174,14 +174,14 @@ function userNews(event: PaneFocusEvent | PaneSelectionEvent): CoordinatorPaneNe
 	const changed = event.userChanged;
 	if (event.kind === "pane_focus") {
 		return changed.includes("focus")
-			? { sentence: focusNews(event), stops: false, by: "user", board: null }
+			? { sentence: focusNews(event), stops: false, by: "user", model: null }
 			: null;
 	}
 	if (changed.length === 0) {
 		return null;
 	}
 	const sentence = readingNews(event, changed);
-	return { sentence, stops: stopsNarration(event, changed), by: "user", board: null };
+	return { sentence, stops: stopsNarration(event, changed), by: "user", model: null };
 }
 
 /**

@@ -132,9 +132,9 @@ interface Pass {
  */
 function skipped(
 	site: ClaimSite,
-	skip: Omit<CodeCheckSkip, "board" | "variant" | "subject">,
+	skip: Omit<CodeCheckSkip, "model" | "variant" | "subject">,
 ): CodeCheckSkip {
-	return { board: site.board, variant: site.variant, subject: site.subject, ...skip };
+	return { model: site.model, variant: site.variant, subject: site.subject, ...skip };
 }
 
 /**
@@ -422,7 +422,7 @@ async function judgeStateRelationships(read: StateToCheck, pass: Pass): Promise<
 	pass.outcome.skipped.push(
 		...judged.skipped,
 		...interfaces.skipped,
-		...unboundSkips(codes, { board: read.board.name, variant: read.variant.id }),
+		...unboundSkips(codes, { model: read.document.name, variant: read.variant.id }),
 	);
 }
 
@@ -455,11 +455,11 @@ async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
 
 /**
  * Every bound part's binding on the boards.
- * @param boards The boards.
+ * @param states The boards.
  * @returns Each binding.
  */
-function partBindings(boards: readonly StateToCheck[]): CodeBinding[] {
-	return boards.flatMap((read) =>
+function partBindings(states: readonly StateToCheck[]): CodeBinding[] {
+	return states.flatMap((read) =>
 		read.variant.content.nodes.flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
 		),
@@ -497,7 +497,7 @@ function timedFacts(facts: FactsPass) {
  * on disk, then its relationships to the evidence between its bound parts.
  * @param vault The vault directory the boards were read from: the checkout that holds
  * it is read for its own repository, and the chosen checkout for every other (ADR 0049).
- * @param boards The boards, each at the variant the check reads.
+ * @param states The boards, each at the variant the check reads.
  * @param signal Cancels the pass, every Git command it runs, every file it
  * reads and every language server it started.
  * @param plans The Terraform or OpenTofu plans an agent named (`--plan`).
@@ -508,16 +508,16 @@ function timedFacts(facts: FactsPass) {
  */
 async function checkCode(
 	vault: string,
-	boards: readonly StateToCheck[],
+	states: readonly StateToCheck[],
 	signal: AbortSignal,
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
 	revisions?: ReadonlyMap<string, string>,
 ): Promise<CodeCheckOutcome> {
-	const inherited = droppedBindings(boards);
-	const asked = boards.flatMap(claimsOf);
-	const documents = documentsOf(boards);
-	const bindings = [...asked.flatMap(pathsOf), ...partBindings(boards), ...inherited, ...documents];
+	const inherited = droppedBindings(states);
+	const asked = states.flatMap(claimsOf);
+	const documents = documentsOf(states);
+	const bindings = [...asked.flatMap(pathsOf), ...partBindings(states), ...inherited, ...documents];
 	const snapshot: RevisionSnapshot = {
 		...(await snapshotCheckoutAccess({ vault, signal, bindings, timeoutMs: null })),
 		...(revisions === undefined ? {} : { revisions }),
@@ -526,8 +526,8 @@ async function checkCode(
 	const checkouts = await readCheckouts(repos, snapshot, signal);
 	const reads =
 		revisions === undefined
-			? await Promise.all(boards.map((read) => atOwnRef(read, checkouts, signal)))
-			: boards;
+			? await Promise.all(states.map((read) => atOwnRef(read, checkouts, signal)))
+			: states;
 	const claims = reads.flatMap(claimsOf);
 	const bound = [...partBindings(reads), ...documents];
 	const refs = await readRefCodes(refReadsOf(claims, bound, snapshot), checkouts, signal);
@@ -559,7 +559,7 @@ async function checkCode(
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
 			await judgeStateRelationships(read, pass);
 		}
-		const dropped = await judgeDroppedParts(boards, { checkouts, facts, signal });
+		const dropped = await judgeDroppedParts(states, { checkouts, facts, signal });
 		pass.outcome.findings.push(...dropped.findings);
 		pass.outcome.skipped.push(...dropped.skipped);
 	} finally {

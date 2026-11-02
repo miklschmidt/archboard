@@ -159,7 +159,7 @@ async function atOwnRef(
 		const checkout = checkouts.get(repo);
 		return checkout?.status === "read" ? checkout.root : undefined;
 	};
-	const nodes = await nodesAtOwnRef(read.board, read.variant, rootOf, { signal });
+	const nodes = await nodesAtOwnRef(read.document, read.variant, rootOf, { signal });
 	return { ...read, variant: { ...read.variant, content: { ...read.variant.content, nodes } } };
 }
 

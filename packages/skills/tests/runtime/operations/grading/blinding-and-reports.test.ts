@@ -35,7 +35,7 @@ const usage = (input: number, output: number) => ({
 	total: input + output,
 });
 
-const BOARD = LegacyBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -79,7 +79,7 @@ const SCENARIO: Scenario = {
 	outcomes: [{ check: "check-clean" }],
 	guardrails: [],
 	guidance: [],
-	captures: [{ label: "board", board: "Flask" }],
+	captures: [{ label: "document", board: "Flask" }],
 };
 
 const RUN: CompletedRun = {
@@ -104,21 +104,21 @@ const RUN: CompletedRun = {
 			exposure: null,
 		},
 	],
-	boards: new Map([["Flask", BOARD]]),
+	documents: new Map([["Flask", DOCUMENT]]),
 	snapshot: new Map(),
 	policy: DEFAULT_SEMANTIC_POLICY,
 	inspections: [
 		{
-			board: "Flask",
+			document: "Flask",
 			group: "request",
 			result: { members: [{ name: "App" }], internalEdges: [], boundaryEdges: [], neighbors: [] },
 			detail: "inspected",
 		},
 	],
-	renders: [{ board: "Flask", file: "/run/renders/render-0.svg" }],
+	renders: [{ document: "Flask", file: "/run/renders/render-0.svg" }],
 	captures: [
 		{
-			label: "board",
+			label: "document",
 			board: "Flask",
 			ok: true,
 			detail: "captured 900×400 of version 2 to capture-0-board.png",
@@ -187,7 +187,7 @@ describe("blinding", () => {
 		expect(JSON.stringify(bundle.captures)).not.toContain("candidate");
 		expect(bundle.captures).toHaveLength(2);
 		expect(bundle.captures[0]).toMatchObject({
-			label: "board",
+			label: "document",
 			ok: true,
 			file: "captures/capture-0-board.png",
 			provenance: { version: 2, width: 900, height: 400, svgSha256: "ab".repeat(32) },
@@ -206,7 +206,7 @@ describe("blinding", () => {
 		const bundle = bundleForGrader(
 			{
 				...RUN,
-				renders: [{ board: "Flask", file: "/batch/runs/candidate/S00/1/renders/render-0.svg" }],
+				renders: [{ document: "Flask", file: "/batch/runs/candidate/S00/1/renders/render-0.svg" }],
 			},
 			"run-0123456789",
 		);
@@ -251,9 +251,9 @@ describe("the grader contract", () => {
 			summary: "fine",
 			concerns: [],
 			visual: {
-				inspectedCaptures: ["board"],
+				inspectedCaptures: ["document"],
 				verdict: "pass",
-				observations: [{ capture: "board", observation: "labels readable, nothing clipped" }],
+				observations: [{ capture: "document", observation: "labels readable, nothing clipped" }],
 			},
 		};
 		expect(parseGraderOutput(JSON.stringify({ runs: [verdict] })).runs[0]?.run).toBe(

@@ -28,13 +28,13 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
  */
 function report(
 	sequence: number,
-	board: string,
+	model: string,
 	selection: readonly string[] = [],
 ): SemanticPaneContext {
 	return {
 		paneId: "pane-a",
 		clientId: "client-a",
-		board: { name: board, key: board.toLowerCase() },
+		model: { name: model, key: model.toLowerCase() },
 		variant: null,
 		view: null,
 		selection: selection.map((id) => ({ id })),

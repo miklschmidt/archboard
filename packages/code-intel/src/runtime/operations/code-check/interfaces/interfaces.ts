@@ -440,8 +440,8 @@ function containerSkip(
 	skip: Pick<CodeCheckSkip, "reason" | "repo" | "ref" | "detail">,
 ): CodeCheckSkip {
 	const subject = nodeSubject(container);
-	const { board, variant } = siteOf(reading.read, "", subject);
-	return { board, variant, subject, ...skip };
+	const { model, variant } = siteOf(reading.read, "", subject);
+	return { model, variant, subject, ...skip };
 }
 
 /**

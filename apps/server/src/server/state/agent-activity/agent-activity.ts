@@ -80,7 +80,7 @@ function createAgentActivity(send: (message: AgentActivityMessage) => void) {
 		if (previous?.activity.model === model) return previous;
 		forget(vault);
 		const entry: Entry = {
-			activity: { board: `model:${model}`, model, claims: [], doing: null },
+			activity: { paneKey: `model:${model}`, model, claims: [], doing: null },
 			linger: null,
 		};
 		entries.set(vault, entry);

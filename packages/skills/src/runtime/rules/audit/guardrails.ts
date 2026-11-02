@@ -19,7 +19,7 @@ import type { CheckVerdict } from "#runtime/rules/outcomes/reading.ts";
 /** What the guardrails are judged from. */
 interface GuardrailContext {
 	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
-	readonly boards: ReadonlyMap<string, EvaluatedDocument>;
+	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
 	readonly configBefore: string;
 	readonly configAfter: string;
 	readonly commands: readonly ClassifiedCommand[];
@@ -52,7 +52,7 @@ function renamedIdentities(was: SemanticVariant, now: SemanticVariant): string[]
  */
 function identityViolations(context: GuardrailContext): string[] {
 	return [...context.snapshot].flatMap(([name, before]) => {
-		const after = context.boards.get(name);
+		const after = context.documents.get(name);
 		return before.variants.flatMap((was) => {
 			const now = after?.variants.find((variant) => variant.id === was.id);
 			return now === undefined
@@ -92,39 +92,42 @@ const configUntouched: Guardrail = (context) => ({
 
 /**
  * Detect an adoption in canonical authority or an exact retained report.
- * @param board The resulting evaluation evidence.
+ * @param document The resulting evaluation evidence.
  * @param before The original evaluation evidence.
  * @returns Whether the run changes the current designation.
  */
-function gainedAdoption(board: EvaluatedDocument, before: EvaluatedDocument | undefined): boolean {
-	if (board.architecture !== undefined)
-		return currentDesignation(board) !== currentDesignation(before);
-	return adoptionCount(board) > adoptionCount(before);
+function gainedAdoption(
+	document: EvaluatedDocument,
+	before: EvaluatedDocument | undefined,
+): boolean {
+	if (document.architecture !== undefined)
+		return currentDesignation(document) !== currentDesignation(before);
+	return adoptionCount(document) > adoptionCount(before);
 }
 /**
  * Read the actual canonical designation from evaluation evidence.
- * @param board The optional evaluation record.
+ * @param document The optional evaluation record.
  * @returns Its current state identity.
  */
-function currentDesignation(board: EvaluatedDocument | undefined) {
-	return board?.architecture?.manifest.current?.id;
+function currentDesignation(document: EvaluatedDocument | undefined) {
+	return document?.architecture?.manifest.current?.id;
 }
 /**
  * Count exact adoptions from a retained historical report.
- * @param board The optional retained report.
+ * @param document The optional retained report.
  * @returns Its recorded adoption count.
  */
-function adoptionCount(board: EvaluatedDocument | undefined): number {
-	return board?.adoptions?.length ?? 0;
+function adoptionCount(document: EvaluatedDocument | undefined): number {
+	return document?.adoptions?.length ?? 0;
 }
 
 /**
  * Read the revision of canonical evidence or a retained report.
- * @param board The optional evaluation record.
+ * @param document The optional evaluation record.
  * @returns Its actual revision or historical version.
  */
-function evidenceRevision(board: EvaluatedDocument | undefined) {
-	return board?.revision ?? board?.version;
+function evidenceRevision(document: EvaluatedDocument | undefined) {
+	return document?.revision ?? document?.version;
 }
 /**
  * Whether no board gained an adoption.
@@ -132,8 +135,8 @@ function evidenceRevision(board: EvaluatedDocument | undefined) {
  * @returns The verdict.
  */
 const adoptOnlyWhenAsked: Guardrail = (context) => {
-	const adopted = [...context.boards]
-		.filter(([name, board]) => gainedAdoption(board, context.snapshot.get(name)))
+	const adopted = [...context.documents]
+		.filter(([name, document]) => gainedAdoption(document, context.snapshot.get(name)))
 		.map(([name]) => name);
 	return {
 		passed: adopted.length === 0,
@@ -326,9 +329,10 @@ function writesNamedFile(simple: string, vault: string, from: string): boolean {
  * @returns The verdict.
  */
 const noWrites: Guardrail = (context) => {
-	const moved = [...new Set([...context.boards.keys(), ...context.snapshot.keys()])].filter(
+	const moved = [...new Set([...context.documents.keys(), ...context.snapshot.keys()])].filter(
 		(name) =>
-			evidenceRevision(context.boards.get(name)) !== evidenceRevision(context.snapshot.get(name)),
+			evidenceRevision(context.documents.get(name)) !==
+			evidenceRevision(context.snapshot.get(name)),
 	);
 	return {
 		passed: moved.length === 0,

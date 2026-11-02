@@ -77,7 +77,7 @@ function useDrillOpen(
 			const follow = async (): Promise<void> => {
 				const reached = await readTarget(target);
 				if (reached.kind === "ready" && current()) {
-					onOpenDown(reached.board.name, reached.variant.id, reached.there);
+					onOpenDown(reached.model.name, reached.variant.id, reached.there);
 				}
 			};
 			void follow();

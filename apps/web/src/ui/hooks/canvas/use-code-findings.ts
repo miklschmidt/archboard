@@ -21,7 +21,7 @@ type RememberedReading = RememberedFindings["readings"][number];
 interface ReadingOnScreen {
 	/** The vault the board is in. */
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 	readonly variant: string;
 	readonly version: number;
 }
@@ -33,16 +33,16 @@ interface ReadingOnScreen {
  * @returns The reading, or null when no pass read exactly that.
  */
 function useCodeFindings(on: Omit<ReadingOnScreen, "vault"> | null): RememberedReading | null {
-	const board = on?.board;
+	const model = on?.model;
 	const variant = on?.variant;
 	const version = on?.version;
 	const select = useCallback(
 		(remembered: RememberedFindings): RememberedReading | null =>
 			remembered.readings.find(
 				(reading) =>
-					reading.board === board && reading.variant === variant && reading.version === version,
+					reading.model === model && reading.variant === variant && reading.version === version,
 			) ?? null,
-		[board, variant, version],
+		[model, variant, version],
 	);
 	const { data } = useQuery({
 		...codeFindingsQuery(usePaneVault()),

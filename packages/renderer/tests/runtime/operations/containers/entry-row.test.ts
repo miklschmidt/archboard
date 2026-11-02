@@ -48,7 +48,7 @@ function documentOf(draft: unknown) {
 	return LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Service",
 		level: "system",
 		version: 1,
@@ -85,11 +85,11 @@ function documentOf(draft: unknown) {
  * @returns The atlas.
  */
 async function atlasOf(
-	board: ReturnType<typeof documentOf>,
+	document: ReturnType<typeof documentOf>,
 	choices: { variant: string; view?: string },
 ): Promise<DiagramAtlas> {
 	const outcome = await renderLegacyBoard(
-		board,
+		document,
 		{ ...choices, theme: "light", layout: "track" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
@@ -158,10 +158,13 @@ test("a child a comparison puts back is never an entry point", async () => {
 		nodes: [...service.nodes, { id: "hook", name: "Webhook", kind: "module", parent: "svc" }],
 		edges: [...service.edges, { id: "notify", from: "client", to: "hook", kind: "call" }],
 	};
-	const board = documentOf(service);
+	const document = documentOf(service);
 	const withHook = LegacyBoardSchema.parse({
-		...board,
-		variants: [{ ...board.variants[0]!, content: orderedFixture(current) }, board.variants[1]!],
+		...document,
+		variants: [
+			{ ...document.variants[0]!, content: orderedFixture(current) },
+			document.variants[1]!,
+		],
 	});
 	const atlas = await atlasOf(withHook, { variant: "draft", view: "Everything" });
 	expect(atlas.nodes["hook"]).toBeDefined();

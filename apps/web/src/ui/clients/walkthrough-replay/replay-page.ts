@@ -99,7 +99,7 @@ function drawAgainst(against: string): void {
 function modelPending(rendering: Rendering): string | null {
 	const { reading, talk } = rendering;
 	if (talk.architecture !== undefined) return canonicalPending(talk.architecture, reading);
-	if (reading?.board == null || !sameModelName(reading.board.name, talk.board.name)) {
+	if (reading?.model == null || !sameModelName(reading.model.name, talk.board.name)) {
 		return `the pane to draw ${talk.board.name}`;
 	}
 	return reading.version === talk.board.version
@@ -141,8 +141,8 @@ function paintersStarting(rendering: Rendering): boolean {
 function pendingOf(rendering: Rendering): string | null {
 	if (rendering.client.isFetching() > 0) return "the board's picture to be drawn";
 	if (paintersStarting(rendering)) return "the painter to start";
-	const board = modelPending(rendering);
-	if (board !== null) return board;
+	const model = modelPending(rendering);
+	if (model !== null) return model;
 	return stepPending(rendering);
 }
 
@@ -163,7 +163,7 @@ function stepPending(rendering: Rendering): string | null {
  */
 function violationsOf(rendering: Rendering): readonly string[] {
 	const moved = rendering.clock.violations().map((violation) => violation.what);
-	const read = rendering.foreign.map((board) => `The board ${board} was read, not the talk's.`);
+	const read = rendering.foreign.map((model) => `The board ${model} was read, not the talk's.`);
 	return [...moved, ...read];
 }
 
@@ -240,7 +240,7 @@ class WalkthroughReplay {
 			beat: null,
 			next: 0,
 		};
-		readRetainedFrom(talkReads(talk, (board) => rendering.foreign.push(board)));
+		readRetainedFrom(talkReads(talk, (model) => rendering.foreign.push(model)));
 		if (talk.board.against !== undefined) drawAgainst(talk.board.against);
 		this.#rendering = rendering;
 		createRoot(this.#root).render(

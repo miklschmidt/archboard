@@ -243,9 +243,9 @@ function isNarrowed(reading: SceneReading): boolean {
  * @returns The way the picture leaves, and the name of the destination.
  */
 function departureTo(from: AcceptedScene, to: SceneRequest): Departure {
-	const board = destinationName(to);
+	const model = destinationName(to);
 	if (from.reading.grammar !== "architecture" || to.reading.grammar !== "architecture")
-		return { way: "across", toward: null, board };
+		return { way: "across", toward: null, model };
 	const { scope } = to.reading;
 	const way = wayBetween(to.model, from.reading.scope, scope);
 	const toward = way === "into" ? towardOf(from, to.model, scope) : null;
@@ -253,7 +253,7 @@ function departureTo(from: AcceptedScene, to: SceneRequest): Departure {
 		way === "across"
 			? sideOf(moduleOrder(to.projection.depicted), from.reading.scope, scope)
 			: undefined;
-	return { way, toward, side, board };
+	return { way, toward, side, model };
 }
 
 /**
@@ -316,7 +316,7 @@ function acceptScene(
 		...request,
 		key: sceneKey(request),
 		drawing,
-		picture: { ...drawing, board: sceneModel(request.reading), view: sceneView(request.reading) },
+		picture: { ...drawing, model: sceneModel(request.reading), view: sceneView(request.reading) },
 		heading: before === null ? null : departureTo(before, request),
 		selected,
 	};
@@ -386,7 +386,7 @@ function nextScene(
  */
 function leavingTo(scene: AcceptedScene | null, request: SceneRequest): Departure | null {
 	if (scene === null || request.grammar === null || request.presentation !== undefined) return null;
-	return scene.picture.board === sceneModel(request.reading) ? null : departureTo(scene, request);
+	return scene.picture.model === sceneModel(request.reading) ? null : departureTo(scene, request);
 }
 
 /** How a reader goes from the scene on screen to a module. */

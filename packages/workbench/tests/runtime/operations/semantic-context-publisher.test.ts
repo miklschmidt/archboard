@@ -77,7 +77,7 @@ describe("semantic context publisher", () => {
 			source: "pane_focus",
 			feedId: "feed-1",
 			repository: "archboard",
-			board: {
+			model: {
 				key: "payments",
 				name: "Payments",
 				vault: "/work/.archboard/vault",
@@ -141,7 +141,7 @@ describe("semantic context publisher", () => {
 	test("builds an operation brief from the exact supplied pane instead of focused state", () => {
 		const h = harness();
 		const exact = context(h.ids, {
-			board: {
+			model: {
 				key: "ledger",
 				name: "Ledger",
 				vault: "/work/.archboard/vault",
@@ -154,11 +154,11 @@ describe("semantic context publisher", () => {
 		const operationBrief = h.publisher.freshBriefFor(exact);
 		const focusedBrief = h.publisher.freshBrief();
 		expect(operationBrief).toMatchObject({
-			board: { key: "ledger", name: "Ledger", file: "boards/ledger.semantic.json" },
+			model: { key: "ledger", name: "Ledger", file: "boards/ledger.semantic.json" },
 			pane: { paneId: "pane-b", focused: false },
 		});
 		expect(focusedBrief).toMatchObject({
-			board: { key: "payments" },
+			model: { key: "payments" },
 			pane: { paneId: "pane-a", focused: true },
 		});
 		expect([operationBrief.version, h.state.freshReads]).toEqual([11, 1]);
@@ -178,7 +178,7 @@ describe("semantic context publisher", () => {
 		const hostile = context(h.ids, {
 			repository: "r".repeat(SEMANTIC_CONTEXT_LIMITS.repositoryBytes),
 			threadLink: { state: "inspect_only", reason: "界".repeat(170) },
-			board: {
+			model: {
 				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.paneKeyBytes),
 				name: "界".repeat(50),
 				vault: "界".repeat(1_365),
@@ -204,9 +204,9 @@ describe("semantic context publisher", () => {
 		expect(utf8(first.brief)).toBeLessThanOrEqual(SEMANTIC_CONTEXT_LIMITS.briefBytes);
 		expect(first.brief).toContain("…");
 		expect(first.repository).not.toBe("");
-		expect(first.board.key).not.toBe("");
-		expect(first.board.file).not.toBe("");
-		expect(first.board.vault).not.toBe("");
+		expect(first.model.key).not.toBe("");
+		expect(first.model.file).not.toBe("");
+		expect(first.model.vault).not.toBe("");
 		expect(first.pane.paneId).not.toBe("");
 		expect(
 			first.architecture.selection.subjects.every(
@@ -287,7 +287,7 @@ describe("semantic context publisher", () => {
 			}),
 		);
 		h.emitFeed(change(h.state.now - CODEX_REALTIME_MS.contextFreshness - 1));
-		h.emitFeed(change(h.state.now, { board: "other-board", at: "not-a-date" }));
+		h.emitFeed(change(h.state.now, { model: "other-board", at: "not-a-date" }));
 
 		expect(stale[0]?.freshness).toBe("stale");
 		expect(stale[0]?.reasons).toContain("semantic freshness window expired");

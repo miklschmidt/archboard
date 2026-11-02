@@ -16,7 +16,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureDocument,
+	document as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -47,7 +47,7 @@ function git(...args: string[]): void {
  * @param name The board's name.
  * @param variants Its variants.
  */
-function board(name: string, variants: readonly FixtureVariant[]): void {
+function document(name: string, variants: readonly FixtureVariant[]): void {
 	fixtureDocument(vault, name, variants);
 }
 
@@ -99,7 +99,7 @@ beforeAll(async () => {
 	git("add", "-f", "infra/prod.tfvars");
 	git("commit", "-q", "--no-gpg-sign", "-m", "the code");
 	register(scratch, { [SHOP]: shop });
-	board("Shop", [
+	document("Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -230,7 +230,7 @@ beforeAll(async () => {
 			content: { nodes: [part("pO", "Old", { path: "src/old.ts", symbol: "old" }, 1000)] },
 		},
 	]);
-	board("Ops", [
+	document("Ops", [
 		{ id: "v1", name: "Built", lifecycle: "current", content: { nodes: [api] } },
 		{
 			id: "v2",
@@ -239,7 +239,7 @@ beforeAll(async () => {
 			content: { nodes: [part("pN", "Planned", { path: "src/planned.ts" }, 1000)] },
 		},
 	]);
-	board("Idea", [{ id: "v1", name: "Sketch", lifecycle: "draft", content: {} }]);
+	document("Idea", [{ id: "v1", name: "Sketch", lifecycle: "draft", content: {} }]);
 	check = await import("#tests/runtime/support/code-check/pass.ts");
 });
 
@@ -259,7 +259,7 @@ afterAll(() => {
 async function pass(variant?: string) {
 	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
-	const outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	const outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 	return { read, outcome };
 }
 
@@ -274,7 +274,7 @@ function found(outcome: CodeCheckOutcome): string[] {
 
 test("the current variant reports missing binding and anchor paths and symbols", async () => {
 	const { read, outcome } = await pass();
-	expect(read.boards.map((one) => [one.board.name, one.variant.id]).toSorted()).toEqual([
+	expect(read.states.map((one) => [one.document.name, one.variant.id]).toSorted()).toEqual([
 		["Ops", "v1"],
 		["Shop", "v1"],
 	]);
@@ -301,7 +301,7 @@ test("the current variant reports missing binding and anchor paths and symbols",
 test("what the pass cannot read is skipped with its reason, and a reason for a whole checkout names no subject", async () => {
 	const { read, outcome } = await pass();
 	const skips = [...read.skipped, ...outcome.skipped].map(
-		(skip) => `${skip.reason} ${skip.subject?.id ?? skip.repo ?? skip.board}`,
+		(skip) => `${skip.reason} ${skip.subject?.id ?? skip.repo ?? skip.model}`,
 	);
 	expect(skips.toSorted()).toEqual(
 		[

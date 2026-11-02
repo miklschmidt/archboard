@@ -7,7 +7,7 @@ import { openObservedPane } from "./observed-pane.ts";
 
 interface Event {
 	type: string;
-	board?: string;
+	model?: string;
 	[key: string]: unknown;
 }
 
@@ -22,7 +22,7 @@ async function startInitialPaneServer(): Promise<{
 	const closed = new Promise<void>((resolve) => (resolveClosed = resolve));
 	sockets.on("connection", (socket) => {
 		socket.once("close", resolveClosed);
-		socket.send(JSON.stringify({ type: "pane_place", board: "scratch" }));
+		socket.send(JSON.stringify({ type: "pane_place", paneKey: "scratch" }));
 	});
 	await new Promise<void>((resolve, reject) => {
 		server.once("error", reject);
@@ -58,7 +58,7 @@ test("registration timeout aborts the request and closes the accepted socket", a
 			base: server.base,
 			clientId: "registration-timeout",
 			vault: "/vault",
-			register: (_board, signal) => {
+			register: (_model, signal) => {
 				resolveStarted();
 				return new Promise((_resolve, reject) => {
 					signal.addEventListener(

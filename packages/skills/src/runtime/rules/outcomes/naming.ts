@@ -231,30 +231,31 @@ function namedValue<T>(byName: ReadonlyMap<string, T>, asked: string | undefined
  * The variant an address asks for: the product's own addressing first, since
  * `payments@variant` is the contract and a variant id is not a name, and only
  * then the variant whose name reads the same.
- * @param board The board.
+ * @param document The board.
  * @param asked The address.
  * @returns The variant, or undefined.
  */
 function variantNamed(
-	board: EvaluatedDocument,
+	document: EvaluatedDocument,
 	asked: string | undefined,
 ): SemanticVariant | undefined {
 	return (
-		resolveVariant(board, asked) ?? namedSubject(board.variants, (variant) => variant.name, asked)
+		resolveVariant(document, asked) ??
+		namedSubject(document.variants, (variant) => variant.name, asked)
 	);
 }
 
 /**
  * The board view a check names.
- * @param board The board.
+ * @param document The board.
  * @param asked The view's name.
  * @returns The view, or undefined.
  */
 function viewNamed(
-	board: EvaluatedDocument,
+	document: EvaluatedDocument,
 	asked: string | undefined,
 ): EvaluatedDocument["views"][number] | undefined {
-	return namedSubject(board.views, (view) => view.name, asked);
+	return namedSubject(document.views, (view) => view.name, asked);
 }
 
 export {

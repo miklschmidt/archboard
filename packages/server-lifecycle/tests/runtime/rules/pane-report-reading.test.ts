@@ -10,7 +10,7 @@ const pane: PaneRegistration = {
 	clientId: "c1",
 	paneId: "A",
 	vault: "/vault",
-	board: null,
+	paneKey: null,
 	primary: true,
 	focused: true,
 	rect: { x: 0, y: 0, width: 1920, height: 1080 },

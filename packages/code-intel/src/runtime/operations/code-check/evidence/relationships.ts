@@ -99,7 +99,7 @@ interface RelationshipOutcome {
 function siteOf(read: StateToCheck, path: string, subject: ClaimSite["subject"]): ClaimSite {
 	return {
 		file: read.file,
-		board: read.board.name,
+		model: read.document.name,
 		variant: read.variant.id,
 		path: `variants.${read.variant.id}.content.${path}`,
 		subject,
@@ -556,8 +556,8 @@ function judgeOrSkip(
 		return;
 	}
 	const subject = edgeSubjects(reading.read.variant.content)(edge);
-	const { board, variant } = siteOf(reading.read, "", subject);
-	outcome.skipped.push({ board, variant, subject, ...judged });
+	const { model, variant } = siteOf(reading.read, "", subject);
+	outcome.skipped.push({ model, variant, subject, ...judged });
 }
 
 /**

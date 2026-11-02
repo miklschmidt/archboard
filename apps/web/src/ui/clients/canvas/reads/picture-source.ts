@@ -26,10 +26,10 @@ interface PictureSource {
 	/**
 	 * Told the boards the server lists in one vault, whenever it lists them.
 	 * @param vault The vault.
-	 * @param boards The boards, with their versions.
+	 * @param models The boards, with their versions.
 	 * @param client The tab's cache, for drawing listed boards ahead.
 	 */
-	readonly listed?: (vault: string, boards: readonly DocumentEntry[], client: QueryClient) => void;
+	readonly listed?: (vault: string, models: readonly DocumentEntry[], client: QueryClient) => void;
 }
 
 let current: PictureSource | null = null;

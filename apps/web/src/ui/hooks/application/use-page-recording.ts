@@ -28,7 +28,7 @@ import { type WalkthroughRecorder } from "#ui/state/walkthrough-recording/record
 function usePageRecorder(opening: WorkspaceAddress): WalkthroughRecorder | null {
 	return useState(() => {
 		const key = opening.panes[0]?.paneKey ?? null;
-		return openWalkthroughRecorder(window.location.search, paneAddressOf(key)?.board ?? null);
+		return openWalkthroughRecorder(window.location.search, paneAddressOf(key)?.model ?? null);
 	})[0];
 }
 

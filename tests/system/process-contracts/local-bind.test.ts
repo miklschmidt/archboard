@@ -39,7 +39,7 @@ test("default bind owns its PID and exposes only the frontend bundle", async () 
 	const { mkdirSync, symlinkSync } = await import("node:fs");
 	mkdirSync(hiddenParent);
 	symlinkSync(repoRoot, hiddenRepo, "dir");
-	const vault = vaultIn(join(root, "boards"));
+	const vault = vaultIn(join(root, "models"));
 	const server = await startOwnedServer({
 		serverPath: fixture,
 		vault,
@@ -85,7 +85,7 @@ test("rejects foreign health, recovers the port, and refuses a command outside a
 	await using resources = new AsyncDisposableStack();
 	const root = mkdtempSync(join(tmpdir(), "archboard-local-bind-refusal-"));
 	resources.defer(() => rmSync(root, { recursive: true, force: true }));
-	const vault = vaultIn(join(root, "boards"));
+	const vault = vaultIn(join(root, "models"));
 	const port = await freeLoopbackPort();
 	const foreign = await startOwnedPeer({
 		argv: [process.execPath, healthFixture],

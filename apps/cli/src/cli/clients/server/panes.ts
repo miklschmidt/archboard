@@ -27,9 +27,9 @@ interface PaneRef {
 interface PaneLayoutResponse {
 	success: true;
 	pane?: PaneRef | null;
-	closed?: PaneRef & { board: string };
+	closed?: PaneRef & { paneKey: string };
 	paneCount: number;
-	onScreen: Array<{ paneId: string; place: string; board: string }>;
+	onScreen: Array<{ paneId: string; place: string; paneKey: string }>;
 }
 
 type ShowModelResponse = {

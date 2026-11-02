@@ -8,7 +8,7 @@ import { NOTHING_READ } from "#server/projections/semantic-context/architecture-
 type ArchitectureModel = Extract<ArchitectureModelRead, { success: true }>;
 type Reading = Pick<
 	SemanticContextInput,
-	"board" | "architecture" | "description" | "stale" | "staleReasons"
+	"model" | "architecture" | "description" | "stale" | "staleReasons"
 >;
 type Report = ReturnType<typeof semanticPaneContextFor>;
 /**
@@ -61,7 +61,7 @@ function unavailableCanonical(
 	model: Extract<ArchitectureModelRead, { success: false }>,
 ): Reading {
 	return {
-		board: {
+		model: {
 			key: "architecture",
 			name: "Architecture",
 			vault,
@@ -105,7 +105,7 @@ function canonicalSelection(model: ArchitectureModel, report: Report) {
 function availableCanonical(vault: string, model: ArchitectureModel, report: Report): Reading {
 	const state = model.selectedState;
 	const reportedReading = report?.architecture ?? null;
-	const board = {
+	const context = {
 		key: `model:${model.manifest.id}`,
 		name: model.manifest.name,
 		vault,
@@ -114,7 +114,7 @@ function availableCanonical(vault: string, model: ArchitectureModel, report: Rep
 	};
 	if (requiresCapture(model, report))
 		return {
-			board,
+			model: context,
 			architecture: NOTHING_READ,
 			description: JSON.stringify({
 				authority: "canonical",
@@ -127,7 +127,7 @@ function availableCanonical(vault: string, model: ArchitectureModel, report: Rep
 			staleReasons: ["canonical_reading_requires_capture"],
 		};
 	return {
-		board,
+		model: context,
 		architecture: {
 			...NOTHING_READ,
 			selection: canonicalSelection(model, report),

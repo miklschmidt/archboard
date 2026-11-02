@@ -31,7 +31,7 @@ type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 
 /** One render the harness attempted because a check asked for it. */
 interface RenderAttempt {
-	readonly board: string;
+	readonly document: string;
 	readonly variant?: string | undefined;
 	readonly view?: string | undefined;
 	readonly ok: boolean;
@@ -42,7 +42,7 @@ interface RenderAttempt {
 
 /** One group inspection the harness ran because a check asked for it. */
 interface InspectionAttempt {
-	readonly board: string;
+	readonly document: string;
 	readonly group: string;
 	readonly variant?: string | undefined;
 	readonly result: InspectedGroup | null;
@@ -81,7 +81,7 @@ interface InspectedGroup {
 /** Everything a run's checks can see. */
 interface Reading {
 	/** Every board in the vault after the author ran, by name. */
-	readonly boards: ReadonlyMap<string, EvaluatedDocument>;
+	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
 	/** Every board as the fixtures left it, before the author ran. */
 	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	/** The vault policy as configured after the run. */
@@ -111,12 +111,12 @@ type Finding = Omit<CheckVerdict, "check">;
  * one's place: on a board nobody has built there is no current variant, and a
  * check naming none fails there rather than judging a proposal as the
  * implemented architecture.
- * @param board The board.
+ * @param document The board.
  * @param asked The variant's id or name, when the check names one.
  * @returns The variant, or undefined when the board has no such variant.
  */
-function variantOf(board: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
-	return asked === undefined ? currentVariant(board) : variantNamed(board, asked);
+function variantOf(document: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
+	return asked === undefined ? currentVariant(document) : variantNamed(document, asked);
 }
 
 /**
@@ -192,26 +192,26 @@ function finding(passed: boolean, detail: string): Finding {
 /**
  * Looks a board and variant up for a check, or says which is missing.
  * @param reading The reading.
- * @param board The board's name.
+ * @param document The board's name.
  * @param variant The variant, when named.
  * @returns The content, or a failed finding.
  */
 function located(
 	reading: Reading,
-	board: string | undefined,
+	document: string | undefined,
 	variant: string | undefined,
-): { readonly board: EvaluatedDocument; readonly variant: SemanticVariant } | Finding {
-	const found = namedValue(reading.boards, board);
-	if (found === undefined) return finding(false, `board "${board ?? "?"}" is not in the vault`);
+): { readonly document: EvaluatedDocument; readonly variant: SemanticVariant } | Finding {
+	const found = namedValue(reading.documents, document);
+	if (found === undefined) return finding(false, `board "${document ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
 	if (chosen === undefined)
 		return finding(
 			false,
 			variant === undefined
-				? `"${board}" has no current variant; a check on it names the variant it means`
-				: `variant "${variant}" is not on "${board}"`,
+				? `"${document}" has no current variant; a check on it names the variant it means`
+				: `variant "${variant}" is not on "${document}"`,
 		);
-	return { board: found, variant: chosen };
+	return { document: found, variant: chosen };
 }
 
 /**

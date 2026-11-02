@@ -14,20 +14,20 @@ import type { SemanticNode } from "#shared/schemas/content.ts";
 
 /**
  * The variants a variant was branched from, nearest first.
- * @param board The board.
+ * @param model The board.
  * @param variant The variant.
  * @returns Its parent, the parent's parent, and so on.
  */
 function ancestorsOf(
-	board: Pick<LegacyBoard, "variants">,
+	model: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant[] {
 	const chain: SemanticVariant[] = [];
-	let next = board.variants.find((one) => one.id === variant.parent);
+	let next = model.variants.find((one) => one.id === variant.parent);
 	while (next !== undefined && !chain.includes(next)) {
 		chain.push(next);
 		const child = next;
-		next = board.variants.find((one) => one.id === child.parent);
+		next = model.variants.find((one) => one.id === child.parent);
 	}
 	return chain;
 }
@@ -59,18 +59,18 @@ function refsIn(variants: readonly SemanticVariant[], repo: string): Set<string>
 /**
  * The refs a draft could be read against in one repository: the refs its
  * bindings name that no variant before it names, else every ref they name.
- * @param board The board.
+ * @param model The board.
  * @param variant The draft.
  * @param repo The repository.
  * @returns The refs, sorted; none when the draft names no ref there.
  */
 function draftRefs(
-	board: Pick<LegacyBoard, "variants">,
+	model: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	repo: string,
 ): string[] {
 	const named = refsIn([variant], repo);
-	const earlier = refsIn(ancestorsOf(board, variant), repo);
+	const earlier = refsIn(ancestorsOf(model, variant), repo);
 	const own = [...named].filter((ref) => !earlier.has(ref));
 	return (own.length > 0 ? own : [...named]).toSorted();
 }
@@ -95,19 +95,19 @@ interface OwnRef {
  * they all name), that ref. A repository where the draft names no ref, or
  * several of its own, is absent: its parts are read part by part. A variant
  * that is not a draft has none.
- * @param board The board.
+ * @param model The board.
  * @param variant The variant.
  * @returns The ref the draft is read at, by repository.
  */
 function ownRefs(
-	board: Pick<LegacyBoard, "variants">,
+	model: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 ): Map<string, OwnRef> {
 	const own = new Map<string, OwnRef>();
 	if (variant.lifecycle !== "draft") return own;
 	const { nodes } = variant.content;
 	for (const repo of new Set(nodes.flatMap((node) => node.binding?.repo ?? []))) {
-		const found = ownRefIn(board, variant, repo);
+		const found = ownRefIn(model, variant, repo);
 		if (found !== undefined) own.set(repo, found);
 	}
 	return own;
@@ -115,17 +115,17 @@ function ownRefs(
 
 /**
  * The one ref a draft is read at in a repository.
- * @param board The board.
+ * @param model The board.
  * @param variant The draft.
  * @param repo The repository.
  * @returns The ref and a binding that names it, or undefined when the draft names none or several of its own.
  */
 function ownRefIn(
-	board: Pick<LegacyBoard, "variants">,
+	model: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	repo: string,
 ): OwnRef | undefined {
-	const refs = draftRefs(board, variant, repo);
+	const refs = draftRefs(model, variant, repo);
 	const [ref] = refs;
 	if (refs.length !== 1 || ref === undefined) return undefined;
 	const binding = variant.content.nodes.find((node) => refOf(node, repo)[0] === ref)?.binding;

@@ -37,7 +37,7 @@ function useWalkthroughBeat(
 		[playback.walkthrough.id, first],
 	);
 	const position = useWalkthrough(
-		{ board: model.manifest.id, variant: model.checkpoint?.id },
+		{ model: model.manifest.id, variant: model.checkpoint?.id },
 		offered,
 		driven === undefined ? initial : drivenPlace(driven, playback, caption.beats.length),
 	);

@@ -60,16 +60,16 @@ async function listen(app: express.Express): Promise<string> {
  * @param warned The boards it found something on.
  * @returns The answer.
  */
-function answerOver(boards: readonly string[], warned: readonly string[]): CodeCheckAnswer {
+function answerOver(states: readonly string[], warned: readonly string[]): CodeCheckAnswer {
 	return {
 		timings: [],
-		boards: boards.map((board) => ({ board, variant: "v1", version: 3 })),
-		findings: warned.map((board) => ({
+		states: states.map((model) => ({ model, variant: "v1", version: 3 })),
+		findings: warned.map((document) => ({
 			code: "ANCHOR_SYMBOL_MISSING",
 			severity: "warning",
-			file: `${board}.semantic.json`,
+			file: `${document}.semantic.json`,
 			path: "variants[0].content.edges[0].anchor",
-			board,
+			model: document,
 			variant: "v1",
 			subject: { kind: "edge", id: "e1", name: "A -> B" },
 			message: "The anchored file neither defines nor references writeBoard.",
@@ -125,7 +125,7 @@ async function readFindings(base: string, vault = ownVault): Promise<Map<string,
 	const reply = await fetch(`${base}/api/vault/code-findings?${named(vault)}`);
 	expect(reply.status).toBe(200);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
-	return new Map(readings.map((reading) => [reading.board, reading.findings.length]));
+	return new Map(readings.map((reading) => [reading.model, reading.findings.length]));
 }
 
 test("a pass fills the memory, and reading it starts no pass", async () => {
@@ -137,11 +137,11 @@ test("a pass fills the memory, and reading it starts no pass", async () => {
 
 	const reply = await fetch(`${base}/api/vault/code-findings?${named()}`);
 	const { readings } = RememberedFindingsSchema.parse(await reply.json());
-	expect(readings.map(({ board, variant, version }) => ({ board, variant, version }))).toEqual([
-		{ board: "orders", variant: "v1", version: 3 },
-		{ board: "payments", variant: "v1", version: 3 },
+	expect(readings.map(({ model, variant, version }) => ({ model, variant, version }))).toEqual([
+		{ model: "orders", variant: "v1", version: 3 },
+		{ model: "payments", variant: "v1", version: 3 },
 	]);
-	expect(readings.find((reading) => reading.board === "orders")?.findings).toHaveLength(1);
+	expect(readings.find((reading) => reading.model === "orders")?.findings).toHaveLength(1);
 	await readFindings(base);
 	expect(passes()).toBe(1);
 });
@@ -189,7 +189,7 @@ test("canonical findings keep the exact model revision and replace only the sele
 	const updatedRevision = { digest: "b".repeat(64), files: [] };
 	const answer: CodeCheckAnswer = {
 		timings: [],
-		boards: [],
+		states: [],
 		models: [{ model: "Shop", state: "Now", revision }],
 		findings: [
 			{

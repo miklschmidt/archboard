@@ -152,7 +152,7 @@ async function semanticsCheckOnServer(
 ): Promise<SemanticsPart> {
 	const started = performance.now();
 	const result = await checkSemanticVaultOnServer(signal, state);
-	return { ...result, timings: [{ check: "board", elapsedMs: performance.now() - started }] };
+	return { ...result, timings: [{ check: "model", elapsedMs: performance.now() - started }] };
 }
 
 /**

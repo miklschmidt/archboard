@@ -26,7 +26,7 @@ function harness(live = true) {
 	const changes: UserPresentationChange[] = [];
 	const port = createPanePresentations({
 		paneFor: (clientId) =>
-			live && clientId === "client-a" ? { clientId: "client-a", board: "pipeline" } : null,
+			live && clientId === "client-a" ? { clientId: "client-a", model: "pipeline" } : null,
 		send(_pane, message) {
 			sent.push(message);
 			return true;
@@ -42,7 +42,7 @@ function harness(live = true) {
 		const report: SemanticPaneContext = {
 			paneId: "pane-a",
 			clientId: "client-a",
-			board: { name: "pipeline", key: "pipeline" },
+			model: { name: "pipeline", key: "pipeline" },
 			variant: null,
 			view: null,
 			selection: [],

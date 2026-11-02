@@ -40,9 +40,9 @@ function nowhere(): boolean {
 
 /** A pane one level down its own board, on a board called api, in whichever vault it is in. */
 const DOWN_IN_API: Parameters<typeof useLevelReading>[0] = {
-	board: "api",
+	model: "api",
 	variant: undefined,
-	trail: [{ board: "overview", variant: undefined, vault: "/any", repository: null }],
+	trail: [{ model: "overview", variant: undefined, vault: "/any", repository: null }],
 	own: 0,
 	open: nowhere,
 	backTo: nowhere,
@@ -100,7 +100,7 @@ test("a view chosen a level down stays with that repository's board", () => {
 
 /** Where the pane in the arrival test is pointed, and what it has drawn. */
 interface Pointed {
-	readonly board: string;
+	readonly model: string;
 	readonly vault: string;
 	readonly arrival: number;
 	/**
@@ -129,12 +129,12 @@ function useHandedMoves(drill: ReturnType<typeof useDrillDown>): void {
  * @returns Nothing to see.
  */
 function DrillProbe(props: Pointed): null {
-	const { board, vault, arrival, onDrawn } = props;
-	const drill = useDrillDown({ board, variant: undefined, arrival, vault, repository: null }, () =>
+	const { model, vault, arrival, onDrawn } = props;
+	const drill = useDrillDown({ model, variant: undefined, arrival, vault, repository: null }, () =>
 		Promise.resolve(true),
 	);
 	useHandedMoves(drill);
-	const shown = `${vault}:${drill.board}`;
+	const shown = `${vault}:${drill.model}`;
 	useEffect(() => {
 		onDrawn(shown);
 	}, [onDrawn, shown]);
@@ -151,7 +151,7 @@ test("a pane that dives into another repository never draws a board of the vault
 		drawn.push(where);
 	};
 	const { rerender } = render(
-		createElement(DrillProbe, { board: "shop", vault: "/shop", arrival: 0, onDrawn }),
+		createElement(DrillProbe, { model: "shop", vault: "/shop", arrival: 0, onDrawn }),
 	);
 	// Down a level in the pane's own vault, then into a board of another repository.
 	act(() => {
@@ -161,10 +161,10 @@ test("a pane that dives into another repository never draws a board of the vault
 		moves.current?.open("ledger", undefined, { vault: "/payments", repository: "payments" });
 	});
 	// The shell moved the pane there.
-	rerender(createElement(DrillProbe, { board: "ledger", vault: "/payments", arrival: 1, onDrawn }));
+	rerender(createElement(DrillProbe, { model: "ledger", vault: "/payments", arrival: 1, onDrawn }));
 
 	expect(drawn).toEqual(["/shop:shop", "/shop:cart", "/payments:ledger"]);
-	expect(moves.current?.trail.map((stop) => stop.board)).toEqual(["shop", "cart"]);
+	expect(moves.current?.trail.map((stop) => stop.model)).toEqual(["shop", "cart"]);
 });
 
 test("a drill asked for before the pane was pointed elsewhere opens nothing over the new board", () => {
@@ -177,12 +177,12 @@ test("a drill asked for before the pane was pointed elsewhere opens nothing over
 		drawn.push(where);
 	};
 	const { rerender } = render(
-		createElement(DrillProbe, { board: "shop", vault: "/shop", arrival: 0, onDrawn }),
+		createElement(DrillProbe, { model: "shop", vault: "/shop", arrival: 0, onDrawn }),
 	);
 	// The reader asked for a card's board, and its flight is still in the air.
 	const asked = moves.current;
 	// Somebody else pointed the pane at another repository's board meanwhile.
-	rerender(createElement(DrillProbe, { board: "ledger", vault: "/payments", arrival: 1, onDrawn }));
+	rerender(createElement(DrillProbe, { model: "ledger", vault: "/payments", arrival: 1, onDrawn }));
 	act(() => {
 		asked?.open("cart", undefined);
 	});

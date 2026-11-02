@@ -43,7 +43,7 @@ const WORKER = {
 };
 const LEDGER = { id: "l", name: "Ledger", kind: "datastore", groups: ["billing"], order: 1000 };
 const GATEWAY = { id: "g", name: "Gateway", kind: "route" };
-const BOARD = content({
+const MODEL = content({
 	nodes: [ORDERS, SHIPPING, HANDLER, QUEUE, WORKER, LEDGER, GATEWAY],
 	edges: [
 		{ id: "e1", from: "g", to: "h", kind: "http" },
@@ -56,18 +56,18 @@ const BOARD = content({
 
 describe("inspecting one group", () => {
 	test("members are explicit, cross containers, and are never their containers", () => {
-		const fulfillment = inspectGroup(BOARD, "fulfillment");
+		const fulfillment = inspectGroup(MODEL, "fulfillment");
 		expect(fulfillment.members.map((node) => node.id)).toEqual(["h", "q", "w"]);
 		expect(fulfillment.internalEdges.map((edge) => edge.id)).toEqual(["e2", "e3"]);
 		expect(fulfillment.boundaryEdges).toEqual([
-			{ edge: BOARD.edges[0]!, direction: "incoming", member: "h", neighbor: "g" },
-			{ edge: BOARD.edges[3]!, direction: "outgoing", member: "w", neighbor: "l" },
+			{ edge: MODEL.edges[0]!, direction: "incoming", member: "h", neighbor: "g" },
+			{ edge: MODEL.edges[3]!, direction: "outgoing", member: "w", neighbor: "l" },
 		]);
 		expect(fulfillment.neighbors.map((node) => node.id)).toEqual(["l", "g"]);
 	});
 
 	test("a node in two groups is a member of both, and a neighbour is counted once", () => {
-		const billing = inspectGroup(BOARD, "billing");
+		const billing = inspectGroup(MODEL, "billing");
 		expect(billing.members.map((node) => node.id)).toEqual(["w", "l"]);
 		expect(billing.internalEdges.map((edge) => edge.id)).toEqual(["e4"]);
 		expect(billing.boundaryEdges.map((edge) => [edge.edge.id, edge.direction])).toEqual([
@@ -78,11 +78,11 @@ describe("inspecting one group", () => {
 	});
 
 	test("a group nobody belongs to is empty rather than an error, and the ids in use are listed once", () => {
-		const nothing = inspectGroup(BOARD, "platform");
+		const nothing = inspectGroup(MODEL, "platform");
 		expect(nothing.members).toEqual([]);
 		expect(nothing.boundaryEdges).toEqual([]);
 		expect(nothing.neighbors).toEqual([]);
-		expect(groupsUsed(BOARD)).toEqual(["billing", "fulfillment"]);
+		expect(groupsUsed(MODEL)).toEqual(["billing", "fulfillment"]);
 	});
 });
 

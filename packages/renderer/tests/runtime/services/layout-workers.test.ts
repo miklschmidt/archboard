@@ -29,7 +29,7 @@ afterAll(() => {
  * @param gateway The name of one card.
  * @returns The board.
  */
-function board(gateway: string): VariantContent {
+function document(gateway: string): VariantContent {
 	return orderedFixture({
 		nodes: [
 			{ id: "edge", name: "Edge", kind: "module" },
@@ -80,12 +80,16 @@ test("a re-render after a relabel that keeps every card's size sends no solve to
 		},
 	});
 	try {
-		const drawn = await renderArchitecture({ content: board("Gateway"), theme: "light", policy });
+		const drawn = await renderArchitecture({
+			content: document("Gateway"),
+			theme: "light",
+			policy,
+		});
 		expect(sent).toBeGreaterThan(0);
 		sent = 0;
 		asked = 0;
 		const relabelled = await renderArchitecture({
-			content: board("Gatehouse"),
+			content: document("Gatehouse"),
 			theme: "light",
 			policy,
 		});

@@ -23,7 +23,7 @@
 import { useCallback, useId, useState } from "react";
 
 /** The sidebar's tabs. */
-type SidebarTab = "board" | "selection";
+type SidebarTab = "model" | "selection";
 
 /** A fresh set identifies a new canonical pick, even when it contains the same subjects. */
 type SidebarSelection = string | ReadonlySet<string> | null;
@@ -149,8 +149,8 @@ function toggled(state: Frame, docked: boolean, floating: boolean, pinned: boole
  */
 function useSidebar(selection: SidebarSelection, resting: boolean, steppedAside: boolean): Sidebar {
 	const [state, setState] = useState<Frame>({
-		tab: selection === null ? "board" : "selection",
-		before: "board",
+		tab: selection === null ? "model" : "selection",
+		before: "model",
 		seen: selection,
 		pinned: null,
 		away: false,

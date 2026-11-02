@@ -16,14 +16,14 @@ afterAll(() => {
 test("a board of one name in two vaults keeps its claim, lease, announcements and doing line apart", async () => {
 	const vaultA = join(home, "a");
 	const vaultB = join(home, "b");
-	const told: Array<{ vault: string; board: string; held: boolean }> = [];
-	lock.onBoardLockChanged((vault, board, holder) => {
-		told.push({ vault, board, held: holder !== null });
+	const told: Array<{ vault: string; model: string; held: boolean }> = [];
+	lock.onBoardLockChanged((vault, model, holder) => {
+		told.push({ vault, model, held: holder !== null });
 	});
 	try {
 		await lock.claimModel({
 			vault: vaultA,
-			board: "payments",
+			model: "payments",
 			reason: "reworking A",
 			forMs: 30_000,
 		});
@@ -33,7 +33,7 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 
 		// A writer in vault B is not blocked by the claim in vault A.
 		const wrote = await lock.withLease(
-			{ vault: vaultB, board: "payments", holder: { id: "writer-b", kind: "agent" }, waitMs: 0 },
+			{ vault: vaultB, model: "payments", holder: { id: "writer-b", kind: "agent" }, waitMs: 0 },
 			() => "written",
 		);
 		expect(wrote).toBe("written");
@@ -62,21 +62,21 @@ test("the lock sweep reads each board on screen in its own vault", async () => {
 	const vaultB = join(home, "sweep-b");
 	await lock.holdModel({
 		vault: vaultB,
-		board: "payments",
+		model: "payments",
 		holder: { id: "another-server", kind: "agent" },
 		waitMs: 0,
 	});
 	lock.forgetLockAnnouncements();
 	const told: Array<{ vault: string; held: boolean }> = [];
-	lock.onBoardLockChanged((vault, _board, holder) => {
+	lock.onBoardLockChanged((vault, _model, holder) => {
 		told.push({ vault, held: holder !== null });
 	});
 	jest.useFakeTimers();
 	try {
 		lock.watchModelLocks({
-			boards: () => [
-				{ vault: vaultA, board: "payments" },
-				{ vault: vaultB, board: "Payments" },
+			models: () => [
+				{ vault: vaultA, model: "payments" },
+				{ vault: vaultB, model: "Payments" },
 			],
 		});
 		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);

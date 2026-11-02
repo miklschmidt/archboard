@@ -160,7 +160,7 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * board on screen, which the viewer answers by leaving the drill-down.
 	 */
 	readonly arrivals: number;
-	readonly board: LegacyIdentity | null;
+	readonly model: LegacyIdentity | null;
 	readonly connected: boolean;
 	/** Who holds the board, or null when nobody does. */
 	readonly heldBy: LockHolder | null;

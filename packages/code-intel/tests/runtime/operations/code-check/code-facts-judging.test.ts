@@ -15,7 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -94,7 +94,7 @@ beforeAll(async () => {
 	git(scratch, mart, "commit", "-q", "--no-gpg-sign", "-m", "the code");
 	register(scratch, { [MART]: mart });
 	const web: readonly [string, string] = ["pW", "pB"];
-	board(vault, "Mart", [
+	document(vault, "Mart", [
 		{
 			id: "v1",
 			name: "Built",
@@ -150,7 +150,7 @@ afterAll(() => {
 async function pass() {
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	return check.checkCode(vault, read.boards, new AbortController().signal);
+	return check.checkCode(vault, read.states, new AbortController().signal);
 }
 
 test("a TypeScript file holds a bound symbol it defines and an anchored one it defines or uses, never one in a comment or a string", async () => {

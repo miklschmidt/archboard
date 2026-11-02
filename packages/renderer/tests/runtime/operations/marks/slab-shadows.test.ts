@@ -14,7 +14,7 @@ import type { DiagramTheme } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 /** A container that holds two cards, and a card beside it, joined by labelled lines. */
-const BOARD = orderedFixture({
+const DOCUMENT = orderedFixture({
 	nodes: [
 		{ id: "api", name: "Checkout API", kind: "service" },
 		{ id: "route", name: "Place order", kind: "route", parent: "api" },
@@ -125,7 +125,7 @@ test.each(["track", "blocks"] as const)(
 	async (layout) => {
 		const drawing = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: BOARD,
+			content: DOCUMENT,
 			theme: "light",
 			layout,
 		});

@@ -297,18 +297,18 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * Boards the address named that no pane could reach. A board of a
 		 * repository with no vault to read is named by its repository, because
 		 * the next step is about the repository and not the board.
-		 * @param boards The boards, and the repositories the address named.
+		 * @param models The boards, and the repositories the address named.
 		 */
-		reportUnreachable: (boards: readonly AskedModel[]): void => {
+		reportUnreachable: (models: readonly AskedModel[]): void => {
 			const unread = new Set(
-				boards.flatMap(({ repository }) =>
+				models.flatMap(({ repository }) =>
 					repository !== null && (deps.vaultOf?.(repository) ?? null) === null ? [repository] : [],
 				),
 			);
 			for (const repository of unread) {
 				deps.notices.raise(unreachableRepositoryNotice(repository));
 			}
-			const others = boards.filter(
+			const others = models.filter(
 				({ repository }) => repository === null || !unread.has(repository),
 			);
 			if (others.length > 0) {

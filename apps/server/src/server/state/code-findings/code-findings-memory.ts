@@ -45,12 +45,12 @@ interface CodeFindingsMemory {
 /**
  * The key one reading is kept under.
  * @param vault The vault the board lives in.
- * @param board The board's name.
+ * @param document The board's name.
  * @param variant The variant's id.
  * @returns The key.
  */
-function keyOf(vault: string, board: string, variant: string): string {
-	return JSON.stringify([vault, board, variant]);
+function keyOf(vault: string, document: string, variant: string): string {
+	return JSON.stringify([vault, document, variant]);
 }
 
 /**
@@ -78,14 +78,14 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 					),
 				},
 			});
-		for (const read of answer.boards) {
-			readings.set(keyOf(vault, read.board, read.variant), {
+		for (const read of answer.states) {
+			readings.set(keyOf(vault, read.model, read.variant), {
 				vault,
 				reading: {
 					...read,
 					checkedAt: at,
 					findings: answer.findings.filter(
-						(finding) => finding.board === read.board && finding.variant === read.variant,
+						(finding) => finding.model === read.model && finding.variant === read.variant,
 					),
 				},
 			});
@@ -101,11 +101,11 @@ function createCodeFindingsMemory(): CodeFindingsMemory {
 			readings: [...readings.values()]
 				.filter((kept) => kept.vault === vault)
 				.map((kept) => kept.reading)
-				.filter((reading) => "board" in reading),
+				.filter((reading) => "variant" in reading),
 			models: [...readings.values()]
 				.filter((kept) => kept.vault === vault)
 				.map((kept) => kept.reading)
-				.filter((reading) => "model" in reading),
+				.filter((reading) => "state" in reading),
 		};
 	}
 	return { remember, recall };

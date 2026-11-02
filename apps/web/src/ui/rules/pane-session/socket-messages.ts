@@ -96,7 +96,7 @@ function panePlaced(context: MessageContext, data: WebSocketMessage): void {
 		typeof data.vault === "string"
 			? { vault: data.vault, repository: data.repository ?? null }
 			: null;
-	context.adoptModel(data.board, data.identity, place);
+	context.adoptModel(data.paneKey, data.identity, place);
 }
 
 /**
@@ -135,8 +135,8 @@ function modelLock(context: MessageContext, data: WebSocketMessage): void {
  * @param data The message.
  */
 function modelChanged(context: MessageContext, data: WebSocketMessage): void {
-	announceModelChange(context.vault(), data.board ?? "", data.version ?? 0);
-	if (typeof data.board === "string" && aboutThisModel(context, data.board)) {
+	announceModelChange(context.vault(), data.paneKey ?? "", data.version ?? 0);
+	if (typeof data.paneKey === "string" && aboutThisModel(context, data.paneKey)) {
 		context.noteChange(data.version ?? null);
 	}
 }
@@ -154,7 +154,7 @@ function modelChanged(context: MessageContext, data: WebSocketMessage): void {
  */
 function aboutThisModel(context: MessageContext, said: string): boolean {
 	const mine = context.paneKey();
-	return mine !== null && paneAddressOf(said)?.board === paneAddressOf(mine)?.board;
+	return mine !== null && paneAddressOf(said)?.model === paneAddressOf(mine)?.model;
 }
 
 /**
@@ -267,7 +267,7 @@ function addressesThisPane(context: MessageContext, data: WebSocketMessage): boo
 	if (data.type === "pane_place" || data.type === "pane_model" || data.type === "model_note") {
 		return true;
 	}
-	const said = data.board;
+	const said = data.paneKey;
 	return typeof said === "string" ? aboutThisModel(context, said) : true;
 }
 

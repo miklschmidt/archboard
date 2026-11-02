@@ -168,7 +168,7 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
  * comparison.
  * @param title The words, true for the names, or nothing for no title.
  * @param identity What the answer says was drawn.
- * @param identity.board The board's name.
+ * @param identity.model The board's name.
  * @param identity.view The view, or null for the overview.
  * @param identity.variant The variant.
  * @param identity.changes What the variant is read against, or null.
@@ -177,12 +177,12 @@ function toldStanding(variant: SemanticVariant): ToldStanding | null {
  */
 function titleOf(
 	title: string | true | undefined,
-	identity: Pick<SemanticRenderReply, "board" | "view" | "variant" | "changes">,
+	identity: Pick<SemanticRenderReply, "model" | "view" | "variant" | "changes">,
 	comparison: boolean,
 ): string | undefined {
 	if (title !== true) return title;
 	const where =
-		identity.view === null ? identity.board : `${identity.board}, view ${identity.view.name}`;
+		identity.view === null ? identity.model : `${identity.model}, view ${identity.view.name}`;
 	const against =
 		comparison && identity.changes !== null
 			? `, compared with ${identity.changes.against.name}`
@@ -251,7 +251,7 @@ async function drawnReply(
 	const waiting = toldStanding(variant);
 	const identity = {
 		success: true as const,
-		board: board.name,
+		model: board.name,
 		version: board.version,
 		variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 		view: view === undefined ? null : offered(view),

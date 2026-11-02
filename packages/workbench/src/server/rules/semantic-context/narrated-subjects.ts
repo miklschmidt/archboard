@@ -110,7 +110,7 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
 
 /**
  * What one step highlights, as the voice is told it.
- * @param board The board.
+ * @param model The board.
  * @param variant The variant the walkthrough belongs to.
  * @param beat The step.
  * @param named The id of the variant a recording's frames are drawn against, or null for the
@@ -119,14 +119,14 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
  * one is read against when there is one.
  */
 function narratedSubjects(
-	board: LegacyBoard,
+	model: LegacyBoard,
 	variant: SemanticVariant,
 	beat: WalkthroughBeat,
 	named: string | null = null,
 ): StepSubject[] {
 	const names = namesOf(variant.content);
 	const base =
-		named === null ? comparedWith(board, variant) : board.variants.find((one) => one.id === named);
+		named === null ? comparedWith(model, variant) : model.variants.find((one) => one.id === named);
 	const against =
 		base === undefined
 			? null

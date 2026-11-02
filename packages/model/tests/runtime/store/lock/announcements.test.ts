@@ -20,7 +20,7 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
-		lock.watchModelLocks({ boards: () => [{ vault, board: "passenger" }] });
+		lock.watchModelLocks({ models: () => [{ vault, model: "passenger" }] });
 		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
@@ -28,33 +28,33 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.watchModelLocks(null);
 		lock.onBoardSweep(null);
 
-		const news: Array<{ board: string; id: string | null; held: boolean }> = [];
-		lock.onBoardLockChanged((_vault, board, holder) =>
-			news.push({ board, id: holder?.id ?? null, held: holder !== null }),
+		const news: Array<{ model: string; id: string | null; held: boolean }> = [];
+		lock.onBoardLockChanged((_vault, model, holder) =>
+			news.push({ model, id: holder?.id ?? null, held: holder !== null }),
 		);
 		await lock.holdModel({
 			vault,
-			board: "broadcast",
+			model: "broadcast",
 			holder: { id: "pane", kind: "human" },
 			waitMs: 0,
 		});
-		expect(news.at(-1)).toEqual({ board: "broadcast", id: "pane", held: true });
+		expect(news.at(-1)).toEqual({ model: "broadcast", id: "pane", held: true });
 		const beforeRenew = news.length;
 		await lock.holdModel({
 			vault,
-			board: "broadcast",
+			model: "broadcast",
 			holder: { id: "pane", kind: "human" },
 			waitMs: 0,
 		});
 		expect(news.length).toBe(beforeRenew);
 		// Release news goes out with the release, not after a linger (TASK-153).
 		lock.releaseHold(vault, "broadcast", "pane");
-		expect(news.at(-1)).toEqual({ board: "broadcast", id: null, held: false });
+		expect(news.at(-1)).toEqual({ model: "broadcast", id: null, held: false });
 
 		const start = news.length;
 		for (let index = 0; index < 8; index += 1) {
 			await lock.withLease(
-				{ vault, board: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
+				{ vault, model: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
 				() => undefined,
 			);
 		}

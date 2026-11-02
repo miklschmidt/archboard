@@ -43,7 +43,7 @@ interface PaneRegistration {
 	 * there is anything on it — a fresh vault holds no board, and a pane that
 	 * could not register until one existed could never be shown the first one.
 	 */
-	board: string | null;
+	paneKey: string | null;
 	/** Is this the first pane in reading order, the one that speaks for the tab? */
 	primary: boolean;
 	/** Is this the pane the user last interacted with? */
@@ -97,7 +97,7 @@ interface PaneReport {
 	focused: boolean;
 	primary: boolean;
 	/** The board it is showing, or null when it is showing none. */
-	board: string | null;
+	paneKey: string | null;
 	/** What that board is, or null when there is no board. */
 	identity: LegacyIdentity | null;
 	/** The vault the board is in. */
@@ -144,7 +144,7 @@ interface PanesReport {
 	/** paneId of the pane the user last interacted with. */
 	focused: string | null;
 	/** Are all panes showing the same board? */
-	sameBoard: boolean;
+	samePaneKey: boolean;
 	panes: PaneReport[];
 	summary: string;
 	text: string;
@@ -153,7 +153,7 @@ interface PanesReport {
 /** What the report needs from the server, without importing the server. */
 interface PaneContext {
 	/** The identity a board key spells. */
-	identity(board: string): LegacyIdentity | null;
+	identity(paneKey: string): LegacyIdentity | null;
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** The model reading this pane last reported, or null when it has reported none. */

@@ -184,7 +184,7 @@ function createArchboardWorkbenchServer(): ArchboardWorkbenchServer {
 				return semanticInputFor(
 					semanticOwners(components, session, workhorse),
 					event.vault,
-					event.board,
+					event.model,
 					{ feedId: semanticChangeFeed.feedId, sequence: event.cursor },
 					changePane(session),
 				);

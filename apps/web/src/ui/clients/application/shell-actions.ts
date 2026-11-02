@@ -25,7 +25,7 @@ import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What the server says a pane is showing after a show, and the repository it is in. */
 type ShownModel = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
-	board: string | null;
+	model: string | null;
 };
 
 /** What the actions act on. */
@@ -40,12 +40,12 @@ interface ShellActionDeps {
 	readonly openSettings: (surface: SettingsSurface) => void;
 	/**
 	 * Point a pane at a board, injectable for checks.
-	 * @param board The board key.
+	 * @param model The board key.
 	 * @param pane The pane's identity to the server.
 	 * @param vault The vault the board is in, which the pane moves into.
 	 * @returns What the server says the pane is showing, and the repository it is in.
 	 */
-	readonly show?: (board: string, pane: string, vault: string) => Promise<ShownModel>;
+	readonly show?: (model: string, pane: string, vault: string) => Promise<ShownModel>;
 	/**
 	 * Say that the user asked for a pane to move (ADR 0034). Supplied by a test; the pane's own
 	 * session otherwise.
@@ -79,9 +79,9 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		(async (board: string, pane: string, vault: string): Promise<ShownModel> => {
-			const { repository } = await showModel(vault, pane, { legacyAddress: board });
-			return { board: null, repository };
+		(async (model: string, pane: string, vault: string): Promise<ShownModel> => {
+			const { repository } = await showModel(vault, pane, { legacyAddress: model });
+			return { model: null, repository };
 		});
 	const { activate } = deps;
 	/**
@@ -104,7 +104,7 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 		// The command waits for the address bar's one slot, so what the person
 		// just asked for is the last thing the server is given.
 		const permission = await deps.addressing.claim({
-			kind: "board",
+			kind: "model",
 			paneId,
 			from: paneKey,
 			repository: from,
@@ -112,7 +112,7 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 		const move = moving(paneId);
 		try {
 			const opened = await show(key, clientId, vault);
-			permission.move.done(opened.board, opened.repository);
+			permission.move.done(opened.model, opened.repository);
 			// The person opened it, so the dock shows the conversation of its checkout.
 			void activate(paneId, { vault });
 			deps.notices.dismiss("model-command");
@@ -172,7 +172,7 @@ async function openModel(
 		return false;
 	}
 	const permission = await deps.addressing.claim({
-		kind: "board",
+		kind: "model",
 		...(model === null ? {} : { destination: { model, repository } }),
 		paneId,
 		from: status.paneKey,

@@ -27,7 +27,7 @@ const SemanticRasterRegionSchema = z.object({
 /** The machine-readable receipt for a PNG written by `semantic rasterize`. */
 const SemanticRasterReceiptSchema = z.object({
 	success: z.literal(true),
-	board: z.string(),
+	document: z.string(),
 	version: z.int(),
 	/** What was drawn; ids select it exactly and names are what a person types. */
 	variant: RenderedVariantSchema,

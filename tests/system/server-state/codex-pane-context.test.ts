@@ -76,7 +76,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 		]);
 		const registration = {
 			...pane("voice-client", "voice-pane", true, true),
-			board: `model:${model.manifest.id}`,
+			paneKey: `model:${model.manifest.id}`,
 		};
 		expect(
 			(await request("/api/panes", { method: "POST", doing: false, body: registration })).status,
@@ -138,7 +138,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "voice-client",
-						board: null,
+						model: null,
 						variant: null,
 						view: null,
 						selection: [],
@@ -197,7 +197,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					doing: false,
 					body: {
 						...pane("other-tab-client", "voice-pane", false, false),
-						board: registration.board,
+						paneKey: registration.paneKey,
 					},
 				})
 			).status,
@@ -210,7 +210,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "other-tab-client",
-						board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
+						model: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 						variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 						view: null,
 						selection: ids.map((id) => ({ id })),
@@ -252,7 +252,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 					body: {
 						paneId: "voice-pane",
 						clientId: "voice-client",
-						board: { name: model.manifest.name, key: registration.board },
+						model: { name: model.manifest.name, key: registration.paneKey },
 						variant: null,
 						view: null,
 						selection: [],
@@ -274,7 +274,7 @@ test("live voice is told what the user changed by hand in its own tab, and nothi
 			body: {
 				paneId: "voice-pane",
 				clientId: "voice-client",
-				board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
+				model: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 				variant: null,
 				view: null,
 				selection: ids.map((id) => ({ id })),
@@ -370,7 +370,7 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		const registerOther = await request("/api/panes", {
 			method: "POST",
 			doing: false,
-			body: { ...pane("other-tab-a", "A", true, true), board: `model:${model.manifest.id}` },
+			body: { ...pane("other-tab-a", "A", true, true), paneKey: `model:${model.manifest.id}` },
 		});
 		expect(registerOther.status).toBe(200);
 		const own = await openApplicationSocket(`${server.base}?reading=canonical`, "own-tab-a", {
@@ -380,7 +380,7 @@ test("a command's context is its own pane's while another tab also shows pane A"
 		const registerOwn = await request("/api/panes", {
 			method: "POST",
 			doing: false,
-			body: { ...pane("own-tab-a", "A", true, true), board: `model:${model.manifest.id}` },
+			body: { ...pane("own-tab-a", "A", true, true), paneKey: `model:${model.manifest.id}` },
 		});
 		expect(registerOwn.status).toBe(200);
 		const gateway = model.modules.find((module) => module.name === "Gateway")!.id;
@@ -395,7 +395,7 @@ test("a command's context is its own pane's while another tab also shows pane A"
 				body: {
 					paneId: "A",
 					clientId,
-					board: { name: model.manifest.name, key: `model:${model.manifest.id}` },
+					model: { name: model.manifest.name, key: `model:${model.manifest.id}` },
 					variant: null,
 					view: null,
 					selection: [{ id }],
@@ -436,13 +436,13 @@ test("a command's context is its own pane's while another tab also shows pane A"
 			| undefined;
 		const context = JSON.parse(String(additional?.archboard?.value)) as {
 			readonly paneId: string;
-			readonly board: { readonly name: string };
+			readonly model: { readonly name: string };
 			readonly semantic: { readonly brief: string };
 		};
-		expect(context).toMatchObject({ paneId: "A", board: { name: "scratch" } });
+		expect(context).toMatchObject({ paneId: "A", model: { name: "scratch" } });
 		// The brief names the exact selection and vault for this tab (ADR 0050).
 		expect(JSON.parse(context.semantic.brief)).toMatchObject({
-			board: { vault: realpathSync(fixture.vault) },
+			model: { vault: realpathSync(fixture.vault) },
 			architecture: { selection: { count: 1, subjects: [{ id: gateway, name: "Gateway" }] } },
 		});
 	} finally {

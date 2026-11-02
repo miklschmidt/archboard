@@ -101,7 +101,7 @@ function resolvePaneSpec(registrations: PaneRegistration[], spec: string): PaneR
 	 * @returns One numbered entry per pane.
 	 */
 	const list = (): string =>
-		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.board})`).join(", ");
+		ordered.map((entry) => `${entry.position}. ${entry.place} (${entry.pane.paneKey})`).join(", ");
 
 	const matches = ordered.filter((entry) => matchesSpec(entry, wanted, spec.trim()));
 
@@ -182,7 +182,7 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 	throw new Error(
 		`${ordered.length} panes are open, so this needs a pane as well as a board — ` +
 			`--pane ${ordered.map((entry) => entry.place).join(" | ")}. ` +
-			`They are showing ${ordered.map((entry) => `${entry.pane.board} (${entry.place})`).join(", ")}.`,
+			`They are showing ${ordered.map((entry) => `${entry.pane.paneKey} (${entry.place})`).join(", ")}.`,
 	);
 }
 

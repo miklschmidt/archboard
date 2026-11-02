@@ -22,7 +22,7 @@ function LeavingPart(props: {
 	}
 	return at === "announcement" ? (
 		<p aria-live="polite" className="sr-only">
-			Drawing {departure.board}…
+			Drawing {departure.model}…
 		</p>
 	) : (
 		<StageSpinner className="pointer-events-none absolute inset-0" />

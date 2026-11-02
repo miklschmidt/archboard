@@ -9,13 +9,13 @@
  * until a viewer lights it — because lighting it is how the pane says what is
  * selected, what a beat is about, and what is in dispute.
  * @param version The board version this drawing is of.
- * @param board Which board it is of; the pane's own by default.
+ * @param model Which board it is of; the pane's own by default.
  * @returns The render route's success body.
  */
-function drawing(version: number, board = "pipeline"): Record<string, unknown> {
+function drawing(version: number, model = "pipeline"): Record<string, unknown> {
 	return {
 		success: true,
-		board,
+		model,
 		version,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
 		view: null,
@@ -48,7 +48,7 @@ const NOTHING_DRAWN = {
 	status: 200,
 	body: {
 		success: true,
-		board: "pipeline",
+		model: "pipeline",
 		version: 3,
 		variant: { id: "v1", name: "current", lifecycle: "current" },
 		view: null,

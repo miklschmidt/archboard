@@ -129,7 +129,7 @@ function addressedReading(model: Model, request: Reading): Reading {
 function agentSwitch(body: z.infer<typeof RequestSchema>, clientId: string) {
 	if (body.agent !== true) return undefined;
 	return {
-		from: semanticPaneContextFor(clientId)?.board?.name ?? null,
+		from: semanticPaneContextFor(clientId)?.model?.name ?? null,
 		by: body.session ?? null,
 	};
 }
@@ -203,7 +203,7 @@ function opensUnread(
 function moveUnread(vault: string, pane: PaneRegistration, res: Response): void {
 	movePaneVault(pane.clientId, vault);
 	const { repository, checkout } = placeOfVault(vault);
-	const place = { type: "pane_place", board: null, identity: null, vault, repository } as const;
+	const place = { type: "pane_place", paneKey: null, identity: null, vault, repository } as const;
 	sendKeylessToPane(pane.clientId, place);
 	res.json({ success: true, repository, checkout, paneId: pane.paneId, ...paneResponse(pane) });
 }

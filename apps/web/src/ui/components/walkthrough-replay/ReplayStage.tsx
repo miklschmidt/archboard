@@ -148,7 +148,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 							<PaneVaultContext value={TALK_VAULT}>
 								{talk.architecture === undefined ? (
 									<CanvasStage
-										board={talk.board.name}
+										model={talk.board.name}
 										variant={talk.board.variant ?? undefined}
 										selection={null}
 										onSelect={ignore}

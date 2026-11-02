@@ -90,7 +90,7 @@ const PANEL_STYLE: CSSProperties = { width: SIDEBAR_WIDTH };
 
 /** The two tabs, in order. */
 const TABS: readonly { readonly tab: SidebarTab; readonly label: string }[] = [
-	{ tab: "board", label: "Board" },
+	{ tab: "model", label: "Board" },
 	{ tab: "selection", label: "Selection" },
 ];
 
@@ -135,7 +135,7 @@ function SidebarTabs(props: SidebarTabsProps): JSX.Element {
 						data-tab={entry.tab}
 						className="text-control px-2"
 					>
-						{entry.tab === "board" ? (props.overviewLabel ?? entry.label) : entry.label}
+						{entry.tab === "model" ? (props.overviewLabel ?? entry.label) : entry.label}
 					</Tabs.Trigger>
 				))}
 			</Tabs.List>
@@ -295,7 +295,7 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element | null {
 	const { open } = sidebar;
 	const choose = useCallback(
 		(value: unknown): void => {
-			if (value === "board" || value === "selection") {
+			if (value === "model" || value === "selection") {
 				open(value);
 			}
 		},

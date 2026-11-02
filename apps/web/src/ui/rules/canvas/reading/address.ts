@@ -35,7 +35,7 @@ const VARIANT_MARK = "@";
 /** What one semantic pane key names: a board, and which of its variants. */
 interface SemanticTarget {
 	/** The board name. */
-	readonly board: string;
+	readonly model: string;
 	/** A variant id or name, or undefined for the board's current variant. */
 	readonly variant: string | undefined;
 }
@@ -55,22 +55,22 @@ function paneAddressOf(key: string | null): SemanticTarget | null {
 	}
 	const mark = key.indexOf(VARIANT_MARK);
 	if (mark <= 0) {
-		return { board: key, variant: undefined };
+		return { model: key, variant: undefined };
 	}
 	const variant = key.slice(mark + 1);
-	return { board: key.slice(0, mark), variant: variant === "" ? undefined : variant };
+	return { model: key.slice(0, mark), variant: variant === "" ? undefined : variant };
 }
 
 /**
  * The key for one board and one of its variants, without any prefix.
- * @param board The board name.
+ * @param model The board name.
  * @param variant Which variant, or nothing for the board's current one.
  * @returns The key.
  */
-function paneKeyFor(board: string, variant?: string | null): string {
+function paneKeyFor(model: string, variant?: string | null): string {
 	return variant === undefined || variant === null || variant === ""
-		? board
-		: `${board}${VARIANT_MARK}${variant}`;
+		? model
+		: `${model}${VARIANT_MARK}${variant}`;
 }
 
 /**
@@ -100,7 +100,7 @@ function sameModelName(one: string, other: string): boolean {
  */
 interface SemanticPaneReading {
 	/** The board on screen, which is the drilled-into one when there is one. */
-	readonly board: string;
+	readonly model: string;
 	/** The variant on screen, by id, or null before anything has been drawn. */
 	readonly variant: string | null;
 	/** The view it is being read through, or null for the whole variant. */

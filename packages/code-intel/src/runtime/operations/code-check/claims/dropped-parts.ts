@@ -87,7 +87,7 @@ interface Judged {
  */
 function predecessorOf(read: StateToCheck): SemanticVariant | undefined {
 	if (read.variant.lifecycle !== "draft") return undefined;
-	return read.board.variants.find((one) => one.id === read.variant.parent);
+	return read.document.variants.find((one) => one.id === read.variant.parent);
 }
 
 /**
@@ -127,9 +127,9 @@ function droppedBindings(reads: readonly StateToCheck[]): CodeBinding[] {
  * @returns The skip.
  */
 function draftSkip(drop: Drop, reason: CodeCheckSkip["reason"], detail?: string): CodeCheckSkip {
-	const { board, variant } = drop.read;
+	const { document, variant } = drop.read;
 	const said = detail === undefined ? {} : { detail };
-	return { reason, board: board.name, variant: variant.id, repo: drop.repo, ...said };
+	return { reason, model: document.name, variant: variant.id, repo: drop.repo, ...said };
 }
 
 /**
@@ -163,7 +163,7 @@ async function codeAt(
 	checkout: ReadCheckout,
 	context: DroppedContext,
 ): Promise<Code | CodeCheckSkip> {
-	const refs = draftRefs(drop.read.board, drop.read.variant, drop.repo);
+	const refs = draftRefs(drop.read.document, drop.read.variant, drop.repo);
 	const [ref] = refs;
 	if (ref === undefined) return { checkout, facts: context.facts };
 	if (refs.length > 1) return draftSkip(drop, "draft-refs-ambiguous", refs.join(", "));
@@ -226,7 +226,7 @@ function droppedFinding(drop: Drop, node: BoundNode, code: Code, held: Place): C
 		severity: "warning",
 		code: "INHERITED_PART_DROPPED",
 		file: read.file,
-		board: read.board.name,
+		model: read.document.name,
 		variant: read.variant.id,
 		path: `variants.${from.id}.content.nodes.${node.id}.binding`,
 		subject: { kind: "node", id: node.id, name: node.name },

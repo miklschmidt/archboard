@@ -4,7 +4,7 @@ import { TEST_PANE_MESSAGE_POLL_MS, TEST_PANE_MESSAGE_TIMEOUT_MS } from "./timin
 
 interface ObservedPaneEvent {
 	type: string;
-	board?: string;
+	paneKey?: string;
 	[key: string]: unknown;
 }
 
@@ -16,8 +16,8 @@ interface Response {
 interface ObservedPane<Event extends ObservedPaneEvent> {
 	readonly socket: WebSocket;
 	readonly events: Event[];
-	board(): string | undefined;
-	register(board: string | null): Promise<void>;
+	model(): string | undefined;
+	register(model: string | null): Promise<void>;
 	waitFor(
 		match: (event: Event) => boolean,
 		start?: number,
@@ -157,7 +157,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	/** The vault the pane shows boards of, which its socket names when it connects (ADR 0049). */
 	vault: string;
 	preferredModel?: string;
-	register: (board: string | null, signal: AbortSignal) => Promise<Response>;
+	register: (model: string | null, signal: AbortSignal) => Promise<Response>;
 	readPanes: (signal: AbortSignal) => Promise<Response>;
 }): Promise<ObservedPane<Event>> {
 	const endpoint = new URL(options.base);
@@ -210,12 +210,12 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	socket.on("error", failInitial);
 	socket.on("close", onCloseBeforeInitial);
 
-	const register = async (board: string | null): Promise<void> => {
+	const register = async (model: string | null): Promise<void> => {
 		const response = await bounded(
 			options.clientId,
 			"to register",
 			TEST_PANE_MESSAGE_TIMEOUT_MS,
-			(signal) => options.register(board, signal),
+			(signal) => options.register(model, signal),
 		);
 		if (
 			response.status === 200 &&
@@ -233,7 +233,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	};
 	try {
 		const initialEvent = await initial.finally(() => clearTimeout(initialTimer));
-		await register(options.preferredModel ?? initialEvent.board ?? null);
+		await register(options.preferredModel ?? initialEvent.paneKey ?? null);
 	} catch (error) {
 		try {
 			await closeSocket(socket, options.clientId, TEST_PANE_MESSAGE_TIMEOUT_MS);
@@ -249,7 +249,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	return {
 		socket,
 		events,
-		board: () => [...events].toReversed().find((event) => event.type === "pane_place")?.board,
+		model: () => [...events].toReversed().find((event) => event.type === "pane_place")?.paneKey,
 		register,
 		async waitFor(match, start = 0, timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS) {
 			const deadline = Date.now() + timeoutMs;

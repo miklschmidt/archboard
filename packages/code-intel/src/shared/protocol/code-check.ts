@@ -59,7 +59,7 @@ const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
 
 /** One board the check read, at the variant it read, and the version it read. */
 const CodeCheckDocumentSchema = z
-	.object({ board: z.string(), variant: z.string(), version: z.int().nonnegative() })
+	.object({ model: z.string(), variant: z.string(), version: z.int().nonnegative() })
 	.strict();
 
 /**
@@ -247,7 +247,6 @@ const CodeCheckSkipSchema = z
 		]),
 		model: z.string().optional(),
 		state: z.string().nullable().optional(),
-		board: z.string().optional(),
 		variant: z.string().optional(),
 		subject: CodeCheckSubjectSchema.optional(),
 		repo: z.string().optional(),
@@ -325,7 +324,7 @@ const UnknownLastChangeSchema = z
 const ModelBehindSchema = z.union([
 	z
 		.object({
-			board: z.string(),
+			model: z.string(),
 			variant: z.string(),
 			lastChange: KnownLastChangeSchema,
 			/** Every commit that changed a part it read, newest first. */
@@ -335,7 +334,7 @@ const ModelBehindSchema = z.union([
 		})
 		.strict(),
 	z
-		.object({ board: z.string(), variant: z.string(), lastChange: UnknownLastChangeSchema })
+		.object({ model: z.string(), variant: z.string(), lastChange: UnknownLastChangeSchema })
 		.strict(),
 ]);
 
@@ -343,7 +342,7 @@ const ModelBehindSchema = z.union([
 const CheckTimingSchema = z.discriminatedUnion("check", [
 	z
 		.object({
-			check: z.enum(["board", "code-facts", "history"]),
+			check: z.enum(["model", "code-facts", "history"]),
 			elapsedMs: z.number().nonnegative(),
 		})
 		.strict(),
@@ -371,7 +370,7 @@ const CodeCheckModelSchema = z.strictObject({
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
 	timings: z.array(CheckTimingSchema),
-	boards: z.array(CodeCheckDocumentSchema),
+	states: z.array(CodeCheckDocumentSchema),
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
 	behind: z.array(ModelBehindSchema),

@@ -163,7 +163,7 @@ function canonicalDestination(operation: Operation) {
 	if (asked?.model !== undefined)
 		return { reading: modelReading(asked.model), repository: asked.repository };
 	const intent = operation.intent;
-	const destination = intent?.kind === "board" ? intent.destination : undefined;
+	const destination = intent?.kind === "model" ? intent.destination : undefined;
 	return destination === undefined
 		? undefined
 		: {

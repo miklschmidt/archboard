@@ -21,10 +21,10 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		],
 		edges: [{ id: "keys", from: "kms", to: "custody", kind: "data", label: "Signing key" }],
 	};
-	const board = LegacyBoardSchema.parse({
+	const document = LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Nested proposal",
 		level: "system",
 		version: 1,
@@ -48,14 +48,14 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		],
 	});
 	const proposal = await renderLegacyBoard(
-		board,
+		document,
 		// Every nested part, which the overview would close.
 		{ variant: "draft", view: "Everything", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
 	if (!proposal.ok || !("svg" in proposal.reply)) throw new Error("Expected a drawn proposal");
 	const fresh = await renderArchitecture({
-		content: board.variants[1]!.content,
+		content: document.variants[1]!.content,
 		theme: "light",
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});

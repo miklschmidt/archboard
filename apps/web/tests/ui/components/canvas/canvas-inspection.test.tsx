@@ -313,7 +313,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	await settled();
 
 	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("engine");
-	expect(server.calls.some((url) => url.includes("board=engine"))).toBe(true);
+	expect(server.calls.some((url) => url.includes("model=engine"))).toBe(true);
 	// The pane says where it came from and how to get back, with no navigator to
 	// place the board: the address still names the board the pane was opened on,
 	// so the way back has to be in the pane's own breadcrumb.
@@ -375,7 +375,7 @@ test("the way back survives drilling into a board with nothing on it", async () 
 
 	// The states somebody most needs the way back in are the ones with no
 	// diagram. A pane that loses it there is a pane they cannot leave.
-	server.reply = { status: 200, body: { ...NOTHING_DRAWN.body, board: "engine" } };
+	server.reply = { status: 200, body: { ...NOTHING_DRAWN.body, model: "engine" } };
 	await act(async () => {
 		fireEvent.click(slot("semantic-drill-down-open")!);
 	});
@@ -426,13 +426,13 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	});
 	await settled();
 
-	server.reply = { status: 200, body: { ...NOTHING_DRAWN.body, board: "engine" } };
+	server.reply = { status: 200, body: { ...NOTHING_DRAWN.body, model: "engine" } };
 	await act(async () => {
 		fireEvent.click(slot("semantic-drill-down-open")!);
 	});
 	await settled();
 	expect(
-		server.calls.some((url) => url.includes("board=engine") && url.includes("variant=v2")),
+		server.calls.some((url) => url.includes("model=engine") && url.includes("variant=v2")),
 	).toBe(true);
 });
 

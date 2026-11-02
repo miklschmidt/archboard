@@ -15,7 +15,7 @@ const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };
 const INTAKE = { id: "in", name: "Legacy intake", kind: "service", order: 2000 };
 const LEDGER = { id: "ld", name: "Ledger", kind: "service", order: 3000 };
 
-const board = LegacyBoardSchema.parse({
+const model = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
@@ -56,8 +56,8 @@ const beat = WalkthroughBeatSchema.parse({
 });
 
 test("a step names what it highlights, and on a draft how each changed", () => {
-	const [current, draft] = board.variants;
-	expect(narratedSubjects(board, draft!, beat)).toEqual([
+	const [current, draft] = model.variants;
+	expect(narratedSubjects(model, draft!, beat)).toEqual([
 		{ name: "Ledger", standing: "added", moved: [] },
 		{
 			name: 'Gateway → Ledger "write"',
@@ -71,7 +71,7 @@ test("a step names what it highlights, and on a draft how each changed", () => {
 		{ name: "Gateway", standing: "unchanged", moved: [] },
 	]);
 	// Branched from nothing: named, and nothing said to have changed.
-	expect(narratedSubjects(board, current!, { ...beat, subjects: ["e1", "missing"] })).toEqual([
+	expect(narratedSubjects(model, current!, { ...beat, subjects: ["e1", "missing"] })).toEqual([
 		{ name: 'Gateway → Legacy intake "read"', standing: null, moved: [] },
 	]);
 });

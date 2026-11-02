@@ -63,7 +63,7 @@ test("what the author is given is in its world; what the harness keeps of the ru
 			paths.authorStdout,
 			paths.authorStderr,
 			paths.lastMessage,
-			paths.boards,
+			paths.documents,
 			paths.renders,
 			paths.captures,
 			paths.manifest,

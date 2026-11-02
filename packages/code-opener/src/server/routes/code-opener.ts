@@ -95,7 +95,7 @@ const pass: RequestHandler = (_request, _response, next) => {
 
 export interface CodeOpenerRouteDependencies {
 	/** Reads the binding a node carries, off the board of the vault the call names. */
-	bindingForElement(board: string, element: string, vault: string): BindingLookup;
+	bindingForElement(model: string, element: string, vault: string): BindingLookup;
 	/** Resolves a binding to the code it opens, in the checkout the vault the call names reads. */
 	resolveTarget(
 		binding: CodeBinding,
@@ -398,13 +398,13 @@ export function createCodeOpenerRouter(
 		...DEFAULT_DEPENDENCIES,
 		/**
 		 * Reads the binding off the board of the vault.
-		 * @param board The board the node is on.
+		 * @param model The board the node is on.
 		 * @param element The node whose binding is wanted.
 		 * @param vaultRoot The vault the call named.
 		 * @returns The binding, or which of board, node or binding was missing.
 		 */
-		bindingForElement: (board: string, element: string, vaultRoot: string) =>
-			canonicalBinding(vaultRoot, board, element),
+		bindingForElement: (model: string, element: string, vaultRoot: string) =>
+			canonicalBinding(vaultRoot, model, element),
 		...overrides,
 	};
 	const router = Router();

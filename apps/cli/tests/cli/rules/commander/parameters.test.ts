@@ -139,8 +139,8 @@ describe("declared parameter facts", () => {
 			[
 				{
 					kind: "positional",
-					key: "board",
-					name: "board",
+					key: "model",
+					name: "model",
 					required: true,
 					route: "staged",
 					description: "which",
@@ -170,7 +170,7 @@ describe("declared parameter facts", () => {
 			JSON.parse((await executePublic(contract, ["pipeline", "--pane", "right"])).stdout),
 		).toEqual({ tokens: ["pipeline", "--pane", "right"] });
 		const help = declareCommand(contract, "help").command.helpInformation();
-		expect(help).toContain("<board>");
+		expect(help).toContain("<model>");
 		expect(help).toContain("--pane");
 		expect(help).toContain("once two panes are open");
 	});

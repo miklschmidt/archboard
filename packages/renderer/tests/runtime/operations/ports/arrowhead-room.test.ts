@@ -30,7 +30,7 @@ interface Point {
 	readonly y: number;
 }
 
-const BOARDS: readonly VariantContent[] = [
+const DOCUMENTS: readonly VariantContent[] = [
 	spokenInstruction,
 	reachTheWorkhorse,
 	frameApproach,
@@ -81,7 +81,7 @@ function lastRun(d: string): { from: Point; to: Point; straight: boolean } {
 test.each(LayoutEngineSchema.options)(
 	"every arrowhead fits the straight run that every line keeps before its end (%s)",
 	async (layout) => {
-		for (const content of BOARDS) {
+		for (const content of DOCUMENTS) {
 			const { svg } = await renderArchitecture({
 				policy: DEFAULT_SEMANTIC_POLICY,
 				content,

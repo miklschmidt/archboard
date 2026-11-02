@@ -25,16 +25,16 @@ function readingOf(reading: SemanticPaneReading | null, picked: PickedSubject | 
 	if (!reading?.drawn) {
 		return NOTHING_READ;
 	}
-	const address = paneAddressOf(reading.board);
+	const address = paneAddressOf(reading.model);
 	if (address === null) {
 		return NOTHING_READ;
 	}
 	const { variant, view, version } = reading.drawn;
 	// Current follows adoption; other variants retain their resolved identity.
 	const key =
-		variant.lifecycle === "current" ? reading.board : paneKeyFor(reading.board, variant.id);
+		variant.lifecycle === "current" ? reading.model : paneKeyFor(reading.model, variant.id);
 	return {
-		board: { name: address.board, key },
+		model: { name: address.model, key },
 		variant,
 		view,
 		version,

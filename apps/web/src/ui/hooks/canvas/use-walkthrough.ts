@@ -31,7 +31,7 @@ type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 /** Which board and variant a pane is reading. */
 interface WalkthroughSource {
 	/** The board on screen. */
-	readonly board: string;
+	readonly model: string;
 	/** The variant on screen: an id or name, or undefined for the current one. */
 	readonly variant: string | undefined;
 }
@@ -39,7 +39,7 @@ interface WalkthroughSource {
 /** Where a reader is: which explanation, of what board, and how far in. */
 interface NarrativePlace {
 	/** The board it is an explanation of. */
-	readonly board: string;
+	readonly model: string;
 	/** The walkthrough being read. */
 	readonly walkthrough: string;
 	/** Which beat of it is current. */
@@ -132,7 +132,7 @@ function placeIn(place: NarrativePlace | null, source: WalkthroughSource): Narra
 	if (place === null) {
 		return null;
 	}
-	return place.board === source.board ? place : null;
+	return place.model === source.model ? place : null;
 }
 
 /** What is being read, of what is on offer. */
@@ -185,11 +185,11 @@ function unspent(driven: DrivenPlace | null | undefined, standing: Standing): Dr
 /**
  * Where a request puts the reader.
  * @param asked The request.
- * @param board The board on screen.
+ * @param model The board on screen.
  * @returns The standing that answers it.
  */
-function standingAsked(asked: DrivenPlace, board: string): Standing {
-	const place = { board, walkthrough: asked.walkthrough, beat: asked.beat };
+function standingAsked(asked: DrivenPlace, model: string): Standing {
+	const place = { model, walkthrough: asked.walkthrough, beat: asked.beat };
 	const answering = asked.answers === false ? null : asked.request;
 	return { place, answering, handled: asked.request };
 }
@@ -216,13 +216,13 @@ function useWalkthrough(
 	reading: Pick<VariantReading, "walkthroughs" | "nameOf"> | null,
 	driven?: DrivenPlace | null,
 ): WalkthroughReading {
-	const { board } = source;
+	const { model } = source;
 	const [standing, setStanding] = useState<Standing>(NOWHERE);
 	// Acted on during render, as React asks for state that follows a prop: the
 	// request is an event that arrived as a value, and it is spent once.
 	const asked = unspent(driven, standing);
 	if (asked !== null) {
-		setStanding(standingAsked(asked, board));
+		setStanding(standingAsked(asked, model));
 	}
 
 	const offered = reading?.walkthroughs ?? NO_WALKTHROUGHS;
@@ -231,10 +231,10 @@ function useWalkthrough(
 
 	const choose = useCallback(
 		(walkthrough: string | null): void => {
-			const place = walkthrough === null ? null : { board, walkthrough, beat: 0 };
+			const place = walkthrough === null ? null : { model, walkthrough, beat: 0 };
 			setStanding((current) => byHand(current, place));
 		},
-		[board],
+		[model],
 	);
 	const goTo = useCallback((index: number): void => {
 		setStanding((current) =>

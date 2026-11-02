@@ -62,7 +62,7 @@ test("local explanations share captured text, cancellation, and retry through th
 	const report = {
 		clientId: "explain-client",
 		paneId: "explain-pane",
-		board: null,
+		model: null,
 		variant: null,
 		view: null,
 		selection: [],

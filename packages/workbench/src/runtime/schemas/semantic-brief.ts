@@ -214,14 +214,14 @@ function buildSemanticBrief(
 		threadLink: context.threadLink,
 		workhorse: context.workhorse,
 		coordinator: context.coordinator,
-		board: {
-			key: context.board.key,
-			name: context.board.name,
-			vault: context.board.vault,
-			file: context.board.file,
+		model: {
+			key: context.model.key,
+			name: context.model.name,
+			vault: context.model.vault,
+			file: context.model.file,
 		},
 		pane: context.pane,
-		version: context.board.version,
+		version: context.model.version,
 		// What the brief actually carries, after fitting: an agent told a subject
 		// is selected must be able to find it in the bytes it was sent.
 		architecture: deepFreeze(fitted.context.architecture),

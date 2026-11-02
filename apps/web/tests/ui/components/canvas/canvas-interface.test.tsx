@@ -125,7 +125,7 @@ function picture(): Record<string, unknown> {
 	].join("");
 	return {
 		success: true,
-		board: "pipeline",
+		model: "pipeline",
 		version: 1,
 		variant: { id: "v2", name: "relayed", lifecycle: "draft" },
 		view: null,

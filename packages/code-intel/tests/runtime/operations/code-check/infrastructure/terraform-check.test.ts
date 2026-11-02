@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -195,7 +195,7 @@ beforeAll(async () => {
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the configuration");
 	write(shop, { "infra/plan.json": JSON.stringify(PLAN) });
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -226,14 +226,14 @@ beforeAll(async () => {
 	check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	withoutPlan = await check.checkCode(vault, read.boards, new AbortController().signal);
+	withoutPlan = await check.checkCode(vault, read.states, new AbortController().signal);
 	const plans = await check.readPlans(
 		vault,
 		[join(shop, "infra", "plan.json")],
 		new AbortController().signal,
 	);
 	if (!plans.ok) throw new Error(`the plan was refused: ${plans.reason}`);
-	withPlan = await check.checkCode(vault, read.boards, new AbortController().signal, plans.plans);
+	withPlan = await check.checkCode(vault, read.states, new AbortController().signal, plans.plans);
 });
 
 afterAll(() => {

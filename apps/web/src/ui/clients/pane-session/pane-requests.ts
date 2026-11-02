@@ -21,7 +21,7 @@ interface PaneReport {
 	 * registers, because a pane that did not exist to the server could never be
 	 * shown the first board somebody makes.
 	 */
-	board: string | null;
+	paneKey: string | null;
 	primary: boolean;
 	focused: boolean;
 	/** Where the pane is in the page, in CSS pixels. */

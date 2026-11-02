@@ -16,7 +16,7 @@
 /** One board a pane has been looking at. */
 interface DrillStop {
 	/** The board name. */
-	readonly board: string;
+	readonly model: string;
 	/** A variant id or name, or undefined for the board's current variant. */
 	readonly variant: string | undefined;
 	/** The vault the board is in. */
@@ -85,7 +85,7 @@ function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep 
 	if (stop === undefined) return { trail, dive: null };
 	// A trail that came back to the board the pane holds: the shell would not
 	// move the pane, so nothing would arrive. The pane is there already.
-	if (sameBoard(stop, own) && stop.variant === own.variant) {
+	if (sameModel(stop, own) && stop.variant === own.variant) {
 		return {
 			trail: { before: trail.before.slice(0, depth), above: [], pending: null },
 			dive: null,
@@ -106,7 +106,7 @@ function drillBack(trail: DrillTrail, own: DrillStop, depth: number): TrailStep 
  */
 function drillArrived(trail: DrillTrail, own: DrillStop): DrillTrail {
 	const { pending } = trail;
-	return pending !== null && sameBoard(pending.stop, own)
+	return pending !== null && sameModel(pending.stop, own)
 		? { before: pending.before, above: [], pending: null }
 		: NO_TRAIL;
 }
@@ -118,8 +118,8 @@ function drillArrived(trail: DrillTrail, own: DrillStop): DrillTrail {
  * @param b The other.
  * @returns Whether they are the same board.
  */
-function sameBoard(a: DrillStop, b: DrillStop): boolean {
-	return a.vault === b.vault && a.board.toLowerCase() === b.board.toLowerCase();
+function sameModel(a: DrillStop, b: DrillStop): boolean {
+	return a.vault === b.vault && a.model.toLowerCase() === b.model.toLowerCase();
 }
 
 /**

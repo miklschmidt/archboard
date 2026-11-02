@@ -91,7 +91,7 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 }
 
 /** A board with one part, pinned to the branch the vault's checkout is on. */
-const board: LegacyBoard = LegacyBoardSchema.parse({
+const document: LegacyBoard = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
@@ -130,8 +130,8 @@ beforeAll(() => {
 	first = repository(holder, "feature", { "src/a.ts": "export {};\n" });
 	// The board is committed, then the code it describes changes.
 	mkdirSync(vault, { recursive: true });
-	writeFileSync(join(vault, "Shop.semantic.json"), `${JSON.stringify(board, null, "\t")}\n`);
-	commit(holder, "board", {});
+	writeFileSync(join(vault, "Shop.semantic.json"), `${JSON.stringify(document, null, "\t")}\n`);
+	commit(holder, "document", {});
 	commit(holder, "code moved on", { "src/a.ts": "export const a = 1;\n" });
 });
 
@@ -143,7 +143,7 @@ afterAll(() => {
 
 test("behind counts the commits of the checkout that holds the vault", async () => {
 	const [answer] = await createBehindReading().read(vault, [
-		{ board, file: join(vault, "Shop.semantic.json") },
+		{ document, file: join(vault, "Shop.semantic.json") },
 	]);
 	if (answer === undefined || !("parts" in answer)) throw new Error("the board was not read");
 	expect(answer.skipped).toEqual([]);
@@ -151,11 +151,11 @@ test("behind counts the commits of the checkout that holds the vault", async () 
 });
 
 test("footprint and locality read the part in the checkout that holds the vault", async () => {
-	const current = currentVariant(board)!;
-	const footprint = await readVariantFootprint({ vault, board, against: current, base: first });
+	const current = currentVariant(document)!;
+	const footprint = await readVariantFootprint({ vault, document, against: current, base: first });
 	expect(footprint.skipped).toEqual([]);
 	expect(footprint.proposal).toBeNull();
-	const locality = await createVariantLocality().read(vault, board, current, undefined);
+	const locality = await createVariantLocality().read(vault, document, current, undefined);
 	expect(locality.skipped).toEqual([]);
 	expect(locality.hotspots.map((one) => one.subject.id)).toEqual(["pA"]);
 });

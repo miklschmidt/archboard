@@ -13,11 +13,11 @@ import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts
 
 /**
  * The vault's half of the listing of these boards, with the dogfood levels.
- * @param boards The boards.
+ * @param models The boards.
  * @returns The half.
  */
-function vault(boards: readonly DocumentEntry[]): ReturnType<typeof vaultHalf> {
-	return vaultHalf({ levels: ["system", "service", "module"], boards: [...boards] });
+function vault(models: readonly DocumentEntry[]): ReturnType<typeof vaultHalf> {
+	return vaultHalf({ levels: ["system", "service", "module"], boards: [...models] });
 }
 
 const VAULT: readonly DocumentEntry[] = [
@@ -44,14 +44,14 @@ const PANES: BrowserPaneListing = {
 		{
 			paneId: "A",
 			place: "left",
-			board: "checkout",
-			identity: { board: "Checkout", variant: "current" },
+			model: "checkout",
+			identity: { model: "Checkout", variant: "current" },
 		},
 		{
 			paneId: "B",
 			place: "right",
-			board: "checkout",
-			identity: { board: "Checkout", variant: "current" },
+			model: "checkout",
+			identity: { model: "Checkout", variant: "current" },
 		},
 	],
 };
@@ -77,7 +77,7 @@ test("named variants retain their addresses and every current spelling selects t
 		undefined,
 	);
 	expect(listing.levels).toEqual(["system", "service", "module"]);
-	expect(listing.boards.flatMap((board) => board.variants.map((variant) => variant.key))).toEqual([
+	expect(listing.models.flatMap((model) => model.variants.map((variant) => variant.key))).toEqual([
 		"checkout@old",
 		"checkout",
 		"checkout@next",
@@ -107,7 +107,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 		]),
 		undefined,
 	);
-	expect(listing.boards.flatMap((board) => board.variants.map((variant) => variant.key))).toEqual([
+	expect(listing.models.flatMap((model) => model.variants.map((variant) => variant.key))).toEqual([
 		"ingest",
 		"ingest@alt",
 	]);
@@ -132,7 +132,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 		]),
 		undefined,
 	);
-	expect(["Checkout", "Broken", "Unlisted"].map((board) => nothingBuiltOn(others, board))).toEqual([
+	expect(["Checkout", "Broken", "Unlisted"].map((model) => nothingBuiltOn(others, model))).toEqual([
 		false,
 		false,
 		false,
@@ -155,7 +155,7 @@ test("an unreadable board stays listed with its error beside the healthy ones", 
 		]),
 		undefined,
 	);
-	expect(listing.boards.map((board) => [board.key, board.error ?? null])).toEqual([
+	expect(listing.models.map((model) => [model.key, model.error ?? null])).toEqual([
 		["checkout", null],
 		["payments", null],
 		["broken", "invalid board"],
@@ -164,17 +164,17 @@ test("an unreadable board stays listed with its error beside the healthy ones", 
 
 test("the vault and the live panes are listed independently of each other", () => {
 	const both = composeListing(vault(VAULT), PANES);
-	expect(both.boards.map((board) => board.key)).toEqual(["checkout", "payments"]);
+	expect(both.models.map((model) => model.key)).toEqual(["checkout", "payments"]);
 	// Every pane still on screen, whether or not two of them share a board.
 	expect(both.onScreen.map((pane) => pane.paneId)).toEqual(["A", "B"]);
 
 	const vaultOnly = composeListing(vault(VAULT), undefined);
-	expect(vaultOnly.boards).toHaveLength(2);
+	expect(vaultOnly.models).toHaveLength(2);
 	expect(vaultOnly.onScreen).toEqual([]);
 
 	const panesOnly = composeListing(undefined, PANES);
-	expect(panesOnly.boards).toEqual([]);
-	expect(panesOnly.onScreen.map((pane) => pane.board)).toEqual(["checkout", "checkout"]);
+	expect(panesOnly.models).toEqual([]);
+	expect(panesOnly.onScreen.map((pane) => pane.model)).toEqual(["checkout", "checkout"]);
 
 	// An unread vault is not an empty one: nothing has been asked for yet.
 	expect(composeListing(undefined, undefined)).toBe(EMPTY_LISTING);

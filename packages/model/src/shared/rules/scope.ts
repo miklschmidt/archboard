@@ -423,16 +423,16 @@ function containersOf(parentOf: ReadonlyMap<string, string | undefined>, id: str
  * variant, and no authored view can take that name. Nothing here guesses which
  * explanation was meant — a name fits at most one view, because a board
  * holding two views of one name is refused before it is ever read.
- * @param board The board that owns the views.
+ * @param model The board that owns the views.
  * @param asked The view's id or the name it was written under.
  * @returns The view, or undefined when nothing on this board answers to it.
  */
-function findView(board: Pick<LegacyBoard, "views">, asked: string): SemanticView | undefined {
+function findView(model: Pick<LegacyBoard, "views">, asked: string): SemanticView | undefined {
 	if (asked === EVERYTHING_VIEW.id) {
 		return EVERYTHING_VIEW;
 	}
 	return (
-		board.views.find((view) => view.id === asked) ?? board.views.find((view) => view.name === asked)
+		model.views.find((view) => view.id === asked) ?? model.views.find((view) => view.name === asked)
 	);
 }
 

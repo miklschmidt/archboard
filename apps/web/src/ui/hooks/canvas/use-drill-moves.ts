@@ -80,7 +80,7 @@ function levelAbove(
 		return null;
 	}
 	return {
-		board: above.board,
+		model: above.model,
 		variant: above.variant,
 		view: trail.length - 1 === own ? ownView : undefined,
 	};
@@ -96,20 +96,20 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 	const { into, out } = flier;
 	const above = useMemo(() => levelAbove(drill, ownView), [drill, ownView]);
 	const onOpenDown = useCallback<OpenDown>(
-		(board, variant, there) => {
+		(model, variant, there) => {
 			// A board of another repository is shown by the shell, which moves the
 			// pane and tells everybody; the pane reports nothing of its own here.
 			if (there !== undefined) {
 				leave("into", picked);
 				onSelect(null);
-				drill.open(board, variant, there);
+				drill.open(model, variant, there);
 				return;
 			}
-			into(picked, { board, variant }, () => {
+			into(picked, { model, variant }, () => {
 				leave("into", picked);
 				onSelect(null);
-				onUserChanged?.("board");
-				drill.open(board, variant);
+				onUserChanged?.("model");
+				drill.open(model, variant);
 			});
 		},
 		[drill, into, leave, onSelect, onUserChanged, picked],
@@ -122,7 +122,7 @@ function useDrillMoves(inputs: DrillMovesInputs): DrillMoves {
 				onSelect(null);
 				// A move the shell makes for it is announced by the shell, and a back that
 				// leaves the board on screen where it is changed nothing to report.
-				if (drill.backTo(depth)) onUserChanged?.("board");
+				if (drill.backTo(depth)) onUserChanged?.("model");
 			};
 			if (above === null || depth !== drill.trail.length - 1) {
 				proceed();

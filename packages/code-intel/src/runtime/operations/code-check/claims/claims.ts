@@ -21,7 +21,7 @@ type VaultDiagnostic = z.infer<typeof VaultDiagnosticSchema>;
 type EvidenceKind = z.infer<typeof EvidenceKindSchema>;
 
 /** Where a claim sits: the board, its variant, the place in the document and its subject. */
-type ClaimSite = Pick<VaultDiagnostic, "file" | "board" | "variant" | "path"> & {
+type ClaimSite = Pick<VaultDiagnostic, "file" | "model" | "variant" | "path"> & {
 	readonly subject: DiagnosticSubject;
 };
 
@@ -67,10 +67,10 @@ interface ReadVariant {
  * @returns The site.
  */
 function siteOf(variant: ReadVariant, path: string, subject: DiagnosticSubject): ClaimSite {
-	const { board, file, variant: read } = variant.read;
+	const { document, file, variant: read } = variant.read;
 	return {
 		file,
-		board: board.name,
+		model: document.name,
 		variant: read.id,
 		path: `variants.${read.id}.content.${path}`,
 		subject,

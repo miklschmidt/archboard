@@ -170,7 +170,7 @@ async function missingSkips() {
 		plans: [],
 		signal: new AbortController().signal,
 	});
-	if (!("boards" in answer)) throw new Error(answer.error);
+	if (!("states" in answer)) throw new Error(answer.error);
 	return answer.skipped.filter((skip) => skip.reason === "language-server-missing");
 }
 

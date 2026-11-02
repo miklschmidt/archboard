@@ -8,7 +8,7 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 /** Semantic evidence accepted by the existing code-inspection engine. */
 interface StateToCheck {
-	readonly board: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
+	readonly document: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
 	readonly variant: SemanticVariant;
 	readonly file: string;
 	readonly named: boolean;
@@ -17,7 +17,7 @@ interface StateToCheck {
 }
 interface StatesToCheck {
 	readonly ok: true;
-	readonly boards: readonly StateToCheck[];
+	readonly states: readonly StateToCheck[];
 	readonly skipped: readonly CodeCheckSkip[];
 }
 type NoSuchDraft = Extract<ArchitectureModelRead, { success: false }>;
@@ -36,7 +36,7 @@ function codeReading(model: Model, predecessor?: Model): StateToCheck {
 	};
 	const previous = predecessor === undefined ? [] : [codeReading(predecessor).variant];
 	return {
-		board: {
+		document: {
 			id: model.manifest.id,
 			name: model.manifest.name,
 			current: model.manifest.current?.id,
@@ -135,7 +135,7 @@ async function readStatesToCheck(
 	if (!model.success) return model;
 	const predecessor = await readPredecessor(vault, model);
 	if (predecessor?.success === false) return predecessor;
-	return { ok: true, boards: [codeReading(model, predecessor)], skipped: [] };
+	return { ok: true, states: [codeReading(model, predecessor)], skipped: [] };
 }
 /**
  * Read every independent active proposal without combining equal names.
@@ -152,7 +152,7 @@ async function readEveryDraftToCheck(vault: string): Promise<StatesToCheck | NoS
 	if (failure !== undefined) return failure;
 	return {
 		ok: true,
-		boards: readings.flatMap((reading) => ("ok" in reading ? reading.boards : [])),
+		states: readings.flatMap((reading) => ("ok" in reading ? reading.states : [])),
 		skipped: [],
 	};
 }

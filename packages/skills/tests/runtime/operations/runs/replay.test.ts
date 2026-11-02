@@ -16,7 +16,7 @@ import { inspectVideo, talkOfFixture } from "#runtime/operations/runs/replay.ts"
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { READING } from "#tests/runtime/support/reading-fixture.ts";
 
-const BOARD = LegacyBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -87,7 +87,7 @@ beforeEach(() => {
 	home = mkdtempSync(join(tmpdir(), "archboard-replay-check-"));
 	const kept = talkOfFixture(
 		{ board: "pr-1", walkthrough: "For reviewers", directory: "~/talk", theme: "light" },
-		BOARD,
+		DOCUMENT,
 		CHECKED,
 	);
 	frames = framesOf(keepTalk({ ...kept, directory: join(home, "talk") }));
@@ -111,7 +111,7 @@ function replayOutput(receipt: Record<string, unknown>): string {
 			{
 				success: true,
 				talk: join(home, "talk"),
-				board: "pr-1",
+				document: "pr-1",
 				variant: "v1",
 				walkthrough: { id: "w1", name: "For reviewers" },
 				steps: 2,

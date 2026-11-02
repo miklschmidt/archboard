@@ -20,13 +20,13 @@ import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 
 /**
  * The board behind one pane's picture.
- * @param board The board on screen.
+ * @param model The board on screen.
  * @param variant The variant on screen: an id or name, or undefined for the
  *   current one.
  * @returns The reading, or null while the board has not arrived or cannot be read.
  */
-function useVariantReading(board: string, variant: string | undefined): VariantReading | null {
-	const held = useQuery(retainedDocumentQuery(usePaneVault(), board));
+function useVariantReading(model: string, variant: string | undefined): VariantReading | null {
+	const held = useQuery(retainedDocumentQuery(usePaneVault(), model));
 	const answer = held.data;
 	return useMemo(() => readVariant(answer, variant), [answer, variant]);
 }

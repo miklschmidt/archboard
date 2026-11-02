@@ -121,7 +121,7 @@ function freezeDeep<T>(value: T): T {
 const ArchboardContextRawSchema = z.strictObject({
 	schema: z.literal(1),
 	paneId: NonEmptyStringSchema,
-	board: z.strictObject({
+	model: z.strictObject({
 		/** The name every command spells this board with. */
 		name: NonEmptyStringSchema,
 		/** Its comparison form, which is what a claim and a broadcast agree on. */
@@ -312,11 +312,11 @@ function orderedContext(value: ArchboardContext): ArchboardContext {
 	return {
 		schema: value.schema,
 		paneId: value.paneId,
-		board: {
-			name: value.board.name,
-			key: value.board.key,
-			version: value.board.version,
-			cursor: value.board.cursor,
+		model: {
+			name: value.model.name,
+			key: value.model.key,
+			version: value.model.version,
+			cursor: value.model.cursor,
 		},
 		threadLink: {
 			state: value.threadLink.state,

@@ -231,7 +231,7 @@ function changeChromeInShell(chrome: PaneChrome): void {
  * Open one tab of the pane's sidebar, as a person does.
  * @param tab Which tab.
  */
-function openSidebarTab(tab: "board" | "selection"): void {
+function openSidebarTab(tab: "model" | "selection"): void {
 	const trigger = document.querySelector<HTMLElement>(
 		`[data-slot='semantic-sidebar-tab'][data-tab='${tab}']`,
 	);
@@ -296,7 +296,7 @@ function Held(props: HeldProps): JSX.Element {
 		PaneChromeContext.Provider,
 		{ value: chrome ?? alone },
 		createElement(CanvasStage, {
-			board: "pipeline",
+			model: "pipeline",
 			...paneReading(props),
 			variant,
 			view,
@@ -329,7 +329,7 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 		options.live === true
 			? createElement(Held, { ...options, selection, report: onSelect })
 			: createElement(CanvasStage, {
-					board: "pipeline",
+					model: "pipeline",
 					...paneReading(options),
 					selection,
 					onSelect,

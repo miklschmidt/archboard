@@ -120,12 +120,12 @@ function checkDoing(raw: unknown): DoingCheck {
  * line. That is the cheaper of the two mistakes: the other one is a list that
  * is the same sentence five times, which is what this is for.
  * @param vault The vault the board lives in.
- * @param board Which board it was said about.
+ * @param model Which board it was said about.
  * @param entry What was said, and who said it.
  * @returns The board's lines, oldest first.
  */
-function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntry[] {
-	const key = modelMemoryKey(vault, board);
+function recordDoing(vault: string, model: string, entry: DoingEntry): DoingEntry[] {
+	const key = modelMemoryKey(vault, model);
 	const { byModel } = store();
 	const existing = byModel.get(key) ?? [];
 	const last = existing[existing.length - 1];
@@ -138,11 +138,11 @@ function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntr
 /**
  * The last few things said about this board, oldest first.
  * @param vault The vault the board lives in.
- * @param board Which board.
+ * @param model Which board.
  * @returns The lines.
  */
-function recentDoing(vault: string, board: string): DoingEntry[] {
-	return store().byModel.get(modelMemoryKey(vault, board)) ?? [];
+function recentDoing(vault: string, model: string): DoingEntry[] {
+	return store().byModel.get(modelMemoryKey(vault, model)) ?? [];
 }
 
 /**
@@ -153,14 +153,14 @@ function recentDoing(vault: string, board: string): DoingEntry[] {
  * board. It exists for the checks, which run several boards through one server.
  * @param which The vault and board, or every board of every vault when omitted.
  * @param which.vault The vault the board lives in.
- * @param which.board Which board.
+ * @param which.model Which board.
  */
-function forgetDoing(which?: { readonly vault: string; readonly board: string }): void {
+function forgetDoing(which?: { readonly vault: string; readonly model: string }): void {
 	const { byModel } = store();
 	if (which === undefined) {
 		byModel.clear();
 	} else {
-		byModel.delete(modelMemoryKey(which.vault, which.board));
+		byModel.delete(modelMemoryKey(which.vault, which.model));
 	}
 }
 

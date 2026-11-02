@@ -19,15 +19,15 @@ interface Reference {
 
 /**
  * All references, including reconciliation bases that still carry authored meaning.
- * @param board The complete board family.
+ * @param model The complete board family.
  * @param includeBases Whether to include reconciliation snapshots in diagnostics.
  * @returns Every semantic vocabulary reference.
  */
-function references(board: LegacyBoard, includeBases = true): Reference[] {
+function references(model: LegacyBoard, includeBases = true): Reference[] {
 	const result: Reference[] = [
-		{ key: "board:level", path: "level", value: board.level, vocabulary: "levels" },
+		{ key: "board:level", path: "level", value: model.level, vocabulary: "levels" },
 	];
-	for (const variant of board.variants) {
+	for (const variant of model.variants) {
 		result.push(
 			...contentReferences(variant.content, variant.id, `variants.${variant.id}.content`),
 		);
@@ -96,21 +96,21 @@ function known(reference: Reference, policy: SemanticPolicy): boolean {
 }
 /**
  * Warn about removed definitions without making existing architecture unreadable.
- * @param board The whole family.
+ * @param model The whole family.
  * @param file The board file.
  * @param policy Current valid policy.
  * @returns Unknown reference diagnostics.
  */
 function semanticVocabularyDiagnostics(
-	board: LegacyBoard,
+	model: LegacyBoard,
 	file: string,
 	policy: SemanticPolicy,
 ): VaultDiagnostic[] {
-	return unknownVocabularyReferences(board, policy).map((reference) => ({
+	return unknownVocabularyReferences(model, policy).map((reference) => ({
 		severity: "warning",
 		code: "UNKNOWN_VOCABULARY",
 		file,
-		board: board.name,
+		model: model.name,
 		path: reference.path,
 		...(reference.variant === undefined ? {} : { variant: reference.variant }),
 		...(reference.subject === undefined ? {} : { subject: reference.subject }),
@@ -119,12 +119,12 @@ function semanticVocabularyDiagnostics(
 }
 /**
  * Retain unknown vocabulary values and source coordinates for migration choices.
- * @param board The complete original family, including reconciliation bases.
+ * @param model The complete original family, including reconciliation bases.
  * @param policy The valid authored vocabulary.
  * @returns Unconfigured original references.
  */
-function unknownVocabularyReferences(board: LegacyBoard, policy: SemanticPolicy): Reference[] {
-	return references(board).filter((reference) => !known(reference, policy));
+function unknownVocabularyReferences(model: LegacyBoard, policy: SemanticPolicy): Reference[] {
+	return references(model).filter((reference) => !known(reference, policy));
 }
 /**
  * Refuse only newly introduced unknown subject references; retained history remains editable.

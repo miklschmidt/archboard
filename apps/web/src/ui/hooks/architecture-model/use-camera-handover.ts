@@ -12,27 +12,27 @@ import {
  * other stood and glides to its own rest. Another board has no such correspondence,
  * and the change stays plain.
  * @param camera The camera of this surface.
- * @param board The board on this surface.
+ * @param model The board on this surface.
  * @param reducedMotion Whether the person asked for no motion.
  */
-function useCameraHandover(camera: PictureCamera, board: string, reducedMotion: boolean): void {
+function useCameraHandover(camera: PictureCamera, model: string, reducedMotion: boolean): void {
 	const handover = useContext(ModelPaneContext)?.handover ?? null;
 	const measured = camera.room !== null;
-	const leaves = useRef({ board, camera });
+	const leaves = useRef({ model, camera });
 	useLayoutEffect(() => {
-		leaves.current = { board, camera };
-	}, [board, camera]);
+		leaves.current = { model, camera };
+	}, [model, camera]);
 	// Only going out of sight runs this cleanup: a new camera object is the same camera.
 	useLayoutEffect(
 		() => () => {
 			const left = leaves.current;
-			handover?.give({ board: left.board, camera: left.camera.view().camera });
+			handover?.give({ model: left.model, camera: left.camera.view().camera });
 		},
 		[handover],
 	);
 	useLayoutEffect(() => {
 		if (measured && handover !== null && !reducedMotion) {
-			startFrom(handover, leaves.current.board, camera);
+			startFrom(handover, leaves.current.model, camera);
 		}
 	}, [camera, handover, measured, reducedMotion]);
 }
@@ -40,12 +40,12 @@ function useCameraHandover(camera: PictureCamera, board: string, reducedMotion: 
 /**
  * Start from the camera another surface left, when it stood on this board.
  * @param handover The pane's handover.
- * @param board The board on this surface.
+ * @param model The board on this surface.
  * @param camera The camera of this surface.
  */
-function startFrom(handover: CameraHandover, board: string, camera: PictureCamera): void {
+function startFrom(handover: CameraHandover, model: string, camera: PictureCamera): void {
 	const left = handover.take();
-	if (left?.board !== board) return;
+	if (left?.model !== model) return;
 	const { rest } = camera.view();
 	const handled = camera.handled();
 	if (camera.glide(left.camera, 0, handled)) camera.glide(rest, PRESENTATION_MS.step, handled);

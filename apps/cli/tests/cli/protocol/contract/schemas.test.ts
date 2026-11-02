@@ -16,7 +16,7 @@ describe("command-contract schemas", () => {
 				success: true,
 				pane,
 				paneCount: 2,
-				onScreen: [{ paneId: pane.paneId, place: pane.place, board: "payments" }],
+				onScreen: [{ paneId: pane.paneId, place: pane.place, paneKey: "payments" }],
 			}),
 		).toMatchObject({ paneCount: 2 });
 		const shown = {

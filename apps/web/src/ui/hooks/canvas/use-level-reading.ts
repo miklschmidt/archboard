@@ -51,7 +51,7 @@ interface LevelPlace {
 	/** How deep the trail was; a different depth is a different level. */
 	readonly depth: number;
 	/** The board at that level. */
-	readonly board: string;
+	readonly model: string;
 	/**
 	 * The vault it is in: two repositories can each hold a board of one name,
 	 * and the ids of one mean nothing in the other.
@@ -65,20 +65,20 @@ interface LevelPlace {
  * The remembered reading, when it is this level's.
  * @param place What was last chosen, or null when nothing has been.
  * @param depth How deep the trail is now.
- * @param board The board on screen now.
+ * @param model The board on screen now.
  * @param vault The vault it is in.
  * @returns The place, or null when it belongs to a level the pane has left.
  */
 function placeAt(
 	place: LevelPlace | null,
 	depth: number,
-	board: string,
+	model: string,
 	vault: string,
 ): LevelPlace | null {
 	if (place === null) {
 		return null;
 	}
-	return place.depth === depth && place.board === board && place.vault === vault ? place : null;
+	return place.depth === depth && place.model === model && place.vault === vault ? place : null;
 }
 
 /**
@@ -89,18 +89,18 @@ function placeAt(
  */
 function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	const depth = drill.trail.length;
-	const board = drill.board;
+	const model = drill.model;
 	const vault = usePaneVault();
 	const [place, setPlace] = useState<LevelPlace | null>(null);
-	const here = placeAt(place, depth, board, vault);
+	const here = placeAt(place, depth, model, vault);
 
 	const { onUserChanged } = own;
 	const onView = useCallback(
 		(view: string | null): void => {
 			onUserChanged?.("view");
-			setPlace({ depth, board, vault, view });
+			setPlace({ depth, model, vault, view });
 		},
-		[board, depth, vault, onUserChanged],
+		[model, depth, vault, onUserChanged],
 	);
 
 	// The pane's own board is read as the shell says; a trail kept across a dive

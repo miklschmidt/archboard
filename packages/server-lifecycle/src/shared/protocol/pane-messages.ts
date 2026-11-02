@@ -24,7 +24,7 @@ interface ApiResponse<T = unknown> {
 interface WebSocketMessage {
 	type: WebSocketMessageType;
 	/** The board it is about; null when the news is that there is no board. */
-	board?: string | null;
+	paneKey?: string | null;
 	[key: string]: unknown;
 }
 
@@ -75,7 +75,7 @@ type WebSocketMessageType =
 /** Canonical model activity, shared by every pane (ADR 0022 and ADR 0068). */
 interface AgentActivity {
 	/** The existing presentation key, `model:<id>`. */
-	board: string;
+	paneKey: string;
 	model: ArchitectureClaim["target"]["model"];
 	claims: ArchitectureClaim[];
 	doing: (Pick<DurableRequest, "writer" | "doing"> & { at: string }) | null;

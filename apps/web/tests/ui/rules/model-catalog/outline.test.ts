@@ -17,14 +17,14 @@ const LEVELS = ["system", "service", "module"] as const;
  * @param links The boards it links to, `^name` for a container link.
  * @returns The board.
  */
-function board(name: string, level: string | null, ...links: string[]): OutlineModel {
+function model(name: string, level: string | null, ...links: string[]): OutlineModel {
 	return {
 		name,
 		level,
 		links: links.map((link) =>
 			link.startsWith("^")
-				? { board: link.slice(1), container: true }
-				: { board: link, container: false },
+				? { model: link.slice(1), container: true }
+				: { model: link, container: false },
 		),
 	};
 }
@@ -49,12 +49,12 @@ function shape(nodes: readonly OutlineNode<OutlineModel>[], depth = 0): string[]
 test("a vault with drill links draws its hierarchy under the closest coarser parent", () => {
 	const outline = buildOutline(
 		[
-			board("Archboard", "system", "Archboard server", "Browser application", "Board persistence"),
-			board("Archboard server", "service", "Board persistence", "Semantic renderer", "Archboard"),
-			board("Browser application", "service", "^Archboard", "Semantic renderer"),
-			board("Board persistence", "module"),
-			board("Semantic renderer", "module", "Renderer layout"),
-			board("Renderer layout", "module", "Semantic renderer"),
+			model("Archboard", "system", "Archboard server", "Browser application", "Board persistence"),
+			model("Archboard server", "service", "Board persistence", "Semantic renderer", "Archboard"),
+			model("Browser application", "service", "^Archboard", "Semantic renderer"),
+			model("Board persistence", "module"),
+			model("Semantic renderer", "module", "Renderer layout"),
+			model("Renderer layout", "module", "Semantic renderer"),
 		],
 		LEVELS,
 	);
@@ -71,10 +71,10 @@ test("a vault with drill links draws its hierarchy under the closest coarser par
 test("a vault of independent boards is one level, by name, numbers in order", () => {
 	const outline = buildOutline(
 		[
-			board("Platform Cluster", "system"),
-			board("Auditlog 10", "service"),
-			board("Auditlog 9", "service"),
-			board("Cloud Infrastructure", "system", "Platform Cluster"),
+			model("Platform Cluster", "system"),
+			model("Auditlog 10", "service"),
+			model("Auditlog 9", "service"),
+			model("Cloud Infrastructure", "system", "Platform Cluster"),
 		],
 		LEVELS,
 	);
@@ -89,11 +89,11 @@ test("a vault of independent boards is one level, by name, numbers in order", ()
 test("folders come first, count their boards, and a link never crosses a folder", () => {
 	const outline = buildOutline(
 		[
-			board("platform/Cluster", "system", "platform/Ingress", "billing/Ledger"),
-			board("platform/Ingress", "service"),
-			board("platform/edge/Gateway", "service"),
-			board("billing/Ledger", "service"),
-			board("Overview", "system", "billing/Ledger"),
+			model("platform/Cluster", "system", "platform/Ingress", "billing/Ledger"),
+			model("platform/Ingress", "service"),
+			model("platform/edge/Gateway", "service"),
+			model("billing/Ledger", "service"),
+			model("Overview", "system", "billing/Ledger"),
 		],
 		LEVELS,
 	);
@@ -111,7 +111,7 @@ test("folders come first, count their boards, and a link never crosses a folder"
 
 test("a cycle of container links roots the first board of the cycle by name", () => {
 	const outline = buildOutline(
-		[board("Beta", "service", "^Alpha"), board("Alpha", "service", "^Beta")],
+		[model("Beta", "service", "^Alpha"), model("Alpha", "service", "^Beta")],
 		LEVELS,
 	);
 	expect(shape(outline)).toEqual(["Alpha +Beta", "  Beta"]);
@@ -119,7 +119,7 @@ test("a cycle of container links roots the first board of the cycle by name", ()
 
 test("a board with an unconfigured level only nests by container links", () => {
 	const outline = buildOutline(
-		[board("Top", "system", "Odd"), board("Odd", "zone"), board("Inner", "zone", "^Odd")],
+		[model("Top", "system", "Odd"), model("Odd", "zone"), model("Inner", "zone", "^Odd")],
 		LEVELS,
 	);
 	expect(shape(outline)).toEqual(["Odd", "  Inner", "Top"]);
@@ -128,9 +128,9 @@ test("a board with an unconfigured level only nests by container links", () => {
 test("ancestors and path ids lead to a board through folders and parents", () => {
 	const outline = buildOutline(
 		[
-			board("platform/Cluster", "system", "platform/Ingress"),
-			board("platform/Ingress", "service", "platform/Routes"),
-			board("platform/Routes", "module"),
+			model("platform/Cluster", "system", "platform/Ingress"),
+			model("platform/Ingress", "service", "platform/Routes"),
+			model("platform/Routes", "module"),
 		],
 		LEVELS,
 	);
@@ -149,14 +149,14 @@ test("ancestors and path ids lead to a board through folders and parents", () =>
 test("a container link that runs down the levels places the linked board under the linker", () => {
 	// Platform draws Payments as a container of its modules: Platform is still Payments' parent.
 	const outline = buildOutline(
-		[board("Platform", "system", "^Payments"), board("Payments", "service")],
+		[model("Platform", "system", "^Payments"), model("Payments", "service")],
 		LEVELS,
 	);
 	expect(shape(outline)).toEqual(["Platform", "  Payments"]);
 });
 
 test("folders spelled in two cases are one folder", () => {
-	const outline = buildOutline([board("Payments/a", null), board("payments/b", null)], LEVELS);
+	const outline = buildOutline([model("Payments/a", null), model("payments/b", null)], LEVELS);
 	expect(shape(outline)).toEqual(["Payments/ 2", "  a", "  b"]);
 });
 
@@ -166,9 +166,9 @@ test("a link that names a repository places no board of this vault under its par
 			{
 				name: "Meta",
 				level: "system",
-				links: [{ board: "Payments", repo: "github.com/acme/payments", container: false }],
+				links: [{ model: "Payments", repo: "github.com/acme/payments", container: false }],
 			},
-			board("Payments", "service"),
+			model("Payments", "service"),
 		],
 		LEVELS,
 	);

@@ -50,7 +50,7 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
 
 /**
  * Answer a render of one board: the variant and view it names, drawn.
- * @param board The board, as read.
+ * @param document The board, as read.
  * @param choices The variant, view, theme and faces asked for.
  * @param policy The vault's presentation policy.
  * @param recipe For a board render that stands alone, the vault its recipe names; the SVG then
@@ -59,24 +59,24 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
  * @returns The answer, or which name the board does not have.
  */
 async function renderLegacyBoard(
-	board: LegacyBoard,
+	document: LegacyBoard,
 	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
 	recipe?: { readonly vault: RecipeVault },
 ): Promise<LegacyRenderOutcome> {
 	installBunHost();
-	const drawing = await drawLegacyBoard(board, choices, policy);
+	const drawing = await drawLegacyBoard(document, choices, policy);
 	if (!drawing.ok) return drawing;
 	const reply =
 		recipe === undefined
 			? drawing.reply
-			: carryingRecipe(board, choices, drawing.reply, drawing.input, recipe.vault);
+			: carryingRecipe(document, choices, drawing.reply, drawing.input, recipe.vault);
 	return { ok: true, reply };
 }
 
 /**
  * A drawn answer whose SVG carries its render recipe.
- * @param board The board, as read.
+ * @param document The board, as read.
  * @param choices What the render asked for.
  * @param reply What the render answered.
  * @param input What the picture was drawn from.
@@ -84,14 +84,14 @@ async function renderLegacyBoard(
  * @returns The answer, its SVG carrying the recipe; an answer with no picture as it was.
  */
 function carryingRecipe(
-	board: LegacyBoard,
+	document: LegacyBoard,
 	choices: LegacyRenderChoices,
 	reply: SemanticRenderReply,
 	input: DrawnInput,
 	vault: RecipeVault,
 ): SemanticRenderReply {
 	if (!wasDrawn(reply)) return reply;
-	const recipe = legacyRecipe(board, choices, reply, input, vault);
+	const recipe = legacyRecipe(document, choices, reply, input, vault);
 	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }
 

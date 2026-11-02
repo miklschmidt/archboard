@@ -31,7 +31,7 @@ interface Drawn {
 
 /** One drawing: a board whole or through one view, under every engine. */
 interface Drawing {
-	readonly board: string;
+	readonly model: string;
 	readonly view: string | undefined;
 	readonly drawn: readonly Drawn[];
 }
@@ -45,13 +45,13 @@ mkdirSync(out, { recursive: true });
 
 /**
  * A file name for one drawing under one engine.
- * @param board The board.
+ * @param name The name of the model.
  * @param view The view, if any.
  * @param engine The engine.
  * @returns The name.
  */
-function fileOf(board: string, view: string | undefined, engine: string): string {
-	return `${[board, view ?? "whole", engine].join("--").replaceAll(/[^\w-]+/gu, "_")}.svg`;
+function fileOf(name: string, view: string | undefined, engine: string): string {
+	return `${[name, view ?? "whole", engine].join("--").replaceAll(/[^\w-]+/gu, "_")}.svg`;
 }
 
 const model = await readArchitectureModel(vault, undefined, undefined, { state: process.argv[5] });
@@ -100,12 +100,12 @@ for (const reading of readings) {
 			fit: fitIn({ width, height }),
 		});
 	}
-	drawings.push({ board: model.manifest.name, view: reading.name, drawn });
+	drawings.push({ model: model.manifest.name, view: reading.name, drawn });
 }
 writeFileSync(join(out, "gallery.json"), JSON.stringify(drawings, null, "\t"));
 const rows = drawings.map(
-	({ board, view, drawn }) =>
-		`<section><h2>${board}${view === undefined ? "" : ` · ${view}`}</h2><div class="row">${drawn
+	({ model: name, view, drawn }) =>
+		`<section><h2>${name}${view === undefined ? "" : ` · ${view}`}</h2><div class="row">${drawn
 			.map(
 				(one) =>
 					`<figure><figcaption>${one.engine} · ${one.ms} ms · ${Math.round(one.width)}×${Math.round(one.height)} · fit ${one.fit.toFixed(2)}</figcaption><img loading="lazy" src="${one.file}"></figure>`,

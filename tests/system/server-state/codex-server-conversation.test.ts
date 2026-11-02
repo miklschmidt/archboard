@@ -117,7 +117,9 @@ test("panes of one tab session share a conversation; another tab session holds i
 		const c = await openApplicationSocket(server.base, "client-c", { tabSession: "tab-two" });
 		resources.defer(() => c.close());
 		expect(await register(pane("client-a", "A", false, true))).toBe(200);
-		expect(await register({ ...pane("client-b", "B", true, false), board: "payments" })).toBe(200);
+		expect(await register({ ...pane("client-b", "B", true, false), paneKey: "payments" })).toBe(
+			200,
+		);
 		expect(await register(pane("client-c", "A", false, false))).toBe(200);
 		for (const socket of [a, b, c]) {
 			expect(await socket.request("connect")).toMatchObject({ ok: true });
@@ -149,7 +151,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 			| undefined;
 		expect(JSON.parse(String(additional?.archboard?.value))).toMatchObject({
 			paneId: "B",
-			board: { name: "payments" },
+			model: { name: "payments" },
 		});
 
 		// Tab two starts a conversation of its own, on its own coordinator and workhorse.
@@ -229,7 +231,7 @@ test("panes of one tab session share a conversation; another tab session holds i
 			body: {
 				paneId: "B",
 				clientId: "client-b",
-				board: { name: "payments", key: "payments" },
+				model: { name: "payments", key: "payments" },
 				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 				view: null,
 				selection: [{ id: selected }],

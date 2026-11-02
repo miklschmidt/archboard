@@ -94,10 +94,10 @@ function picker() {
 				move: {
 					/**
 					 * Record the lifecycle event.
-					 * @param board The board navigation reached.
+					 * @param model The board navigation reached.
 					 */
-					done: (board): void => {
-						moved.push(board);
+					done: (model): void => {
+						moved.push(model);
 					},
 					/** Record one navigation refusal. */
 					failed: (): void => {
@@ -157,16 +157,16 @@ function picker() {
 		},
 		/**
 		 * Emulate the server refusing an unknown pane.
-		 * @param board The board to show.
+		 * @param model The board to show.
 		 * @param clientId The pane being addressed.
 		 * @returns The board, once its pane exists.
 		 */
-		show: async (board, clientId) => {
+		show: async (model, clientId) => {
 			shown.push(clientId);
 			if (!record.status.registered) {
 				throw new Error("No pane is open; the browser command names nothing.");
 			}
-			return { board, repository: null };
+			return { model, repository: null };
 		},
 	};
 	return {

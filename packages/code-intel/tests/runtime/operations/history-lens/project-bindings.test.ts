@@ -28,7 +28,7 @@ process.env["ARCHBOARD_REPOS"] = registry;
 let lens: typeof LensModule;
 let base = "";
 
-const board = LegacyBoardSchema.parse({
+const document = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board1",
@@ -111,7 +111,7 @@ beforeAll(async () => {
 	writeFileSync(join(root, "src/Shop/sub/Ledger.cs"), "first\n");
 	writeFileSync(join(root, "src/Shop/settings.json"), "{}\n");
 	writeFileSync(join(root, "src/Other.cs"), "first\n");
-	writeFileSync(file, JSON.stringify(board));
+	writeFileSync(file, JSON.stringify(document));
 	base = commit("create the board and project");
 	for (let at = 1; at <= 5; at += 1) {
 		writeFileSync(join(root, "src/Shop/sub/Ledger.cs"), `${at}\n`);
@@ -130,7 +130,7 @@ afterAll(() => {
 });
 
 test("Behind counts every changed file in a project directory after the board changed", async () => {
-	const [read] = await lens.createBehindReading().read(vault, [{ board, file }]);
+	const [read] = await lens.createBehindReading().read(vault, [{ document, file }]);
 	const answer = ModelBehindSchema.parse(read);
 	if (!("parts" in answer)) throw new Error("no last change");
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: base });
@@ -138,10 +138,10 @@ test("Behind counts every changed file in a project directory after the board ch
 });
 
 test("hotspots and coupling use the project directory and omit overlapping bindings", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = LocalityAnswerSchema.parse(
-		await lens.createVariantLocality().read(vault, board, current, new Date("2000-01-01")),
+		await lens.createVariantLocality().read(vault, document, current, new Date("2000-01-01")),
 	);
 	expect(answer.hotspots.find((part) => part.subject.id === "project")?.commits).toHaveLength(7);
 	const pairs = answer.coupling.map((pair) => pair.subjects.map((subject) => subject.id));
@@ -150,10 +150,10 @@ test("hotspots and coupling use the project directory and omit overlapping bindi
 });
 
 test("a footprint includes source-only and settings changes in a project directory", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("no current variant");
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readVariantFootprint({ vault, board, against: current, base }),
+		await lens.readVariantFootprint({ vault, document, against: current, base }),
 	);
 	if (answer.proposal !== null) throw new Error("no proposal expected");
 	expect(answer.changed.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);

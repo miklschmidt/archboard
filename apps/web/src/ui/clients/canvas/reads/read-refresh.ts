@@ -54,9 +54,9 @@ async function readAgain(client: QueryClient, queryKeys: readonly QueryKey[]): P
  */
 function namesIn(data: unknown): string[] {
 	if (typeof data !== "object" || data === null) return [];
-	const record = data as { name?: unknown; board?: unknown; formerNames?: unknown };
+	const record = data as { name?: unknown; model?: unknown; formerNames?: unknown };
 	const formerNames = Array.isArray(record.formerNames) ? (record.formerNames as unknown[]) : [];
-	return [record.name, record.board, ...formerNames].filter(
+	return [record.name, record.model, ...formerNames].filter(
 		(name): name is string => typeof name === "string",
 	);
 }
@@ -66,16 +66,16 @@ function namesIn(data: unknown): string[] {
  * or a name the board's own reading says it has had or has now.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board, by any of its names.
+ * @param model The board, by any of its names.
  * @returns The names, as they were asked.
  */
-function namesAskedFor(client: QueryClient, vault: string, board: string): string[] {
+function namesAskedFor(client: QueryClient, vault: string, model: string): string[] {
 	const said = new Map<string, string[]>();
 	for (const reading of cachedReadings(client, vault)) {
 		said.set(reading.asked, [...(said.get(reading.asked) ?? []), ...namesIn(reading.data)]);
 	}
 	return [...said].flatMap(([asked, names]) =>
-		[asked, ...names].some((name) => sameModelName(name, board)) ? [asked] : [],
+		[asked, ...names].some((name) => sameModelName(name, model)) ? [asked] : [],
 	);
 }
 
@@ -97,11 +97,11 @@ function readingsOf(vault: string, names: readonly string[]): QueryKey[] {
  * of it are read again, under every name this tab asked it by.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board, by any of its names, or a board key naming a variant.
+ * @param model The board, by any of its names, or a board key naming a variant.
  * @returns Settles once the fresh reads have been asked for.
  */
-function modelChanged(client: QueryClient, vault: string, board: string): Promise<void> {
-	const name = paneAddressOf(board)?.board ?? board;
+function modelChanged(client: QueryClient, vault: string, model: string): Promise<void> {
+	const name = paneAddressOf(model)?.model ?? model;
 	return readAgain(client, readingsOf(vault, namesAskedFor(client, vault, name)));
 }
 
@@ -111,17 +111,17 @@ function modelChanged(client: QueryClient, vault: string, board: string): Promis
  * each named board as `modelChanged` reads it.
  * @param client The tab's cache.
  * @param vault The vault the boards are in.
- * @param boards The board keys, which may be none. A key that names a variant is of the whole board.
+ * @param models The board keys, which may be none. A key that names a variant is of the whole board.
  * @returns Settles once the fresh reads have been asked for.
  */
 async function modelsChanged(
 	client: QueryClient,
 	vault: string,
-	boards: readonly string[],
+	models: readonly string[],
 ): Promise<void> {
 	await Promise.all([
-		readAgain(client, [readKeys.boards(vault), modelCatalogKeys.panes]),
-		...boards.map((board) => modelChanged(client, vault, board)),
+		readAgain(client, [readKeys.models(vault), modelCatalogKeys.panes]),
+		...models.map((model) => modelChanged(client, vault, model)),
 	]);
 }
 
@@ -182,10 +182,10 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
  * which reads what it needs itself.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board, by any of its names.
+ * @param model The board, by any of its names.
  */
-async function modelGoneStale(client: QueryClient, vault: string, board: string): Promise<void> {
-	for (const queryKey of readingsOf(vault, namesAskedFor(client, vault, board))) {
+async function modelGoneStale(client: QueryClient, vault: string, model: string): Promise<void> {
+	for (const queryKey of readingsOf(vault, namesAskedFor(client, vault, model))) {
 		// oxlint-disable-next-line no-await-in-loop -- in order: the documents before the pictures drawn from them
 		await client.invalidateQueries({ queryKey, refetchType: "none" });
 	}
@@ -213,16 +213,16 @@ function versionOf(data: unknown): number | undefined {
  * ahead that follows this listing draws them again rather than keeping them.
  * @param client The tab's cache.
  * @param vault The vault.
- * @param boards The boards listed there, with their versions.
+ * @param models The boards listed there, with their versions.
  */
-function modelsListed(client: QueryClient, vault: string, boards: readonly DocumentEntry[]): void {
+function modelsListed(client: QueryClient, vault: string, models: readonly DocumentEntry[]): void {
 	const moved = new Set(
 		cachedReadings(client, vault).flatMap(({ asked, data }) => {
 			const held = versionOf(data);
 			// A reading asked by a former name is listed under the name its board
 			// goes by now, which only the reading itself says (ADR 0036).
 			const names = [asked, ...namesIn(data)];
-			const listed = boards.find((entry) =>
+			const listed = models.find((entry) =>
 				names.some((name) => sameModelName(name, entry.key) || sameModelName(name, entry.name)),
 			)?.version;
 			return held !== undefined && listed !== undefined && listed !== held ? [asked] : [];

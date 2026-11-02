@@ -33,7 +33,7 @@ function createRepositoryFixture(): RepositoryFixture {
 	for (const directory of [nowhere, home, state, dirname(log)]) {
 		mkdirSync(directory, { recursive: true });
 	}
-	const vault = vaultIn(join(root, "boards"));
+	const vault = vaultIn(join(root, "models"));
 	const serverEnvironment: RepositoryServerEnvironment = {
 		...process.env,
 		...clearedEnvironment,

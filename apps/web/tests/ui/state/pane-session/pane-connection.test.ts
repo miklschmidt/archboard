@@ -151,7 +151,7 @@ function deliver(socket: ControlledSocket, message: Record<string, unknown>): vo
 /** The vault a pane opens in, and the vault of another checkout of its repository. */
 const LEFT_VAULT = "/work/archboard/.archboard/vault";
 const CHOSEN_VAULT = "/work/archboard-next/.archboard/vault";
-const PAYMENTS = { board: "payments", variant: "current" };
+const PAYMENTS = { model: "payments", variant: "current" };
 
 /** One call the pane made, held until the test answers it. */
 interface HeldCall {
@@ -205,10 +205,10 @@ async function paneOnPayments() {
 			/**
 			 * Record who the pane says holds its board.
 			 * @param _paneId The pane.
-			 * @param _board The board.
+			 * @param _model The board.
 			 * @param holder The holder.
 			 */
-			onHolder: (_paneId, _board, holder): void => {
+			onHolder: (_paneId, _model, holder): void => {
 				holders.push(holder);
 			},
 		}),
@@ -240,7 +240,7 @@ async function paneOnPayments() {
 	calls[0]!.answer.resolve(registeredReply());
 	deliver(socket, {
 		type: "pane_place",
-		board: "payments",
+		paneKey: "payments",
 		identity: PAYMENTS,
 		vault: LEFT_VAULT,
 		repository: "r",
@@ -268,7 +268,7 @@ function registeredReply(): Response {
 function chooseOtherCheckout(socket: ControlledSocket): void {
 	deliver(socket, {
 		type: "pane_place",
-		board: "payments",
+		paneKey: "payments",
 		identity: PAYMENTS,
 		vault: CHOSEN_VAULT,
 		repository: "r",
@@ -332,8 +332,8 @@ test("an answer from the vault a pane left that comes back before the move leave
 		await Bun.sleep(0);
 		deliver(pane.socket, {
 			type: "pane_place",
-			board: "ledger",
-			identity: { board: "ledger", variant: "current" },
+			paneKey: "ledger",
+			identity: { model: "ledger", variant: "current" },
 			vault: LEFT_VAULT,
 			repository: "r",
 		});
@@ -360,9 +360,9 @@ test("news of a board is news of the vault the pane is in, before and after the 
 		heard.push(vault);
 	});
 	try {
-		deliver(pane.socket, { type: "model_note", semantic: true, board: "payments", version: 2 });
+		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 2 });
 		chooseOtherCheckout(pane.socket);
-		deliver(pane.socket, { type: "model_note", semantic: true, board: "payments", version: 7 });
+		deliver(pane.socket, { type: "model_note", semantic: true, model: "payments", version: 7 });
 		// The server sends a pane only its own vault's news, so the board the
 		// canvas reads again is the one of the vault it moved to.
 		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);

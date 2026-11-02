@@ -61,13 +61,13 @@ function stageMarks(
 ): { "aria-label": string; "aria-busy"?: true; "data-state": string } {
 	if (departure !== null) {
 		return {
-			"aria-label": `Semantic board ${departure.board}`,
+			"aria-label": `Semantic board ${departure.model}`,
 			"aria-busy": true,
 			"data-state": "loading",
 		};
 	}
 	return {
-		"aria-label": `Semantic board ${drawing.board}`,
+		"aria-label": `Semantic board ${drawing.model}`,
 		"data-state": stale ? "stale" : "drawn",
 	};
 }
@@ -317,7 +317,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		<section
 			{...stageMarks(departure, drawing, props.stale === true)}
 			data-slot="canvas-stage"
-			data-model={drawing.board}
+			data-model={drawing.model}
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
 			data-group={props.group?.group}

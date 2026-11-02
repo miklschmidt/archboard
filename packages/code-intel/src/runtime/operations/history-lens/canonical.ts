@@ -22,7 +22,7 @@ async function readArchitectureLocality(
 	const request = ArchitectureLocalityRequestSchema.parse(input);
 	const read = await readStatesToCheck(vault, request.state, request);
 	if (!("ok" in read)) return read;
-	const reading = read.boards[0]!;
+	const reading = read.states[0]!;
 	const model = reading.model!;
 	const evidence = await locality.read(
 		vault,
@@ -56,16 +56,16 @@ async function readArchitectureFootprint(
 	const request = ArchitectureFootprintRequestSchema.parse(input);
 	const read = await readStatesToCheck(vault, request.state, request);
 	if (!("ok" in read)) return read;
-	const reading = read.boards[0]!;
+	const reading = read.states[0]!;
 	const model = reading.model!;
 	const proposal = model.selectedState?.lifecycle === "draft" ? reading.variant : undefined;
 	const against =
 		proposal === undefined
 			? reading.variant
-			: reading.board.variants.find((variant) => variant.id === proposal.parent);
+			: reading.document.variants.find((variant) => variant.id === proposal.parent);
 	const evidence = await readFootprintEvidence({
 		vault,
-		board: reading.board,
+		document: reading.document,
 		proposal,
 		against,
 		base: request.base,

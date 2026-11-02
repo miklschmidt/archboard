@@ -32,11 +32,11 @@ interface DocumentReading {
 
 /**
  * Every document reference of the variants the check reads.
- * @param boards The boards, each at the variant the check reads.
+ * @param states The boards, each at the variant the check reads.
  * @returns The references.
  */
-function documentsOf(boards: readonly StateToCheck[]): DocumentReference[] {
-	return boards.flatMap((read) => read.variant.documents ?? []);
+function documentsOf(states: readonly StateToCheck[]): DocumentReference[] {
+	return states.flatMap((read) => read.variant.documents ?? []);
 }
 
 /**
@@ -52,7 +52,7 @@ function documentPathMissing(read: StateToCheck, index: number, where: string): 
 		severity: "warning",
 		code: "DOCUMENT_PATH_MISSING",
 		file: read.file,
-		board: read.board.name,
+		model: read.document.name,
 		variant: read.variant.id,
 		path: `variants.${read.variant.id}.documents.${index}`,
 		message:
@@ -77,7 +77,7 @@ type Judged = { readonly finding: CodeFinding } | { readonly skip: CodeCheckSkip
  */
 function codeOf(
 	document: DocumentReference,
-	at: Pick<CodeCheckSkip, "board" | "variant">,
+	at: Pick<CodeCheckSkip, "model" | "variant">,
 	reading: DocumentReading,
 ): RepoCheckout | { readonly skip: CodeCheckSkip } | undefined {
 	const { repo, path } = document;
@@ -105,7 +105,7 @@ function judgeDocument(
 	document: DocumentReference,
 	reading: DocumentReading,
 ): Judged {
-	const code = codeOf(document, { board: read.board.name, variant: read.variant.id }, reading);
+	const code = codeOf(document, { model: read.document.name, variant: read.variant.id }, reading);
 	if (code === undefined || "skip" in code) return code;
 	const target = targetIn(document, code, reading);
 	if (target.ok && target.kind === "file") return undefined;
@@ -114,15 +114,15 @@ function judgeDocument(
 
 /**
  * Hold each document reference to the file at the version it names.
- * @param boards The boards, each at the variant the check reads.
+ * @param states The boards, each at the variant the check reads.
  * @param reading The registered checkouts, each repository's checkout and the refs read from Git.
  * @returns The findings, and the references that were not read with the reason.
  */
 function judgeDocuments(
-	boards: readonly StateToCheck[],
+	states: readonly StateToCheck[],
 	reading: DocumentReading,
 ): { findings: CodeFinding[]; skipped: CodeCheckSkip[] } {
-	const judged = boards.flatMap((read) =>
+	const judged = states.flatMap((read) =>
 		(read.variant.documents ?? []).map((document, index) =>
 			judgeDocument(read, index, document, reading),
 		),

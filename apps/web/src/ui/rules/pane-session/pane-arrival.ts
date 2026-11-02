@@ -13,7 +13,7 @@ interface PaneArrivalParts {
 	/** The server put the pane in another vault. */
 	readonly setVault: (vault: string) => void;
 	readonly setOpened: (key: string | null) => void;
-	readonly setModel: (board: LegacyIdentity | null) => void;
+	readonly setModel: (model: LegacyIdentity | null) => void;
 	readonly setDoing: (entries: DoingEntry[]) => void;
 	/** The board on screen moved: who holds it and what was reported of it are not known yet. */
 	readonly forgetModel: () => void;
@@ -89,9 +89,9 @@ function createPaneArrival(
 		// and that is also where any later drill starts from.
 		status.opened = key;
 		status.paneKey = key;
-		status.board = identity ?? { board: key, variant: "current" };
+		status.model = identity ?? { model: key, variant: "current" };
 		parts.setOpened(key);
-		parts.setModel(status.board);
+		parts.setModel(status.model);
 		if (moved) {
 			// A different board is a different version and a different writer, and
 			// what an agent said about the last one is not news about this one.

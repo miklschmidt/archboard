@@ -109,14 +109,14 @@ function startBrowserRenderer(): void {
 
 /**
  * Draw one variant of a board in this page, once the core has loaded.
- * @param board The board, as the page read it.
+ * @param document The board, as the page read it.
  * @param choices The variant and view; the picture takes the page's theme.
  * @param policy The vault's presentation policy, as the page read it.
  * @returns The same answer the render route would give for this board.
  * @throws {Error} When this page never started the renderer.
  */
 async function drawLegacyBoardHere(
-	board: LegacyBoard,
+	document: LegacyBoard,
 	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
 ): Promise<LegacyRenderOutcome> {
@@ -124,7 +124,7 @@ async function drawLegacyBoardHere(
 		throw new Error("startBrowserRenderer was not called before drawing a board.");
 	}
 	await Promise.all([started, loadDiagramIcons(policy)]);
-	return renderLegacyBoard(board, choices, policy);
+	return renderLegacyBoard(document, choices, policy);
 }
 
 /**

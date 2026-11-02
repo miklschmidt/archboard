@@ -52,14 +52,14 @@ function useModelMoves(inputs: MoveInputs) {
 	const layout = useLayoutEngine();
 	const draw = useCallback(
 		async (to: Destination): Promise<ScenePicture | null> => {
-			const scope = to.board === ROOTS ? null : to.board;
+			const scope = to.model === ROOTS ? null : to.model;
 			const filters = { ...reading.filters, controls: true };
 			const opened = projectModel(model, scope, null, filters, reference);
 			if (opened.content.nodes.length === 0) return null;
 			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
 				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture", layout))),
-				board: sceneModel(destination),
+				model: sceneModel(destination),
 				view: sceneView(destination),
 			};
 		},
@@ -95,7 +95,7 @@ function useModelMoves(inputs: MoveInputs) {
 			 */
 			const plain = (): void => open(next);
 			const route = moveTo(scene, next);
-			const to = { board: next ?? ROOTS };
+			const to = { model: next ?? ROOTS };
 			if (route.kind === "out") out({ ...to, card: route.card }, plain);
 			else if (route.kind === "into") into(route.card, to, plain);
 			else plain();
@@ -147,14 +147,14 @@ function useDrawAhead(
 	const modules = useMemo(() => new Set(model.modules.map((module) => module.id)), [model.modules]);
 	const scope = scene?.reading.scope ?? null;
 	useEffect(() => {
-		if (scope !== null) ask(() => draw({ board: parentOf(model, scope) ?? ROOTS }));
+		if (scope !== null) ask(() => draw({ model: parentOf(model, scope) ?? ROOTS }));
 	}, [scope, model, ask, draw]);
 	return useCallback(
 		(id: string): void => {
 			const opens = modules.has(id) && id !== scope;
 			ask(async () => {
 				await drawToggled(id);
-				if (opens) await draw({ board: id });
+				if (opens) await draw({ model: id });
 			});
 		},
 		[modules, scope, ask, draw, drawToggled],

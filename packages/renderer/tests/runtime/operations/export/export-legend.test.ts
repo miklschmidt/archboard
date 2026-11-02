@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { Window } from "happy-dom";
 import { LINE_MARKS, markCounts } from "#shared/rules/render/key-marks.ts";
-import type { DrawnBoard } from "@archboard/model/render-reply";
+import type { DrawnPicture } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { exported } from "#tests/runtime/support/export-picture.ts";
 
@@ -13,7 +13,7 @@ import { exported } from "#tests/runtime/support/export-picture.ts";
 // legend lists what the page's key lists for the same picture.
 
 /** How the picture drew one subject. */
-type AppliedAppearance = DrawnBoard["appearances"][number];
+type AppliedAppearance = DrawnPicture["appearances"][number];
 
 /** One entry of an exported legend: what it keys, its words and its count. */
 interface Listed {
@@ -47,7 +47,7 @@ function listed(svg: string): (Listed & { x: number; y: number })[] {
  * @param drawn The picture, as the page receives it.
  * @returns The entries.
  */
-function pageKey(drawn: DrawnBoard): Listed[] {
+function pageKey(drawn: DrawnPicture): Listed[] {
 	const { legend } = drawn;
 	const relationships = legend?.relationships ?? [];
 	return [
@@ -129,7 +129,7 @@ function comparable({ iconSvg, ...facts }: AppliedAppearance) {
  * @param drawn The picture.
  * @returns How far down and right its subjects reach.
  */
-function reach(drawn: DrawnBoard): { bottom: number; right: number } {
+function reach(drawn: DrawnPicture): { bottom: number; right: number } {
 	const boxes = (["nodes", "edges", "regions"] as const).flatMap((kind) =>
 		Object.values(drawn.atlas[kind]),
 	);

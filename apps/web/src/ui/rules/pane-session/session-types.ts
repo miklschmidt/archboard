@@ -11,7 +11,7 @@ import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
 
 /** A board's address: what it is called, and which of its variants is shown. */
 export interface LegacyIdentity {
-	board: string;
+	model: string;
 	/** The variant's name, or `current` when the pane follows the designation. */
 	variant: string;
 }
@@ -29,7 +29,7 @@ export type CatalogModel = Omit<DocumentEntry, "variants"> & {
 
 /** Persisted board inventory returned by `/api/semantic-boards`. */
 export interface PersistedLegacyListing {
-	boards: CatalogModel[];
+	models: CatalogModel[];
 	/** The vault's configured levels, coarsest first. */
 	levels: readonly string[];
 }
@@ -39,7 +39,7 @@ export interface BrowserPaneListing {
 	panes: Array<{
 		paneId: string;
 		place: string;
-		board: string;
+		model: string;
 		identity: LegacyIdentity;
 	}>;
 }
@@ -47,7 +47,7 @@ export interface BrowserPaneListing {
 /** UI-local projection of persisted boards and the live pane inventory. */
 export interface LegacyListing extends PersistedLegacyListing {
 	/** What each pane is holding right now, in reading order. */
-	onScreen: Array<{ paneId: string; place: string; board: string }>;
+	onScreen: Array<{ paneId: string; place: string; model: string }>;
 }
 
 /** What the server sends a pane over its socket. */
@@ -57,8 +57,8 @@ export interface WebSocketMessage {
 	reading?: unknown;
 	/** On `pane_error`: the actionable refusal the shell must keep visible. */
 	error?: string;
-	/** The board a message is about, as a pane board key. */
-	board?: string;
+	/** The pane key a message is about. */
+	paneKey?: string;
 	identity?: LegacyIdentity;
 	/** On `pane_place`: the vault the pane is in now (ADR 0050). On `agent_activity`: the vault the boards are in. */
 	vault?: string;
@@ -151,7 +151,7 @@ export interface PaneStatus {
 	 * point this pane at a board is told there is no such pane.
 	 */
 	registered: boolean;
-	board: LegacyIdentity | null;
+	model: LegacyIdentity | null;
 	/**
 	 * The board this pane is showing, or null before it is on one.
 	 *

@@ -47,7 +47,7 @@ function finding(
 		severity,
 		file: "pipeline.semantic.json",
 		path: "variants[0]",
-		board: "pipeline",
+		model: "pipeline",
 		variant: "v1",
 		subject: { ...subject, name: subject.id },
 		message,
@@ -74,7 +74,7 @@ function remembered(version: number, findings: readonly Record<string, unknown>[
 		success: true,
 		readings: [
 			{
-				board: "pipeline",
+				model: "pipeline",
 				variant: "v1",
 				version,
 				checkedAt: "2026-10-06T12:00:00.000Z",

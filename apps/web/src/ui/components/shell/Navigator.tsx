@@ -60,7 +60,7 @@ function workingEntries(view: ShellView, panes: readonly PaneMark[]): WorkingEnt
 	return view.repositories.flatMap((shell) => {
 		const repository = shell.repository.name;
 		return Object.values(shell.activity).map((activity) => {
-			const name = shell.model?.name ?? activity.board;
+			const name = shell.model?.name ?? activity.model;
 			const letters =
 				panes.length < 2
 					? []
@@ -119,7 +119,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		[actions],
 	);
 	const openPaneKey = useCallback(
-		(_board: string, beside: boolean, repository: string): void => {
+		(_model: string, beside: boolean, repository: string): void => {
 			const shell = view.repositories.find((entry) => entry.repository.name === repository);
 			if (shell !== undefined) openRepository(actions, shell, beside);
 		},

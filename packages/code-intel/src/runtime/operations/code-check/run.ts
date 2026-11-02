@@ -87,10 +87,10 @@ function canonicalFinding(
 	finding: import("#shared/protocol/code-check.ts").CodeFinding,
 ) {
 	const model = readings.find(
-		(reading) => reading.board.name === finding.board && reading.variant.id === finding.variant,
+		(reading) => reading.document.name === finding.model && reading.variant.id === finding.variant,
 	)?.model;
 	if (model === undefined) return finding;
-	const { board: _board, variant: _variant, path: _path, ...content } = finding;
+	const { model: _document, variant: _variant, path: _path, ...content } = finding;
 	const owner = findingOwner(model, finding.subject?.id);
 	return { ...content, file: owner ?? "model.json", ...findingIdentity(model) };
 }
@@ -138,11 +138,11 @@ function createCodeCheck(): CodeCheck {
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);
-			const code = await checkCode(vault, read.boards, request.signal, plans.plans);
+			const code = await checkCode(vault, read.states, request.signal, plans.plans);
 			return CodeCheckAnswerSchema.parse({
 				timings: code.timings,
-				boards: [],
-				models: read.boards.flatMap(({ model }) =>
+				states: [],
+				models: read.states.flatMap(({ model }) =>
 					model === undefined
 						? []
 						: [
@@ -153,7 +153,7 @@ function createCodeCheck(): CodeCheck {
 								},
 							],
 				),
-				findings: code.findings.map((finding) => canonicalFinding(read.boards, finding)),
+				findings: code.findings.map((finding) => canonicalFinding(read.states, finding)),
 				skipped: [...read.skipped, ...code.skipped],
 				behind: [],
 			});

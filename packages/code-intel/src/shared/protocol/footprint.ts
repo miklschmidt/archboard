@@ -114,7 +114,7 @@ const FootprintRepositorySchema = z.discriminatedUnion("status", [
 
 /** What every footprint says, whether or not a proposal was named. */
 const footprintBase = {
-	board: z.string(),
+	model: z.string(),
 	version: z.int().nonnegative(),
 	/** The ref as the caller named it. */
 	base: z.string(),

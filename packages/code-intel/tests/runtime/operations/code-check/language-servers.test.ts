@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 import { languageServerOf } from "#runtime/operations/language-servers/server-command.ts";
 
 const caller = {
@@ -98,7 +98,7 @@ beforeAll(async () => {
 		"src/report.ts": "export function report(): string { return 'r'; }\n",
 	});
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -136,7 +136,7 @@ beforeAll(async () => {
 	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {

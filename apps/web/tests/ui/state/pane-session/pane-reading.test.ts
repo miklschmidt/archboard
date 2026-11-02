@@ -34,7 +34,7 @@ async function settled(): Promise<void> {
 function reading(id: string): PaneReading {
 	return {
 		...NOTHING_READ,
-		board: { name: "payments", key: "payments" },
+		model: { name: "payments", key: "payments" },
 		selection: [{ id }],
 	};
 }

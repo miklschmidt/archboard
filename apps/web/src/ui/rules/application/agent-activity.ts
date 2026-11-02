@@ -38,7 +38,7 @@ function replaceAgentActivity(
 ): AgentActivityMap {
 	const next: Record<string, AgentActivityEntry> = {};
 	for (const entry of snapshot) {
-		next[entry.board] = entry;
+		next[entry.model] = entry;
 	}
 	return sameActivity(current, next) ? current : Object.freeze(next);
 }

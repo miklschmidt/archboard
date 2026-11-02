@@ -38,8 +38,8 @@ function mintClientId(paneId: string): string {
 interface SessionState {
 	contact: PaneContact;
 	setConnected: (connected: boolean) => void;
-	board: LegacyIdentity | null;
-	setModel: (board: LegacyIdentity | null) => void;
+	model: LegacyIdentity | null;
+	setModel: (model: LegacyIdentity | null) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	openedKey: string | null;
 	setOpened: (key: string | null) => void;
@@ -61,7 +61,7 @@ interface SessionState {
  */
 function useSessionState(openingVault: string): SessionState {
 	const { contact, setConnected } = usePaneContact();
-	const [board, setModel] = useState<LegacyIdentity | null>(null);
+	const [model, setModel] = useState<LegacyIdentity | null>(null);
 	const [openedKey, setOpened] = useState<string | null>(null);
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
@@ -73,7 +73,7 @@ function useSessionState(openingVault: string): SessionState {
 	return {
 		contact,
 		setConnected,
-		board,
+		model,
 		setModel,
 		openedKey,
 		setOpened,
@@ -209,7 +209,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 		openedKey: state.openedKey,
 		vault: state.vault,
 		arrivals: state.arrivals,
-		board: state.board,
+		model: state.model,
 		connected: state.contact.connected,
 		heldBy: state.heldBy,
 		doing: state.doing,

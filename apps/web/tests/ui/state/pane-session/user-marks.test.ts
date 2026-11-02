@@ -32,15 +32,15 @@ async function settled(): Promise<void> {
 
 /**
  * A drawn reading.
- * @param board The board on screen.
+ * @param model The board on screen.
  * @param selected The selected subject, or null.
  * @param version The board version drawn.
  * @returns The reading.
  */
-function reading(board: string, selected: string | null, version = 1): PaneReading {
+function reading(model: string, selected: string | null, version = 1): PaneReading {
 	return {
 		...NOTHING_READ,
-		board: { name: board, key: board },
+		model: { name: model, key: model },
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
 		version,
 		selection: selected === null ? [] : [{ id: selected }],
@@ -126,7 +126,7 @@ describe("what a report says the user changed", () => {
 		publisher.publish(reading("payments", null));
 		await settled();
 
-		publisher.userChanged("board");
+		publisher.userChanged("model");
 		publisher.userChanged("variant");
 		publisher.reset();
 		publisher.publish(NOTHING_READ);
@@ -136,7 +136,7 @@ describe("what a report says the user changed", () => {
 		publisher.dispose();
 
 		// The variant kept its id, so only the board is said.
-		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["board"]]);
+		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["model"]]);
 	});
 
 	test("a board the server could not open leaves nothing waiting for an agent's switch to use", async () => {
@@ -144,8 +144,8 @@ describe("what a report says the user changed", () => {
 		publisher.publish(reading("payments", null));
 		await settled();
 
-		publisher.userChanged("board");
-		publisher.userChangeFailed("board");
+		publisher.userChanged("model");
+		publisher.userChangeFailed("model");
 		publisher.reset();
 		publisher.publish(reading("ledger", null));
 		await settled();

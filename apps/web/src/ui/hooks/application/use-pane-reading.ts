@@ -106,9 +106,9 @@ function usePaneReadings(): PaneReadings {
 	}, []);
 	const modelChanged = useCallback(
 		(paneId: string, paneKey: string, previousKey: string | null): void => {
-			const board = paneAddressOf(paneKey);
+			const model = paneAddressOf(paneKey);
 			const previous = paneAddressOf(previousKey);
-			if (board === null || previous === null || !sameModelName(board.board, previous.board)) {
+			if (model === null || previous === null || !sameModelName(model.model, previous.model)) {
 				setViews((current) => cleared(current, paneId));
 			}
 			setPicked((current) => cleared(current, paneId));

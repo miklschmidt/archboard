@@ -7,15 +7,15 @@ async function lockMode(): Promise<void> {
 	if (!vault) {
 		throw new Error("ARCHBOARD_TEST_LOCK_VAULT is required.");
 	}
-	const board = process.env["ARCHBOARD_TEST_LOCK_MODEL"] ?? "resource-cleanup";
+	const model = process.env["ARCHBOARD_TEST_LOCK_MODEL"] ?? "resource-cleanup";
 	const holderId = process.env["ARCHBOARD_TEST_LOCK_HOLDER"] ?? "resource-owner";
 	const hold = await holdModel({
 		vault,
-		board,
+		model,
 		holder: { id: holderId, kind: "agent" },
 		waitMs: 0,
 	});
-	const lockFile = join(vault, ".archboard/locks", `${board}.lock`);
+	const lockFile = join(vault, ".archboard/locks", `${model}.lock`);
 	const port = Number(process.env["ARCHBOARD_TEST_STUBBORN_PORT"]) || undefined;
 	const server = port ? createServer((socket) => socket.end()) : undefined;
 	if (server) {
@@ -25,11 +25,11 @@ async function lockMode(): Promise<void> {
 		});
 	}
 	const renewal = setInterval(() => {
-		void holdModel({ vault, board, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
+		void holdModel({ vault, model, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
 	}, 800);
 	const stop = () => {
 		clearInterval(renewal);
-		releaseHold(vault, board, holderId);
+		releaseHold(vault, model, holderId);
 		if (server) {
 			server.close(() => process.exit(0));
 		} else {

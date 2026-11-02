@@ -134,7 +134,7 @@ type RenderedChanges = z.infer<typeof RenderedChangesSchema>;
  */
 const RenderIdentitySchema = z.object({
 	success: z.literal(true),
-	board: DisplayNameSchema,
+	model: DisplayNameSchema,
 	version: z.int(),
 	variant: RenderedVariantSchema,
 	/** The view this picture is of, or null when it is of the overview. */
@@ -255,7 +255,7 @@ const PictureLegendSchema = z.object({
 });
 
 /** A board that was drawn. */
-const DrawnBoardSchema = RenderIdentitySchema.extend({
+const DrawnPictureSchema = RenderIdentitySchema.extend({
 	svg: z.string().min(1),
 	/**
 	 * The scene and its icons, for a painter, which no host reads. Only a picture
@@ -272,7 +272,7 @@ const DrawnBoardSchema = RenderIdentitySchema.extend({
 	/** What the picture draws; `changes.standing` says how each of these stands, and no other. */
 	drawn: DrawnSubjectsSchema,
 });
-type DrawnBoard = z.infer<typeof DrawnBoardSchema>;
+type DrawnPicture = z.infer<typeof DrawnPictureSchema>;
 
 /**
  * Why nothing was drawn. `NOTHING_TO_RENDER`: the variant holds nothing at all.
@@ -292,7 +292,7 @@ const NothingDrawnSchema = RenderIdentitySchema.extend({
 });
 type NothingDrawn = z.infer<typeof NothingDrawnSchema>;
 
-const SemanticRenderReplySchema = z.union([DrawnBoardSchema, NothingDrawnSchema]);
+const SemanticRenderReplySchema = z.union([DrawnPictureSchema, NothingDrawnSchema]);
 type SemanticRenderReply = z.infer<typeof SemanticRenderReplySchema>;
 
 /**
@@ -300,7 +300,7 @@ type SemanticRenderReply = z.infer<typeof SemanticRenderReplySchema>;
  * @param reply The answer.
  * @returns True when there is something to show.
  */
-function wasDrawn(reply: SemanticRenderReply): reply is DrawnBoard {
+function wasDrawn(reply: SemanticRenderReply): reply is DrawnPicture {
 	return "svg" in reply;
 }
 
@@ -333,8 +333,8 @@ export {
 	PictureMarksSchema,
 	type PictureMarks,
 	PictureReceiptShape,
-	DrawnBoardSchema,
-	type DrawnBoard,
+	DrawnPictureSchema,
+	type DrawnPicture,
 	NothingDrawnReasonSchema,
 	type NothingDrawnReason,
 	NothingDrawnSchema,

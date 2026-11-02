@@ -164,7 +164,7 @@ async function goBack(): Promise<void> {
  * Which board the pane is showing.
  * @returns Its name.
  */
-function board(): string | null {
+function model(): string | null {
 	return document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-model") ?? null;
 }
 
@@ -250,20 +250,20 @@ test("a card's board opens by flying into the card, and lands where the board st
 	try {
 		await openBelow();
 		// The flight is in the air: the board is inside its card, the camera is on its way, and the board above is still the pane's.
-		expect(board()).toBe("pipeline");
+		expect(model()).toBe("pipeline");
 		expect(insets()).toBe(1);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		const before = cameraNow();
 		frames.run(EXPLORING_MS.dive / 2);
 		expect(cameraNow().scale).toBeGreaterThan(before.scale);
-		expect(board()).toBe("pipeline");
+		expect(model()).toBe("pipeline");
 
 		flyOut(frames);
 		const lastFrame = insetOnScreen();
 		await settle();
 
 		// The board has taken over from the one inside the card, in the same place and with no entrance of its own.
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		expect(insets()).toBe(0);
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
@@ -283,18 +283,18 @@ test("going back flies out of the card that opened the board, and lands on the w
 		await openBelow();
 		flyOut(frames);
 		await settle();
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		const left = pictureOnScreen(BELOW);
 
 		await goBack();
 		// The board is seen where it was, now inside its card on the board above.
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		expect(insets()).toBe(1);
 		expectSamePlace(insetOnScreen(), left);
 
 		flyOut(frames);
 		await settle();
-		expect(board()).toBe("pipeline");
+		expect(model()).toBe("pipeline");
 		expect(insets()).toBe(0);
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
@@ -310,7 +310,7 @@ interface FarBefore {
 
 /** Which board the stage showed before one change of it. */
 interface PictureBefore {
-	readonly board: string | null;
+	readonly model: string | null;
 }
 
 /**
@@ -328,7 +328,7 @@ function ofFar(seen: FarBefore | PictureBefore): seen is FarBefore {
  * @returns True when it is.
  */
 function ofModel(seen: FarBefore | PictureBefore): seen is PictureBefore {
-	return "board" in seen;
+	return "model" in seen;
 }
 
 /**
@@ -346,7 +346,7 @@ function after(
 	const later = seen.slice(index + 1);
 	return {
 		far: later.find(ofFar)?.far ?? surface().classList.contains("is-far"),
-		shown: later.find(ofModel)?.board ?? stage.getAttribute("data-model"),
+		shown: later.find(ofModel)?.model ?? stage.getAttribute("data-model"),
 	};
 }
 
@@ -365,7 +365,7 @@ function watchFarView(): () => string[] {
 	const note = (records: MutationRecord[]): void => {
 		for (const record of records) {
 			if (record.attributeName === "data-model") {
-				seen.push({ board: record.oldValue });
+				seen.push({ model: record.oldValue });
 			} else if (record.target === surface()) {
 				seen.push({ far: (record.oldValue ?? "").split(/\s+/).includes("is-far") });
 			}
@@ -399,7 +399,7 @@ test("a flight between two boards seen from far swaps no card's words for its na
 		await settle();
 		frames.run(EXPLORING_MS.cameraRest + 64);
 		await settle();
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		expect(changes()).toEqual([]);
 		expect(surface().classList.contains("is-far")).toBe(true);
 	} finally {
@@ -417,7 +417,7 @@ test("a board seen from far that opens from a board seen near swaps its cards on
 		await settle();
 		frames.run(EXPLORING_MS.cameraRest + 64);
 		await settle();
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		// Then the cards swap their words for their names once, with the picture's own fade.
 		expect(changes()).toEqual(["engine: far"]);
 	} finally {
@@ -463,7 +463,7 @@ for (const input of INPUTS) {
 				sendInput(input.type);
 			});
 			await settle();
-			expect(board()).toBe("engine");
+			expect(model()).toBe("engine");
 			expect(insets()).toBe(0);
 			expect(reached).toBe(false);
 		} finally {
@@ -483,7 +483,7 @@ test("a board opens by flying only when it can be seen in time", async () => {
 		frames.run(EXPLORING_MS.divePrefetch + 32);
 		await settle();
 		expect(insets()).toBe(0);
-		expect(board()).toBe("pipeline");
+		expect(model()).toBe("pipeline");
 		expect(document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-state")).toBe(
 			"loading",
 		);
@@ -499,7 +499,7 @@ test("a board does not fly while a picture is still coming in", async () => {
 		expect(surface().hasAttribute("data-picture-motion")).toBe(true);
 		await openBelow();
 		expect(insets()).toBe(0);
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 	} finally {
 		frames.restore();
 	}
@@ -510,11 +510,11 @@ test("a reader who asked for no motion gets the board at once, and goes back at 
 	try {
 		await openBelow();
 		expect(insets()).toBe(0);
-		expect(board()).toBe("engine");
+		expect(model()).toBe("engine");
 		expect(surface().hasAttribute("data-camera-motion")).toBe(false);
 		await goBack();
 		expect(insets()).toBe(0);
-		expect(board()).toBe("pipeline");
+		expect(model()).toBe("pipeline");
 	} finally {
 		frames.restore();
 	}

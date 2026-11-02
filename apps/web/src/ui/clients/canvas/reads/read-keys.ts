@@ -29,13 +29,13 @@ const readKeys = {
 	 */
 	codeFindings: (vault: string) => ["code-findings", vault] as const,
 	/** Every vault's semantic boards. */
-	allModels: [SEMANTIC_KEY, "boards"] as const,
+	allModels: [SEMANTIC_KEY, "models"] as const,
 	/**
 	 * One vault's semantic boards.
 	 * @param vault The vault.
 	 * @returns Its cache key.
 	 */
-	boards: (vault: string) => [SEMANTIC_KEY, "boards", vault] as const,
+	models: (vault: string) => [SEMANTIC_KEY, "models", vault] as const,
 	/** Every drawing of every board of every vault. */
 	renders: [SEMANTIC_KEY, "render"] as const,
 	/**
@@ -57,19 +57,19 @@ const readKeys = {
 	 * This is the prefix a board's own change invalidates: the version moved for
 	 * the whole board, so no picture of it is current any more.
 	 * @param vault The vault the board is in.
-	 * @param board The board name.
+	 * @param model The board name.
 	 * @returns Its render prefix.
 	 */
-	modelRenders: (vault: string, board: string) => [SEMANTIC_KEY, "render", vault, board] as const,
+	modelRenders: (vault: string, model: string) => [SEMANTIC_KEY, "render", vault, model] as const,
 	/**
 	 * One board's own document, which inspection reads for what a picture does
 	 * not carry. It is the same versioned board the drawing is of, so a change
 	 * announcement makes both stale and has to invalidate both.
 	 * @param vault The vault the board is in.
-	 * @param board The board name.
+	 * @param model The board name.
 	 * @returns Its cache key.
 	 */
-	document: (vault: string, board: string) => [SEMANTIC_KEY, "document", vault, board] as const,
+	document: (vault: string, model: string) => [SEMANTIC_KEY, "document", vault, model] as const,
 	/**
 	 * One drawing: a vault, a board, a variant and a view. Not a theme: a picture
 	 * paints with the page's colour tokens, so one picture serves both themes and
@@ -82,7 +82,7 @@ const readKeys = {
 			SEMANTIC_KEY,
 			"render",
 			request.vault,
-			request.board,
+			request.model,
 			request.variant ?? "",
 			request.view ?? "",
 			comparisonKey(request),
@@ -140,9 +140,9 @@ function cachedReadings(client: QueryClient, vault: string): CachedReading[] {
  */
 function sameModelAsked(
 	previous: readonly unknown[] | undefined,
-	request: Pick<SemanticRenderRequest, "vault" | "board">,
+	request: Pick<SemanticRenderRequest, "vault" | "model">,
 ): boolean {
-	return previous?.[2] === request.vault && previous[3] === request.board;
+	return previous?.[2] === request.vault && previous[3] === request.model;
 }
 
 export { cachedReadings, sameModelAsked, readKeys, type CachedReading };

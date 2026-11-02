@@ -20,7 +20,7 @@ import {
 /** What a person's gesture asked the workspace to become. */
 type NavigationIntent =
 	| {
-			readonly kind: "board";
+			readonly kind: "model";
 			/** The canonical destination whose arrival completes this user open. */
 			readonly destination?: { readonly model: string; readonly repository: string };
 			readonly paneId: string;

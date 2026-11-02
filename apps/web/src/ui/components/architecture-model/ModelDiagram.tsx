@@ -137,7 +137,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		cut: props.cut,
 		recall,
 	});
-	useCameraHandover(camera, drawing.board, reducedMotion);
+	useCameraHandover(camera, drawing.model, reducedMotion);
 	const { lighting, single } = useSceneLighting(scene, selected, leaving !== null);
 	const tip = useSceneTip(drawing, camera, lighting);
 	const selectArea = useAreaSelection(scene, camera, onSelectMany);
@@ -207,7 +207,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		<section
 			data-slot="model-diagram"
 			data-revision={model.revision.digest}
-			data-scene={drawing.board}
+			data-scene={drawing.model}
 			aria-busy={props.pending}
 			tabIndex={0}
 			aria-label="Module diagram"

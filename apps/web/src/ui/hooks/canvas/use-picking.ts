@@ -22,7 +22,7 @@ import type { GroupChoice, GroupSelection } from "#ui/rules/canvas/reading/group
 /** What picking is made from. */
 interface PickingInputs {
 	/** The board on screen. */
-	readonly board: string;
+	readonly model: string;
 	/** What the board says about itself, or null while it has not arrived. */
 	readonly reading: VariantReading | null;
 	/** Whether a walkthrough is being read. */
@@ -66,8 +66,8 @@ interface Picking {
  * @returns The picks, and the group selected.
  */
 function usePicking(inputs: PickingInputs): Picking {
-	const { board, reading, presenting, choose, onSelect } = inputs;
-	const grouped = useGroupSelection(board, reading === null ? null : reading.variant, presenting);
+	const { model, reading, presenting, choose, onSelect } = inputs;
+	const grouped = useGroupSelection(model, reading === null ? null : reading.variant, presenting);
 	const chooseGroup = grouped.choose;
 	const held = reading?.subject;
 	const onPick = useCallback(

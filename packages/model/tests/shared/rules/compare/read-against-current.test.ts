@@ -81,17 +81,17 @@ function documentOf(variants: readonly Record<string, unknown>[], current?: stri
  * @param id The variant's id.
  * @returns The variant.
  */
-function variantOf(board: LegacyBoard, id: string): SemanticVariant {
-	const found = board.variants.find((one) => one.id === id);
+function variantOf(model: LegacyBoard, id: string): SemanticVariant {
+	const found = model.variants.find((one) => one.id === id);
 	if (found === undefined) throw new Error(`no variant ${id}`);
 	return found;
 }
 
 describe("a board with a current variant", () => {
-	const board = documentOf(HISTORY, "v2");
+	const model = documentOf(HISTORY, "v2");
 
 	test("draws the current variant as it is, with no comparison", () => {
-		const drawing = drawingOf(board, variantOf(board, "v2"));
+		const drawing = drawingOf(model, variantOf(model, "v2"));
 
 		expect(drawing.changes).toBeNull();
 		// Nothing the history had is put back into the picture of now.
@@ -99,7 +99,7 @@ describe("a board with a current variant", () => {
 	});
 
 	test("draws a historical variant against current: what current has and history lacks stands removed", () => {
-		const drawing = drawingOf(board, variantOf(board, "v1"));
+		const drawing = drawingOf(model, variantOf(model, "v1"));
 
 		expect(drawing.changes?.against.id).toBe("v2");
 		expect(drawing.changes?.standing).toEqual({
@@ -113,7 +113,7 @@ describe("a board with a current variant", () => {
 	});
 
 	test("draws a proposal standing on history against current, not against its parent", () => {
-		const drawing = drawingOf(board, variantOf(board, "v3"));
+		const drawing = drawingOf(model, variantOf(model, "v3"));
 
 		expect(drawing.changes?.against.id).toBe("v2");
 		expect(drawing.changes?.standing).toMatchObject({
@@ -126,7 +126,7 @@ describe("a board with a current variant", () => {
 });
 
 describe("a board nobody has built", () => {
-	const board = documentOf([
+	const model = documentOf([
 		{ id: "d1", name: "First sketch", lifecycle: "draft", content: { nodes: [PLATFORM, GATEWAY] } },
 		{
 			id: "d2",
@@ -138,10 +138,10 @@ describe("a board nobody has built", () => {
 	]);
 
 	test("draws a draft against the draft it came from, since there is no now", () => {
-		const drawing = drawingOf(board, variantOf(board, "d2"));
+		const drawing = drawingOf(model, variantOf(model, "d2"));
 
 		expect(drawing.changes?.against.id).toBe("d1");
 		expect(drawing.changes?.standing).toEqual({ pl: "unchanged", gw: "unchanged", qu: "added" });
-		expect(drawingOf(board, variantOf(board, "d1")).changes).toBeNull();
+		expect(drawingOf(model, variantOf(model, "d1")).changes).toBeNull();
 	});
 });

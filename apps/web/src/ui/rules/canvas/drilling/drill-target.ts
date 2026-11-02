@@ -30,6 +30,6 @@ interface OtherRepository {
  * @param variant The variant to open, by id.
  * @param there The other repository's vault it is in, when it is not in the pane's own.
  */
-type OpenDown = (board: string, variant: string, there?: OtherRepository) => void;
+type OpenDown = (model: string, variant: string, there?: OtherRepository) => void;
 
 export { type OpenDown, type OtherRepository, type RepositoryPlace, type RepositoryPlaces };

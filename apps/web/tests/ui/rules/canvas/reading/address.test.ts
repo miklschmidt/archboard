@@ -14,7 +14,7 @@ test("a key naming a variant round-trips through the address and back", () => {
 	expect(key).toBe("pipeline@7c40IV7N");
 	// Both halves come back as they went in, which is what lets a restore put the
 	// pane on the proposal it was on rather than on the board's current state.
-	expect(paneAddressOf(key)).toEqual({ board: "pipeline", variant: "7c40IV7N" });
+	expect(paneAddressOf(key)).toEqual({ model: "pipeline", variant: "7c40IV7N" });
 	expect(paneKeyFor("pipeline", paneAddressOf(key)?.variant)).toBe(key);
 });
 
@@ -22,7 +22,7 @@ test("a key naming no variant still means whichever variant is current", () => {
 	// Every address written before variants were addressable says this, and it
 	// has to go on meaning what it meant: the board, as it stands.
 	expect(paneKeyFor("pipeline")).toBe("pipeline");
-	expect(paneAddressOf("pipeline")).toEqual({ board: "pipeline", variant: undefined });
+	expect(paneAddressOf("pipeline")).toEqual({ model: "pipeline", variant: undefined });
 	expect(paneAddressOf("")).toBeNull();
 	expect(paneAddressOf(null)).toBeNull();
 });
@@ -33,10 +33,10 @@ test("the variant is everything after the first mark, punctuation and all", () =
 	// variant is the whole of the rest: a proposal called "Queue @ edge" is a
 	// title somebody wrote, and a name a branch accepts that nothing can open
 	// would be a trap. This is the same rule the server parses by.
-	expect(paneAddressOf("a@Queue @ edge")).toEqual({ board: "a", variant: "Queue @ edge" });
+	expect(paneAddressOf("a@Queue @ edge")).toEqual({ model: "a", variant: "Queue @ edge" });
 	expect(paneKeyFor("payments", "Queue @ edge")).toBe("payments@Queue @ edge");
 	expect(paneAddressOf(paneKeyFor("payments", "Queue @ edge"))).toEqual({
-		board: "payments",
+		model: "payments",
 		variant: "Queue @ edge",
 	});
 });

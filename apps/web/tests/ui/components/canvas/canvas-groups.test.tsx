@@ -138,7 +138,7 @@ function picture(hidden: readonly string[] = []): Record<string, unknown> {
 	].join("");
 	return {
 		success: true,
-		board: "pipeline",
+		model: "pipeline",
 		version: 1,
 		variant: { id: "v1", name: "as it is", lifecycle: "current" },
 		view: null,
@@ -283,7 +283,7 @@ test("selecting a group replaces the picked subject, and picking a subject lets 
 	serving();
 	const { picks } = mountStage("g", { live: true });
 	await settled();
-	openSidebarTab("board");
+	openSidebarTab("model");
 	await toggle("billing");
 	expect(picks.at(-1)).toBeNull();
 	expect(selected()).toEqual(["w", "l"]);
@@ -298,7 +298,7 @@ test("selecting a group replaces the picked subject, and picking a subject lets 
 	await settled();
 	expect(picks.at(-1)).toBe("g");
 	expect(selected()).toEqual(["g"]);
-	openSidebarTab("board");
+	openSidebarTab("model");
 	expect(listed()).toBeNull();
 
 	// Escape lets a selected group go, as it lets a picked subject go.
@@ -334,7 +334,7 @@ test("a membership in the inspector selects the same group, with its colour", as
 	expect(selected()).toEqual(["h", "q", "w"]);
 	// The control goes with the selection it let go of, and the keyboard is not left on the page.
 	expect(document.activeElement).not.toBe(document.body);
-	openSidebarTab("board");
+	openSidebarTab("model");
 	expect(listed()).toBe("fulfillment");
 });
 

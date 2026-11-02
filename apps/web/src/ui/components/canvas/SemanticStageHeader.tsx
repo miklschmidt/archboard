@@ -25,7 +25,7 @@ interface StageHeaderView {
 	/** The query's answer for the board on screen. */
 	readonly render: { readonly data: SemanticRender | undefined };
 	/** Which board the pane is looking at, and how it got there. */
-	readonly drill: Pick<DrillNavigation, "board" | "trail">;
+	readonly drill: Pick<DrillNavigation, "model" | "trail">;
 	/**
 	 * Go back to one of the boards the reader came down through.
 	 * @param depth Where it is in the trail: 0 is its first board.
@@ -36,7 +36,7 @@ interface StageHeaderView {
 	 * @param board The board on screen.
 	 * @returns The boards above it.
 	 */
-	readonly placeOf?: ((board: string) => readonly CrumbPlace[]) | undefined;
+	readonly placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;
 	/** The sidebar, which a control in the header shows and hides. */
 	readonly sidebar: Sidebar;
 }
@@ -75,7 +75,7 @@ function StageHeader(props: { readonly view: StageHeaderView }): JSX.Element {
 	return (
 		<PaneHeader
 			{...facts}
-			name={view.render.data?.board ?? view.drill.board}
+			name={view.render.data?.model ?? view.drill.model}
 			{...crumbs}
 			sidebar={view.sidebar}
 		>

@@ -65,7 +65,7 @@ const SemanticSubjectRefSchema = z
 type SemanticSubjectRef = z.infer<typeof SemanticSubjectRefSchema>;
 
 /** Which board a pane is reading, by the name every command spells it with. */
-const SemanticPaneBoardSchema = z
+const SemanticPaneModelSchema = z
 	.object({
 		/** The board's name as typed, which is what the CLI and the routes take. */
 		name: z.string().min(1).max(200),
@@ -148,7 +148,7 @@ type PanePresentRequest = z.infer<typeof PanePresentRequestSchema>;
  * The walkthrough position is not one of them: `answering` already tells a step somebody asked
  * for from one the user chose.
  */
-const SemanticPanePartSchema = z.enum(["board", "variant", "view", "selection"]);
+const SemanticPanePartSchema = z.enum(["model", "variant", "view", "selection"]);
 type SemanticPanePart = z.infer<typeof SemanticPanePartSchema>;
 
 /**
@@ -180,7 +180,7 @@ const SemanticPaneContextSchema = z
 		paneId: z.string().min(1).max(128),
 		/** The socket this pane speaks over, so a dropped tab retires its report. */
 		clientId: z.string().min(1).max(128),
-		board: SemanticPaneBoardSchema.nullable(),
+		model: SemanticPaneModelSchema.nullable(),
 		variant: SemanticPaneVariantSchema.nullable(),
 		view: SemanticPaneViewSchema.nullable(),
 		/** The subjects the person has picked out; empty for none. */
@@ -229,7 +229,7 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
  * @param other The other, or nothing.
  * @returns True when both name the same board key, or neither names one.
  */
-function sameSemanticBoard(
+function sameSemanticModel(
 	one: SemanticPaneContext | null,
 	other: SemanticPaneContext | null,
 ): boolean {
@@ -242,7 +242,7 @@ function sameSemanticBoard(
  * @returns The key, or null.
  */
 function keyOf(report: SemanticPaneContext | null): string | null {
-	return report?.board?.key ?? null;
+	return report?.model?.key ?? null;
 }
 
 export {
@@ -259,5 +259,5 @@ export {
 	type PanePresentRequest,
 	SemanticPaneContextSchema,
 	type SemanticPaneContext,
-	sameSemanticBoard,
+	sameSemanticModel,
 };

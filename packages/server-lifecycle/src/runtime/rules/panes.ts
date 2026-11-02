@@ -100,7 +100,7 @@ function emptyReport(arrangement: Arrangement, context: PaneContext): PanesRepor
 		paneCount: 0,
 		arrangement,
 		focused: null,
-		sameBoard: true,
+		samePaneKey: true,
 		panes: [],
 		summary,
 		text:
@@ -123,7 +123,7 @@ function paneReport(
 	place: string,
 	context: PaneContext,
 ): PaneReport {
-	const identity = identityOf(pane.board, context);
+	const identity = identityOf(pane.paneKey, context);
 	const { repository, checkout } = context.whereabouts(pane.vault);
 	return {
 		paneId: pane.paneId,
@@ -132,7 +132,7 @@ function paneReport(
 		place,
 		focused: pane.focused,
 		primary: pane.primary,
-		board: identity === null ? pane.board : paneAddressKey(identity),
+		paneKey: identity === null ? pane.paneKey : paneAddressKey(identity),
 		identity,
 		vault: pane.vault,
 		repository,
@@ -147,15 +147,15 @@ function paneReport(
 
 /**
  * What board a pane is on, when it is on one.
- * @param board The board key the pane reported, or null.
+ * @param paneKey The board key the pane reported, or null.
  * @param context Where board keys are resolved.
  * @returns The legacy identity, or null for a canonical model or empty pane.
  */
-function identityOf(board: string | null, context: PaneContext): LegacyIdentity | null {
-	if (board === null || board.startsWith("model:")) {
+function identityOf(paneKey: string | null, context: PaneContext): LegacyIdentity | null {
+	if (paneKey === null || paneKey.startsWith("model:")) {
 		return null;
 	}
-	return context.identity(board) ?? parsePaneKey(board);
+	return context.identity(paneKey) ?? parsePaneKey(paneKey);
 }
 
 const LAYOUT_PHRASE: Record<string, string> = {
@@ -374,8 +374,8 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 	// proposal against what is current are reading one document, and a command
 	// that names no board is not ambiguous between them — it is the comparison
 	// this tool exists for.
-	const sameBoard =
-		new Set(panes.map((p) => p.architecture?.model ?? p.identity?.board ?? p.board)).size === 1;
+	const samePaneKey =
+		new Set(panes.map((p) => p.architecture?.model ?? p.identity?.board ?? p.paneKey)).size === 1;
 	const focused = panes.find((p) => p.focused)?.paneId ?? null;
 	const summary = `${layoutPhrase(arrangement, panes.length)}${showingPhrase(panes)}.`;
 	const lines = [
@@ -387,7 +387,7 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 		paneCount: panes.length,
 		arrangement,
 		focused,
-		sameBoard,
+		samePaneKey,
 		panes,
 		summary,
 		text: lines.join("\n"),

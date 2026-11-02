@@ -71,7 +71,7 @@ const EmbedFindingSchema = z.object({
 	 */
 	embedRepo: z.string().optional(),
 	/** The board as the recipe names it; absent when the recipe cannot be read. */
-	board: EmbedLegacyBoardSchema.optional(),
+	paneKey: EmbedLegacyBoardSchema.optional(),
 	model: EmbedLegacyBoardSchema.optional(),
 	message: z.string(),
 	/** For `EMBED_SOURCE_MISSING`: what is gone. */
@@ -162,7 +162,9 @@ const EmbedsPartSchema = z.object({
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
 	/** Every tracked embed of the vault's boards (ADR 0057), in the order the boards list them. */
-	tracked: z.array(z.object({ board: EmbedLegacyBoardSchema, repo: z.string(), path: z.string() })),
+	tracked: z.array(
+		z.object({ paneKey: EmbedLegacyBoardSchema, repo: z.string(), path: z.string() }),
+	),
 	/** Every vault an embed's recipe names that the check read, in the order the embeds name them. */
 	vaults: z.array(EmbedVaultSchema),
 	findings: z.array(EmbedFindingSchema),

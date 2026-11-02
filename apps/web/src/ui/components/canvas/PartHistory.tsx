@@ -51,7 +51,7 @@ const SKIPPED: Readonly<Record<BehindSkip["reason"], string>> = {
 
 /** The pure source-history display, shared by canonical module readers. */
 interface PartHistoryProps {
-	readonly answer: Omit<LocalityAnswer, "board" | "version" | "variant">;
+	readonly answer: Omit<LocalityAnswer, "model" | "version" | "variant">;
 	readonly subject: string;
 	readonly nodes: readonly Pick<SemanticNode, "id" | "kind">[];
 	readonly look: KindLook;

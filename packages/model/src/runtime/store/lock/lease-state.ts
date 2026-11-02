@@ -16,7 +16,7 @@ import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 
 const processAnnounced = new Map<string, string>();
 const processSink = { notify: null as LockSink | null };
-const processSweep = { also: null as ((vault: string, board: string) => void) | null };
+const processSweep = { also: null as ((vault: string, model: string) => void) | null };
 const processWatcher: {
 	watched: WatchedModels | null;
 	timer: ReturnType<typeof setInterval> | null;
@@ -25,12 +25,12 @@ const processWatcher: {
 /** One board of one vault. */
 interface WatchedModel {
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 }
 
 /** The boards a browser has on screen, each with the vault it lives in. */
 interface WatchedModels {
-	readonly boards: () => readonly WatchedModel[];
+	readonly models: () => readonly WatchedModel[];
 }
 
 /**
@@ -60,15 +60,15 @@ function newToken(): string {
  * One percent-encoded filename per normalized board keeps nested board names
  * from becoming directories and makes this the sole vault lock-path owner.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @returns The lease file's path.
  */
-function lockPathFor(vault: string, board: string): string {
+function lockPathFor(vault: string, model: string): string {
 	return path.join(
 		vault,
 		VAULT_STATE_DIR,
 		"locks",
-		`${encodeURIComponent(normalizePaneKey(board))}.lock`,
+		`${encodeURIComponent(normalizePaneKey(model))}.lock`,
 	);
 }
 
@@ -159,11 +159,11 @@ function holderOf(record: LockRecord): LockHolder {
 /**
  * Who has one board now.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @returns The holder, or null when the board is free.
  */
-function modelLockState(vault: string, board: string): LockHolder | null {
-	const live = liveRecord(readRecord(lockPathFor(vault, normalizePaneKey(board))));
+function modelLockState(vault: string, model: string): LockHolder | null {
+	const live = liveRecord(readRecord(lockPathFor(vault, normalizePaneKey(model))));
 	return live ? holderOf(live) : null;
 }
 
@@ -186,29 +186,29 @@ function lockFingerprint(holder: LockHolder | null): string {
  * news. What was told is remembered per board of a vault, so a board of one
  * name in two vaults is told twice.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @param holder Who has it, or null when it is free.
  */
-function announce(vault: string, board: string, holder: LockHolder | null): void {
+function announce(vault: string, model: string, holder: LockHolder | null): void {
 	// Reserved internal locks are not boards. Their public operation owns its news.
-	if (board.startsWith("@")) return;
+	if (model.startsWith("@")) return;
 	const announced = lockFingerprint(holder);
-	const key = modelMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, model);
 	if (processAnnounced.get(key) === announced) {
 		return;
 	}
 	processAnnounced.set(key, announced);
-	processSink.notify?.(vault, normalizePaneKey(board), holder);
+	processSink.notify?.(vault, normalizePaneKey(model), holder);
 }
 
 /**
  * Tell the panes a board is held.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @param holder Who has it.
  */
-function announceHeld(vault: string, board: string, holder: LockHolder): void {
-	announce(vault, board, holder);
+function announceHeld(vault: string, model: string, holder: LockHolder): void {
+	announce(vault, model, holder);
 }
 
 /**
@@ -219,10 +219,10 @@ function announceHeld(vault: string, board: string, holder: LockHolder): void {
  * than assumed, so a board another process has taken meanwhile is announced
  * held, never falsely free from stale release state.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  */
-function announceFree(vault: string, board: string): void {
-	announce(vault, board, modelLockState(vault, board));
+function announceFree(vault: string, model: string): void {
+	announce(vault, model, modelLockState(vault, model));
 }
 
 /**
@@ -232,12 +232,12 @@ function announceFree(vault: string, board: string): void {
  * a successor, and unlinking that record would admit a third writer. The
  * ordering is deliberate — immediate unlink, then the news.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @param holderId Who is releasing it.
  * @returns True when this holder had it to release.
  */
-function releaseHold(vault: string, board: string, holderId: string): boolean {
-	const key = normalizePaneKey(board);
+function releaseHold(vault: string, model: string, holderId: string): boolean {
+	const key = normalizePaneKey(model);
 	const file = lockPathFor(vault, key);
 	const current = readRecord(file);
 	if (!current || current.id !== holderId) {
@@ -264,20 +264,20 @@ function releaseHold(vault: string, board: string, holderId: string): boolean {
  * every claim it renews (TASK-489). A process that takes the lapsed lease in
  * the meantime writes its own record, and the next renewal is refused.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @param id Who is renewing.
  * @param leaseMs How much longer to hold it.
  * @returns The renewed holder, or null when the lease is no longer theirs.
  */
-function renewRecord(vault: string, board: string, id: string, leaseMs: number): LockHolder | null {
-	const file = lockPathFor(vault, board);
+function renewRecord(vault: string, model: string, id: string, leaseMs: number): LockHolder | null {
+	const file = lockPathFor(vault, model);
 	const current = readRecord(file);
 	if (!current || current.id !== id) {
 		return null;
 	}
 	const renewed: LockRecord = { ...current, until: stamp(Date.now() + leaseMs) };
 	writeRecord(file, renewed);
-	announceHeld(vault, board, holderOf(renewed));
+	announceHeld(vault, model, holderOf(renewed));
 	return holderOf(renewed);
 }
 
@@ -289,20 +289,20 @@ function sweepModelLocks(): void {
 		return;
 	}
 	const watched = new Map<string, WatchedModel>();
-	for (const { vault, board } of processWatcher.watched.boards()) {
-		watched.set(modelMemoryKey(vault, board), { vault, board: normalizePaneKey(board) });
+	for (const { vault, model } of processWatcher.watched.models()) {
+		watched.set(modelMemoryKey(vault, model), { vault, model: normalizePaneKey(model) });
 	}
-	for (const { vault, board } of watched.values()) {
+	for (const { vault, model } of watched.values()) {
 		// The note-watch passenger shares this exact board list and cadence. It runs
 		// first, but its failure must never stop lock observation.
 		try {
-			processSweep.also?.(vault, board);
+			processSweep.also?.(vault, model);
 		} catch (error) {
-			logger.warn(`Board lock sweep passenger failed for "${board}"; lock watch continues.`, {
+			logger.warn(`Board lock sweep passenger failed for "${model}"; lock watch continues.`, {
 				error,
 			});
 		}
-		announce(vault, board, modelLockState(vault, board));
+		announce(vault, model, modelLockState(vault, model));
 	}
 }
 
@@ -340,7 +340,7 @@ function watchModelLocks(watched: WatchedModels | null): void {
  * which boards are on screen.
  * @param sink What to run for each board of a vault, or null to stop.
  */
-function onBoardSweep(sink: ((vault: string, board: string) => void) | null): void {
+function onBoardSweep(sink: ((vault: string, model: string) => void) | null): void {
 	processSweep.also = sink;
 }
 

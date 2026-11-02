@@ -70,7 +70,7 @@ const paneKeys = new Map<string, string>();
  * @returns The board key that pane holds, or null when it holds none.
  */
 function paneKeyOf(pane: PaneRegistration): string | null {
-	return paneKeys.get(pane.clientId) ?? pane.board;
+	return paneKeys.get(pane.clientId) ?? pane.paneKey;
 }
 
 /**
@@ -87,11 +87,11 @@ function paneKeyOfClient(clientId: string): string | null {
  * What each pane holds, in reading order.
  * @returns One entry per pane with its place on screen and its board.
  */
-function paneKeysOnScreen(): Array<{ paneId: string; place: string; board: string | null }> {
+function paneKeysOnScreen(): Array<{ paneId: string; place: string; model: string | null }> {
 	return panesInOrder(addressablePanes([...panes.values()])).map((entry) => ({
 		paneId: entry.pane.paneId,
 		place: entry.place,
-		board: paneKeyOf(entry.pane),
+		model: paneKeyOf(entry.pane),
 	}));
 }
 
@@ -141,12 +141,12 @@ function sendToVaultClients(vault: string, data: string): void {
  * of a board of another vault, even one of the same name (ADR 0049).
  * @param message The message to send.
  * @param vault The vault the board lives in.
- * @param board The board the message is about; stamped onto the message.
+ * @param paneKey The pane key the message is about; stamped onto the message.
  */
-function broadcast(message: WebSocketMessage, vault: string, board: string): void {
-	sendToVaultClients(vault, JSON.stringify({ ...message, board }));
+function broadcast(message: WebSocketMessage, vault: string, paneKey: string): void {
+	sendToVaultClients(vault, JSON.stringify({ ...message, paneKey }));
 	for (const observer of broadcastObservers) {
-		observer(message, vault, board);
+		observer(message, vault, paneKey);
 	}
 }
 
@@ -178,11 +178,11 @@ function deliverToPane(clientId: string, data: string): boolean {
  * open` used to drag the other pane along with it.
  * @param clientId The pane's client id.
  * @param message The message to send.
- * @param board The board the message is about; stamped onto the message.
+ * @param paneKey The pane key the message is about; stamped onto the message.
  * @returns Whether the pane received it.
  */
-function sendToPane(clientId: string, message: WebSocketMessage, board: string): boolean {
-	return deliverToPane(clientId, JSON.stringify({ ...message, board }));
+function sendToPane(clientId: string, message: WebSocketMessage, paneKey: string): boolean {
+	return deliverToPane(clientId, JSON.stringify({ ...message, paneKey }));
 }
 
 /**
@@ -271,15 +271,15 @@ function stillThere(vault: string, _key: string): boolean {
 function copyableModels(clientId: string, vault: string): string[] {
 	const remembered = paneVaults.get(clientId) === vault ? paneKeys.get(clientId) : undefined;
 	const reference = referencePane(vault);
-	const boards: string[] = [];
+	const models: string[] = [];
 	if (remembered !== undefined) {
-		boards.push(remembered);
+		models.push(remembered);
 	}
 	const shown = reference === null ? null : paneKeyOf(reference);
 	if (shown !== null) {
-		boards.push(shown);
+		models.push(shown);
 	}
-	return boards;
+	return models;
 }
 
 /**
@@ -523,7 +523,7 @@ export type { PendingPaneClose, PendingPaneOpen };
 
 /** Whoever is watching what the panes are told about boards. */
 const broadcastObservers = new Set<
-	(message: WebSocketMessage, vault: string, board: string) => void
+	(message: WebSocketMessage, vault: string, model: string) => void
 >();
 
 /**
@@ -536,7 +536,7 @@ const broadcastObservers = new Set<
  * @returns Stops watching.
  */
 function onBoardBroadcast(
-	observer: (message: WebSocketMessage, vault: string, board: string) => void,
+	observer: (message: WebSocketMessage, vault: string, model: string) => void,
 ): () => void {
 	broadcastObservers.add(observer);
 	return (): void => {

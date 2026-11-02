@@ -104,10 +104,10 @@ function chosenCheckout(): string | undefined {
  * @param vault The vault.
  * @param board The board.
  */
-async function createModel(vault: string, board: string): Promise<void> {
+async function createModel(vault: string, model: string): Promise<void> {
 	writeFileSync(
 		join(vault, "model.json"),
-		JSON.stringify({ schemaVersion: 1, id: "Payments", name: board, current: null }),
+		JSON.stringify({ schemaVersion: 1, id: "Payments", name: model, current: null }),
 	);
 }
 
@@ -121,7 +121,7 @@ async function createModel(vault: string, board: string): Promise<void> {
 function paneIn(vault: string, clientId: string, x = 0): Promise<PaneSession> {
 	return openPaneSession(server.base, createRequester({ ...server, vault }), {
 		clientId,
-		board: "payments",
+		model: "payments",
 		x,
 	});
 }
@@ -200,7 +200,7 @@ describe.serial("browser show and the chosen checkout", () => {
 				body: {
 					paneId: "pane-left",
 					clientId: "pane-left",
-					board: { name: "payments", key: "payments" },
+					model: { name: "payments", key: "payments" },
 					variant: null,
 					view: null,
 					selection: [{ id: "ab12" }],
@@ -228,7 +228,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		expect(chosenCheckout()).toBe(worktree);
 		// The pane the show did not name follows the choice with its board.
 		expect(await left.waitFor("pane_place", mark)).toMatchObject({
-			board: "payments",
+			paneKey: "payments",
 			vault: worktreeVault,
 			repository: ORDERS,
 		});
@@ -274,7 +274,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		const mark = pane.mark();
 		archboard(fixture.nowhere, ["repo", "use", main]);
 		expect(await pane.waitFor("pane_place", mark)).toMatchObject({
-			board: "payments",
+			paneKey: "payments",
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -308,11 +308,11 @@ describe.serial("browser show and the chosen checkout", () => {
 		archboard(fixture.nowhere, ["repo", "use", main]);
 
 		// The page reconnects naming the vault it was in, which the server cannot read now.
-		const back = await openObservedPane<{ type: string; board?: string; vault?: unknown }>({
+		const back = await openObservedPane<{ type: string; model?: string; vault?: unknown }>({
 			base: server.base,
 			clientId: "pane-gone",
 			vault: goneVault,
-			register: (board, signal) =>
+			register: (model, signal) =>
 				createRequester({ ...server, vault: mainVault })("/api/panes", {
 					method: "POST",
 					doing: false,
@@ -323,7 +323,7 @@ describe.serial("browser show and the chosen checkout", () => {
 						primary: true,
 						focused: false,
 						rect: { x: 0, y: 0, width: 640, height: 800 },
-						board,
+						paneKey: model,
 					},
 				}),
 			readPanes: (signal) =>

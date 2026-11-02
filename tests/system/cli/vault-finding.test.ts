@@ -258,14 +258,14 @@ test("autostart starts a server without a vault, and the server serves the vault
 		seedCanonicalFixture(join(shop, ".archboard/vault"), "Checkout", []);
 		const drawn = archboard(["model", "read"], shop, started);
 		expect(drawn.status, drawn.failure).toBe(0);
-		const boards = (cwd: string, args: readonly string[] = []) => {
+		const models = (cwd: string, args: readonly string[] = []) => {
 			const result = archboard(["model", "read", ...args], cwd, started);
 			expect(result.status, result.failure).toBe(0);
 			return z.object({ manifest: z.object({ name: z.string() }) }).parse(JSON.parse(result.stdout))
 				.manifest.name;
 		};
-		expect(boards(shop)).toBe("Checkout");
-		expect(boards(fixture.nowhere, ["-C", plans])).toBe("plans");
+		expect(models(shop)).toBe("Checkout");
+		expect(models(fixture.nowhere, ["-C", plans])).toBe("plans");
 	} finally {
 		archboard(["stop"], fixture.nowhere, started);
 	}

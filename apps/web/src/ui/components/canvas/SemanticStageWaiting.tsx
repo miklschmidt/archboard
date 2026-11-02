@@ -18,7 +18,7 @@ import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 /** What the waiting pane is drawn from. */
 interface WaitingView {
 	/** Which board is being drawn. */
-	readonly drill: { readonly board: string };
+	readonly drill: { readonly model: string };
 	/** The last board's picture on its way out, or null. */
 	readonly leaving: Leaving | null;
 	/** The pane's camera, kept across the wait. */
@@ -40,7 +40,7 @@ function ignorePick(): void {
 function waitingStage(view: WaitingView): JSX.Element {
 	const { leaving } = view;
 	if (leaving === null) {
-		return <SemanticStageLoading board={view.drill.board} />;
+		return <SemanticStageLoading model={view.drill.model} />;
 	}
 	return (
 		<SemanticDiagram

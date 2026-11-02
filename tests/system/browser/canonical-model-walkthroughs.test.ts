@@ -185,7 +185,7 @@ test("walkthrough beats change readings while one revision stays captured until 
 		WAIT,
 	);
 	expect(reported).toMatchObject({
-		board: null,
+		paneKey: null,
 		architecture: {
 			model: "Shop",
 			expectedRevision: revision,

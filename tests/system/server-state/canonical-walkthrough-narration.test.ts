@@ -71,7 +71,7 @@ describe("live narration", () => {
 			walkthrough: voice.model.playback!.walkthrough.id,
 			beat: 0,
 		});
-		expect(message).not.toHaveProperty("board");
+		expect(message).not.toHaveProperty("paneKey");
 		expect(voice.spoken()).toEqual([]);
 		await voice.report(voice.beat(0, false, String(message["request"])));
 		expect(voice.spoken()).toEqual([]);

@@ -52,8 +52,8 @@ test("browser keyboard input keeps trusted keys, modifiers, and native focus", a
 	});
 	await browser.run(["press", "Tab"]);
 	expect(await browser.eval<string>("document.activeElement.id")).toBe("second");
-	await browser.run(["keyboard", "type", "board"]);
-	expect(await browser.eval<string>("document.querySelector('#second').value")).toBe("board");
+	await browser.run(["keyboard", "type", "model"]);
+	expect(await browser.eval<string>("document.querySelector('#second').value")).toBe("model");
 });
 
 const WAIT = { timeoutMs: 8_000 } as const;

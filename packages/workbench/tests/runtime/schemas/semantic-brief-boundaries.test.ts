@@ -148,7 +148,7 @@ function maximumContext(cursorFeedId: string, includeStaleReasons = true): Seman
 		},
 		workhorse: { threadId: identity, turnId: identity },
 		coordinator: { threadId: identity, realtimeSessionId: identity },
-		board: {
+		model: {
 			key: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.paneKeyBytes),
 			name: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes),
 			vault: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),
@@ -183,8 +183,8 @@ describe("semantic context JSON byte boundaries", () => {
 		for (const value of publicBoundaryValues) {
 			const context: SemanticContextInput = {
 				repository: "repo",
-				board: {
-					key: "board",
+				model: {
+					key: "model",
 					name: "Board",
 					vault: "/vault",
 					file: "board.semantic.json",
@@ -213,8 +213,8 @@ describe("semantic context JSON byte boundaries", () => {
 	test("retains the NUL-free authored string contract", () => {
 		const context: SemanticContextInput = {
 			repository: "repo",
-			board: {
-				key: "board",
+			model: {
+				key: "model",
 				name: "Board",
 				vault: "/vault",
 				file: "board.semantic.json",

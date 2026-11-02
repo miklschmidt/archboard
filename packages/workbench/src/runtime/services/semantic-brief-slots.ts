@@ -106,7 +106,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			},
 		},
 		{
-			original: context.board.key,
+			original: context.model.key,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
@@ -114,7 +114,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, key: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
@@ -205,7 +205,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			},
 		},
 		{
-			original: context.board.name,
+			original: context.model.name,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
@@ -213,11 +213,11 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, name: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, name: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
-			original: context.board.vault,
+			original: context.model.vault,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
@@ -225,11 +225,11 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, vault: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, vault: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{
-			original: context.board.file,
+			original: context.model.file,
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
@@ -237,7 +237,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
-				context.board = { ...context.board, file: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
+				context.model = { ...context.model, file: value ?? SEMANTIC_CONTEXT_ELLIPSIS };
 			},
 		},
 		{

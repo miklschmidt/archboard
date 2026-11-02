@@ -5,10 +5,10 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 /** A board of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
-const BOARD = LegacyBoardSchema.parse({
+const DOCUMENT = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
-	id: "board",
+	id: "document",
 	name: "Gateway",
 	level: "system",
 	version: 1,
@@ -58,7 +58,7 @@ const BOARD = LegacyBoardSchema.parse({
  */
 async function emptyCode(variant: string, view?: string): Promise<string | undefined> {
 	const outcome = await renderLegacyBoard(
-		BOARD,
+		DOCUMENT,
 		{ theme: "light", variant, view },
 		DEFAULT_SEMANTIC_POLICY,
 	);

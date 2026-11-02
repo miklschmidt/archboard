@@ -11,7 +11,7 @@ import { LegacyListingSchema } from "@archboard/model/legacy-listing";
 import {
 	type DiagramAtlas,
 	type DiagramBox,
-	type DrawnBoard,
+	type DrawnPicture,
 	type LayoutEngineName,
 	type NothingDrawn,
 	type OfferedView,
@@ -41,13 +41,13 @@ type SemanticAtlas = DiagramAtlas;
 type SemanticVariantRef = RenderedVariant;
 
 /** What a drawn state is waiting on, when it is waiting on anything. */
-type SemanticWaiting = NonNullable<DrawnBoard["waiting"]>;
+type SemanticWaiting = NonNullable<DrawnPicture["waiting"]>;
 
 /** How the picture drew one subject, as the renderer core read it off the picture. */
-type AppliedAppearance = DrawnBoard["appearances"][number];
+type AppliedAppearance = DrawnPicture["appearances"][number];
 
 /** What the picture's key lists: one sample of each kind it draws. */
-type PictureLegend = NonNullable<DrawnBoard["legend"]>;
+type PictureLegend = NonNullable<DrawnPicture["legend"]>;
 
 /** One view the board offers, as a switcher needs to know it. */
 type SemanticOfferedView = OfferedView;
@@ -59,7 +59,7 @@ type DocumentEntry = ListedLegacyBoard;
 type RetainedListing = Pick<LegacyListing, "levels" | "boards" | "repository">;
 
 /** A variant with something on it, drawn, as the viewer carries it. */
-type SemanticDrawing = DrawnBoard & { readonly kind: "drawn" };
+type SemanticDrawing = DrawnPicture & { readonly kind: "drawn" };
 
 /** A board that is there and has nothing on it yet, as the viewer carries it. */
 type SemanticNothingDrawn = NothingDrawn & { readonly kind: "empty" };
@@ -75,7 +75,7 @@ type SemanticRender = SemanticDrawing | SemanticNothingDrawn;
 interface SemanticRenderRequest {
 	/** The vault the board is in, as the server names it (ADR 0049). */
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 	/** A variant id or name; the board's current variant when absent. */
 	readonly variant?: string | undefined;
 	/**

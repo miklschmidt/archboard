@@ -171,7 +171,7 @@ describe("the surface across pictures", () => {
 	test("a first picture and another board's come in part by part; reduced motion cuts", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
-			const other = picture([B], [], { board: "engine" });
+			const other = picture([B], [], { model: "engine" });
 			const { rerender, container } = render(
 				createElement(Surface, { drawing: first, reducedMotion: false }),
 			);

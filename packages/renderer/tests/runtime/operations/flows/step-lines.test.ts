@@ -35,7 +35,7 @@ const FLOW = {
  * @param edges The authored relationships.
  * @returns The content.
  */
-function board(edges: readonly unknown[] = []): VariantContent {
+function document(edges: readonly unknown[] = []): VariantContent {
 	return orderedFixture({ nodes: NODES, edges, flows: [FLOW] });
 }
 
@@ -57,7 +57,7 @@ describe("a flow drawn on its board", () => {
 	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board(),
+			content: document(),
 			theme: "light",
 		});
 		expect(drawnIds(rendered.svg, "step")).toEqual(["s1", "s2", "s3"]);
@@ -74,7 +74,7 @@ describe("a flow drawn on its board", () => {
 	test("a board with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
+			content: document([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),
 			theme: "light",
 		});
 		expect(drawnIds(rendered.svg, "edge")).toEqual(["e1"]);
@@ -84,7 +84,7 @@ describe("a flow drawn on its board", () => {
 	test("a standing keyed by the step's id lands on its line", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
-			content: board(),
+			content: document(),
 			theme: "light",
 			standing: { s3: "added" },
 		});

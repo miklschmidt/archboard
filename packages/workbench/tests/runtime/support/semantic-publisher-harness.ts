@@ -31,7 +31,7 @@ function context(
 			threadId: ids.thread("coordinator"),
 			realtimeSessionId: ids.realtimeSession,
 		},
-		board: {
+		model: {
 			key: "payments",
 			name: "Payments",
 			vault: "/work/.archboard/vault",
@@ -87,7 +87,7 @@ function change(
 	return {
 		cursor: 3,
 		vault: "/work/.archboard/vault",
-		board: "payments",
+		model: "payments",
 		at: new Date(now).toISOString(),
 		origin: "human",
 		significance: "structural",

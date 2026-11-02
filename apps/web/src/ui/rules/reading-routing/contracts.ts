@@ -66,7 +66,7 @@ interface WorkspacePort {
 	readonly closePane: (paneId: string) => boolean;
 	readonly selectPane: (paneId: string) => boolean;
 	/** A restore could not reach these boards; the workspace is what is shown. */
-	readonly reportUnreachable: (boards: readonly AskedModel[]) => void;
+	readonly reportUnreachable: (models: readonly AskedModel[]) => void;
 }
 
 export type { AskedModel, OpenedModel, OpenOutcome, WorkspacePort };

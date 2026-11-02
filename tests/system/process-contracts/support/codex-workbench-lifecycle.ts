@@ -92,7 +92,7 @@ export const pane = (clientId: string) => ({
 	paneId: "lifecycle-pane",
 	primary: true,
 	focused: true,
-	board: "scratch",
+	paneKey: "scratch",
 	rect: { x: 0, y: 0, width: 1280, height: 800 },
 });
 export async function startServer(options: {

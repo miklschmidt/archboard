@@ -48,7 +48,7 @@ const MODEL: Searchable = {
 			{
 				id: "mark",
 				legacy: "mark",
-				board: "board",
+				board: "model",
 				file: "mark.json",
 				name: "Order bookmark",
 				summary: "Kept",
@@ -62,7 +62,7 @@ const MODEL: Searchable = {
 			},
 		],
 		addresses: [
-			{ address: "orders-before", board: "board", state: "Before", canonical: "Current" },
+			{ address: "orders-before", board: "model", state: "Before", canonical: "Current" },
 		],
 	},
 };

@@ -7,7 +7,7 @@ import {
 	LEGACY_BOARD_SCHEMA_VERSION,
 	type LegacyBoard,
 } from "@archboard/model/legacy-board";
-import type { DrawnBoard } from "@archboard/model/render-reply";
+import type { DrawnPicture } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { renderLegacyBoard } from "#runtime/operations/render.ts";
 import { type LegacyRenderChoices } from "#shared/rules/render/legacy-board.ts";
@@ -55,7 +55,7 @@ const DRAFT = {
 const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
-	id: "board",
+	id: "document",
 	name: "Ingest",
 	level: "system",
 	version: 1,
@@ -97,7 +97,7 @@ const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
 async function exported(
 	choices: Omit<LegacyRenderChoices, "fonts">,
 	policy = DEFAULT_SEMANTIC_POLICY,
-): Promise<DrawnBoard> {
+): Promise<DrawnPicture> {
 	const outcome = await renderLegacyBoard(EXPORT_DOCUMENT, { theme: "light", ...choices }, policy);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
 	return outcome.reply;

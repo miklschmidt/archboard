@@ -22,7 +22,7 @@ let failAt: number | null = null;
 let asked: number[] = [];
 
 /** A board of one part with a walkthrough of two steps: all the talk's schema asks of a board. */
-const BOARD = {
+const MODEL = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
@@ -90,7 +90,7 @@ const talkParts: Omit<Parameters<typeof keepTalk>[0], "voice" | "directory"> = {
 			{ kind: "end", at: SAMPLES },
 		],
 	},
-	document: BOARD,
+	document: MODEL,
 	policy: {
 		policy: DEFAULT_SEMANTIC_POLICY,
 		configurationValid: true,

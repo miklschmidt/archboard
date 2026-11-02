@@ -57,7 +57,7 @@ interface DiveInputs {
  * through. Going back, a reader that knows which card opens the board on screen
  * says so. Otherwise it is the card that the flight in went through.
  */
-type Destination = Pick<SemanticRenderRequest, "board" | "variant" | "view"> & {
+type Destination = Pick<SemanticRenderRequest, "model" | "variant" | "view"> & {
 	readonly card?: string;
 };
 
@@ -462,7 +462,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 			proceed();
 			return;
 		}
-		cards.set(keyOf(at.board, to.board), card);
+		cards.set(keyOf(at.model, to.model), card);
 		/**
 		 * The flight into the card, once the board's picture is to hand.
 		 * @param child The picture of the board the card opens.
@@ -483,7 +483,7 @@ function createFlights(first: DiveInputs, handed: (from: MovingPicture | null) =
 	 */
 	function out(to: Destination, proceed: () => void): void {
 		const child = pane.drawn;
-		const card = to.card ?? (child === null ? undefined : cards.get(keyOf(to.board, child.board)));
+		const card = to.card ?? (child === null ? undefined : cards.get(keyOf(to.model, child.model)));
 		if (endRun() || child === null || card === undefined) {
 			proceed();
 			return;

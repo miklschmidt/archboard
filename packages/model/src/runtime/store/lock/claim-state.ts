@@ -23,12 +23,12 @@ const processRevocations = new Map<string, ClaimRevocation>();
 // command-lived agent, survives between writes and can renew on its behalf.
 /**
  * One process claim as a caller is told about it.
- * @param board The board key.
+ * @param model The board key.
  * @param entry The claim this server holds.
  * @returns The claim, with its campaign deadline as a timestamp.
  */
-function claimOf(board: string, entry: ClaimEntry): Claim {
-	return { board, holder: entry.holder, expires: stamp(entry.expires) };
+function claimOf(model: string, entry: ClaimEntry): Claim {
+	return { model, holder: entry.holder, expires: stamp(entry.expires) };
 }
 
 /**
@@ -51,7 +51,7 @@ function stopRenewing(entry: ClaimEntry): void {
  */
 function dropClaim(entry: ClaimEntry): void {
 	stopRenewing(entry);
-	processClaims.delete(modelMemoryKey(entry.vault, entry.board));
+	processClaims.delete(modelMemoryKey(entry.vault, entry.model));
 }
 
 /**
@@ -61,11 +61,11 @@ function dropClaim(entry: ClaimEntry): void {
  * claim is dropped the moment it is asked about rather than whenever the
  * renewal timer next lands.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @returns The claim, or null when this server has none.
  */
-function liveClaim(vault: string, board: string): ClaimEntry | null {
-	const entry = processClaims.get(modelMemoryKey(vault, board));
+function liveClaim(vault: string, model: string): ClaimEntry | null {
+	const entry = processClaims.get(modelMemoryKey(vault, model));
 	if (!entry) {
 		return null;
 	}
@@ -75,7 +75,7 @@ function liveClaim(vault: string, board: string): ClaimEntry | null {
 	// Claim expiry bounds a live agent or one that walked away. Drop immediately
 	// when asked rather than depending on where the renewal timer last landed.
 	dropClaim(entry);
-	releaseHold(entry.vault, entry.board, entry.holder.id);
+	releaseHold(entry.vault, entry.model, entry.holder.id);
 	return null;
 }
 
@@ -87,25 +87,25 @@ function liveClaim(vault: string, board: string): ClaimEntry | null {
  * else. Only the server that owned this claim records it, and the record is
  * consumed once.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @param lost Who held the claim.
  * @param by Who has the board now, when that is known.
  * @param cause Why the claim ended.
  */
 function noteClaimRevoked(
 	vault: string,
-	board: string,
+	model: string,
 	lost: LockHolder,
 	by: LockHolder | null,
 	cause: ClaimEndCause,
 ): void {
-	const key = modelMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, model);
 	const entry = processClaims.get(key);
 	if (!entry || entry.holder.id !== lost.id) {
 		return;
 	}
 	dropClaim(entry);
-	processRevocations.set(key, { claim: claimOf(board, entry), by, cause });
+	processRevocations.set(key, { claim: claimOf(model, entry), by, cause });
 }
 
 /**
@@ -115,22 +115,22 @@ function noteClaimRevoked(
  * restore a claim the person explicitly took back (ADR 0022), so a refused
  * renewal ends the claim instead.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  */
-function renewClaim(vault: string, board: string): void {
-	const entry = liveClaim(vault, board);
+function renewClaim(vault: string, model: string): void {
+	const entry = liveClaim(vault, model);
 	if (!entry) {
 		return;
 	}
-	const renewed = renewRecord(vault, board, entry.holder.id, CLAIM_MS.lease);
+	const renewed = renewRecord(vault, model, entry.holder.id, CLAIM_MS.lease);
 	if (renewed) {
 		entry.holder = renewed;
 		return;
 	}
 	// Never call ordinary acquisition here. Retaking a free lease would restore
 	// a claim the person explicitly took back (ADR 0022).
-	const holder = modelLockState(vault, board);
-	noteClaimRevoked(vault, board, entry.holder, holder, causeOfRefusedRenewal(holder));
+	const holder = modelLockState(vault, model);
+	noteClaimRevoked(vault, model, entry.holder, holder, causeOfRefusedRenewal(holder));
 }
 
 /**
@@ -153,12 +153,12 @@ function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
  * The short lease bounds a dead server; repeated renewal is what makes a long
  * claim long. This timer never moves the separate claim expiry.
  * @param vault The vault root the board lives in.
- * @param board The board key.
+ * @param model The board key.
  * @returns The timer, so the claim can stop it.
  */
-function startRenewing(vault: string, board: string): ReturnType<typeof setInterval> {
+function startRenewing(vault: string, model: string): ReturnType<typeof setInterval> {
 	const timer = setInterval(() => {
-		renewClaim(vault, board);
+		renewClaim(vault, model);
 	}, MODEL_LOCK_MS.renew);
 	// Renewal must not be the reason a process stays alive.
 	timer.unref();

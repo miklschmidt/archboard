@@ -28,7 +28,7 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	});
 	const search = { ...bookmarkSearch(bookmarkReading, paneId), ...address };
 	const model = nullableParameter(search[`model${paneId}`]);
-	const board = nullableParameter(search[`pane${paneId}`]);
+	const paneKey = nullableParameter(search[`pane${paneId}`]);
 	const scope = nullableParameter(search[`scope${paneId}`]);
 	const checkpoint = nullableParameter(search[`checkpoint${paneId}`]);
 	const state = nullableParameter(search[`state${paneId}`]);
@@ -335,9 +335,8 @@ function useModelLocation(paneId: string, bookmarkReading?: Reading) {
 	return {
 		openRequested,
 		openRepository,
-		board,
 		openOriginal,
-		legacyAddress: legacyAddress ?? (model === null ? board : null),
+		legacyAddress: legacyAddress ?? (model === null ? paneKey : null),
 		selectLegacyAddress,
 		bookmark,
 		selectBookmark,

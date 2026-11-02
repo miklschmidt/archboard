@@ -352,13 +352,13 @@ async function partCodesOf(
  * says how many, so that a model that binds nothing is not mistaken for code that agrees.
  * @param codes Each part's code, by its id.
  * @param site The board and the variant the codes were read at.
- * @param site.board The board's name.
+ * @param site.model The name of the model.
  * @param site.variant The variant's id.
  * @returns One skip for each unbound part.
  */
 function unboundSkips(
 	codes: ReadonlyMap<string, PartCode>,
-	site: { readonly board: string; readonly variant: string },
+	site: { readonly model: string; readonly variant: string },
 ): CodeCheckSkip[] {
 	return [...codes.values()].flatMap((code) =>
 		code.status === "unbound"

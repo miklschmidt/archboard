@@ -59,7 +59,7 @@ interface FixtureVariant {
  * @param name The board's name.
  * @param variants Its variants; the current one, if any, is the one so marked.
  */
-function board(vault: string, name: string, variants: readonly FixtureVariant[]): void {
+function document(vault: string, name: string, variants: readonly FixtureVariant[]): void {
 	const current = variants.find((variant) => variant.lifecycle === "current");
 	write(vault, {
 		[`${name}.semantic.json`]: JSON.stringify({
@@ -101,4 +101,4 @@ function register(
 	});
 }
 
-export { type FixtureVariant, board, git, register, write };
+export { type FixtureVariant, document, git, register, write };

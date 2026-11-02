@@ -30,7 +30,7 @@ const OnScreenPaneSchema = z.looseObject({
 	paneId: z.string(),
 	place: z.string(),
 	/** The board it is showing, or null on a vault that holds none yet. */
-	board: z.string().nullable(),
+	paneKey: z.string().nullable(),
 });
 
 const PaneNamespaceInputSchema = z.object({ tokens });
@@ -164,7 +164,7 @@ const PaneCloseStageSchema = stagedNoFlags.transform((values, context) => {
 type PaneCloseStage = z.infer<typeof PaneCloseStageSchema>;
 const PaneCloseResultSchema = z.looseObject({
 	success: z.literal(true),
-	closed: PaneRefSchema.extend({ board: z.string().nullable() }),
+	closed: PaneRefSchema.extend({ paneKey: z.string().nullable() }),
 	paneCount: z.number().int().nonnegative(),
 	onScreen: z.array(OnScreenPaneSchema),
 });
@@ -256,7 +256,7 @@ const PanesResultSchema = z.looseObject({
 		z.looseObject({
 			paneId: z.string(),
 			place: z.string(),
-			board: z.string().nullable(),
+			paneKey: z.string().nullable(),
 			vault: z.string(),
 			/** The repository identity, or an untracked vault's registry name; null when unregistered. */
 			repository: z.string().nullable(),

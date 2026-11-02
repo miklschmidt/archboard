@@ -31,7 +31,7 @@ interface VariantSpec {
  * @returns The board.
  * @throws {Error} When the fixture is not a board the store would read.
  */
-function board(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
+function document(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
 	const current = variants.find((variant) => variant.lifecycle === "current")?.id;
 	const parsed = parseLegacyBoard(
 		withFixtureOrders({
@@ -71,7 +71,7 @@ const FLOW = {
 	],
 };
 
-const BEFORE = board([
+const BEFORE = document([
 	{
 		id: "v1",
 		name: "Initial",
@@ -101,7 +101,7 @@ const BEFORE = board([
 	},
 ]);
 
-const AFTER = board(
+const AFTER = document(
 	[
 		{
 			id: "v1",
@@ -196,7 +196,7 @@ const AFTER = board(
 );
 
 const READING: Reading = {
-	boards: new Map([["Flask", AFTER]]),
+	documents: new Map([["Flask", AFTER]]),
 	snapshot: new Map([["Flask", BEFORE]]),
 	policy: {
 		...DEFAULT_SEMANTIC_POLICY,
@@ -205,7 +205,7 @@ const READING: Reading = {
 	diagnostics: [],
 	renders: [
 		{
-			board: "Flask",
+			document: "Flask",
 			variant: undefined,
 			view: "Session path",
 			ok: true,
@@ -216,7 +216,7 @@ const READING: Reading = {
 	captures: [],
 	inspections: [
 		{
-			board: "Flask",
+			document: "Flask",
 			group: "request-lifecycle",
 			variant: undefined,
 			result: {

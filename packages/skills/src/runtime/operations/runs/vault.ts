@@ -114,7 +114,7 @@ async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument
 		...(model.manifest.current === null ? [] : [evaluationState(model)]),
 		...proposals.map(evaluationState),
 	];
-	const board: EvaluatedDocument = {
+	const document: EvaluatedDocument = {
 		id: model.manifest.id,
 		name: model.manifest.name,
 		current: model.manifest.current?.id,
@@ -123,7 +123,7 @@ async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument
 		revision: model.revision.digest,
 		architecture: model,
 	};
-	return new Map([[board.name, board]]);
+	return new Map([[document.name, document]]);
 }
 /**
  * Read the one named canonical model for evaluation.
@@ -160,7 +160,10 @@ async function renderLegacyBoard(
 	request: RenderRequest,
 	directory: string,
 ): Promise<RenderAttempt> {
-	const file = path.join(directory, `${request.board.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.svg`);
+	const file = path.join(
+		directory,
+		`${request.document.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.svg`,
+	);
 	fs.mkdirSync(directory, { recursive: true });
 	const answer = await archboard(cli, [
 		"model",
@@ -247,12 +250,15 @@ async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
 }
 /**
  * Retain complete canonical readings and derived outcome evidence.
- * @param boards The derived records.
+ * @param documents The derived records.
  * @param directory The evidence directory.
  */
-function writeBoards(boards: ReadonlyMap<string, EvaluatedDocument>, directory: string): void {
+function writeDocuments(
+	documents: ReadonlyMap<string, EvaluatedDocument>,
+	directory: string,
+): void {
 	fs.mkdirSync(directory, { recursive: true });
-	for (const [name, record] of boards)
+	for (const [name, record] of documents)
 		fs.writeFileSync(
 			path.join(directory, `${name.replaceAll(/[^A-Za-z0-9._-]+/gu, "_")}.json`),
 			JSON.stringify(record, null, 2) + "\n",
@@ -270,7 +276,7 @@ export {
 	readVault,
 	renderLegacyBoard,
 	vaultDiagnostics,
-	writeBoards,
+	writeDocuments,
 	fixturePolicy,
 	writeVaultConfiguration,
 };

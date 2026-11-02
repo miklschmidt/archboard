@@ -109,7 +109,7 @@ describe.serial("the repositories of the navigator", () => {
 		seedCanonicalFixture(fixture.vault, "notes", []);
 		const pane = await openPaneSession(server.base, createRequester(server), {
 			clientId: "pane-unread",
-			board: "notes",
+			model: "notes",
 		});
 		resources.defer(() => pane.close());
 		const inMain = createRequester({ ...server, vault });
@@ -124,7 +124,7 @@ describe.serial("the repositories of the navigator", () => {
 		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
 		expect(reader.status).toBe(200);
 		const moved = await pane.waitFor("pane_place", mark);
-		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
+		expect(moved).toMatchObject({ paneKey: null, vault, repository: ORDERS });
 	});
 
 	test("choosing a checkout moves the panes that showed the old one, and a show moves a named pane", async () => {
@@ -152,13 +152,13 @@ describe.serial("the repositories of the navigator", () => {
 
 		const pane = await openPaneSession(server.base, inMain, {
 			clientId: "pane-orders",
-			board: "payments",
+			model: "payments",
 		});
 		resources.defer(() => pane.close());
 		// A pane of another tab, in a vault the choice does not touch.
 		const elsewhere = await openPaneSession(server.base, inServed, {
 			clientId: "pane-elsewhere",
-			board: "notes",
+			model: "notes",
 		});
 		resources.defer(() => elsewhere.close());
 
@@ -173,7 +173,7 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		expect(chose.status).toBe(200);
 		const moved = await pane.waitFor("pane_place", mark);
-		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
+		expect(moved).toMatchObject({ paneKey: "payments", vault: worktreeVault, repository: ORDERS });
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
 		expect((await listed()).find((each) => each.name === ORDERS)?.vault).toBe(worktreeVault);
@@ -181,7 +181,7 @@ describe.serial("the repositories of the navigator", () => {
 		// A show names the pane and the vault of another repository's board, and the
 		// pane moves into that vault.
 		const beforeShow = pane.mark();
-		const shown = await inServed<{ board: string; repository: string | null }>("/api/panes/show", {
+		const shown = await inServed<{ model: string; repository: string | null }>("/api/panes/show", {
 			method: "POST",
 			doing: false,
 			body: { reading: { model: "Fixture" }, pane: pane.clientId },
@@ -212,7 +212,7 @@ describe.serial("the repositories of the navigator", () => {
 		seedCanonicalFixture(mainVault, "ledger", []);
 		const away = await openPaneSession(server.base, inWorktree, {
 			clientId: "pane-away",
-			board: "ledger",
+			model: "ledger",
 		});
 		await away.close();
 
@@ -240,7 +240,7 @@ describe.serial("the repositories of the navigator", () => {
 		});
 		expect(first).toMatchObject({
 			type: "pane_place",
-			board: "ledger",
+			paneKey: "ledger",
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -261,7 +261,7 @@ describe.serial("the repositories of the navigator", () => {
 			createRequester({ ...server, vault: mainVault }),
 			{
 				clientId: "pane-left-behind",
-				board: "payments",
+				model: "payments",
 			},
 		);
 		resources.defer(() => pane.close());
@@ -270,7 +270,7 @@ describe.serial("the repositories of the navigator", () => {
 		const used = pane.mark();
 		cli("repo", "use", worktree);
 		expect(await pane.waitFor("pane_place", used)).toMatchObject({
-			board: "payments",
+			paneKey: "payments",
 			vault: vaultOf(worktree),
 			repository: ORDERS,
 		});
@@ -287,7 +287,7 @@ describe.serial("the repositories of the navigator", () => {
 		const fixVault = vaultOf(fix);
 		expect((await choose(fix)).status).toBe(200);
 		const moved = await pane.waitFor("pane_place", mark);
-		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
+		expect(moved).toMatchObject({ paneKey: "payments", vault: fixVault, repository: ORDERS });
 	});
 
 	test("a vault that a link leads out of the layout is not listed", async () => {
@@ -337,7 +337,7 @@ describe.serial("the repositories of the navigator", () => {
 			body: {
 				clientId: pane.clientId,
 				paneId: pane.clientId,
-				board: null,
+				model: null,
 				variant: null,
 				view: null,
 				selection: [],

@@ -62,7 +62,7 @@ interface Job {
 /** What a drawing's key names, in the order the key names it. */
 interface DrawingKey {
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 	/** The state's name. */
 	readonly variant: string;
 	/** The reading: `(whole model)`, a module's id, or a flow's id and grammar. */
@@ -81,8 +81,8 @@ const KEY_SEPARATOR = " | ";
  * @returns The key.
  */
 function keyOf(drawing: DrawingKey): string {
-	const { vault, board, variant, view, engine, theme, comparison } = drawing;
-	return [vault, board, variant, view, engine, theme, comparison ? "comparison" : "plain"].join(
+	const { vault, model, variant, view, engine, theme, comparison } = drawing;
+	return [vault, model, variant, view, engine, theme, comparison ? "comparison" : "plain"].join(
 		KEY_SEPARATOR,
 	);
 }
@@ -93,10 +93,10 @@ function keyOf(drawing: DrawingKey): string {
  * @returns Its fields.
  */
 function drawingOf(key: string): DrawingKey {
-	const [vault, board, variant, view, engine, theme, comparison] = key.split(KEY_SEPARATOR);
+	const [vault, model, variant, view, engine, theme, comparison] = key.split(KEY_SEPARATOR);
 	return {
 		vault: vault!,
-		board: board!,
+		model: model!,
 		variant: variant!,
 		view: view!,
 		engine: engine!,
@@ -303,7 +303,7 @@ function jobsOfState(vault: string, state: State, axes: Axes): Job[] {
 				comparisons.map((comparison) => ({
 					key: keyOf({
 						vault,
-						board: state.model.manifest.name,
+						model: state.model.manifest.name,
 						variant: state.name,
 						view: reading.view,
 						engine,

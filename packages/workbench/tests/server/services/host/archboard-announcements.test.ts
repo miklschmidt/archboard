@@ -36,7 +36,7 @@ const INPUT: SemanticContextInput = {
 		threadId: identity.decoder.adoptThreadId("coordinator-1"),
 		realtimeSessionId: null,
 	},
-	board: {
+	model: {
 		key: "architecture",
 		name: "Architecture",
 		vault: "/work/.archboard/vault",
@@ -69,7 +69,7 @@ const INPUT: SemanticContextInput = {
  * @param board The board it wrote.
  * @returns The publisher and the change.
  */
-function sources(by: string | null = null, board = "architecture") {
+function sources(by: string | null = null, model = "architecture") {
 	const listeners = new Set<(event: SettledChangeSourceEvent) => void>();
 	const publisher = createSemanticContextPublisher({
 		feed: {
@@ -90,8 +90,8 @@ function sources(by: string | null = null, board = "architecture") {
 	for (const listener of listeners) {
 		listener({
 			cursor: 7,
-			vault: INPUT.board.vault,
-			board,
+			vault: INPUT.model.vault,
+			model,
 			at: "2023-11-14T22:13:20.000Z",
 			origin: "agent",
 			significance: "structural",
@@ -111,9 +111,9 @@ function sources(by: string | null = null, board = "architecture") {
  */
 function tab(
 	narrated: string | null = null,
-	boards: readonly string[] = ["architecture"],
+	models: readonly string[] = ["architecture"],
 ): { readonly id: typeof TAB; readonly canvas: CoordinatorCallbackCanvas } {
-	return { id: TAB, canvas: { boards, narrated } };
+	return { id: TAB, canvas: { models, narrated } };
 }
 
 /**

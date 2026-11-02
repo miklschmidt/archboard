@@ -35,7 +35,7 @@ describe("semantic context source failures", () => {
 			feedListener?.({
 				cursor: 1,
 				vault: "/work/.archboard/vault",
-				board: "scratch",
+				model: "scratch",
 				at: new Date().toISOString(),
 				origin: "human",
 				significance: "layout",

@@ -191,8 +191,8 @@ async function createOpenerFixture(options: OpenerFixtureOptions = {}): Promise<
 	let visibleBase = "";
 	let disposed = false;
 
-	const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (board, element) => {
-		if (board !== "system/payments") {
+	const bindingForElement: CodeOpenerRouteDependencies["bindingForElement"] = (model, element) => {
+		if (model !== "system/payments") {
 			return { ok: false, code: "BOARD_NOT_FOUND", error: "Board is not open." };
 		}
 		if (element !== "node") {

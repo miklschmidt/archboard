@@ -28,7 +28,7 @@ const VIEWS = [{ id: "vw", name: "The parts", grammar: "architecture" }];
  * @param content What is on its one variant.
  * @returns The board document.
  */
-const board = (content: Record<string, unknown>) => ({
+const model = (content: Record<string, unknown>) => ({
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd1",
@@ -48,7 +48,7 @@ const board = (content: Record<string, unknown>) => ({
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (content: Record<string, unknown>): string => {
-	const parsed = parseLegacyBoard(withFixtureOrders(board(content)));
+	const parsed = parseLegacyBoard(withFixtureOrders(model(content)));
 	return parsed.ok ? "" : parsed.problem;
 };
 

@@ -119,7 +119,7 @@ const IN_SHOP = (path: string, extra: object = {}) => ({ repo: SHOP, path, ...ex
  * @param version The board's version.
  * @returns The board.
  */
-function board(version: number): LegacyBoard {
+function document(version: number): LegacyBoard {
 	const current = [
 		part("pA", "Checkout", IN_SHOP("src/a.ts")),
 		part("pB", "Payments", IN_SHOP("src/b.ts")),
@@ -163,7 +163,7 @@ function variantOf(value: LegacyBoard, id: string): SemanticVariant {
 	return found;
 }
 
-const built = board(1);
+const built = document(1);
 
 /**
  * The hotspots of the shop's board, parsed as the route answers them.

@@ -174,7 +174,7 @@ function stageBody(view: RenderView): JSX.Element {
 		return render.error === null ? (
 			waitingStage(view)
 		) : (
-			<SemanticStageProblem board={view.drill.board} error={render.error} />
+			<SemanticStageProblem model={view.drill.model} error={render.error} />
 		);
 	}
 	// The disclosure is decided before the two shapes divide, because an empty
@@ -186,7 +186,7 @@ function stageBody(view: RenderView): JSX.Element {
 	if (answer.kind === "empty") {
 		return (
 			<SemanticStageEmpty
-				board={answer.board}
+				model={answer.model}
 				view={answer.view}
 				variant={answer.variant.name}
 				notice={notice}

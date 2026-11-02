@@ -80,7 +80,7 @@ const PaneSchema = z.object({
 	// The board this pane adopted — what it is actually showing, which is what
 	// makes the report a description of the displayed scene rather than an echo
 	// of what the server thinks it sent.
-	board: z.string().min(1).nullable(),
+	paneKey: z.string().min(1).nullable(),
 	primary: z.boolean(),
 	focused: z.boolean(),
 	rect: RectSchema,
@@ -427,7 +427,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				clientId: target.clientId,
 				place,
 				position,
-				board: target.board,
+				paneKey: target.paneKey,
 			},
 			paneCount: onScreen,
 			onScreen: paneKeysOnScreen(),
@@ -509,10 +509,10 @@ function noteWhatChanged(
 	previous: PaneRegistration | undefined,
 	registration: PaneRegistration,
 ): void {
-	const board = registration.board;
-	const moved = previous?.board !== board;
-	if (moved && board !== null) {
-		arrivedOnBoard(registration.clientId, board);
+	const paneKey = registration.paneKey;
+	const moved = previous?.paneKey !== paneKey;
+	if (moved && paneKey !== null) {
+		arrivedOnBoard(registration.clientId, paneKey);
 	}
 	const userChanged = focusChange(previous, registration);
 	if (moved || userChanged.length > 0) {
@@ -544,8 +544,8 @@ function focusChange(
  * part way through. Being told outright is what ADR 0016 requires of every
  * arrival; a broadcast only reaches whoever was already there.
  * @param clientId The pane's client id.
- * @param board The board it is now showing.
+ * @param paneKey The board it is now showing.
  */
-function arrivedOnBoard(clientId: string, board: string): void {
-	paneKeys.set(clientId, board);
+function arrivedOnBoard(clientId: string, paneKey: string): void {
+	paneKeys.set(clientId, paneKey);
 }

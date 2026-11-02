@@ -340,7 +340,7 @@ test("retired board writers and claims cannot change a vault through HTTP or CLI
 		const response = await fetch(`${server!.base}/api/semantic-boards/${route}`, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({ vault, board: "retired", doing: "Try retired authoring" }),
+			body: JSON.stringify({ vault, model: "retired", doing: "Try retired authoring" }),
 		});
 		expect([404, 410]).toContain(response.status);
 	}

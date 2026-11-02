@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import type { DiagramBox, DrawnBoard } from "@archboard/model/render-reply";
+import type { DiagramBox, DrawnPicture } from "@archboard/model/render-reply";
 import { exported, paintedBody } from "#tests/runtime/support/export-picture.ts";
 
 // A title is drawn above an exported picture (TASK-467): the drawing moves down
@@ -23,7 +23,7 @@ function titleOf(svg: string): { words: string; y: number } | undefined {
  * @param drawn The drawing.
  * @returns Its subjects' boxes, by kind and id.
  */
-function boxes(drawn: DrawnBoard): [string, DiagramBox][] {
+function boxes(drawn: DrawnPicture): [string, DiagramBox][] {
 	return (["nodes", "edges", "regions"] as const).flatMap((kind) =>
 		Object.entries(drawn.atlas[kind]).map(([id, box]): [string, DiagramBox] => [
 			`${kind}/${id}`,

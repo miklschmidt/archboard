@@ -15,11 +15,11 @@ import { modelChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
 /**
  * Ask the server for this board's picture again whenever it changes.
  * @param vault The vault the board is in.
- * @param board The board as this reader asks for it.
+ * @param model The board as this reader asks for it.
  * @param goesBy The name the board goes by now, when this reader asks for it by
  *   a name it had before a rename (ADR 0036); its news is announced under this.
  */
-function useModelChanges(vault: string, board: string, goesBy: string = board): void {
+function useModelChanges(vault: string, model: string, goesBy: string = model): void {
 	const client = useQueryClient();
 	useEffect(
 		() =>
@@ -27,11 +27,11 @@ function useModelChanges(vault: string, board: string, goesBy: string = board): 
 				if (inVault !== vault) {
 					return;
 				}
-				if (sameModelName(changed, board) || sameModelName(changed, goesBy)) {
-					void modelChanged(client, vault, board);
+				if (sameModelName(changed, model) || sameModelName(changed, goesBy)) {
+					void modelChanged(client, vault, model);
 				}
 			}),
-		[board, client, goesBy, vault],
+		[model, client, goesBy, vault],
 	);
 }
 

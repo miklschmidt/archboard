@@ -115,8 +115,8 @@ function sendStartingPlace(
 		vault,
 		repository: repositoryOfVault(vault),
 		...(startingKey === null
-			? { board: null, identity: null }
-			: { board: startingKey, identity: parsePaneKey(startingKey) }),
+			? { paneKey: null, identity: null }
+			: { paneKey: startingKey, identity: parsePaneKey(startingKey) }),
 	};
 	return new Promise<void>((resolve, reject) => {
 		try {

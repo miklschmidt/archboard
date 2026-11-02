@@ -38,7 +38,7 @@ type Dive = (stop: DrillStop) => Promise<boolean>;
 /** Where a pane is, and the two moves it can make. */
 interface DrillNavigation {
 	/** The board on screen. */
-	readonly board: string;
+	readonly model: string;
 	/** The variant on screen, or undefined for the board's current one. */
 	readonly variant: string | undefined;
 	/**
@@ -50,11 +50,11 @@ interface DrillNavigation {
 	readonly own: number;
 	/**
 	 * Follow a drill-down into another board.
-	 * @param board The target board.
+	 * @param model The target board.
 	 * @param variant A variant id or name, or undefined for its current one.
 	 * @param there The other repository's vault it is in, when it is not in the pane's own.
 	 */
-	readonly open: (board: string, variant: string | undefined, there?: OtherRepository) => void;
+	readonly open: (model: string, variant: string | undefined, there?: OtherRepository) => void;
 	/**
 	 * Go back to one of the boards of the trail.
 	 * @param depth Where it is in the trail: 0 is the first board.
@@ -65,7 +65,7 @@ interface DrillNavigation {
 
 /** The board the shell pointed the pane at, and what counts as being pointed again. */
 interface OwnModel {
-	readonly board: string;
+	readonly model: string;
 	readonly variant: string | undefined;
 	/** Which time the pane has been pointed at a board, when the shell counts. */
 	readonly arrival: number | undefined;
@@ -90,10 +90,10 @@ function useArrivals(
 	held: DrillTrail,
 	setTrail: (next: DrillTrail) => void,
 ): DrillTrail {
-	const { board, variant, arrival, vault } = own;
-	const [opened, setOpened] = useState({ board, variant, arrival, vault });
+	const { model, variant, arrival, vault } = own;
+	const [opened, setOpened] = useState({ model, variant, arrival, vault });
 	if (
-		opened.board === board &&
+		opened.model === model &&
 		opened.variant === variant &&
 		opened.arrival === arrival &&
 		opened.vault === vault
@@ -102,8 +102,8 @@ function useArrivals(
 	}
 	// A trail of its own even when it is empty, so that a move asked for before
 	// the arrival can tell that the trail it was asked from is gone.
-	const arrived = { ...drillArrived(held, { board, variant, vault, repository: null }) };
-	setOpened({ board, variant, arrival, vault });
+	const arrived = { ...drillArrived(held, { model, variant, vault, repository: null }) };
+	setOpened({ model, variant, arrival, vault });
 	setTrail(arrived);
 	return arrived;
 }
@@ -119,12 +119,12 @@ function useDrillDown(own: OwnModel, dive: Dive | undefined): DrillNavigation {
 	const trail = useArrivals(own, held, setTrail);
 	const ownStop = useMemo<DrillStop>(
 		() => ({
-			board: own.board,
+			model: own.model,
 			variant: own.variant,
 			vault: own.vault,
 			repository: own.repository,
 		}),
-		[own.board, own.variant, own.vault, own.repository],
+		[own.model, own.variant, own.vault, own.repository],
 	);
 	/**
 	 * Take a step, and ask the shell for the board it leaves for, if any. A step
@@ -153,11 +153,11 @@ function useDrillDown(own: OwnModel, dive: Dive | undefined): DrillNavigation {
 		[dive],
 	);
 	const open = useCallback(
-		(board: string, variant: string | undefined, there?: OtherRepository): void => {
+		(model: string, variant: string | undefined, there?: OtherRepository): void => {
 			take(
 				trail,
 				drillInto(trail, ownStop, {
-					board,
+					model,
 					variant,
 					vault: there?.vault ?? ownStop.vault,
 					repository: there?.repository ?? ownStop.repository,
@@ -178,7 +178,7 @@ function useDrillDown(own: OwnModel, dive: Dive | undefined): DrillNavigation {
 		const stops = stopsOf(trail, ownStop);
 		const here = stops.at(-1) ?? ownStop;
 		return {
-			board: here.board,
+			model: here.model,
 			variant: here.variant,
 			trail: stops.slice(0, -1),
 			own: trail.before.length,

@@ -17,7 +17,7 @@ const STAGE_CLASS = "bg-background relative flex min-h-0 min-w-0 flex-1 flex-col
 /** Inputs shared by the states that name their board. */
 interface SemanticStateProps {
 	/** The board the pane was asked for. */
-	board: string;
+	model: string;
 }
 
 /**
@@ -51,14 +51,14 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
 function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 	return (
 		<section
-			aria-label={`Semantic board ${props.board}`}
+			aria-label={`Semantic board ${props.model}`}
 			data-slot="canvas-stage"
 			data-state="loading"
 			aria-busy="true"
 			className={STAGE_CLASS}
 		>
 			<p aria-live="polite" className="sr-only">
-				Drawing {props.board}…
+				Drawing {props.model}…
 			</p>
 			<StageSpinner className="flex-1" />
 		</section>
@@ -88,7 +88,7 @@ interface SemanticEmptyProps extends SemanticStateProps {
 function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 	return (
 		<section
-			aria-label={`Semantic board ${props.board}`}
+			aria-label={`Semantic board ${props.model}`}
 			data-slot="canvas-stage"
 			data-state={props.notice === null ? "empty" : "stale"}
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}
@@ -96,7 +96,7 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 			{props.notice}
 			<p className="text-title">
 				{props.view === null
-					? `${props.board} has nothing on it yet`
+					? `${props.model} has nothing on it yet`
 					: `${props.view.name} is empty on ${props.variant}`}
 			</p>
 			<p className="text-muted-foreground text-body max-w-prose">
@@ -113,7 +113,7 @@ const FAILURE_TITLES: Readonly<Record<string, string>> = {
 	MODEL_MISSING: "There is no such board",
 	UNKNOWN_VARIANT: "There is no such variant",
 	UNKNOWN_VIEW: "There is no such view",
-	BOARD_UNREADABLE: "This board could not be read",
+	MODEL_UNREADABLE: "This board could not be read",
 	UNREACHABLE: "The Archboard server did not answer",
 	REPLY_INVALID: "The Archboard server sent something unexpected",
 };
@@ -152,7 +152,7 @@ function SemanticStageProblem(props: SemanticStageProblemProps): JSX.Element {
 	const { title, detail } = failureWords(props.error);
 	return (
 		<section
-			aria-label={`Semantic board ${props.board}`}
+			aria-label={`Semantic board ${props.model}`}
 			data-slot="canvas-stage"
 			data-state="error"
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}

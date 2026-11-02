@@ -43,7 +43,7 @@ test("picking something out opens the selection, and letting go gives back the t
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { live: true });
 	await settle();
-	expect(openTab()).toBe("board");
+	expect(openTab()).toBe("model");
 	expect(part("canvas-panel")).not.toBeNull();
 
 	pickCard();
@@ -55,7 +55,7 @@ test("picking something out opens the selection, and letting go gives back the t
 		fireEvent.keyDown(viewport(), { key: "Escape" });
 	});
 	await settle();
-	expect(openTab()).toBe("board");
+	expect(openTab()).toBe("model");
 });
 
 test("a tab the user chooses while something is selected stays theirs until they pick again", async () => {
@@ -64,16 +64,16 @@ test("a tab the user chooses while something is selected stays theirs until they
 	await settle();
 	pickCard();
 	await settle();
-	openSidebarTab("board");
+	openSidebarTab("model");
 	await settle();
-	expect(openTab()).toBe("board");
+	expect(openTab()).toBe("model");
 
 	// Letting go leaves them where they are.
 	act(() => {
 		fireEvent.keyDown(viewport(), { key: "Escape" });
 	});
 	await settle();
-	expect(openTab()).toBe("board");
+	expect(openTab()).toBe("model");
 
 	// A new pick is a new request to be told about something.
 	pickCard();
@@ -89,7 +89,7 @@ test("moving between tabs leaves the picture where the user was looking", async 
 	const before = cameraNow();
 	openSidebarTab("selection");
 	await settle();
-	openSidebarTab("board");
+	openSidebarTab("model");
 	await settle();
 	pickCard();
 	await settle();

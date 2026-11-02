@@ -47,48 +47,48 @@ function stallServer(): void {
  * @param board The board.
  * @returns When the write has landed.
  */
-async function writeUnderClaim(board: string): Promise<void> {
-	const id = lock.claimWriterId(vault, board);
+async function writeUnderClaim(model: string): Promise<void> {
+	const id = lock.claimWriterId(vault, model);
 	expect(id).not.toBeNull();
 	const written = lock.withLease(
-		{ vault, board, holder: { id: id!, kind: "agent", claimed: true }, waitMs: 0 },
-		() => board,
+		{ vault, model, holder: { id: id!, kind: "agent", claimed: true }, waitMs: 0 },
+		() => model,
 	);
 	await advanceLockTime(MODEL_LOCK_MS.stealGuard * 2);
-	expect(await written).toBe(board);
+	expect(await written).toBe(model);
 }
 
 test("claims on several boards of one server stand through a stall while their holders write", async () => {
-	const boards = ["payments", "ledger", "queues", "audit"];
+	const models = ["payments", "ledger", "queues", "audit"];
 	const claims = new Map<string, lock.Claim>();
-	for (const board of boards) {
+	for (const model of models) {
 		const { claim } = await lock.claimModel({
 			vault,
-			board,
-			reason: `rebuilding ${board}`,
+			model,
+			reason: `rebuilding ${model}`,
 			forMs: 600_000,
 		});
-		claims.set(board, claim);
+		claims.set(model, claim);
 	}
 	for (let round = 0; round < 3; round += 1) {
 		stallServer();
 		// After the pause, half the holders' writes land before the late renewal
 		// runs and half after it.
-		await Promise.all(boards.slice(0, 2).map(writeUnderClaim));
+		await Promise.all(models.slice(0, 2).map(writeUnderClaim));
 		await advanceLockTime(MODEL_LOCK_MS.renew);
-		await Promise.all(boards.slice(2).map(writeUnderClaim));
+		await Promise.all(models.slice(2).map(writeUnderClaim));
 	}
-	for (const board of boards) {
-		const claim = claims.get(board)!;
-		expect(lock.takeClaimRevocation(vault, board)).toBeNull();
-		expect(lock.claimOn(vault, board)?.holder.id).toBe(claim.holder.id);
-		expect(lock.modelLockState(vault, board)).toMatchObject({
+	for (const model of models) {
+		const claim = claims.get(model)!;
+		expect(lock.takeClaimRevocation(vault, model)).toBeNull();
+		expect(lock.claimOn(vault, model)?.holder.id).toBe(claim.holder.id);
+		expect(lock.modelLockState(vault, model)).toMatchObject({
 			id: claim.holder.id,
 			since: claim.holder.since,
 			claimed: true,
 		});
 		const rival = await lock
-			.holdModel({ vault, board, holder: { id: `rival-${board}`, kind: "agent" }, waitMs: 0 })
+			.holdModel({ vault, model, holder: { id: `rival-${model}`, kind: "agent" }, waitMs: 0 })
 			.catch((error: unknown) => error);
 		expect(rival).toBeInstanceOf(lock.ModelHeldError);
 	}
@@ -97,8 +97,8 @@ test("claims on several boards of one server stand through a stall while their h
 test("a claim that ends without a person names what its renewal found", async () => {
 	const taken = "taken";
 	const removed = "removed";
-	for (const board of [taken, removed]) {
-		await lock.claimModel({ vault, board, reason: "rebuilding", forMs: 600_000 });
+	for (const model of [taken, removed]) {
+		await lock.claimModel({ vault, model, reason: "rebuilding", forMs: 600_000 });
 	}
 	// Another process took one lease over and holds it; the other lease is gone.
 	const takenFile = join(vault, ".archboard/locks", `${taken}.lock`);

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
-import type { DrawnBoard } from "@archboard/model/render-reply";
+import type { DrawnPicture } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { markCounts } from "#shared/rules/render/key-marks.ts";
 import { renderLegacyBoard } from "#runtime/operations/render.ts";
@@ -60,10 +60,10 @@ const DRAFT = {
 	],
 };
 
-const BOARD = LegacyBoardSchema.parse({
+const DOCUMENT = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
-	id: "board",
+	id: "document",
 	name: "Ingest",
 	level: "system",
 	version: 1,
@@ -103,9 +103,9 @@ const BOARD = LegacyBoardSchema.parse({
  */
 async function drawn(
 	choices: Pick<LegacyRenderChoices, "view" | "comparison">,
-): Promise<DrawnBoard> {
+): Promise<DrawnPicture> {
 	const outcome = await renderLegacyBoard(
-		BOARD,
+		DOCUMENT,
 		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
 		DEFAULT_SEMANTIC_POLICY,
 	);
@@ -141,7 +141,7 @@ function legendMarks(svg: string): number[] {
  * @param reply The drawn reply.
  * @returns Their ids, sorted.
  */
-function placedIds(reply: DrawnBoard): string[] {
+function placedIds(reply: DrawnPicture): string[] {
 	return [...new Set(Object.values(reply.atlas).flatMap((boxes) => Object.keys(boxes)))].toSorted();
 }
 

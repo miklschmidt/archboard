@@ -40,9 +40,9 @@ function Diagnostic(props: { diagnostic: VaultDiagnostic }): JSX.Element {
 				{diagnostic.file}
 				{diagnostic.path === undefined ? "" : ` · ${diagnostic.path}`}
 			</p>
-			{diagnostic.board !== undefined && (
+			{diagnostic.model !== undefined && (
 				<p className="text-muted-foreground text-xs">
-					{diagnostic.board}
+					{diagnostic.model}
 					{diagnostic.variant === undefined ? "" : ` @ ${diagnostic.variant}`}
 					{diagnostic.subject === undefined ? "" : ` · ${describeSubject(diagnostic.subject)}`}
 				</p>

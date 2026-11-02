@@ -86,7 +86,7 @@ function renderCalls(): string[] {
  */
 function documentAsked(url: string): string | null {
 	return url.startsWith(DOCUMENT_ROUTE)
-		? (new URLSearchParams(url.split("?")[1]).get("board") ?? "")
+		? (new URLSearchParams(url.split("?")[1]).get("model") ?? "")
 		: null;
 }
 
@@ -120,12 +120,12 @@ function fakeFetch(input: RequestInfo | URL): Promise<Response> {
  */
 function serverReply(url: string): Promise<Response> {
 	server.calls.push(url);
-	const board = documentAsked(url);
-	if (board !== null) {
-		const held = server.held[board];
+	const model = documentAsked(url);
+	if (model !== null) {
+		const held = server.held[model];
 		return held === undefined
-			? answered(documentReply(board))
-			: held.then(() => answered(documentReply(board)));
+			? answered(documentReply(model))
+			: held.then(() => answered(documentReply(model)));
 	}
 	if (url.startsWith(VAULT_ROUTE)) {
 		return answered(
@@ -140,22 +140,22 @@ function serverReply(url: string): Promise<Response> {
 
 /**
  * What a document request for one board is answered with.
- * @param board The board asked for.
+ * @param model The board asked for.
  * @returns The reply, refusing a board the test never put there.
  */
-function documentReply(board: string): StubReply {
-	const held = server.documents[board];
+function documentReply(model: string): StubReply {
+	const held = server.documents[model];
 	if (held === undefined) {
 		return {
 			status: 404,
 			body: {
 				success: false,
 				code: "MODEL_MISSING",
-				error: `there is no semantic board called "${board}"`,
+				error: `there is no semantic board called "${model}"`,
 			},
 		};
 	}
-	return { status: 200, body: { success: true, board: withFixtureOrders(held) } };
+	return { status: 200, body: { success: true, model: withFixtureOrders(held) } };
 }
 
 /** A reply the fake server is about to give. */
@@ -210,7 +210,7 @@ async function captured(resource: string): Promise<unknown> {
  */
 async function capturedDrawing(request: SemanticRenderRequest) {
 	const fields = {
-		board: request.board,
+		model: request.model,
 		variant: request.variant,
 		view: request.view,
 		against: request.against,
@@ -238,13 +238,13 @@ function supplyCapture(): void {
 		/**
 		 * Read a retained fixture document.
 		 * @param _vault The fixture namespace.
-		 * @param board The recorded document name.
+		 * @param model The recorded document name.
 		 * @returns Its original document.
 		 */
-		document: async (_vault, board) =>
+		document: async (_vault, model) =>
 			z
-				.object({ board: z.unknown() })
-				.parse(await captured(`${DOCUMENT_ROUTE}?board=${encodeURIComponent(board)}`)).board,
+				.object({ model: z.unknown() })
+				.parse(await captured(`${DOCUMENT_ROUTE}?model=${encodeURIComponent(model)}`)).model,
 		/**
 		 * Read the policy captured by this fixture.
 		 * @returns The captured policy.

@@ -37,7 +37,7 @@ function publicStartEnvironment(
 	}
 	mkdirSync(persistent, { recursive: true, mode: 0o700 });
 	// The server's own registry lists one vault, so a page opens there.
-	const registry = listOnlyVault(join(root, "repos.json"), vaultIn(join(root, "boards")));
+	const registry = listOnlyVault(join(root, "repos.json"), vaultIn(join(root, "models")));
 	writeFileSync(join(persistent, "pre-existing-sentinel"), "preserve me");
 	return {
 		...process.env,

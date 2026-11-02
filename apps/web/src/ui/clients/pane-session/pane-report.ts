@@ -59,7 +59,7 @@ function buildPaneReport(input: PaneReportInput): PaneReport | null {
 	const report: PaneReport = {
 		clientId: input.clientId,
 		paneId: input.paneId,
-		board: input.paneKey,
+		paneKey: input.paneKey,
 		primary: input.primary,
 		focused: input.focused,
 		rect,

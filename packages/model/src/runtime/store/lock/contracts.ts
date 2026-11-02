@@ -35,7 +35,7 @@ interface LockRequest {
 	/** The vault root the board lives in; the lease is a file under it. */
 	readonly vault: string;
 	/** Normalized by the acquisition owner so aliases name one mutex. */
-	readonly board: string;
+	readonly model: string;
 	readonly holder: Readonly<{
 		id: string;
 		kind: HolderKind;
@@ -57,10 +57,10 @@ interface LockRequest {
 }
 
 /** Hears who holds a board of a vault: the vault comes first because a name alone is ambiguous. */
-type LockSink = (vault: string, board: string, holder: Readonly<LockHolder> | null) => void;
+type LockSink = (vault: string, model: string, holder: Readonly<LockHolder> | null) => void;
 
 interface Claim {
-	readonly board: string;
+	readonly model: string;
 	readonly holder: Readonly<LockHolder>;
 	/** Claim campaign deadline, independent from the renewable short lease. */
 	readonly expires: string;
@@ -88,7 +88,7 @@ interface ClaimEntry {
 	/** The vault the claimed board lives in. */
 	vault: string;
 	/** The claimed board's normalised key. */
-	board: string;
+	model: string;
 	holder: LockHolder;
 	expires: number;
 	timer: ReturnType<typeof setInterval> | null;
@@ -147,43 +147,43 @@ function describeWriter(holder: Readonly<LockHolder>): string {
 /**
  * The sentence a bounded wait ends with: who has the board, since when, for
  * how long, on which server, and how long this caller waited.
- * @param board The board key.
+ * @param model The board key.
  * @param holder Who has it, when the wait could still see them.
  * @param waitedMs How long this caller waited.
  * @returns The message.
  */
 function describeHold(
-	board: string,
+	model: string,
 	holder: Readonly<LockHolder> | null,
 	waitedMs: number,
 ): string {
 	const waited = `Waited ${seconds(waitedMs)}.`;
 	if (!holder) {
-		return `Board "${board}" is being written by somebody else and did not come free. ${waited}`;
+		return `Board "${model}" is being written by somebody else and did not come free. ${waited}`;
 	}
 	const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
 	const who = describeWriter(holder);
 	const where = holder.process === processName() ? "" : ` on another server (${holder.process})`;
-	return `Board "${board}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
+	return `Board "${model}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 
 /** A bounded lock wait ended while another holder still owned the board. */
 class ModelHeldError extends Error {
 	public readonly code = "MODEL_HELD";
-	public readonly board: string;
+	public readonly model: string;
 	public readonly holder: Readonly<LockHolder> | null;
 	public readonly waitedMs: number;
 
 	/**
 	 * A refusal naming who has the board and how long this caller waited.
-	 * @param board The board key.
+	 * @param model The board key.
 	 * @param holder Who has it, when the wait could still see them.
 	 * @param waitedMs How long this caller waited.
 	 */
-	public constructor(board: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
-		super(describeHold(board, holder, waitedMs));
+	public constructor(model: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
+		super(describeHold(model, holder, waitedMs));
 		this.name = "ModelHeldError";
-		this.board = board;
+		this.model = model;
 		this.holder = holder;
 		this.waitedMs = waitedMs;
 	}

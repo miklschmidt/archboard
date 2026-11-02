@@ -30,10 +30,10 @@ class ModelLockCancelledError extends Error {
 
 	/**
 	 * A wait given up because the request that was waiting went away.
-	 * @param board The board key.
+	 * @param model The board key.
 	 */
-	constructor(readonly board: string) {
-		super(`Waiting to write "${board}" was canceled because the request disconnected.`);
+	constructor(readonly model: string) {
+		super(`Waiting to write "${model}" was canceled because the request disconnected.`);
 		this.name = "ModelLockCancelledError";
 	}
 }
@@ -109,7 +109,7 @@ function isTakingBack(live: LockRecord, who: Asker, revoke: boolean): boolean {
  * @param vault The vault root the board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
- * @param board The board key.
+ * @param model The board key.
  * @param endsClaimHere Ends a standing claim this acquisition displaced.
  * @returns The settled attempt, or null when the contested path must decide.
  * @throws {Error} When the create fails for any reason but the file existing.
@@ -118,7 +118,7 @@ function createExclusively(
 	vault: string,
 	file: string,
 	record: LockRecord,
-	board: string,
+	model: string,
 	endsClaimHere: (taker: LockRecord) => void,
 ): Attempt | null {
 	fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -130,7 +130,7 @@ function createExclusively(
 			fs.closeSync(handle);
 		}
 		endsClaimHere(record);
-		announceHeld(vault, board, holderOf(record));
+		announceHeld(vault, model, holderOf(record));
 		return { ok: true, record, created: true };
 	} catch (error) {
 		if (!isAlreadyThere(error)) {
@@ -141,14 +141,14 @@ function createExclusively(
 	if (!raced) {
 		return null;
 	}
-	announceHeld(vault, board, holderOf(raced));
+	announceHeld(vault, model, holderOf(raced));
 	return { ok: false, record: raced };
 }
 
 /** What one attempt is asking for. */
 interface AttemptContext {
 	vault: string;
-	board: string;
+	model: string;
 	file: string;
 	who: Asker;
 	leaseMs: number;
@@ -168,7 +168,7 @@ function decideAgainstLive(
 	context: AttemptContext,
 	endsClaimHere: (taker: LockRecord) => void,
 ): Attempt | null {
-	const { vault, board, file, who, leaseMs, revoke } = context;
+	const { vault, model, file, who, leaseMs, revoke } = context;
 	if (live.id === who.id) {
 		// Reentrant renewal preserves `since`, so refusals describe when the holder
 		// began rather than its latest heartbeat. Joining is not creating: callers
@@ -176,13 +176,13 @@ function decideAgainstLive(
 		const renewed = renewedRecord(live, who, leaseMs);
 		writeRecord(file, renewed);
 		endsClaimHere(renewed);
-		announceHeld(vault, board, holderOf(renewed));
+		announceHeld(vault, model, holderOf(renewed));
 		return { ok: true, record: renewed, created: false };
 	}
 	if (isTakingBack(live, who, revoke)) {
 		return null;
 	}
-	announceHeld(vault, board, holderOf(live));
+	announceHeld(vault, model, holderOf(live));
 	return { ok: false, record: live };
 }
 
@@ -209,15 +209,15 @@ function sleep(ms: number): Promise<void> {
  * Waiting is filesystem polling because another process has no signal it can
  * send here. Abort removes both the timer and the listener, so a disconnected
  * request does not consume application shutdown time.
- * @param board The board key, for the message a cancelled wait carries.
+ * @param model The board key, for the message a cancelled wait carries.
  * @param ms How long to wait.
  * @param signal Cancels the wait when the request goes away.
  * @returns When the interval is up.
  * @throws {ModelLockCancelledError} When the request goes away first.
  */
-function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promise<void> {
+function waitForLockPoll(model: string, ms: number, signal?: AbortSignal): Promise<void> {
 	if (signal?.aborted) {
-		return Promise.reject(new ModelLockCancelledError(board));
+		return Promise.reject(new ModelLockCancelledError(model));
 	}
 	return new Promise((resolve, reject) => {
 		let timer: ReturnType<typeof setTimeout> | null = null;
@@ -233,7 +233,7 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
 			timer = null;
 			signal?.removeEventListener("abort", onAbort);
 			if (cancelled) {
-				reject(new ModelLockCancelledError(board));
+				reject(new ModelLockCancelledError(model));
 			} else {
 				resolve();
 			}
@@ -262,7 +262,7 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
  * 0022) follows the contested lapsed path; a short write is never revoked,
  * and an ordinary human hold is refused by a claim like any other rival.
  * @param vault The vault root the board lives in.
- * @param board The board key, already normalized.
+ * @param model The board key, already normalized.
  * @param who Who is asking, and whether they are claiming it.
  * @param leaseMs How long the lease runs for.
  * @param revoke Whether a person is taking a standing claim back.
@@ -271,12 +271,12 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
  */
 async function attempt(
 	vault: string,
-	board: string,
+	model: string,
 	who: Asker,
 	leaseMs: number,
 	revoke: boolean,
 ): Promise<Attempt> {
-	const file = lockPathFor(vault, board);
+	const file = lockPathFor(vault, model);
 	const current = readRecord(file);
 	const live = liveRecord(current);
 	/**
@@ -290,13 +290,13 @@ async function attempt(
 	 */
 	const endsClaimHere = (taker: LockRecord): void => {
 		const claimHere =
-			revoke && who.kind === "human" ? processClaims.get(modelMemoryKey(vault, board)) : undefined;
+			revoke && who.kind === "human" ? processClaims.get(modelMemoryKey(vault, model)) : undefined;
 		if (claimHere && claimHere.holder.id !== who.id) {
-			noteClaimRevoked(vault, board, claimHere.holder, holderOf(taker), "taken-back");
+			noteClaimRevoked(vault, model, claimHere.holder, holderOf(taker), "taken-back");
 		}
 	};
 
-	const context = { vault, board, file, who, leaseMs, revoke };
+	const context = { vault, model, file, who, leaseMs, revoke };
 	if (live) {
 		const decided = decideAgainstLive(live, context, endsClaimHere);
 		if (decided) {
@@ -305,7 +305,7 @@ async function attempt(
 	}
 
 	if (!current) {
-		const settled = createExclusively(vault, file, freshRecord(who, leaseMs), board, endsClaimHere);
+		const settled = createExclusively(vault, file, freshRecord(who, leaseMs), model, endsClaimHere);
 		if (settled) {
 			return settled;
 		}
@@ -339,12 +339,12 @@ async function takeLapsed(
 	current: LockRecord | null,
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
-	const { vault, board, file, who, leaseMs } = context;
+	const { vault, model, file, who, leaseMs } = context;
 	if (!isOwnLapsedClaim(current, who)) {
-		return stealContested(vault, file, freshRecord(who, leaseMs), board, endsClaimHere);
+		return stealContested(vault, file, freshRecord(who, leaseMs), model, endsClaimHere);
 	}
 	const record = { ...renewedRecord(current, who, leaseMs), token: newToken() };
-	const taken = await stealContested(vault, file, record, board, endsClaimHere);
+	const taken = await stealContested(vault, file, record, model, endsClaimHere);
 	return taken.ok ? { ...taken, created: false } : taken;
 }
 
@@ -358,7 +358,7 @@ async function takeLapsed(
  * @param vault The vault root the board lives in.
  * @param file The lease file's path.
  * @param record The lease to write.
- * @param board The board key.
+ * @param model The board key.
  * @param endsClaimHere Ends a standing claim this acquisition displaced.
  * @returns This acquisition, or the writer that won the steal.
  */
@@ -366,7 +366,7 @@ async function stealContested(
 	vault: string,
 	file: string,
 	record: LockRecord,
-	board: string,
+	model: string,
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
@@ -376,7 +376,7 @@ async function stealContested(
 		return { ok: false, record: liveRecord(settled) };
 	}
 	endsClaimHere(record);
-	announceHeld(vault, board, holderOf(record));
+	announceHeld(vault, model, holderOf(record));
 	return { ok: true, record, created: true };
 }
 
@@ -394,14 +394,14 @@ async function stealContested(
  * @throws {ModelLockCancelledError} When the request goes away while waiting.
  */
 async function holdModel(request: LockRequest): Promise<LockHold> {
-	const board = normalizePaneKey(request.board);
+	const model = normalizePaneKey(request.model);
 	const plan = waitPlan(request);
 	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
 	for (;;) {
 		// One try at a time, against one lease file: the whole point of this loop
 		// is that the board admits a single writer, so the attempts cannot overlap.
 		// oxlint-disable-next-line no-await-in-loop -- one attempt at a time is the mutex
-		const result = await attemptOnce(board, request, plan.leaseMs);
+		const result = await attemptOnce(model, request, plan.leaseMs);
 		if (result.ok) {
 			return { holder: holderOf(result.record), created: result.created };
 		}
@@ -412,11 +412,11 @@ async function holdModel(request: LockRequest): Promise<LockHold> {
 		if (verdict === "wait") {
 			// The poll interval between attempts, which is what waiting is here.
 			// oxlint-disable-next-line no-await-in-loop -- the interval between attempts
-			await waitForLockPoll(request.board, pollFor(plan.deadline), request.signal);
+			await waitForLockPoll(request.model, pollFor(plan.deadline), request.signal);
 		}
 	}
 	throw new ModelHeldError(
-		request.board,
+		request.model,
 		wait.blocker ? holderOf(wait.blocker) : null,
 		Date.now() - plan.startedAt,
 	);
@@ -512,23 +512,23 @@ function givesUp(wait: WaitState): boolean {
  * If cancellation arrives after a successful new acquisition, that
  * acquisition is released; a reentrant hold that belonged to the caller
  * beforehand never is.
- * @param board The board key, already normalized.
+ * @param model The board key, already normalized.
  * @param request Who is asking.
  * @param leaseMs How long the lease runs for.
  * @returns This acquisition, or the live blocker that refused it.
  * @throws {ModelLockCancelledError} When the request goes away.
  */
-async function attemptOnce(board: string, request: LockRequest, leaseMs: number): Promise<Attempt> {
+async function attemptOnce(model: string, request: LockRequest, leaseMs: number): Promise<Attempt> {
 	refuseIfCancelled(request);
 	const result = await attempt(
 		request.vault,
-		board,
+		model,
 		request.holder,
 		leaseMs,
 		request.revokeClaim === true,
 	);
 	if (request.signal?.aborted && result.ok && result.created) {
-		releaseHold(request.vault, board, request.holder.id);
+		releaseHold(request.vault, model, request.holder.id);
 	}
 	refuseIfCancelled(request);
 	return result;
@@ -541,7 +541,7 @@ async function attemptOnce(board: string, request: LockRequest, leaseMs: number)
  */
 function refuseIfCancelled(request: LockRequest): void {
 	if (request.signal?.aborted) {
-		throw new ModelLockCancelledError(request.board);
+		throw new ModelLockCancelledError(request.model);
 	}
 }
 
@@ -587,7 +587,7 @@ async function withLease<T>(request: LockRequest, write: () => T): Promise<T> {
 		return write();
 	} finally {
 		if (hold.created) {
-			releaseHold(request.vault, request.board, request.holder.id);
+			releaseHold(request.vault, request.model, request.holder.id);
 		}
 	}
 }

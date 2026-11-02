@@ -15,7 +15,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 
 const caller = {
 	ARCHBOARD_REPOS: process.env["ARCHBOARD_REPOS"],
@@ -125,7 +125,7 @@ beforeAll(async () => {
 	git(scratch, shop, "add", "-A");
 	git(scratch, shop, "commit", "-q", "--no-gpg-sign", "-m", "the flake");
 	register(scratch, { [SHOP]: shop });
-	board(vault, "Shop", [
+	document(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -167,7 +167,7 @@ beforeAll(async () => {
 		return Array.isArray(command) ? spawnSync(command, options) : spawnSync(command);
 	}) as typeof Bun.spawnSync;
 	try {
-		outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+		outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 	} finally {
 		Bun.spawn = spawn;
 		Bun.spawnSync = spawnSync;

@@ -11,7 +11,7 @@ import { assembleShellView } from "#ui/rules/application/shell-view.ts";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { ModelCatalog } from "#ui/hooks/architecture-model/use-model-catalog.ts";
 
-const CHECKOUT = { board: "Checkout", variant: "current" };
+const CHECKOUT = { model: "Checkout", variant: "current" };
 
 /** The vault of the one repository the catalog lists. */
 const VAULT = "/work/shop/.archboard/vault";
@@ -47,7 +47,7 @@ function twoPaneRecords(): PaneRecords {
 		...emptyPaneStatus("A"),
 		clientId: "A-1",
 		connected: true,
-		board: CHECKOUT,
+		model: CHECKOUT,
 		paneKey: "Checkout",
 		vault: VAULT,
 		version: 3,
@@ -107,7 +107,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 		since,
 		until: since,
 	};
-	const entry = { board: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
+	const entry = { paneKey: "model:Checkout", model: "Checkout", claims: [claim], doing: null };
 	/**
 	 * The view while the tab's one pane is in a vault.
 	 * @param vault The vault.
@@ -118,7 +118,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 			theme: "dark",
 			list: initialPaneList(),
 			records: patchRecord({}, "A", {
-				status: { ...emptyPaneStatus("A"), board: CHECKOUT, paneKey: "Checkout", vault },
+				status: { ...emptyPaneStatus("A"), model: CHECKOUT, paneKey: "Checkout", vault },
 				holder: null,
 			}),
 			panes: {},

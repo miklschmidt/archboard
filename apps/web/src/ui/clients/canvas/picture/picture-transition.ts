@@ -16,7 +16,7 @@ import type { SemanticDrawing } from "#ui/clients/canvas/reads/drawings.ts";
  * picture is of, and `view` how that is read.
  */
 type MovingPicture = Pick<SemanticDrawing, "svg" | "painting" | "atlas" | "width" | "height"> & {
-	readonly board: string;
+	readonly model: string;
 	readonly view: { readonly id: string } | null;
 };
 
@@ -77,7 +77,7 @@ function viewOf(drawing: MovingPicture): string | null {
  * @returns True when the subjects of one are the subjects of the other.
  */
 function continuousPictures(before: MovingPicture, after: MovingPicture): boolean {
-	return before.board === after.board && viewOf(before) === viewOf(after);
+	return before.model === after.model && viewOf(before) === viewOf(after);
 }
 
 /**

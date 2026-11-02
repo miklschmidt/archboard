@@ -25,12 +25,12 @@ function CodeWarnings(props: CodeWarningsProps): JSX.Element | null {
 	const reading = useCodeFindings(
 		drawing === undefined
 			? null
-			: { board: drawing.board, variant: drawing.variant.id, version: drawing.version },
+			: { model: drawing.model, variant: drawing.variant.id, version: drawing.version },
 	);
 	if (reading === null) return null;
 	return (
 		<WarningSteps
-			key={`${reading.board}:${reading.variant}:${reading.version}:${reading.checkedAt}`}
+			key={`${reading.model}:${reading.variant}:${reading.version}:${reading.checkedAt}`}
 			{...props}
 			reading={reading}
 		/>

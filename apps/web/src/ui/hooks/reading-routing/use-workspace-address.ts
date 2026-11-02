@@ -209,7 +209,7 @@ function finishUserOperation(state: Reconciliation, operation: Operation): void 
 	if (intent !== null && answer === "opened" && operationMovedPane(operation, state.displayed)) {
 		// The visible origin can be canonical while the server remembers a legacy board.
 		state.deliberate.expect(
-			intent.kind === "board"
+			intent.kind === "model"
 				? { ...intent, from: operation.from, repository: operation.fromRepository }
 				: intent,
 		);
@@ -244,7 +244,7 @@ function grantSlot(state: Reconciliation): void {
 	}
 	const { intent } = next;
 	const operation =
-		intent.kind === "board"
+		intent.kind === "model"
 			? startOperation({ kind: "user" }, intent.paneId, null, state.displayed, intent)
 			: null;
 	state.operation = operation;

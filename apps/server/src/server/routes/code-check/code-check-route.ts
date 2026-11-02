@@ -111,14 +111,14 @@ async function answerCodeCheck(
 			async (signal) => {
 				const checked = await dependencies.check({ vault, variant, everyDraft, plans, signal });
 				// A cancelled pass may have stopped short, so it is nobody's news.
-				if ("boards" in checked && !signal.aborted) {
+				if ("states" in checked && !signal.aborted) {
 					dependencies.memory.remember(vault, checked, checkedAt);
 				}
 				return checked;
 			},
 		);
 		if (callerGone(request, response)) return;
-		if ("boards" in answer) response.json({ success: true, ...answer });
+		if ("states" in answer) response.json({ success: true, ...answer });
 		else response.status(422).json({ success: false, ...answer });
 	} catch (error) {
 		if (!callerGone(request, response)) {

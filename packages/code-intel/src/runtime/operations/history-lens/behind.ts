@@ -40,13 +40,13 @@ import { currentVariant, type LegacyBoard } from "@archboard/model/legacy-board"
 
 /** One board to read, as the store read it, and the file it lives in. */
 interface StateToRead {
-	readonly board: LegacyBoard;
+	readonly document: LegacyBoard;
 	readonly file: string;
 }
 
 /** One board on its way to an answer. */
 interface StateInProgress {
-	readonly board: LegacyBoard;
+	readonly document: LegacyBoard;
 	readonly variant: string;
 	readonly lastChange: LastChange;
 	readonly parts: PartReading;
@@ -103,12 +103,12 @@ async function countedAfter(
 
 /**
  * What the boards read in each repository.
- * @param boards The boards, with their last changes and parts.
+ * @param states The boards, with their last changes and parts.
  * @returns Each repository by identity.
  */
-function repositoriesOf(boards: readonly StateInProgress[]): Map<string, RepositoryRead> {
+function repositoriesOf(states: readonly StateInProgress[]): Map<string, RepositoryRead> {
 	const repositories = new Map<string, RepositoryRead>();
-	for (const { lastChange, parts } of boards) {
+	for (const { lastChange, parts } of states) {
 		for (const part of parts.read) {
 			const read = repositories.get(part.repo) ?? {
 				root: part.root,
@@ -161,19 +161,19 @@ async function walkRepository(
 
 /**
  * Walk every repository the boards read, each once and all at the same time.
- * @param boards The boards.
+ * @param states The boards.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
  * @returns Each repository's walk, by identity.
  */
 async function walkRepositories(
-	boards: readonly StateInProgress[],
+	states: readonly StateInProgress[],
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
 ): Promise<Map<string, WalkedRepository>> {
 	return new Map(
 		await Promise.all(
-			[...repositoriesOf(boards)].map(async ([repo, read]): Promise<[string, WalkedRepository]> => [
+			[...repositoriesOf(states)].map(async ([repo, read]): Promise<[string, WalkedRepository]> => [
 				repo,
 				await walkRepository(read, snapshot.inspection(repo)?.head?.commit !== undefined, options),
 			]),
@@ -202,16 +202,16 @@ function countedAgainst(
 
 /**
  * One board's answer, from the walks.
- * @param board The board on its way.
+ * @param document The board on its way.
  * @param walks Every repository's walk.
  * @returns How far it is behind, per board and per part.
  */
 function answerFor(
-	board: StateInProgress,
+	document: StateInProgress,
 	walks: ReadonlyMap<string, WalkedRepository>,
 ): ModelBehind {
-	const { lastChange, parts, variant } = board;
-	if (lastChange.kind === "unknown") return { board: board.board.name, variant, lastChange };
+	const { lastChange, parts, variant } = document;
+	if (lastChange.kind === "unknown") return { model: document.document.name, variant, lastChange };
 	const since = lastChange.kind === "commit" ? lastChange.commit : undefined;
 	const commits = new Map<string, BehindCommit>();
 	const answerParts = parts.read.map((part) => {
@@ -227,7 +227,7 @@ function answerFor(
 		};
 	});
 	return {
-		board: board.board.name,
+		model: document.document.name,
 		variant,
 		lastChange:
 			lastChange.kind === "commit"
@@ -258,44 +258,49 @@ async function vaultCheckoutOf(vault: string, options: GitRunOptions): Promise<s
 
 /**
  * Read how far boards are behind, with every Git command this needs.
- * @param boards The boards, each with a current variant.
+ * @param states The boards, each with a current variant.
  * @param vaultRoot The vault's checkout, or undefined.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
  * @returns One answer per board, in the order given.
  */
 async function readBehind(
-	boards: readonly StateToRead[],
+	states: readonly StateToRead[],
 	vaultRoot: string | undefined,
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
 ): Promise<ModelBehind[]> {
 	const inProgress = await Promise.all(
-		boards.flatMap(({ board, file }) => {
-			const variant = currentVariant(board);
+		states.flatMap(({ document, file }) => {
+			const variant = currentVariant(document);
 			if (variant === undefined) return [];
 			return [
 				(async (): Promise<StateInProgress> => ({
-					board,
+					document,
 					variant: variant.id,
-					lastChange: await lastChangeOf(board, fs.realpathSync.native(file), vaultRoot, options),
+					lastChange: await lastChangeOf(
+						document,
+						fs.realpathSync.native(file),
+						vaultRoot,
+						options,
+					),
 					parts: partReading(variant.content, snapshot),
 				}))(),
 			];
 		}),
 	);
 	const repositories = await walkRepositories(inProgress, snapshot, options);
-	return inProgress.map((board) => answerFor(board, repositories));
+	return inProgress.map((document) => answerFor(document, repositories));
 }
 
 /**
  * Every binding of the current variants, so one snapshot holds their paths.
- * @param boards The boards.
+ * @param states The boards.
  * @returns The bindings.
  */
-function bindingsOf(boards: readonly StateToRead[]): CodeBinding[] {
-	return boards.flatMap(({ board }) =>
-		(currentVariant(board)?.content.nodes ?? []).flatMap((node) =>
+function bindingsOf(states: readonly StateToRead[]): CodeBinding[] {
+	return states.flatMap(({ document }) =>
+		(currentVariant(document)?.content.nodes ?? []).flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
 		),
 	);
@@ -304,14 +309,14 @@ function bindingsOf(boards: readonly StateToRead[]): CodeBinding[] {
 /**
  * Everything an answer derives from: the version of each board, each checkout
  * with its HEAD, and the HEAD of the vault's checkout.
- * @param boards The boards.
+ * @param states The boards.
  * @param vaultRoot The vault's checkout.
  * @param snapshot The registered checkouts.
  * @param options The caller's signal.
  * @returns The key.
  */
 async function memoryKey(
-	boards: readonly StateToRead[],
+	states: readonly StateToRead[],
 	vaultRoot: string | undefined,
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
@@ -323,7 +328,7 @@ async function memoryKey(
 	return JSON.stringify({
 		vaultRoot,
 		vaultHead,
-		boards: boards.map(({ board, file }) => [file, board.version]),
+		states: states.map(({ document, file }) => [file, document.version]),
 		checkouts: snapshot.entries.map((entry) => [entry.repo, snapshot.inspection(entry.repo)]),
 	});
 }
@@ -333,11 +338,11 @@ interface BehindReading {
 	/**
 	 * How far each board is behind its code.
 	 * @param vault The vault directory.
-	 * @param boards The boards to read, each with a current variant.
+	 * @param states The boards to read, each with a current variant.
 	 * @param signal Cancels the reading and every Git command it runs.
 	 * @returns One answer per board with a current variant, in the order given.
 	 */
-	read(vault: string, boards: readonly StateToRead[], signal?: AbortSignal): Promise<ModelBehind[]>;
+	read(vault: string, states: readonly StateToRead[], signal?: AbortSignal): Promise<ModelBehind[]>;
 }
 
 /**
@@ -352,24 +357,24 @@ function createBehindReading(): BehindReading {
 		/**
 		 * Read, or answer from memory when nothing the answer derives from moved.
 		 * @param vault The vault directory.
-		 * @param boards The boards to read.
+		 * @param states The boards to read.
 		 * @param signal Cancels the reading.
 		 * @returns One answer per board with a current variant.
 		 */
-		async read(vault, boards, signal) {
+		async read(vault, states, signal) {
 			const options = { signal };
 			const [vaultRoot, snapshot] = await Promise.all([
 				vaultCheckoutOf(vault, options),
 				snapshotCheckoutAccess({
 					vault,
 					...(signal === undefined ? {} : { signal }),
-					bindings: bindingsOf(boards),
+					bindings: bindingsOf(states),
 					timeoutMs: null,
 				}),
 			]);
-			const key = await memoryKey(boards, vaultRoot, snapshot, options);
+			const key = await memoryKey(states, vaultRoot, snapshot, options);
 			if (memory?.key === key) return memory.answer;
-			const answer = await readBehind(boards, vaultRoot, snapshot, options);
+			const answer = await readBehind(states, vaultRoot, snapshot, options);
 			memory = { key, answer };
 			return answer;
 		},

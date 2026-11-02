@@ -60,7 +60,7 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const BOARD = LegacyBoardSchema.parse(
+const DOCUMENT = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -99,8 +99,8 @@ function writeGuardrail(
 	fileChanges: readonly { path: string; kind: string }[] = [],
 ) {
 	const [verdict] = evaluateGuardrails(["doing-on-writes"], {
-		snapshot: new Map([["Flask JSON", BOARD]]),
-		boards: new Map([["Flask JSON", BOARD]]),
+		snapshot: new Map([["Flask JSON", DOCUMENT]]),
+		documents: new Map([["Flask JSON", DOCUMENT]]),
 		configBefore: "a",
 		configAfter: "a",
 		commands: commands.map(classified),
@@ -164,21 +164,24 @@ describe("file changes", () => {
 });
 
 describe("what counts as a direct write", () => {
-	const board = `'${VAULT}/flask.module.json'`;
+	const document = `'${VAULT}/flask.module.json'`;
 	test.each([
-		[`bash -lc "python -m json.tool ${board} >/dev/null; echo json_exit:$?"`, true],
-		[`bash -lc "jq empty ${board} 2>&1; grep -n version ${board}"`, true],
-		[`bash -lc "sed -n '1,12p' ${board}"`, true],
-		[`bash -lc "od -An -tx1 -N 180 ${board} 2>/dev/null"`, true],
-		[`bash -lc "cat ${board} | head -5 > /tmp/peek.json"`, true],
-		[`bash -lc "cat payload.json > ${board}"`, false],
-		[`bash -lc "cat payload.json >> ${board}"`, false],
-		[`bash -lc "sed -i 's/a/b/' ${board}"`, false],
-		[`bash -lc "cp /tmp/fixed.json ${board}"`, false],
-		[`bash -lc "cp ${board} /tmp/copy.json"`, true],
-		[`bash -lc "rm ${board}"`, false],
-		[`bash -lc "python3 - <<'EOF'\nimport json\np=${board}\nopen(p,'w').write('{}')\nEOF"`, false],
-		[`bash -lc "node -e \\"require('fs').writeFileSync(${board}, '{}')\\""`, false],
+		[`bash -lc "python -m json.tool ${document} >/dev/null; echo json_exit:$?"`, true],
+		[`bash -lc "jq empty ${document} 2>&1; grep -n version ${document}"`, true],
+		[`bash -lc "sed -n '1,12p' ${document}"`, true],
+		[`bash -lc "od -An -tx1 -N 180 ${document} 2>/dev/null"`, true],
+		[`bash -lc "cat ${document} | head -5 > /tmp/peek.json"`, true],
+		[`bash -lc "cat payload.json > ${document}"`, false],
+		[`bash -lc "cat payload.json >> ${document}"`, false],
+		[`bash -lc "sed -i 's/a/b/' ${document}"`, false],
+		[`bash -lc "cp /tmp/fixed.json ${document}"`, false],
+		[`bash -lc "cp ${document} /tmp/copy.json"`, true],
+		[`bash -lc "rm ${document}"`, false],
+		[
+			`bash -lc "python3 - <<'EOF'\nimport json\np=${document}\nopen(p,'w').write('{}')\nEOF"`,
+			false,
+		],
+		[`bash -lc "node -e \\"require('fs').writeFileSync(${document}, '{}')\\""`, false],
 	])("%s is %s", (command, reads) => {
 		expect(writeGuardrail([command]).passed).toBe(reads);
 	});

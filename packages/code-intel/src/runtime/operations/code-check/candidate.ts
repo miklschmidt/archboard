@@ -25,7 +25,7 @@ type CandidateRevision = Readonly<HistoricalRevision>;
 /** The in-memory candidate and the immutable code it is to describe. */
 interface CandidateCodeRequest {
 	readonly vault: string;
-	readonly board: LegacyBoard;
+	readonly document: LegacyBoard;
 	readonly file: string;
 	readonly variant: SemanticVariant;
 	readonly revisions: readonly CandidateRevision[];
@@ -144,12 +144,12 @@ async function suggestHistoricalCommits(
  * @returns Findings, or the missing immutable evidence that prevents checking.
  */
 async function checkCandidateCode(request: CandidateCodeRequest): Promise<CandidateCodeResult> {
-	const { vault, board, file, variant, signal } = request;
+	const { vault, document, file, variant, signal } = request;
 	const parsed = candidateRevisions(request.revisions);
 	if (!(parsed instanceof Map)) return parsed;
 	const revisions = parsed;
 	const { relationshipKinds } = readVaultConfiguration(vault).configuration;
-	const read: StateToCheck = { board, file, variant, named: true, relationshipKinds };
+	const read: StateToCheck = { document, file, variant, named: true, relationshipKinds };
 	const bindings = candidateBindings(variant);
 	const missing = bindings.find((binding) => !revisions.has(binding.repo));
 	if (missing !== undefined)

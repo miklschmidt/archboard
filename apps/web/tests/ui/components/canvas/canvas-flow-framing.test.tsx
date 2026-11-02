@@ -58,7 +58,7 @@ const TALL: Rows = {
  * @param message The message the first step names.
  * @returns The board document, as its route answers with it.
  */
-function board(message: string): Record<string, unknown> {
+function model(message: string): Record<string, unknown> {
 	const content = {
 		nodes: PARTICIPANTS.map((id) => ({ id, name: id, kind: "service" })),
 		edges: [],
@@ -145,7 +145,7 @@ function picture(frameWidth: number, rows: Rows): Record<string, unknown> {
  * @param message The message the first step names.
  */
 async function presentingFlow(frameWidth: number, rows: Rows, message: string): Promise<void> {
-	server.documents["pipeline"] = board(message);
+	server.documents["pipeline"] = model(message);
 	server.reply = { status: 200, body: picture(frameWidth, rows) };
 	mountStage(null, { reducedMotion: true });
 	await presenting();

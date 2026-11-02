@@ -177,7 +177,7 @@ function sourceCursor(value: unknown): number {
 /** One settled change's fields, after each has been checked against its own limit. */
 interface SettledChangeFields {
 	readonly cursor: number;
-	readonly board: BoundedValue<string>;
+	readonly model: BoundedValue<string>;
 	readonly at: BoundedValue<string>;
 	readonly capture: SemanticCapture;
 }
@@ -443,7 +443,7 @@ export function createSemanticContextPublisher(
 			return;
 		}
 		const eventCursor = sourceCursor(event.cursor);
-		const eventModel = textValue(event.board, "change.board", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+		const eventModel = textValue(event.model, "change.board", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
 		const eventAt = textValue(event.at, "change.at", SEMANTIC_CONTEXT_LIMITS.reasonBytes);
 		const capture = dateCapture(eventAt.value, clock);
 		let context: SemanticContextInput;
@@ -455,7 +455,7 @@ export function createSemanticContextPublisher(
 		}
 		publishSettledChange(event, context, {
 			cursor: eventCursor,
-			board: eventModel,
+			model: eventModel,
 			at: eventAt,
 			capture,
 		});
@@ -474,7 +474,7 @@ export function createSemanticContextPublisher(
 		context: SemanticContextInput,
 		settled: SettledChangeFields,
 	): void => {
-		const staleReasons = modelMismatchReasons(settled.board.value, context.board.key);
+		const staleReasons = modelMismatchReasons(settled.model.value, context.model.key);
 		const changeText = textValue(
 			event.text,
 			"change.text",
@@ -492,7 +492,7 @@ export function createSemanticContextPublisher(
 				...captureAmbiguity(settled.at.truncated, settled.capture),
 			],
 			additionalStaleReasons: staleReasons,
-			inputTruncated: settled.board.truncated || settled.at.truncated || changeText.truncated,
+			inputTruncated: settled.model.truncated || settled.at.truncated || changeText.truncated,
 		});
 		if (fields.cursor === null) {
 			fail("change.cursor", "settled changes require a cursor");
@@ -501,7 +501,7 @@ export function createSemanticContextPublisher(
 			change: {
 				feedId,
 				cursor: fields.cursor,
-				board: settled.board.value,
+				model: settled.model.value,
 				at: settled.at.value,
 				origin: event.origin,
 				significance: event.significance,

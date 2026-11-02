@@ -28,13 +28,13 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
  * @param clientId The pane's client id.
  * @returns The reading, or null when it is about another board.
  */
-function readingAboutBoard(clientId: string): SemanticPaneContext | null {
+function readingAboutPaneKey(clientId: string): SemanticPaneContext | null {
 	const context = semanticPaneContextFor(clientId);
 	if (context === null) return null;
 	if (context.architecture != null) return context;
 	const pane = panes.get(clientId);
 	const showing = pane === undefined ? null : paneKeyOf(pane);
-	return context.board?.key === showing ? context : null;
+	return context.model?.key === showing ? context : null;
 }
 
 /**
@@ -63,7 +63,7 @@ function getPanesRoute(req: Request, res: Response): void {
 		 * @returns The reading, or null when the pane has said nothing.
 		 */
 		reading: (clientId) => {
-			const context = readingAboutBoard(clientId);
+			const context = readingAboutPaneKey(clientId);
 			if (context === null) {
 				return null;
 			}

@@ -8,7 +8,7 @@ import type { PanePresentation, SemanticPaneReading } from "#ui/rules/canvas/rea
 /** What the pane has on screen, as it knows it. */
 interface OnScreen {
 	/** The board on screen, which is the drilled-into one when there is one. */
-	readonly board: string;
+	readonly model: string;
 	/** The server's answer for that board, once there is one. */
 	readonly answer: SemanticRender | undefined;
 	/** The view it is being read through, or undefined for the whole variant. */
@@ -32,7 +32,7 @@ function useReported(
 	report: ((reading: SemanticPaneReading) => void) | undefined,
 	onScreen: OnScreen,
 ): void {
-	const { board, answer, selection, presentation } = onScreen;
+	const { model, answer, selection, presentation } = onScreen;
 	// Empty views retain their resolved identity for the pane and its address.
 	const drawn = useMemo(
 		() =>
@@ -47,8 +47,8 @@ function useReported(
 	const variant = answer?.variant.id ?? null;
 	const view = onScreen.view ?? null;
 	useEffect(() => {
-		report?.({ board, variant, view, selection, drawn, presentation });
-	}, [report, board, variant, view, selection, drawn, presentation]);
+		report?.({ model, variant, view, selection, drawn, presentation });
+	}, [report, model, variant, view, selection, drawn, presentation]);
 }
 
 export { useReported };

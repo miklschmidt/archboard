@@ -247,7 +247,7 @@ function pane(
 			repository,
 			paneKey,
 			opened: paneKey,
-			board: null,
+			model: null,
 			view: null,
 			lastChangeAt: null,
 			doing: [],

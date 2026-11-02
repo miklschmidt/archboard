@@ -49,7 +49,7 @@ function stack(built: boolean) {
 	return LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
-		id: "board",
+		id: "document",
 		name: "Ingest",
 		level: "system",
 		version: 1,

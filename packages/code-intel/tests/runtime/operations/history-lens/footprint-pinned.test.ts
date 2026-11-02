@@ -75,7 +75,7 @@ function part(id: string, order: number, path: string, branch: string) {
  * @param variants The variants.
  * @returns The board.
  */
-function board(variants: readonly object[]) {
+function document(variants: readonly object[]) {
 	return LegacyBoardSchema.parse({
 		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
@@ -122,11 +122,11 @@ afterAll(() => {
  * @param proposal The draft to read, if any.
  * @returns The changed ids, and each skip as its part and reason.
  */
-async function read(value: ReturnType<typeof board>, proposal?: string) {
+async function read(value: ReturnType<typeof document>, proposal?: string) {
 	const answer = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: currentVariant(value),
 			proposal: proposal === undefined ? undefined : resolveVariant(value, proposal),
 			base: "main",
@@ -144,7 +144,7 @@ async function read(value: ReturnType<typeof board>, proposal?: string) {
 }
 
 test("a part pinned to a branch that is not checked out is read up to that branch, and one pinned to a ref no checkout resolves is skipped naming it", async () => {
-	const value = board([
+	const value = document([
 		{
 			id: "v1",
 			name: "Built",
@@ -165,7 +165,7 @@ test("a part pinned to a branch that is not checked out is read up to that branc
 
 test("a draft is read at its own branch, which holds the older branch an inherited part pins", async () => {
 	const inherited = part("pL", 1000, "src/ledger.ts", "feature");
-	const value = board([
+	const value = document([
 		{ id: "v1", name: "Built", lifecycle: "current", content: { nodes: [inherited] } },
 		{
 			id: "v2",

@@ -10,7 +10,7 @@ test("the Archboard context codec names the archboard trigger and encodes the co
 	const context = ArchboardContextSchema.parse({
 		schema: 1,
 		paneId: "pane-exact",
-		board: { name: "Board", key: "board", version: 7, cursor: "feed:3" },
+		model: { name: "Board", key: "model", version: 7, cursor: "feed:3" },
 		threadLink: { state: "executable", reason: null },
 		child: { id: "child-1", epoch: "epoch-1" },
 		workhorse: { threadId: "thread-1", turnId: null },

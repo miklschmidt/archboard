@@ -44,26 +44,26 @@ const UNKNOWN_REASON = {
 
 /**
  * The lines about how far one board is behind.
- * @param board One board's reading.
+ * @param document One board's reading.
  * @returns Its lines.
  */
-function behindLines(board: ModelBehind): string[] {
-	const head = `behind: ${board.board}`;
-	if (board.lastChange.kind === "unknown") {
-		return [`${head}: cannot tell, because ${UNKNOWN_REASON[board.lastChange.reason]}`];
+function behindLines(document: ModelBehind): string[] {
+	const head = `behind: ${document.model}`;
+	if (document.lastChange.kind === "unknown") {
+		return [`${head}: cannot tell, because ${UNKNOWN_REASON[document.lastChange.reason]}`];
 	}
-	if (!("commits" in board)) return [];
+	if (!("commits" in document)) return [];
 	const since =
-		board.lastChange.kind === "commit"
-			? `since ${board.lastChange.commit.slice(0, 9)} (${board.lastChange.committedAt.slice(0, 10)})`
+		document.lastChange.kind === "commit"
+			? `since ${document.lastChange.commit.slice(0, 9)} (${document.lastChange.committedAt.slice(0, 10)})`
 			: "since a change to its current variant that no commit holds yet";
-	const large = board.commits.filter((commit) => commit.large).length;
+	const large = document.commits.filter((commit) => commit.large).length;
 	return [
-		`${head}: ${plural(board.commits.length, "commit")} ${since}${large === 0 ? "" : `, ${large} large`}`,
-		...board.parts
+		`${head}: ${plural(document.commits.length, "commit")} ${since}${large === 0 ? "" : `, ${large} large`}`,
+		...document.parts
 			.filter((part) => part.commits.length > 0)
 			.map((part) => `behind:   ${part.subject.name} (${part.path}): ${part.commits.length}`),
-		...counts(board.skipped.map((skip) => skip.reason)).map(
+		...counts(document.skipped.map((skip) => skip.reason)).map(
 			([reason, count]) => `behind:   skipped ${plural(count, "part")}: ${reason}`,
 		),
 	];
@@ -93,7 +93,7 @@ function findingLines(finding: CodeFinding): string[] {
 function skippedNoun(skip: CodeCheckSkip): string {
 	if (skip.subject !== undefined) return "subject";
 	if (skip.variant !== undefined) return "draft";
-	if (skip.board !== undefined) return "board";
+	if (skip.model !== undefined) return "model";
 	return skip.repo === undefined ? "language" : "checkout";
 }
 
@@ -113,7 +113,7 @@ function namesOf(same: readonly CodeCheckSkip[], noun: string): string[] {
 	if (noun === "language") return same.flatMap((skip) => skip.detail ?? []);
 	if (noun === "draft") {
 		return same.map(
-			(skip) => `${skip.board} ${skip.variant} in ${skip.repo}: ${skip.detail ?? ""}`,
+			(skip) => `${skip.model} ${skip.variant} in ${skip.repo}: ${skip.detail ?? ""}`,
 		);
 	}
 	if (noun !== "checkout") return [];

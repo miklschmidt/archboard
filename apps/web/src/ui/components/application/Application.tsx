@@ -345,7 +345,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
 				// the board in front of them, and focus follows the pointer.
-				void shell.selectModel(paneKeyFor(address.board, variant), paneId);
+				void shell.selectModel(paneKeyFor(address.model, variant), paneId);
 			}
 		},
 		[variantSources],

@@ -19,7 +19,7 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 	const url = new URL(
 		recordingPageUrl({
 			serverUrl: "http://127.0.0.1:3000",
-			board: { name: "Checkout" },
+			document: { name: "Checkout" },
 			variant,
 			repository,
 			walkthrough: { id: "w1" },
@@ -48,7 +48,7 @@ function addressSearch(against: string | null): string {
 	return new URL(
 		recordingPageUrl({
 			serverUrl: "http://127.0.0.1:3000",
-			board: { name: "Checkout" },
+			document: { name: "Checkout" },
 			variant: "v3",
 			repository: null,
 			walkthrough: { id: "w1" },

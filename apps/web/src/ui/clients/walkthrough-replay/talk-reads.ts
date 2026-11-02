@@ -17,7 +17,7 @@ import { type RetainedReads } from "#ui/clients/canvas/reads/retained-reads.ts";
  * @param foreign Told of a read of another board, which the talk cannot answer.
  * @returns The reads.
  */
-function talkReads(talk: Talk, foreign: (board: string) => void): RetainedReads {
+function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads {
 	return {
 		/**
 		 * List the original document inside this capture.
@@ -27,14 +27,14 @@ function talkReads(talk: Talk, foreign: (board: string) => void): RetainedReads 
 		/**
 		 * The talk's board, and no other, whichever vault the pane names.
 		 * @param _vault The pane's vault, which a talk has no use for.
-		 * @param board The board asked for.
+		 * @param model The board asked for.
 		 * @returns The talk's document.
 		 * @throws {Error} When another board is asked for.
 		 */
-		document: async (_vault, board) => {
-			if (sameModelName(board, talk.board.name)) return talk.document;
-			foreign(board);
-			throw new Error(`The talk is of ${talk.board.name}; ${board} was read while rendering it.`);
+		document: async (_vault, model) => {
+			if (sameModelName(model, talk.board.name)) return talk.document;
+			foreign(model);
+			throw new Error(`The talk is of ${talk.board.name}; ${model} was read while rendering it.`);
 		},
 		/**
 		 * The policy the talk's board was drawn under.
@@ -59,19 +59,19 @@ function talkReads(talk: Talk, foreign: (board: string) => void): RetainedReads 
 function retainedListing(talk: Talk): RetainedListing {
 	const parsed = parseLegacyBoard(talk.document);
 	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
-	const board = parsed.board;
+	const model = parsed.board;
 	return {
 		levels: [],
 		boards: [
 			{
-				id: board.id,
-				key: board.name,
-				name: board.name,
-				version: board.version,
-				opens: board.current ?? null,
+				id: model.id,
+				key: model.name,
+				name: model.name,
+				version: model.version,
+				opens: model.current ?? null,
 				links: [],
 				description: null,
-				variants: board.variants.map((variant) => ({
+				variants: model.variants.map((variant) => ({
 					id: variant.id,
 					name: variant.name,
 					lifecycle: variant.lifecycle,

@@ -31,7 +31,7 @@ type LostClaim = ClaimRevocation & {
 async function claimModel(
 	request: Readonly<{
 		vault: string;
-		board: string;
+		model: string;
 		reason: string;
 		forMs?: number;
 		waitMs?: number;
@@ -42,13 +42,13 @@ async function claimModel(
 	// under the claim renew only the lease; this explicit act alone moves expiry.
 	// Clamp rather than refuse an overlong request, while never making the claim
 	// shorter than the renewable lease beneath it.
-	const board = normalizePaneKey(request.board);
+	const model = normalizePaneKey(request.model);
 	const forMs = campaignLength(request.forMs);
-	const existing = liveClaim(request.vault, board);
+	const existing = liveClaim(request.vault, model);
 	const id = existing === null ? `claim-${newToken()}` : existing.holder.id;
 	const hold = await holdModel({
 		vault: request.vault,
-		board,
+		model,
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
 		leaseMs: CLAIM_MS.lease,
 		...(request.waitMs !== undefined ? { waitMs: request.waitMs } : {}),
@@ -56,14 +56,14 @@ async function claimModel(
 	});
 	const entry: ClaimEntry = {
 		vault: request.vault,
-		board,
+		model,
 		holder: hold.holder,
 		expires: Date.now() + forMs,
 		timer: existing === null ? null : existing.timer,
 	};
-	processClaims.set(modelMemoryKey(request.vault, board), entry);
-	entry.timer ??= startRenewing(request.vault, board);
-	return { claim: claimOf(board, entry), created: existing === null };
+	processClaims.set(modelMemoryKey(request.vault, model), entry);
+	entry.timer ??= startRenewing(request.vault, model);
+	return { claim: claimOf(model, entry), created: existing === null };
 }
 
 /**
@@ -79,12 +79,12 @@ function campaignLength(asked: number | undefined): number {
 /**
  * Release this server's claim without treating an already-ended claim as an error.
  * @param vault The vault root the board lives in.
- * @param board Board key or alias.
+ * @param model Board key or alias.
  * @returns The released process claim, or null when this server retained no claim for the board.
  */
-function releaseClaim(vault: string, board: string): Claim | null {
+function releaseClaim(vault: string, model: string): Claim | null {
 	// A late release after expiry or take-back is harmless and reports null.
-	const key = normalizePaneKey(board);
+	const key = normalizePaneKey(model);
 	const entry = processClaims.get(modelMemoryKey(vault, key));
 	if (entry === undefined) {
 		return null;
@@ -97,11 +97,11 @@ function releaseClaim(vault: string, board: string): Claim | null {
 /**
  * Read this server's live claim, expiring it first when its campaign deadline passed.
  * @param vault The vault root the board lives in.
- * @param board Board key or alias.
+ * @param model Board key or alias.
  * @returns The live claim, or null.
  */
-function claimOn(vault: string, board: string): Claim | null {
-	const key = normalizePaneKey(board);
+function claimOn(vault: string, model: string): Claim | null {
+	const key = normalizePaneKey(model);
 	const entry = liveClaim(vault, key);
 	return entry === null ? null : claimOf(key, entry);
 }
@@ -109,27 +109,27 @@ function claimOn(vault: string, board: string): Claim | null {
 /**
  * Resolve the holder identity an agent write should reenter for this board.
  * @param vault The vault root the board lives in.
- * @param board Board key or alias.
+ * @param model Board key or alias.
  * @returns The live claim holder id, or null for an ordinary per-write acquisition.
  */
-function claimWriterId(vault: string, board: string): string | null {
+function claimWriterId(vault: string, model: string): string | null {
 	// The server supplies this id across command-lived agent requests. If the
 	// vault lease was lost, ordinary acquisition must not silently rebuild the
 	// claim; the renewal/revocation owner resolves that state.
-	const entry = liveClaim(vault, normalizePaneKey(board));
+	const entry = liveClaim(vault, normalizePaneKey(model));
 	return entry === null ? null : entry.holder.id;
 }
 
 /**
  * Consume the one-shot notice that this server's claim was taken back.
  * @param vault The vault root the board lives in.
- * @param board Board key or alias.
+ * @param model Board key or alias.
  * @returns The revocation and why it ended, once, or null after it has been consumed.
  */
-function takeClaimRevocation(vault: string, board: string): LostClaim | null {
+function takeClaimRevocation(vault: string, model: string): LostClaim | null {
 	// Told once: the next agent act learns what was interrupted and that nothing
 	// was undone; after that, work is ordinary rather than permanently refused.
-	const key = modelMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, model);
 	const lost = processRevocations.get(key);
 	if (lost === undefined) {
 		return null;
@@ -153,19 +153,19 @@ function takeClaimRevocation(vault: string, board: string): LostClaim | null {
  * @returns The agent's claim that stood when the person asked, or null when none did.
  */
 async function takeBackModel(
-	request: Readonly<{ vault: string; board: string; by: string; signal?: Readonly<AbortSignal> }>,
+	request: Readonly<{ vault: string; model: string; by: string; signal?: Readonly<AbortSignal> }>,
 ): Promise<LockHolder | null> {
-	const { vault, board } = request;
-	const standing = modelLockState(vault, board);
+	const { vault, model } = request;
+	const standing = modelLockState(vault, model);
 	const hold = await holdModel({
 		vault,
-		board,
+		model,
 		holder: { id: request.by, kind: "human" },
 		revokeClaim: true,
 		...(request.signal !== undefined ? { signal: request.signal } : {}),
 	});
 	if (hold.created) {
-		releaseHold(vault, board, hold.holder.id);
+		releaseHold(vault, model, hold.holder.id);
 	}
 	return standing?.kind === "agent" && standing.claimed ? standing : null;
 }
@@ -179,14 +179,14 @@ async function takeBackModel(
  * @returns The sentence's opening, without a full stop.
  */
 function claimEndReason(lost: ClaimRevocation): string {
-	const board = `"${lost.claim.board}"`;
+	const model = `"${lost.claim.model}"`;
 	if (lost.cause === "taken-back") {
-		return `The user at the canvas took ${board} back`;
+		return `The user at the canvas took ${model} back`;
 	}
 	if (lost.cause === "held-by-another" && lost.by) {
-		return `Another writer (${lost.by.kind}, ${lost.by.process}) took the lease on ${board} while this server could not renew it, and holds it now`;
+		return `Another writer (${lost.by.kind}, ${lost.by.process}) took the lease on ${model} while this server could not renew it, and holds it now`;
 	}
-	return `The lease on ${board} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
+	return `The lease on ${model} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
 }
 
 export {

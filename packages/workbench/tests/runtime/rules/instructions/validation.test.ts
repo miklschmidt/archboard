@@ -28,7 +28,7 @@ const CONTEXT_KEY_ORACLE = {
 	root: [
 		"schema",
 		"paneId",
-		"board",
+		"model",
 		"threadLink",
 		"child",
 		"workhorse",
@@ -43,7 +43,7 @@ const CONTEXT_KEY_ORACLE = {
 		"ambiguity",
 		"operation",
 	],
-	board: ["name", "key", "version", "cursor"],
+	model: ["name", "key", "version", "cursor"],
 	threadLink: ["state", "reason"],
 	child: ["id", "epoch"],
 	workhorse: ["threadId", "turnId"],
@@ -339,13 +339,13 @@ describe("lower bounds", () => {
 		[
 			"board.name",
 			(candidate: ArchboardContext): void => {
-				candidate.board.name = "";
+				candidate.model.name = "";
 			},
 		],
 		[
 			"board.cursor",
 			(candidate: ArchboardContext): void => {
-				candidate.board.cursor = "";
+				candidate.model.cursor = "";
 			},
 		],
 		[
@@ -430,10 +430,10 @@ describe("public parsed-value immutability", () => {
 			expectDeepFrozen(value);
 		}
 		expect(context).not.toBe(contextFixture);
-		expect(context.board).not.toBe(contextFixture.board);
+		expect(context.model).not.toBe(contextFixture.model);
 		const secondContext = ArchboardContextSchema.parse(contextFixture);
 		expect(secondContext).not.toBe(context);
-		expect(secondContext.board).not.toBe(context.board);
+		expect(secondContext.model).not.toBe(context.model);
 		const secondStart = TurnStartParamsSchema.parse(start);
 		expect(secondStart).not.toBe(start);
 		expect(secondStart.input).not.toBe(start.input);

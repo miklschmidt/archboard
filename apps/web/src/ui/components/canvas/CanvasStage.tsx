@@ -56,7 +56,7 @@ type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 /** Inputs for a semantic pane. */
 interface CanvasStageProps {
 	/** The board name, as the address names it. */
-	board: string;
+	model: string;
 	/**
 	 * Open the code a node is bound to, when the shell around the pane can.
 	 *
@@ -132,7 +132,7 @@ interface CanvasStageProps {
 	 * @param board The board on screen.
 	 * @returns The boards above it.
 	 */
-	placeOf?: ((board: string) => readonly CrumbPlace[]) | undefined;
+	placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;
 	/**
 	 * Show a board of another vault in this pane: a drill-down into another
 	 * repository, or back along a trail that came from one (ADR 0050). Without
@@ -221,12 +221,12 @@ interface DocumentReadingProps extends CanvasStageProps {
  */
 const DocumentReading = memo(function DocumentReading(props: DocumentReadingProps): JSX.Element {
 	const { resting, ...stage } = props;
-	const { board, variant, onSelect, onUserChanged } = props;
+	const { model, variant, onSelect, onUserChanged } = props;
 	const [comparison, onComparisonChange] = useState(true);
 	const vault = usePaneVault();
 	const repository = useQuery(retainedListingQuery(vault)).data?.repository ?? null;
 	const drill = useDrillDown(
-		{ board, variant, arrival: props.arrival, vault, repository },
+		{ model, variant, arrival: props.arrival, vault, repository },
 		props.onDive,
 	);
 	// How the board on screen is read: the shell's answer for the pane's own
@@ -240,9 +240,9 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	// The explanations belong to the board on screen, so drilling into another
 	// one closes whatever was being read: the beats were about a different
 	// architecture.
-	const reading = useVariantReading(drill.board, level.variant);
+	const reading = useVariantReading(drill.model, level.variant);
 	const narrative = useWalkthrough(
-		{ board: drill.board, variant: level.variant },
+		{ model: drill.model, variant: level.variant },
 		reading,
 		props.driven,
 	);
@@ -255,7 +255,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	const render = useQuery(
 		semanticRenderQuery({
 			vault,
-			board: drill.board,
+			model: drill.model,
 			variant: level.variant,
 			view: viewToRead(narrative.beat, level.view),
 			comparison,
@@ -264,7 +264,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	);
 	// The board on screen, not the pane's own: a change to the board somebody is
 	// actually reading is the one that has to reach them.
-	useModelChanges(vault, drill.board);
+	useModelChanges(vault, drill.model);
 
 	const drawn = drawingIn(render.data);
 	const presented = usePresentationPosition(
@@ -300,7 +300,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 		presenting: narrative.open !== null,
 	});
 	const fitPicture = useMemo(
-		() => (drawn === null ? null : JSON.stringify([drawn.board, drawn.variant.id, drawn.view?.id])),
+		() => (drawn === null ? null : JSON.stringify([drawn.model, drawn.variant.id, drawn.view?.id])),
 		[drawn],
 	);
 	useAutoFit(camera, drawn, focus, {
@@ -326,14 +326,14 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	);
 
 	const { onPick, onChooseGroup, groupControls, groups, group } = usePicking({
-		board: drill.board,
+		model: drill.model,
 		reading,
 		presenting: narrative.open !== null,
 		choose,
 		onSelect,
 	});
 	useReported(props.onReading, {
-		board: drill.board,
+		model: drill.model,
 		answer: render.data,
 		view: viewToRead(narrative.beat, level.view),
 		selection: props.selection,
@@ -349,7 +349,7 @@ const DocumentReading = memo(function DocumentReading(props: DocumentReadingProp
 	//
 	// Which way the reader went is said first, so the picture being left knows
 	// how to leave: into the card that was picked, or back out.
-	const departure = useDeparture(drawn, drill.board, render);
+	const departure = useDeparture(drawn, drill.model, render);
 	// Two panes rest their sidebars, so each picture has the room (use-sidebar.ts).
 	const sidebar = useSidebar(props.selection, resting, narrative.open !== null);
 	useClearOfPanel(picture, sidebar.floating, props.selection, camera, reducedMotion, sidebarWidth);

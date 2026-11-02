@@ -11,7 +11,7 @@ import type {
 interface LivePaneStatus {
 	connected: boolean;
 	registered: boolean;
-	board: LegacyIdentity | null;
+	model: LegacyIdentity | null;
 	paneKey: string | null;
 	opened: string | null;
 	view: string | null;
@@ -47,7 +47,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 	const live: LivePaneStatus = {
 		connected: false,
 		registered: false,
-		board: null,
+		model: null,
 		paneKey: null,
 		opened: null,
 		view: null,
@@ -65,7 +65,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			clientId: parts.clientId,
 			connected: live.connected,
 			registered: live.registered,
-			board: live.board,
+			model: live.model,
 			paneKey: live.paneKey,
 			opened: live.opened,
 			view: live.view,

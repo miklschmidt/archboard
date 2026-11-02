@@ -36,7 +36,7 @@ import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 /** Where a group was chosen: which board, and which state of it. */
 interface GroupPlace {
 	/** The board on screen. */
-	readonly board: string;
+	readonly model: string;
 	/** The resolved variant on screen. */
 	readonly variant: string;
 	/** The group's id. */
@@ -64,19 +64,19 @@ const NO_GROUP_NAMES: GroupNames = Object.freeze({});
 /**
  * The remembered choice, when it is a choice about what is on screen now.
  * @param place What was last chosen, or null when nothing has been.
- * @param board The board on screen.
+ * @param model The board on screen.
  * @param variant The resolved variant on screen, or null while it is unknown.
  * @returns The group, or null when the choice belongs to something else.
  */
 function chosenHere(
 	place: GroupPlace | null,
-	board: string,
+	model: string,
 	variant: string | null,
 ): string | null {
 	if (place === null || variant === null) {
 		return null;
 	}
-	return place.board === board && place.variant === variant ? place.group : null;
+	return place.model === model && place.variant === variant ? place.group : null;
 }
 
 /**
@@ -84,19 +84,19 @@ function chosenHere(
  * longer uses the group, or a walkthrough opened. A variant still loading
  * ends nothing.
  * @param place The remembered choice.
- * @param board The board now shown.
+ * @param model The board now shown.
  * @param variant The variant now shown, or null while the document loads.
  * @param presenting Whether a walkthrough is open.
  * @returns Whether to forget the choice for good.
  */
 function choiceOver(
 	place: GroupPlace | null,
-	board: string,
+	model: string,
 	variant: SemanticVariant | null,
 	presenting: boolean,
 ): boolean {
 	if (place === null) return false;
-	if (presenting || place.board !== board) return true;
+	if (presenting || place.model !== model) return true;
 	return (
 		variant !== null &&
 		(place.variant !== variant.id || !groupsUsed(variant.content).includes(place.group))
@@ -106,13 +106,13 @@ function choiceOver(
 /**
  * Which group this pane has selected on the board and variant it is showing,
  * and what that selects.
- * @param board The board on screen.
+ * @param model The board on screen.
  * @param variant The variant on screen, whole, or null while it has not arrived.
  * @param presenting Whether a walkthrough is open.
  * @returns The names, the choices, the selection and the one way to change it.
  */
 function useGroupSelection(
-	board: string,
+	model: string,
 	variant: SemanticVariant | null,
 	presenting: boolean,
 ): GroupSelectionState {
@@ -120,15 +120,15 @@ function useGroupSelection(
 	const policy = useQuery(vaultCheckQuery(usePaneVault()));
 	const names = policy.data === undefined ? NO_GROUP_NAMES : policy.data.policy.groups;
 	const [place, setPlace] = useState<GroupPlace | null>(null);
-	if (choiceOver(place, board, variant, presenting)) {
+	if (choiceOver(place, model, variant, presenting)) {
 		setPlace(null);
 	}
-	const group = chosenHere(place, board, shown);
+	const group = chosenHere(place, model, shown);
 	const choose = useCallback(
 		(chosen: string | null): void => {
-			setPlace(chosen === null || shown === null ? null : { board, variant: shown, group: chosen });
+			setPlace(chosen === null || shown === null ? null : { model, variant: shown, group: chosen });
 		},
-		[board, shown],
+		[model, shown],
 	);
 	const choices = useMemo(() => groupChoices(variant?.content ?? null, names), [variant, names]);
 	const selected = useMemo(

@@ -82,12 +82,12 @@ interface LocalPictureSetup {
  * The board a request is about, as this tab read it.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board name.
+ * @param model The board name.
  * @returns The board.
  * @throws {ReadingError} When what the server sent is not a coherent board.
  */
-async function modelFor(client: QueryClient, vault: string, board: string): Promise<LegacyBoard> {
-	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, board)));
+async function modelFor(client: QueryClient, vault: string, model: string): Promise<LegacyBoard> {
+	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, model)));
 	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
 	return parsed.board;
 }
@@ -107,12 +107,12 @@ async function drawHere(
 	client: QueryClient,
 	drawing: Map<string, Promise<SemanticRenderReply>>,
 ): Promise<SemanticRender> {
-	const [board, vault] = await Promise.all([
-		modelFor(client, request.vault, request.board),
+	const [model, vault] = await Promise.all([
+		modelFor(client, request.vault, request.model),
 		client.fetchQuery(vaultCheckQuery(request.vault)),
 	]);
 	const stamp = {
-		version: board.version,
+		version: model.version,
 		fingerprint: vault.fingerprint,
 		renderer: setup.renderer,
 	};
@@ -125,7 +125,7 @@ async function drawHere(
 	// drawing rather than laying the board out a second time.
 	const key = JSON.stringify([
 		request.vault,
-		request.board,
+		request.model,
 		request.variant,
 		request.view,
 		comparisonKey(request),
@@ -135,7 +135,7 @@ async function drawHere(
 	const reply =
 		kept ??
 		(await (drawing.get(key) ??
-			startDrawing(setup, { board, request, stamp, policy: vault.policy }, drawing, key)));
+			startDrawing(setup, { model, request, stamp, policy: vault.policy }, drawing, key)));
 	return wasDrawn(reply) ? { ...reply, kind: "drawn" } : { ...reply, kind: "empty" };
 }
 
@@ -144,7 +144,7 @@ async function drawHere(
  * the same picture meanwhile wait for it.
  * @param setup The renderer and the storage.
  * @param what The board, request, stamp and policy to draw with.
- * @param what.board The board.
+ * @param what.model The board.
  * @param what.request What is asked for.
  * @param what.stamp What the picture is kept under.
  * @param what.policy The vault policy.
@@ -155,7 +155,7 @@ async function drawHere(
 function startDrawing(
 	setup: LocalPictureSetup,
 	what: {
-		board: LegacyBoard;
+		model: LegacyBoard;
 		request: SemanticRenderRequest;
 		stamp: PictureStamp;
 		policy: SemanticPolicy;
@@ -163,7 +163,7 @@ function startDrawing(
 	drawing: Map<string, Promise<SemanticRenderReply>>,
 	key: string,
 ): Promise<SemanticRenderReply> {
-	const pending = drawn(setup, what.board, what.request, what.policy).then((fresh) => {
+	const pending = drawn(setup, what.model, what.request, what.policy).then((fresh) => {
 		if (setup.storage !== undefined) {
 			void writeCachedPicture(setup.storage, what.request, what.stamp, fresh);
 		}
@@ -177,7 +177,7 @@ function startDrawing(
 /**
  * Lay a request out and draw it.
  * @param setup The renderer.
- * @param board The board.
+ * @param model The board.
  * @param request What is asked for.
  * @param policy The vault policy.
  * @returns The render answer.
@@ -185,12 +185,12 @@ function startDrawing(
  */
 async function drawn(
 	setup: LocalPictureSetup,
-	board: LegacyBoard,
+	model: LegacyBoard,
 	request: SemanticRenderRequest,
 	policy: SemanticPolicy,
 ): Promise<SemanticRenderReply> {
 	const outcome = await setup.draw(
-		board,
+		model,
 		{
 			variant: request.variant,
 			view: request.view,
@@ -208,17 +208,17 @@ async function drawn(
  * What this tab has been reading of one board: the name it asks its pictures by, and the views.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board that changed.
+ * @param model The board that changed.
  * @returns How to ask for its pictures again.
  */
 function readingsOf(
 	client: QueryClient,
 	vault: string,
-	board: string,
+	model: string,
 ): { name: string; views: Set<string> } {
-	const reading = { name: board, views: new Set([""]) };
+	const reading = { name: model, views: new Set([""]) };
 	for (const { kind, asked, view } of cachedReadings(client, vault)) {
-		if (kind !== "picture" || !sameModelName(asked, board)) continue;
+		if (kind !== "picture" || !sameModelName(asked, model)) continue;
 		reading.name = asked;
 		reading.views.add(view);
 	}
@@ -229,15 +229,15 @@ function readingsOf(
  * Every picture of a changed board this tab is likely to show next.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board that changed.
+ * @param model The board that changed.
  * @returns The requests, current variant first.
  */
 async function picturesToDrawAhead(
 	client: QueryClient,
 	vault: string,
-	board: string,
+	model: string,
 ): Promise<SemanticRenderRequest[]> {
-	const reading = readingsOf(client, vault, board);
+	const reading = readingsOf(client, vault, model);
 	// Marked stale without reading anything yet: a pane showing the board reads
 	// its own again, and the drawing below reads the rest.
 	await modelGoneStale(client, vault, reading.name);
@@ -254,7 +254,7 @@ async function picturesToDrawAhead(
 	return variants.flatMap((variant) =>
 		[...reading.views].map((view) => ({
 			vault,
-			board: reading.name,
+			model: reading.name,
 			...(variant === "" ? {} : { variant }),
 			...(view === "" ? {} : { view }),
 			layout: layoutEngineNow(),
@@ -267,10 +267,10 @@ async function picturesToDrawAhead(
  * ahead is left for the pane that asks for it to report.
  * @param client The tab's cache.
  * @param vault The vault the board is in.
- * @param board The board that changed.
+ * @param model The board that changed.
  */
-async function drawAhead(client: QueryClient, vault: string, board: string): Promise<void> {
-	const requests = await picturesToDrawAhead(client, vault, board);
+async function drawAhead(client: QueryClient, vault: string, model: string): Promise<void> {
+	const requests = await picturesToDrawAhead(client, vault, model);
 	await requests.reduce(
 		(previous, request) => previous.then(() => client.prefetchQuery(semanticRenderQuery(request))),
 		Promise.resolve(),
@@ -284,20 +284,20 @@ async function drawAhead(client: QueryClient, vault: string, board: string): Pro
  * report.
  * @param client The tab's cache.
  * @param vault The vault the boards are in.
- * @param boards The boards the server lists.
+ * @param models The boards the server lists.
  */
 async function drawListedAhead(
 	client: QueryClient,
 	vault: string,
-	boards: readonly DocumentEntry[],
+	models: readonly DocumentEntry[],
 ): Promise<void> {
-	for (const entry of boards) {
+	for (const entry of models) {
 		// Asked by its key, as a pane and an address ask for it, so the picture
 		// lands where the pane that opens the board looks for it.
 		const { name } = readingsOf(client, vault, entry.key);
 		// oxlint-disable-next-line no-await-in-loop -- one board at a time, so drawing ahead never takes more than one of the renderer's workers
 		await client.prefetchQuery(
-			semanticRenderQuery({ vault, board: name, layout: layoutEngineNow() }),
+			semanticRenderQuery({ vault, model: name, layout: layoutEngineNow() }),
 		);
 	}
 }
@@ -325,8 +325,8 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 		draw: (request, client) => {
 			if (!warmed.has(client)) {
 				warmed.add(client);
-				onModelChange((vault, board) => {
-					void drawAhead(client, vault, board).catch(() => undefined);
+				onModelChange((vault, model) => {
+					void drawAhead(client, vault, model).catch(() => undefined);
 				});
 			}
 			return drawHere(setup, request, client, drawing);
@@ -336,14 +336,14 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 		 * listed boards ahead after any other vault's sweep, unless this vault's
 		 * is already waiting or under way.
 		 * @param vault The vault the boards are in.
-		 * @param boards The boards the server lists.
+		 * @param models The boards the server lists.
 		 * @param client The tab's cache.
 		 */
-		listed: (vault, boards, client) => {
+		listed: (vault, models, client) => {
 			const forgotten =
 				setup.storage === undefined
 					? Promise.resolve()
-					: forgetStalePictures(setup.storage, vault, boards, setup.renderer);
+					: forgetStalePictures(setup.storage, vault, models, setup.renderer);
 			const sweep = sweeps.get(client) ?? { queued: new Set<string>(), last: Promise.resolve() };
 			sweeps.set(client, sweep);
 			if (sweep.queued.has(vault)) return;
@@ -351,7 +351,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 			// Stale pictures go first, so the sweep never reads one it is about to forget.
 			sweep.last = sweep.last
 				.then(() => forgotten)
-				.then(() => drawListedAhead(client, vault, boards))
+				.then(() => drawListedAhead(client, vault, models))
 				.catch(() => undefined)
 				.finally(() => sweep.queued.delete(vault));
 		},

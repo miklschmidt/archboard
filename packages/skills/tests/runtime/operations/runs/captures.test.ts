@@ -31,7 +31,7 @@ const DECLARED: CaptureDeclaration = {
 function receipt(overrides: Record<string, unknown> = {}): Record<string, unknown> {
 	return {
 		success: true,
-		board: "Flask request pipeline",
+		document: "Flask request pipeline",
 		version: 4,
 		variant: { id: "v1", name: "Current", lifecycle: "current" },
 		comparedWith: null,
@@ -253,7 +253,7 @@ const documentWith = (views: LegacyBoard["views"]) => ({ views }) as unknown as 
 
 describe("every view of a board", () => {
 	test("comes to one capture per view the author made, in its grammar, with a unique label that never reads as a tile", () => {
-		const boards = new Map([
+		const documents = new Map([
 			[
 				"Flask",
 				documentWith([
@@ -268,7 +268,7 @@ describe("every view of a board", () => {
 				{ label: "flask", board: "Flask" },
 				{ label: "views", board: "Flask", views: "every" },
 			],
-			boards,
+			documents,
 		);
 		expect(expanded).toEqual([
 			{ label: "flask", board: "Flask" },
@@ -289,7 +289,7 @@ describe("every view of a board", () => {
 	});
 
 	test("a named capture is taken of the board and view the author actually named", () => {
-		const boards = new Map([
+		const documents = new Map([
 			[
 				"Flask JSON",
 				documentWith([
@@ -298,10 +298,10 @@ describe("every view of a board", () => {
 			],
 		]);
 		expect(
-			expandCaptures([{ label: "path", board: "flask_json", view: "request-path" }], boards),
+			expandCaptures([{ label: "path", board: "flask_json", view: "request-path" }], documents),
 		).toEqual([{ label: "path", board: "Flask JSON", view: "Request path" }]);
 		expect(
-			expandCaptures([{ label: "path", board: "Flask JSON", view: "Session cache" }], boards),
+			expandCaptures([{ label: "path", board: "Flask JSON", view: "Session cache" }], documents),
 		).toEqual([{ label: "path", board: "Flask JSON", view: "Session cache" }]);
 	});
 

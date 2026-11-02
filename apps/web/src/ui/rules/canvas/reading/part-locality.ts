@@ -57,7 +57,7 @@ type PartLocality =
  * @returns What the answer says about it.
  */
 function partLocality(
-	answer: Omit<LocalityAnswer, "board" | "version" | "variant">,
+	answer: Omit<LocalityAnswer, "model" | "version" | "variant">,
 	part: string,
 ): PartLocality {
 	const skip = answer.skipped.find((skipped) => skipped.subject.id === part);

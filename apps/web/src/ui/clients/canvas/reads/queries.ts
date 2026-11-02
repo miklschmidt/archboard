@@ -24,7 +24,7 @@ import { pictureSource } from "#ui/clients/canvas/reads/picture-source.ts";
  */
 function retainedListingQuery(vault: string) {
 	return queryOptions({
-		queryKey: readKeys.boards(vault),
+		queryKey: readKeys.models(vault),
 		/**
 		 * Read the vault's semantic boards, read again what this tab holds of a
 		 * board that has moved since, and tell the picture source which versions
@@ -115,18 +115,18 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
  * derived from one versioned board, so both stay fresh until that board
  * announces a new version, and neither is re-read on a timer.
  * @param vault The vault the board is in.
- * @param board The board name.
+ * @param model The board name.
  * @returns The query options.
  */
-function retainedDocumentQuery(vault: string, board: string) {
+function retainedDocumentQuery(vault: string, model: string) {
 	return queryOptions({
-		queryKey: readKeys.document(vault, board),
+		queryKey: readKeys.document(vault, model),
 		/**
 		 * Read the board, from the server or wherever the page reads boards from.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The document, as the server holds it.
 		 */
-		queryFn: (context) => retainedReads().document(vault, board, context.signal),
+		queryFn: (context) => retainedReads().document(vault, model, context.signal),
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,

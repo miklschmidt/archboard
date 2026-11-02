@@ -202,7 +202,7 @@ const KEY_FIELDS = 9;
 function pictureKey(request: SemanticRenderRequest, stamp: PictureStamp): string {
 	return JSON.stringify([
 		request.vault,
-		request.board,
+		request.model,
 		request.variant ?? "",
 		request.view ?? "",
 		comparisonKey(request),
@@ -262,13 +262,13 @@ async function writeCachedPicture(
  * wrote is forgotten, because nothing asks for it again.
  * @param storage The storage.
  * @param vault The vault the boards are in.
- * @param boards The boards the server lists there, with their versions.
+ * @param models The boards the server lists there, with their versions.
  * @param renderer The renderer build in force now.
  */
 async function forgetStalePictures(
 	storage: PictureStorage,
 	vault: string,
-	boards: readonly {
+	models: readonly {
 		readonly name: string;
 		readonly key: string;
 		readonly version?: number | undefined;
@@ -279,12 +279,12 @@ async function forgetStalePictures(
 		const stale = (await storage.keys()).filter(isModelPicture).filter((key) => {
 			const parts = keyParts(key);
 			if (parts.length !== KEY_FIELDS) return true;
-			const [ofVault, board, , , , , version, , drawnBy] = parts;
+			const [ofVault, model, , , , , version, , drawnBy] = parts;
 			if (ofVault !== vault) return false;
-			const listed = boards.find(
+			const listed = models.find(
 				({ name, key: listedKey }) =>
-					typeof board === "string" &&
-					(sameModelName(board, listedKey) || sameModelName(board, name)),
+					typeof model === "string" &&
+					(sameModelName(model, listedKey) || sameModelName(model, name)),
 			);
 			return drawnBy !== renderer || listed === undefined || listed.version !== version;
 		});

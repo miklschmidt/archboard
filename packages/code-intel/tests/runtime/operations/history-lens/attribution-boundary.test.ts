@@ -27,7 +27,7 @@ const together: string[] = [];
 let firstOnly = "";
 let clock = 1_790_000_000;
 
-const board = LegacyBoardSchema.parse({
+const document = LegacyBoardSchema.parse({
 	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
@@ -121,13 +121,13 @@ afterAll(() => {
 });
 
 test("large fallback commits do not suppress coupling among precise ordinary commits", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("missing current variant");
 	const locality = LocalityAnswerSchema.parse(
-		await lens.createVariantLocality().read(scratch, board, current, undefined),
+		await lens.createVariantLocality().read(scratch, document, current, undefined),
 	);
 	const footprint = FootprintAnswerSchema.parse(
-		await lens.readVariantFootprint({ vault: scratch, board, against: current, base }),
+		await lens.readVariantFootprint({ vault: scratch, document, against: current, base }),
 	);
 	if (footprint.proposal !== null) throw new Error("unexpected proposal");
 	const pair = locality.coupling.find(
@@ -154,12 +154,12 @@ test("large fallback commits do not suppress coupling among precise ordinary com
 });
 
 test("footprint uses a proposal's changed symbol binding for the same subject id", async () => {
-	const current = currentVariant(board);
+	const current = currentVariant(document);
 	if (current === undefined) throw new Error("missing current variant");
 	const proposal = LegacyBoardSchema.parse({
-		...board,
+		...document,
 		variants: [
-			...board.variants,
+			...document.variants,
 			{
 				id: "v2",
 				name: "Proposal",
@@ -177,7 +177,7 @@ test("footprint uses a proposal's changed symbol binding for the same subject id
 	}).variants[1];
 	if (proposal === undefined) throw new Error("missing proposal");
 	const answer = FootprintAnswerSchema.parse(
-		await lens.readVariantFootprint({ vault: scratch, board, against: current, proposal, base }),
+		await lens.readVariantFootprint({ vault: scratch, document, against: current, proposal, base }),
 	);
 	if (answer.proposal === null) throw new Error("proposal was not read");
 	const changed = answer.namedAndChanged.find((entry) => entry.subject.id === "first");

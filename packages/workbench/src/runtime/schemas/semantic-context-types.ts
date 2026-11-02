@@ -37,7 +37,7 @@ interface SettledChangeSourceEvent {
 	readonly cursor: number;
 	/** The directory of the vault the board lives in: a board name alone does not say which. */
 	readonly vault: string;
-	readonly board: string;
+	readonly model: string;
 	readonly at: string;
 	readonly origin: SemanticChangeOrigin;
 	readonly significance: SemanticChangeSignificance;
@@ -90,7 +90,7 @@ interface SemanticModelInput {
  * What of a pane's reading the user changed by hand: a part the pane marked in its report
  * (ADR 0034), or the pane having become the one they are in.
  */
-type SemanticUserChange = "board" | "variant" | "view" | "selection" | "focus";
+type SemanticUserChange = "model" | "variant" | "view" | "selection" | "focus";
 
 interface SemanticPaneInput {
 	readonly paneId: string;
@@ -268,7 +268,7 @@ interface SemanticContextInput {
 	readonly threadLink?: SemanticThreadLinkInput;
 	readonly workhorse?: SemanticWorkhorseInput;
 	readonly coordinator?: SemanticCoordinatorInput;
-	readonly board: SemanticModelInput;
+	readonly model: SemanticModelInput;
 	readonly pane: SemanticPaneInput;
 	readonly architecture: SemanticArchitectureInput;
 	readonly claim?: SemanticClaimInput;
@@ -319,7 +319,7 @@ interface SemanticBriefFields {
 	readonly threadLink: SemanticThreadLink;
 	readonly workhorse: SemanticWorkhorse;
 	readonly coordinator: SemanticCoordinator;
-	readonly board: LegacyBoard;
+	readonly model: LegacyBoard;
 	readonly pane: SemanticPane;
 	readonly version: number | null;
 	readonly architecture: SemanticArchitecture;
@@ -341,7 +341,7 @@ interface SettledSemanticChangeEvent extends SemanticBriefFields {
 	readonly change: {
 		readonly feedId: string;
 		readonly cursor: SemanticCursor;
-		readonly board: string;
+		readonly model: string;
 		readonly at: string;
 		readonly origin: SemanticChangeOrigin;
 		readonly significance: SemanticChangeSignificance;

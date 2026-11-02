@@ -26,7 +26,7 @@ function pane(clientId: string, extra: Partial<PaneRegistration> = {}): PaneRegi
 		clientId,
 		paneId: "A",
 		vault: "/vault",
-		board: "tour",
+		paneKey: "tour",
 		primary: false,
 		focused: false,
 		rect: { x: 0, y: 0, width: 1920, height: 1080 },

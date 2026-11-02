@@ -255,7 +255,7 @@ function movePane(clientId: string, to: string, repository: string | null): void
 	if (key === null) {
 		sendKeylessToPane(clientId, {
 			type: "pane_place",
-			board: null,
+			paneKey: null,
 			identity: null,
 			vault: to,
 			repository,

@@ -179,10 +179,10 @@ function fakeShell(options: FakeOptions): FakeShell {
 		},
 		/**
 		 * Boards nothing could reach.
-		 * @param boards The boards.
+		 * @param models The boards.
 		 */
-		reportUnreachable: (boards): void => {
-			unreachable.push(...boards.map(({ paneKey }) => paneKey));
+		reportUnreachable: (models): void => {
+			unreachable.push(...models.map(({ paneKey }) => paneKey));
 		},
 	};
 

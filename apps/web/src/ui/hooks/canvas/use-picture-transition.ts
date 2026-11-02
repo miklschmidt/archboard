@@ -93,7 +93,7 @@ function carriedOn(last: MovingPicture, next: MovingPicture, presenting = false)
 	if (last.svg === next.svg) {
 		return false;
 	}
-	return continuousPictures(last, next) || (presenting && last.board === next.board);
+	return continuousPictures(last, next) || (presenting && last.model === next.model);
 }
 
 /**

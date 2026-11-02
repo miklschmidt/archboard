@@ -106,7 +106,7 @@ const PARTS = [
  * step from Mailer to Templates.
  * @returns The board.
  */
-function board(): LegacyBoard {
+function document(): LegacyBoard {
 	const nodes = [
 		...PARTS.map(([id, name, path, parent], index) => ({
 			id,
@@ -206,7 +206,7 @@ beforeAll(async () => {
 	together(["src/mailer.ts", "src/templates.ts"], 5);
 	together(["src/basket.ts", "src/tax.ts"], 5);
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
-	const value = board();
+	const value = document();
 	const [variant] = value.variants;
 	if (variant === undefined) throw new Error("the board has no variant");
 	answer = LocalityAnswerSchema.parse(

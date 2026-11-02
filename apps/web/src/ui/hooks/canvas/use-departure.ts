@@ -127,13 +127,13 @@ function useHeading(
 /**
  * Hold the last picture drawn, and where the reader is going from it.
  * @param drawn The picture the pane has now, or null.
- * @param board The board being drawn.
+ * @param model The board being drawn.
  * @param render The query for its picture.
  * @returns The departure, if one is under way, and the way to announce one.
  */
 function useDeparture(
 	drawn: SemanticDrawing | null,
-	board: string,
+	model: string,
 	render: Pick<UseQueryResult<SemanticRender>, "data" | "error">,
 ): DepartureState {
 	const [kept, setKept] = useState<SemanticDrawing | null>(drawn);
@@ -143,8 +143,8 @@ function useDeparture(
 	}
 	const { current, leave } = useHeading(drawn, kept);
 	const departure = useMemo<Departure>(
-		() => ({ way: current?.way ?? "across", toward: current?.toward ?? null, board }),
-		[current, board],
+		() => ({ way: current?.way ?? "across", toward: current?.toward ?? null, model }),
+		[current, model],
 	);
 	const waiting = render.data === undefined && render.error === null;
 	const leaving = useMemo<Leaving | null>(

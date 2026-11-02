@@ -163,13 +163,13 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
-		const { key, file: note } = board;
+		const model = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
+		const { key, file: note } = model;
 		const beforeBytes = readFileSync(note);
 		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
 		await saveSelection(fixture, invocation);
 
-		const result = await activate(fixture, { model: key, subject: board.node });
+		const result = await activate(fixture, { model: key, subject: model.node });
 		expect(result.status).toBe(200);
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({
 			success: true,
@@ -265,11 +265,11 @@ describe("public code-target activation contract", () => {
 	test.each([
 		["other/board", "node", "BOARD_NOT_FOUND", 404],
 		["system/payments", "missing", "ELEMENT_NOT_FOUND", 404],
-	] as const)("refuses missing canonical identity %s/%s", async (board, element, code, status) => {
+	] as const)("refuses missing canonical identity %s/%s", async (model, element, code, status) => {
 		await using resources = new AsyncDisposableStack();
 		const fixture = await createOpenerFixture();
 		resources.defer(() => fixture.dispose());
-		const result = await activate(fixture, { board, element });
+		const result = await activate(fixture, { board: model, element });
 		expect(result.status).toBe(status);
 		expect(CodeTargetOpenReplySchema.parse(result.body)).toMatchObject({ success: false, code });
 	});
@@ -366,8 +366,8 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
-		const { key, file: note } = board;
+		const model = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
+		const { key, file: note } = model;
 		const brokenExecutable = join(fixture.root, "broken-opener");
 		writeFileSync(brokenExecutable, `#!${join(fixture.root, "missing-interpreter")}\n`);
 		chmodSync(brokenExecutable, 0o755);
@@ -389,7 +389,7 @@ describe("public code-target activation contract", () => {
 		const stateBytes = readFileSync(fixture.configFile);
 		const stateMtime = statSync(fixture.configFile, { bigint: true }).mtimeNs;
 
-		const result = await activate(fixture, { model: key, subject: board.node });
+		const result = await activate(fixture, { model: key, subject: model.node });
 		expect(result.status).toBe(500);
 		const reply = CodeTargetOpenReplySchema.parse(result.body);
 		expect(reply).toMatchObject({

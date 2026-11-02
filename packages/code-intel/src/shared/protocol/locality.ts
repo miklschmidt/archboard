@@ -108,7 +108,7 @@ const LeftOutSchema = z
 /** What `semantic locality` says about one variant of one board. */
 const LocalityAnswerSchema = z
 	.object({
-		board: z.string(),
+		model: z.string(),
 		/** The board's version the reading was made at. */
 		version: z.int().nonnegative(),
 		/** The variant read: the current one, or the draft that was named. */

@@ -366,17 +366,17 @@ interface Explanation {
  * added step would be third of three in a flow of one, and a removed step second of
  * three in an exchange that only ever had two. A removed subject is read where
  * it lived, so it is counted among the things it lived with.
- * @param board The board the variant belongs to.
+ * @param model The board the variant belongs to.
  * @param shown The variant the picture is of.
  * @param selection The picked semantic id.
  * @returns The subject and how it stands, or neither.
  */
 function comparedSubject(
-	board: LegacyBoard,
+	model: LegacyBoard,
 	shown: SemanticVariant,
 	selection: string,
 ): Pick<Explanation, "subject" | "against" | "held"> {
-	const depiction = depictionOf(board, shown);
+	const depiction = depictionOf(model, shown);
 	const other = depiction.against;
 	const own = subjectOf(shown, selection);
 	const subject = own ?? (other === undefined ? undefined : subjectOf(other, selection));
@@ -454,7 +454,7 @@ function explain(
 		open: openOn(shown, ids),
 		on: {
 			vault,
-			board: reading.board.name,
+			model: reading.board.name,
 			variant: shown.id,
 			version: reading.board.version,
 		},
@@ -500,7 +500,7 @@ interface SemanticInspectorProps {
 	 */
 	onOpenCode?: ((binding: CodeBinding) => void) | undefined;
 	/** The board on screen. */
-	board: string;
+	model: string;
 	/** The id of the variant the drawing is of. */
 	variant: string;
 	/** The picked semantic id. */
@@ -531,13 +531,13 @@ interface SemanticInspectorProps {
  */
 function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	const vault = usePaneVault();
-	const document = useQuery(retainedDocumentQuery(vault, props.board));
+	const document = useQuery(retainedDocumentQuery(vault, props.model));
 	// Read on the same terms as the picture — no timer, fresh when the board
 	// announces a new version — and subscribed here rather than relied on from
 	// above, under the same spelling of the board name that the read used. A
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
-	useModelChanges(vault, props.board);
+	useModelChanges(vault, props.model);
 	const explained = explain(vault, document, props.variant, props.selection, props.overview);
 	const { subject } = explained;
 	const code = codeOn(useCodeFindings(explained.on), explained.ids);

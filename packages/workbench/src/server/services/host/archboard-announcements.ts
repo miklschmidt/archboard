@@ -45,7 +45,7 @@ function heard(
 	canvas: CoordinatorCallbackCanvas,
 ): Pick<ContextChange, "coordinator" | "voice"> {
 	if (news === null) return { voice: { withheld: "agent" } };
-	if (news.board !== null && !canvas.boards.includes(news.board)) {
+	if (news.model !== null && !canvas.models.includes(news.model)) {
 		return { voice: { withheld: "not_shown" } };
 	}
 	return {
@@ -62,7 +62,7 @@ function heard(
  * @returns The change.
  */
 function modelChangeAnnouncement(event: SettledSemanticChangeEvent, tab: TabCanvas): ContextChange {
-	const checkouts = [checkoutOfVault(event.board.vault)];
+	const checkouts = [checkoutOfVault(event.model.vault)];
 	return {
 		feed: event.change.feedId,
 		sequence: event.change.cursor.sequence,

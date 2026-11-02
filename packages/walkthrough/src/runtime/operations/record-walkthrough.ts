@@ -106,8 +106,8 @@ interface RecordingOptions {
 type CanonicalModel = Extract<ArchitectureModelRead, { success: true }>;
 type WalkthroughRecordingRequest = RecordingOptions &
 	(
-		| { board: LegacyBoard; architecture?: never; vault?: never }
-		| { architecture: CanonicalModel; vault: string; board?: never }
+		| { document: LegacyBoard; architecture?: never; vault?: never }
+		| { architecture: CanonicalModel; vault: string; document?: never }
 	);
 
 /** A finished recording. */
@@ -137,8 +137,8 @@ type RecordingPageAddress = Pick<
 > & {
 	readonly walkthrough: Pick<WalkthroughRecordingRequest["walkthrough"], "id">;
 } & (
-		| { board: Pick<LegacyBoard, "name">; architecture?: never; vault?: never }
-		| { architecture: CanonicalModel; vault: string; board?: never }
+		| { document: Pick<LegacyBoard, "name">; architecture?: never; vault?: never }
+		| { architecture: CanonicalModel; vault: string; document?: never }
 	);
 
 /**
@@ -171,8 +171,8 @@ function addressReading(url: URL, request: RecordingPageAddress): void {
 		url.searchParams.set("recordVault", request.vault);
 		return;
 	}
-	const { variant, board } = request;
-	url.searchParams.set("paneA", variant === null ? board.name : `${board.name}@${variant}`);
+	const { variant, document } = request;
+	url.searchParams.set("paneA", variant === null ? document.name : `${document.name}@${variant}`);
 }
 
 /**
@@ -399,14 +399,14 @@ function talkSubject(request: WalkthroughRecordingRequest, steps: number) {
 		};
 	return {
 		board: {
-			name: request.board.name,
+			name: request.document.name,
 			variant: request.variant,
 			...(request.against === null ? {} : { against: request.against }),
-			version: request.board.version,
+			version: request.document.version,
 			walkthrough: request.walkthrough,
 			steps,
 		},
-		document: request.board,
+		document: request.document,
 	};
 }
 

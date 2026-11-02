@@ -25,8 +25,8 @@ type MigrationHold<T> =
  * @returns Its result, or a pending indication.
  */
 function withLeaseIfFreeSync<T>(request: LockRequest, migrate: () => T): MigrationHold<T> {
-	const board = normalizePaneKey(request.board);
-	const file = lockPathFor(request.vault, board);
+	const model = normalizePaneKey(request.model);
+	const file = lockPathFor(request.vault, model);
 	const current = readRecord(file);
 	const live = liveRecord(current);
 	if (live !== null) return joinedOrPending(live.id, request.holder.id, migrate);
@@ -34,12 +34,12 @@ function withLeaseIfFreeSync<T>(request: LockRequest, migrate: () => T): Migrati
 	// alone and retry after a regular writer has resolved it.
 	if (current !== null) return { acquired: false };
 	const record = freshRecord(request.holder, request.leaseMs ?? MODEL_LOCK_MS.lease);
-	const acquired = createExclusively(request.vault, file, record, board, () => {});
+	const acquired = createExclusively(request.vault, file, record, model, () => {});
 	if (acquired?.ok !== true) return { acquired: false };
 	try {
 		return { acquired: true, value: migrate() };
 	} finally {
-		releaseHold(request.vault, board, record.id);
+		releaseHold(request.vault, model, record.id);
 	}
 }
 

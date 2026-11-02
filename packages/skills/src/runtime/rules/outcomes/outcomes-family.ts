@@ -35,7 +35,7 @@ import {
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
 
 type Check = (check: OutcomeCheck, reading: Reading) => Finding;
-type Located = { readonly board: EvaluatedDocument; readonly variant: SemanticVariant };
+type Located = { readonly document: EvaluatedDocument; readonly variant: SemanticVariant };
 
 /**
  * Runs a check that needs the board and variant it names.
@@ -63,12 +63,12 @@ function onLocated(
 function onBoard(
 	check: OutcomeCheck,
 	reading: Reading,
-	judge: (board: EvaluatedDocument) => Finding,
+	judge: (document: EvaluatedDocument) => Finding,
 ): Finding {
-	const board = namedValue(reading.boards, check.board);
-	return board === undefined
+	const document = namedValue(reading.documents, check.board);
+	return document === undefined
 		? finding(false, `board "${check.board}" is not in the vault`)
-		: judge(board);
+		: judge(document);
 }
 
 /**
@@ -175,8 +175,11 @@ const edgeIdsRetained: Check = (check, reading) =>
  * @param reading The reading.
  * @returns The finding.
  */
-const boardCount: Check = (check, reading) =>
-	finding(reading.boards.size === check.expected, `${reading.boards.size} boards in the vault`);
+const documentCount: Check = (check, reading) =>
+	finding(
+		reading.documents.size === check.expected,
+		`${reading.documents.size} boards in the vault`,
+	);
 
 /**
  * Whether a variant is in the lifecycle a check names, or the check names none.
@@ -195,10 +198,10 @@ function lifecycleMatches(variant: SemanticVariant, check: OutcomeCheck): boolea
  * @returns The finding.
  */
 const variantExists: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
+	onBoard(check, reading, (document) => {
 		const variant =
-			findVariant(board, check.variant ?? "") ??
-			namedSubject(board.variants, (candidate) => candidate.name, check.variant);
+			findVariant(document, check.variant ?? "") ??
+			namedSubject(document.variants, (candidate) => candidate.name, check.variant);
 		return finding(
 			variant !== undefined && lifecycleMatches(variant, check),
 			`"${check.variant}" is ${variant?.lifecycle ?? "absent"}`,
@@ -222,18 +225,18 @@ function isNamed(variant: SemanticVariant | undefined, asked: string | undefined
  * @returns The finding.
  */
 const currentIs: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const current = currentVariant(board);
+	onBoard(check, reading, (document) => {
+		const current = currentVariant(document);
 		return finding(isNamed(current, check.variant), `current is "${current?.name ?? "?"}"`);
 	});
 
 /**
  * The current variant's content as JSON, for equality.
- * @param board The board, if any.
+ * @param document The board, if any.
  * @returns The JSON text.
  */
-function currentJson(board: EvaluatedDocument | undefined): string {
-	return JSON.stringify(board === undefined ? null : currentVariant(board)?.content);
+function currentJson(document: EvaluatedDocument | undefined): string {
+	return JSON.stringify(document === undefined ? null : currentVariant(document)?.content);
 }
 
 /**
@@ -243,14 +246,14 @@ function currentJson(board: EvaluatedDocument | undefined): string {
  * @returns The finding.
  */
 const currentUntouched: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
+	onBoard(check, reading, (document) => {
 		// Two absences are not two equal architectures: a board with no current
 		// variant has nothing for this check to hold still, and passing it would
 		// say the author left alone something that was never there.
-		if (currentVariant(board) === undefined) {
-			return finding(false, `"${board.name}" has no current variant to leave untouched`);
+		if (currentVariant(document) === undefined) {
+			return finding(false, `"${document.name}" has no current variant to leave untouched`);
 		}
-		const same = currentJson(board) === currentJson(namedValue(reading.snapshot, check.board));
+		const same = currentJson(document) === currentJson(namedValue(reading.snapshot, check.board));
 		return finding(
 			same,
 			same ? "the current variant is unchanged" : "the current variant's content changed",
@@ -276,8 +279,8 @@ const reconciliationSettled: Check = (check, reading) =>
  * @returns The finding.
  */
 const adoptionsCount: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const adoptions = board.adoptions ?? [];
+	onBoard(check, reading, (document) => {
+		const adoptions = document.adoptions ?? [];
 		const reasons = adoptions.every((adoption) => adoption.reason !== undefined);
 		const reasonsOk = check.withReason !== true || reasons;
 		return finding(
@@ -373,8 +376,8 @@ function viewMatches(view: SemanticView, check: OutcomeCheck): boolean {
  * @returns The finding.
  */
 const viewExists: Check = (check, reading) =>
-	onBoard(check, reading, (board) => {
-		const view = viewNamed(board, check.view);
+	onBoard(check, reading, (document) => {
+		const view = viewNamed(document, check.view);
 		if (view === undefined) return finding(false, `view "${check.view}" is missing`);
 		const selection = selectionOf(view);
 		return finding(
@@ -434,7 +437,7 @@ const OWNERS: Partial<Record<OutcomeCheck["check"], Check>> = {
 	"node-id-retained": nodeIdRetained,
 	"node-field-retained": nodeFieldRetained,
 	"edge-ids-retained": edgeIdsRetained,
-	"board-count": boardCount,
+	"board-count": documentCount,
 	"variant-exists": variantExists,
 	"current-variant": currentIs,
 	"current-untouched": currentUntouched,

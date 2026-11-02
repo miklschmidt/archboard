@@ -10,7 +10,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import { board, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
+import { document, git, register, write } from "#tests/runtime/support/code-check/fixture.ts";
 import type { CodeFinding } from "#shared/protocol/code-check.ts";
 
 const caller = {
@@ -205,7 +205,7 @@ function edge(id: string, ends: [string, string], kind: string, anchor?: [string
  * @param edges Its relationships.
  */
 function current(name: string, nodes: unknown[], edges: unknown[]): void {
-	board(vault, name, [
+	document(vault, name, [
 		{ id: "v1", name: "Built", lifecycle: "current", content: { nodes, edges } },
 	]);
 }
@@ -293,7 +293,7 @@ beforeAll(async () => {
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
-	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
+	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
 afterAll(() => {
@@ -324,7 +324,7 @@ function pieces(finding: CodeFinding): string[] {
  */
 function found(name: string): string[] {
 	return outcome.findings
-		.filter((each) => each.board === name)
+		.filter((each) => each.model === name)
 		.map((each) => [each.code, each.subject?.id, each.severity, ...pieces(each)].join(" | "))
 		.toSorted();
 }

@@ -56,7 +56,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly paneElement: () => HTMLElement | null;
 	readonly workbenchSockets: PaneWorkbenchSocketOwner<Transport> | null;
 	readonly setConnected: (connected: boolean) => void;
-	readonly setModel: (board: LegacyIdentity | null) => void;
+	readonly setModel: (model: LegacyIdentity | null) => void;
 	/** The server put the pane in another vault (ADR 0050). */
 	readonly setVault: (vault: string) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
@@ -472,12 +472,12 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param next The board, variant, view and selection.
 	 */
 	function readingChanged(next: PaneReading): void {
-		if (next.board === null) {
+		if (next.model === null) {
 			readingThrough(null);
 			reading.publish(next);
 			return;
 		}
-		showing(next.board.key);
+		showing(next.model.key);
 		readingThrough(next.view?.id ?? null);
 		reading.publish(next);
 	}
@@ -518,11 +518,11 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		// And what that board IS, so the shell names what is on screen rather than
 		// the board somebody started from.
 		const address = paneAddressOf(key);
-		status.board =
+		status.model =
 			address === null
-				? status.board
-				: { board: address.board, variant: address.variant ?? "current" };
-		ports.setModel(status.board);
+				? status.model
+				: { model: address.model, variant: address.variant ?? "current" };
+		ports.setModel(status.model);
 		// A different board is a different version and a different writer.
 		status.version = null;
 		status.doing = [];

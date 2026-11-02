@@ -146,7 +146,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 	await request("/api/panes", {
 		method: "POST",
 		doing: false,
-		body: { ...productionPane("canonical-voice", "A", true, true), board: null, recording: true },
+		body: { ...productionPane("canonical-voice", "A", true, true), paneKey: null, recording: true },
 	});
 	let sequence = 0;
 	const architecture: NonNullable<Report["architecture"]> = {
@@ -165,7 +165,7 @@ export async function canonicalNarration(resources: AsyncDisposableStack, propos
 			body: {
 				paneId: "A",
 				clientId: "canonical-voice",
-				board: null,
+				model: null,
 				variant: null,
 				view: null,
 				selection: [],

@@ -19,18 +19,18 @@ const LEDGER = { id: "ld", name: "Ledger", kind: "service" };
 const DIRECT = { id: "e1", from: "gw", to: "ld", kind: "call", label: "posts" };
 const QUEUED = { id: "e2", from: "gw", to: "ld", kind: "queue", label: "retries" };
 
-const BOARD = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [DIRECT, QUEUED] });
+const MODEL = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [DIRECT, QUEUED] });
 
 describe("what a view shows", () => {
 	test("naming one relationship shows that relationship and not the other one beside it", () => {
-		const shown = scopedContent(BOARD, { kind: "selection", nodes: [], edges: ["e1"], flows: [] });
+		const shown = scopedContent(MODEL, { kind: "selection", nodes: [], edges: ["e1"], flows: [] });
 		expect(shown.edges.map((edge) => edge.id)).toEqual(["e1"]);
 		// Both its ends are there, and the container the near end sits inside.
 		expect(shown.nodes.map((node) => node.id).toSorted()).toEqual(["gw", "ld", "pl"]);
 	});
 
 	test("naming no relationship shows every one between the nodes it kept", () => {
-		const shown = scopedContent(BOARD, {
+		const shown = scopedContent(MODEL, {
 			kind: "selection",
 			nodes: ["gw", "ld"],
 			edges: [],
@@ -40,13 +40,13 @@ describe("what a view shows", () => {
 	});
 
 	test("a relationship with an end the view does not keep is not drawn", () => {
-		const shown = scopedContent(BOARD, { kind: "selection", nodes: ["ld"], edges: [], flows: [] });
+		const shown = scopedContent(MODEL, { kind: "selection", nodes: ["ld"], edges: [], flows: [] });
 		expect(shown.edges).toEqual([]);
 		expect(shown.nodes.map((node) => node.id)).toEqual(["ld"]);
 	});
 
 	test("a named relationship whose ends are not named still brings them, with their containers", () => {
-		const shown = scopedContent(BOARD, { kind: "selection", nodes: [], edges: ["e2"], flows: [] });
+		const shown = scopedContent(MODEL, { kind: "selection", nodes: [], edges: ["e2"], flows: [] });
 		expect(shown.nodes.map((node) => node.id)).toEqual(["pl", "gw", "ld"]);
 		expect(shown.edges.map((edge) => edge.id)).toEqual(["e2"]);
 	});
@@ -76,7 +76,7 @@ describe("what a view shows", () => {
 	});
 
 	test("a view of everything is the variant itself, relationships and all", () => {
-		expect(scopedContent(BOARD, { kind: "all" })).toBe(BOARD);
+		expect(scopedContent(MODEL, { kind: "all" })).toBe(MODEL);
 	});
 });
 

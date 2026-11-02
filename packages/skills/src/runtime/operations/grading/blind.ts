@@ -40,12 +40,12 @@ interface CompletedRun {
 	readonly commands: readonly ClassifiedCommand[];
 	/** Files the author changed with Codex's editing tool, outside any command. */
 	readonly fileChanges: readonly FileChange[];
-	readonly boards: ReadonlyMap<string, EvaluatedDocument>;
+	readonly documents: ReadonlyMap<string, EvaluatedDocument>;
 	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	readonly policy: Reading["policy"] | null;
 	readonly inspections: Reading["inspections"];
 	readonly renders: readonly {
-		readonly board: string;
+		readonly document: string;
 		readonly variant?: string | undefined;
 		readonly view?: string | undefined;
 		readonly file?: string | undefined;
@@ -61,7 +61,7 @@ interface CompletedRun {
 /** One capture as the grader sees it: what it is of, where it is, and whether it exists. */
 interface BundledCapture {
 	readonly label: string;
-	readonly board: string;
+	readonly document: string;
 	readonly variant: string | null;
 	readonly view: string | null;
 	readonly grammar: DiagramGrammar | null;
@@ -89,7 +89,7 @@ interface RunBundle {
 	readonly policy: Reading["policy"] | null;
 	readonly inspections: Reading["inspections"];
 	readonly renders: readonly {
-		readonly board: string;
+		readonly document: string;
 		readonly variant: string | null;
 		readonly view: string | null;
 		readonly file: string | null;
@@ -171,21 +171,21 @@ function bundleForGrader(run: CompletedRun, id: string): RunBundle {
 		status: run.status,
 		finalMessage: run.finalMessage === null ? null : hide(run.finalMessage),
 		boardsBefore: Object.fromEntries(run.snapshot),
-		boardsAfter: Object.fromEntries(run.boards),
+		boardsAfter: Object.fromEntries(run.documents),
 		policy: run.policy,
 		inspections: run.inspections.map((inspection) => ({
 			...inspection,
 			detail: hide(inspection.detail),
 		})),
 		renders: run.renders.map((render) => ({
-			board: render.board,
+			document: render.document,
 			variant: render.variant ?? null,
 			view: render.view ?? null,
 			file: render.file === undefined ? null : `renders/${path.basename(render.file)}`,
 		})),
 		captures: run.captures.map((capture) => ({
 			label: capture.label,
-			board: capture.board,
+			document: capture.board,
 			variant: capture.variant ?? null,
 			view: capture.view ?? null,
 			grammar: capture.grammar ?? null,

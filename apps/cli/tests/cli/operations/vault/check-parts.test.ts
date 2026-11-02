@@ -51,12 +51,12 @@ const codeCheck: CodeCheckAnswer = {
 		},
 		{ check: "history", elapsedMs: 8.5 },
 	],
-	boards: [{ board: "Orders", variant: "v1", version: 4 }],
+	states: [{ model: "Orders", variant: "v1", version: 4 }],
 	findings: [],
-	skipped: [{ reason: "no-current-variant", board: "Refunds" }],
+	skipped: [{ reason: "no-current-variant", model: "Refunds" }],
 	behind: [
 		{
-			board: "Orders",
+			model: "Orders",
 			variant: "v1",
 			lastChange: {
 				kind: "commit",
@@ -236,7 +236,7 @@ test("check and check all ask the semantics check, then the code check, run the 
 		expect(answer).toHaveProperty("embeds", NO_CHECKOUT);
 		expect(result.semantics?.diagnostics).toEqual([]);
 		expect(result.code).toEqual(codeCheck);
-		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["board"]);
+		expect(result.semantics?.timings.map((timing) => timing.check)).toEqual(["model"]);
 		const timed = stderr
 			.split("\n")
 			.filter((line) => line.endsWith(" ms"))
@@ -330,7 +330,7 @@ test("a finding prints with its subject and evidence, fails the code check on a 
 		severity: "warning",
 		code: "ANCHOR_MISMATCH",
 		file: "/vault/Orders.semantic.json",
-		board: "Orders",
+		model: "Orders",
 		variant: "v1",
 		subject: { kind: "step", id: "s1", name: "Pay: Api -> Ledger: post" },
 		message: "Elsewhere.",

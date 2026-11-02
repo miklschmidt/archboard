@@ -119,7 +119,7 @@ interface OpenModelProps {
 	/** What the part's drill-down names. */
 	readonly target: DrillDown;
 	/** The board it leads to. */
-	readonly board: LegacyBoard;
+	readonly model: LegacyBoard;
 	/** The variant of it that it opens. */
 	readonly variant: SemanticVariant;
 	/** The part's kind, which is the level of the board it opens (ADR 0029). */
@@ -163,8 +163,8 @@ function stateOf(variant: SemanticVariant): readonly string[] {
  * @returns The words.
  */
 function standingOf(props: OpenModelProps, levels: readonly string[] | undefined): string {
-	const { board, variant, kind, here } = props;
-	const level = `${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
+	const { model, variant, kind, here } = props;
+	const level = `${model.level.charAt(0).toUpperCase()}${model.level.slice(1)}`;
 	const said = [drillWayWords(kind, here, levels), level].filter((part) => part !== null);
 	return [...said, ...stateOf(variant)].join(" · ");
 }
@@ -176,20 +176,20 @@ function standingOf(props: OpenModelProps, levels: readonly string[] | undefined
  * @returns The primary action.
  */
 function OpenModel(props: OpenModelProps): JSX.Element {
-	const { target, board, variant, kind, here, onOpen, there } = props;
+	const { target, model, variant, kind, here, onOpen, there } = props;
 	const vault = usePaneVault();
 	const levels = useQuery(vaultCheckQuery(vault)).data?.policy.levels;
 	const way = drillWay(kind, here, levels);
 	const open = useCallback((): void => {
-		onOpen(board.name, variant.id, there);
-	}, [onOpen, board.name, variant.id, there]);
+		onOpen(model.name, variant.id, there);
+	}, [onOpen, model.name, variant.id, there]);
 	return (
 		<>
 			<Go
 				slot="semantic-drill-down-open"
 				lifecycle={variant.lifecycle}
 				icon={way === null ? RiStackLine : WAY_ICONS[way]}
-				title={`Open ${board.name}`}
+				title={`Open ${model.name}`}
 				primary
 				onClick={open}
 			>
@@ -227,26 +227,26 @@ const UNREACHABLE_WORDS: Readonly<
  * Why a target cannot be opened, in words that name the thing that is missing
  * and, where there is one, what to do.
  * @param unresolved Why the drill-down leads nowhere, or not yet.
- * @param board The board the link names.
+ * @param model The board the link names.
  * @returns The sentence.
  */
-function unresolvedWords(unresolved: Unresolved, board: string): string {
+function unresolvedWords(unresolved: Unresolved, model: string): string {
 	if (unresolved.kind === "listing-failed") {
-		return `The link to ${board} names a repository, and this vault could not be listed to tell whether that is its own. ${unresolved.problem}`;
+		return `The link to ${model} names a repository, and this vault could not be listed to tell whether that is its own. ${unresolved.problem}`;
 	}
 	if (unresolved.kind === "unregistered") {
-		return `${board} is a board of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;
+		return `${model} is a board of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;
 	}
 	if (unresolved.kind === "unreachable") {
-		return `${board} is a board of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`;
+		return `${model} is a board of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`;
 	}
-	return modelWords(unresolved, board);
+	return modelWords(unresolved, model);
 }
 
 /**
  * Why the target board, read in its vault, opens nothing, or not yet.
  * @param unresolved What reading the board answered.
- * @param board The board the link names.
+ * @param model The board the link names.
  * @returns The sentence.
  */
 function modelWords(
@@ -254,14 +254,14 @@ function modelWords(
 		Unresolved,
 		{ readonly kind: "listing-failed" | "unregistered" | "unreachable" }
 	>,
-	board: string,
+	model: string,
 ): string {
-	if (unresolved.kind === "reading") return `Reading ${board}…`;
-	if (unresolved.kind === "unreadable") return `${board} could not be read. ${unresolved.problem}`;
+	if (unresolved.kind === "reading") return `Reading ${model}…`;
+	if (unresolved.kind === "unreadable") return `${model} could not be read. ${unresolved.problem}`;
 	if (unresolved.kind === "no-variant") {
-		return `${board} has no variant called "${unresolved.asked}". Nothing was opened in its place.`;
+		return `${model} has no variant called "${unresolved.asked}". Nothing was opened in its place.`;
 	}
-	return `${board} has no current variant, and this link asks for whichever one is.`;
+	return `${model} has no current variant, and this link asks for whichever one is.`;
 }
 
 /**
@@ -289,7 +289,7 @@ function WayDown(props: WayDownProps): JSX.Element {
 	return (
 		<OpenModel
 			target={target}
-			board={reached.board}
+			model={reached.model}
 			variant={reached.variant}
 			kind={kind}
 			here={here}

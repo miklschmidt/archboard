@@ -69,7 +69,7 @@ function comparedWith(
 	current: ArchitectureModelRead,
 ): ComparisonReference | undefined;
 function comparedWith(
-	board: Pick<LegacyBoard, "name" | "current" | "variants">,
+	model: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant | undefined;
 function comparedWith(
@@ -86,19 +86,19 @@ function comparedWith(
 
 /**
  * Resolve the comparison of a retained legacy variant.
- * @param board The retained board.
+ * @param model The retained board.
  * @param variant The selected variant.
  * @returns Its current variant or retained parent.
  */
 function legacyReference(
-	board: Pick<LegacyBoard, "name" | "current" | "variants">,
+	model: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant | undefined {
-	const current = currentVariant(board);
+	const current = currentVariant(model);
 	if (current !== undefined) return current.id === variant.id ? undefined : current;
 	return variant.parent === undefined
 		? undefined
-		: board.variants.find((one) => one.id === variant.parent);
+		: model.variants.find((one) => one.id === variant.parent);
 }
 
 /** A complete comparison picture, independent of legacy board ownership. */
@@ -120,7 +120,7 @@ function drawingOf(
 	scope?: ReadingScope,
 ): ComparedContent;
 function drawingOf(
-	board: Pick<LegacyBoard, "name" | "current" | "variants">,
+	model: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope?: ReadingScope,
 	named?: SemanticVariant,
@@ -133,7 +133,7 @@ function drawingOf(
 ): ComparedContent | DrawnProposal {
 	if ("nodes" in source && "nodes" in reading) return comparedContent(reading, source, scope);
 	if ("variants" in source && "content" in reading)
-		return boardDrawing(source, reading, scope, named);
+		return modelDrawing(source, reading, scope, named);
 	throw new TypeError("Compare two complete contents, or a board and its variant.");
 }
 
@@ -162,20 +162,20 @@ function comparedContent(
  * — never on the board, which keeps saying what the architecture is or would
  * be. The renderer is told how each subject stands and draws a restored one as
  * absent rather than as part of the variant.
- * @param board The board.
+ * @param model The board.
  * @param variant The variant being drawn.
  * @param scope The shared reading, applied to both sides of the change.
  * @param named The variant to read it against when the caller named one, in place of
  * `comparedWith`.
  * @returns The content to draw and the changes to mark on it.
  */
-function boardDrawing(
-	board: Pick<LegacyBoard, "name" | "current" | "variants">,
+function modelDrawing(
+	model: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,
 ): DrawnProposal {
-	const base = named ?? comparedWith(board, variant);
+	const base = named ?? comparedWith(model, variant);
 	if (base === undefined) {
 		return { content: scopedContent(variant.content, scope), changes: null };
 	}

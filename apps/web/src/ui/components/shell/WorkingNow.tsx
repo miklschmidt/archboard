@@ -65,7 +65,7 @@ interface WorkingEntry {
 interface WorkingNowProps {
 	readonly entries: readonly WorkingEntry[];
 	/** Open a board of a repository, in the active pane or beside it. */
-	readonly onOpen: (board: string, beside: boolean, repository: string) => void;
+	readonly onOpen: (model: string, beside: boolean, repository: string) => void;
 }
 
 /**
@@ -74,7 +74,7 @@ interface WorkingNowProps {
  * @returns The key.
  */
 function entryKey(entry: WorkingEntry): string {
-	return `${entry.repository}|${entry.activity.board}`;
+	return `${entry.repository}|${entry.activity.model}`;
 }
 
 /**
@@ -128,7 +128,7 @@ function WorkingNow(props: WorkingNowProps): JSX.Element | null {
 interface WorkingItemProps {
 	readonly entry: WorkingEntry;
 	readonly now: number;
-	readonly onOpen: (board: string, beside: boolean, repository: string) => void;
+	readonly onOpen: (model: string, beside: boolean, repository: string) => void;
 }
 
 /**

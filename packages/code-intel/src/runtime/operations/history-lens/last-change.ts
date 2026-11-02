@@ -211,14 +211,14 @@ async function lastChangingCommit(
 
 /**
  * The last change of one board.
- * @param board The board as the store reads it now.
+ * @param document The board as the store reads it now.
  * @param file The board file.
  * @param vaultRoot The root of the Git checkout that holds the vault, or undefined when there is none.
  * @param options The caller's signal.
  * @returns The last change, or why it cannot be found.
  */
 async function lastChangeOf(
-	board: LegacyBoard,
+	document: LegacyBoard,
 	file: string,
 	vaultRoot: string | undefined,
 	options: GitRunOptions,
@@ -230,7 +230,7 @@ async function lastChangeOf(
 		const ignored = await gitSays(vaultRoot, ["check-ignore", "-q", "--", relative], options);
 		return ignored ? { kind: "unknown", reason: "model-file-ignored" } : { kind: "uncommitted" };
 	}
-	if (changedCurrent(documentOf(atHead), board)) return { kind: "uncommitted" };
+	if (changedCurrent(documentOf(atHead), document)) return { kind: "uncommitted" };
 	const found = await lastChangingCommit(
 		vaultRoot,
 		await fileHistory(vaultRoot, relative, options),

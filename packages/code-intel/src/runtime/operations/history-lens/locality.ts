@@ -241,7 +241,7 @@ function rank(split: readonly (CountedPart & PartCommits)[]): Ranking {
 	};
 }
 
-type LocalityEvidence = Omit<LocalityAnswer, "board" | "version" | "variant">;
+type LocalityEvidence = Omit<LocalityAnswer, "model" | "version" | "variant">;
 /**
  * Read locality: every part the lens reads, ranked by the commits of the
  * period that changed its bound files, and the pairs those commits couple.
@@ -306,7 +306,7 @@ interface VariantLocality {
 	/**
 	 * The hotspots and change coupling of one variant of one board.
 	 * @param vault The vault directory the board is in: its own checkout is read for its own repository.
-	 * @param board The board as the store read it.
+	 * @param document The board as the store read it.
 	 * @param variant The variant to read: the current one, or a draft.
 	 * @param since The start of the period, or undefined for the year before each HEAD.
 	 * @param signal Cancels the reading and every Git command it runs, once no other request waits for it.
@@ -314,7 +314,7 @@ interface VariantLocality {
 	 */
 	read(
 		vault: string,
-		board: LegacyBoard,
+		document: LegacyBoard,
 		variant: SemanticVariant,
 		since: Date | undefined,
 		signal?: AbortSignal,
@@ -386,20 +386,20 @@ function createVariantLocality(): VariantLocality {
 		/**
 		 * Read retained evidence.
 		 * @param vault The vault.
-		 * @param board The retained document.
+		 * @param document The retained document.
 		 * @param variant The selected state.
 		 * @param since The period start.
 		 * @param signal Cancellation.
 		 * @returns The original semantic receipt.
 		 */
-		async read(vault, board, variant, since, signal) {
+		async read(vault, document, variant, since, signal) {
 			return {
-				board: board.name,
-				version: board.version,
+				model: document.name,
+				version: document.version,
 				variant: { id: variant.id, name: variant.name, lifecycle: variant.lifecycle },
 				...(await evidence.read(
 					vault,
-					JSON.stringify([board.id, board.version]),
+					JSON.stringify([document.id, document.version]),
 					variant,
 					since,
 					signal,

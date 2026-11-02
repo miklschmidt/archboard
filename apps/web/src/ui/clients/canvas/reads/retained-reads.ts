@@ -19,11 +19,11 @@ interface RetainedReads {
 	/**
 	 * One board's whole document.
 	 * @param vault The vault the board is in.
-	 * @param board The board, by name.
+	 * @param model The board, by name.
 	 * @param signal Cancels the read.
 	 * @returns The document, not yet checked.
 	 */
-	readonly document: (vault: string, board: string, signal?: AbortSignal) => Promise<unknown>;
+	readonly document: (vault: string, model: string, signal?: AbortSignal) => Promise<unknown>;
 	/**
 	 * The vault's checked policy and diagnostics.
 	 * @param vault The vault.

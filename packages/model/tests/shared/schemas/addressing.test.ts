@@ -15,7 +15,7 @@ type Lifecycle = LegacyBoard["variants"][number]["lifecycle"];
  * @param current The designated variant, if any.
  * @returns The document.
  */
-const board = (
+const model = (
 	variants: ReadonlyArray<readonly [id: string, lifecycle: Lifecycle, parent?: string]>,
 	current?: string,
 ): unknown =>
@@ -63,12 +63,12 @@ const opens = (value: unknown, asked?: string): string | null => {
 
 describe("a board for something nobody has built", () => {
 	test("has no current variant and is coherent", () => {
-		const planned = parsed(board([["v1", "draft"]]));
+		const planned = parsed(model([["v1", "draft"]]));
 		expect(currentVariant(planned)).toBeUndefined();
 	});
 
 	test("may not mark a variant current without designating it", () => {
-		expect(parseLegacyBoard(board([["v1", "current"]])).ok).toBe(false);
+		expect(parseLegacyBoard(model([["v1", "current"]])).ok).toBe(false);
 	});
 });
 
@@ -76,7 +76,7 @@ describe("what an address that names no variant opens", () => {
 	test("the current variant, when there is one", () => {
 		expect(
 			opens(
-				board(
+				model(
 					[
 						["v1", "current"],
 						["v2", "draft", "v1"],
@@ -90,7 +90,7 @@ describe("what an address that names no variant opens", () => {
 	test("the sole draft, when nothing is built", () => {
 		expect(
 			opens(
-				board([
+				model([
 					["v1", "shelved"],
 					["v2", "draft", "v1"],
 				]),
@@ -101,7 +101,7 @@ describe("what an address that names no variant opens", () => {
 	test("the one draft no other draft came before, when there are several", () => {
 		expect(
 			opens(
-				board([
+				model([
 					["v1", "draft"],
 					["v2", "draft", "v1"],
 					["v3", "draft", "v1"],
@@ -113,7 +113,7 @@ describe("what an address that names no variant opens", () => {
 	test("nothing, when several drafts stand on a shelved root", () => {
 		expect(
 			opens(
-				board([
+				model([
 					["v1", "shelved"],
 					["v2", "draft", "v1"],
 					["v3", "draft", "v1"],
@@ -125,6 +125,6 @@ describe("what an address that names no variant opens", () => {
 	test("asking for the current variant by its word opens no draft in its place", () => {
 		// Which variant is implemented is a different question from which to open,
 		// and on this board its truthful answer is none.
-		expect(opens(board([["v1", "draft"]]), "current")).toBeNull();
+		expect(opens(model([["v1", "draft"]]), "current")).toBeNull();
 	});
 });

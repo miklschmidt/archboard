@@ -42,7 +42,7 @@ type TalkLog = NonNullable<ReturnType<RecordingPage["talk"]>>;
 
 /** What the page address asks the existing recorder to capture. */
 type RecordingRequest = NonNullable<ReturnType<typeof recordingAskedOf>> & {
-	readonly board: string | null;
+	readonly model: string | null;
 };
 type RecordedModel = Parameters<NonNullable<RecordingPage["load"]>>[0];
 type RecordedView = {
@@ -87,15 +87,15 @@ function placeIn(reading: PaneReading | null, walkthrough: string): PanePlace | 
 /**
  * Whether a pane is showing a board, drawn.
  * @param reading What the pane last said it is reading, or null.
- * @param board The board, by name.
+ * @param model The board, by name.
  * @returns True once it is.
  */
-function drawnOn(reading: PaneReading | null, board: string | null): boolean {
+function drawnOn(reading: PaneReading | null, model: string | null): boolean {
 	return (
-		reading?.board != null &&
+		reading?.model != null &&
 		reading.version !== null &&
-		board !== null &&
-		sameModelName(reading.board.name, board)
+		model !== null &&
+		sameModelName(reading.model.name, model)
 	);
 }
 
@@ -127,7 +127,7 @@ function requestedPicture(
 	view: RecordedView,
 ): boolean {
 	return view.architecture === undefined
-		? drawnOn(reading, request.board)
+		? drawnOn(reading, request.model)
 		: canonicalDrawn(reading, view.architecture);
 }
 
@@ -137,7 +137,7 @@ function requestedPicture(
  * @returns Its target name or null when none was requested.
  */
 function recordingTarget(request: RecordingRequest): string | null {
-	return request.canonical?.model ?? request.board;
+	return request.canonical?.model ?? request.model;
 }
 
 /**

@@ -64,7 +64,7 @@ test("a drawn board puts the server's picture on screen, asked for in no theme",
 	expect(stageState()).toBe("drawn");
 	expect(surface().querySelector("svg")).not.toBeNull();
 	expect(surface().querySelectorAll("[data-semantic-id]").length).toBe(3);
-	expect(renderCalls()[0]).toContain("board=pipeline");
+	expect(renderCalls()[0]).toContain("model=pipeline");
 	// The picture takes the page's theme, so the request names none.
 	expect(renderCalls()[0]).not.toContain("theme=");
 });
@@ -402,7 +402,7 @@ test("a torn render answer is a failure, and never looks like an empty board", a
 	expect(
 		await stateOverReply({
 			success: true,
-			board: "pipeline",
+			model: "pipeline",
 			version: 1,
 			variant: whole["variant"],
 		}),

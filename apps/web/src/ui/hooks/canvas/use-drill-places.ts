@@ -72,21 +72,21 @@ function repositoryLabels(crumbs: readonly Located[]): (string | undefined)[] {
  * @returns The places, and the repository of the board on screen when it is named.
  */
 function useDrillPlaces(
-	placeOf: ((board: string) => readonly CrumbPlace[]) | undefined,
-	drill: Pick<DrillNavigation, "board" | "trail">,
+	placeOf: ((model: string) => readonly CrumbPlace[]) | undefined,
+	drill: Pick<DrillNavigation, "model" | "trail">,
 	onBackTo: (depth: number) => void,
 ): Pick<PaneHeaderProps, "ancestors" | "repository"> {
-	const { board, trail } = drill;
+	const { model, trail } = drill;
 	const vault = usePaneVault();
 	const repository = useQuery(retainedListingQuery(vault)).data?.repository ?? null;
 	const names = useQueries({
-		queries: trail.map((stop) => retainedDocumentQuery(stop.vault, stop.board)),
+		queries: trail.map((stop) => retainedDocumentQuery(stop.vault, stop.model)),
 		combine: namesOf,
 	});
 	return useMemo(() => {
 		const passed = trail.map((stop, at) => ({
 			place: {
-				name: names[at]?.name ?? stop.board,
+				name: names[at]?.name ?? stop.model,
 				level: names[at]?.level,
 				vault: stop.vault,
 				/** Go back to this board of the trail. */
@@ -96,10 +96,10 @@ function useDrillPlaces(
 			},
 			where: stop,
 		}));
-		const placed = navigatorPlaces(placeOf, trail[0] ?? { board, vault }, vault);
+		const placed = navigatorPlaces(placeOf, trail[0] ?? { model, vault }, vault);
 		const here = { vault, repository };
 		return labelled([...placed.map((place) => ({ place, where: here })), ...passed], here);
-	}, [placeOf, board, trail, names, onBackTo, vault, repository]);
+	}, [placeOf, model, trail, names, onBackTo, vault, repository]);
 }
 
 /**
@@ -111,11 +111,11 @@ function useDrillPlaces(
  * @returns The places, outermost first.
  */
 function navigatorPlaces(
-	placeOf: ((board: string) => readonly CrumbPlace[]) | undefined,
-	first: Pick<Located, "vault"> & { readonly board: string },
+	placeOf: ((model: string) => readonly CrumbPlace[]) | undefined,
+	first: Pick<Located, "vault"> & { readonly model: string },
 	vault: string,
 ): readonly CrumbPlace[] {
-	return first.vault === vault ? (placeOf?.(first.board) ?? []) : [];
+	return first.vault === vault ? (placeOf?.(first.model) ?? []) : [];
 }
 
 /**

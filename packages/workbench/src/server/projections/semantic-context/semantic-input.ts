@@ -51,9 +51,9 @@ function canonicalContextFromBrief(
 	return ArchboardContextSchema.parse({
 		schema: 1,
 		paneId,
-		board: {
-			name: brief.board.name,
-			key: brief.board.key,
+		model: {
+			name: brief.model.name,
+			key: brief.model.key,
 			version: brief.version ?? 0,
 			cursor: brief.cursor === null ? null : `${brief.cursor.feedId}:${brief.cursor.sequence}`,
 		},

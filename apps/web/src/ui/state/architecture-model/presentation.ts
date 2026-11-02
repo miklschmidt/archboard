@@ -5,7 +5,7 @@ import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narratio
 
 /** Where a surface of a pane stood when it went out of sight. */
 interface LeftCamera {
-	readonly board: string;
+	readonly model: string;
 	readonly camera: ReturnType<PictureCamera["view"]>["camera"];
 }
 

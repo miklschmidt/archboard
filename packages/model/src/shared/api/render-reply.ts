@@ -16,7 +16,7 @@ export type {
 	DiagramAtlas,
 	DiagramBox,
 	DiagramTheme,
-	DrawnBoard,
+	DrawnPicture,
 	LayoutEngineName,
 	LegendLayout,
 	NothingDrawn,

@@ -14,7 +14,7 @@ const CLAIM: AgentActivityEntry["claims"][number] = {
 };
 
 const WORKING: AgentActivityEntry = {
-	board: "Checkout",
+	paneKey: "Checkout",
 	model: "Checkout",
 	claims: [CLAIM],
 	doing: {
@@ -27,10 +27,10 @@ const WORKING: AgentActivityEntry = {
 test("a snapshot replaces the whole map and an equal snapshot keeps its identity", () => {
 	const first = replaceAgentActivity(NO_AGENT_ACTIVITY, [
 		WORKING,
-		{ ...WORKING, board: "Billing" },
+		{ ...WORKING, model: "Billing" },
 	]);
 	expect(Object.keys(first)).toEqual(["Checkout", "Billing"]);
-	expect(replaceAgentActivity(first, [{ ...WORKING }, { ...WORKING, board: "Billing" }])).toBe(
+	expect(replaceAgentActivity(first, [{ ...WORKING }, { ...WORKING, model: "Billing" }])).toBe(
 		first,
 	);
 	const moved = replaceAgentActivity(first, [

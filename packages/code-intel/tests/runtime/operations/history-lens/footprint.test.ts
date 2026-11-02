@@ -128,7 +128,7 @@ function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, inde
  * stranger's part.
  * @returns The board.
  */
-function board(): LegacyBoard {
+function document(): LegacyBoard {
 	const built = BUILT.map(nodeOf);
 	const reworded = new Set(["pL", "pS"]);
 	const proposed = [
@@ -183,14 +183,14 @@ function board(): LegacyBoard {
  * @returns The answer, checked against its schema.
  */
 async function footprint(base: string, proposal?: string, head?: string): Promise<FootprintAnswer> {
-	const value = board();
+	const value = document();
 	const current = currentVariant(value);
 	if (current === undefined) throw new Error("the board has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: current,
 			proposal: named,
 			base,
@@ -421,11 +421,11 @@ test("a --head that looks like an option is a ref and never an option", async ()
  * @returns The answer, which names a proposal.
  */
 async function readAgainst(proposal: string, variantName?: string) {
-	const value = board();
+	const value = document();
 	const answer = FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({
 			vault: scratch,
-			board: value,
+			document: value,
 			against: variantName === undefined ? undefined : resolveVariant(value, variantName),
 			proposal: resolveVariant(value, proposal),
 			base: "main",

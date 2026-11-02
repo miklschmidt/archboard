@@ -45,7 +45,7 @@ type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 type DrillTarget =
 	| {
 			readonly kind: "ready";
-			readonly board: LegacyBoard;
+			readonly model: LegacyBoard;
 			readonly variant: SemanticVariant;
 			/** The other repository it is in, or undefined for the vault the link is drawn in. */
 			readonly there: OtherRepository | undefined;
@@ -147,28 +147,28 @@ function destinationOf(
 /**
  * The variant of the target board a drill-down opens.
  * @param target What the node's drill-down names.
- * @param board The target board.
+ * @param model The target board.
  * @param there The other repository the board is in, if any.
  * @returns The destination, or why there is none.
  */
 function variantOf(
 	target: DrillDown,
-	board: LegacyBoard,
+	model: LegacyBoard,
 	there: OtherRepository | undefined,
 ): DrillTarget {
 	const asked = target.variant;
 	if (asked.kind === "current") {
-		const current = resolveVariant(board);
+		const current = resolveVariant(model);
 		return current === undefined
 			? { kind: "no-current" }
-			: { kind: "ready", board, variant: current, there };
+			: { kind: "ready", model, variant: current, there };
 	}
 	// By name, or by a name the variant had before a rename (ADR 0036): a link
 	// written then still means the state it named.
-	const named = variantNamed(board, asked.name);
+	const named = variantNamed(model, asked.name);
 	return named === undefined
 		? { kind: "no-variant", asked: asked.name }
-		: { kind: "ready", board, variant: named, there };
+		: { kind: "ready", model, variant: named, there };
 }
 
 /**

@@ -91,7 +91,7 @@ interface Pending {
 interface PresentablePane {
 	readonly clientId: string;
 	/** The board key the pane is showing, which its socket messages are addressed by. */
-	readonly board: string | null;
+	readonly model: string | null;
 }
 
 /** What the port needs of the server around it. */
@@ -395,9 +395,9 @@ const panePresentations = createPanePresentations({
 		const pane = panes.get(clientId);
 		if (pane === undefined) return null;
 		const architecture = semanticPaneContextFor(clientId)?.architecture;
-		if (architecture?.vault === pane.vault) return { clientId, board: null };
-		const board = paneKeyOfClient(clientId);
-		return board === null ? null : { clientId, board };
+		if (architecture?.vault === pane.vault) return { clientId, model: null };
+		const model = paneKeyOfClient(clientId);
+		return model === null ? null : { clientId, model };
 	},
 	/**
 	 * Send one request down a pane's socket.
@@ -406,9 +406,9 @@ const panePresentations = createPanePresentations({
 	 * @returns Whether a live socket took it.
 	 */
 	send: (pane, message) =>
-		pane.board === null
+		pane.model === null
 			? sendKeylessToPane(pane.clientId, message)
-			: sendToPane(pane.clientId, message, pane.board),
+			: sendToPane(pane.clientId, message, pane.model),
 });
 
 export {

@@ -110,7 +110,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					board: "scratch",
+					paneKey: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
 				},
 			});
@@ -124,7 +124,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 						body: {
 							paneId: clientId,
 							clientId,
-							board: { name: "scratch", key: "scratch" },
+							model: { name: "scratch", key: "scratch" },
 							variant: null,
 							view: null,
 							selection: [{ id: "picked-by-replacement" }],
@@ -213,7 +213,7 @@ describe.serial("production server Codex WebSocket ownership", () => {
 					paneId: clientId,
 					primary: true,
 					focused: true,
-					board: "scratch",
+					paneKey: "scratch",
 					rect: { x: 0, y: 0, width: 1280, height: 800 },
 				},
 			});
