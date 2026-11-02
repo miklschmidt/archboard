@@ -12,19 +12,6 @@
   "parent": "vKEsyHFk/yejBBUFY#fscW90Xt",
   "outgoing": [
     {
-      "order": 30000,
-      "kind": "call",
-      "label": "the voice's stream; each step, line and version shown",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
-        "symbol": "TalkCapture"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
-      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
-    },
-    {
       "order": 26000,
       "kind": "event",
       "label": "voice as a recording in its language; each step shown",
@@ -50,6 +37,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#UEuRPGRJ",
       "to": "vKEsyHFk/yejBBUFY#zs2QxCu7"
+    },
+    {
+      "order": 30000,
+      "kind": "call",
+      "label": "the voice's stream; each step, line and version shown",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/state/walkthrough-recording/recorder.ts",
+        "symbol": "TalkCapture"
+      },
+      "id": "vKEsyHFk/SMjRfwN3#MqDfCTuA",
+      "to": "vKEsyHFk/yejBBUFY#uG3OntgL"
     },
     {
       "order": 31000,

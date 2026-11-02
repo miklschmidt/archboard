@@ -12,6 +12,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#R3ldC44x",
   "parent": "vKEsyHFk/0T9enjhi#ZqkmwupZ",
+  "formerNames": [
+    "Decode board bytes"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
@@ -33,8 +36,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "Decode board bytes"
-  ]
+  "outgoing": []
 }
