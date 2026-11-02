@@ -42,6 +42,7 @@ const model = {
 		module("added", "service", "top"),
 		module("removed", "service", "top"),
 		module("uncoloured", "plain", "top"),
+		...doors.map((id) => module(`inside ${id}`, "plain", id)),
 	],
 	relationships: doors.map((to, order) => ({
 		id: to,
