@@ -113,7 +113,7 @@ function groundOf(
  */
 function walkthroughGround(picture: Element): readonly TipGround[] {
 	const box = picture
-		.closest("[data-slot='semantic-reading-area']")
+		.closest("[data-slot='pane-stage']")
 		?.querySelector("[data-slot='semantic-presentation']");
 	return box === null || box === undefined
 		? []
