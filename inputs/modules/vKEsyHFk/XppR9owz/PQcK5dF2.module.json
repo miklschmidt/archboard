@@ -87,19 +87,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#4aWZZKkA",
       "to": "vKEsyHFk/XppR9owz#vAQwlVuz"
-    },
-    {
-      "order": 77000,
-      "kind": "call",
-      "label": "formats model refusals for the command result",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-        "symbol": "formatModelRefusal"
-      },
-      "id": "vKEsyHFk/XppR9owz#PDFACmp1",
-      "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR"
     }
   ]
 }
