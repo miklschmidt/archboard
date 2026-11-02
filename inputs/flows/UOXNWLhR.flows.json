@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "UOXNWLhR",
-  "name": "Canvas viewer",
+  "name": "Board viewer",
   "flows": [
     {
       "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
@@ -16,6 +16,9 @@
         "vKEsyHFk/UOXNWLhR#gIakrnWa",
         "vKEsyHFk/UOXNWLhR#hc77pwzB",
         "vKEsyHFk/UOXNWLhR#3KtX2jdA"
+      ],
+      "formerNames": [
+        "A reader opens a card's board"
       ],
       "steps": [
         {
@@ -292,9 +295,6 @@
             }
           ]
         }
-      ],
-      "formerNames": [
-        "A reader opens a card's board"
       ]
     },
     {
@@ -1636,5 +1636,8 @@
         }
       ]
     }
+  ],
+  "formerNames": [
+    "Canvas viewer"
   ]
 }
