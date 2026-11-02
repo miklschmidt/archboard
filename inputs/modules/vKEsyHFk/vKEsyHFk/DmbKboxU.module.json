@@ -13,14 +13,14 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "board"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "board"
-  ]
+  "outgoing": []
 }
