@@ -32,6 +32,9 @@ class CoreBuildError extends Error {
 	}
 }
 
+/** What makes a good build, and where the tools for it are named. */
+const CORE_BUILD_STEP = `Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT}, with the tools that its INSTALL.md names.`;
+
 /** The build this thread compiled, which it hands each layout worker it starts. */
 let compiled: WebAssembly.Module | undefined;
 
@@ -95,7 +98,7 @@ function loadBuild(expected: string): { core: Core; module: WebAssembly.Module }
 	} catch {
 		throw new CoreBuildError(
 			"CORE_BUILD_MISSING",
-			`The renderer core is not built. Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT} inside \`nix develop\`.`,
+			`The renderer core is not built. ${CORE_BUILD_STEP}`,
 		);
 	}
 	let module: WebAssembly.Module;
@@ -106,15 +109,14 @@ function loadBuild(expected: string): { core: Core; module: WebAssembly.Module }
 	} catch {
 		throw new CoreBuildError(
 			"CORE_BUILD_INVALID",
-			`The renderer core build cannot be loaded. Run \`${CORE_BUILD_COMMAND}\` in ${CHECKOUT} inside \`nix develop\`.`,
+			`The renderer core build cannot be loaded. ${CORE_BUILD_STEP}`,
 		);
 	}
 	const built = core.sourceHash();
 	if (built !== expected) {
 		throw new CoreBuildError(
 			"CORE_BUILD_STALE",
-			`The renderer core was built from other sources (${built}) than ${CHECKOUT} holds (${expected}). ` +
-				`Run \`${CORE_BUILD_COMMAND}\` there inside \`nix develop\`.`,
+			`The renderer core was built from other sources (${built}) than ${CHECKOUT} holds (${expected}). ${CORE_BUILD_STEP}`,
 		);
 	}
 	return { core, module };

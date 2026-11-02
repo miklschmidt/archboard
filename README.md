@@ -343,7 +343,7 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Git, Bun 1.4.3 or newer, and Node.js. Nix with flakes supplies the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) lists the exact versions and the way without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
+You need Linux or macOS, Git, Bun 1.4.3 or newer, and Node.js. Nix with flakes supplies the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) gives the way with rustup, for a machine without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
 
 The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
 

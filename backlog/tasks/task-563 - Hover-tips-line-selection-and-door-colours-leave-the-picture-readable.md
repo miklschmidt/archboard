@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T18:56:00Z'
+updated_date: '2026-11-02T19:16:00Z'
 labels:
   - reader
   - design
@@ -34,6 +34,7 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #10 The full gate passes and an independent review of the final diff approves
 - [x] #11 The README assets show the final picture
 - [x] #12 A flowchart's lines that reach one step join into one trunk: no two run side by side and none stops short of the join (dTfYgmVn, End)
+- [ ] #13 A consumer without Nix can follow INSTALL.md to the toolchain that builds the product
 <!-- AC:END -->
 
 ## Implementation Notes

@@ -6,7 +6,7 @@
 // sources in this checkout is kept, so a run without a change needs no Rust
 // tools.
 //
-// Run from the repository root, inside `nix develop`:
+// Run from the repository root, with the tools that INSTALL.md names:
 //   bun run build:core
 
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -75,7 +75,7 @@ function spawn(
 		});
 	} catch {
 		throw new Error(
-			`\`${command[0]}\` is not on PATH. Run \`bun run build:core\` inside \`nix develop\`.`,
+			`\`${command[0]}\` is not on PATH. Install the tools that INSTALL.md names, then run \`bun run build:core\`.`,
 		);
 	}
 }
