@@ -27,7 +27,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "81e09837b7e88d26211dcc8bde131874a7a55422aa169a671874ea855fae5c89"
+			"hash": "d8d1b4421190db54912e13faee3b084e821c30c5e84e4272cae4388b61b7ce29"
 		},
 		{
 			"name": "hero",
@@ -60,7 +60,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "117decfb9595cfe9f99c04808d8fe16663847871733e30cfb71282cd35d62ad6"
+			"hash": "442e56d207c3667120f1defeda6669115bb366ff5e642c098c2e61d912d1e48e"
 		},
 		{
 			"name": "explainer",
@@ -91,7 +91,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "65827b143cc49b668d66e4a85df1b5dc954f091922cf37eb22749bff88553923"
+			"hash": "95843e7025ac929500058a8b12f9643444a82488d5626196880b8032014c0766"
 		},
 		{
 			"name": "plan",
@@ -119,7 +119,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "6a11d728e141855eb0c43fc06b319b29f97aab26783a4d7922f085ee9cc6e90c"
+			"hash": "494928cd4a0408b6a0b93c5c8ef14fe9ad08940c6d723ccf7320872f5403d28a"
 		},
 		{
 			"name": "history",
@@ -148,7 +148,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "5ac57874d464dc0f65119b4bbc14543c652c806905aef6c4fe85bc14f0b8386a"
+			"hash": "9dc0fe99b9d6a547d45d2565b1b512a6fce451def87373877568278509d2325c"
 		},
 		{
 			"name": "pr-walkthrough",
@@ -180,7 +180,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "2041394c4f42a8c50ac7fff521a4390dab3a05ec239e7b286874d80399940936"
+			"hash": "8dd11cd7ed423ca777d525663af5dfaf1e93722b2ea21bf64050329e41c1ff02"
 		},
 		{
 			"name": "sequence",
@@ -207,7 +207,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "8d029f2c6b11cee6e0306b17a46384e38456580c79dca1348b64a6b61476970f"
+			"hash": "70bf0f70ca067a1e81cb643a306a5d734bee96692e8ed20cffdac8ecf96fb1c0"
 		},
 		{
 			"name": "newcomer",
@@ -239,7 +239,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "2041394c4f42a8c50ac7fff521a4390dab3a05ec239e7b286874d80399940936"
+			"hash": "8dd11cd7ed423ca777d525663af5dfaf1e93722b2ea21bf64050329e41c1ff02"
 		},
 		{
 			"name": "drill-down",
@@ -266,7 +266,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "a4e0d3e86f7bdd7ed574795bd768451d568aae5b92b0c26c949a46247b03032e"
+			"hash": "01de5fcb87ae01d720b9377ecf73273a86561a7748e3290508860d9cb9c328f0"
 		},
 		{
 			"name": "ask",
@@ -295,7 +295,7 @@
 				"apps/server/src/server/routes/architecture/explanation-routes.ts",
 				"apps/cli/src/cli/clients/server/architecture-model.ts"
 			],
-			"hash": "a52362d41fbb01a49e01bb848d7c3158a0d3909ad63a2af64cda320f84ea68ba"
+			"hash": "513b9d118f4a7522edadfbaaefbde80a311d29c5dc481629fe5bc21e37780b9e"
 		},
 		{
 			"name": "take-back",
@@ -327,7 +327,7 @@
 				"scripts/readme-assets/fixture-history.ts",
 				"scripts/readme-assets/tools.ts"
 			],
-			"hash": "4b1b55de72324483166366e59c88a872f6e40dcd9710b090eb85b61a3abb8454"
+			"hash": "c96ee98bc8937f5c82810bfd690aad9f347ed2afade7e77bd96f4b375e5e3436"
 		},
 		{
 			"name": "web-shop",
@@ -354,7 +354,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/assets.ts"
 			],
-			"hash": "8d029f2c6b11cee6e0306b17a46384e38456580c79dca1348b64a6b61476970f"
+			"hash": "70bf0f70ca067a1e81cb643a306a5d734bee96692e8ed20cffdac8ecf96fb1c0"
 		},
 		{
 			"name": "architecture",
@@ -396,7 +396,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
+			"hash": "a299e8e6d8461c5f7a205a9cbc53d682876094cfbcf71c14c7d8e97c86f2fff8"
 		},
 		{
 			"name": "module-interfaces",
@@ -429,7 +429,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
+			"hash": "a299e8e6d8461c5f7a205a9cbc53d682876094cfbcf71c14c7d8e97c86f2fff8"
 		},
 		{
 			"name": "git-history",
@@ -462,7 +462,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "3b722b9cb2bbed8adbab645093d68082df84b216c66c992dece9b146f83482ba"
+			"hash": "a299e8e6d8461c5f7a205a9cbc53d682876094cfbcf71c14c7d8e97c86f2fff8"
 		},
 		{
 			"name": "design-smells",
@@ -493,7 +493,7 @@
 				"scripts/readme-assets/tools.ts",
 				"scripts/readme-assets/model-authoring.ts"
 			],
-			"hash": "6937f99a33820474583614aaa88eab97101590e2a78dd0bc7fd5fbdec67ea0cf"
+			"hash": "58a595e07cd4b5736d3f353347bda7b91fb9245183197358a965b116bae0f3f7"
 		}
 	]
 }
