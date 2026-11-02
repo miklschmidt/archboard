@@ -35,6 +35,8 @@ const APPROACH_STRAIGHT: f64 = 12.0;
 /// How far beyond the turn out of a point a line runs before it turns again,
 /// so the two turns do not touch.
 const CLEAR: f64 = 4.0;
+/// The farthest a straight line slides: past this it has room to turn in.
+pub(super) const SLIDE: f64 = BEND_RADIUS * 2.0;
 
 /// Which end of a line is moved: where it leaves a shape, or where it arrives.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -180,7 +182,7 @@ fn slid(corners: &[Point], start: Point, card: Option<Rect>) -> Option<Vec<Point
     let ([from, to], Some(card)) = (corners, card) else {
         return None;
     };
-    if apart(start, *from) >= BEND_RADIUS * 2.0 {
+    if apart(start, *from) >= SLIDE {
         return None;
     }
     let moved = Point {

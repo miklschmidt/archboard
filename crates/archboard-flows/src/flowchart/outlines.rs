@@ -12,7 +12,7 @@ use archboard_scene::request::FlowchartShape;
 
 use super::SIDE_RUN;
 use super::graph::Graph;
-use super::ports::{at_shape_points, on_outline};
+use super::ports::{SLIDE, at_shape_points, on_outline};
 
 /// How near two straight lanes stand when they draw as one line.
 const ONE_LANE: f64 = 3.0;
@@ -68,11 +68,12 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
         .map(|(_, bounds)| bounds)
 }
 
-/// Whether a bridge stands on a line, or on a lane near enough to draw as one
-/// with it. Such a line keeps its place, because the bridges are settled. The
-/// place decides and not the bridge's names, which give one line of a trunk.
+/// Whether a bridge stands within a line's reach: on it, or on a lane it could
+/// slide to or draw as one with. Such a line keeps its place, because the bridges
+/// are settled. The place decides and not the bridge's names, which give one
+/// line of a trunk.
 fn under_a_bridge(curve: &Curve, bridges: &[DrawingBridge]) -> bool {
-    let line = inflate(curve_bounds(curve), ONE_LANE);
+    let line = inflate(curve_bounds(curve), SLIDE + ONE_LANE);
     bridges.iter().any(|bridge| {
         let piece = curve_bounds(&bridge.curve);
         line.x < piece.x + piece.width
@@ -137,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn a_line_stays_where_a_bridge_stands_on_it_or_on_its_lane() {
+    fn a_line_stays_where_a_bridge_stands_within_its_reach() {
         let bridges = [DrawingBridge {
             edge_id: "named".to_owned(),
             under: vec!["crossed".to_owned()],
@@ -148,6 +149,10 @@ mod tests {
         assert!(stays((100.0, 0.0), (100.0, 400.0)), "the line it names");
         assert!(stays((102.0, 0.0), (102.0, 400.0)), "a line of its trunk");
         assert!(stays((0.0, 50.0), (200.0, 50.0)), "a line beneath it");
+        assert!(
+            stays((84.0, 0.0), (84.0, 400.0)),
+            "a line that could slide to it"
+        );
         assert!(!stays((120.0, 0.0), (120.0, 400.0)), "a lane of its own");
     }
 }
