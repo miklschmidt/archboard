@@ -72,8 +72,8 @@
         "path": "packages/board/src/runtime/operations/history/read.ts",
         "symbol": "requireCompleteArchive"
       },
-      "to": "vKEsyHFk/0T9enjhi#yEqHs86l",
-      "id": "vKEsyHFk#Rutvvekt"
+      "id": "vKEsyHFk#Rutvvekt",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
     },
     {
       "order": 980040,
@@ -85,8 +85,8 @@
         "path": "packages/board/src/runtime/operations/history/initialize-model.ts",
         "symbol": "installArchitectureModel"
       },
-      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT",
-      "id": "vKEsyHFk#BbwtsMPQ"
+      "id": "vKEsyHFk#BbwtsMPQ",
+      "to": "vKEsyHFk/0T9enjhi#2gFwMLTT"
     }
   ]
 }

@@ -26,19 +26,6 @@
       "to": "vKEsyHFk/UOXNWLhR#XXTC3G6Y"
     },
     {
-      "order": 96000,
-      "kind": "call",
-      "label": "the transform of each glide frame",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
-        "symbol": "cameraTransform"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
-      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
-    },
-    {
       "order": 38000,
       "kind": "call",
       "label": "glides and picture transitions",
@@ -50,6 +37,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#PGzV2I05",
       "to": "vKEsyHFk/yejBBUFY#rouptSyK"
+    },
+    {
+      "order": 96000,
+      "kind": "call",
+      "label": "the transform of each glide frame",
+      "emphasis": "muted",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-glide.ts",
+        "symbol": "cameraTransform"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#zx1KnBNz",
+      "to": "vKEsyHFk/UOXNWLhR#ijZRg0FU"
     }
   ]
 }

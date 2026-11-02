@@ -3,13 +3,15 @@
   "name": "diagnostics",
   "kind": "package",
   "responsibility": "Logs a line and shows a thrown value as text",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/diagnostics"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#7nWcEvFx",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

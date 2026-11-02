@@ -3,13 +3,15 @@
   "name": "timing",
   "kind": "package",
   "responsibility": "Every duration, grouped by the subsystem that owns it, with what it pulls against",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/timing"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#sZ4chHDX",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

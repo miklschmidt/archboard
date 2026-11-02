@@ -3,13 +3,15 @@
   "name": "workspace",
   "kind": "package",
   "responsibility": "Where a vault, a checkout and the state directory are, and the atomic write",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#tdKalihR",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

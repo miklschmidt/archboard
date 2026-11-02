@@ -177,8 +177,8 @@
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
         "symbol": "productionModule.createServerVoiceAgentOptions"
       },
-      "to": "vKEsyHFk/9ncuT5DP#yyFS6UVO",
-      "id": "vKEsyHFk#ratt913y"
+      "id": "vKEsyHFk#ratt913y",
+      "to": "vKEsyHFk/9ncuT5DP#yyFS6UVO"
     },
     {
       "order": 980200,
@@ -190,8 +190,8 @@
         "path": "packages/workbench/src/server/services/owner/wiring.ts",
         "symbol": "narrationChangesOf"
       },
-      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI",
-      "id": "vKEsyHFk#AvmihZrD"
+      "id": "vKEsyHFk#AvmihZrD",
+      "to": "vKEsyHFk/9ncuT5DP#pZL0uxjI"
     }
   ]
 }

@@ -97,8 +97,8 @@
         "path": "packages/board/src/runtime/operations/history/retain.ts",
         "symbol": "checkpointPublication"
       },
-      "to": "vKEsyHFk/0T9enjhi#yEqHs86l",
-      "id": "vKEsyHFk#0HzNfqV6"
+      "id": "vKEsyHFk#0HzNfqV6",
+      "to": "vKEsyHFk/0T9enjhi#yEqHs86l"
     },
     {
       "order": 980020,
@@ -110,8 +110,8 @@
         "path": "packages/board/src/runtime/operations/history/retain.ts",
         "symbol": "captureReferencePins"
       },
-      "to": "vKEsyHFk/0T9enjhi#QDE2xctM",
-      "id": "vKEsyHFk#bWBjHjjK"
+      "id": "vKEsyHFk#bWBjHjjK",
+      "to": "vKEsyHFk/0T9enjhi#QDE2xctM"
     },
     {
       "order": 980060,
@@ -123,8 +123,8 @@
         "path": "packages/board/src/runtime/operations/history/retain.ts",
         "symbol": "walkthroughDependencies"
       },
-      "to": "vKEsyHFk#v5jpAVBo",
-      "id": "vKEsyHFk#HnfPersG"
+      "id": "vKEsyHFk#HnfPersG",
+      "to": "vKEsyHFk#v5jpAVBo"
     }
   ]
 }

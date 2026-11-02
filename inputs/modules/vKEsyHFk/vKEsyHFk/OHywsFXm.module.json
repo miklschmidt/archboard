@@ -4,13 +4,15 @@
   "kind": "package",
   "responsibility": "Draws a board as a picture, in the browser or under Bun",
   "description": "The TypeScript hosts in this package load the renderer core, which crates/ builds to WebAssembly (ADR 0059). The core measures, lays out and paints. A host runs its layout solves and gives it icons and theme colours.",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#OHywsFXm",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "formerNames": [
     "Semantic renderer"
   ],

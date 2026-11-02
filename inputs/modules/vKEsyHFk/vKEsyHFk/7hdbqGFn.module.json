@@ -3,13 +3,15 @@
   "name": "code-opener",
   "kind": "package",
   "responsibility": "Opens the code that a node binds",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-opener"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#7hdbqGFn",
-  "parent": "vKEsyHFk/vKEsyHFk#fssx6Gaq",
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",

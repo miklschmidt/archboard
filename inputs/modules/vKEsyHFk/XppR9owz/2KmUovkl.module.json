@@ -33,6 +33,19 @@
   ],
   "outgoing": [
     {
+      "order": 12000,
+      "kind": "http",
+      "label": "health: is this the server of this checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/service/service-routes.ts",
+        "symbol": "healthRoute"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#4GkwbIhi",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
       "order": 59000,
       "kind": "call",
       "label": "what answers at its address",

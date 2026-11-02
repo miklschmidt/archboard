@@ -24,6 +24,14 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#vKDw0TwV",
       "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
+    },
+    {
+      "order": 25000,
+      "kind": "http",
+      "label": "load the recording page, or the replay page",
+      "emphasis": "normal",
+      "id": "vKEsyHFk/SMjRfwN3#yWqRrF8i",
+      "to": "vKEsyHFk/HBlhIeSD#3ld7pYE2"
     }
   ]
 }

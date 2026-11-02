@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/address.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#9VahN2IU",
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "outgoing": []
 }

@@ -12,6 +12,23 @@
   "parent": "vKEsyHFk/yejBBUFY#AIp6YN1P",
   "outgoing": [
     {
+      "order": 2000,
+      "kind": "http",
+      "label": "views and controls",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-requests/src/ui/clients/server-requests.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#iF6W48DS",
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
       "order": 67000,
       "kind": "call",
       "label": "Fetch the canonical model",

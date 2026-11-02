@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/runtime/store/model-news.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
   "schemaVersion": 1,
   "id": "vKEsyHFk#P9dwhB8m",
+  "parent": "vKEsyHFk/0T9enjhi#IyV7OF9L",
   "outgoing": []
 }

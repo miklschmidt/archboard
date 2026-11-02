@@ -34,6 +34,23 @@
   ],
   "outgoing": [
     {
+      "order": 1000,
+      "kind": "http",
+      "label": "semantic commands, on its own checkout's port",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "fetch"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
+    },
+    {
       "order": 96000,
       "kind": "call",
       "emphasis": "normal",
@@ -44,6 +61,18 @@
       },
       "id": "vKEsyHFk/XppR9owz#ZglcNYUQ",
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
+    },
+    {
+      "order": 100000,
+      "kind": "http",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     },
     {
       "order": 112000,
@@ -58,18 +87,6 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#idpOv420",
       "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ"
-    },
-    {
-      "order": 100000,
-      "kind": "http",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
-        "symbol": "mountArchitectureModelRoutes"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
     }
   ]
 }

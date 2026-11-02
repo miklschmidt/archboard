@@ -46,32 +46,6 @@
       "to": "vKEsyHFk#06cbjPhn"
     },
     {
-      "order": 57000,
-      "kind": "call",
-      "label": "spawn it detached",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "spawn"
-      },
-      "id": "vKEsyHFk/XppR9owz#CfLy7gvx",
-      "to": "vKEsyHFk/6E6hL0Zk#m4GMTKLW"
-    },
-    {
-      "order": 58000,
-      "kind": "call",
-      "label": "identity probe",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
-        "symbol": "markServerIdentityVerified"
-      },
-      "id": "vKEsyHFk/XppR9owz#qXImR60k",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
       "order": 45000,
       "kind": "dependency",
       "label": "observe and stop the server process",
@@ -96,6 +70,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#WJFn6A3p",
       "to": "vKEsyHFk#Q1jP0WbC"
+    },
+    {
+      "order": 58000,
+      "kind": "call",
+      "label": "identity probe",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/server-lifecycle/src/runtime/operations/spawn.ts",
+        "symbol": "markServerIdentityVerified"
+      },
+      "id": "vKEsyHFk/XppR9owz#qXImR60k",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     }
   ]
 }
