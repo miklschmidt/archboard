@@ -3,7 +3,7 @@
 //! its outline, to the middle of the side it crosses for a decision or a
 //! terminal (`ports.rs`).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Painted};
 use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment};
@@ -67,7 +67,8 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
 
 /// The drawing with every line that meets a shape carried on to its outline,
 /// and every line that meets a decision or a terminal turned to the middle of
-/// the side it crosses.
+/// the side it crosses. A line that a bridge stands on keeps its place, because
+/// the bridge is settled.
 pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
     let boxes: HashMap<String, Rect> = drawing
         .drawing
@@ -75,11 +76,37 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
         .iter()
         .map(|card| (card.measured.node.id.clone(), card.bounds))
         .collect();
+    let bridged: HashSet<String> = drawing
+        .bridged
+        .bridges
+        .iter()
+        .flat_map(|bridge| bridge.under.iter().chain([&bridge.edge_id]))
+        .cloned()
+        .collect();
     let shaped = |id: &str| -> Shaped { Some((graph.shape(id)?, *boxes.get(id)?)) };
+    let card_of = |routed: &DrawingEdge<EdgeFacts>, from: Shaped, to: Shaped| {
+        let id = match (pointed(from), pointed(to)) {
+            (None, Some(_)) => &routed.edge.from,
+            (Some(_), None) => &routed.edge.to,
+            _ => return None,
+        };
+        let free = !bridged.contains(&routed.edge.id);
+        boxes.get(id).copied().filter(|_| free)
+    };
     let on_shapes = |routed: &mut DrawingEdge<EdgeFacts>| {
         let from = shaped(&routed.edge.from);
         let to = shaped(&routed.edge.to);
-        let turned = at_shape_points(routed.curve.clone(), pointed(from), pointed(to));
+        let card = card_of(routed, from, to);
+        let turned = at_shape_points(routed.curve.clone(), pointed(from), pointed(to), card);
+        if let (Some(words), Some(_)) = (&mut routed.label, card) {
+            let (was, is) = if pointed(from).is_none() {
+                (routed.curve.from, turned.from)
+            } else {
+                (routed.curve.end(), turned.end())
+            };
+            words.bounds.x += is.x - was.x;
+            words.bounds.y += is.y - was.y;
+        }
         routed.curve = outlined(turned, from, to);
     };
     drawing.drawing.edges.iter_mut().for_each(on_shapes);
