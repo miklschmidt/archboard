@@ -53,7 +53,7 @@ If your output contradicts an existing ADR, surface it explicitly rather than si
 ## Writing an ADR in this repo
 
 An ADR records a decision, and a decision outlives the code that carries it out.
-So write it in the vocabulary of `CONTEXT.md`, about boards, notes, panes,
+So write it in the vocabulary of `CONTEXT.md`, about models, notes, panes,
 elements and agents, and not about the code.
 
 **Do not put claims about the code in an ADR.** No file paths, no function or

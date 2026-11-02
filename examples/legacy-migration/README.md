@@ -1,6 +1,6 @@
 # Plan legacy identities
 
-This example copies two immutable original board fixtures and inventories their overlapping descriptions.
+This example copies two immutable original legacy board fixtures and inventories their overlapping descriptions.
 Use a temporary directory outside another Git checkout.
 The commands require Archboard on PATH and Bun.
 
@@ -14,7 +14,7 @@ archboard model inventory --origin Shop -C "$example_dir" > "$example_dir/invent
 
 Read the inventory before selecting a canonical identity.
 The same name and binding supply evidence, while the different responsibilities produce a definition conflict.
-The two API identities retain their original board namespaces.
+The two API identities retain their original legacy board namespaces.
 
 Create an editable request from that exact inventory:
 

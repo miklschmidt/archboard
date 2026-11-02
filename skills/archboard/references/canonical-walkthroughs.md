@@ -101,7 +101,7 @@ A changed or unavailable source or target refuses the start.
 Reopen the walkthrough before starting narration again.
 
 Live narration requests its first beat through the existing pane presentation port.
-Canonical requests name the pane and walkthrough without a legacy board key.
+Canonical requests name the pane and walkthrough without a pane key.
 The recording page drives its own steps and receives no first-beat request from the server.
 Both paths narrate only available beats after the pane reports arrival.
 Leaving the walkthrough ends its narration.

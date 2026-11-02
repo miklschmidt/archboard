@@ -52,7 +52,7 @@ jobs:
 
       # Ubuntu's AppArmor policy permits the installed Chrome Stable sandbox.
       # Isolated test servers discover their renderer through PATH.
-      - name: Use sandboxed Chrome for board rendering
+      - name: Use sandboxed Chrome for model rendering
         run: |
           chrome_version=$(/opt/google/chrome/chrome --version)
           echo "$chrome_version"
@@ -116,7 +116,7 @@ jobs:
           restore-keys: |
             vite-task-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Verify native ownership, storage, and board paths
+      - name: Verify native ownership, storage, and model paths
         run: nix develop --command bunx vp run test:macos
 
       - name: Save validation task cache

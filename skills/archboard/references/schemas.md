@@ -22,4 +22,4 @@ An incomplete transaction refuses ordinary reads until explicit recovery complet
 
 Legacy levels remain decodable for explicit migration and exact retained history.
 Canonical modules use containment without fixed levels.
-New authoring never writes a board family or a level.
+New authoring never writes a legacy board family or a level.

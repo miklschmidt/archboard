@@ -89,9 +89,9 @@ They do not describe the current implementation.
 
 ## Retained originals and history
 
-TASK-549 migrates the original board documents through explicit identity choices and the public installer.
+TASK-549 migrates the original legacy boards through explicit identity choices and the public installer.
 Their exact bytes, state history, and independent drafts remain retained.
-Original IDs in qualified module addresses record provenance; they no longer define separate live boards.
+Original IDs in qualified module addresses record provenance; they no longer define separate live legacy boards.
 
 Use `model checkpoints` to discover retained readings.
 Use an exact checkpoint when sharing or recording a walkthrough.

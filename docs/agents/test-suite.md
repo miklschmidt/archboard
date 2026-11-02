@@ -39,7 +39,7 @@ The six normal native lanes are:
 It reads the current canonical model in this checkout's `.archboard/vault` through `readArchitectureModel`.
 It renders the root and every module with children through the shared `projectModel` rule.
 Each reading carries the complete model for container interface context.
-It also renders three fixed wide-board fixtures on both registered layout engines.
+It also renders three fixed wide fixtures on both registered layout engines.
 It retains the drawing assertions and first-layout speed limits.
 Unreadable canonical inputs or an absent current state stop the benchmark.
 It reads no other repository, historical state, or proposal selection.
@@ -197,8 +197,8 @@ A product change must not retune these test values.
 A system owner waits for a product timer only when the test is about that timer
 and the timer has no test override. These cases remain:
 
-- the one-second lock sweep that tells a pane its board changed under it
-  (`external-board-write`, and the opt-in cross-process lock owner);
+- the one-second lock sweep that tells a pane its model changed under it
+  (the outside write case, and the opt-in cross-process lock owner);
 - the one-second lease renewal that records a claim's loss after a pane takes it back
   (the opt-in cross-process lock owner);
 - the wall-clock pace of a recording (`walkthrough-recording`, a declared
@@ -215,7 +215,7 @@ uses a 60-second case deadline when `CI=true`. Its default engine, Blocks, also 
 45.3 seconds (TASK-451). Local runs keep the 20-second case deadline and
 3-second first-render limit. Both engines keep all picture correctness assertions.
 The preload still applies its 60-second wall-clock ceiling to every case.
-The former board-specific Blocks exceptions no longer apply to the recursive canonical corpus,
+The former per-document Blocks exceptions no longer apply to the recursive canonical corpus,
 because the core's router routes its trunks (TASK-520.02).
 No current corpus case has a separate deadline.
 
@@ -244,7 +244,7 @@ The recording owners in `tests/system/server-state` use a fake ffmpeg that recor
 It keeps distinct narrative-source and target revisions, then observes the authored beat order and captured drawing revision.
 `canonical-walkthrough-replay.test.ts` deletes the source inputs before it renders the retained talk through the built page.
 It compares complete frame output from one page and two pages.
-The same owner also replays an original board recording from its captured document.
+The same owner also replays an original legacy board recording from its captured document.
 `walkthrough-render.test.ts` supplies a page that refuses a frame.
 That owner requires `RENDER_FAILED`, preserves the talk, and leaves no output or partial file.
 These module owners cover the supporting contracts:
@@ -295,8 +295,8 @@ it in `afterAll`. Happy DOM is never registered for the whole suite: the
 system owners keep a plain Node-like global, because a suite-wide `document`
 would change what those owners prove.
 
-Reuse the module's existing rendered-test harness when one exists. Semantic
-board stage tests use `apps/web/tests/ui/support/canvas/stage-harness.tsx`,
+Reuse the module's existing rendered-test harness when one exists. Canvas
+stage tests use `apps/web/tests/ui/support/canvas/stage-harness.tsx`,
 which owns DOM registration, measured viewport setup, fetch restoration and
 Testing Library cleanup. Other rendered owners use `GlobalRegistrator` from
 `@happy-dom/global-registrator` with React's `act` and `createRoot`, or
@@ -418,7 +418,7 @@ The next write receives `CLAIM_REVOKED`, and the architecture keeps every accept
 Starts the production server composition with the exact Codex 0.160.0 protocol
 fake, then drives the real browser transport and rendered shell. One short
 create, send, and decline flow proves the pane workbench is operable, both
-ordinary and dynamic approval effects are visible, and the mounted board
+ordinary and dynamic approval effects are visible, and the mounted model
 pane keeps its seeded element. The owner also checks the fake's exact version
 probes, single app-server spawn, browser console, and page errors.
 
@@ -447,7 +447,7 @@ things reach the voice model as one `appendSpeech` line each: the first step, a
 step taken by hand, a part picked by hand mid-step, and leaving with Escape. No
 coordinator turn starts. The pick names the part and not its id, and the pane
 stays on its step (TASK-293.05). The dock's key ends the session and releases
-its media, and the mounted board pane is unchanged.
+its media, and the mounted model pane is unchanged.
 
 The owner checks the keyboard order of the dock's voice controls, the target
 size of the voice keys at desktop and desktop scaled, that a presented pane
@@ -535,7 +535,7 @@ It covers foreign navigation, immutable foreign pins, unavailable checkpoints, s
 `canonical-model-code.test.ts` owns visible current, draft, and exact code activation with unavailable source.
 It also covers matching code warnings, diagram marks, selected evidence, and their removal after the architecture revision changes.
 The same owner compares the history panel with an actual source Git commit.
-Canonical history uses the existing commit and coupling display without synthetic board metadata.
+Canonical history uses the existing commit and coupling display without synthetic legacy board metadata.
 `canonical-model-references.test.ts` owns portable addresses for every canonical subject kind, reload, Back, unavailable targets, and pinned recovery.
 Both browser owners use real files and Git with the existing browser adapter and public architecture operations.
 
@@ -656,7 +656,7 @@ The unchanged-byte assertion includes old schema files and catches implicit upgr
 ## Legacy history preview and original retention
 
 The public architecture operations own `legacy-preview/history.test.ts`, `drafts.test.ts`, and `retention.test.ts` under `packages/model/tests/runtime/operations/`.
-Real legacy files prove original board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
+Real legacy files prove original legacy board coverage, independent same-name drafts, explicit predecessor and baseline choices, standing bases, and lifecycle evidence.
 The existing canonical subject engine owns compact changes.
 Original retention cases prove exact old-schema bytes, unresolved payloads, configured signing refusal, exact retries, source and plan guards, retained ancestry, and unchanged source HEAD and index.
 The signed case reopens original coverage after live files disappear and Git collects unreachable objects.
@@ -754,10 +754,10 @@ The following continuing owners replace their responsibilities.
 
 | Retired product path                                                                | Continuing owner                                                                                                                                                                   |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Legacy create, edit, branch, adopt, settle, rename, discard, move, and board claims | `packages/model/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                |
+| Legacy create, edit, branch, adopt, settle, rename, discard, move, and claims    | `packages/model/tests/runtime/operations/model-edit`, `proposals`, and `legacy-preview` cover canonical authoring, claims, reconciliation, migration, and recovery.                |
 | Automatic legacy read upgrades                                                      | `packages/model/tests/runtime/store/format/read-migration.test.ts` decodes exact original bytes without writes. Migration owners cover explicit cutover.                           |
 | Legacy CLI and HTTP authoring adapters                                              | `tests/system/models/model-flows.test.ts` covers canonical creation, flow edits, structural and behavioral exports, code checks, history commands, and retired-route refusal.      |
-| Board-owned embed tracking and name-based repair                                    | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.              |
+| Legacy embed tracking and name-based repair                                         | Canonical render recipes use the existing renderer metadata owner. The model surface owner covers SVG, PNG, and Git-discovered embeds. Fetch and cache owners remain.              |
 | Legacy locality and footprint lookup adapters                                       | Canonical history commands use real module bindings and Git commits through the existing analysis. Pure language and history owners remain.                                        |
 | Legacy board context and outside-write announcements                                | The canonical change-feed owner and generic server owners cover durable attribution, captured selection, focus, shared conversations, and local workhorse routing.                 |
 | Legacy side-by-side variant commands                                                | Canonical proposal adapters cover independent state reads. The parent's browser owners cover simultaneous displayed readings.                                                      |
@@ -774,13 +774,13 @@ The retired `@archboard/model/commands` entry has no live consumers.
 Canonical flow inputs use the existing model schema owner.
 Semantic content owners retain traffic, responsibility, label, comparison, and reconciliation coverage.
 `HistoricalRevisionSchema` remains under `@archboard/model/contract` for exact source evidence.
-The board interface narrows to 184 exports, and its ceiling drops to 184.
+The model package interface narrows to 184 exports, and its ceiling drops to 184.
 
 The repository navigator lists one canonical model per repository.
-It no longer contains folders, boards, variant rows, or a second architecture hierarchy.
+It no longer contains folders, legacy boards, variant rows, or a second architecture hierarchy.
 `apps/web/tests/ui/components/shell/navigator-repositories.test.tsx` retains repository identity, activity, the checkout list, failure recovery, and filter behavior.
 `canonical-model-agent-navigation.test.ts` owns keyboard opens, adjacent panes, active repository selection, and pane letters through the browser.
-The old `navigator-tree.test.tsx` retires with board hierarchy and variant expansion.
+The old `navigator-tree.test.tsx` retires with the legacy hierarchy and variant expansion.
 Its private React-prop inspection also retires because it tests implementation details.
 Canonical navigation, proposal, and walkthrough browser owners retain visible architecture and presentation behavior.
 
@@ -825,19 +825,19 @@ The existing group UI owner continues to cover shared chips and controls used by
 `canonical-model-attention.test.ts` replaces `semantic-board-exploring.test.ts`.
 It retains neighbor lighting, readable relationship labels at actual far zoom, and complete selected ink across shared routes.
 The canonical canvas reuses the retained viewer's camera commands and lighting rules.
-Board-card flights retire with board ownership.
+Flights between legacy boards retire with them.
 Canonical scope and gesture owners retain navigation and camera behavior.
 
 `workspace-address.test.ts` now uses canonical models and public proposal writes.
 It retains user history, agent replacement, stable pane identities, per-pane state choices, and checkout changes across two repositories.
 The repository navigator owner also asserts that a user open adds one history entry.
-The old missing-board fallback retires because `canonical-model-navigation.test.ts` keeps unavailable intent explicit.
+The old fallback for a missing legacy board retires because `canonical-model-navigation.test.ts` keeps unavailable intent explicit.
 
-The legacy board viewer, board claim, drill-address, and drill-boundary browser owners retire.
+The legacy board viewer, claim, drill-address, and drill-boundary browser owners retire.
 Canonical viewer, gesture, navigation, reference, structure, code, proposal, and agent-navigation owners cover their continuing behavior.
 Their contracts include exact pane reports, selected source actions, foreign destinations, durable updates, and subject claim take-back.
 `semantic-traffic.test.ts` also retains reduced-motion visibility without replacing the picture.
-Board ownership transfer remains explicitly unavailable for canonical models, so its old move workflow retires.
+Ownership transfer between models remains explicitly unavailable for canonical models, so its old move workflow retires.
 
 `canonical-model-legibility.test.ts` replaces the legacy status-legibility browser fixture.
 It retains computed light and dark colors, comparison ink, label paint order, kind icons, and simultaneous issue and selection marks.
@@ -860,16 +860,16 @@ The legacy locality endpoint adapter, query key, and retained-replay placeholder
 It mounts the actual canonical consumer and retains commit expansion, coupled-subject callbacks, evidence distinctions, and explicit retry.
 A new architecture revision hides the prior revision's evidence while the request runs.
 The old blanket refusal for historical variants retires because canonical history supports explicit states and checkpoints.
-The retained board harness no longer simulates a live locality route.
+The retained document harness no longer simulates a live locality route.
 
-The unused board take-back client and its shell/session state retire.
+The unused legacy take-back client and its shell/session state retire.
 The old pane-connection take-back race case retires with that endpoint.
 Generic connection and registration cases remain, while canonical subject-claim runtime and browser owners cover the shipped control.
 
 The repository catalogue owner now uses the summaries of the shared event stream and no model read.
 It covers explicit migration requirements, unreadable repository discovery, and model updates.
-Board release tracking, board-name lookup, activity-triggered content refreshes, and their obsolete assertions retire.
-Pane reports retain registration and stale-build handling without board-list invalidation callbacks.
+Legacy release tracking, legacy name lookup, activity-triggered content refreshes, and their obsolete assertions retire.
+Pane reports retain registration and stale-build handling without list invalidation callbacks.
 
 Retained-stage UI fixtures now supply captured documents and pictures through the existing reader providers.
 The DOM harness remains separate from those capture fixtures.

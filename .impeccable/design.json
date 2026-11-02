@@ -126,7 +126,7 @@
 			},
 			"nav": {
 				"displayName": "Nav",
-				"purpose": "The name of a board in the navigator."
+				"purpose": "The name of a model in the navigator."
 			},
 			"control": {
 				"displayName": "Control",
@@ -344,7 +344,7 @@
 			},
 			{
 				"name": "The Card Is a Window Rule",
-				"body": "A card that opens a board is a window onto it. The board opens when the camera flies into the card, and going back flies out of it. The board's picture sits inside the card, in the picture's own units, so one camera carries both and the board that opens stands where the board in the card stood. The shell adds no layer for the flight.",
+				"body": "A card that opens a picture is a window onto it. The picture opens when the camera flies into the card, and going back flies out of it. The picture's picture sits inside the card, in the picture's own units, so one camera carries both and the picture that opens stands where the picture in the card stood. The shell adds no layer for the flight.",
 				"section": "elevation"
 			},
 			{

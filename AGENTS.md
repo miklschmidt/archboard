@@ -91,7 +91,7 @@ Where things are written down:
   Use a new identity for a changed intent.
 - Keep continuing subject identities unchanged.
   `packages/model/src/shared/rules/ids.ts` is the only allocator of short local IDs.
-  Qualified namespaces preserve imported provenance, not board ownership.
+  Qualified namespaces preserve imported provenance, not ownership.
   Names, paths, and matching bindings never establish shared identity.
 - Retain exact checkpoints before sharing history or recording walkthroughs.
   Keep configured Git signing enabled for source commits and archive operations.

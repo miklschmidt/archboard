@@ -521,7 +521,7 @@ Going back out runs the flight the other way, and a flight that cannot happen be
 _Avoid_: drill-down, zoom transition, page transition, animation
 
 **Passage**:
-How a move between two boards looks when the camera has no card to fly through: the two boards travel as one, sideways to a board at the same depth, in to a deeper board and out to a shallower one.
+How a move between two pictures looks when the camera has no card to fly through: the two pictures travel as one, sideways to a picture at the same depth, in to a deeper picture and out to a shallower one.
 _Avoid_: page transition, slide, crossfade
 
 ### States and proposals

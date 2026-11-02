@@ -1,7 +1,7 @@
 # Work with a canonical model
 
 Use this path when the addressed vault contains an authored `model.json` manifest.
-Existing `.semantic.json` boards retain authority until explicit migration.
+Existing `.semantic.json` legacy boards retain authority until explicit migration.
 The canonical reader refuses a mixed vault.
 
 Run `archboard model read -C <directory>` to inspect root modules and relationships.
@@ -11,7 +11,7 @@ Read `roots` in order, then find each identity in `modules`.
 
 Run `archboard model read '<qualified-id>' -C <directory>` to select one module.
 A qualified identity uses `model[/original-board]#local-id`.
-The optional original board records imported provenance.
+The optional original legacy board records imported provenance.
 Each segment follows the existing one-to-eight-character ID authority.
 Current and former names work only when exactly one module matches.
 If a name is ambiguous, use one of the returned matching identities.
@@ -446,7 +446,7 @@ The open module shows entry points and callers from the complete architecture.
 A connection to the module itself never names an invented child.
 
 A missing scope or checkpoint stays unavailable until the reader changes the address or restores the missing history.
-Navigation never copies modules, creates a board, or changes architecture files.
+Navigation never copies modules, creates a second model, or changes architecture files.
 
 ## Author independent flows
 
@@ -623,7 +623,7 @@ The sequence draws ordered participants and messages.
 The flowchart draws control steps and their branches.
 Both readings use the existing renderer and include the complete selected flow.
 Structural scope and relationship filters cannot remove its participants or messages.
-These commands do not require a board or named view.
+These commands do not require a named view.
 The browser selects these grammars through its existing diagram and flow controls.
 
 ## Create and compare compact proposals
@@ -786,7 +786,7 @@ Use `browser panes` to read the canonical `architecture` report and `tabSessionI
 If the report is absent, ask the person to open the canonical reading before resolving a pointing request.
 Use its actual `architecture.vault`, including after navigation to another repository.
 Keep `reading.referenceSubject` separate from the temporary pointer selection.
-Do not infer canonical architecture from the pane's legacy board field.
+Do not infer canonical architecture from the pane's `paneKey` field.
 
 Use `model explain` to request a new action from the existing local workhorse.
 Use `-C` with the directory that holds the reported vault.

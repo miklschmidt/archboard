@@ -80,7 +80,7 @@ of your shell.
    known checkout, and the check reads only the chosen one, or the one that
    holds the vault for its own repository, so the servers of step 5 take effect
    only if this directory is chosen or holds the vault. Say so to the user. Run `archboard repo use <dir>` only when the user asks, because it
-   changes what every board on this machine reads.
+   changes what every model on this machine reads.
 5. In the repository, run `archboard repo language-server <language> <command>`.
    Write one `--arg=<argument>` for each argument. The language is `python`,
    `csharp`, `swift`, `c` or `rust`. The language `c` covers C, C++ and Objective-C.

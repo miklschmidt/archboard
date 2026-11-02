@@ -289,7 +289,7 @@ The plan must preserve independent drafts, exact predecessors, historical covera
 Matching names and bindings do not authorize identity merges.
 The installer retains exact originals before removing their live copies.
 Opening a model or preview never performs automatic cutover.
-Retired semantic-board commands cannot edit an unmigrated vault.
+Retired legacy board commands cannot edit an unmigrated vault.
 
 ## Retain and share history
 
@@ -309,7 +309,7 @@ Linked worktrees share archive objects and keep separate current architecture.
 An untracked vault uses an explicitly initialized private bare archive in machine state.
 Back up that archive before removing machine state or moving its vault.
 Use `model export` and `model import` for complete portable transfer.
-Canonical models have no board-move or cross-model ownership-transfer operation.
+Canonical models have no move or ownership-transfer operation between models.
 
 If an operation returns `RECOVERY_REQUIRED`, run `model recover` in its original checkout.
 Preserve foreign bytes and the journal when recovery refuses.

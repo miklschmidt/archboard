@@ -3,7 +3,7 @@
 # installing 506MB again, and a trailing slash does not match a symlink.
 node_modules
 
-# Board claims are local runtime state, not authored board content.
+# Claims are local runtime state, not authored model content.
 .archboard/vault/.archboard/locks/
 
 # Build artifacts. Only the frontend is built: bun runs the server and the CLI
@@ -18,13 +18,13 @@ docs/design/generated/cli-command-audit.md
 docs/design/generated/command-contract-proof.json
 docs/design/generated/command-contract-proof.md
 
-# Rendered semantic diagrams. The authored source is the board JSON under
+# Rendered semantic diagrams. The authored source is the model JSON under
 # docs/design/ and the builder that draws it; the pictures render on demand, at
 # any depth — the pipeline example draws one file per view per variant into its
 # own directory.
 docs/design/generated/**/*.svg
 docs/design/generated/*.svg
-# Bitmaps `semantic rasterize` draws from the same boards are derived too.
+# Bitmaps `semantic rasterize` draws from the same models are derived too.
 docs/design/generated/**/*.png
 docs/design/generated/*.png
 
@@ -80,7 +80,7 @@ skills/archboard/references/generated/
 /legacy/
 
 # Skill evaluation output (TASK-209): fetched Flask checkouts, run traces,
-# renders, boards, verdicts and reports. The canonical inputs are tracked under
+# renders, documents, verdicts and reports. The canonical inputs are tracked under
 # evals; everything here reproduces from them with
 # `bun run eval:skill`.
 .skill-evals/
