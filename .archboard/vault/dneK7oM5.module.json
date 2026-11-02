@@ -12,19 +12,6 @@
   "parent": "vKEsyHFk/yejBBUFY#zWQG6LJZ",
   "outgoing": [
     {
-      "order": 15000,
-      "kind": "call",
-      "label": "the live panes' inventory",
-      "emphasis": "muted",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/model-catalog/queries.ts",
-        "symbol": "fetchPaneInventory"
-      },
-      "id": "vKEsyHFk/yejBBUFY#fbpFPAWn",
-      "to": "vKEsyHFk#ERy2jAwu"
-    },
-    {
       "order": 51000,
       "kind": "call",
       "label": "read the repositories; choose a checkout",

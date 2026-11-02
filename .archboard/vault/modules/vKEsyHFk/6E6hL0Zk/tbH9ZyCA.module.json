@@ -52,13 +52,13 @@
     {
       "order": 18000,
       "kind": "event",
-      "label": "model and agent news",
+      "label": "what the server addresses to a pane",
       "description": "model and agent news",
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/panes/registry.ts",
-        "symbol": "sendToVaultClients"
+        "symbol": "sendToPane"
       },
       "id": "vKEsyHFk/6E6hL0Zk#VO9ngl7m",
       "to": "vKEsyHFk#iORmkZrI"
