@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T19:42:00Z'
+updated_date: '2026-11-02T20:06:00Z'
 labels:
   - reader
   - design
@@ -37,6 +37,8 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #13 A consumer without Nix can follow INSTALL.md to the toolchain that builds the product
 - [x] #14 The project requires Bun 1.4.4 and a patched Node.js on every route
 - [ ] #15 A module with no parts outside the open one stands as a card, not a door
+- [ ] #16 A reading falls to the Graphviz placement only when no dense room can draw it (Canonical architecture, 1VHRyajb)
+- [ ] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
 <!-- AC:END -->
 
 ## Implementation Notes

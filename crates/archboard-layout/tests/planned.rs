@@ -498,3 +498,15 @@ fn provisional_routes_cannot_reassign_declared_decision_points() {
         assert!((first["y"].as_f64().unwrap() - card["y"].as_f64().unwrap() - 100.0).abs() < 0.05);
     }
 }
+
+#[test]
+fn a_reading_its_first_rooms_refuse_stays_dense_before_any_graphviz_placement() {
+    for graph in [
+        include_str!("fixtures/refused-dense.json"),
+        include_str!("fixtures/refused-dense-frames.json"),
+    ] {
+        let mut host = Counting(0);
+        lay_out_board(graph, &mut host).expect("a planned drawing");
+        assert_eq!(host.0, 0);
+    }
+}
