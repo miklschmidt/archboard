@@ -65,6 +65,7 @@ const FlowCollectionSchema = z.strictObject({
 	schemaVersion: z.literal(1),
 	id: SemanticIdSchema,
 	name: DisplayNameSchema,
+	formerNames: z.array(DisplayNameSchema).optional(),
 	flows: z.array(ModelFlowSchema),
 });
 

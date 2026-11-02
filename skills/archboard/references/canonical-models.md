@@ -485,6 +485,7 @@ An intent that creates or changes a flow and leaves it with no summary refuses w
 The diagnostic names each flow. Add `edit-flow` with `set.summary` for it to the same intent.
 A flow that an intent leaves alone keeps its bytes, and `archboard check` reports it as `FLOW_SUMMARY_MISSING`.
 `edit-collection` changes a collection name without changing its identity or file.
+Its former names still select the collection when they match exactly one collection.
 `remove-flow` and `remove-collection` remove their remaining subjects.
 A flow transferred out of a removed collection survives in its destination.
 

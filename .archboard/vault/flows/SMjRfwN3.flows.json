@@ -2,5 +2,9 @@
   "schemaVersion": 1,
   "id": "SMjRfwN3",
   "name": "Picture rasterizer",
+  "formerNames": [
+    "Picture rasterizer",
+    "Board rasterizer"
+  ],
   "flows": []
 }

@@ -29,7 +29,9 @@ function conflict(message: string, subjects: string[] = []): never {
 function collectionOf(collections: Collection[], selector: string): Collection {
 	const exact = collections.find((value) => value.id === selector);
 	if (exact) return exact;
-	const matches = collections.filter((value) => value.name === selector);
+	const matches = collections.filter(
+		(value) => value.name === selector || value.formerNames?.includes(selector),
+	);
 	if (matches.length !== 1) conflict("Select one existing collection by identity or unique name.");
 	return matches[0]!;
 }

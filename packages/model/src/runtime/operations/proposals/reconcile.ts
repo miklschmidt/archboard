@@ -185,7 +185,7 @@ function reconcileModels(
 			mine: new Map(mine.collections.map((c) => [c.id, c])),
 			theirs: new Map(theirs.collections.map((c) => [c.id, c])),
 		},
-		["name"],
+		["name", "formerNames"],
 		"collection",
 	);
 	const narratives = reconcileNarratives(base, mine, theirs);

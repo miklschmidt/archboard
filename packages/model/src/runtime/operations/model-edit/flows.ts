@@ -124,6 +124,22 @@ function includeCollection(
 		includeAffected(state.entries, state.flows, flow.id, state.subjects);
 }
 /**
+ * Rename a continuing collection and retain its former selectors.
+ * @param state The complete candidate.
+ * @param change The collection name change.
+ */
+function editCollection(
+	state: FlowCandidate,
+	change: Extract<Change, { type: "edit-collection" }>,
+) {
+	const collection = collectionOf(state.collections, change.collection);
+	once(state, `collection:${collection.id}`);
+	includeCollection(state, collection);
+	if (collection.name !== change.name)
+		collection.formerNames = [...new Set([...(collection.formerNames ?? []), collection.name])];
+	collection.name = change.name;
+}
+/**
  * Apply collection and flow metadata changes, with removals deferred until transfers settle.
  * @param state The complete candidate.
  * @param change One schema-checked flow statement.
@@ -141,10 +157,7 @@ function changeDefinitions(state: FlowCandidate, change: Change): void {
 			break;
 		}
 		case "edit-collection": {
-			const collection = collectionOf(state.collections, change.collection);
-			once(state, `collection:${collection.id}`);
-			includeCollection(state, collection);
-			collection.name = change.name;
+			editCollection(state, change);
 			break;
 		}
 		case "remove-collection": {
@@ -252,7 +265,11 @@ function collectionScopes(collections: ArchitectureModel["collections"]) {
 	return new Map(
 		collections.map((collection) => [
 			collection.id,
-			{ name: collection.name, flows: collection.flows.map((flow) => flow.id) },
+			{
+				name: collection.name,
+				formerNames: collection.formerNames,
+				flows: collection.flows.map((flow) => flow.id),
+			},
 		]),
 	);
 }

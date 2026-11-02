@@ -55,7 +55,7 @@ function collectionStanding(
 	before: Subject | undefined,
 	after: Subject | undefined,
 ): Comparison {
-	const fields = fieldChanges(before, after, ["name"]);
+	const fields = fieldChanges(before, after, ["name", "formerNames"]);
 	const kind =
 		before === undefined
 			? "added"
