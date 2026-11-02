@@ -100,7 +100,7 @@ pub(crate) fn gradient_id(id: GradientId) -> String {
         GradientId::FlowGold => "ab-flow-gold".to_owned(),
         GradientId::LegendPulse => "export-legend-pulse".to_owned(),
         GradientId::Door { color } => {
-            format!("ab-door-{}", color.map_or("primary", |color| word(&color)))
+            format!("ab-door-{}", color.map_or("neutral", |color| word(&color)))
         }
     }
 }

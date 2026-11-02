@@ -26,6 +26,9 @@ const LIGHT_EDGE: (f64, f64) = (0.46, 0.17);
 const LIGHT_INK: (f64, f64) = (0.985, 0.018);
 const LIGHT_RULE: (f64, f64) = (0.82, 0.11);
 
+/// How far down a neutral face falls, in OKLCH lightness and chroma.
+const NEUTRAL_BOTTOM: (f64, f64) = (-0.05, 0.0);
+
 /// The colours of a finish.
 pub(super) struct Finish {
     pub top: Colour,
@@ -55,15 +58,16 @@ fn tone(bright: &Colour, (lightness, cap): (f64, f64)) -> Colour {
     }
 }
 
-/// The finish of one colour. With no colour it is the primary action's own.
+/// The finish of one colour. With no colour it stands in a card's own tone: such
+/// a part claims no kin, and gold stays with what is chosen.
 pub(super) fn finish_of(color: Option<PaletteColor>) -> Finish {
     let Some(color) = color else {
         return Finish {
-            top: Token::PrimaryTop.into(),
-            bottom: Token::PrimaryBottom.into(),
-            rim: Token::PrimaryEdge.into(),
-            ink: Token::PrimaryForeground.into(),
-            rule: Token::PrimaryEdge.into(),
+            top: Token::SlabFace.into(),
+            bottom: step(&Token::SlabFace.into(), NEUTRAL_BOTTOM),
+            rim: Token::SlabEdge.into(),
+            ink: Token::DiagramText.into(),
+            rule: Token::Border.into(),
         };
     };
     let bright = Colour::Bright { color };
@@ -100,4 +104,17 @@ pub(super) fn finish_definitions(
 ) -> Vec<Definition> {
     let colours: BTreeSet<Option<PaletteColor>> = colours.collect();
     colours.into_iter().map(gradient).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::finish_of;
+    use crate::scene::{Colour, Token};
+
+    #[test]
+    fn a_door_with_no_colour_stands_in_a_cards_tone_and_takes_no_gold() {
+        let finish = finish_of(None);
+        assert_eq!(finish.top, Colour::from(Token::SlabFace));
+        assert_eq!(finish.ink, Colour::from(Token::DiagramText));
+    }
 }

@@ -201,6 +201,10 @@ every role and changes the values. The file theme.css holds both themes.
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
+**The One Ring Rule.** The gold ring goes round a card, a door or a frame that is chosen. A line wears a faint gold bed under its own ink, and only when it is the one line chosen. Among several lines the light says which stand, and each keeps its own ink.
+
+**The Clear Tip Rule.** A reader rests on a part to see what it touches, so a tip never covers the part or what lights round it. A tip stands in a top corner of the pane, across from the pointer, and takes no pointer.
+
 ## Typography
 
 **Display Font:** Big Shoulders Display (served as Archboard Display).
@@ -301,8 +305,10 @@ A group shows on each of its cards as a tag at the top right, the same bright
 piece as in the Legend, and the cards of a group stand together. No frame is
 drawn round a group. A card's face and front edge stay neutral in every group.
 A door is a bright button with the finish of a primary action, in the color of
-its group, or of its kind when it has no group, in both themes. Its arrow
-points up, sideways or down by where its module lies in the tree.
+its group, or of its kind when it has no group, in both themes. A door with
+neither color stands in a card's tone and takes no gold, so two doors that share
+a color share something real. Its arrow points up, sideways or down by where its
+module lies in the tree.
 The code path stands at a card's foot in Maple Mono NL at 10.5 units, its
 folders dimmed and its file bright, as far from the foot as the name stands from
 the top. Below a scale of 0.857 a picture draws its far view: one fixed type scale

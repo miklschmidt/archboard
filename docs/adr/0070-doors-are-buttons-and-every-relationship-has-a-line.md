@@ -124,3 +124,10 @@ module ends on that module's card, which stands for the part.
 The repair took the lines drawn from 1,794 to 1,807 and the total area from
 187.8 M to 173.7 M. The readings that pass the fit gate went from 107 of 115 to
 104 of 112, and the same 8 readings miss.
+
+## Amendment of 2026-11-02: a door with no color takes no gold
+
+A door whose group and kind name no color used to take the gold of a primary
+action. Gold marks what is chosen, so a reading of such doors looked chosen
+everywhere. A door with no color now stands in a card's tone. A color on a door
+then says that the door belongs to a group or a colored kind.
