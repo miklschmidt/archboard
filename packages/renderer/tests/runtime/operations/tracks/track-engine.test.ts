@@ -381,14 +381,15 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 // and a wrap into two rows and a narrower one into three both fit the pane
 // at full scale. Taking the smaller page stepped the fan down three rows as
 // a staircase, where the wrap into two rows reads worse than the fan in one
-// row with its group packed, and that is kept.
+// row with its group packed, and that is kept. A card widens for its tags, so
+// this group's name stays short enough for the two rows to fit the pane.
 test("a fan never steps down three rows where two would do", async () => {
 	const content = orderedFixture(variantReconciliation);
 	const policy = SemanticPolicySchema.parse({
 		levels: ["service"],
 		nodeKinds: { function: { name: "Function", icon: "RiCodeLine" } },
 		relationshipKinds: { call: { name: "Call", dash: "solid", arrowhead: "filled" } },
-		groups: { writes: { name: "Board writes", color: "orange" } },
+		groups: { writes: { name: "Writes", color: "orange" } },
 	});
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const targets = content.edges.map(({ to }) => drawing.atlas.nodes[to]!);
