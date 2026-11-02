@@ -42,6 +42,12 @@ const BrowserRequestSchema = z.discriminatedUnion("action", [
 
 type BrowserRequest = z.infer<typeof BrowserRequestSchema>;
 
+/** Every gateway action has an ingress arm; an unlisted one fails to compile. */
+type AssertNoUnhandledAction<Action extends never> = Action;
+type BrowserRequestActionsAreExhaustive = AssertNoUnhandledAction<
+	Exclude<BrowserGatewayAction, BrowserRequest["action"]>
+>;
+
 interface ServerCodexBrowserSocketSend {
 	readonly send: (message: unknown) => Promise<void>;
 }
@@ -523,6 +529,8 @@ function createServerCodexBrowserSocketOwner(
 }
 
 export {
+	type BrowserRequestActionsAreExhaustive,
+	type ServerCodexBrowserSocketSend,
 	type ServerCodexBrowserWebSocket,
 	createServerCodexBrowserSocketSend,
 	createServerCodexBrowserSocketOwner,

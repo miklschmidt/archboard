@@ -171,7 +171,7 @@ export type BrowserActionResult = void | {
 	readonly realtimeSessionHandle?: string;
 };
 
-interface BrowserAccountActions {
+export interface BrowserAccountActions {
 	readonly read: (input: {
 		readonly browserId: BrowserConnectionId;
 		readonly chatId: string;
