@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T20:52:00Z'
+updated_date: '2026-11-02T23:39:00Z'
 labels:
   - reader
   - design
@@ -39,6 +39,8 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #15 A module with no parts outside the open one stands as a card, not a door
 - [x] #16 A reading falls to the Graphviz placement only when no dense room can draw it (Canonical architecture, 1VHRyajb)
 - [x] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
+- [ ] #18 A well's side walls are real soft shadows on its floor, with no flat band, so the depth reads from one viewpoint
+- [ ] #19 A well's shadows stay gentle on the light ground, and its top wall stands a little brighter than its floor on the dark ground
 <!-- AC:END -->
 
 ## Implementation Notes

@@ -79,6 +79,10 @@ pub enum GradientId {
     SoftSheen,
     /// The inner shadow down a frame's well from its top edge.
     WellShade,
+    /// The inner shadow across a frame's well from its left side.
+    WellLeftShade,
+    /// The inner shadow across a frame's well from its right side.
+    WellRightShade,
     /// A port's well.
     PortWell,
     /// The fade down a port's slot.

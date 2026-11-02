@@ -21,11 +21,23 @@ const SPILL: f64 = 0.5;
 const FALLOFF: [f64; 5] = [1.0, 0.82, 0.52, 0.16, 0.0];
 
 /// The shadow's ink on each ground, lighter on the light ground.
-fn shadow_ink(palette: &Palette, share: f64) -> Colour {
+pub(super) fn shadow_ink(palette: &Palette, share: f64) -> Colour {
     light_dark(
         &translucent(&palette.slab_shadow, 0.65 * share),
         &translucent(&palette.slab_shadow, share),
     )
+}
+
+/// Stops that fall off as a shadow does, over a share of a gradient's line.
+pub(super) fn falling(ink: &Colour, share: f64) -> Vec<Stop> {
+    let last = (FALLOFF.len() - 1) as f64;
+    (FALLOFF.iter().enumerate())
+        .map(|(index, opacity)| Stop {
+            offset: Some(share * index as f64 / last),
+            colour: ink.clone(),
+            opacity: Some(*opacity),
+        })
+        .collect()
 }
 
 /// How many layers the shadow of a shape that is not a box is stacked of.
@@ -125,17 +137,7 @@ pub(super) fn smooth_shadow(rect: Rect, radius: f64, reach: f64) -> Items {
 /// Shared side, corner and centre paints for all shadow sizes.
 pub(super) fn shadow_definitions(palette: &Palette) -> Vec<Definition> {
     let ink = shadow_ink(palette, 1.0);
-    let stops = || {
-        FALLOFF
-            .iter()
-            .enumerate()
-            .map(|(index, opacity)| Stop {
-                offset: Some(index as f64 / (FALLOFF.len() - 1) as f64),
-                colour: ink.clone(),
-                opacity: Some(*opacity),
-            })
-            .collect::<Vec<_>>()
-    };
+    let stops = || falling(&ink, 1.0);
     let corners = [
         (0, 0, 1.0, 1.0),
         (0, 2, 0.0, 1.0),

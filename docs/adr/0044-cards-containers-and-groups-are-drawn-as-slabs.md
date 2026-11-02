@@ -456,3 +456,15 @@ apart from both the ground and a well's floor, and a stronger top highlight in b
 of a slab: walls and a lip round its floor, under the edge tab of 2026-10-31. The line round the well replaces the crease. On the
 light theme a door and a tag stand at one deeper lightness and carry white ink tinted with their hue. A mixed line is a
 double line, two rails with a clear core, which has no dash to drift out of step.
+
+## Amendment of 2026-11-03: a well shows one wall
+
+A well is seen from one viewpoint. A reader sees it from below its foot, which is why its top wall shows. That
+viewpoint shows no side wall, so the two 6-unit bands of rule 3 and of the amendment of 2026-11-01 broke the depth, and
+the owner asked for real shadows in their place. The floor now reaches both sides of the box. The top wall is the rim
+less itself moved down, so it thins to nothing round both top corners. Each side leaves a soft shadow of 12 units on the
+floor, weaker than the inner shadow of 14 units from the top edge. All three use the falloff of a card's shadow. They
+are three gradient bands, with no filter, blur or mask: a blur of an inset box is the product of its two falloffs, and
+that is what two translucent bands give where they overlap. They take the lighter ink of a card's shadow on the light
+ground. On the dark ground the top wall goes toward the lit lip, a little brighter than the floor, because a shade of
+the floor was lost in the shadow under it.
