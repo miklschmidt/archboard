@@ -95,3 +95,23 @@ fn blocked_midpoints_use_the_nearest_clear_private_spot_without_rerouting() {
     assert_eq!(label.y, 488.0);
     assert_eq!(shape.routes[0].points, path);
 }
+
+#[test]
+fn words_never_stand_across_another_stretch_of_their_own_line() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 900.0),
+        (140.0, 900.0),
+        (140.0, 300.0),
+    ];
+    let shape = drawing(&[("ab", route)]);
+    let path: Vec<Point> = route.iter().map(|&(x, y)| Point { x, y }).collect();
+    let edge = model.edge_index["ab"];
+    let (label, _) = Slots::new(&model, &shape)
+        .slot(&model, edge, &path)
+        .expect("words have a place on the line");
+    // Both legs run side by side below 300, closer than the words are wide.
+    assert!(label.y + label.height < 300.0);
+}

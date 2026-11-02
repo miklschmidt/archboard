@@ -1,7 +1,9 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
+mod own;
 mod trunk;
 
+use own::Own;
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -213,6 +215,14 @@ fn clear(
         && labels.clear(at, &shape.labels)
 }
 
+/// Whether a box and a stretch of line, which has no width, meet.
+fn meets(area: Rect, stretch: Rect) -> bool {
+    stretch.x <= area.x + area.width
+        && stretch.x + stretch.width >= area.x
+        && stretch.y <= area.y + area.height
+        && stretch.y + stretch.height >= area.y
+}
+
 fn at(span: Span, position: f64, size: Rect) -> Rect {
     let (x, y) = if span.a.y == span.b.y {
         (position, span.a.y)
@@ -265,9 +275,10 @@ fn slot_index(
         width: label.width.unwrap_or(0.0),
         height: label.height.unwrap_or(0.0),
     };
+    let own = Own { edge, path };
     if let Some(&part_first) = shape.trunk.get(&edge) {
         let spans = index.private(edge, &from_part(path, part_first));
-        return nearest(&spans, size, shape, edge, index, labels).map(|at| (at, false));
+        return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));
     }
     let mut spans = index.private(edge, path);
     spans.sort_by(|a, b| {
@@ -275,10 +286,10 @@ fn slot_index(
             .total_cmp(&length(&[a.a, a.b]))
             .then(a.before.total_cmp(&b.before))
     });
-    let midway = midway(&spans, size, shape, edge, index, labels);
+    let midway = midway(&spans, size, shape, own, index, labels);
     midway
         .map(|at| (at, false))
-        .or_else(|| nearest(&spans, size, shape, edge, index, labels).map(|at| (at, true)))
+        .or_else(|| nearest(&spans, size, shape, own, index, labels).map(|at| (at, true)))
 }
 
 /// The middle of the longest run that holds the words.
@@ -286,7 +297,7 @@ fn midway(
     spans: &[Span],
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
@@ -299,8 +310,11 @@ fn midway(
             f64::midpoint(span.a.y, span.b.y)
         };
         let label = at(span, position, size);
-        (length(&[span.a, span.b]) >= required + 32.0 && clear(shape, edge, label, index, labels))
-            .then_some(label)
+        let kept = inflate(label, 12.01);
+        (length(&[span.a, span.b]) >= required + 32.0
+            && own.others(span).all(|stretch| !meets(kept, stretch))
+            && clear(shape, own.edge, label, index, labels))
+        .then_some(label)
     })
 }
 
@@ -308,7 +322,7 @@ fn nearest(
     spans: &[Span],
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<Rect> {
@@ -318,7 +332,7 @@ fn nearest(
         if best.is_some_and(|(distance, _)| span.before > distance) {
             continue;
         }
-        for spot in spots_for(span, size, shape, edge, index, labels) {
+        for spot in spots_for(span, size, shape, own, index, labels) {
             if best.is_none_or(|(distance, _)| spot.0.total_cmp(&distance).is_lt()) {
                 best = Some(spot);
             }
@@ -331,7 +345,7 @@ fn spots_for(
     span: Span,
     size: Rect,
     shape: &Shape,
-    edge: usize,
+    own: Own<'_>,
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Vec<(f64, Rect)> {
@@ -360,12 +374,15 @@ fn spots_for(
     for &r in shape.labels.values() {
         protect(inflate(r, 8.02));
     }
+    for stretch in own.others(span) {
+        protect(inflate(stretch, 12.02));
+    }
     let window = search_window(a, b, across, across_half, horizontal);
-    index.touching(edge, window, |r| protect(inflate(r, 12.02)));
+    index.touching(own.edge, window, |r| protect(inflate(r, 12.02)));
     spots.extend(free.into_iter().filter_map(|(lo, hi)| {
         let position = if a < b { lo } else { hi };
         let label = at(span, position, size);
-        clear(shape, edge, label, index, labels)
+        clear(shape, own.edge, label, index, labels)
             .then_some((span.before + (position - a).abs(), label))
     }));
     spots
