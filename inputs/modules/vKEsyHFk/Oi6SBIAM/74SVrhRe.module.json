@@ -25,19 +25,6 @@
   ],
   "outgoing": [
     {
-      "order": 86000,
-      "kind": "call",
-      "label": "address the exact pane socket",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/presentation.ts",
-        "symbol": "sendBoardlessToPane"
-      },
-      "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
-      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
-    },
-    {
       "order": 37000,
       "kind": "dependency",
       "label": "narrated walkthroughs",
@@ -49,6 +36,19 @@
       },
       "id": "vKEsyHFk/vKEsyHFk#vBJQnNd2",
       "to": "vKEsyHFk#6RJ25ejV"
+    },
+    {
+      "order": 86000,
+      "kind": "call",
+      "label": "address the exact pane socket",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/presentation.ts",
+        "symbol": "sendBoardlessToPane"
+      },
+      "id": "vKEsyHFk/Oi6SBIAM#cIfMjqFT",
+      "to": "vKEsyHFk/Oi6SBIAM#BL7LFThw"
     }
   ]
 }

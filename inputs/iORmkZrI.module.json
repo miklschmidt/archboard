@@ -38,6 +38,19 @@
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
     },
     {
+      "order": 20000,
+      "kind": "event",
+      "label": "agent commands and snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+        "symbol": "send"
+      },
+      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
+    },
+    {
       "order": 32000,
       "kind": "call",
       "label": "the id each of this tab's sockets carries",
@@ -89,19 +102,6 @@
       },
       "id": "vKEsyHFk#2UrR4Yp6",
       "to": "vKEsyHFk#ERy2jAwu"
-    },
-    {
-      "order": 20000,
-      "kind": "event",
-      "label": "agent commands and snapshots",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
-        "symbol": "send"
-      },
-      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     }
   ]
 }

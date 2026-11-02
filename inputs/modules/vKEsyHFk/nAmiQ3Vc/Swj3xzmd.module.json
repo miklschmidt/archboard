@@ -1,7 +1,7 @@
 {
   "order": 5003,
   "name": "Command catalogue",
-  "kind": "service",
+  "kind": "module",
   "responsibility": "The table of every command, and the caller that hands this module its argv",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

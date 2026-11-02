@@ -3,6 +3,9 @@
   "name": "server-requests",
   "kind": "package",
   "responsibility": "Every browser call to the server, each naming its vault",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-requests"
@@ -15,8 +18,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }

@@ -1,7 +1,7 @@
 {
   "order": 11003,
   "name": "Agent CLI",
-  "kind": "service",
+  "kind": "app",
   "responsibility": "Authors named boards: one short-lived process per command, run by the source of the archboard checkout it stands in, writing no board itself",
   "description": "Every board operation reaches the Archboard server over HTTP and names the vault the command found, from -C or the checkout it runs in. The first command in a checkout or untracked vault that this machine does not know registers it. Three commands draw for themselves in a headless browser here: rasterize photographs the SVG the server made; record keeps a narrated talk from the server's own page, then draws it frame by frame and has ffmpeg encode the video; replay draws a kept talk again. repo add, repo use, repo forget and repo language-server write this machine's list of checkouts itself. With --clipboard, rasterize publishes PNG and self-contained HTML to the local desktop through a native clipboard helper.",
   "binding": {
