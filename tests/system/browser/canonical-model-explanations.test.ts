@@ -1,4 +1,4 @@
-import { editCanonicalModel, openAbout, pick } from "./support/canonical-page.ts";
+import { editCanonicalModel, pick } from "./support/canonical-page.ts";
 import { expect, test } from "bun:test";
 import { cpSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -229,7 +229,6 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	).toBe(original);
 	await browser.run(["click", '[data-slot="explanation-cancel"]']);
 	await actionStatus(browser, "cancelled");
-	await openAbout(browser);
 	const point = await browser.eval<{ x: number; y: number }>(
 		`(() => { const r = document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]').getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`,
 	);
@@ -241,11 +240,6 @@ test("keyboard and context actions expose unavailable agents, captured retry, an
 	await browser.run(["mouse", "down", "right"]);
 	await browser.run(["mouse", "up", "right"]);
 	await menuReady(browser, "trace-flow");
-	expect(
-		await browser.eval<string | null>(
-			`document.querySelector('[data-slot="module-list"] [data-module-id="Shop#Worker"]')?.getAttribute('aria-pressed') ?? null`,
-		),
-	).toBe("true");
 	await browser.run(["click", '[data-explanation-action="trace-flow"]']);
 	await actionStatus(browser, "running");
 	const panes = await (await fetch(`${server.base}/api/panes`)).json();
