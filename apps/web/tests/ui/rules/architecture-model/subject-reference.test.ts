@@ -36,9 +36,11 @@ function referenceTo(...ids: readonly string[]): readonly string[] {
 }
 
 test("a relationship's reference names its identity, ends, kind and words, then the address", () => {
-	const name = (id: string) => SAID.modules.find((module) => module.id === id)?.name;
+	const [from, to] = ["Shop#Handler", "Shop#Queue"].map(
+		(id) => SAID.modules.find((module) => module.id === id)?.name,
+	);
 	expect(referenceTo("said")).toEqual([
-		`Relationship said: ${name("Shop#Handler")} → ${name("Shop#Queue")}, call, "enqueue the order"`,
+		`Relationship said: ${from} → ${to}, call, "enqueue the order"`,
 		ADDRESS,
 	]);
 });
