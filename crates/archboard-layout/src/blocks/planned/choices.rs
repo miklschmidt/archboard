@@ -97,9 +97,19 @@ fn select<'a>(
     let slots = super::route_labels::Slots::new(model, shape);
     let probe = super::channel::Probe::new(model, topology, edge, shape, bounds);
     let limit = if model.edges.len() > 64 { 64 } else { 128 };
-    paths
-        .into_iter()
-        .filter_map(move |points| pool.keep(model, edge, &slots, &probe, points))
+    // A route that keeps its words off its own other stretches comes first, whatever its rank.
+    let passes: &[bool] = if model.edges[edge].label().is_some() {
+        &[false, true]
+    } else {
+        &[false]
+    };
+    passes
+        .iter()
+        .flat_map(move |&beside| paths.clone().into_iter().map(move |one| (beside, one)))
+        .filter_map(move |(beside, points)| {
+            let words = |path: &[Point]| label_for(model, edge, path, &slots, beside);
+            pool.keep(model, edge, words, &probe, points)
+        })
         .take(limit)
 }
 
@@ -113,14 +123,14 @@ impl Pool {
         &mut self,
         model: &Model<'_>,
         edge: usize,
-        slots: &super::route_labels::Slots<'_>,
+        words: impl Fn(&[Point]) -> Result<Option<Rect>, ()>,
         probe: &super::channel::Probe<'_, '_>,
         points: Vec<Point>,
     ) -> Option<PlacedLine> {
         if probe.refusal(&points).is_some() {
             return None;
         }
-        let label = label_for(model, edge, &points, slots).ok()?;
+        let label = words(&points).ok()?;
         let longest = points
             .windows(2)
             .max_by(|a, b| length(a).total_cmp(&length(b)))
@@ -297,14 +307,17 @@ fn label_for(
     edge: usize,
     points: &[Point],
     slots: &super::route_labels::Slots<'_>,
+    beside: bool,
 ) -> Result<Option<Rect>, ()> {
     if model.edges[edge].label().is_none() {
         return Ok(None);
     }
-    slots
-        .slot(model, edge, points)
-        .map(|(label, _)| Some(label))
-        .ok_or(())
+    let spot = if beside {
+        slots.any_slot(model, edge, points)
+    } else {
+        slots.slot(model, edge, points)
+    };
+    spot.map(|(label, _)| Some(label)).ok_or(())
 }
 
 fn shifted(guide: &[Point], index: usize, horizontal: bool, offset: f64) -> Vec<Point> {

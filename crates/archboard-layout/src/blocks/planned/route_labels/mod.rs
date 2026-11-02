@@ -3,7 +3,7 @@
 mod own;
 mod trunk;
 
-use own::Own;
+use own::{Own, keeps, meets};
 pub(super) use trunk::{branches, from_part, seat};
 
 use super::{
@@ -215,14 +215,6 @@ fn clear(
         && labels.clear(at, &shape.labels)
 }
 
-/// Whether a box and a stretch of line, which has no width, meet.
-fn meets(area: Rect, stretch: Rect) -> bool {
-    stretch.x <= area.x + area.width
-        && stretch.x + stretch.width >= area.x
-        && stretch.y <= area.y + area.height
-        && stretch.y + stretch.height >= area.y
-}
-
 fn at(span: Span, position: f64, size: Rect) -> Rect {
     let (x, y) = if span.a.y == span.b.y {
         (position, span.a.y)
@@ -256,10 +248,22 @@ impl<'a> Slots<'a> {
         edge: usize,
         path: &[Point],
     ) -> Option<(Rect, bool)> {
+        let own = Own { edge, path };
+        spot_on(model, own, path, self.shape, &self.strokes, &self.labels)
+    }
+    /// A spot that may stand beside the route's other stretches, for a route with no better.
+    pub(super) fn any_slot(
+        &self,
+        model: &Model<'_>,
+        edge: usize,
+        path: &[Point],
+    ) -> Option<(Rect, bool)> {
         slot_index(model, edge, self.shape, path, &self.strokes, &self.labels)
     }
 }
 
+/// Where a route's words stand: clear of the route's other stretches, or as a fallback beside
+/// them when the route leaves no such spot, because a line keeps its words.
 fn slot_index(
     model: &Model<'_>,
     edge: usize,
@@ -268,6 +272,22 @@ fn slot_index(
     index: &StrokeIndex,
     labels: &super::label_space::Labels,
 ) -> Option<(Rect, bool)> {
+    spot_on(model, Own { edge, path }, path, shape, index, labels).or_else(|| {
+        let free = Own { edge, path: &[] };
+        let (at, _) = spot_on(model, free, path, shape, index, labels)?;
+        Some((at, true))
+    })
+}
+
+fn spot_on(
+    model: &Model<'_>,
+    own: Own<'_>,
+    path: &[Point],
+    shape: &Shape,
+    index: &StrokeIndex,
+    labels: &super::label_space::Labels,
+) -> Option<(Rect, bool)> {
+    let edge = own.edge;
     let label = model.edges[edge].label()?;
     let size = Rect {
         x: 0.0,
@@ -275,7 +295,6 @@ fn slot_index(
         width: label.width.unwrap_or(0.0),
         height: label.height.unwrap_or(0.0),
     };
-    let own = Own { edge, path };
     if let Some(&part_first) = shape.trunk.get(&edge) {
         let spans = index.private(edge, &from_part(path, part_first));
         return nearest(&spans, size, shape, own, index, labels).map(|at| (at, false));
@@ -459,18 +478,6 @@ pub(super) fn arrange(model: &Model<'_>, shape: &mut Shape) -> Option<usize> {
     Some(fallbacks)
 }
 
-/// Whether a drawing dressed with its trunks' words keeps a plate where it stands: each
-/// plate there was seated around the others, and moving one can unseat the next.
-fn keeps(
-    shape: &Shape,
-    edge: usize,
-    at: Rect,
-    strokes: &StrokeIndex,
-    labels: &super::label_space::Labels,
-) -> bool {
-    !shape.trunk.is_empty() && clear(shape, edge, at, strokes, labels)
-}
-
 fn available(
     model: &Model<'_>,
     shape: &Shape,
@@ -505,7 +512,8 @@ fn consistent(
             continue;
         }
         let old = shape.labels.remove(&edge)?;
-        if keeps(shape, edge, old, strokes, labels) {
+        let path = &shape.routes[index].points;
+        if keeps(shape, Own { edge, path }, old, strokes, labels) {
             shape.labels.insert(edge, old);
             continue;
         }
@@ -558,7 +566,9 @@ fn update(
             continue;
         }
         let old = shape.labels.remove(&edge);
-        if let Some(kept) = old.filter(|&at| keeps(shape, edge, at, strokes, labels)) {
+        let path = &shape.routes[index].points;
+        if let Some(kept) = old.filter(|&at| keeps(shape, Own { edge, path }, at, strokes, labels))
+        {
             shape.labels.insert(edge, kept);
             labels.remember(edge, kept);
             continue;
