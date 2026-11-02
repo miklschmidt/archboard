@@ -8,6 +8,7 @@ import {
 	ModelCodeWarnings,
 } from "#ui/components/architecture-model/ModelCodeFindings.tsx";
 import { ModelEngine } from "#ui/components/architecture-model/ModelEngine.tsx";
+import { ModelHoverLight } from "#ui/components/architecture-model/ModelHoverLight.tsx";
 import { ModelFlowHead } from "#ui/components/architecture-model/ModelFlowHead.tsx";
 import { ModelInterfaceLine } from "#ui/components/architecture-model/ModelInterfaceLine.tsx";
 import { ModelLegend } from "#ui/components/architecture-model/ModelLegend.tsx";
@@ -99,7 +100,12 @@ function ReadingLegend(props: { readonly reader: Reader }): JSX.Element {
 				onShowAll={location.showAllKinds}
 				selection={selection}
 			/>
-			{scene?.layout !== undefined && <ModelEngine />}
+			{scene?.layout !== undefined && (
+				<>
+					<ModelEngine />
+					<ModelHoverLight />
+				</>
+			)}
 		</>
 	);
 }

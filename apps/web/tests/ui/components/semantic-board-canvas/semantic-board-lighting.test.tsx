@@ -6,6 +6,7 @@ import { act, cleanup, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 import { z } from "zod";
 
+import { chooseHoverLight } from "#ui/clients/semantic-board-canvas/subjects/hover-light.ts";
 import { litBy } from "#ui/rules/semantic-board-canvas/board/connections.ts";
 import { takeFrames } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
 import { settle, viewport } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
@@ -113,6 +114,32 @@ test("a part picked out keeps its light while the pointer visits another, and ha
 		expect(lit()).toEqual(["e2", "e3", "h", "orders", "q", "shipping", "w"].toSorted());
 	} finally {
 		frames.restore();
+	}
+});
+
+test("a reader who turned the hover light off is lit only by a pick", async () => {
+	await served();
+	const frames = takeFrames();
+	try {
+		act(() => chooseHoverLight("off"));
+		pointAt("q");
+		frames.run(240);
+		expect(lighting()).toBeNull();
+		expect(lit()).toEqual([]);
+	} finally {
+		frames.restore();
+	}
+	await pick("q");
+	expect(lighting()).toBe("pick");
+	const light = lit();
+	const again = takeFrames();
+	try {
+		pointAt("l");
+		again.run(240);
+		expect(lit()).toEqual(light);
+	} finally {
+		again.restore();
+		act(() => chooseHoverLight("on"));
 	}
 });
 
