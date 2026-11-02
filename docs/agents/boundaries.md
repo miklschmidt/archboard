@@ -753,9 +753,6 @@ path, and `archboard install-skill --print-source` is how a test learns which sk
   `operations/execution/` presents one operation result.
   `operations/contract-artifacts/` generates the command proof from the shipped contracts.
   No legacy board or top-level claim/release command remains live.
-- `src/runtime/` is the `runtime` area, for the native clipboard: `clients/clipboard/` copies one
-  image through a detached owner process that `copy-image.ts` forks by file URL, and
-  `protocol/clipboard/` is the message pair between them.
 - `command-owner` paths in the command table and the `generatedFrom` field of the proof are
   repository paths of these files. Moving a command file means editing `run.ts`.
 - The tests are in `tests/cli/`, in the folders of the code they cover. `support/` holds the public
