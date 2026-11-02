@@ -1,8 +1,8 @@
-// The query options for the semantic-board resources the browser reads. As in
+// The query options for the resources the browser reads. As in
 // the model-catalog behavior, the options live here rather than at the call
 // sites, so each resource's freshness contract is written down once. Their keys
-// are private to this module (`board-keys.ts`), and what makes them stale is
-// `board-refresh.ts`'s to decide.
+// are private to this module (`read-keys.ts`), and what makes them stale is
+// `read-refresh.ts`'s to decide.
 
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";

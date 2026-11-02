@@ -25,7 +25,7 @@ const MAX_STEP_LABEL = 60;
 
 /**
  * What one step says it carries. Stated here once so the spelling an agent may
- * write and the spelling a board holds cannot drift apart: a label an ingress
+ * write and the spelling a model holds cannot drift apart: a label an ingress
  * schema accepted and the document then refused would be a write that failed
  * for a reason the caller was told nothing about until afterwards.
  */
@@ -187,7 +187,7 @@ type SemanticFlow = z.infer<typeof SemanticFlowSchema>;
  *
  * The two are separate states rather than "a selection that happens to be
  * empty", so that removing the last thing a view pointed at can never quietly
- * turn it into a view of the whole board.
+ * turn it into a view of the whole model.
  */
 const ViewScopeSchema = z.discriminatedUnion("kind", [
 	z.object({ kind: z.literal("all") }).strict(),
@@ -206,7 +206,7 @@ const ViewScopeSchema = z.discriminatedUnion("kind", [
 type ViewScope = z.infer<typeof ViewScopeSchema>;
 
 /**
- * One board-owned way of reading every variant: a grammar, and what to read with it.
+ * One model-owned way of reading every variant: a grammar, and what to read with it.
  *
  * A view is presentation intent and carries no geometry. Which view a pane is
  * showing is the browser's business and is never written down here.

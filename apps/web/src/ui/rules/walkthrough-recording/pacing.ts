@@ -49,7 +49,7 @@ interface PaceObservation {
 type PaceState =
 	/** Voice was asked for and has not gone live yet. */
 	| { readonly kind: "starting"; readonly since: number }
-	/** The talk has begun, showing the whole board before the first step. */
+	/** The talk has begun, showing the whole model before the first step. */
 	| { readonly kind: "lead"; readonly since: number }
 	/** On one step, waiting for the voice to explain it and fall quiet. */
 	| {

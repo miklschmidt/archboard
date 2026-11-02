@@ -6,9 +6,9 @@ import type { SemanticBox } from "#ui/clients/canvas/reads/drawings.ts";
 type DepartureWay =
 	/** To a deeper model. */
 	| "into"
-	/** To a shallower board. */
+	/** To a shallower model. */
 	| "out"
-	/** To a board at the same depth, or to another view of this one. */
+	/** To a model at the same depth, or to another view of this one. */
 	| "across";
 
 /** Which way a reader travels among the models at one depth: left to one earlier in the tree. */

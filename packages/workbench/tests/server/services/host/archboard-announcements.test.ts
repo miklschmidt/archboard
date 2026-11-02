@@ -66,7 +66,7 @@ const INPUT: SemanticContextInput = {
 /**
  * A publisher over INPUT, and the settled change it publishes for a write.
  * @param by The thread the write names, or null.
- * @param board The model it wrote.
+ * @param model The model it wrote.
  * @returns The publisher and the change.
  */
 function sources(by: string | null = null, model = "architecture") {
@@ -106,7 +106,7 @@ function sources(by: string | null = null, model = "architecture") {
 /**
  * A canvas that shows these models, narrating one or none.
  * @param narrated The narrated model, or null.
- * @param boards The models its panes show.
+ * @param models The models its panes show.
  * @returns The tab and its canvas.
  */
 function tab(

@@ -1,5 +1,5 @@
 // Projects the command table into the contract registry, and asserts the
-// board/browser architecture rule over every registered command.
+// model/browser architecture rule over every registered command.
 import type { AnyCommandContract } from "#cli/protocol/contract/contract.ts";
 import type {
 	CliRegistryEntry,

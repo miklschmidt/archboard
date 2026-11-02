@@ -44,7 +44,7 @@ function stallServer(): void {
 
 /**
  * One write by the agent holding the model's claim, as the write path makes it.
- * @param board The model.
+ * @param model The model.
  * @returns When the write has landed.
  */
 async function writeUnderClaim(model: string): Promise<void> {

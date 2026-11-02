@@ -72,8 +72,8 @@ const RelationshipPolicySchema = z
 	.strict();
 /**
  * One configured group a node may belong to. The record key is the stable id
- * boards carry; the name is what a reader sees, and renaming it changes no
- * board and no comparison. The colour is required: a group colours the cards
+ * models carry; the name is what a reader sees, and renaming it changes no
+ * model and no comparison. The colour is required: a group colours the cards
  * and the containers' headers placed with it and the region that gathers them
  * (ADR 0038), so a group without one could not be drawn. A kind's colour is
  * its icon chip's. The refusal's path names the group.
@@ -126,14 +126,14 @@ type SemanticPolicy = z.infer<typeof SemanticPolicySchema>;
 const NETWORK: EvidenceKind[] = ["call", "configured-path"];
 /**
  * The vocabulary a vault has before its owner writes config.yaml. Every kind
- * a board is likely to draw carries a colour, so a fresh vault is not neutral
+ * a model is likely to draw carries a colour, so a fresh vault is not neutral
  * gray (ADR 0025 makes containment colour mandatory once configured);
  * external and other stay neutral so a part outside the checkout reads as
  * outside, and call and dependency keep the neutral edge ink.
  *
  * There is a kind for every level, named after it, because a node standing for
- * what another board describes carries that board's level as its kind
- * (ADR 0029). Without `system` beside `service` and `module`, a board could
+ * what another model describes carries that model's level as its kind
+ * (ADR 0029). Without `system` beside `service` and `module`, a model could
  * not say that one of its parts is a whole system described elsewhere.
  *
  * Every relationship kind but `other` names the evidence kinds that prove it
@@ -185,13 +185,13 @@ const DEFAULT_SEMANTIC_POLICY: SemanticPolicy = {
 	groups: {},
 };
 /**
- * The one node, relationship or flow step a diagnostic is about. The board and
+ * The one node, relationship or flow step a diagnostic is about. The model and
  * variant it sits on are the diagnostic's own, so `id` alone finds it there.
- * The kinds are the board's own subject kinds (`edge` is a relationship). A
+ * The kinds are the model's own subject kinds (`edge` is a relationship). A
  * step carries an anchor, so the code check names one (ADR 0046); the plain
  * check never does, and every reader accepts one. `name` is what a reader
  * would call it, carried so a line of text can say it without reading the
- * board again: a step, which has no name of its own, is named by its flow, its
+ * model again: a step, which has no name of its own, is named by its flow, its
  * ends and its label.
  */
 const DiagnosticSubjectSchema = z.object({
@@ -201,8 +201,8 @@ const DiagnosticSubjectSchema = z.object({
 });
 type DiagnosticSubject = z.infer<typeof DiagnosticSubjectSchema>;
 /**
- * One of the two parts a `SHARED_SYMBOL` warning names: its board, its id and
- * name, and the ids of the live variants of that board that carry it.
+ * One of the two parts a `SHARED_SYMBOL` warning names: its model, its id and
+ * name, and the ids of the live variants of that model that carry it.
  */
 const SharedSymbolPartSchema = z.object({
 	model: z.string(),

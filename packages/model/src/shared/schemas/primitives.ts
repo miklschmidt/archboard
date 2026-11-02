@@ -1,4 +1,4 @@
-// The words every part of a board is spelled with.
+// The words every part of a model is spelled with.
 //
 // They live apart from the things that use them because a node, a flow and a
 // view all need the same name and the same identity, and a module that imported
@@ -16,7 +16,7 @@ const SingleLineTextSchema = NonBlankTextSchema.regex(/^[^\n]*$/u, "must be a si
 
 /**
  * An identity minted by the repository's one minting site. The shape is the
- * block-id alphabet, so an id can be written anywhere a board id can be
+ * block-id alphabet, so an id can be written anywhere a model id can be
  * written. `BLOCK_ID_RE` is the shared authority used here and by `isBlockId`.
  */
 const SemanticIdSchema = z
@@ -33,7 +33,7 @@ const ResponsibilitySchema = NonBlankTextSchema.max(MAX_RESPONSIBILITY);
  * The id of one configured group, as the vault configuration keys it.
  *
  * An id rather than a label, so that renaming what a reader sees changes no
- * board: the name lives in `groups` of the vault policy, and a board carries
+ * model: the name lives in `groups` of the vault policy, and a model carries
  * only the stable key. Spelled with the vocabulary-name grammar every other
  * configured key uses.
  */

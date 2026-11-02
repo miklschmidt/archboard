@@ -10,7 +10,7 @@
 // never refuses because of it. A pass changes nothing, so the route is a GET.
 //
 // The code pass (`packages/code-intel/src/runtime/operations/code-check`) reads every document at its current
-// variant, or at the draft `variant` names, and gives `boards`, `findings` and
+// variant, or at the draft `variant` names, and gives `states`, `findings` and
 // `skipped`. `every-draft=true` reads every draft of every document instead, and
 // a `variant` beside it is not read (TASK-488). Behind (ADR 0045, TASK-369.02)
 // reads the current variant of each document once, whatever the pass reads. A `variant` that names no draft on any model

@@ -12,7 +12,7 @@ import type { SemanticDrawing } from "#ui/clients/canvas/reads/drawings.ts";
 
 /**
  * What moving one picture into the next reads of a picture. A legacy board's
- * drawing is one, and so is a canonical reading's scene: `board` names what the
+ * drawing is one, and so is a canonical reading's scene: `model` names what the
  * picture is of, and `view` how that is read.
  */
 type MovingPicture = Pick<SemanticDrawing, "svg" | "painting" | "atlas" | "width" | "height"> & {

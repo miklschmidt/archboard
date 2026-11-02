@@ -1,6 +1,6 @@
 // Routing rules of the track router that change drawings of this repository,
 // each owned by the lines it moves. What this catches: any of the rules below
-// dropped or undone, read off the named lines rather than a whole-board score.
+// dropped or undone, read off the named lines rather than a whole-picture score.
 
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/model/policy";

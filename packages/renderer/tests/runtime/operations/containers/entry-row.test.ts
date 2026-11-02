@@ -78,7 +78,7 @@ function documentOf(draft: unknown) {
 
 /**
  * The atlas of one rendered document picture.
- * @param board The document.
+ * @param document The document.
  * @param choices The variant and view.
  * @param choices.variant The variant.
  * @param choices.view The view, if any.

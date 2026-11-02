@@ -82,7 +82,7 @@ test("a flank label clears an unrelated corridor without bending away from its r
 	// How the added route is attached is chosen by the whole drawing's cost,
 	// not fixed to a flank for it; what a reader needs is the label on a
 	// straight run of its own route, no card crossed, and the drawing's turns
-	// within the wide-board bound. Bridges are removed before counting bends.
+	// within the wide-picture bound. Bridges are removed before counting bends.
 	const corridors = corridorPoints(drawing.svg);
 	expect(onStraightRun(corridors.get("6zcjVgzh")!, drawing, "6zcjVgzh")).toBe(true);
 	const turns = [...corridors.values()].reduce((total, route) => total + bendsOf(route), 0);

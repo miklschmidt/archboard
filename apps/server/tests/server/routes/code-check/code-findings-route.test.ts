@@ -56,7 +56,7 @@ async function listen(app: express.Express): Promise<string> {
 /**
  * The answer of a pass over some documents at their current variant, `v1`, with
  * one warning on each document it names in `warned`.
- * @param boards The documents it read, each at version 3.
+ * @param states The documents it read, each at version 3.
  * @param warned The documents it found something on.
  * @returns The answer.
  */

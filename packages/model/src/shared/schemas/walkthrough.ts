@@ -10,7 +10,7 @@
 // and what it says. It does not say how long to linger on it, where to put the
 // camera, what to fade, how fast, or how far down the page it sits — every one
 // of those belongs to the viewer, and a beat that carried one would be the
-// board telling the renderer how to look, which is the thing the whole contract
+// model telling the renderer how to look, which is the thing the whole contract
 // exists to stop. There is no field here an author could spend on one, in any
 // spelling, and there is no cap on how many beats an explanation has or how
 // many subjects a beat names: a long explanation of a large system is a thing

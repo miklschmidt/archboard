@@ -26,7 +26,7 @@ interface OtherRepository {
 
 /**
  * Open a drill-down's model.
- * @param board The target model.
+ * @param model The target model.
  * @param variant The variant to open, by id.
  * @param there The other repository's vault it is in, when it is not in the pane's own.
  */

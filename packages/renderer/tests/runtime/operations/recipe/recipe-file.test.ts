@@ -21,7 +21,7 @@ import { EXPORT_DOCUMENT } from "#tests/runtime/support/export-picture.ts";
 /**
  * The SVG of a document's draft, with or without its recipe.
  * @param recipe Whether the render carries one.
- * @param board The document; the export document when absent.
+ * @param document The document; the export document when absent.
  * @param view The view drawn.
  * @returns The document.
  */

@@ -77,7 +77,7 @@ function documentOf(variants: readonly Record<string, unknown>[], current?: stri
 
 /**
  * One variant of a model, by id.
- * @param board The model.
+ * @param model The model.
  * @param id The variant's id.
  * @returns The variant.
  */

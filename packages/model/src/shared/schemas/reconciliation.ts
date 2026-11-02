@@ -3,8 +3,8 @@
 // Apart from `reconcile.ts` — which is how one is worked out — because the two
 // change for different reasons and only one of them is a contract. An unsettled
 // disagreement outlives the command that found it: it is written on the variant,
-// read back after a restart, and shown to whoever opens the board (ADR 0023),
-// so its shape is something the board's contract has to describe. The merge
+// read back after a restart, and shown to whoever opens the model (ADR 0023),
+// so its shape is something the model's contract has to describe. The merge
 // algorithm beside it can be rewritten without any of that moving.
 
 import { z } from "zod";
@@ -26,7 +26,7 @@ const ReconciliationKindSchema = z.enum([
  * Carried because a disagreement between "removed it" and "changed it" is
  * settled by a third answer — stating the subject again — and a third answer is
  * written out of values, not out of field names. Naming `description` and
- * leaving its value to be found in the board's JSON, a line below a
+ * leaving its value to be found in the model's JSON, a line below a
  * near-identical `responsibility`, is how a restored node comes back with a
  * sentence nobody wrote (TASK-256.09).
  *
@@ -53,7 +53,7 @@ type ChangedField = z.infer<typeof ChangedFieldSchema>;
  *
  * A schema rather than a bare type because an unsettled disagreement outlives
  * the command that found it: it is written on the variant, read back after a
- * restart, and shown to whoever opens the board (ADR 0023). Something a
+ * restart, and shown to whoever opens the model (ADR 0023). Something a
  * document holds is something the document's contract has to describe.
  */
 const ReconciliationIssueSchema = z
@@ -83,7 +83,7 @@ const ReconciliationIssueSchema = z
 type ReconciliationIssue = z.infer<typeof ReconciliationIssueSchema>;
 
 /**
- * What a draft is waiting on, as the board records it.
+ * What a draft is waiting on, as the model records it.
  *
  * Held on the variant rather than worked out on every read, because it is a
  * fact about a moment: these two states disagreed when the predecessor moved,
@@ -95,13 +95,13 @@ const StandingShapeSchema = z
 	.object({
 		/** The variant whose change this one has not caught up with. */
 		against: SemanticIdSchema,
-		/** The board version the disagreement arose at. */
+		/** The model version the disagreement arose at. */
 		atVersion: z.int().min(1),
 		/**
 		 * What the predecessor said when this draft last agreed with it.
 		 *
 		 * The third state a merge needs, and the only one that cannot be recovered
-		 * from the board: the predecessor has moved on, and the draft is a whole
+		 * from the model: the predecessor has moved on, and the draft is a whole
 		 * architecture rather than a patch, so "what did this draft change" has no
 		 * answer without it. It is kept only while something is unsettled — a
 		 * draft that agrees with its predecessor has the predecessor itself as its
@@ -144,7 +144,7 @@ const VariantStandingSchema = StandingShapeSchema.refine(
  *
  * That retained base is the store's own machinery — a second whole copy of the
  * architecture, kept so a later merge has something to compare against — and a
- * reader needs none of it. Sending it would put the board on the wire twice to
+ * reader needs none of it. Sending it would put the model on the wire twice to
  * answer two sentences, and would make a mechanism somebody has to keep working
  * into a field somebody could start depending on.
  */

@@ -6,7 +6,7 @@
 // The first is ADR 0023's line between meaning and presentation. There is no
 // coordinate, size, colour, font or route in this file, and there is no field
 // an author could use to stand in for one. A diagram that comes out badly is
-// the renderer's fault, and it is fixed once, in the renderer, for every board.
+// the renderer's fault, and it is fixed once, in the renderer, for every model.
 //
 // The second is that identity outlives spelling. A node keeps its id when it
 // is renamed, when it moves to a different parent, and when it is carried into
@@ -130,10 +130,10 @@ const DrillDownSchema = z
  * `parent` is structural containment — a module inside a service — and not a
  * drawing group: it says the child is part of the parent, which is true
  * whatever the picture ends up looking like. It names at most one parent, and
- * the graph it forms is checked acyclic when the board is validated.
+ * the graph it forms is checked acyclic when the model is validated.
  *
  * `binding` is the one optional primary code location, and two nodes on the
- * same board may name different repositories. Optional because a part may be
+ * same model may name different repositories. Optional because a part may be
  * implemented and simply not bound yet; its absence never says a part is
  * planned. Whether anything is built is a fact about the variant (ADR 0031),
  * and a binding on a draft may name where code will live before it does.
@@ -146,7 +146,7 @@ const DrillDownSchema = z
  * answered only the first cannot show an architecture organised around
  * anything else. And not presentation: a group's name and how membership is
  * shown come from the vault policy and the viewer, and are stored nowhere on
- * the board (ADR 0023), so the board carries the ids and never their
+ * the model (ADR 0023), so the model carries the ids and never their
  * appearance. Absent means the same as empty, and the document writes the
  * shorter of the two.
  */
@@ -194,7 +194,7 @@ const SemanticEdgeSchema = z
 type SemanticEdge = z.infer<typeof SemanticEdgeSchema>;
 
 /**
- * Everything one architectural state says. An empty content is valid: a board
+ * Everything one architectural state says. An empty content is valid: a model
  * starts empty and is built up, and refusing to hold nothing would mean the
  * first write had to invent something to say.
  */
@@ -253,7 +253,7 @@ interface VariantSubject {
  * hand-maintained lists of entity kinds is one list that will be missing a kind
  * the day a sixth is added, and the two places that matter — the identities a
  * fresh mint must avoid, and the rule that no two subjects share one — would
- * then disagree about what a board contains.
+ * then disagree about what a model contains.
  * @param content The variant's content.
  * @yields {VariantSubject} Each subject, in document order.
  */

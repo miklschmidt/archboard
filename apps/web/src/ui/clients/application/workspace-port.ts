@@ -121,7 +121,7 @@ const NO_READINGS: PaneReadings = Object.freeze({
 	},
 	/** Nothing to forget. */
 	modelChanged: (): void => {
-		// A caller with no readings has nothing held against a board.
+		// A caller with no readings has nothing held against a model.
 	},
 });
 

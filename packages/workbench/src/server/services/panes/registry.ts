@@ -133,8 +133,8 @@ function deliverToPane(clientId: string, data: string): boolean {
  * Send model news to one pane, named by client id.
  *
  * A model switch is the message this exists for: it replaces the receiving
- * pane's whole scene, so sending it to every socket is how one pane's `board
- * open` used to drag the other pane along with it.
+ * pane's whole scene, so sending it to every socket is how one pane's open
+ * used to drag the other pane along with it.
  * @param clientId The pane's client id.
  * @param message The message to send.
  * @param paneKey The pane key the message is about; stamped onto the message.

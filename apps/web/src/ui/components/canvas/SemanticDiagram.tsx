@@ -103,7 +103,7 @@ interface SemanticDiagramProps {
 	reading: VariantReading | null;
 	/**
 	 * Follow a card's drill-down, which a double-click on the card asks for.
-	 * @param board The target model.
+	 * @param model The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpenDown?: OpenDown | undefined;

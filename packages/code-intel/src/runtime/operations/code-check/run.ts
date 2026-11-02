@@ -1,7 +1,7 @@
 // One run of the code check over a vault's documents (ADR 0046), with behind beside it (ADR 0045).
 //
 // It reads every document at its current variant, or at the draft `variant`
-// names, and gives `boards`, `findings` and `skipped`. `everyDraft` reads every
+// names, and gives `states`, `findings` and `skipped`. `everyDraft` reads every
 // draft of every document instead, and a `variant` beside it is not read
 // (TASK-488). Behind (TASK-369.02) reads the current variant of each document
 // once, whatever the pass reads. A `variant` that names no draft on any document

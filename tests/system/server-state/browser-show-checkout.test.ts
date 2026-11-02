@@ -102,7 +102,7 @@ function chosenCheckout(): string | undefined {
 /**
  * Create a model in a vault.
  * @param vault The vault.
- * @param board The model.
+ * @param model The model.
  */
 async function createModel(vault: string, model: string): Promise<void> {
 	writeFileSync(

@@ -75,7 +75,7 @@ function RepositoryOf(props: { readonly repository: string | undefined }): JSX.E
 
 /** Inputs for the header. */
 interface PaneHeaderProps {
-	/** A board-specific control between the breadcrumb and the page tabs. */
+	/** A model-specific control between the breadcrumb and the page tabs. */
 	readonly children?: ReactNode;
 	/** The model on screen. */
 	readonly name: string;

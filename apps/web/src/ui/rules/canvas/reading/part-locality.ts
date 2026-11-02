@@ -45,7 +45,7 @@ type PartLocality =
 			readonly partners: readonly Partner[];
 	  }
 	/**
-	 * The answer does not name it. The server reads the board as it is when
+	 * The answer does not name it. The server reads the model as it is when
 	 * asked, so the answer is of a later version that no longer holds the part.
 	 */
 	| { readonly kind: "absent" };

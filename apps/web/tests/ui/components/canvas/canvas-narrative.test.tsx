@@ -78,7 +78,7 @@ const CONTENT = {
 	walkthroughs: [WALKTHROUGH],
 };
 
-/** The board-owned view one walkthrough beat reads through. */
+/** The model-owned view one walkthrough beat reads through. */
 const VIEWS = [{ ...VIEW, scope: { kind: "selection", nodes: ["n1"], edges: [], flows: [] } }];
 
 /**

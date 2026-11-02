@@ -299,7 +299,7 @@ async function inspectInOrder(
 	return { findings, fixed };
 }
 /**
- * Inspect canonical recipes in the addressed checkout without board-owned tracking.
+ * Inspect canonical recipes in the addressed checkout.
  * @param at The explicit vault or checkout.
  * @param options The repair intent and cancellation signal.
  * @param options.fix Whether to replace changed local artifacts.

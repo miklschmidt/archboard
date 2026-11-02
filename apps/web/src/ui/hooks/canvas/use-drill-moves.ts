@@ -48,7 +48,7 @@ interface DrillMovesInputs {
 interface DrillMoves {
 	/**
 	 * Follow a drill-down to a model and one of its variants.
-	 * @param board The target model.
+	 * @param model The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	readonly onOpenDown: OpenDown;

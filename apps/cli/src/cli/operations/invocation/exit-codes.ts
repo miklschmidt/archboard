@@ -38,7 +38,7 @@ function errorMessage(error: unknown): string {
  * Whether the code names a refused model write: the note stays unwritten, whether another
  * holder, a revoked claim or a moved version stopped it.
  * @param code - The error code, if any.
- * @returns True for a board-write refusal.
+ * @returns True for a model-write refusal.
  */
 function isModelRefusalCode(code: string | undefined): boolean {
 	return code !== undefined && MODEL_REFUSAL_CODES.has(code);

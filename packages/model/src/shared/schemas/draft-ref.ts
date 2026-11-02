@@ -14,7 +14,7 @@ import type { SemanticNode } from "#shared/schemas/content.ts";
 
 /**
  * The variants a variant was branched from, nearest first.
- * @param model The board.
+ * @param model The model.
  * @param variant The variant.
  * @returns Its parent, the parent's parent, and so on.
  */
@@ -59,7 +59,7 @@ function refsIn(variants: readonly SemanticVariant[], repo: string): Set<string>
 /**
  * The refs a draft could be read against in one repository: the refs its
  * bindings name that no variant before it names, else every ref they name.
- * @param model The board.
+ * @param model The model.
  * @param variant The draft.
  * @param repo The repository.
  * @returns The refs, sorted; none when the draft names no ref there.
@@ -95,7 +95,7 @@ interface OwnRef {
  * they all name), that ref. A repository where the draft names no ref, or
  * several of its own, is absent: its parts are read part by part. A variant
  * that is not a draft has none.
- * @param model The board.
+ * @param model The model.
  * @param variant The variant.
  * @returns The ref the draft is read at, by repository.
  */
@@ -115,7 +115,7 @@ function ownRefs(
 
 /**
  * The one ref a draft is read at in a repository.
- * @param model The board.
+ * @param model The model.
  * @param variant The draft.
  * @param repo The repository.
  * @returns The ref and a binding that names it, or undefined when the draft names none or several of its own.

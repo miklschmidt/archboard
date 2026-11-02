@@ -438,7 +438,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 }
 
 /**
- * Mount the pane telemetry, layout and board-showing routes.
+ * Mount the pane telemetry, layout and model-showing routes.
  * @param app The application to mount on.
  */
 function mountPaneRoutes(app: Express): void {

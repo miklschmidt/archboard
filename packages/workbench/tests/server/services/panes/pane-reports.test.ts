@@ -22,7 +22,7 @@ type SemanticPaneContext = z.infer<typeof SemanticPaneContextSchema>;
 /**
  * One report from the same pane.
  * @param sequence Which report it is.
- * @param board The model it says it is reading.
+ * @param model The model it says it is reading.
  * @param selection The ids it says are picked out.
  * @returns The report.
  */

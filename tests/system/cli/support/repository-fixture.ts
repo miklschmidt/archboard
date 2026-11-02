@@ -15,7 +15,7 @@ interface RepositoryFixture {
 	readonly state: string;
 	readonly log: string;
 	readonly registry: string;
-	/** An untracked vault, `<root>/boards/.archboard/vault`, that the registry does not list. */
+	/** An untracked vault, `<root>/models/.archboard/vault`, that the registry does not list. */
 	readonly vault: string;
 	readonly serverEnvironment: RepositoryServerEnvironment;
 	repository(name: string, origin: string): string;

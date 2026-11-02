@@ -23,9 +23,9 @@ interface WebSocketMessage {
 type WebSocketMessageType =
 	// Temporary explanations changed in this tab, independently of the shown vault.
 	| "architecture_explanations_changed"
-	// Which board this pane is showing, and in which repository's vault: on
+	// Which model this pane is showing, and in which repository's vault: on
 	// connect, whenever a show moves it, and when the repository's chosen checkout
-	// changes. It carries no picture — the board is a file the server draws, and
+	// changes. It carries no picture — the server draws the model, and
 	// the pane asks for the drawing itself (ADR 0023).
 	| "pane_place"
 	| "pane_model"
@@ -41,8 +41,8 @@ type WebSocketMessageType =
 	| "pane_close"
 	// A pane presenting a walkthrough is asked to go to a step, or to leave
 	// (TASK-251). The position stays the pane's: this asks, and the pane's own
-	// report says where it got to. Board-scoped, so a pane that has moved to
-	// another board does not step through a walkthrough it is not showing.
+	// report says where it got to. Model-scoped, so a pane that has moved to
+	// another model does not step through a walkthrough it is not showing.
 	| "pane_present";
 
 /** Canonical model activity, shared by every pane (ADR 0022 and ADR 0068). */

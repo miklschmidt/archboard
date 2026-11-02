@@ -129,7 +129,7 @@ interface CanvasStageProps {
 	/**
 	 * The models above one, outermost first, as the navigator places them, each
 	 * a way to it in this pane: the header's breadcrumb.
-	 * @param board The model on screen.
+	 * @param model The model on screen.
 	 * @returns The models above it.
 	 */
 	placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;

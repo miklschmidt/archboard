@@ -33,7 +33,7 @@ interface StageHeaderView {
 	readonly onBackTo: (depth: number) => void;
 	/**
 	 * The models above one, outermost first, as the navigator places them.
-	 * @param board The model on screen.
+	 * @param model The model on screen.
 	 * @returns The models above it.
 	 */
 	readonly placeOf?: ((model: string) => readonly CrumbPlace[]) | undefined;

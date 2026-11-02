@@ -1,4 +1,4 @@
-// Corpus checks on a drawn document, shared by the wide-board corpus and the
+// Corpus checks on a drawn document, shared by the wide-picture corpus and the
 // focused owners of the regressions it found: a run under another line's
 // label, lines closer than a lane, a line along a container's wall, a label
 // across a container's edge, and a route on a slant.

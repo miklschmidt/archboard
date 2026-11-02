@@ -67,7 +67,7 @@ interface PaneSignalSource {
 	readonly onSelection: (listener: (input: SemanticContextInput) => void) => SemanticUnsubscribe;
 }
 
-/** A board/context reader used only by the on-demand fresh-brief port. */
+/** A model/context reader used only by the on-demand fresh-brief port. */
 interface FreshBriefSource {
 	readonly read: () => SemanticContextInput;
 }
@@ -258,7 +258,7 @@ interface SemanticArchitectureInput {
 /**
  * Scalar context supplied by a composition adapter.
  *
- * `description` is already the compact result of the public board-description
+ * `description` is already the compact result of the public model-description
  * port. The publisher never receives a model document and never stores one:
  * everything here is a name, an identity or a count that somebody else read.
  */

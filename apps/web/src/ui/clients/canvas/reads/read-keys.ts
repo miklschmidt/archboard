@@ -1,8 +1,8 @@
-// The cache keys of the semantic-board resources, spelled once, and the one
+// The cache keys of the resources, spelled once, and the one
 // place that reads a key back into what it names.
 //
 // Private to the reads module: the query options in `queries.ts` subscribe
-// under these keys, and `board-refresh.ts` decides which of them go stale and
+// under these keys, and `read-refresh.ts` decides which of them go stale and
 // in what order. Nothing outside `reads/` names a key or decodes one, so the
 // layout can change here alone.
 

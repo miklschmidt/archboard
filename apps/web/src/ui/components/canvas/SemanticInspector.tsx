@@ -271,7 +271,7 @@ interface BodyProps {
 	code: CodeStanding | null;
 	/**
 	 * Open the model one level down.
-	 * @param board The target model.
+	 * @param model The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: OpenDown;
@@ -509,7 +509,7 @@ interface SemanticInspectorProps {
 	overview: boolean;
 	/**
 	 * Open the model one level down.
-	 * @param board The target model.
+	 * @param model The target model.
 	 * @param variant The variant to open, by id.
 	 */
 	onOpen: OpenDown;

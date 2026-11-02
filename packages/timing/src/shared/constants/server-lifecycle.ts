@@ -17,7 +17,7 @@ const SERVER_LIFECYCLE_MS = durations({
 	 *
 	 * It stays below the CLI's five-second stop observation window, so a stuck
 	 * request produces a healthy, inspectable refusal rather than looking like a
-	 * dead server. A disconnected board-lock waiter does not spend this budget: its request
+	 * dead server. A disconnected model-lock waiter does not spend this budget: its request
 	 * signal cancels the MODEL_LOCK_MS.poll wait immediately.
 	 */
 	mutationDrain: 1000,

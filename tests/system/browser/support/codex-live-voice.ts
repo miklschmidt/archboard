@@ -326,7 +326,7 @@ const isFrame = (record: FixtureRecord, method: string): boolean =>
 /**
  * Where Talk's steps fall in the fixture's log.
  * @param talked The records written after Talk was pressed.
- * @param board The model in view, which the coordinator's catalogue must name.
+ * @param model The model in view, which the coordinator's catalogue must name.
  * @returns The step positions.
  */
 function talkWire(talked: readonly FixtureRecord[], model: string): TalkWire {

@@ -135,7 +135,7 @@ const PanePresentRequestSchema = z
 		walkthrough: z.string().min(1).max(64),
 		beat: z.int().min(0),
 	})
-	// Not strict: the socket adds the board key every board message carries.
+	// Not strict: the socket adds the model key every model message carries.
 	.strip();
 
 /**
@@ -151,7 +151,7 @@ const SemanticPanePartSchema = z.enum(["model", "variant", "view", "selection"])
  *
  * Every part of it but the pane itself is nullable, and deliberately: a pane is
  * mounted before its first drawing answers, and a pane whose model was closed
- * has to be able to say so. "Board X, nothing drawn yet" and "nothing at all"
+ * has to be able to say so. "Model X, nothing drawn yet" and "nothing at all"
  * are both true things a pane can be, and a report that could not express them
  * would leave the last true-looking answer standing after it stopped being true.
  */

@@ -2,7 +2,7 @@
 // `GET /api/vault/code-check` (ADR 0046).
 //
 // `timings` records elapsed work for code facts, each language server and
-// history (TASK-436.02). `boards` says which document was read at which variant and
+// history (TASK-436.02). `states` says which document was read at which variant and
 // version. `findings` says what the code pass found. `skipped` says what the
 // check did not read, with the reason, so a subject that was not read never
 // looks like one with nothing to report. `behind` is the reading of ADR 0045:

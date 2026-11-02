@@ -143,7 +143,7 @@ function operationPane(
 }
 
 /**
- * Whether a workhorse has board-change delivery bound to a thread of its own.
+ * Whether a workhorse has model-change delivery bound to a thread of its own.
  * @param workhorse The workhorse.
  * @returns True once its delivery is bound.
  */
@@ -152,7 +152,7 @@ function deliveryBound(workhorse: CodexWorkbenchWorkhorse): boolean {
 }
 
 /**
- * The conversation a pane's news is for: its own tab's, once a workhorse of it has board-change
+ * The conversation a pane's news is for: its own tab's, once a workhorse of it has model-change
  * delivery bound.
  * @param components The generation.
  * @param clientId The pane's client id.

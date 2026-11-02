@@ -72,7 +72,7 @@ function isMutationRequest(req: Request): boolean {
 /**
  * Mount the admission middleware: it precedes every mutation-specific guard
  * and body parser. Parsing is one request lease; explicit async route and
- * board-lock work takes a second lease so disconnecting the response cannot
+ * model-lock work takes a second lease so disconnecting the response cannot
  * make unfinished mutation work disappear from shutdown's authoritative drain.
  * @param app The application to mount on.
  */

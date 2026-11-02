@@ -122,7 +122,7 @@ async function openDown(): Promise<void> {
 
 /** A pane whose choice nothing records, for cases that ask other questions. */
 function ignoreChoice(): void {
-	// The pane's own board is the shell's; a level below is the pane's own.
+	// The pane's own model is the shell's; a level below is the pane's own.
 }
 
 test("a model a level down offers its own views and its own states", async () => {

@@ -1,4 +1,4 @@
-// The words a semantic board is written in, and nothing else.
+// The words a model is written in, and nothing else.
 //
 // ADR 0023 draws one line: an agent says what a thing *is* and how it relates
 // to its neighbours, and the renderer decides where it goes and what it looks
