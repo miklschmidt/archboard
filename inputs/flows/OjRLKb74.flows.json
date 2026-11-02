@@ -287,10 +287,6 @@
             {
               "label": "no",
               "steps": []
-            },
-            {
-              "label": "opens a board",
-              "steps": []
             }
           ]
         },

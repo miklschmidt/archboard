@@ -1048,10 +1048,6 @@
                   }
                 }
               ]
-            },
-            {
-              "label": "a refused board write",
-              "steps": []
             }
           ]
         },

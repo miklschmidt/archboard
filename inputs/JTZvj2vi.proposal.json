@@ -8398,53 +8398,6 @@
       "value": "draw the model's entrance"
     }
   ],
-  "retiredIds": [
-    "vKEsyHFk/yejBBUFY#A19ksdGe",
-    "vKEsyHFk/XppR9owz#TOMOWgDQ",
-    "vKEsyHFk/yejBBUFY#WWPvFeLg",
-    "vKEsyHFk/XppR9owz#9GGi3iZw",
-    "vKEsyHFk/UOXNWLhR#nmkLjKkz",
-    "vKEsyHFk/UOXNWLhR#aTUikCKr",
-    "vKEsyHFk/UOXNWLhR#AEEOu1vG",
-    "vKEsyHFk/UOXNWLhR#UAnbIRqG",
-    "vKEsyHFk/UOXNWLhR#OAY8mj0y",
-    "vKEsyHFk/UOXNWLhR#n5No6FUy",
-    "vKEsyHFk/UOXNWLhR#WT3s42AE",
-    "vKEsyHFk/UOXNWLhR#9VphxuuC",
-    "vKEsyHFk#tv4MSYd6",
-    "vKEsyHFk#NjziT92Y",
-    "vKEsyHFk#m5Ct61Wj",
-    "vKEsyHFk#Y4CPwsJC",
-    "vKEsyHFk#MT1O8WXn",
-    "vKEsyHFk#wN2XkLVD",
-    "vKEsyHFk#HqcAJhNA",
-    "vKEsyHFk#fU1obV1q",
-    "vKEsyHFk#ZwdlhWaG",
-    "vKEsyHFk#GfzrDnYW",
-    "vKEsyHFk#6rPPoEMd",
-    "vKEsyHFk#Zwk3OuRn",
-    "vKEsyHFk#gRc6GEfR",
-    "vKEsyHFk#0cSzgeYd",
-    "vKEsyHFk#A8IkfH4a",
-    "vKEsyHFk#JRcNAGp9",
-    "vKEsyHFk#WBbX6uPW",
-    "vKEsyHFk#jPdi4ndV",
-    "vKEsyHFk#JuK9kPUC",
-    "vKEsyHFk#2QaIm9u5",
-    "vKEsyHFk#PoaUWNrZ",
-    "vKEsyHFk#1Ki6QCRp",
-    "vKEsyHFk#N8ZJyIbU",
-    "vKEsyHFk#0oYDU8cV",
-    "vKEsyHFk#KMmwoBvr",
-    "vKEsyHFk#FT3wjIMa",
-    "vKEsyHFk#2PD9YeDq",
-    "vKEsyHFk#Np6QHSgA",
-    "vKEsyHFk#4S9sLbmq",
-    "vKEsyHFk#MzuJ4Y5F",
-    "vKEsyHFk#8I2z7YLx",
-    "vKEsyHFk#fmkuK9be",
-    "vKEsyHFk#CjQhZFoE"
-  ],
   "standing": {
     "against": "oyXXnyCV",
     "baseline": "149fb2e15f8d739470e6e0c9e76c971ffb336616",
@@ -8874,7 +8827,144 @@
           "symbol": "PICTURE_CLOCK"
         },
         "repair": "This proposal and the variant it came from both changed `anchor` of this step. Say which one this proposal means, or write a third answer."
+      },
+      {
+        "subject": "vKEsyHFk/6E6hL0Zk#oipi6vdQ",
+        "what": "step",
+        "kind": "competing-field",
+        "field": "alternatives",
+        "mine": [
+          "no such model",
+          "no such part",
+          "part not bound",
+          "bound",
+          "no such board"
+        ],
+        "theirs": [
+          "no such model",
+          "no such part",
+          "part not bound",
+          "bound"
+        ],
+        "repair": "This proposal and the variant it came from both changed `alternatives` of this step. Say which one this proposal means, or write a third answer."
+      },
+      {
+        "subject": "vKEsyHFk/HBlhIeSD#tuxb9gwQ",
+        "what": "step",
+        "kind": "competing-field",
+        "field": "alternatives",
+        "mine": [
+          "no model has it",
+          "found",
+          "no board has it"
+        ],
+        "theirs": [
+          "no model has it",
+          "found"
+        ],
+        "repair": "This proposal and the variant it came from both changed `alternatives` of this step. Say which one this proposal means, or write a third answer."
+      },
+      {
+        "subject": "vKEsyHFk/nAmiQ3Vc#D3nOOMNN",
+        "what": "step",
+        "kind": "competing-field",
+        "field": "alternatives",
+        "mine": [
+          "a usage error",
+          "the command's contract lists its code",
+          "a refused model write",
+          "a code with a fixed exit",
+          "anything else",
+          "a refused board write"
+        ],
+        "theirs": [
+          "a usage error",
+          "the command's contract lists its code",
+          "a refused model write",
+          "a code with a fixed exit",
+          "anything else"
+        ],
+        "repair": "This proposal and the variant it came from both changed `alternatives` of this step. Say which one this proposal means, or write a third answer."
+      },
+      {
+        "subject": "vKEsyHFk/OjRLKb74#T4D1Md6Z",
+        "what": "step",
+        "kind": "competing-field",
+        "field": "alternatives",
+        "mine": [
+          "opens a model",
+          "no",
+          "opens a board"
+        ],
+        "theirs": [
+          "opens a model",
+          "no"
+        ],
+        "repair": "This proposal and the variant it came from both changed `alternatives` of this step. Say which one this proposal means, or write a third answer."
+      },
+      {
+        "subject": "vKEsyHFk/yejBBUFY#7GSvblsl",
+        "what": "step",
+        "kind": "competing-field",
+        "field": "alternatives",
+        "mine": [
+          "pane or view",
+          "model",
+          "board"
+        ],
+        "theirs": [
+          "pane or view",
+          "model"
+        ],
+        "repair": "This proposal and the variant it came from both changed `alternatives` of this step. Say which one this proposal means, or write a third answer."
       }
     ]
-  }
+  },
+  "retiredIds": [
+    "vKEsyHFk/yejBBUFY#A19ksdGe",
+    "vKEsyHFk/XppR9owz#TOMOWgDQ",
+    "vKEsyHFk/yejBBUFY#WWPvFeLg",
+    "vKEsyHFk/XppR9owz#9GGi3iZw",
+    "vKEsyHFk/UOXNWLhR#nmkLjKkz",
+    "vKEsyHFk/UOXNWLhR#aTUikCKr",
+    "vKEsyHFk/UOXNWLhR#AEEOu1vG",
+    "vKEsyHFk/UOXNWLhR#UAnbIRqG",
+    "vKEsyHFk/UOXNWLhR#OAY8mj0y",
+    "vKEsyHFk/UOXNWLhR#n5No6FUy",
+    "vKEsyHFk/UOXNWLhR#WT3s42AE",
+    "vKEsyHFk/UOXNWLhR#9VphxuuC",
+    "vKEsyHFk#tv4MSYd6",
+    "vKEsyHFk#NjziT92Y",
+    "vKEsyHFk#m5Ct61Wj",
+    "vKEsyHFk#Y4CPwsJC",
+    "vKEsyHFk#MT1O8WXn",
+    "vKEsyHFk#wN2XkLVD",
+    "vKEsyHFk#HqcAJhNA",
+    "vKEsyHFk#fU1obV1q",
+    "vKEsyHFk#ZwdlhWaG",
+    "vKEsyHFk#GfzrDnYW",
+    "vKEsyHFk#6rPPoEMd",
+    "vKEsyHFk#Zwk3OuRn",
+    "vKEsyHFk#gRc6GEfR",
+    "vKEsyHFk#0cSzgeYd",
+    "vKEsyHFk#A8IkfH4a",
+    "vKEsyHFk#JRcNAGp9",
+    "vKEsyHFk#WBbX6uPW",
+    "vKEsyHFk#jPdi4ndV",
+    "vKEsyHFk#JuK9kPUC",
+    "vKEsyHFk#2QaIm9u5",
+    "vKEsyHFk#PoaUWNrZ",
+    "vKEsyHFk#1Ki6QCRp",
+    "vKEsyHFk#N8ZJyIbU",
+    "vKEsyHFk#0oYDU8cV",
+    "vKEsyHFk#KMmwoBvr",
+    "vKEsyHFk#FT3wjIMa",
+    "vKEsyHFk#2PD9YeDq",
+    "vKEsyHFk#Np6QHSgA",
+    "vKEsyHFk#4S9sLbmq",
+    "vKEsyHFk#MzuJ4Y5F",
+    "vKEsyHFk#8I2z7YLx",
+    "vKEsyHFk#fmkuK9be",
+    "vKEsyHFk#CjQhZFoE"
+  ]
 }
