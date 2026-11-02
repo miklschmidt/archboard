@@ -31,8 +31,8 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/runtime/rules/dynamic-tools/authority/classification.ts",
-        "symbol": "GeneralThreadToolNameSchema"
+        "path": "packages/workbench/src/runtime/operations/dynamic-tools/dispatch/dispatch-support.ts",
+        "symbol": "GeneralThreadToolName"
       },
       "id": "vKEsyHFk/SJ2JMVyz#t5YUCWX1",
       "to": "vKEsyHFk/SJ2JMVyz#Fxm7RW2x"

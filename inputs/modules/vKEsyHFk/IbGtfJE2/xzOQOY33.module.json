@@ -19,7 +19,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/skills/src/runtime/rules/outcomes/outcomes.ts",
-        "symbol": "CHECK_KINDS"
+        "symbol": "OutcomeCheck"
       },
       "id": "vKEsyHFk/IbGtfJE2#PoidUOm3",
       "to": "vKEsyHFk/IbGtfJE2#k8wziYS4"

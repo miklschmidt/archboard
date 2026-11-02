@@ -12,6 +12,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
   "parent": "vKEsyHFk/UOXNWLhR#9L5uHzND",
+  "formerNames": [
+    "Open a card's board"
+  ],
   "outgoing": [
     {
       "order": 104000,
@@ -39,8 +42,5 @@
       "id": "vKEsyHFk/UOXNWLhR#2CWfWIJr",
       "to": "vKEsyHFk/UOXNWLhR#gIakrnWa"
     }
-  ],
-  "formerNames": [
-    "Open a card's board"
   ]
 }

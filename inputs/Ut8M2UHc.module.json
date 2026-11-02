@@ -8,8 +8,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/renderer/src/shared/rules/render/marks.ts"
   },
-  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Ut8M2UHc",
+  "parent": "vKEsyHFk/gbyqW4H3#eXWJ2qtq",
   "outgoing": []
 }
