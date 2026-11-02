@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-01T21:03:00Z'
+updated_date: '2026-11-02T00:14:00Z'
 labels:
   - renderer
   - motion
@@ -109,4 +109,6 @@ Review of e25501ab2..42923cc56: eight behavior findings and two standards findin
 The complete gate passed all 21 tasks and 49 browser owners at 8255d50fd. A further CPU regression exposed a rim disappearing on the second edit during its fade. The repair retains both direct rim shapes and their fading wrappers. The same regression now covers consecutive edits. The core build and complete gate run again on the final checkpoint.
 
 Pass before the push. A gpt-6.1-sol review of e25501ab2..42923cc56 found two standards faults and eight behavior faults, and it fixed each of them in the commits from 4fc10b4a9 to b6c81446c. The gate gave exit 0 with 21 of 21 tasks on b6c81446c, in the review and again in a separate run. Parity gave 2112 comparisons, a mean of 0.157 percent and a worst case of 0.783 percent. In three runs of each move on the large board at 60 Hz, a door drew 104 frames, with 8 frames over 25 ms and a longest gap of 83 ms, and a dive drew 97 frames, with 6 frames over 25 ms and a longest gap of 67 ms. A first load, a door, a flight and a first load with reduced motion were filmed on this build and looked at. The depth moves in, out and sideways were filmed on this build for the pull request.
+
+Junction marks now recede with their lines. The painter read the light from groups only, and a junction mark names its lines on the shape, so its dots and bars stayed at full strength while the lines receded. A mark now shows as much as the brightest of its lines, and this matches the rule in markVeil. On the real page with the pointer on a card, unlit dots measured a fade of 1.0 before the fix and 0.38 after it on the CPU painter. They measured 0.39 after it on the GPU painter, which had no before run. Lines measured 0.25 and 0.24, and lit dots stayed at 1.0. A dimmed dot reads a little stronger than its line because it sits over that line, as it does in the SVG.
 <!-- SECTION:NOTES:END -->

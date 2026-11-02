@@ -6,8 +6,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use archboard_scene::drawing::Toggle;
 use archboard_scene::geometry::{Curve, Point, Rect, Segment};
 use archboard_scene::scene::{
-    Atlas, Cap, Colour, Definition, Group, Item, Mask, MaskId, Motion, Painting, PathStep,
-    PulseLook, Purpose, Role, Scene, Shape, Stroke, Subject, SubjectKind, Token, TrafficMark,
+    Atlas, Cap, Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, Painting,
+    PathStep, PulseLook, Purpose, Role, Scene, Shape, Stroke, Subject, SubjectKind, Token,
+    TrafficMark,
 };
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 
@@ -15,7 +16,7 @@ use crate::between::PHASES;
 use crate::canvas::{Canvas, Count, Ink};
 use crate::flight::DiveWay;
 use crate::palette::Theme;
-use crate::presentation::{Camera, Marks, Recede};
+use crate::presentation::{Camera, Light, Marks, Recede, Shine};
 use crate::stage::Stage;
 
 mod kept;
@@ -30,6 +31,16 @@ struct Op {
     at: Vec2,
     /// A stroke's width, or a fill's opacity.
     size: f64,
+    /// How solid its ink is.
+    solid: f64,
+}
+
+/// How solid an ink is.
+fn solid_of(ink: &Ink) -> f64 {
+    match ink {
+        Ink::Solid(colour) => f64::from(colour.components[3]),
+        Ink::Gradient(..) => 1.0,
+    }
 }
 
 /// A canvas that records what it is asked to draw.
@@ -44,23 +55,21 @@ impl Canvas for Record {
         self.at = transform;
     }
     fn fill(&mut self, path: &BezPath, ink: &Ink, _: bool) {
-        let size = match ink {
-            Ink::Solid(colour) => f64::from(colour.components[3]),
-            Ink::Gradient(..) => 1.0,
-        };
         self.ops.push(Op {
             stroked: false,
             x: path.bounding_box().x0,
             at: self.at.translation(),
-            size,
+            size: solid_of(ink),
+            solid: solid_of(ink),
         });
     }
-    fn stroke(&mut self, path: &BezPath, stroke: &kurbo::Stroke, _: &Ink) {
+    fn stroke(&mut self, path: &BezPath, stroke: &kurbo::Stroke, ink: &Ink) {
         self.ops.push(Op {
             stroked: true,
             x: path.bounding_box().x0,
             at: self.at.translation(),
             size: stroke.width,
+            solid: solid_of(ink),
         });
     }
     fn push(&mut self, _: Option<(&BezPath, bool)>, _: f32) {}
@@ -234,6 +243,67 @@ fn what_is_out_of_the_light_recedes_and_traffic_recedes_furthest() {
     assert_eq!(super::rest_of(&recede, &Role::Label), 0.3);
     let traffic = super::rest_of(&recede, &Role::Traffic("e".to_owned()));
     assert!((traffic - 0.04).abs() < 1e-9);
+}
+
+/// A mark where some lines join: a dot, as `junction_marks` draws it.
+fn dot(x: f64, members: &[&str]) -> Item {
+    let circle = Geometry::Circle {
+        centre: Some(Point { x, y: 0.0 }),
+        radius: 3.0,
+    };
+    Item::Shape(Shape {
+        members: members.iter().map(|&id| id.to_owned()).collect(),
+        ..Shape::new(Purpose::Line, circle).filled(Token::Border)
+    })
+}
+
+/// A mark where lines join a few units apart: a bar, as `junction_marks` draws it.
+fn bar(x: f64, members: &[&str]) -> Item {
+    let at = |x| Point { x, y: 0.0 };
+    let steps = vec![
+        PathStep::Move { to: at(x) },
+        PathStep::Line { to: at(x + 6.0) },
+    ];
+    Item::Shape(Shape {
+        members: members.iter().map(|&id| id.to_owned()).collect(),
+        ..Shape::path(Purpose::Line, steps)
+            .unfilled()
+            .stroked(Stroke::new(Token::Border, 6.0))
+    })
+}
+
+#[test]
+fn a_join_recedes_with_its_lines_and_shows_as_much_as_the_brightest_of_them() {
+    let marks = vec![
+        dot(1.0, &["out", "lit"]),
+        dot(2.0, &["out", "reached", "far"]),
+        dot(3.0, &["out", "gone"]),
+        bar(4.0, &["out", "lit"]),
+        bar(5.0, &["out", "gone"]),
+    ];
+    let mut stage = stage_of(vec![Item::Group(Group::new(Role::Junctions, marks))]);
+    let shine = |opacity| Shine {
+        opacity,
+        delay: 0.0,
+    };
+    let light = Light {
+        rest: 0.14,
+        labels: 0.28,
+        subjects: HashMap::from([
+            ("lit".to_owned(), shine(1.0)),
+            ("reached".to_owned(), shine(0.6)),
+            ("far".to_owned(), shine(0.46)),
+        ]),
+        duration: 0.0,
+    };
+    stage.set_light(&light, 0.0);
+    let (drawn, _) = frame(&mut stage, 1.0);
+    let solid: Vec<f64> = drawn.iter().map(|op| op.solid).collect();
+    let wanted = [1.0, 0.6, 0.14, 1.0, 0.14];
+    assert_eq!(solid.len(), wanted.len());
+    for (one, other) in solid.iter().zip(wanted) {
+        assert!((one - other).abs() < 1e-6, "{solid:?} against {wanted:?}");
+    }
 }
 
 /// A relationship "e" and a part "n", drawn after it.

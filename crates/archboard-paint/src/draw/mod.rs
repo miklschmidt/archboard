@@ -314,6 +314,18 @@ impl<C: Canvas> Walk<'_, C> {
         }
     }
 
+    /// How much of a mark shows that stands with its members: as much as the
+    /// brightest of them. Any other shape shows as its group does.
+    fn shown_with_members(&self, shape: &Shape) -> f64 {
+        let recede = &self.presentation.recede;
+        shape
+            .members
+            .iter()
+            .map(|member| *recede.subjects.get(member).unwrap_or(&recede.rest))
+            .reduce(f64::max)
+            .unwrap_or(1.0)
+    }
+
     /// Draw a group, with its layer when it needs one.
     fn group(&mut self, group: &Group, inside: Inside) {
         if matches!(group.role, Role::HeadShade) && !inside.stuck {
@@ -498,7 +510,8 @@ impl<C: Canvas> Walk<'_, C> {
             colour: Colour::Black,
         };
         let fill = shape.fill.as_ref().unwrap_or(&black);
-        if let Some(ink) = self.ink(fill, shape.fill_opacity.unwrap_or(1.0), bounds) {
+        let alpha = shape.fill_opacity.unwrap_or(1.0) * self.shown_with_members(shape);
+        if let Some(ink) = self.ink(fill, alpha, bounds) {
             self.canvas.fill(path, &ink, false);
         }
         if let Some(stroke) = &shape.stroke {
@@ -518,7 +531,8 @@ impl<C: Canvas> Walk<'_, C> {
     ) {
         let selection = Paint::from(Token::DiagramSelection);
         let paint = if ring { &selection } else { &stroke.paint };
-        let Some(ink) = self.ink(paint, stroke.opacity.unwrap_or(1.0), bounds) else {
+        let alpha = stroke.opacity.unwrap_or(1.0) * self.shown_with_members(shape);
+        let Some(ink) = self.ink(paint, alpha, bounds) else {
             return;
         };
         let grown = self.far_scale(stroke, &shape.geometry, inside);
