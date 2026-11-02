@@ -135,7 +135,7 @@ function canonicalContent(
 		...collections.map((collection) => `${mine.manifest.id}#${collection.id}`),
 	]);
 	const retiredIds = [
-		...new Set([...(mine.manifest.retiredIds ?? []), ...(theirs.manifest.retiredIds ?? [])]),
+		...new Set([...(theirs.manifest.retiredIds ?? []), ...(mine.manifest.retiredIds ?? [])]),
 	].filter((id) => !live.has(id));
 	inputs.set("model.json", Buffer.from(JSON.stringify({ ...theirs.manifest, retiredIds })));
 	return decodeModel(
