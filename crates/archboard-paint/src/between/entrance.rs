@@ -4,10 +4,11 @@
 //! A move can carry what two scenes share. Here nothing is shared, so the
 //! picture blooms out of its middle instead. Containers open first, so the cards
 //! have a floor to land on. The cards come out of the middle in a wave, each from a
-//! little nearer the middle and smaller than it lands. Then a spark runs along the
-//! connections and draws the lines, and each label arrives when the spark reaches
-//! it. Everything is timed by where it is on the board, not by how many there are,
-//! so a board of four cards and a board of forty read as the same gesture.
+//! little nearer the middle and smaller than it lands. Once the cards the lines leave
+//! and reach stand there, a spark runs along the connections and draws the lines, and
+//! each label arrives when the spark reaches it. Everything is timed by where it is
+//! on the board, not by how many there are, so a board of four cards and a board of
+//! forty read as the same gesture.
 //!
 //! A subject the last picture also drew is the same subject. It flies from where
 //! the last picture drew it to its place in this one, so the eye keeps hold of
@@ -18,7 +19,7 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Group, Item, Role, Scene, Transform};
 
-use super::arrive::Grow;
+use super::arrive::{Grow, SHOWN_BY};
 use super::circuit::{Span, Spans, label_span, length_of, line_spans};
 use super::found::{Form, Found, found, holds_subject};
 use super::handover::{Handover, Last};
@@ -159,12 +160,33 @@ fn arriving(
     ))
 }
 
+/// When a card stands in its place as a line sees it: in full, and all but settled.
+fn stands_by(card: &Found<'_>, (begin, end): (f64, f64), last: &Last<'_>) -> f64 {
+    let (begin, end) = if last.stood_for(card).is_some() {
+        (0.0, FLOWN_BY)
+    } else {
+        (begin, end)
+    };
+    begin + (end - begin) * SHOWN_BY
+}
+
 /// When each line is drawn on, by its place in the groups.
-fn line_times(groups: &[Found<'_>], scene: &Scene, entry: &Entry) -> Vec<(usize, Span)> {
+fn line_times(
+    groups: &[Found<'_>],
+    scene: &Scene,
+    entry: &Entry,
+    there: &dyn Fn(&str) -> f64,
+) -> Vec<(usize, Span)> {
     let places: Vec<usize> = (0..groups.len())
         .filter(|&at| groups[at].form() == Form::Line)
         .collect();
-    line_spans(groups, &places, scene, (entry.lines_start, entry.draw_end))
+    line_spans(
+        groups,
+        &places,
+        scene,
+        (entry.lines_start, entry.draw_end),
+        there,
+    )
 }
 
 /// The lines, which a spark draws on once the cards are there.
@@ -196,7 +218,11 @@ fn frames_and_labels(
             if let Some(&way) = ways.get(group.id) {
                 let mover = last.trays.get(group.id).map_or_else(
                     || Mover::Open(Box::new(Opening::new(group, way))),
-                    |&tray| Mover::Resize(Box::new(Resizing::new(group, tray, way, last))),
+                    |&tray| {
+                        let resizing = Resizing::new(group, tray, way, last.shown)
+                            .holding(last.holder == Some(group.id));
+                        Mover::Resize(Box::new(resizing))
+                    },
                 );
                 Some((at, mover))
             } else if group.is_label() {
@@ -213,8 +239,9 @@ fn frames_and_labels(
 
 /// When something that belongs to no subject fades in. A line's pulses start as
 /// it ends, the plate under a line's words comes with them, and a mark on the
-/// lines comes as the last lines land. The rest of the page's furniture fades in
-/// with the frames, so that nothing stands on its own before the picture arrives.
+/// lines comes as the last lines land. The start and the end of a flow stand at its
+/// far ends, so they come with the last cards. The rest of the page's furniture fades
+/// in with the frames, so that nothing stands on its own before the picture arrives.
 fn furniture_times(
     item: &Item,
     spans: &Spans<'_>,
@@ -241,6 +268,7 @@ fn furniture_times(
             }
         }),
         Role::Junctions => (entry.labels_start * length, length),
+        Role::Shape => (entry.cards_start_by, entry.cards_start_by + entry.card_span),
         _ => frames,
     }
 }
@@ -300,13 +328,18 @@ impl Entrance {
         let groups = found(scene);
         let middle = middle_of_scene(scene);
         let last = Last::of(handover);
-        let times = line_times(&groups, scene, &phases.entry);
-        let length = length_of(times.iter().map(|&(_, span)| span));
-        let (all, of_subject) = movers(&groups, &times, phases, middle, &last);
         let cards: HashMap<&str, (usize, f64, f64)> = card_times(&groups, &phases.entry, middle)
             .into_iter()
             .map(|(at, begin, end)| (groups[at].id, (at, begin, end)))
             .collect();
+        let there = |id: &str| {
+            cards.get(id).map_or(0.0, |&(at, begin, end)| {
+                stands_by(&groups[at], (begin, end), &last)
+            })
+        };
+        let times = line_times(&groups, scene, &phases.entry, &there);
+        let length = length_of(times.iter().map(|&(_, span)| span));
+        let (all, of_subject) = movers(&groups, &times, phases, middle, &last);
         let flown = groups
             .iter()
             .filter(|group| {
@@ -342,8 +375,7 @@ impl Entrance {
             furniture: &furniture,
         };
         let mut plan = Plan::new(&scene.body, all, &wiring);
-        let landed = |id: &str| cards.get(id).map_or(0.0, |&(_, _, end)| end);
-        plan.cover(rims(&groups, &times, &landed));
+        plan.cover(rims(&groups, &times));
         let length = plan.length();
         Entrance {
             plan,
@@ -529,6 +561,23 @@ mod tests {
     }
 
     #[test]
+    fn no_line_leaves_or_reaches_a_card_before_the_card_shows_in_full() {
+        let board = tall_board();
+        let entrance = Entrance::new(&board, &PHASES, None);
+        let drawn_by = |at: &f64| {
+            let body = entrance.at(*at);
+            solid(drawing(&body, "e")[0]) > 0.0
+        };
+        let begins = (0..400)
+            .map(|step| f64::from(step) * 0.01)
+            .find(drawn_by)
+            .expect("it is drawn");
+        let body = entrance.at(begins);
+        assert_eq!(solid(drawing(&body, "top")[0]), 1.0, "it leaves a card");
+        assert_eq!(solid(drawing(&body, "middle")[0]), 1.0, "it reaches one");
+    }
+
+    #[test]
     fn an_entrance_draws_the_lines_after_the_cards_and_each_label_as_its_line_reaches_it() {
         let board = tall_board();
         let lines = |progress: f64| {
@@ -538,12 +587,12 @@ mod tests {
                 .map(|group| solid(group))
                 .collect::<Vec<_>>()
         };
-        assert_eq!(lines(0.2), [0.0, 0.0], "no line before the cards");
-        let [line, label] = lines(0.36)[..] else {
+        assert_eq!(lines(0.5), [0.0, 0.0], "no line before the cards");
+        let [line, label] = lines(0.7)[..] else {
             panic!("a line and its label")
         };
         assert!(line > 0.0, "the line has begun");
         assert_eq!(label, 0.0, "the spark has not reached its label");
-        assert!(lines(0.6)[1] > 0.0, "it arrives as the spark reaches it");
+        assert!(lines(1.0)[1] > 0.0, "it arrives as the spark reaches it");
     }
 }

@@ -285,10 +285,10 @@ The more lines run at once, the slower each goes, by the square root of their nu
 
 `crates/archboard-paint/src/between/spark.rs` draws the spark and the rim. A rim starts where a line lands on a card, and it runs both ways round the card's edge. Each card takes one rim, from the first line that lands on it.
 
-| Moment                | Sparks start | The last spark lands | The rest of the move lands |
-| --------------------- | ------------ | -------------------- | -------------------------- |
-| A first load          | 243 ms       | 2,128 ms             | 760 ms                     |
-| A move on one picture | 269 ms       | 1,920 ms             | 640 ms                     |
+| Moment                | Sparks start  | The last spark lands | The rest of the move lands |
+| --------------------- | ------------- | -------------------- | -------------------------- |
+| A first load          | 264 to 492 ms | Up to 2,377 ms       | 760 ms                     |
+| A move on one picture | 269 ms        | 1,920 ms             | 640 ms                     |
 
 A small board does not stretch to fill this time, and it lands early. A line with a different number of points, or points that move more than 10 units apart, counts as a new shape. A line that keeps its shape rides with its cards.
 
@@ -313,9 +313,27 @@ A container that the last picture also drew now changes its size. It starts in t
 
 Three smaller changes follow from one tray. The lens of an entrance blurred the tab outside its circle, so the entrance has no lens when a tray stays. The old cards hung outside a tray that shrank, so the last picture now leaves inside the tray when all its cards stood there. A second change that interrupts the first takes the tray from the box that it held, and a film of a second press 233 ms in shows widths of 971, 976, 972 and 960 pixels with no jump.
 
-A sequence's flow frame now counts as a container, so it opens on a first load. A card's rim no longer uses the box of the atlas, because the box of a lifeline holds its whole column. That box caused the glow up the first column. A rim goes round a body that a group draws, so it now runs round an activation bar. A rim also waits for its card to land.
+A sequence's flow frame now counts as a container, so it opens on a first load. A card's rim no longer uses the box of the atlas, because the box of a lifeline holds its whole column. That box caused the glow up the first column. A rim goes round a body that a group draws, so it now runs round an activation bar.
 
 Films of both directions on the GPU show one tray, a sharp tab, and no pop at the landing. With reduced motion, the change is one cut. In headless Chrome at 60 Hz, three runs of each direction gave a mean frame gap of 16.7 ms and a longest gap of 16.8 ms on the GPU. One run of each direction on the CPU painter gave a mean of 30.3 to 32.3 ms and a longest gap of 50 ms. These films ran on the board of a flow with twelve steps and eight participants, not on the largest board.
+
+### A line waits for its cards
+
+The film of a tall flowchart showed lines that ran into empty space. The cards come out of the middle, the sparks started at 243 ms, and the top cards showed in full only at 492 ms. Rims waited for their cards, so they lit from the middle out and not along the flow.
+
+The whole drawing now waits until no line leaves or reaches a card that does not show in full. A card shows in full at 60 percent of its arrival, and it stands within a few pixels of its place by then. All lines wait by the same time, so a line still starts as the line that feeds it lands. The wait is at most 249 ms, and each line keeps its pace, so a board ends that much later. A rim lights as its line lands, so on the flowchart the rims now run from the first card to the last.
+
+The start and the end of a flow belong to no subject, so they faded in with the frames, as two gold blurs before their container opened. They now come with the last cards.
+
+On the largest board, three runs of a first load gave a mean frame gap of 18.4 ms on the GPU, with one gap of 117 ms at its start. Two runs on the flowchart gave 16.7 and 16.9 ms. Two runs of the largest board on the CPU painter gave a mean of 41.7 and 42.7 ms and a longest gap of 117 and 133 ms. One run of the flowchart gave 29.0 ms and 67 ms. All ran in headless Chrome at 60 Hz. With reduced motion, a first load of the flowchart changes no pixel after its first frame.
+
+### A move cuts an opening short
+
+A door pressed during an opening showed a second wall. The move cross-faded from what had opened to the frame of the next picture, and the edge of the opening stayed where it stood. A container that a move finds on its way open now goes on from the box that it reached, in the way that a tray resizes, and the edge rides with it and cools. `crates/archboard-paint/src/between/resize.rs` holds this, and tests own the start, the landing, and the edge.
+
+An earlier report named dark card-sized patches after such a press. They are no fault of the move. The pointer stands on the door, so the board dims round it, and a door pressed at rest gives the same picture.
+
+The same film showed bright rims round dimmed cards. A rim now stands with its card, in the way that a junction mark stands with its lines, so it dims with the card.
 
 ### What the lens costs
 

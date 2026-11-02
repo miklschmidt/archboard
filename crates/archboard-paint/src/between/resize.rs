@@ -4,14 +4,19 @@
 //! changes its size, so a flow stays where it is as its grammar changes. Its corners
 //! and walls keep their shape, because each point keeps its distance from the nearer
 //! edge of the box.
+//!
+//! A move that cuts the opening of a container short takes it on the same way, from
+//! the box it had reached, with the edge that led it riding along and cooling. A
+//! cross-fade from what had opened to the next picture's frame would show two walls.
+
+use std::collections::HashMap;
 
 use archboard_scene::geometry::{Point, Rect};
 use archboard_scene::scene::{Geometry, Group, Item, PathStep, Shape, Transform, Viewport};
 
 use super::ease::{carried, ease_out, lerp, mix_rect, phase, then};
-use super::found::Found;
-use super::handover::Last;
-use super::open::{OPENS, Way};
+use super::found::{Found, Pairing};
+use super::open::{OPENS, Way, edge, under_way, ways, worn_edge};
 
 /// One group of a container the last picture also drew, changing its size.
 #[derive(Clone, Debug)]
@@ -23,24 +28,37 @@ pub(super) struct Resizing {
     carry: Transform,
     to: Rect,
     end: f64,
+    /// The well of the container, where an edge lands.
+    well: Rect,
     /// How much of it shows at its start.
     shown: f64,
     /// Whether the last picture stood inside it, and so leaves inside it.
     pub(super) holds_last: bool,
+    /// The edge an opening left on it: its box, and how solid it stands.
+    edge: Option<(Rect, f64)>,
 }
 
 impl Resizing {
-    /// A group of a container that stood in a box of the last picture.
-    pub(super) fn new(found: &Found<'_>, stood: Rect, way: Way, last: &Last<'_>) -> Resizing {
+    /// A group of a container that stood in a box of the last picture, where as much
+    /// of it showed as `shown` says.
+    pub(super) fn new(found: &Found<'_>, stood: Rect, way: Way, shown: f64) -> Resizing {
         Resizing {
-            holds_last: last.holder == Some(found.id),
+            holds_last: false,
             group: found.group.clone(),
             stood,
             carry: Transform::translate(0.0, 0.0),
             to: way.whole,
+            well: way.well,
             end: way.end(),
-            shown: last.shown,
+            shown,
+            edge: None,
         }
+    }
+
+    /// Say whether the last picture stood inside it.
+    pub(super) fn holding(mut self, holds_last: bool) -> Resizing {
+        self.holds_last = holds_last;
+        self
     }
 
     /// Where the container finishes changing its size.
@@ -91,9 +109,51 @@ impl Resizing {
             y: held.y - self.to.y * scale,
             scale: Some(scale),
         };
+        if let Some((stood, solid)) = self.edge {
+            let at = mix_rect(stood, self.well, moved);
+            let (x, y) = (at.x - placed.x, at.y - placed.y);
+            group
+                .items
+                .push(edge(Rect { x, y, ..at }, solid * (1.0 - here).powi(2)));
+        }
         group.transform = Some(then(placed, group.transform));
         group
     }
+}
+
+/// The containers a move finds cut short on their way open, by their places in the
+/// next picture. Each goes on from where it stood and finishes by `end`.
+pub(super) fn resumed(
+    old: &[Found<'_>],
+    new: &[Found<'_>],
+    pairing: &Pairing,
+    middle: Point,
+    end: f64,
+) -> HashMap<usize, Resizing> {
+    let cut_short: Vec<(Found<'_>, usize)> = pairing
+        .shared
+        .iter()
+        .filter(|&&(a, b)| old[a].is_region() && new[b].is_region())
+        .filter(|&&(a, _)| under_way(old[a].group).is_some())
+        .map(|&(a, b)| (old[a], b))
+        .collect();
+    let going_on: Vec<Found<'_>> = cut_short.iter().map(|&(_, b)| new[b]).collect();
+    let ways = ways(&going_on, middle, (0.0, end));
+    cut_short
+        .into_iter()
+        .filter_map(|(last, b)| {
+            let stood = under_way(last.group)?;
+            let shown = last.group.opacity.unwrap_or(1.0);
+            let resizing = Resizing::new(&new[b], stood, *ways.get(new[b].id)?, shown);
+            Some((
+                b,
+                Resizing {
+                    edge: worn_edge(last.group),
+                    ..resizing
+                },
+            ))
+        })
+        .collect()
 }
 
 /// Keeps each point its distance from the nearer edge of a box as the box changes
@@ -247,7 +307,6 @@ mod tests {
     use archboard_scene::scene::{Geometry, Group, Item, Transform};
 
     use super::super::found::found;
-    use super::super::handover::Last;
     use super::super::open::ways;
     use super::super::testing::{rect, region, scene};
     use super::Resizing;
@@ -262,7 +321,7 @@ mod tests {
         let board = scene(vec![region("r", tray), region("r", band)], &[]);
         let groups = found(&board);
         let way = ways(&groups, MIDDLE, (0.0, 1.0))["r"];
-        Resizing::new(&groups[1], stood, way, &Last::default())
+        Resizing::new(&groups[1], stood, way, 0.0)
     }
 
     /// The box that shows a group, and the box of the first shape in it.

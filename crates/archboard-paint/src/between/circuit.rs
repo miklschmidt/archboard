@@ -205,18 +205,22 @@ fn run_of(group: &Group) -> Option<Run> {
 }
 
 /// When some of a scene's lines are drawn, as shares of a move, by their places
-/// among the groups.
+/// among the groups. `there` says when a subject stands in its place, and the
+/// drawing waits until no line leaves or reaches a card before that. All its lines
+/// wait alike, so a line still starts as the line that feeds it lands.
 pub(super) fn line_spans(
     groups: &[Found<'_>],
     lines: &[usize],
     scene: &Scene,
     (first, last): Span,
+    there: &dyn Fn(&str) -> f64,
 ) -> Vec<(usize, Span)> {
-    let boxes: Vec<Rect> = groups
+    let cards: Vec<(&str, Rect)> = groups
         .iter()
         .filter(|group| group.form() == Form::Card && !group.is_label())
-        .filter_map(|group| group.frame)
+        .filter_map(|group| Some((group.id, group.frame?)))
         .collect();
+    let boxes: Vec<Rect> = cards.iter().map(|&(_, frame)| frame).collect();
     let drawn: Vec<(usize, Run)> = lines
         .iter()
         .filter_map(|&at| Some((at, run_of(groups[at].group)?)))
@@ -224,10 +228,20 @@ pub(super) fn line_spans(
     let runs: Vec<Run> = drawn.iter().map(|&(_, run)| run).collect();
     let least = scene.width.hypot(scene.height) * LEAST_RUN;
     let window = last - first;
+    let spans: Vec<Span> = run_order(&runs, &boxes, least)
+        .into_iter()
+        .map(|(begin, end)| (first + begin * window, first + end * window))
+        .collect();
+    let stands = |point: Point| holder(&boxes, point).map_or(0.0, |at| there(cards[at].0));
+    let wait = runs
+        .iter()
+        .zip(&spans)
+        .map(|(run, &(begin, end))| (stands(run.start) - begin).max(stands(run.end) - end))
+        .fold(0.0, f64::max);
     drawn
         .iter()
-        .zip(run_order(&runs, &boxes, least))
-        .map(|(&(at, _), (begin, end))| (at, (first + begin * window, first + end * window)))
+        .zip(spans)
+        .map(|(&(at, _), (begin, end))| (at, (begin + wait, end + wait)))
         .collect()
 }
 

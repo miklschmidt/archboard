@@ -10,7 +10,9 @@
 use std::collections::HashMap;
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Group, Item, Purpose, Shape, Stroke, Token, Transform, Viewport};
+use archboard_scene::scene::{
+    Geometry, Group, Item, Purpose, Role, Shape, Stroke, Token, Transform, Viewport,
+};
 
 use super::ease::{carried, ease_out, phase};
 use super::found::Found;
@@ -68,7 +70,7 @@ pub(super) struct Way {
     /// All that the container draws.
     pub(super) whole: Rect,
     /// The well, where the edge lands: the tab stands above it.
-    well: Rect,
+    pub(super) well: Rect,
     front: Front,
     /// How far the front goes before it reaches the container.
     near: f64,
@@ -118,13 +120,33 @@ fn distances(rect: Rect, middle: Point) -> (f64, f64) {
     (near_x.max(near_y), far_x.max(far_y))
 }
 
+/// How the plain items of a group stand against the picture.
+fn placing(group: &Group) -> Transform {
+    group.transform.unwrap_or(Transform::translate(0.0, 0.0))
+}
+
 /// The box a container shows itself in while a move that was cut short has it.
-fn under_way(group: &Group) -> Option<Rect> {
+pub(super) fn under_way(group: &Group) -> Option<Rect> {
     let Item::Viewport(viewport) = group.items.first()? else {
         return None;
     };
-    let placed = group.transform.unwrap_or(Transform::translate(0.0, 0.0));
-    Some(carried(viewport.frame, placed))
+    Some(carried(viewport.frame, placing(group)))
+}
+
+/// The edge a container wears while a move that was cut short has it: its box, and
+/// how solid it stands from 0 to 1.
+pub(super) fn worn_edge(group: &Group) -> Option<(Rect, f64)> {
+    let Item::Group(edge) = group.items.get(1)? else {
+        return None;
+    };
+    let Item::Shape(shape) = edge.items.first()? else {
+        return None;
+    };
+    let Geometry::Rect { rect, .. } = shape.geometry else {
+        return None;
+    };
+    let solid = shape.stroke.as_ref()?.opacity? / EDGE[0].1;
+    Some((carried(rect, placing(group)), solid))
 }
 
 /// The containers among some groups: each one's id, all that it draws, and its well.
@@ -213,17 +235,17 @@ impl Opening {
     }
 
     /// The container at a moment of the move.
-    pub(super) fn at(&self, progress: f64) -> Vec<Item> {
+    pub(super) fn at(&self, progress: f64) -> Group {
         let way = self.way;
         let reach = way.front.at(progress);
+        let mut group = self.group.clone();
         if reach >= way.far {
-            return vec![Item::Group(self.group.clone())];
+            return group;
         }
         let square = way.front.square(reach);
-        let mut group = self.group.clone();
         let Some(area) = meeting(way.whole, square) else {
             group.opacity = Some(0.0);
-            return vec![Item::Group(group)];
+            return group;
         };
         let span = way.far - way.near;
         let shown = ease_out(phase(reach, way.near, way.near + span * SHOWN_BY));
@@ -233,38 +255,42 @@ impl Opening {
             view: area,
             items: std::mem::take(&mut group.items),
         })];
-        let mut items = vec![Item::Group(group)];
         if self.edged {
             let cooled = (1.0 - phase(reach, way.near + span * COOLS_FROM, way.far)).powi(2);
             let reached = meeting(area, way.well).unwrap_or(area);
-            items.extend(EDGE.map(|layer| edge(reached, layer, shown * cooled)));
+            group.items.push(edge(reached, cooled));
         }
-        items
+        group
     }
 }
 
-/// One layer of the edge that leads an opening.
-fn edge(area: Rect, (width, solid): (f64, f64), shown: f64) -> Item {
-    let stroke = Stroke {
-        opacity: Some(solid * shown),
-        ..Stroke::new(Token::DiagramText, width)
+/// The edge that leads an opening, in a group of its own, so that it is no box of
+/// the container's. `solid` says how solid it stands, from 0 to 1.
+pub(super) fn edge(area: Rect, solid: f64) -> Item {
+    let layer = |(width, most): (f64, f64)| {
+        let stroke = Stroke {
+            opacity: Some(most * solid),
+            ..Stroke::new(Token::DiagramText, width)
+        };
+        Item::Shape(
+            Shape::rect(Purpose::Plate, area, Some(EDGE_CORNER))
+                .unfilled()
+                .stroked(stroke),
+        )
     };
-    Item::Shape(
-        Shape::rect(Purpose::Plate, area, Some(EDGE_CORNER))
-            .unfilled()
-            .stroked(stroke),
-    )
+    Item::Group(Group::new(Role::Marks, EDGE.map(layer).to_vec()))
 }
 
 #[cfg(test)]
 mod tests {
     use archboard_scene::geometry::{Point, Rect};
-    use archboard_scene::scene::{Group, Item, Scene};
+    use archboard_scene::scene::{Group, Item, Scene, Transform};
 
+    use super::super::ease::carried;
     use super::super::found::found;
     use super::super::testing::{PHASES, card, drawing, rect, region, scene};
     use super::super::{Between, Entrance, Handover};
-    use super::{Opening, ways};
+    use super::{Opening, ways, worn_edge};
 
     const MIDDLE: Point = Point { x: 200.0, y: 100.0 };
 
@@ -308,22 +334,15 @@ mod tests {
         Opening::new(group, all[id])
     }
 
-    fn first_group(items: &[Item]) -> &Group {
-        let Some(Item::Group(group)) = items.first() else {
-            panic!("the container comes first")
-        };
-        group
-    }
-
     #[test]
     fn a_container_opens_out_of_the_middle() {
         let board = board();
         let early = opening_of(&board, "near", 0).at(PHASES.entry.region_span * 0.25);
-        let area = shown_box(first_group(&early)).expect("a box shows it");
+        let area = shown_box(&early).expect("a box shows it");
         assert!(area.width > 0.0 && area.width < 320.0, "it is on its way");
         assert!(area.x < MIDDLE.x && MIDDLE.x < area.x + area.width);
         assert!(area.y < MIDDLE.y && MIDDLE.y < area.y + area.height);
-        assert_eq!(early.len(), 3, "the frame wears the edge");
+        assert!(worn_edge(&early).is_some(), "the frame wears the edge");
     }
 
     #[test]
@@ -331,8 +350,8 @@ mod tests {
         let board = board();
         let frame = opening_of(&board, "near", 0);
         let landed = frame.at(frame.end());
-        assert_eq!(landed.len(), 1);
-        assert_eq!(shown_box(first_group(&landed)), None, "nothing cuts it");
+        assert_eq!(shown_box(&landed), None, "nothing cuts it");
+        assert_eq!(worn_edge(&landed), None);
     }
 
     #[test]
@@ -340,10 +359,10 @@ mod tests {
         let board = board();
         let at = PHASES.entry.region_span * 0.2;
         let (frame, header) = (opening_of(&board, "near", 0), opening_of(&board, "near", 1));
-        let boxes = [&frame, &header].map(|opening| shown_box(first_group(&opening.at(at))));
+        let boxes = [&frame, &header].map(|opening| shown_box(&opening.at(at)));
         assert!(boxes[0].is_some());
         assert_eq!(boxes[0], boxes[1]);
-        assert_eq!(header.at(at).len(), 1);
+        assert_eq!(worn_edge(&header.at(at)), None);
     }
 
     #[test]
@@ -351,10 +370,10 @@ mod tests {
         let board = board();
         let (near, far) = (opening_of(&board, "near", 0), opening_of(&board, "far", 0));
         let early = PHASES.entry.region_span * 0.1;
-        assert!(shown_box(first_group(&near.at(early))).is_some());
+        assert!(shown_box(&near.at(early)).is_some());
         let unseen = far.at(early);
-        assert_eq!(unseen.len(), 1);
-        assert_eq!(first_group(&unseen).opacity, Some(0.0));
+        assert_eq!(unseen.opacity, Some(0.0));
+        assert_eq!(worn_edge(&unseen), None);
     }
 
     #[test]
@@ -364,7 +383,7 @@ mod tests {
         let board = board();
         let frame = opening_of(&board, "near", 0);
         let begins = PHASES.entry.cards_start + PHASES.entry.cards_start_by * 0.2;
-        let area = shown_box(first_group(&frame.at(begins))).expect("a box shows it");
+        let area = shown_box(&frame.at(begins)).expect("a box shows it");
         assert!(area.y <= 90.0 && area.y + area.height >= 110.0);
     }
 
@@ -438,6 +457,64 @@ mod tests {
         let entrance = Entrance::new(&board(), &PHASES, Some(handover));
         assert!(entrance.keeps_tray());
         assert_eq!(entrance.holder_at(0.0), None);
+    }
+
+    /// The board with its wide container a little wider, as a door in it opens.
+    fn with_a_door_open() -> Scene {
+        scene(
+            vec![
+                region("near", rect(40.0, 60.0, 350.0, 80.0)),
+                region("far", rect(340.0, 160.0, 50.0, 30.0)),
+                card("c", rect(180.0, 90.0, 40.0, 20.0), &["C"]),
+                region("near", rect(40.0, 50.0, 60.0, 10.0)),
+            ],
+            &[],
+        )
+    }
+
+    /// The opening of the board as it stood a quarter of the way, and the move that
+    /// cut it short.
+    fn cut_short() -> (Scene, Between) {
+        let board = board();
+        let entrance = Entrance::new(&board, &PHASES, None);
+        let seen = Scene {
+            body: entrance.at(PHASES.entry.region_span * 0.25),
+            ..board
+        };
+        let move_ = Between::new(&seen, &with_a_door_open(), (0.0, 0.0), &PHASES);
+        (seen, move_)
+    }
+
+    /// The box that shows a group, where the group stands.
+    fn held_box(group: &Group) -> Rect {
+        let at = group.transform.unwrap_or(Transform::translate(0.0, 0.0));
+        carried(shown_box(group).expect("a box shows it"), at)
+    }
+
+    #[test]
+    fn a_container_a_move_cut_short_goes_on_opening_from_where_it_stood() {
+        let (seen, move_) = cut_short();
+        let stood = held_box(drawing(&seen.body, "near")[0]);
+        let start = move_.at(0.0);
+        assert_eq!(held_box(drawing(&start, "near")[0]), stood);
+        let later = move_.at(0.4);
+        assert!(held_box(drawing(&later, "near")[0]).width > stood.width);
+        assert_eq!(move_.at(move_.length()), with_a_door_open().body);
+    }
+
+    #[test]
+    fn a_container_a_move_cut_short_takes_its_edge_along_and_lets_it_cool() {
+        let (seen, move_) = cut_short();
+        let (stood, solid) = worn_edge(drawing(&seen.body, "near")[0]).expect("it wears its edge");
+        let edge_at = |progress: f64| {
+            let body = move_.at(progress);
+            worn_edge(drawing(&body, "near")[0]).expect("it wears its edge")
+        };
+        let (start, solid_at_start) = edge_at(0.0);
+        assert_eq!((start, solid_at_start), (stood, solid), "no step in it");
+        let (later, solid_later) = edge_at(0.4);
+        assert!(later.width > stood.width, "it runs with the box");
+        assert!(solid_later < solid, "it cools");
     }
 
     #[test]

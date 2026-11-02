@@ -81,7 +81,7 @@ impl Mover {
             Mover::Ride(ride) => ride.at(progress),
             Mover::Inside(inside) => inside.at(progress),
             Mover::Rim(rim) => rim.at(progress),
-            Mover::Open(opening) => opening.at(progress),
+            Mover::Open(opening) => vec![Item::Group(opening.at(progress))],
             Mover::Resize(resizing) => vec![Item::Group(resizing.at(progress))],
             Mover::Both(old, new) => {
                 let mut both = old.at(progress);

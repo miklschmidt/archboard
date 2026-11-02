@@ -25,8 +25,8 @@ const ARRIVE_SCALE: f64 = 0.94;
 /// How much a card that blooms out of a picture grows from.
 const BLOOM_SCALE: f64 = 0.84;
 
-/// How far through its arrival a card shows in full.
-const SHOWN_BY: f64 = 0.6;
+/// How far through its arrival a card shows in full, all but settled.
+pub(super) const SHOWN_BY: f64 = 0.6;
 
 /// Where a label that crosses the board is gone, as a share of the move.
 pub(super) const LABEL_GONE_BY: f64 = 0.16;

@@ -180,18 +180,14 @@ fn paint_of(group: &Group) -> Option<Paint> {
 }
 
 /// The rims of the cards that a spark lands on: each lights once, with the first
-/// line to land there, in that line's colour, as soon as its card has landed. A rim
-/// goes round a body that a group draws: the atlas's box of a participant's lifeline
-/// holds its whole column.
-pub(super) fn rims(
-    groups: &[Found<'_>],
-    spans: &[(usize, Span)],
-    landed: &dyn Fn(&str) -> f64,
-) -> Vec<Mover> {
-    let bodies: Vec<(Rect, f64)> = groups
+/// line to land there, in that line's colour. A rim goes round a body that a group
+/// draws: the atlas's box of a participant's lifeline holds its whole column. It stands
+/// with its card, so that it dims with it.
+pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> {
+    let bodies: Vec<(Rect, &str)> = groups
         .iter()
         .filter(|group| group.is_card())
-        .filter_map(|group| Some((largest_rect(group.group)?, landed(group.id))))
+        .filter_map(|group| Some((largest_rect(group.group)?, group.id)))
         .collect();
     let cards: Vec<Rect> = bodies.iter().map(|&(card, _)| card).collect();
     let mut first: Vec<Option<(f64, Paint, Point)>> = vec![None; cards.len()];
@@ -208,7 +204,7 @@ pub(super) fn rims(
     bodies
         .iter()
         .zip(first)
-        .filter_map(|(&(card, there), lit)| {
+        .filter_map(|(&(card, id), lit)| {
             let (end, paint, point) = lit?;
             let edge = Rect {
                 x: card.x - RIM_ROOM,
@@ -216,15 +212,16 @@ pub(super) fn rims(
                 width: card.width + RIM_ROOM * 2.0,
                 height: card.height + RIM_ROOM * 2.0,
             };
-            let shape = Shape::rect(Purpose::Plate, edge, Some(RIM_CORNER))
+            let mut shape = Shape::rect(Purpose::Plate, edge, Some(RIM_CORNER))
                 .unfilled()
                 .stroked(Stroke::new(sparked(&paint, RIM_TOWARD_TEXT), 1.0));
+            shape.members = vec![id.to_owned()];
             let (landed, edge) = along_outline(&shape.geometry, point);
             Some(Mover::Rim(Box::new(Rim {
                 shape,
                 landed,
                 edge,
-                start: end.max(there),
+                start: end,
             })))
         })
         .collect()
@@ -378,22 +375,23 @@ mod tests {
         ];
         let board = scene(body, &[("actor", column)]);
         let groups = found(&board);
-        assert!(rims(&groups, &[(1, (0.0, 1.0))], &|_| 0.0).is_empty());
+        assert!(rims(&groups, &[(1, (0.0, 1.0))]).is_empty());
     }
 
     #[test]
-    fn a_rim_waits_for_a_card_that_lands_after_its_line() {
+    fn a_rim_stands_with_its_card_and_lights_as_the_line_lands() {
         let body = vec![
             card("c", rect(0.0, 0.0, 100.0, 40.0), &[]),
             line("l", &[(300.0, 20.0), (50.0, 20.0)]),
         ];
         let board = scene(body, &[]);
         let groups = found(&board);
-        let lit = rims(&groups, &[(1, (0.0, 0.3))], &|_| 0.7);
+        let lit = rims(&groups, &[(1, (0.0, 0.3))]);
         let [Mover::Rim(rim)] = lit.as_slice() else {
             panic!("one rim")
         };
-        assert_eq!(rim.start, 0.7);
+        assert_eq!(rim.start, 0.3);
+        assert_eq!(rim.shape.members, ["c"], "it dims with the card");
     }
 
     #[test]

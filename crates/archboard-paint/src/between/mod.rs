@@ -58,6 +58,7 @@ use found::{Form, Found, Pairing, found, holds_subject, pair};
 use line::{LineCarry, reroutes};
 use open::ways;
 use plan::{Mover, Plan, Riding, Wiring};
+use resize::resumed;
 use ride::{Ride, mark_of};
 use spark::{redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
@@ -190,7 +191,8 @@ fn drawn_lines(
         .copied()
         .filter(|&b| new[b].form() == Form::Line && doors.carrying(&new[b]).is_none());
     let drawn: Vec<usize> = changed.chain(added).collect();
-    line_spans(new, &drawn, scene, (phases.draw_start, phases.draw_end))
+    let span = (phases.draw_start, phases.draw_end);
+    line_spans(new, &drawn, scene, span, &|_| 0.0)
 }
 
 /// What a move would park, among some items, to any depth: the shadows and the
@@ -437,21 +439,20 @@ impl Between {
             let id = found.group.mask.as_ref()?;
             masks.get(&id.line).cloned()
         };
+        let middle = middle_of_scene(&next);
+        let mut going_on = resumed(&old, &new, &pairing, middle, phases.move_end);
         let carries = pairing.shared.iter().map(|&(a, b)| {
             let masks = (mask_of(&old[a], &last_masks), mask_of(&new[b], &next_masks));
+            let masks = (masks.0.as_ref(), masks.1.as_ref());
+            let opening = going_on.remove(&b);
+            let mover = opening.map(|going_on| Mover::Resize(Box::new(going_on)));
             (
                 b,
-                carried(
-                    &old[a],
-                    &new[b],
-                    (masks.0.as_ref(), masks.1.as_ref()),
-                    &spans,
-                    phases,
-                ),
+                mover.or_else(|| carried(&old[a], &new[b], masks, &spans, phases)),
             )
         });
         let added: Vec<Found<'_>> = pairing.added.iter().map(|&b| new[b]).collect();
-        let openings = ways(&added, middle_of_scene(&next), (phases.enter_start, 1.0));
+        let openings = ways(&added, middle, (phases.enter_start, 1.0));
         let arrivals = pairing.added.iter().map(|&b| {
             (
                 b,
@@ -480,7 +481,7 @@ impl Between {
             furniture: &furniture,
         };
         let mut plan = Plan::new(&next.body, movers, &wiring);
-        plan.cover(rims(&new, &times, &|_| 0.0));
+        plan.cover(rims(&new, &times));
         let mut leavers: Vec<(usize, Mover)> = pairing
             .removed
             .iter()
