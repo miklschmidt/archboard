@@ -115,9 +115,7 @@ function headerBand(frame: Element, id: string, clientY: number): TipTarget | nu
 	if (rule === null || header === null || header === undefined) {
 		return null;
 	}
-	return clientY <= rule.getBoundingClientRect().top
-		? { id, part: "header", drawn: header }
-		: null;
+	return clientY <= rule.getBoundingClientRect().top ? { id, part: "header", drawn: header } : null;
 }
 
 /**
@@ -300,11 +298,4 @@ function messageKind(kind: string): string {
 /** The lines a label's tip leaves out unless it has them. */
 const UNSAID = { lead: undefined, body: undefined, hint: undefined } as const;
 
-export {
-	openableAt,
-	subjectTip,
-	tipTargetAt,
-	type SubjectTip,
-	type TipCorner,
-	type TipTarget,
-};
+export { openableAt, subjectTip, tipTargetAt, type SubjectTip, type TipCorner, type TipTarget };

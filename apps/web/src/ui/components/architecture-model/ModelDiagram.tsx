@@ -44,7 +44,10 @@ import { surfaceMarks } from "#ui/clients/semantic-board-canvas/subjects/subject
 import { usePresentationArrival } from "#ui/hooks/semantic-board-canvas/use-presentation-arrival.ts";
 import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-handover.ts";
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
-import { SubjectTipBox, TipCorner } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
+import {
+	SubjectTipBox,
+	TipCorner,
+} from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import {
 	subjectTip,
 	type TipTarget,
@@ -398,8 +401,7 @@ function ModelSubjectTip(props: {
 	const far = useCameraWith(props.camera, seenFromFar) && hasFarView(scene);
 	const appearance = scene.picture.appearances.find((one) => one.id === target?.id);
 	const tip = target === null ? null : subjectTip(scene.projection, target, appearance, far);
-	if (target === null || !isDoor(scene.projection, target.id))
-		return <SubjectTipBox tip={tip} />;
+	if (target === null || !isDoor(scene.projection, target.id)) return <SubjectTipBox tip={tip} />;
 	return <ModelDoorTip target={target} scene={scene} said={tip} appearance={appearance} />;
 }
 

@@ -147,14 +147,12 @@ pub(super) fn paint_edge_line(
     }
     parts.push(standing_swipe(&path, width, standing, palette));
     parts.push(shape(
-        Shape::path(Purpose::Halo, path)
-            .unfilled()
-            .stroked(
-                styles
-                    .ring(Some(width + EDGE_HALO_EXTRA))
-                    .at(EDGE_HALO_OPACITY)
-                    .rounded(),
-            ),
+        Shape::path(Purpose::Halo, path).unfilled().stroked(
+            styles
+                .ring(Some(width + EDGE_HALO_EXTRA))
+                .at(EDGE_HALO_OPACITY)
+                .rounded(),
+        ),
     ));
     if appearance.dash == Dash::Mixed {
         parts.push(shape(
