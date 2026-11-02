@@ -37,7 +37,7 @@
       "order": 104000,
       "kind": "call",
       "label": "capture the exact model reading",
-      "description": "read that board for the agent's brief",
+      "description": "read that model for the agent's brief",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

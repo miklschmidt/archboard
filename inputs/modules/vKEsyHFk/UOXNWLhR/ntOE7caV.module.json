@@ -1,12 +1,12 @@
 {
   "order": 4000,
-  "name": "Resolve board meaning",
+  "name": "Resolve reading meaning",
   "kind": "function",
   "responsibility": "Inspect subjects and variants",
-  "description": "Parses the board document, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
+  "description": "Parses the legacy board, resolves the shown variant, describes nodes, edges, flows, steps, bindings, containment, and proposal standing.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/semantic-board-canvas/board/board-document.ts"
+    "path": "apps/web/src/ui/rules/canvas/reading/document.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#ntOE7caV",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
         "symbol": "subjectOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#axWdg78p",
@@ -32,11 +32,14 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
         "symbol": "LightingInputs"
       },
       "id": "vKEsyHFk/UOXNWLhR#55kjuelE",
       "to": "vKEsyHFk/UOXNWLhR#uPniwNFZ"
     }
+  ],
+  "formerNames": [
+    "Resolve board meaning"
   ]
 }

@@ -14,7 +14,7 @@
     {
       "order": 8000,
       "kind": "call",
-      "label": "drawBoard on the core",
+      "label": "drawLegacyBoard on the core",
       "emphasis": "hero",
       "traffic": {
         "speed": 40,
@@ -23,7 +23,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/renderer/src/runtime/operations/render.ts",
-        "symbol": "drawBoard"
+        "symbol": "drawLegacyBoard"
       },
       "id": "vKEsyHFk/gbyqW4H3#4RbEQ6uO",
       "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
@@ -31,7 +31,7 @@
     {
       "order": 29000,
       "kind": "call",
-      "label": "a picture with no board around it",
+      "label": "a picture with no model around it",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

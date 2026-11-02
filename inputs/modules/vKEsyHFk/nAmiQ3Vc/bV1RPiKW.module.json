@@ -14,12 +14,12 @@
     {
       "order": 11000,
       "kind": "call",
-      "label": "formatBoardRefusal",
+      "label": "formatModelRefusal",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-        "symbol": "formatBoardRefusal"
+        "symbol": "formatModelRefusal"
       },
       "id": "vKEsyHFk/nAmiQ3Vc#1LCJsaUZ",
       "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR"

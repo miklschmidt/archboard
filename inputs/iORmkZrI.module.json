@@ -2,7 +2,7 @@
   "order": 960060,
   "name": "Pane connection",
   "kind": "function",
-  "responsibility": "Keeps one socket per page that names its vault and its tab, and hears board and agent news on it",
+  "responsibility": "Keeps one socket per page that names its vault and its tab, and hears model and agent news on it",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/clients/pane-session"
@@ -36,6 +36,19 @@
       },
       "id": "vKEsyHFk/yejBBUFY#rcSUaP1b",
       "to": "vKEsyHFk/yejBBUFY#941UBxya"
+    },
+    {
+      "order": 20000,
+      "kind": "event",
+      "label": "agent commands and snapshots",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
+        "symbol": "send"
+      },
+      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
+      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     },
     {
       "order": 32000,
@@ -89,19 +102,6 @@
       },
       "id": "vKEsyHFk#2UrR4Yp6",
       "to": "vKEsyHFk#ERy2jAwu"
-    },
-    {
-      "order": 20000,
-      "kind": "event",
-      "label": "agent commands and snapshots",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/codex-realtime-voice/src/ui/clients/transport/socket-run.ts",
-        "symbol": "send"
-      },
-      "id": "vKEsyHFk/yejBBUFY#EAT8ges2",
-      "to": "vKEsyHFk/Oi6SBIAM#X07YebBP"
     }
   ]
 }

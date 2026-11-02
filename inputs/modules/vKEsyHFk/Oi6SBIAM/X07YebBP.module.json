@@ -43,12 +43,12 @@
     {
       "order": 6000,
       "kind": "event",
-      "label": "board and agent news; the vault a pane is in",
+      "label": "model and agent news; the vault a pane is in",
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "sendStartingBoard"
+        "symbol": "sendStartingPlace"
       },
       "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
       "to": "vKEsyHFk#iORmkZrI"
@@ -138,7 +138,7 @@
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-        "symbol": "parseBoardKey"
+        "symbol": "parsePaneKey"
       },
       "id": "vKEsyHFk/Oi6SBIAM#2HMvI71J",
       "to": "vKEsyHFk#9VahN2IU"

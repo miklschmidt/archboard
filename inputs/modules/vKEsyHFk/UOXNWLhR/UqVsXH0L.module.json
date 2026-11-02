@@ -6,7 +6,7 @@
   "description": "A sweep is a copy of the line laid over the picture for as long as it takes, animated on the document timeline, then settled into the line under it and taken away. The picture is not changed. A person who asked for reduced motion gets no sweep.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-sweep.ts"
+    "path": "apps/web/src/ui/clients/canvas/picture/picture-sweep.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UqVsXH0L",

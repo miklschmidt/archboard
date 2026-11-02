@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/nAmiQ3Vc#bcBloLg6",
       "name": "One CLI invocation",
+      "summary": "The path every command takes. Help, version and unknown names end here, and the rest settle their shared options, contract and vault. They then run under an abort signal that SIGINT or SIGTERM trips.",
       "participants": [
         "vKEsyHFk/nAmiQ3Vc#Swj3xzmd",
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
@@ -165,7 +166,7 @@
                   "id": "vKEsyHFk/nAmiQ3Vc#TlwNxlZO",
                   "from": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
                   "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
-                  "label": "carry the board, doing, session and version on every request",
+                  "label": "carry the model, doing, session and version on every request",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -315,12 +316,12 @@
             "symbol": "runCli"
           }
         }
-      ],
-      "summary": "The path every command takes. Help, version and unknown names end here, and the rest settle their shared options, contract and vault. They then run under an abort signal that SIGINT or SIGTERM trips."
+      ]
     },
     {
       "id": "vKEsyHFk/nAmiQ3Vc#tnVc95Oc",
       "name": "Addressing a vault",
+      "summary": "Finds the vault from -C or the working directory and registers what holds it on first use, so the browser lists it. A registry that cannot be written costs a warning, and the command goes on.",
       "participants": [
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
         "vKEsyHFk/nAmiQ3Vc#zUIObqwQ",
@@ -629,12 +630,12 @@
             }
           ]
         }
-      ],
-      "summary": "Finds the vault from -C or the working directory and registers what holds it on first use, so the browser lists it. A registry that cannot be written costs a warning, and the command goes on."
+      ]
     },
     {
       "id": "vKEsyHFk/nAmiQ3Vc#S1R4z2CE",
       "name": "Selecting the contract",
+      "summary": "Picks the contract the arguments name: a first argument, a subcommand after leading options, a default child or the namespace itself. A namespace that refuses a bare name gives a usage error.",
       "participants": [
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
         "vKEsyHFk/nAmiQ3Vc#0R2ysy3p",
@@ -817,12 +818,12 @@
             }
           ]
         }
-      ],
-      "summary": "Picks the contract the arguments name: a first argument, a subcommand after leading options, a default child or the namespace itself. A namespace that refuses a bare name gives a usage error."
+      ]
     },
     {
       "id": "vKEsyHFk/nAmiQ3Vc#3nWT5b8k",
       "name": "A failed invocation",
+      "summary": "Reports a failure once, with the usage line for a usage error, and maps it to the exit code that scripts read. A contract can declare its own code, and anything unlisted exits 1.",
       "participants": [
         "vKEsyHFk/nAmiQ3Vc#qHOothyT",
         "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
@@ -835,7 +836,7 @@
           "to": "vKEsyHFk/nAmiQ3Vc#qHOothyT",
           "label": "a step of the invocation throws",
           "kind": "self",
-          "note": "a removed board form, an unknown subcommand, a stated option the command does not read, no vault, or the command itself",
+          "note": "a removed model form, an unknown subcommand, a stated option the command does not read, no vault, or the command itself",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/cli/src/cli/operations/invocation/session.ts",
@@ -870,12 +871,12 @@
                   "id": "vKEsyHFk/nAmiQ3Vc#ENkOCmmK",
                   "from": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
                   "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",
-                  "label": "format a refused board write",
+                  "label": "format a refused model write",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-                    "symbol": "formatBoardRefusal"
+                    "symbol": "formatModelRefusal"
                   }
                 },
                 {
@@ -887,7 +888,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-                    "symbol": "formatBoardRefusal"
+                    "symbol": "formatModelRefusal"
                   }
                 },
                 {
@@ -998,7 +999,7 @@
               ]
             },
             {
-              "label": "a refused board write",
+              "label": "a refused model write",
               "steps": [
                 {
                   "id": "vKEsyHFk/nAmiQ3Vc#J0z7s32f",
@@ -1009,7 +1010,7 @@
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
                     "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-                    "symbol": "isBoardRefusalCode"
+                    "symbol": "isModelRefusalCode"
                   }
                 }
               ]
@@ -1021,7 +1022,7 @@
                   "id": "vKEsyHFk/nAmiQ3Vc#igTunqq1",
                   "from": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
                   "to": "vKEsyHFk/nAmiQ3Vc#bV1RPiKW",
-                  "label": "exit 3 (server), 4 (browser) or 2 (board or vault)",
+                  "label": "exit 3 (server), 4 (browser) or 2 (model or vault)",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -1047,6 +1048,10 @@
                   }
                 }
               ]
+            },
+            {
+              "label": "a refused board write",
+              "steps": []
             }
           ]
         },
@@ -1062,8 +1067,7 @@
             "symbol": "exitCodeFor"
           }
         }
-      ],
-      "summary": "Reports a failure once, with the usage line for a usage error, and maps it to the exit code that scripts read. A contract can declare its own code, and anything unlisted exits 1."
+      ]
     }
   ]
 }

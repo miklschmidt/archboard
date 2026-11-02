@@ -6,7 +6,7 @@
   "description": "Stores compact changes against exact retained predecessors. Consistent decoding keeps predecessor fingerprints stable across live and retained inputs. Changed predecessors require explicit reconciliation or replacement decisions.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/proposals"
+    "path": "packages/model/src/runtime/operations/proposals"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#KJy5yYuq",
@@ -40,7 +40,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "tree"
       },
       "id": "vKEsyHFk#c0DxX92y",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/read.ts",
+        "path": "packages/model/src/runtime/operations/proposals/read.ts",
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#HuWEB6r9",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/read.ts",
+        "path": "packages/model/src/runtime/operations/proposals/read.ts",
         "symbol": "proposalBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#26VVxTms",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "applyCandidateStructure"
       },
       "id": "vKEsyHFk/0T9enjhi#7ArYACBc",
@@ -92,7 +92,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "proposalCandidate"
       },
       "id": "vKEsyHFk/0T9enjhi#HQwxAHRe",
@@ -105,7 +105,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "retainBaseline"
       },
       "id": "vKEsyHFk/0T9enjhi#pOm4j7QN",
@@ -118,7 +118,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/read.ts",
+        "path": "packages/model/src/runtime/operations/proposals/read.ts",
         "symbol": "decodeProposal"
       },
       "id": "vKEsyHFk/0T9enjhi#Wb4yWBbs",
@@ -131,7 +131,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "proposalCandidate"
       },
       "id": "vKEsyHFk/0T9enjhi#igvDGP6v",
@@ -144,7 +144,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "archiveContext"
       },
       "id": "vKEsyHFk/0T9enjhi#OePzvDJW",
@@ -157,7 +157,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/candidate.ts",
+        "path": "packages/model/src/runtime/operations/proposals/candidate.ts",
         "symbol": "captureReferencePins"
       },
       "id": "vKEsyHFk/0T9enjhi#KU0dnode",
@@ -170,7 +170,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/proposals/reconcile.ts",
+        "path": "packages/model/src/runtime/operations/proposals/reconcile.ts",
         "symbol": "reconcileModels"
       },
       "id": "vKEsyHFk/0T9enjhi#NmLgBfWk",
@@ -183,7 +183,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/shared/rules/compare/interfaces.ts",
+        "path": "packages/model/src/shared/rules/compare/interfaces.ts",
         "symbol": "inspectContainer"
       },
       "id": "vKEsyHFk#UDGtsZfv",

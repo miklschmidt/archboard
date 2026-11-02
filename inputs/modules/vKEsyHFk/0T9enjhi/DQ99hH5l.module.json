@@ -6,7 +6,7 @@
   "description": "Archive writes batch blobs through one supervised Git operation. Each closure inspection reuses immutable blobs and tree listings within that operation and bounds pending reads. It preserves exact bytes, modes, and the existing process deadline.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/model-archive-blobs.ts"
+    "path": "packages/model/src/runtime/store/model-archive-blobs.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#DQ99hH5l",
@@ -43,7 +43,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-blobs.ts",
+        "path": "packages/model/src/runtime/store/model-archive-blobs.ts",
         "symbol": "ArchiveError"
       },
       "id": "vKEsyHFk/0T9enjhi#jBpM272B",
@@ -56,7 +56,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/store/model-archive-blobs.ts",
+        "path": "packages/model/src/runtime/store/model-archive-blobs.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#zlSipRtX",

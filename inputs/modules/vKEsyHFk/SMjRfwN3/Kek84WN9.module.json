@@ -2,8 +2,8 @@
   "order": 24000,
   "name": "Replay page",
   "kind": "ui",
-  "responsibility": "The server's page asked for with ?replay=1: draws a talk's board from the talk alone, one frame at a time on a stepped clock",
-  "description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the board's entrance through first, uncaptured, so frame 0 shows the board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time, a picture's traffic at where its picture's clock stands. An animation on another timeline, or a read of another board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay.",
+  "responsibility": "The server's page asked for with ?replay=1: draws a talk's model from the talk alone, one frame at a time on a stepped clock",
+  "description": "It mounts the recording page's stage, viewer and subtitles, and no workbench, pane session or socket, so no Codex is involved. Loading a talk plays the legacy board's entrance through first, uncaptured, so frame 0 shows the legacy board at rest. A frame is ready once the fonts are loaded, no read is in flight, the step's picture is drawn and the page has not changed for two turns of its event loop, within RECORDING_FRAME_READY_MS. The stepped clock runs even the frames a library asks of the browser, and stands every animation at the frame's time, a picture's traffic at where its picture's clock stands. An animation on another timeline, or a read of another legacy board, fails the render and names the frame.\n\nA canonical talk draws its captured model and narrative through the shared walkthrough presentation. It reads no mutable vault and needs no source repository for replay.",
   "groups": [
     "walkthrough"
   ],
@@ -31,13 +31,13 @@
     {
       "order": 34000,
       "kind": "call",
-      "label": "read boards from the talk",
-      "description": "The page or replay imports the semantic-board-canvas root. It re-exports readBoardsFrom from the implementing child, so the relationship ends on that public entry point.",
+      "label": "read models from the talk",
+      "description": "The page or replay imports the canvas root. It re-exports readRetainedFrom from the implementing child, so the relationship ends on that public entry point.",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-        "symbol": "readBoardsFrom"
+        "symbol": "readRetainedFrom"
       },
       "id": "vKEsyHFk/UOXNWLhR#r0RVKR0o",
       "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
@@ -58,12 +58,12 @@
     {
       "order": 35000,
       "kind": "data",
-      "label": "the talk's board and policy, in place of the server's",
+      "label": "the talk's model and policy, in place of the server's",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-        "symbol": "readBoardsFrom"
+        "symbol": "readRetainedFrom"
       },
       "id": "vKEsyHFk/yejBBUFY#TGkTEPYM",
       "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
@@ -71,12 +71,12 @@
     {
       "order": 45000,
       "kind": "call",
-      "label": "a board cache of its own, under the tab's defaults",
+      "label": "a model cache of its own, under the tab's defaults",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-        "symbol": "createBoardQueryClient"
+        "symbol": "createModelQueryClient"
       },
       "id": "vKEsyHFk/yejBBUFY#q9tk8Tjs",
       "to": "vKEsyHFk#dneK7oM5"

@@ -2,11 +2,11 @@
   "order": 6000,
   "name": "Camera arithmetic",
   "kind": "function",
-  "responsibility": "Computes clamped camera transforms and fits without persisting board geometry",
+  "responsibility": "Computes clamped camera transforms and fits without persisting model geometry",
   "description": "Pure camera.ts arithmetic supplies pan, pinch, zoom and fit transforms. The separate camera controller owns the live presentation store and when movement rests.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/semantic-board-canvas/camera/camera.ts"
+    "path": "apps/web/src/ui/rules/canvas/camera/camera.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#ijZRg0FU",

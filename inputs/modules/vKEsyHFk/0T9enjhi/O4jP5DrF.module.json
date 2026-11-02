@@ -5,7 +5,7 @@
   "responsibility": "Derives qualified flow and step schemas and explicit edit statements from the existing semantic contracts",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/shared/schemas/model-flows.ts"
+    "path": "packages/model/src/shared/schemas/model-flows.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#O4jP5DrF",

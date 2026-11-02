@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/HBlhIeSD#SHFuILEQ",
       "name": "An agent runs the code check",
+      "summary": "The route behind archboard check code. It keeps the findings only when the pass finishes before the caller leaves, and it passes a refusal on unchanged as a 422.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/HBlhIeSD#3bPZg9a5",
@@ -30,7 +31,7 @@
           "id": "vKEsyHFk/HBlhIeSD#5d3cCsSc",
           "from": "vKEsyHFk/HBlhIeSD#3bPZg9a5",
           "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-          "label": "run: the boards, the plans, the pass and behind",
+          "label": "run: the models, the plans, the pass and behind",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -42,21 +43,21 @@
           "id": "vKEsyHFk/HBlhIeSD#psh2Ek59",
           "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
           "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-          "label": "read the boards at their current variant or the named draft",
+          "label": "read the models at their current variant or the named draft",
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/code-intel/src/runtime/operations/code-check/run.ts",
-            "symbol": "readBoardsToCheck"
+            "symbol": "readStatesToCheck"
           }
         },
         {
           "id": "vKEsyHFk/HBlhIeSD#tuxb9gwQ",
           "kind": "decision",
-          "question": "Does some board have the draft that was named?",
+          "question": "Does some model have the draft that was named?",
           "alternatives": [
             {
-              "label": "no board has it",
+              "label": "no model has it",
               "steps": [
                 {
                   "id": "vKEsyHFk/HBlhIeSD#otP2a8uC",
@@ -205,15 +206,19 @@
                   ]
                 }
               ]
+            },
+            {
+              "label": "no board has it",
+              "steps": []
             }
           ]
         }
-      ],
-      "summary": "The route behind archboard check code. It keeps the findings only when the pass finishes before the caller leaves, and it passes a refusal on unchanged as a 422."
+      ]
     },
     {
       "id": "vKEsyHFk/HBlhIeSD#dTfYgmVn",
       "name": "A person chooses a repository's checkout",
+      "summary": "Makes one known checkout with a vault the repository's chosen one. Panes left in an unchosen checkout move with their model, and every tab hears repositories_changed.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/HBlhIeSD#FHvFFjFn",
@@ -377,7 +382,7 @@
                               "id": "vKEsyHFk/HBlhIeSD#tglqRyhQ",
                               "from": "vKEsyHFk/HBlhIeSD#FHvFFjFn",
                               "to": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
-                              "label": "move the pane out, with its board",
+                              "label": "move the pane out, with its model",
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
@@ -399,7 +404,7 @@
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
                                 "path": "apps/server/src/server/routes/repositories/repository-routes.ts",
-                                "symbol": "sendBoardlessToPane"
+                                "symbol": "sendKeylessToPane"
                               }
                             }
                           ]
@@ -436,8 +441,7 @@
             }
           ]
         }
-      ],
-      "summary": "Makes one known checkout with a vault the repository's chosen one. Panes left in an unchosen checkout move with their board, and every tab hears repositories_changed."
+      ]
     }
   ]
 }

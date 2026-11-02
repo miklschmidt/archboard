@@ -2,7 +2,7 @@
   "order": 39000,
   "name": "Recording stage",
   "kind": "module",
-  "responsibility": "Hosts the recording workflow on its board stage",
+  "responsibility": "Hosts the recording workflow on its model stage",
   "description": "Frames the supplied recording pane. ApplicationPane selects the captured canonical stage when the driver supplies a model.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

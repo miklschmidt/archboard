@@ -5,7 +5,7 @@
   "responsibility": "Says what is selected in a retained diagram: its details, its interface, where it opens and how it stands",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx"
+    "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#zrv2H09S",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/GoDeeper.tsx",
+        "path": "apps/web/src/ui/components/canvas/GoDeeper.tsx",
         "symbol": "useDrillTarget"
       },
       "id": "vKEsyHFk/UOXNWLhR#TQiSprch",
@@ -27,12 +27,12 @@
     {
       "order": 77000,
       "kind": "call",
-      "description": "The inspector reads its board on the same terms as the picture and hears it change, so what it explains is read again.",
+      "description": "The inspector reads its model on the same terms as the picture and hears it change, so what it explains is read again.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
-        "symbol": "useSemanticBoardChanges"
+        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "symbol": "useModelChanges"
       },
       "id": "vKEsyHFk/UOXNWLhR#ieYgCFQc",
       "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
@@ -44,7 +44,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/DetailsPanel.tsx",
+        "path": "apps/web/src/ui/components/canvas/DetailsPanel.tsx",
         "symbol": "reachOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#UXs6A8o7",
@@ -53,12 +53,12 @@
     {
       "order": 83000,
       "kind": "call",
-      "description": "The stage's panels read the board document, the vault check and a part's history through the viewer's queries.",
+      "description": "The stage's panels read the legacy board, the vault check and a part's history through the viewer's queries.",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
-        "symbol": "semanticBoardDocumentQuery"
+        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
+        "symbol": "retainedDocumentQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#hxPvFxCk",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
@@ -70,7 +70,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspector.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticInspector.tsx",
         "symbol": "usePaneVault"
       },
       "id": "vKEsyHFk/UOXNWLhR#5llRZ8no",
@@ -83,7 +83,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/ContainerInterface.tsx",
+        "path": "apps/web/src/ui/components/canvas/ContainerInterface.tsx",
         "symbol": "inspectContainer"
       },
       "id": "vKEsyHFk#YUNbvrVu",

@@ -91,7 +91,7 @@
     {
       "order": 10000,
       "kind": "call",
-      "label": "the stated board, doing and version",
+      "label": "the stated model, doing and version",
       "emphasis": "normal",
       "traffic": {
         "speed": 40,

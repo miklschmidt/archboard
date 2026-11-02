@@ -6,7 +6,7 @@
   "description": "Canonical proposals and legacy families share one engine. Step identity spans flows. A step placement keeps its flow and nested holder together. The selected decoder decides candidate coherence.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/shared/rules/reconcile"
+    "path": "packages/model/src/shared/rules/reconcile"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#Jx4O72DO",

@@ -2,7 +2,7 @@
   "order": 37000,
   "name": "Render recipe",
   "kind": "module",
-  "responsibility": "Writes and reads the render recipe that a board render carries",
+  "responsibility": "Writes and reads the render recipe that a model render carries",
   "description": "Carries canonical model selectors and the exact input revision in the existing SVG metadata recipe. The embed checker reuses canonical reading and rendering owners.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",

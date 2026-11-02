@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/6E6hL0Zk#CCzGfHOu",
       "name": "The server starts",
+      "summary": "Starts the workbench, the HTTP listener and the socket server in order, and refuses a port that another Archboard holds. A failed start stops what already runs, newest first.",
       "participants": [
         "vKEsyHFk/6E6hL0Zk#m4GMTKLW",
         "vKEsyHFk/6E6hL0Zk#2naazvac",
@@ -153,12 +154,12 @@
             }
           ]
         }
-      ],
-      "summary": "Starts the workbench, the HTTP listener and the socket server in order, and refuses a port that another Archboard holds. A failed start stops what already runs, newest first."
+      ]
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#xfUOzZhb",
       "name": "Is this the Archboard server?",
+      "summary": "The health route reports its pid, source, lifecycle phase, admitted writes and socket count. The CLI reads it to tell its own server from anything else on the port.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
@@ -227,12 +228,12 @@
             "symbol": "healthRoute"
           }
         }
-      ],
-      "summary": "The health route reports its pid, source, lifecycle phase, admitted writes and socket count. The CLI reads it to tell its own server from anything else on the port."
+      ]
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#FCB3mr2J",
       "name": "A code check pass",
+      "summary": "Judges the anchors, bindings and relationships of the selected canonical states against source, through code facts and language servers. The server keeps a finished pass for the panes to show.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#TBnOCNx2",
         "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
@@ -281,7 +282,7 @@
               "kind": "sync",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+                "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
                 "symbol": "readArchitectureModel"
               }
             },
@@ -293,7 +294,7 @@
               "kind": "return",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
-                "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
+                "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
                 "symbol": "readArchitectureModel"
               }
             }
@@ -307,8 +308,8 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "packages/code-intel/src/runtime/operations/code-check/boards.ts",
-            "symbol": "readBoardsToCheck"
+            "path": "packages/code-intel/src/runtime/operations/code-check/states.ts",
+            "symbol": "readStatesToCheck"
           }
         },
         {
@@ -381,7 +382,7 @@
                   "id": "vKEsyHFk/6E6hL0Zk#8KCz2kB8",
                   "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
                   "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-                  "label": "the boards' anchors, bindings and relationships",
+                  "label": "the models' anchors, bindings and relationships",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -416,7 +417,7 @@
                 {
                   "id": "vKEsyHFk/6E6hL0Zk#fGicYKbN",
                   "kind": "loop",
-                  "condition": "for each claim, then for each board",
+                  "condition": "for each claim, then for each model",
                   "steps": [
                     {
                       "id": "vKEsyHFk/6E6hL0Zk#le1xvi4P",
@@ -427,7 +428,7 @@
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
                         "path": "packages/code-intel/src/runtime/operations/code-check/check.ts",
-                        "symbol": "judgeBoardRelationships"
+                        "symbol": "judgeStateRelationships"
                       }
                     }
                   ]
@@ -436,7 +437,7 @@
                   "id": "vKEsyHFk/6E6hL0Zk#5p6VBZvu",
                   "from": "vKEsyHFk/HBlhIeSD#5SMX69gS",
                   "to": "vKEsyHFk/6E6hL0Zk#Y70KOm9C",
-                  "label": "boards, findings, skipped and behind",
+                  "label": "models, findings, skipped and behind",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -488,12 +489,12 @@
             }
           ]
         }
-      ],
-      "summary": "Judges the anchors, bindings and relationships of the selected canonical states against source, through code facts and language servers. The server keeps a finished pass for the panes to show."
+      ]
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#eaZyW88b",
       "name": "A part's code is opened",
+      "summary": "Resolves a module's binding to a file in its repository's checkout and launches the chosen opener at the symbol's line. Each refusal has its own status, so the browser can name what went wrong.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/6E6hL0Zk#6a2R1ddu",
@@ -540,10 +541,10 @@
         {
           "id": "vKEsyHFk/6E6hL0Zk#oipi6vdQ",
           "kind": "decision",
-          "question": "Does the board hold a part bound to code?",
+          "question": "Does the model hold a part bound to code?",
           "alternatives": [
             {
-              "label": "no such board",
+              "label": "no such model",
               "steps": [
                 {
                   "id": "vKEsyHFk/6E6hL0Zk#f6zhGkTU",
@@ -731,15 +732,19 @@
                   ]
                 }
               ]
+            },
+            {
+              "label": "no such board",
+              "steps": []
             }
           ]
         }
-      ],
-      "summary": "Resolves a module's binding to a file in its repository's checkout and launches the chosen opener at the symbol's line. Each refusal has its own status, so the browser can name what went wrong."
+      ]
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#zeZA4CvA",
       "name": "A tab opens a pane",
+      "summary": "Upgrades a pane's socket after it checks the page's origin and the vault that the socket names. The pane then learns its starting model and joins the workbench, and a foreign page gets a 403.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#6nZjwK9W",
         "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
@@ -838,12 +843,12 @@
                           "id": "vKEsyHFk/6E6hL0Zk#5dimKCaV",
                           "from": "vKEsyHFk/6E6hL0Zk#tbH9ZyCA",
                           "to": "vKEsyHFk/vKEsyHFk#6nZjwK9W",
-                          "label": "the board this pane starts on",
+                          "label": "the model this pane starts on",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
                             "path": "apps/server/src/server/sockets/panes/websocket-connection.ts",
-                            "symbol": "sendStartingBoard"
+                            "symbol": "sendStartingPlace"
                           }
                         },
                         {
@@ -866,12 +871,12 @@
             }
           ]
         }
-      ],
-      "summary": "Upgrades a pane's socket after it checks the page's origin and the vault that the socket names. The pane then learns its starting board and joins the workbench, and a foreign page gets a 403."
+      ]
     },
     {
       "id": "vKEsyHFk/6E6hL0Zk#U1HsxCvz",
       "name": "The server stops",
+      "summary": "Stops admitting writes and waits for the admitted ones before it closes sockets, the listener and the workbench. If they do not settle in time, it reports SERVER_BUSY and tears nothing down.",
       "participants": [
         "vKEsyHFk/6E6hL0Zk#J7yOKraz",
         "vKEsyHFk/6E6hL0Zk#K6P74fM7",
@@ -1009,8 +1014,7 @@
             }
           ]
         }
-      ],
-      "summary": "Stops admitting writes and waits for the admitted ones before it closes sockets, the listener and the workbench. If they do not settle in time, it reports SERVER_BUSY and tears nothing down."
+      ]
     }
   ]
 }

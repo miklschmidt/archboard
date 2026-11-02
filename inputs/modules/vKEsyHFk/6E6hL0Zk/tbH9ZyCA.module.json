@@ -52,8 +52,8 @@
     {
       "order": 18000,
       "kind": "event",
-      "label": "board and agent news",
-      "description": "board and agent news",
+      "label": "model and agent news",
+      "description": "model and agent news",
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

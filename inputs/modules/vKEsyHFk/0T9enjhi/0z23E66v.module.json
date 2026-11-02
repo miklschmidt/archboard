@@ -2,7 +2,7 @@
   "order": 31000,
   "name": "Durable writes",
   "kind": "module",
-  "responsibility": "Commits a board change, a discard or a move under the lease and version check of each board it writes, and writes each file where its name puts it",
+  "responsibility": "Commits a model change, a discard or a move under the lease and version check of each model it writes, and writes each file where its name puts it",
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#0z23E66v",
   "parent": "vKEsyHFk/0T9enjhi#EekL5c17",

@@ -3,10 +3,10 @@
   "name": "Address and locate",
   "kind": "function",
   "responsibility": "Maps names to safe vault paths",
-  "description": "semanticBoardAddress normalizes board identity without I/O; locateSemanticBoard resolves the .semantic.json file and follows existing ancestors to refuse symlink paths that leave the configured vault.",
+  "description": "legacyBoardAddress normalizes model identity without I/O; locateLegacyBoard resolves the .semantic.json file and follows existing ancestors to refuse symlink paths that leave the configured vault.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/location.ts"
+    "path": "packages/model/src/runtime/store/location.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#hoh4xPWb",

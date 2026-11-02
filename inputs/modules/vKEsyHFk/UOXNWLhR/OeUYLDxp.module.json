@@ -1,30 +1,17 @@
 {
   "order": 57000,
-  "name": "Board refresh",
+  "name": "Read refresh",
   "kind": "module",
-  "responsibility": "Decides which readings a report makes stale, under every name the tab asked a board by, and in what order",
-  "description": "Callers report what happened: a board changed, boards of a vault were written or let go, a listing may have moved, a vault's policy changed, the socket came back or a person asked for everything again. Reads in flight are cancelled first, so an answer decided before the event never lands as fresh, then a board's document is marked before its pictures, because a picture reads its board the moment it is asked for again. A reading asked by another spelling of the board, or by a name it had before a rename, is read again too.",
+  "responsibility": "Decides which readings a report makes stale, under every name the tab asked a model by, and in what order",
+  "description": "Callers report what happened: a model changed, models of a vault were written or let go, a listing may have moved, a vault's policy changed, the socket came back or a person asked for everything again. Reads in flight are cancelled first, so an answer decided before the event never lands as fresh, then a model's document is marked before its pictures, because a picture reads its model the moment it is asked for again. A reading asked by another spelling of the model, or by a name it had before a rename, is read again too.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts"
+    "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#OeUYLDxp",
   "parent": "vKEsyHFk/UOXNWLhR#kr46TVLf",
   "outgoing": [
-    {
-      "order": 122000,
-      "kind": "call",
-      "label": "every reading the tab holds, and the names it asked by",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-        "symbol": "cachedReadings"
-      },
-      "id": "vKEsyHFk/UOXNWLhR#51taDpRp",
-      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
-    },
     {
       "order": 70043,
       "kind": "call",
@@ -32,11 +19,27 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/board-refresh.ts",
-        "symbol": "sameBoardName"
+        "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts",
+        "symbol": "sameModelName"
       },
       "id": "vKEsyHFk#GsciFned",
       "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"
+    },
+    {
+      "order": 122000,
+      "kind": "call",
+      "label": "every reading the tab holds, and the names it asked by",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/clients/canvas/reads/read-refresh.ts",
+        "symbol": "cachedReadings"
+      },
+      "id": "vKEsyHFk/UOXNWLhR#51taDpRp",
+      "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
     }
+  ],
+  "formerNames": [
+    "Board refresh"
   ]
 }

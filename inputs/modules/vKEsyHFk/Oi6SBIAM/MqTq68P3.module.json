@@ -29,7 +29,7 @@
     {
       "order": 13000,
       "kind": "call",
-      "label": "record the pane; send it a board",
+      "label": "record the pane; send it a model",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

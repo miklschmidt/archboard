@@ -6,7 +6,7 @@
   "description": "Accepts only semantic IDs present in the server atlas and toggles the shared attention mark on rendered groups.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts"
+    "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#UDkL7Tn6",

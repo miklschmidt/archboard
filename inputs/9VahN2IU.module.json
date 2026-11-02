@@ -1,14 +1,17 @@
 {
   "order": 960130,
-  "name": "Board keys",
+  "name": "Legacy addresses",
   "kind": "function",
-  "responsibility": "Parses and writes the keys that address a board and a variant",
+  "responsibility": "Parses and writes the keys that address a model and a variant",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/address.ts"
+    "path": "packages/model/src/runtime/store/legacy-address.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
   "schemaVersion": 1,
   "id": "vKEsyHFk#9VahN2IU",
-  "outgoing": []
+  "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "outgoing": [],
+  "formerNames": [
+    "Board keys"
+  ]
 }

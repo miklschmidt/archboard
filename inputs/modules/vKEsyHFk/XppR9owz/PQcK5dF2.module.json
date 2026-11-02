@@ -52,7 +52,7 @@
     {
       "order": 24000,
       "kind": "call",
-      "label": "the stated board, doing, version and the found vault",
+      "label": "the stated model, doing, version and the found vault",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -91,12 +91,12 @@
     {
       "order": 77000,
       "kind": "call",
-      "label": "formats board refusals for the command result",
+      "label": "formats model refusals for the command result",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "apps/cli/src/cli/operations/invocation/exit-codes.ts",
-        "symbol": "formatBoardRefusal"
+        "symbol": "formatModelRefusal"
       },
       "id": "vKEsyHFk/XppR9owz#PDFACmp1",
       "to": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR"

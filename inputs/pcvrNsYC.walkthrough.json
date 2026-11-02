@@ -67,7 +67,7 @@
     },
     {
       "title": "Propose a change",
-      "narrative": "The shared runtime keeps stable identities across modules and flows. A proposal stores changed fields against an exact baseline. It does not copy the whole system into another board.",
+      "narrative": "The shared runtime keeps stable identities across modules and flows. A proposal stores changed fields against an exact baseline. It does not copy the whole system into another model.",
       "reading": {
         "scope": "vKEsyHFk/vKEsyHFk#DmbKboxU",
         "selection": [

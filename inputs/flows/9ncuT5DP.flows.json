@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/9ncuT5DP#tp4aDqct",
       "name": "A typed message from a pane",
+      "summary": "Turns a pane's typed text into turn/start on an idle workhorse or turn/steer on an active one. The gateway checks the command lease and thread link first, so a stale tab cannot act on the conversation.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#tzyaOHwF",
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
@@ -253,12 +254,12 @@
             }
           ]
         }
-      ],
-      "summary": "Turns a pane's typed text into turn/start on an idle workhorse or turn/steer on an active one. The gateway checks the command lease and thread link first, so a stale tab cannot act on the conversation."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#UmUjUWRv",
       "name": "A context change reaches a workhorse",
+      "summary": "Injects one brief about a settled model change into the checkout's workhorse thread, after it proves that the link and generation stand. A lost response settles as unknown and is never sent twice.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
         "vKEsyHFk/9ncuT5DP#SQjLwRvE",
@@ -278,7 +279,7 @@
           "id": "vKEsyHFk/9ncuT5DP#rGWmiQ8v",
           "from": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
           "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
-          "label": "a settled change of a board in the tab's panes' vaults",
+          "label": "a settled change of a model in the tab's panes' vaults",
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -290,7 +291,7 @@
           "id": "vKEsyHFk/9ncuT5DP#ajT8vki6",
           "from": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
           "to": "vKEsyHFk/9ncuT5DP#YiFwU6JS",
-          "label": "announce the brief for the board's checkout",
+          "label": "announce the brief for the model's checkout",
           "kind": "sync",
           "note": "to its workhorse, withheld once the brief is stale",
           "anchor": {
@@ -721,12 +722,12 @@
             "symbol": "onError"
           }
         }
-      ],
-      "summary": "Injects one brief about a settled board change into the checkout's workhorse thread, after it proves that the link and generation stand. A lost response settles as unknown and is never sent twice."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#eUWhXhf8",
       "name": "A conversation starts",
+      "summary": "On a tab's first message or Talk, readies the coordinator, starts the shown checkout's workhorse and binds its link. A failed start rolls back, and an unknown outcome is never retried.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#u2LFaG7R",
         "vKEsyHFk/9ncuT5DP#JHbKEH3A",
@@ -1046,12 +1047,12 @@
             }
           ]
         }
-      ],
-      "summary": "On a tab's first message or Talk, readies the coordinator, starts the shown checkout's workhorse and binds its link. A failed start rolls back, and an unknown outcome is never retried."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#ILeym7Ex",
       "name": "The coordinator delegates work",
+      "summary": "Routes delegate_to_workhorse to the named checkout: a new turn when the workhorse is idle, its queue when it is active. The epoch ledger records whether the work arrived, failed or stayed unknown.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#Fg9dkGj3",
         "vKEsyHFk/9ncuT5DP#tlC2W839",
@@ -1235,7 +1236,7 @@
                   "id": "vKEsyHFk/9ncuT5DP#1BwEndY0",
                   "from": "vKEsyHFk/9ncuT5DP#tlC2W839",
                   "to": "vKEsyHFk/9ncuT5DP#jylkTBp7",
-                  "label": "turn/start with the board's context",
+                  "label": "turn/start with the model's context",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -1329,12 +1330,12 @@
             "symbol": "createDelegate"
           }
         }
-      ],
-      "summary": "Routes delegate_to_workhorse to the named checkout: a new turn when the workhorse is idle, its queue when it is active. The epoch ledger records whether the work arrived, failed or stayed unknown."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#Va4NV3BO",
       "name": "Workhorse news reaches the coordinator",
+      "summary": "Words a workhorse notification or a tell_coordinator call as one sentence and starts a coordinator turn on it. With no voice session, or an unattended one, the news is only recorded.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#iay14AUl",
         "vKEsyHFk/9ncuT5DP#08zJvPJq",
@@ -1513,12 +1514,12 @@
             }
           ]
         }
-      ],
-      "summary": "Words a workhorse notification or a tell_coordinator call as one sentence and starts a coordinator turn on it. With no voice session, or an unattended one, the news is only recorded."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#fNauRzDy",
       "name": "A context change reaches the coordinator or the voice",
+      "summary": "Tells the coordinator and the live voice about a model change or a pane's focus. The coordinator gets a developer message and the voice gets context or speech, and without a voice session nothing is queued.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
         "vKEsyHFk/9ncuT5DP#SQjLwRvE",
@@ -1536,7 +1537,7 @@
           "id": "vKEsyHFk/9ncuT5DP#7AB9nJWu",
           "from": "vKEsyHFk/9ncuT5DP#42Ws0Eeo",
           "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
-          "label": "a settled board change, or a pane's focus or selection",
+          "label": "a settled model change, or a pane's focus or selection",
           "kind": "async",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
@@ -1550,7 +1551,7 @@
           "to": "vKEsyHFk/9ncuT5DP#SQjLwRvE",
           "label": "word it for the coordinator and the voice",
           "kind": "self",
-          "note": "the voice hears a board on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
+          "note": "the voice hears a model on screen, as speech when it stops the narration; the coordinator hears only what an agent outside the session did",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "packages/workbench/src/server/services/host/archboard-announcements.ts",
@@ -1827,12 +1828,12 @@
             "symbol": "announceContextChange"
           }
         }
-      ],
-      "summary": "Tells the coordinator and the live voice about a board change or a pane's focus. The coordinator gets a developer message and the voice gets context or speech, and without a voice session nothing is queued."
+      ]
     },
     {
       "id": "vKEsyHFk/9ncuT5DP#gBoH41j4",
       "name": "A tab session ends",
+      "summary": "When a tab's last chat closes, a grace period lets a reload return to its conversation and approvals. If none returns, the server ends the session, cancels its approvals and unloads its threads.",
       "participants": [
         "vKEsyHFk/9ncuT5DP#tzyaOHwF",
         "vKEsyHFk/9ncuT5DP#hCKEBd5f",
@@ -2069,8 +2070,7 @@
             }
           ]
         }
-      ],
-      "summary": "When a tab's last chat closes, a grace period lets a reload return to its conversation and approvals. If none returns, the server ends the session, cancels its approvals and unloads its threads."
+      ]
     }
   ]
 }

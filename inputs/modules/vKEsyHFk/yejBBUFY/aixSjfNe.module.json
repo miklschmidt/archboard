@@ -3,7 +3,7 @@
   "name": "Walkthrough replay",
   "kind": "module",
   "responsibility": "A page drawing a recorded talk again, one frame at a time: the recording's pane and subtitles, fed from the talk, on a stepped clock",
-  "description": "Asked for by ?replay=1, and mounted by the entry point in place of the application, so it has no workbench, no pane session and no socket, and no Codex is involved. The walkthrough package publishes the page for the renderer that drives it (drawn on Board rasterizer): it reads the talk and its options, hands this page the parsed talk to load, draws frame(n) when asked and answers how many frames the talk renders to. It reads the board and the policy only from the talk, and a read of any other board fails the render. A canonical talk supplies its captured model and narrative to the same frame renderer. Replay reads no live architecture, opens no agent session, and keeps the existing stepped clock.",
+  "description": "Asked for by ?replay=1, and mounted by the entry point in place of the application, so it has no workbench, no pane session and no socket, and no Codex is involved. The walkthrough package publishes the page for the renderer that drives it (drawn on Legacy board rasterizer): it reads the talk and its options, hands this page the parsed talk to load, draws frame(n) when asked and answers how many frames the talk renders to. It reads the legacy board and the policy only from the talk, and a read of any other legacy board fails the render. A canonical talk supplies its captured model and narrative to the same frame renderer. Replay reads no live architecture, opens no agent session, and keeps the existing stepped clock.",
   "groups": [
     "walkthrough"
   ],

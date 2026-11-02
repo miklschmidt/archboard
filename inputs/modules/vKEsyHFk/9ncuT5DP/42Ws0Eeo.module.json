@@ -3,7 +3,7 @@
   "name": "Architecture context publisher",
   "kind": "module",
   "responsibility": "Publishes captured pane gestures and durable architecture changes to local agents",
-  "description": "Each brief names its board's vault, so a thread passes it to the CLI with -C. It hears the board changes of the vaults its tab session's panes are in, and drops a cosmetic one, which is no news. Archboard's announcements tell each change only to the workhorse of the board's checkout, so a workhorse is told about the boards it works on.",
+  "description": "Each brief names its model's vault, so a thread passes it to the CLI with -C. It hears the model changes of the vaults its tab session's panes are in, and drops a cosmetic one, which is no news. Archboard's announcements tell each change only to the workhorse of the model's checkout, so a workhorse is told about the models it works on.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/runtime/operations/semantic-context-publisher.ts"
@@ -24,7 +24,7 @@
     {
       "order": 50000,
       "kind": "event",
-      "label": "each settled board change, focus and selection",
+      "label": "each settled model change, focus and selection",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -37,7 +37,7 @@
     {
       "order": 91000,
       "kind": "event",
-      "label": "each settled board change, focus and selection it publishes",
+      "label": "each settled model change, focus and selection it publishes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

@@ -3,7 +3,7 @@
   "name": "Narration host",
   "kind": "module",
   "responsibility": "Captures walkthrough narration and applies addressed presentation commands",
-  "description": "Archboard's adapters that plug into one mechanism of the package, as its thread tools, board context, announcements and tab adapter do, sit with that mechanism instead.",
+  "description": "Archboard's adapters that plug into one mechanism of the package, as its thread tools, model context, announcements and tab adapter do, sit with that mechanism instead.",
   "schemaVersion": 1,
   "id": "vKEsyHFk/9ncuT5DP#SScV6EZR",
   "parent": "vKEsyHFk/6E6hL0Zk#9G6CmNgt",

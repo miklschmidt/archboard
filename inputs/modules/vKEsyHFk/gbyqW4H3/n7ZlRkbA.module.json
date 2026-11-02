@@ -5,7 +5,7 @@
   "responsibility": "Adds code-check warning overlays to the rendered subjects",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/code-marks.ts"
+    "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#n7ZlRkbA",
@@ -18,7 +18,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/code-marks.ts",
+        "path": "apps/web/src/ui/clients/canvas/subjects/code-marks.ts",
         "symbol": "cornerWarning"
       },
       "id": "vKEsyHFk/gbyqW4H3#kxJJ5IPb",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticInspectorCode.tsx",
+        "path": "apps/web/src/ui/components/canvas/SemanticInspectorCode.tsx",
         "symbol": "lineWarning"
       },
       "id": "vKEsyHFk/gbyqW4H3#bwa7JRYk",

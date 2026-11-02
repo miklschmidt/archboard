@@ -1,6 +1,6 @@
 {
   "order": 15000,
-  "name": "Board rasterizer",
+  "name": "Picture rasterizer",
   "kind": "module",
   "responsibility": "One headless browser, one PNG at a time, refused rather than cropped",
   "groups": [
@@ -34,5 +34,8 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [],
+  "formerNames": [
+    "Board rasterizer"
+  ]
 }

@@ -2,7 +2,7 @@
   "order": 31000,
   "name": "code-intel",
   "kind": "package",
-  "responsibility": "What the code says about a board: the code check, its facts and the history lens",
+  "responsibility": "What the code says about a model: the code check, its facts and the history lens",
   "groups": [
     "code",
     "packages"

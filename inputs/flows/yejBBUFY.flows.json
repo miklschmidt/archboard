@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/yejBBUFY#YnBAS29q",
       "name": "Restore canonical workspace",
+      "summary": "Plans what the address asks for against what is on screen, and applies it one step at a time, opening models through the server. A model it cannot reach leaves the rewritten address.",
       "participants": [
         "vKEsyHFk/yejBBUFY#HggZR41l",
         "vKEsyHFk/yejBBUFY#HCghQa6I",
@@ -36,7 +37,7 @@
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/board-routing/restore.ts",
+            "path": "apps/web/src/ui/rules/reading-routing/restore.ts",
             "symbol": "restoreOutcome"
           }
         },
@@ -57,28 +58,28 @@
                       "id": "vKEsyHFk/yejBBUFY#ILCB83vN",
                       "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
                       "to": "vKEsyHFk/yejBBUFY#HggZR41l",
-                      "label": "add, close or focus a pane, or read its board through a view",
+                      "label": "add, close or focus a pane, or read its model through a view",
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                        "path": "apps/web/src/ui/hooks/reading-routing/use-workspace-address.ts",
                         "symbol": "commandsOver"
                       }
                     }
                   ]
                 },
                 {
-                  "label": "board",
+                  "label": "model",
                   "steps": [
                     {
                       "id": "vKEsyHFk/yejBBUFY#5KjOQLli",
                       "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
                       "to": "vKEsyHFk/yejBBUFY#HggZR41l",
-                      "label": "take the command slot and open the board in the pane",
+                      "label": "take the command slot and open the model in the pane",
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                        "path": "apps/web/src/ui/hooks/reading-routing/use-workspace-address.ts",
                         "symbol": "commandsOver"
                       }
                     },
@@ -86,7 +87,7 @@
                       "id": "vKEsyHFk/yejBBUFY#Oyq0M6rF",
                       "from": "vKEsyHFk/yejBBUFY#HggZR41l",
                       "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                      "label": "show the board in the pane, in the vault the address names",
+                      "label": "show the model in the pane, in the vault the address names",
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
@@ -109,7 +110,7 @@
                     {
                       "id": "vKEsyHFk/yejBBUFY#Y2oFOECt",
                       "kind": "decision",
-                      "question": "Does the server reach the board?",
+                      "question": "Does the server reach the model?",
                       "alternatives": [
                         {
                           "label": "opened",
@@ -142,12 +143,12 @@
                               "id": "vKEsyHFk/yejBBUFY#mAK9VniS",
                               "from": "vKEsyHFk/vKEsyHFk#cPOdAA3f",
                               "to": "vKEsyHFk/yejBBUFY#xsn0RvSi",
-                              "label": "the pane is on the board",
+                              "label": "the pane is on the model",
                               "kind": "async",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
                                 "path": "apps/web/src/ui/rules/pane-session/socket-messages.ts",
-                                "symbol": "paneBoard"
+                                "symbol": "panePlaced"
                               }
                             },
                             {
@@ -158,7 +159,7 @@
                               "kind": "return",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+                                "path": "apps/web/src/ui/hooks/reading-routing/use-workspace-address.ts",
                                 "symbol": "answerOperation"
                               }
                             },
@@ -170,7 +171,7 @@
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/state/board-routing/operation.ts",
+                                "path": "apps/web/src/ui/state/reading-routing/operation.ts",
                                 "symbol": "operationSettled"
                               }
                             }
@@ -219,12 +220,12 @@
                               "id": "vKEsyHFk/yejBBUFY#vDa9CXvj",
                               "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
                               "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
-                              "label": "remember the board as one the address could not reach",
+                              "label": "remember the model as one the address could not reach",
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/rules/board-routing/restore.ts",
-                                "symbol": "boardUnreachable"
+                                "path": "apps/web/src/ui/rules/reading-routing/restore.ts",
+                                "symbol": "modelUnreachable"
                               }
                             }
                           ]
@@ -232,6 +233,10 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "label": "board",
+                  "steps": []
                 }
               ]
             }
@@ -241,20 +246,20 @@
           "id": "vKEsyHFk/yejBBUFY#DgX4TIE3",
           "from": "vKEsyHFk/yejBBUFY#HCghQa6I",
           "to": "vKEsyHFk/yejBBUFY#HCghQa6I",
-          "label": "write the address, leaving out boards it could not reach",
+          "label": "write the address, leaving out models it could not reach",
           "kind": "self",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/board-routing/use-workspace-address.ts",
+            "path": "apps/web/src/ui/hooks/reading-routing/use-workspace-address.ts",
             "symbol": "publishAddress"
           }
         }
-      ],
-      "summary": "Plans what the address asks for against what is on screen, and applies it one step at a time, opening boards through the server. A board it cannot reach leaves the rewritten address."
+      ]
     },
     {
       "id": "vKEsyHFk/yejBBUFY#j71M2dfg",
       "name": "Send a message to the agent",
+      "summary": "Holds a message while setup carries it through sign-in and the new conversation, then delivers it as a turn, steer or queue entry. It stops being held only when the timeline shows it.",
       "participants": [
         "vKEsyHFk/yejBBUFY#0x47EMoO",
         "vKEsyHFk/yejBBUFY#HggZR41l",
@@ -470,12 +475,12 @@
             "symbol": "prune"
           }
         }
-      ],
-      "summary": "Holds a message while setup carries it through sign-in and the new conversation, then delivers it as a turn, steer or queue entry. It stops being held only when the timeline shows it."
+      ]
     },
     {
       "id": "vKEsyHFk/yejBBUFY#rJ0zWUg4",
       "name": "Start Talk",
+      "summary": "Carries a press of Talk through the same setup as a message, then starts realtime voice on the pane's thread link. A link that is not executable refuses the start.",
       "participants": [
         "vKEsyHFk/yejBBUFY#0x47EMoO",
         "vKEsyHFk/yejBBUFY#HggZR41l",
@@ -610,12 +615,12 @@
             }
           ]
         }
-      ],
-      "summary": "Carries a press of Talk through the same setup as a message, then starts realtime voice on the pane's thread link. A link that is not executable refuses the start."
+      ]
     },
     {
       "id": "vKEsyHFk/yejBBUFY#k15Ecakx",
       "name": "Record a walkthrough",
+      "summary": "The page's side of model record: a pacing loop starts Talk as a recording and moves the pane to each step. It keeps the voice and log after the last step, and a wait that runs out keeps nothing.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/yejBBUFY#fscW90Xt",
@@ -718,7 +723,7 @@
               "id": "vKEsyHFk/yejBBUFY#dPKJKrlr",
               "from": "vKEsyHFk/yejBBUFY#dtYjWvlf",
               "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
-              "label": "what the pane reads: board drawn, step arrived",
+              "label": "what the pane reads: model drawn, step arrived",
               "kind": "async",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
@@ -754,7 +759,7 @@
                       "id": "vKEsyHFk/yejBBUFY#uVdX8LFZ",
                       "from": "vKEsyHFk/yejBBUFY#fscW90Xt",
                       "to": "vKEsyHFk/yejBBUFY#fscW90Xt",
-                      "label": "begin the talk on the board as drawn",
+                      "label": "begin the talk on the model as drawn",
                       "kind": "self",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
@@ -844,12 +849,12 @@
             }
           ]
         }
-      ],
-      "summary": "The page's side of model record: a pacing loop starts Talk as a recording and moves the pane to each step. It keeps the voice and log after the last step, and a wait that runs out keeps nothing."
+      ]
     },
     {
       "id": "vKEsyHFk/yejBBUFY#TJCV96ua",
       "name": "Replay a talk frame by frame",
+      "summary": "Draws one kept talk a frame at a time on a stepped clock, playing its steps, words and loudness. A frame that moved outside the clock, or was not ready in time, stops the render with the reason.",
       "participants": [
         "vKEsyHFk/vKEsyHFk#cPOdAA3f",
         "vKEsyHFk/yejBBUFY#aixSjfNe",
@@ -873,12 +878,12 @@
           "id": "vKEsyHFk/yejBBUFY#Ahao1K8p",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
-          "label": "answer the pane's board reads from the talk",
+          "label": "answer the pane's model reads from the talk",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-            "symbol": "readBoardsFrom"
+            "symbol": "readRetainedFrom"
           }
         },
         {
@@ -897,12 +902,12 @@
           "id": "vKEsyHFk/yejBBUFY#OkRUa8KX",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/yejBBUFY#dtYjWvlf",
-          "label": "mount the recording's stage on the talk's board",
+          "label": "mount the recording's stage on the talk's model",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-            "symbol": "SemanticBoardStage"
+            "symbol": "CanvasStage"
           }
         },
         {
@@ -914,7 +919,7 @@
               "id": "vKEsyHFk/yejBBUFY#rPTZXW0g",
               "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
               "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
-              "label": "draw the board's entrance",
+              "label": "draw the model's entrance",
               "kind": "self",
               "anchor": {
                 "repo": "github.com/miklschmidt/archboard",
@@ -1073,8 +1078,7 @@
             }
           ]
         }
-      ],
-      "summary": "Draws one kept talk a frame at a time on a stepped clock, playing its steps, words and loudness. A frame that moved outside the clock, or was not ready in time, stops the render with the reason."
+      ]
     }
   ]
 }

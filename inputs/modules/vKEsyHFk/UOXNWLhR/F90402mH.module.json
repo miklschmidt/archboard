@@ -17,12 +17,12 @@
     {
       "order": 10000,
       "kind": "call",
-      "label": "renderBoard, linked faces",
+      "label": "renderLegacyBoard, linked faces",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/renderer/src/ui/state/browser-renderer.ts",
-        "symbol": "renderBoard"
+        "symbol": "renderLegacyBoard"
       },
       "id": "vKEsyHFk/gbyqW4H3#NFop37Ak",
       "to": "vKEsyHFk/gbyqW4H3#yOV8Znnv"
