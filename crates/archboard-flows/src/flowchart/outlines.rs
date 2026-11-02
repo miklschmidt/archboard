@@ -3,16 +3,19 @@
 //! its outline, to the middle of the side it crosses for a decision or a
 //! terminal (`ports.rs`).
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
-use archboard_scene::drawing::{Bridged, DrawingEdge, EdgeFacts, Painted};
-use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment};
+use archboard_scene::drawing::{DrawingBridge, DrawingEdge, EdgeFacts, Painted};
+use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment, curve_bounds, inflate};
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
 
 use super::SIDE_RUN;
 use super::graph::Graph;
 use super::ports::{at_shape_points, on_outline};
+
+/// How near two straight lanes stand when they draw as one line.
+const ONE_LANE: f64 = 3.0;
 
 /// The drawing with each decision's box cut to its diamond: it was laid out
 /// wider on either side by an answer's sideways run and its words' room.
@@ -65,29 +68,18 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
         .map(|(_, bounds)| bounds)
 }
 
-/// The lines that keep their place, because the bridges are settled: each that
-/// carries a hop, which every line of a trunk does though a bridge names only
-/// one of them, and each that a bridge names, because a bridge at a join cuts
-/// the line beneath and leaves its own line's curve as it was.
-fn settled(plain: &[DrawingEdge<EdgeFacts>], bridged: &Bridged<EdgeFacts>) -> HashSet<String> {
-    let curves: HashMap<&str, &Curve> = plain
-        .iter()
-        .map(|line| (line.edge.id.as_str(), &line.curve))
-        .collect();
-    let hopped = bridged
-        .edges
-        .iter()
-        .filter(|line| curves.get(line.edge.id.as_str()) != Some(&&line.curve));
-    hopped
-        .map(|line| &line.edge.id)
-        .chain(
-            bridged
-                .bridges
-                .iter()
-                .flat_map(|bridge| std::iter::once(&bridge.edge_id).chain(&bridge.under)),
-        )
-        .cloned()
-        .collect()
+/// Whether a bridge stands on a line, or on a lane near enough to draw as one
+/// with it. Such a line keeps its place, because the bridges are settled. The
+/// place decides and not the bridge's names, which give one line of a trunk.
+fn under_a_bridge(curve: &Curve, bridges: &[DrawingBridge]) -> bool {
+    let line = inflate(curve_bounds(curve), ONE_LANE);
+    bridges.iter().any(|bridge| {
+        let piece = curve_bounds(&bridge.curve);
+        line.x < piece.x + piece.width
+            && piece.x < line.x + line.width
+            && line.y < piece.y + piece.height
+            && piece.y < line.y + line.height
+    })
 }
 
 /// The drawing with every line that meets a shape carried on to its outline,
@@ -100,7 +92,7 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
         .iter()
         .map(|card| (card.measured.node.id.clone(), card.bounds))
         .collect();
-    let settled = settled(&drawing.drawing.edges, &drawing.bridged);
+    let bridges = drawing.bridged.bridges.clone();
     let shaped = |id: &str| -> Shaped { Some((graph.shape(id)?, *boxes.get(id)?)) };
     let card_of = |routed: &DrawingEdge<EdgeFacts>, from: Shaped, to: Shaped| {
         let id = match (pointed(from), pointed(to)) {
@@ -108,7 +100,7 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
             (Some(_), None) => &routed.edge.to,
             _ => return None,
         };
-        let free = !settled.contains(&routed.edge.id);
+        let free = !under_a_bridge(&routed.curve, &bridges);
         boxes.get(id).copied().filter(|_| free)
     };
     let on_shapes = |routed: &mut DrawingEdge<EdgeFacts>| {
@@ -134,77 +126,28 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
 
 #[cfg(test)]
 mod tests {
-    use archboard_scene::drawing::{DrawingBridge, Emphasis};
-
     use super::*;
 
-    fn line(id: &str, y: f64) -> DrawingEdge<EdgeFacts> {
-        DrawingEdge {
-            edge: EdgeFacts {
-                id: id.to_owned(),
-                from: "a".to_owned(),
-                to: "b".to_owned(),
-                kind: "next".to_owned(),
-                emphasis: Emphasis::Normal,
-                traffic: None,
-                two_way: false,
-            },
-            curve: Curve {
-                from: Point { x: 0.0, y },
-                segments: vec![Segment::Line {
-                    to: Point { x: 100.0, y },
-                }],
-            },
-            label: None,
+    fn straight(from: (f64, f64), to: (f64, f64)) -> Curve {
+        let [from, to] = [from, to].map(|(x, y)| Point { x, y });
+        Curve {
+            from,
+            segments: vec![Segment::Line { to }],
         }
     }
 
     #[test]
-    fn every_line_of_a_bridged_trunk_and_each_line_under_it_keep_their_place() {
-        let plain = [
-            line("named", 0.0),
-            line("trunk", 0.0),
-            line("under", 50.0),
-            line("join", 70.0),
-            line("free", 90.0),
-        ];
-        let hop = Curve {
-            from: Point { x: 40.0, y: 0.0 },
-            segments: vec![Segment::Line {
-                to: Point { x: 60.0, y: 0.0 },
-            }],
-        };
-        let hopped = |id: &str| {
-            let mut carrier = line(id, 0.0);
-            carrier.curve.segments.insert(0, hop.segments[0]);
-            carrier
-        };
-        let bridged = Bridged {
-            edges: vec![
-                hopped("named"),
-                hopped("trunk"),
-                line("under", 50.0),
-                line("join", 70.0),
-                line("free", 90.0),
-            ],
-            bridges: vec![
-                DrawingBridge {
-                    edge_id: "named".to_owned(),
-                    under: vec!["under".to_owned()],
-                    curve: hop.clone(),
-                    join: None,
-                },
-                DrawingBridge {
-                    edge_id: "join".to_owned(),
-                    under: vec!["under".to_owned()],
-                    curve: hop.clone(),
-                    join: Some(true),
-                },
-            ],
-        };
-        let kept = settled(&plain, &bridged);
-        let mut kept: Vec<&str> = kept.iter().map(String::as_str).collect();
-        kept.sort_unstable();
-        assert_eq!(kept, ["join", "named", "trunk", "under"]);
+    fn a_line_stays_where_a_bridge_stands_on_it_or_on_its_lane() {
+        let bridges = [DrawingBridge {
+            edge_id: "named".to_owned(),
+            under: vec!["crossed".to_owned()],
+            curve: straight((100.0, 40.0), (100.0, 60.0)),
+            join: Some(true),
+        }];
+        let stays = |from, to| under_a_bridge(&straight(from, to), &bridges);
+        assert!(stays((100.0, 0.0), (100.0, 400.0)), "the line it names");
+        assert!(stays((102.0, 0.0), (102.0, 400.0)), "a line of its trunk");
+        assert!(stays((0.0, 50.0), (200.0, 50.0)), "a line beneath it");
+        assert!(!stays((120.0, 0.0), (120.0, 400.0)), "a lane of its own");
     }
 }
