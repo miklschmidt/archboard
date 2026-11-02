@@ -67,7 +67,7 @@ function onBoard(
 ): Finding {
 	const document = namedValue(reading.documents, check.board);
 	return document === undefined
-		? finding(false, `board "${check.board}" is not in the vault`)
+		? finding(false, `document "${check.board}" is not in the vault`)
 		: judge(document);
 }
 
@@ -114,7 +114,7 @@ const nodeIdRetained: Check = (check, reading) =>
 		const before = snapshotId(reading, check);
 		const after = nodeNamed(at.variant.content, check.node ?? "")?.id;
 		if (before === undefined)
-			return finding(false, `"${check.node}" was not on the board before the run`);
+			return finding(false, `"${check.node}" was not on the document before the run`);
 		return finding(before === after, `"${check.node}" was ${before}, is ${after ?? "gone"}`);
 	});
 
@@ -178,7 +178,7 @@ const edgeIdsRetained: Check = (check, reading) =>
 const documentCount: Check = (check, reading) =>
 	finding(
 		reading.documents.size === check.expected,
-		`${reading.documents.size} boards in the vault`,
+		`${reading.documents.size} documents in the vault`,
 	);
 
 /**

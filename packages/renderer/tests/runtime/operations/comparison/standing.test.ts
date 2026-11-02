@@ -47,7 +47,7 @@ const PROPOSAL: VariantContent = architecture(
 	],
 	[
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST", emphasis: "normal" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document", emphasis: "hero" },
 		{ id: "e3", from: "gw", to: "queue", kind: "event", label: "enqueue", emphasis: "normal" },
 		{ id: "e4", from: "legacy", to: "store", kind: "data", label: "writes", emphasis: "muted" },
 		{ id: "e5", from: "io", to: "store", kind: "data", emphasis: "hero" },

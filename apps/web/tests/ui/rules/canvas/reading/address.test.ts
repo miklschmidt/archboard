@@ -41,7 +41,7 @@ test("the variant is everything after the first mark, punctuation and all", () =
 	});
 });
 
-test("two spellings of one board name are one board", () => {
+test("two spellings of one model name are one model", () => {
 	// The server keys a model by a normalised form of its name and reports the
 	// name as it was written, so the two reach the browser in different cases and
 	// only a case-insensitive comparison can tell they are one model (ADR 0010).

@@ -197,7 +197,7 @@ describe("family checks", () => {
 		expect(verdicts.map((verdict) => verdict.passed)).toEqual([true, true]);
 	});
 
-	test("on a board nobody has built, nothing is held still and no draft is judged as current", () => {
+	test("on a document nobody has built, nothing is held still and no draft is judged as current", () => {
 		const planned = LegacyBoardSchema.parse(
 			withFixtureOrders({
 				...BEFORE,
@@ -389,7 +389,7 @@ describe("guardrails", () => {
 		}
 	});
 
-	test("removing a board violates a read-only scenario even when no remaining board version moved", () => {
+	test("removing a document violates a read-only scenario even when no remaining document version moved", () => {
 		const verdicts = evaluateGuardrails(["no-writes"], {
 			...context,
 			documents: new Map(),

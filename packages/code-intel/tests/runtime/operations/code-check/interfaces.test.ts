@@ -252,7 +252,7 @@ beforeAll(async () => {
 	}
 	const check: typeof CheckModule = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
+	if (!read.ok) throw new Error("no documents");
 	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
@@ -295,7 +295,7 @@ test("an entry point the module does not expose, which a caller's code reaches f
 	expect(findings("ENTRY_POINT_UNEXPOSED", "Store alone")).toEqual([]);
 });
 
-test("a hidden part whose exposed code a file no part binds uses at run time is a caller the board does not draw", () => {
+test("a hidden part whose exposed code a file no part binds uses at run time is a caller the document does not draw", () => {
 	const undrawn = findings("CALLER_UNDRAWN", "Shop");
 	expect(undrawn.map((each) => [each.subject?.id, each.severity])).toEqual([
 		["Audit", "warning"],
@@ -314,7 +314,7 @@ test("a hidden part whose exposed code a file no part binds uses at run time is 
 	]);
 });
 
-test("a use by a part on the board is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
+test("a use by a part on the document is the undrawn relationship's to report, and a use only as a type or as a value is no caller", () => {
 	// The server, a part on the document, calls Write: RELATIONSHIP_UNDRAWN says so, once.
 	expect(findings("RELATIONSHIP_UNDRAWN", "Shop").map((each) => each.subject?.id)).toEqual([
 		"Write",
@@ -345,7 +345,7 @@ test("an external file passing an exposed function to a callback is an undrawn c
 	);
 });
 
-test("a container with no caller on its board has no caller to miss", () => {
+test("a container with no caller on its document has no caller to miss", () => {
 	expect(findings("CALLER_UNDRAWN", "Store alone")).toEqual([]);
 });
 

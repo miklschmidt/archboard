@@ -59,7 +59,7 @@ const VALID_OK_VALUES: Record<GeneralThreadToolName, unknown> = {
 			{
 				turnId: "turn-1",
 				status: "completed",
-				summary: "completed · user: Inspect the board · assistant: Done",
+				summary: "completed · user: Inspect the model · assistant: Done",
 				outputsIncluded: false,
 				outputsTruncated: false,
 			},

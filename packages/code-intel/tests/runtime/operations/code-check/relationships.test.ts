@@ -223,7 +223,7 @@ beforeAll(async () => {
 	]);
 	check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
+	if (!read.ok) throw new Error("no documents");
 	// No language server, so the judgement reads the evidence code facts give alone.
 	outcome = await check.checkCode(vault, read.states, new AbortController().signal, [], NO_SERVER);
 });

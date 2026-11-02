@@ -28,7 +28,8 @@ function skillPackage(name: string, files: Record<string, string>): string {
 const SCENARIOS = [
 	{
 		id: "S01",
-		prompt: "Explain `Handle a request` on the `Order pipeline` board through `Checkout.submit`.",
+		prompt:
+			"Explain `Handle a request` on the `Order pipeline` document through `Checkout.submit`.",
 		outcomes: [{ check: "view-exists", board: "Order pipeline", view: "Dispatch exchange" }],
 	},
 ];
@@ -45,7 +46,7 @@ const FIXTURES = [
 	},
 ];
 
-test("a package naming the evaluated framework, a graded board, a quoted symbol or a group id is refused, each where it is named", () => {
+test("a package naming the evaluated framework, a graded document, a quoted symbol or a group id is refused, each where it is named", () => {
 	const leaky = skillPackage("leaky", {
 		"SKILL.md": "Draw the Werkzeug server.\nA clean line.\n",
 		"references/example.md": [

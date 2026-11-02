@@ -112,7 +112,7 @@ function captureAmbiguity(timestampTruncated: boolean, capture: SemanticCapture)
 function modelMismatchReasons(eventModel: string, contextModel: string): string[] {
 	return eventModel === contextModel
 		? []
-		: [`settled event names board "${eventModel}" but context names "${contextModel}"`];
+		: [`settled event names model "${eventModel}" but context names "${contextModel}"`];
 }
 
 /**

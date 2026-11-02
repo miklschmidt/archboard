@@ -338,7 +338,7 @@ test("a membership in the inspector selects the same group, with its colour", as
 	expect(listed()).toBe("fulfillment");
 });
 
-test("a variant with no memberships offers no groups, as a board without views offers no views", async () => {
+test("a variant with no memberships offers no groups, as a model without views offers no views", async () => {
 	server.documents["pipeline"] = documentOf(NODES.map(({ groups: _groups, ...node }) => node));
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
@@ -363,7 +363,7 @@ test("an id the configuration no longer defines is still listed, by its id, with
 	expect(selected()).toEqual(["w", "l"]);
 });
 
-test("a board change refreshes who the selected group selects", async () => {
+test("a model change refreshes who the selected group selects", async () => {
 	serving();
 	mountStage();
 	await settled();

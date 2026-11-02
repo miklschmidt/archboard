@@ -49,7 +49,7 @@ function document(variants: readonly VariantSpec[], extra: object = {}): LegacyB
 			...extra,
 		}),
 	);
-	if (!parsed.ok) throw new Error(`fixture board is incoherent: ${parsed.problem}`);
+	if (!parsed.ok) throw new Error(`fixture document is incoherent: ${parsed.problem}`);
 	return parsed.board;
 }
 

@@ -121,7 +121,7 @@ function statedChoice(req: Request, res: Response): z.infer<typeof CheckoutChoic
 			success: false,
 			code: "CHECKOUT_UNUSABLE",
 			error: checkout.exists
-				? `${root} has no ${VAULT_DIRECTORY}, so it has no boards to read. Choose a checkout of ${repository} that has one.`
+				? `${root} has no ${VAULT_DIRECTORY}, so it has no models to read. Choose a checkout of ${repository} that has one.`
 				: `${root} is gone from this machine. Choose another checkout of ${repository}, or remove it with \`archboard repo forget ${root}\`.`,
 		});
 		return null;

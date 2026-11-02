@@ -61,7 +61,7 @@ test.each([
 	["What the CLI can be asked", whatTheCliCanBeAsked, "blocks"],
 	["Workhorse news", workhorseNews, "blocks"],
 	["The two threads", theTwoThreads, "track"],
-	["Reading a board", readingAModel, "blocks"],
+	["Reading a document", readingAModel, "blocks"],
 	["Board changes reach the workhorse", modelChangesReachTheWorkhorse, "track"],
 ] as const)(
 	"%s: one graph plan keeps every card, label, and route intact",

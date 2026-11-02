@@ -25,7 +25,7 @@ interface Reference {
  */
 function references(model: LegacyBoard, includeBases = true): Reference[] {
 	const result: Reference[] = [
-		{ key: "board:level", path: "level", value: model.level, vocabulary: "levels" },
+		{ key: "document:level", path: "level", value: model.level, vocabulary: "levels" },
 	];
 	for (const variant of model.variants) {
 		result.push(

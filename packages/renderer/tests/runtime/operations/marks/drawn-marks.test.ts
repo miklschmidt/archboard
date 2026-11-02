@@ -109,7 +109,7 @@ async function drawn(
 		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 

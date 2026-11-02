@@ -358,7 +358,7 @@ function graderPrompt(brief: GraderBrief): string {
 	const opening = brief.continuing
 		? ["Continue grading in this same session, under the same rubric and the same rules.", ""]
 		: [
-				"You are grading agent runs that authored architecture boards about the Flask source tree.",
+				"You are grading agent runs that authored architecture documents about the Flask source tree.",
 				"Each run is anonymous. You are not told which configuration produced it, and you must not guess or mention it.",
 				NO_DELEGATION,
 				"",
@@ -367,7 +367,7 @@ function graderPrompt(brief: GraderBrief): string {
 				)
 					.map(([version, commit]) => `${version} = ${commit}`)
 					.join(", ")}.`,
-				`Each run is a directory under ${brief.layout.runs}/<run-id>/ holding bundle.json (the request, its source paths, the expected-feature checklist with the skill passages each feature derives from, the configured vault policy, group-inspection results, the boards before and after as the vault stores them, the harness's deterministic verdicts, the commands the author ran, and a \`captures\` list), the resulting board documents under boards/, rendered diagrams under renders/ as SVG, and under captures/ the PNG bitmaps the harness took of every final saved diagram the request asked for, at native scale, one per entry of \`captures\` with its label, board, variant, view, provenance (board version, variant, view, scale, dimensions, SVG digest) and, for a large diagram, native-scale tiles.`,
+				`Each run is a directory under ${brief.layout.runs}/<run-id>/ holding bundle.json (the request, its source paths, the expected-feature checklist with the skill passages each feature derives from, the configured vault policy, group-inspection results, the documents before and after as the vault stores them, the harness's deterministic verdicts, the commands the author ran, and a \`captures\` list), the resulting document documents under boards/, rendered diagrams under renders/ as SVG, and under captures/ the PNG bitmaps the harness took of every final saved diagram the request asked for, at native scale, one per entry of \`captures\` with its label, document, variant, view, provenance (document version, variant, view, scale, dimensions, SVG digest) and, for a large diagram, native-scale tiles.`,
 				`The skill under evaluation, read-only, under ${brief.layout.skill}/: SKILL.md and references/. A citation such as \`${CATALOGUE_PASSAGE}\` names a file there and one of its headings; each expected feature's \`skill\` list cites the passages it derives from, and the catalogue the \`unprompted\` rows come from is \`${CATALOGUE_PASSAGE}\`. Read a cited passage before judging a feature against it.`,
 				"",
 				"# Rubric",

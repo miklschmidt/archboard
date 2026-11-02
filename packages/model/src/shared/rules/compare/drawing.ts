@@ -79,9 +79,7 @@ function comparedWith(
 	if ("success" in selected && "success" in reading)
 		return defaultComparisonReference(selected, reading);
 	if ("variants" in selected && "content" in reading) return legacyReference(selected, reading);
-	throw new TypeError(
-		"Select a model and its current reading, or a retained board and its variant.",
-	);
+	throw new TypeError("Select a model and its current reading, or a legacy board and its variant.");
 }
 
 /**
@@ -134,7 +132,7 @@ function drawingOf(
 	if ("nodes" in source && "nodes" in reading) return comparedContent(reading, source, scope);
 	if ("variants" in source && "content" in reading)
 		return modelDrawing(source, reading, scope, named);
-	throw new TypeError("Compare two complete contents, or a board and its variant.");
+	throw new TypeError("Compare two complete contents, or a model and its variant.");
 }
 
 /**

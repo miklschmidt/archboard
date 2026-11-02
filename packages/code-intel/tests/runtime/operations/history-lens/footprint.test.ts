@@ -185,7 +185,7 @@ function document(): LegacyBoard {
 async function footprint(base: string, proposal?: string, head?: string): Promise<FootprintAnswer> {
 	const value = document();
 	const current = currentVariant(value);
-	if (current === undefined) throw new Error("the board has no current variant");
+	if (current === undefined) throw new Error("the document has no current variant");
 	const named = proposal === undefined ? undefined : resolveVariant(value, proposal);
 	return FootprintAnswerSchema.parse(
 		await lens.readVariantFootprint({

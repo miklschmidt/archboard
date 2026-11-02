@@ -107,7 +107,7 @@ function ViewChoice(props: ViewChoiceProps): JSX.Element {
 function SemanticViewBar(props: SemanticViewBarProps): JSX.Element {
 	const { views, showing, summary, onChoose } = props;
 	return (
-		<SidebarChoices slot="semantic-view-bar" label="Ways of reading this board">
+		<SidebarChoices slot="semantic-view-bar" label="Ways of reading this model">
 			{[OVERVIEW, ...views, EVERYTHING].map((view) => {
 				const on = view.id === "" ? showing === null : showing?.id === view.id;
 				return (

@@ -145,7 +145,7 @@ test("behind counts the commits of the checkout that holds the vault", async () 
 	const [answer] = await createBehindReading().read(vault, [
 		{ document, file: join(vault, "Shop.semantic.json") },
 	]);
-	if (answer === undefined || !("parts" in answer)) throw new Error("the board was not read");
+	if (answer === undefined || !("parts" in answer)) throw new Error("the document was not read");
 	expect(answer.skipped).toEqual([]);
 	expect(answer.parts.map((part) => [part.subject.id, part.commits.length])).toEqual([["pA", 1]]);
 });

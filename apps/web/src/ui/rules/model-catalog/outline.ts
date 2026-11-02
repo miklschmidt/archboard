@@ -368,7 +368,7 @@ function modelDraft<Model extends OutlineModel>(
 		.filter((name, index, all) => name !== primary && all.indexOf(name) === index);
 	return {
 		kind: "model",
-		id: `board:${foldName(model.name)}`,
+		id: `model:${foldName(model.name)}`,
 		name: labelOf(model.name),
 		path: model.name,
 		model,

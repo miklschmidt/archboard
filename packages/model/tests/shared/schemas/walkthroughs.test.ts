@@ -69,7 +69,7 @@ const explained = (walkthroughs: readonly Record<string, unknown>[]) => ({
  */
 const walkthrough = (over: Record<string, unknown> = {}) => ({
 	id: "wk",
-	name: "For the board",
+	name: "For the model",
 	beats: [
 		{ id: "b1", heading: "The shape", body: "Two parts and one call." },
 		{ id: "b2", heading: "One edit", body: "The CLI states it.", subjects: ["cli", "e1"] },
@@ -137,7 +137,7 @@ describe("what an explanation has to be before it is presented", () => {
 		expect(refusal(explained([about]))).toContain("not something on this variant");
 	});
 
-	test("a beat read through a view this board has is accepted, and any other is refused", () => {
+	test("a beat read through a view this model has is accepted, and any other is refused", () => {
 		const seen = walkthrough({
 			beats: [{ id: "b1", heading: "The shape", body: "Two parts.", view: "vw" }],
 		});
@@ -150,7 +150,7 @@ describe("what an explanation has to be before it is presented", () => {
 
 	test("a walkthrough with no beats is refused, and says which one", () => {
 		expect(refusal(explained([walkthrough({ beats: [] })]))).toContain(
-			'"For the board" is a walkthrough with no beats',
+			'"For the model" is a walkthrough with no beats',
 		);
 	});
 

@@ -96,7 +96,7 @@ describe("what one capture record is", () => {
 				exitCode: 1,
 				json: null,
 				stdout: "",
-				stderr: 'Error: view "Dispatch exchange" is not on the board\n',
+				stderr: 'Error: view "Dispatch exchange" is not on the document\n',
 			},
 			import.meta.path,
 		);
@@ -251,7 +251,7 @@ describe("the visual verdict as it stands", () => {
 /** A saved document holding only the views a capture reads. */
 const documentWith = (views: LegacyBoard["views"]) => ({ views }) as unknown as LegacyBoard;
 
-describe("every view of a board", () => {
+describe("every view of a document", () => {
 	test("comes to one capture per view the author made, in its grammar, with a unique label that never reads as a tile", () => {
 		const documents = new Map([
 			[
@@ -288,7 +288,7 @@ describe("every view of a board", () => {
 		]);
 	});
 
-	test("a named capture is taken of the board and view the author actually named", () => {
+	test("a named capture is taken of the document and view the author actually named", () => {
 		const documents = new Map([
 			[
 				"Flask JSON",
@@ -305,7 +305,7 @@ describe("every view of a board", () => {
 		).toEqual([{ label: "path", board: "Flask JSON", view: "Session cache" }]);
 	});
 
-	test("adds nothing for a board with no views or no board at all", () => {
+	test("adds nothing for a document with no views or no document at all", () => {
 		const named = { label: "flask", board: "Flask" };
 		const requests = [named, { label: "views", board: "Flask", views: "every" as const }];
 		expect(expandCaptures(requests, new Map([["Flask", documentWith([])]]))).toEqual([named]);

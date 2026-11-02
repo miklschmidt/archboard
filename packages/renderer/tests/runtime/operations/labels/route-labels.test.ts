@@ -21,13 +21,13 @@ import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 /** The reported shape: a pane and its routes, wired both ways and labelled both ways. */
 const PAIRED: VariantContent = orderedFixture({
 	nodes: [
-		{ id: "pane", name: "Pane", kind: "external", responsibility: "Shows a board" },
+		{ id: "pane", name: "Pane", kind: "external", responsibility: "Shows a document" },
 		{ id: "routes", name: "Routes", kind: "module" },
 		{
 			id: "store",
 			name: "Store",
 			kind: "module",
-			responsibility: "The one place a board is written",
+			responsibility: "The one place a document is written",
 		},
 	],
 	edges: [
@@ -72,7 +72,7 @@ const LIFECYCLE: VariantContent = orderedFixture({
 			id: "life",
 			name: "Lifecycle transitions",
 			kind: "function",
-			responsibility: "Defines board lifecycle changes",
+			responsibility: "Defines document lifecycle changes",
 		},
 		{
 			id: "edit",
@@ -109,7 +109,7 @@ const CAMERA_FOCUS: VariantContent = orderedFixture({
 		{ id: "camera", name: "Control camera", kind: "function", parent: "viewer" },
 		{ id: "select", name: "Select semantic subjects", kind: "function", parent: "viewer" },
 		{ id: "focus", name: "Drive walkthrough focus", kind: "function", parent: "viewer" },
-		{ id: "refresh", name: "Refresh changed boards", kind: "function", parent: "viewer" },
+		{ id: "refresh", name: "Refresh changed documents", kind: "function", parent: "viewer" },
 	],
 	edges: [
 		{
@@ -146,12 +146,12 @@ const CROWDED: VariantContent = orderedFixture({
 	],
 	edges: [
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document", emphasis: "hero" },
 		{ id: "e3", from: "io", to: "gw", kind: "event", label: "settled" },
 		{ id: "e4", from: "gw", to: "queue", kind: "event", label: "enqueue" },
 		{ id: "e5", from: "queue", to: "io", kind: "call", label: "drain" },
 		{ id: "e6", from: "io", to: "store", kind: "data", label: "writes" },
-		{ id: "e7", from: "store", to: "io", kind: "data", label: "the board" },
+		{ id: "e7", from: "store", to: "io", kind: "data", label: "the document" },
 		{ id: "e8", from: "store", to: "web", kind: "data", label: "the picture" },
 	],
 });

@@ -10,7 +10,7 @@ import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
 function usePaneVault(): string {
 	const vault = use(PaneVaultContext);
 	if (vault === null) {
-		throw new Error("A board reader was drawn outside a pane, so it cannot name a vault.");
+		throw new Error("A model reader was drawn outside a pane, so it cannot name a vault.");
 	}
 	return vault;
 }

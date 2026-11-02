@@ -76,7 +76,7 @@ function architectureViolation(entry: CliRegistryEntry): string | null {
 		return `${name} is a browser operation outside the browser namespace.`;
 	}
 	if (command.effects.includes("write")) {
-		return `${name} is a browser operation that writes a board note.`;
+		return `${name} is a browser operation that writes a model note.`;
 	}
 	return null;
 }

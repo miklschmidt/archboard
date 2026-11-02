@@ -13,7 +13,7 @@
 // variant, or at the draft `variant` names, and gives `boards`, `findings` and
 // `skipped`. `every-draft=true` reads every draft of every document instead, and
 // a `variant` beside it is not read (TASK-488). Behind (ADR 0045, TASK-369.02)
-// reads the current variant of each document once, whatever the pass reads. A `variant` that names no draft on any document
+// reads the current variant of each document once, whatever the pass reads. A `variant` that names no draft on any model
 // is refused with the drafts that exist. Each `plan` names a Terraform or
 // OpenTofu plan JSON by its absolute path (TASK-367.17); one outside every
 // registered checkout, one the check never reads or one that is not a plan

@@ -168,7 +168,7 @@ test("a subject the change takes away can still be asked about", async () => {
 	// It is in the picture — the server puts back what the change took away — so
 	// the panel has to answer for it rather than claiming it has gone.
 	expect(inspector()).toContain("Legacy Bridge");
-	expect(inspector()).not.toContain("not on the board any more");
+	expect(inspector()).not.toContain("not on the model any more");
 	expect(standing()).toBe("removed");
 	// And the region names the state it is being read against, so "removed" is
 	// never removed-from-nowhere.
@@ -243,7 +243,7 @@ test("an exchange is a subject a user can inspect", async () => {
 	// A subject is named, not numbered: its id is not what a panel is for.
 	expect(inspector()).not.toContain("f1");
 	expect(slot("semantic-inspector-participants")?.textContent).toContain("board-io");
-	expect(inspector()).not.toContain("not on the board any more");
+	expect(inspector()).not.toContain("not on the model any more");
 	// Its cast moved, so it reads as changed like any other subject.
 	expect(standing()).toBe("changed");
 	expect(
@@ -257,7 +257,7 @@ test("one message of an exchange is a subject a user can inspect", async () => {
 
 	expect(inspector()).toContain("enqueue");
 	expect(inspector()).not.toContain("s3");
-	expect(inspector()).not.toContain("not on the board any more");
+	expect(inspector()).not.toContain("not on the model any more");
 	expect(inspector()).toContain("Agent edit");
 	// Who sent it and who received it, in names rather than ids.
 	expect(inspector()).toContain("board-io");
@@ -272,12 +272,12 @@ test("a message the change stops sending can still be asked about", async () => 
 	// A removed step is put back into the exchange it was told in, so it is in
 	// the picture and the panel answers for it as it does for a removed card.
 	expect(inspector()).toContain("ack");
-	expect(inspector()).not.toContain("not on the board any more");
+	expect(inspector()).not.toContain("not on the model any more");
 	expect(standing()).toBe("removed");
 	expect(inspector()).toContain("Agent edit");
 });
 
-test("a board that came from nothing says nothing about having changed", async () => {
+test("a model that came from nothing says nothing about having changed", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	server.documents["pipeline"] = {
 		...branched(),

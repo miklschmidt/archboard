@@ -140,7 +140,7 @@ function WalkthroughRow(props: WalkthroughRowProps): JSX.Element {
 function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element {
 	const { walkthroughs, open, onChoose, narration } = props;
 	return (
-		<SidebarChoices slot="semantic-walkthrough-bar" label="Explanations of this board">
+		<SidebarChoices slot="semantic-walkthrough-bar" label="Explanations of this model">
 			{walkthroughs.map((walkthrough) => (
 				<WalkthroughRow
 					key={walkthrough.id}

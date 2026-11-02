@@ -36,7 +36,7 @@ async function drawnSvg(
 		DEFAULT_SEMANTIC_POLICY,
 		recipe ? { vault: { repo: "github.com/example/vault" } } : undefined,
 	);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply.svg;
 }
 

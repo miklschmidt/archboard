@@ -47,7 +47,7 @@ test("an address with no active pane takes the first, and one naming a closed pa
 	expect(address([], "A").activePaneId).toBeNull();
 });
 
-test("two addresses are the same only when the panes, their boards and the focus all match", () => {
+test("two addresses are the same only when the panes, their models and the focus all match", () => {
 	const one = address([
 		["A", "payments"],
 		["B", "billing"],
@@ -85,7 +85,7 @@ test("two addresses are the same only when the panes, their boards and the focus
 	).toBe(false);
 });
 
-test("a plan opens the boards that differ, adds and closes panes, and moves the focus", () => {
+test("a plan opens the models that differ, adds and closes panes, and moves the focus", () => {
 	const plan = planFor(
 		address([["A", "payments"]]),
 		address(
@@ -117,7 +117,7 @@ function shown(repository: string | null): WorkspaceAddress {
 	});
 }
 
-test("the same board in another repository is another board to open, and an address naming no repository keeps the pane's own", () => {
+test("the same model in another repository is another model to open, and an address naming no repository keeps the pane's own", () => {
 	expect(planFor(shown("github.com/acme/shop"), shown("scratch"), PANES).opens).toEqual([
 		{ paneId: "A", paneKey: "payments", repository: "scratch" },
 	]);
@@ -145,7 +145,7 @@ test("an address that matches what is displayed asks for nothing", () => {
 	).toBe(true);
 });
 
-test("the panes at risk are the ones a plan closes or points at another board", () => {
+test("the panes at risk are the ones a plan closes or points at another model", () => {
 	const plan = planFor(
 		address([
 			["A", "payments"],

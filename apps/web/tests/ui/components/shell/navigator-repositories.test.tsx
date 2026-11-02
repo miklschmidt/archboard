@@ -118,7 +118,7 @@ test("a repository whose chosen checkout has no vault says so, and its rows choo
 test("a repository whose model cannot be read offers to read them again, and the navigator does not call it empty", () => {
 	const failed = {
 		...repositoryOf(ready(BILLING, BILLING_VAULT), undefined),
-		error: "The board listing could not be read: offline",
+		error: "The model listing could not be read: offline",
 	};
 	const { show } = mountNavigator({ repositories: [failed], panes: [] });
 	const alert = document.querySelector('[data-slot="navigator"] [role="alert"]');

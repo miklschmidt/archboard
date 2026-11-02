@@ -180,7 +180,7 @@ function soloPane(registrations: PaneRegistration[]): PaneRegistration | null {
 		return ordered[0]!.pane;
 	}
 	throw new Error(
-		`${ordered.length} panes are open, so this needs a pane as well as a board — ` +
+		`${ordered.length} panes are open, so this needs a pane as well as a model — ` +
 			`--pane ${ordered.map((entry) => entry.place).join(" | ")}. ` +
 			`They are showing ${ordered.map((entry) => `${entry.pane.paneKey} (${entry.place})`).join(", ")}.`,
 	);

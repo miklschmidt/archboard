@@ -29,7 +29,7 @@ test("a lasting name with a space in it is addressable", () => {
 	expect(parsePaneKey("payments@Queued ingest").variant).toBe("Queued ingest");
 });
 
-test("an address ends its board at the first mark, so a selector may hold one too", () => {
+test("an address ends its model at the first mark, so a selector may hold one too", () => {
 	// A model name may not contain "@", so the first one ends the name and
 	// everything after it is the selector. A proposal somebody called "Queue @
 	// edge" is a name a branch command takes, so it has to be a name an address
@@ -52,7 +52,7 @@ test("a name a proposal may be given is a name an address may carry", () => {
 	}
 });
 
-test("a board file refuses what its own filename cannot hold, and only then", () => {
+test("a model file refuses what its own filename cannot hold, and only then", () => {
 	// A model file spells its variant into a path, so the old rule still applies
 	// there — at the moment the name is built, not in the grammar every address
 	// goes through.

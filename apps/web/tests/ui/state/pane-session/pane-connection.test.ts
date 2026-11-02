@@ -302,7 +302,7 @@ test("a pane moved into another checkout's vault reports there, and the answer f
 	}
 });
 
-test("a pane told only where it is takes its repository's new name and keeps its board", async () => {
+test("a pane told only where it is takes its repository's new name and keeps its model", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();
@@ -351,7 +351,7 @@ test("an answer from the vault a pane left that comes back before the move leave
 	}
 });
 
-test("news of a board is news of the vault the pane is in, before and after the server moves it", async () => {
+test("news of a model is news of the vault the pane is in, before and after the server moves it", async () => {
 	const socketDescriptor = Object.getOwnPropertyDescriptor(globalThis, "WebSocket")!;
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();

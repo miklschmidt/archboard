@@ -65,14 +65,14 @@ const NO_SUCH_MODEL = {
 	body: {
 		success: false,
 		code: "MODEL_MISSING",
-		error: 'there is no semantic board called "pipeline"',
+		error: 'there is no legacy board called "pipeline"',
 	},
 } as const;
 
 /** The model was there and has stopped being readable. */
 const UNREADABLE = {
 	status: 422,
-	body: { success: false, code: "BOARD_UNREADABLE", error: "the board file is not valid JSON" },
+	body: { success: false, code: "MODEL_UNREADABLE", error: "the model file is not valid JSON" },
 } as const;
 
 /**

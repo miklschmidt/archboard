@@ -175,7 +175,7 @@ function linkedOutMessage(link: NonNullable<VaultNotFound["link"]>): string {
 	return (
 		`${link.vault} leads through a link to ${link.target}, which is not the ${VAULT_DIRECTORY} of a directory. ` +
 		`The server serves only a vault whose real directory is <dir>/${VAULT_DIRECTORY}, because its agents work in <dir>. ` +
-		`Move the boards from ${link.target} to ${link.vault} in place of the link. Nothing was done.`
+		`Move the models from ${link.target} to ${link.vault} in place of the link. Nothing was done.`
 	);
 }
 
@@ -200,7 +200,7 @@ function notFoundMessage(
 		if (boundElsewhere !== undefined) {
 			return (
 				`${start} is inside the git checkout ${root}, which has no ${VAULT_DIRECTORY} at its root. ` +
-				`The boards of its repository, ${boundElsewhere.repository}, are in another vault. ` +
+				`The models of its repository, ${boundElsewhere.repository}, are in another vault. ` +
 				`Run the command with ${option} <dir>: ${boundElsewhere.vaults.map(holdsPhrase).join(" ")} ` +
 				`Nothing was done.`
 			);
@@ -216,7 +216,7 @@ function notFoundMessage(
 		`${start} is not inside a git checkout, and neither it nor any directory above it holds ${VAULT_DIRECTORY}. ` +
 		`Inside a checkout a command uses the vault at the checkout root; outside any checkout it uses the ${VAULT_DIRECTORY} ` +
 		`of the nearest enclosing directory. Run the command inside a checkout that has a vault, create ` +
-		`<dir>/${VAULT_DIRECTORY} in the directory that should hold the boards, or name one with ${option} <dir>. Nothing was done.`
+		`<dir>/${VAULT_DIRECTORY} in the directory that should hold the models, or name one with ${option} <dir>. Nothing was done.`
 	);
 }
 

@@ -236,9 +236,9 @@ function SemanticStageView(view: RenderView): JSX.Element {
 		<>
 			{/* The way back is in the header, which is drawn in every state, because
 			    the states somebody most needs it in are the ones with no diagram:
-			    drilling into a board that is empty, or unreadable, or still loading,
+			    drilling into a model that is empty, or unreadable, or still loading,
 			    and finding that the only way back went with the picture would leave
-			    them stuck on a board they cannot leave. */}
+			    them stuck on a model they cannot leave. */}
 			<StageHeader view={view} />
 			{/* Coherent and out of step: a picture cannot say that by itself, and
 			    drawn plainly it looks settled — which is the one impression it must
@@ -249,7 +249,7 @@ function SemanticStageView(view: RenderView): JSX.Element {
 				variantNameOf={variantNamer(view)}
 			/>
 			{/* Read left to right: the picture — with a presented walkthrough's
-			    caption over it, while the sidebar steps aside — then the board and
+			    caption over it, while the sidebar steps aside — then the model and
 			    whatever is selected on it. */}
 			<PeekProvider selection={view.selection}>
 				<ReadingArea presenting={view.narrative.open !== null}>

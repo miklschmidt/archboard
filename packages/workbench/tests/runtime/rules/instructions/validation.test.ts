@@ -337,7 +337,7 @@ describe("lower bounds", () => {
 			},
 		],
 		[
-			"board.name",
+			"model.name",
 			(candidate: ArchboardContext): void => {
 				candidate.model.name = "";
 			},

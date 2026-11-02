@@ -87,7 +87,7 @@ test("a relationship can cite an endpoint's bound child in a sibling role folder
 		await import("#tests/runtime/support/code-check/pass.ts");
 	const read = readStatesToCheck(vault, undefined);
 	if (!read.ok || read.states.length !== 1)
-		throw new Error(`fixture board did not load: ${JSON.stringify(read)}`);
+		throw new Error(`fixture document did not load: ${JSON.stringify(read)}`);
 	const outcome = await checkCode(vault, read.states, new AbortController().signal, [], () => ({
 		status: "missing",
 		detail: "turned off",

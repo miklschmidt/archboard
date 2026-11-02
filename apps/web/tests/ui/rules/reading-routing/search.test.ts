@@ -52,7 +52,7 @@ test("board keys keep their variant and their path, because the server parses th
 	expect(address.panes[0]?.paneKey).toBe("billing/ledger@option-a");
 });
 
-test("one pane on one board writes one parameter; the active pane is written only when it is not the first", () => {
+test("one pane on one model writes one parameter; the active pane is written only when it is not the first", () => {
 	expect(
 		searchFromAddress({
 			panes: [{ paneId: "A", paneKey: "payments", repository: null, view: null }],
@@ -90,7 +90,7 @@ test("a search naming no pane is an address with no panes, which asks for nothin
 	expect(address.activePaneId).toBeNull();
 });
 
-test("a board key that reads as JSON is still a board key through the installed parser", () => {
+test("a model key that reads as JSON is still a model key through the installed parser", () => {
 	// The router's default parser would take these for a number, a boolean and
 	// nothing at all; each of them is a name a model is allowed to have.
 	const parsed = parseWorkspaceSearchString("?paneA=2026&paneB=true&pane=A");
@@ -102,7 +102,7 @@ test("a board key that reads as JSON is still a board key through the installed 
 	]);
 });
 
-test("a board key survives being written and read back by the router's own pair", () => {
+test("a model key survives being written and read back by the router's own pair", () => {
 	for (const paneKey of ["2026", "true", "null", "1.5", "-ledger", "billing/ledger@option-a"]) {
 		const written = stringifyWorkspaceSearch(searchFromAddress(addressOf([["A", paneKey]])));
 		const read = addressFromSearch(validateWorkspaceSearch(parseWorkspaceSearchString(written)));
@@ -110,7 +110,7 @@ test("a board key survives being written and read back by the router's own pair"
 	}
 });
 
-test("the view a pane reads a semantic board through survives the address bar", () => {
+test("the view a pane reads a legacy board through survives the address bar", () => {
 	const search = searchFromAddress({
 		panes: [{ paneId: "A", paneKey: "semantic:pipeline", repository: null, view: "k3f9" }],
 		activePaneId: "A",
@@ -166,7 +166,7 @@ test("a view named for a pane that is not open names nothing", () => {
 	]);
 });
 
-test("each pane's repository survives the address bar beside its board, and a pane without one names none", () => {
+test("each pane's repository survives the address bar beside its model, and a pane without one names none", () => {
 	const search = searchFromAddress({
 		panes: [
 			{ paneId: "A", paneKey: "payments", repository: "github.com/acme/shop", view: null },

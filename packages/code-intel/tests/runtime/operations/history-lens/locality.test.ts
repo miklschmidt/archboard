@@ -340,7 +340,7 @@ test("a draft is read when it is named, and its parts rank beside the current on
 	expect(answer.hotspots.find((one) => one.subject.id === "pN")?.count).toBe(3);
 });
 
-test("a board with no part in a registered repository answers an empty ranking, not a failure", async () => {
+test("a document with no part in a registered repository answers an empty ranking, not a failure", async () => {
 	const lonely = LegacyBoardSchema.parse({
 		...built,
 		variants: [
@@ -376,7 +376,7 @@ const small = (version: number): LegacyBoard =>
 		],
 	});
 
-test("a new version of a board that binds the same code needs a new answer and no new walk", async () => {
+test("a new version of a document that binds the same code needs a new answer and no new walk", async () => {
 	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const next = small(2);
@@ -386,7 +386,7 @@ test("a new version of a board that binds the same code needs a new answer and n
 	expect(moved.periods[0]).toBe(answer.periods[0]!);
 });
 
-test("an answer is kept until the board's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
+test("an answer is kept until the document's version, the start of the period or a checkout's HEAD moves, and is no other vault's", async () => {
 	const reading = lens.createVariantLocality();
 	const first = small(1);
 	const answer = await reading.read(scratch, first, variantOf(first, "v1"), undefined);
@@ -408,7 +408,7 @@ test("an answer is kept until the board's version, the start of the period or a 
 			.hotspots,
 	).not.toBe(answer.hotspots);
 	write(shop, edit("src/c.ts", 3));
-	commit(shop, 0, "a commit in a repository the board does not bind");
+	commit(shop, 0, "a commit in a repository the document does not bind");
 	expect((await reading.read(scratch, first, variantOf(first, "v1"), undefined)).hotspots).toBe(
 		answer.hotspots,
 	);

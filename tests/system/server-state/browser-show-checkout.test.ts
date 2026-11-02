@@ -245,7 +245,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		expect(chosenCheckout()).toBe(worktree);
 	});
 
-	test("no board command changes the choice, and a command that registers a checkout tells the server", async () => {
+	test("no model command changes the choice, and a command that registers a checkout tells the server", async () => {
 		await using resources = new AsyncDisposableStack();
 		const pane = await paneIn(worktreeVault, "pane-watch");
 		resources.defer(() => pane.close());

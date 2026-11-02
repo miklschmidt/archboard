@@ -83,7 +83,7 @@ function ContainerInterface(props: ContainerInterfaceProps): JSX.Element | null 
 			</Measure>
 			<Measure title="Callers" count={measures.callers} slot="semantic-inspector-callers">
 				{measures.callers === 0 ? (
-					<p className="text-muted-foreground text-body">No part on this board calls it.</p>
+					<p className="text-muted-foreground text-body">No part on this model calls it.</p>
 				) : (
 					<SidebarChoices label="Callers" slot="semantic-inspector-caller-list">
 						{inspection.callers.map((caller) => (

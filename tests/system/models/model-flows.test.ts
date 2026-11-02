@@ -322,7 +322,7 @@ test("structural exports use canonical recursive scope and preserve reproducible
 	});
 });
 
-test("retired board writers and claims cannot change a vault through HTTP or CLI", async () => {
+test("retired model writers and claims cannot change a vault through HTTP or CLI", async () => {
 	const before = cli(["model", "read"]);
 	for (const route of [
 		"create",
@@ -357,7 +357,7 @@ test("retired board writers and claims cannot change a vault through HTTP or CLI
 	expect(cli(["model", "read"]).stdout).toBe(before.stdout);
 });
 
-test("canonical locality and branch footprint retain source analysis without a live board reader", () => {
+test("canonical locality and branch footprint retain source analysis without a live model reader", () => {
 	mkdirSync(join(home, "src"), { recursive: true });
 	writeFileSync(join(home, "src/gateway.ts"), "export function dispatch(){ return 1; }\n");
 	for (const args of [

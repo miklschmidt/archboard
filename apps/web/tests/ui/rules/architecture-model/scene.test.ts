@@ -100,7 +100,7 @@ test.each([
 	expect(nextScene(before, asked, drawing([]), NOTHING)?.heading?.way).toBe(way);
 });
 
-test("a board at the same depth stands on the side the module tree lists it", () => {
+test("a model at the same depth stands on the side the module tree lists it", () => {
 	const first = accepted(request({ scope: "Shop#Gateway" }), []);
 	const last = accepted(request({ scope: "Shop#Worker" }), []);
 	expect(leavingTo(first, request({ scope: "Shop#Worker" }))?.side).toBe("right");
@@ -118,7 +118,7 @@ test("a picture stays while the next reading of its subject is drawn", () => {
 	).toBeNull();
 });
 
-test("a state, comparison or filter is carried on one board, and a focus starts afresh", () => {
+test("a state, comparison or filter is carried on one model, and a focus starts afresh", () => {
 	const scope = reading({ scope: "Shop#Gateway" });
 	expect(sceneModel({ ...scope, state: "Draft", against: "Current" })).toBe(sceneModel(scope));
 	expect(sceneView({ ...scope, filters: { hideKinds: ["call"] } })).toBeNull();

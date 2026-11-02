@@ -47,7 +47,7 @@ const VIEW = { id: "vw1", name: "The writer alone", grammar: "architecture" } as
  */
 const WALKTHROUGH = {
 	id: "w1",
-	name: "For the board",
+	name: "For the model",
 	summary: "Ten minutes on where the writes go.",
 	beats: [
 		{ id: "b1", heading: "The shape of it", body: "Two modules and one call.", subjects: [] },
@@ -512,7 +512,7 @@ test("the same walkthrough stays presented when the reader moves to the proposal
 	// in it survives the move.
 	const draft = {
 		id: "v2",
-		name: "Semantic boards",
+		name: "Semantic models",
 		lifecycle: "draft",
 		parent: "v1",
 		content: CONTENT,

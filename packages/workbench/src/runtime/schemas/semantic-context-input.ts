@@ -205,11 +205,11 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
 function normalizeModel(
 	model: SemanticContextInput["model"],
 ): BoundedValue<NormalizedContext["model"]> {
-	const key = textValue(model.key, "board.key", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
-	const name = textValue(model.name, "board.name", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
-	const vault = textValue(model.vault, "board.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
-	const file = textValue(model.file, "board.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
-	const version = numberValue(model.version, "board.version");
+	const key = textValue(model.key, "model.key", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+	const name = textValue(model.name, "model.name", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+	const vault = textValue(model.vault, "model.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
+	const file = textValue(model.file, "model.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
+	const version = numberValue(model.version, "model.version");
 	return {
 		value: deepFreeze({
 			key: key.value,

@@ -178,7 +178,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	const initialTimer = setTimeout(
 		() =>
 			rejectInitial(
-				timeoutError(options.clientId, "to be given a board", TEST_PANE_MESSAGE_TIMEOUT_MS),
+				timeoutError(options.clientId, "to be given a model", TEST_PANE_MESSAGE_TIMEOUT_MS),
 			),
 		TEST_PANE_MESSAGE_TIMEOUT_MS,
 	);
@@ -200,7 +200,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 		}
 	};
 	const onCloseBeforeInitial = (): void =>
-		failInitial(new Error(`Pane ${options.clientId} closed before it was given a board.`));
+		failInitial(new Error(`Pane ${options.clientId} closed before it was given a model.`));
 	const releaseSocketListeners = (): void => {
 		socket.off("message", onMessage);
 		socket.off("error", failInitial);

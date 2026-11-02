@@ -168,7 +168,7 @@ describe("the surface across pictures", () => {
 		});
 	});
 
-	test("a first picture and another board's come in part by part; reduced motion cuts", () => {
+	test("a first picture and another model's come in part by part; reduced motion cuts", () => {
 		withFramesByHand(() => {
 			const first = picture([A], []);
 			const other = picture([B], [], { model: "engine" });

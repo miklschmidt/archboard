@@ -112,7 +112,7 @@ function writeGuardrail(
 }
 
 describe("file changes", () => {
-	test("a board patched with the editing tool is read off the stream and fails the write guardrail", () => {
+	test("a document patched with the editing tool is read off the stream and fails the write guardrail", () => {
 		const trace = parseTrace(
 			[
 				{ type: "thread.started", thread_id: "t" },
@@ -154,7 +154,7 @@ describe("file changes", () => {
 		]);
 		const verdict = writeGuardrail([], trace.fileChanges);
 		expect(verdict.passed).toBe(false);
-		expect(verdict.detail).toContain("1 board files patched directly");
+		expect(verdict.detail).toContain("1 document files patched directly");
 		// A file outside the vault is the author's business.
 		expect(writeGuardrail([], [trace.fileChanges[1]!]).passed).toBe(true);
 		expect(
@@ -458,7 +458,7 @@ function record(overrides: Partial<RunRecord>): RunRecord {
 }
 
 describe("contamination in the report", () => {
-	test("a run that read evaluation material is listed apart and blocks the token comparison, without being called a board failure", () => {
+	test("a run that read evaluation material is listed apart and blocks the token comparison, without being called a document failure", () => {
 		const exposed = record({
 			run: "run-0000000002",
 			arm: "candidate",
@@ -484,7 +484,7 @@ describe("contamination in the report", () => {
 		expect(report.scenarios[0]!.baseline.unaudited).toBe(1);
 		expect(report.contamination.map((run) => run.run)).toEqual(["run-0000000003"]);
 		const markdown = renderReportMarkdown(report);
-		expect(markdown).toContain("wrote 1 board files outside the CLI");
+		expect(markdown).toContain("wrote 1 document files outside the CLI");
 		expect(markdown).toContain("1 runs were recorded before file changes and exposure were kept");
 	});
 

@@ -119,7 +119,7 @@ function shownFor(res: Response, pane: ActivatedPane, picked: string | undefined
 		res,
 		409,
 		"CHECKOUT_NOT_SHOWABLE",
-		`This tab has no workhorse and no pane in ${picked}. Pick a checkout from the list, or open one of its boards.`,
+		`This tab has no workhorse and no pane in ${picked}. Pick a checkout from the list, or open one of its models.`,
 	);
 	return null;
 }

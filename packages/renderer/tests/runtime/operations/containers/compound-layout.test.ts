@@ -101,7 +101,7 @@ describe("compound architecture layout", () => {
 
 	test("concurrent requests on the layout worker retain deterministic independent drawings", async () => {
 		const other = orderedFixture({
-			nodes: [{ id: "solo", name: "Another board", kind: "module" }],
+			nodes: [{ id: "solo", name: "Another document", kind: "module" }],
 		});
 		const [first, separate, concurrent] = await Promise.all([
 			renderArchitecture({ policy: DEFAULT_SEMANTIC_POLICY, content: NESTED, theme: "light" }),

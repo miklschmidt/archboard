@@ -125,7 +125,7 @@ function ignoreChoice(): void {
 	// The pane's own board is the shell's; a level below is the pane's own.
 }
 
-test("a board a level down offers its own views and its own states", async () => {
+test("a model a level down offers its own views and its own states", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
@@ -149,7 +149,7 @@ test("a board a level down offers its own views and its own states", async () =>
 	expect(renderCalls().at(-1)).toContain("variant=e1");
 });
 
-test("double-clicking a card opens the board it drills down to", async () => {
+test("double-clicking a card opens the model it drills down to", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
@@ -170,7 +170,7 @@ test("double-clicking a card opens the board it drills down to", async () => {
 	expect(renderCalls().at(-1)).toContain("variant=e1");
 });
 
-test("a double-click whose board answers after the pane moved on opens nothing", async () => {
+test("a double-click whose model answers after the pane moved on opens nothing", async () => {
 	const proposed = {
 		...PIPELINE_CURRENT,
 		id: "v2",
@@ -213,7 +213,7 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 });
 
-test("a newer double-click wins over an older one whose board answers first", async () => {
+test("a newer double-click wins over an older one whose model answers first", async () => {
 	// Two cards, each opening a different model.
 	server.documents["pipeline"] = twoCardPipeline();
 	server.documents["engine"] = cardDocument("engine", undefined);
@@ -256,7 +256,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	expect(renderCalls().filter((call) => call.includes("model=engine"))).toEqual([]);
 });
 
-test("while the board below is drawn, the board above stays on the pane only to be seen leaving", async () => {
+test("while the model below is drawn, the model above stays on the pane only to be seen leaving", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
@@ -284,7 +284,7 @@ test("while the board below is drawn, the board above stays on the pane only to 
 	expect(document.querySelector("[data-slot='semantic-inspector']")).toBeNull();
 });
 
-test("choosing at the level below asks for that reading of the board below", async () => {
+test("choosing at the level below asks for that reading of the model below", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
@@ -309,7 +309,7 @@ test("choosing at the level below asks for that reading of the board below", asy
 	expect(asked).toContain("view=ev2");
 });
 
-test("coming back up leaves the pane reading its own board as it was", async () => {
+test("coming back up leaves the pane reading its own model as it was", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };
@@ -356,7 +356,7 @@ async function doubleClickInto(model: string): Promise<void> {
 	await settle();
 }
 
-test("a crumb two levels up goes straight back to its board, as one change by hand", async () => {
+test("a crumb two levels up goes straight back to its model, as one change by hand", async () => {
 	server.documents["pipeline"] = cardDocument("pipeline", "engine");
 	server.documents["engine"] = cardDocument("engine", "store");
 	server.documents["store"] = cardDocument("store", undefined);
@@ -403,7 +403,7 @@ function report(reading: Reading): void {
 /** Everything the pane has said it was reading, in order. */
 const readings: Reading[] = [];
 
-test("the pane says which board it is actually reading, not the one it was opened on", async () => {
+test("the pane says which model it is actually reading, not the one it was opened on", async () => {
 	server.documents["pipeline"] = PIPELINE;
 	server.documents["engine"] = ENGINE;
 	server.reply = { status: 200, body: { ...drawing(1), views: [PIPELINE_VIEW] } };

@@ -77,7 +77,8 @@ function marksOf(svg: string, id: string): string[] {
 
 for (const grammar of ["architecture", "sequence"] satisfies DiagramGrammar[]) {
 	test(
-		grammar + " marks each part that opens a board with the way it lies, and draws its name whole",
+		grammar +
+			" marks each part that opens a document with the way it lies, and draws its name whole",
 		async () => {
 			const { svg } = await renderSemanticView({
 				policy: DEFAULT_SEMANTIC_POLICY,
@@ -271,7 +272,7 @@ test("an architecture keeps a frame's far name clear of its far mark", async () 
 			nodes: [
 				{
 					id: "frame",
-					name: "the frame that holds every part of the board store",
+					name: "the frame that holds every part of the document store",
 					kind: "system",
 					drillDown: OPENS,
 				},

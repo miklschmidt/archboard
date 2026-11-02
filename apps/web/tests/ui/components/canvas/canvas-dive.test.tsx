@@ -154,7 +154,7 @@ async function openBelow(): Promise<void> {
 async function goBack(): Promise<void> {
 	await act(async () => {
 		fireEvent.click(
-			document.querySelector<HTMLElement>("nav[aria-label='Where this board sits'] button")!,
+			document.querySelector<HTMLElement>("nav[aria-label='Where this model sits'] button")!,
 		);
 	});
 	await settle();
@@ -245,7 +245,7 @@ function flyOut(frames: FramesByHand): void {
 	frames.run(EXPLORING_MS.dive + 64);
 }
 
-test("a card's board opens by flying into the card, and lands where the board stands", async () => {
+test("a card's model opens by flying into the card, and lands where the model stands", async () => {
 	const frames = await aboveOnScreen();
 	try {
 		await openBelow();
@@ -277,7 +277,7 @@ test("a card's board opens by flying into the card, and lands where the board st
 	}
 });
 
-test("going back flies out of the card that opened the board, and lands on the whole board above", async () => {
+test("going back flies out of the card that opened the model, and lands on the whole model above", async () => {
 	const frames = await aboveOnScreen();
 	try {
 		await openBelow();
@@ -389,7 +389,7 @@ function watchFarView(): () => string[] {
 	};
 }
 
-test("a flight between two boards seen from far swaps no card's words for its name, in the air or as the board takes over", async () => {
+test("a flight between two models seen from far swaps no card's words for its name, in the air or as the model takes over", async () => {
 	const frames = await aboveOnScreen({ above: FAR, below: FAR });
 	try {
 		expect(surface().classList.contains("is-far")).toBe(true);
@@ -407,7 +407,7 @@ test("a flight between two boards seen from far swaps no card's words for its na
 	}
 });
 
-test("a board seen from far that opens from a board seen near swaps its cards once, after it has taken over from the flight", async () => {
+test("a model seen from far that opens from a model seen near swaps its cards once, after it has taken over from the flight", async () => {
 	const frames = await aboveOnScreen({ below: FAR });
 	try {
 		expect(surface().classList.contains("is-far")).toBe(false);
@@ -473,7 +473,7 @@ for (const input of INPUTS) {
 	});
 }
 
-test("a board opens by flying only when it can be seen in time", async () => {
+test("a model opens by flying only when it can be seen in time", async () => {
 	const frames = await aboveOnScreen();
 	try {
 		// The model below has no picture to hand yet: the pane gives the flight up after a moment and opens it the plain way.
@@ -492,7 +492,7 @@ test("a board opens by flying only when it can be seen in time", async () => {
 	}
 });
 
-test("a board does not fly while a picture is still coming in", async () => {
+test("a model does not fly while a picture is still coming in", async () => {
 	// When that picture lands it is written to the surface again, which would take the model inside the card away.
 	const frames = await aboveOnScreen({ arrived: false });
 	try {
@@ -505,7 +505,7 @@ test("a board does not fly while a picture is still coming in", async () => {
 	}
 });
 
-test("a reader who asked for no motion gets the board at once, and goes back at once", async () => {
+test("a reader who asked for no motion gets the model at once, and goes back at once", async () => {
 	const frames = await aboveOnScreen({ reducedMotion: true });
 	try {
 		await openBelow();

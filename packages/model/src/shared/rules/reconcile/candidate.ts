@@ -82,7 +82,7 @@ function danglingIssue(subject: string, problem: string): ReconciliationIssue {
 		theirs: "changed under it",
 		repair:
 			"Merging the change from the variant this proposal came from would leave it saying " +
-			`something no board may hold — ${problem}. This proposal keeps its own side of that and ` +
+			`something no model may hold — ${problem}. This proposal keeps its own side of that and ` +
 			"takes the rest of the change; say what it should say instead.",
 	};
 }

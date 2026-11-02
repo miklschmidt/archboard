@@ -112,7 +112,7 @@ beforeAll(async () => {
 	writeFileSync(join(root, "src/Shop/settings.json"), "{}\n");
 	writeFileSync(join(root, "src/Other.cs"), "first\n");
 	writeFileSync(file, JSON.stringify(document));
-	base = commit("create the board and project");
+	base = commit("create the document and project");
 	for (let at = 1; at <= 5; at += 1) {
 		writeFileSync(join(root, "src/Shop/sub/Ledger.cs"), `${at}\n`);
 		writeFileSync(join(root, "src/Other.cs"), `${at}\n`);
@@ -129,7 +129,7 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("Behind counts every changed file in a project directory after the board changed", async () => {
+test("Behind counts every changed file in a project directory after the document changed", async () => {
 	const [read] = await lens.createBehindReading().read(vault, [{ document, file }]);
 	const answer = ModelBehindSchema.parse(read);
 	if (!("parts" in answer)) throw new Error("no last change");

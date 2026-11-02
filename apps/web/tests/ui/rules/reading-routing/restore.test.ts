@@ -333,7 +333,7 @@ test("a restore waits for a pane that has not reached the server rather than ope
 	expect(shell.restore.done).toBe(false);
 });
 
-test("an address that asks for another view reads the board again without reopening it", () => {
+test("an address that asks for another view reads the model again without reopening it", () => {
 	// The pane is already on the model; only the explanation on screen is wrong.
 	const shell = fakeShell({
 		panes: [["A", "pipeline"]],
@@ -351,7 +351,7 @@ test("an address that asks for another view reads the board again without reopen
 	expect(shell.port.displayed.panes[0]?.view).toBe("k3f9");
 });
 
-test("a pane being pointed at another board is not read on the way there", () => {
+test("a pane being pointed at another model is not read on the way there", () => {
 	// The view belongs to the model it is going to, and is settled once it lands.
 	const shell = fakeShell({
 		panes: [["A", "payments"]],

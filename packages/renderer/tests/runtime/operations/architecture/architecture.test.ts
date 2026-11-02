@@ -50,7 +50,7 @@ const SAMPLE: VariantContent = architecture(
 	],
 	[
 		{ id: "e1", from: "web", to: "gw", kind: "http", label: "REST", emphasis: "normal" },
-		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read board", emphasis: "hero" },
+		{ id: "e2", from: "gw", to: "io", kind: "call", label: "read document", emphasis: "hero" },
 		{ id: "e3", from: "gw", to: "lease", kind: "call", emphasis: "normal" },
 		{ id: "e4", from: "io", to: "vault", kind: "data", label: "atomic write", emphasis: "hero" },
 		{ id: "e5", from: "lease", to: "vault", kind: "data", emphasis: "muted" },
@@ -453,7 +453,7 @@ describe("renderArchitecture", () => {
 
 	test("a label belongs to its edge, in the markup and in the atlas", async () => {
 		const rendered = await render();
-		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read board");
+		const labelled = drawnTexts(rendered.svg).filter((text) => text.text === "read document");
 
 		expect(labelled).toHaveLength(1);
 		expect(labelled[0]!.subject).toEqual({ kind: "edge", id: "e2" });

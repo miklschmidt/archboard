@@ -184,7 +184,7 @@ test("a container draws its whole wrapped header above its members and leaves it
 	).toBe(name);
 });
 
-test("a board drawn in between leaves another board's picture as it was", async () => {
+test("a document drawn in between leaves another document's picture as it was", async () => {
 	const words = "AVAST Waterfall Office";
 	const content = orderedFixture({
 		nodes: [

@@ -23,7 +23,7 @@ import { buildReport, type ConcernKind, type RunRecord } from "#runtime/rules/re
 import { renderReportMarkdown } from "#runtime/rules/reports/report-markdown.ts";
 
 const EXPECTED = [
-	{ feature: "board.create", requirement: "one board", skill: ["SKILL.md#essentials"] },
+	{ feature: "board.create", requirement: "one document", skill: ["SKILL.md#essentials"] },
 	{ feature: "render.svg", requirement: "drawn", skill: ["SKILL.md#essentials"] },
 ];
 
@@ -201,7 +201,7 @@ const onAxis = (axis: FindingAxis): RunVerdict =>
 		{ ...BARE, feature: "render.svg", verdict: "missing", finding: finding(axis) },
 	]);
 
-test("a feature the skill never taught fails no run; a departure or a contradicted board does", () => {
+test("a feature the skill never taught fails no run; a departure or a contradicted document does", () => {
 	expect(semanticallyCompliant(EXPECTED, onAxis("skill"))).toBe(true);
 	expect(semanticallyCompliant(EXPECTED, onAxis("conformance"))).toBe(false);
 	expect(semanticallyCompliant(EXPECTED, onAxis("truth"))).toBe(false);

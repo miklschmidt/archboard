@@ -176,7 +176,7 @@ describe("a pane whose socket came back", () => {
 		expect(sent.map((body) => body.sequence)).toEqual([0, 1]);
 	});
 
-	test("a pane that moved boards says nothing about the board it left", async () => {
+	test("a pane that moved models says nothing about the model it left", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("a"));
 		await settled();

@@ -28,7 +28,7 @@ function playbackOf(
 				name: "Pipeline",
 				variant: null,
 				version: 1,
-				walkthrough: { id: "wk", name: "For the board" },
+				walkthrough: { id: "wk", name: "For the model" },
 				steps: 2,
 			},
 		},

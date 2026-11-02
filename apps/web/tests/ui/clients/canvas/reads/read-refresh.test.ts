@@ -123,7 +123,7 @@ function readDocument(vault: string, name: string, signal?: AbortSignal): Promis
 	asked.push(`${vault}|${name}`);
 	const model = server.get(vault);
 	if (model === undefined || !opens(model, name)) {
-		return Promise.reject(new Error(`no board ${name}`));
+		return Promise.reject(new Error(`no model ${name}`));
 	}
 	const answer = { ...model };
 	const { promise, resolve, reject } = Promise.withResolvers<unknown>();
@@ -304,7 +304,7 @@ function navigator(client: QueryClient): () => void {
 	};
 }
 
-test("a changed board is read from after the change: an answer decided before it does not win", async () => {
+test("a changed model is read from after the change: an answer decided before it does not win", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const shown = pane(client, SHOP, "Payments");
 	await until(() => shown.versions().join() === "1,1");
@@ -327,7 +327,7 @@ test("a changed board is read from after the change: an answer decided before it
 	client.clear();
 });
 
-test("a board let go under the server's spelling reads again what was asked by another spelling or a former name, and the vault's listing and the panes, in that vault only", async () => {
+test("a model let go under the server's spelling reads again what was asked by another spelling or a former name, and the vault's listing and the panes, in that vault only", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const stopNavigator = navigator(client);
 	const spelled = pane(client, SHOP, "PAYMENTS");
@@ -359,7 +359,7 @@ test("a board let go under the server's spelling reads again what was asked by a
 	client.clear();
 });
 
-test("a board command reads every listing and the panes again, not the repositories; reading everything again reads them too", async () => {
+test("a model command reads every listing and the panes again, not the repositories; reading everything again reads them too", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const stopNavigator = navigator(client);
 	await until(() => requested.length === 4);
@@ -387,7 +387,7 @@ test("a board command reads every listing and the panes again, not the repositor
 	client.clear();
 });
 
-test("a listing reads again a board this tab drew ahead at another version, by any spelling, in that vault only, and nothing it lists at the version held", async () => {
+test("a listing reads again a model this tab drew ahead at another version, by any spelling, in that vault only, and nothing it lists at the version held", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	// Drawn ahead at version 1 in both vaults, with no pane showing either, the
 	// shop's model asked by another spelling than the key it is listed under.
@@ -413,7 +413,7 @@ test("a listing reads again a board this tab drew ahead at another version, by a
 	client.clear();
 });
 
-test("a changed policy draws its vault's pictures again without reading a board, and no other vault's", async () => {
+test("a changed policy draws its vault's pictures again without reading a model, and no other vault's", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const shop = pane(client, SHOP, "Payments");
 	const billing = pane(client, BILLING, "Payments");

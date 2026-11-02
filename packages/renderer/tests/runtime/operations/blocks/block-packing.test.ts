@@ -41,7 +41,7 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-test("a line's words stand clear of its own legs on a board of tight rows", async () => {
+test("a line's words stand clear of its own legs on a document of tight rows", async () => {
 	const content = orderedFixture(modelRasterizer);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(labelsOverOwnLine(drawing)).toEqual([]);

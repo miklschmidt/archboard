@@ -249,7 +249,7 @@ test("check and check all ask the semantics check, then the code check, run the 
 	}
 });
 
-test("a board behind its code is information and does not fail the check", async () => {
+test("a model behind its code is information and does not fail the check", async () => {
 	plain = clean;
 	const { stderr, exited } = await run(["check", "code"]);
 	expect(exited).toBe(0);
@@ -391,7 +391,7 @@ test("--state, --every-draft and --plan reach the code check of check, check all
 	}
 });
 
-test("a draft no board has is refused, and --every-draft beside --state is refused before the server", async () => {
+test("a draft no model has is refused, and --every-draft beside --state is refused before the server", async () => {
 	plain = clean;
 	refuseDraft = true;
 	try {

@@ -87,7 +87,7 @@ function variantOf(model: LegacyBoard, id: string): SemanticVariant {
 	return found;
 }
 
-describe("a board with a current variant", () => {
+describe("a model with a current variant", () => {
 	const model = documentOf(HISTORY, "v2");
 
 	test("draws the current variant as it is, with no comparison", () => {
@@ -125,7 +125,7 @@ describe("a board with a current variant", () => {
 	});
 });
 
-describe("a board nobody has built", () => {
+describe("a model nobody has built", () => {
 	const model = documentOf([
 		{ id: "d1", name: "First sketch", lifecycle: "draft", content: { nodes: [PLATFORM, GATEWAY] } },
 		{

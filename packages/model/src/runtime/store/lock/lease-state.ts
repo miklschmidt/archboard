@@ -298,7 +298,7 @@ function sweepModelLocks(): void {
 		try {
 			processSweep.also?.(vault, model);
 		} catch (error) {
-			logger.warn(`Board lock sweep passenger failed for "${model}"; lock watch continues.`, {
+			logger.warn(`Model lock sweep passenger failed for "${model}"; lock watch continues.`, {
 				error,
 			});
 		}

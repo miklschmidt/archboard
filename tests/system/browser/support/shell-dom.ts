@@ -11,7 +11,7 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 /** The element the browser presents fullscreen: the centre stage. */
 const STAGE_ROOT = '[data-slot="pane-stages"]';
 /** The breadcrumb in the header of the pane with focus: the models above, the model, then the variant. */
-const MODEL_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
+const MODEL_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this model sits"]';
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
 /** A pane's top row: where its model sits, the ways to read it and the pane's controls. */

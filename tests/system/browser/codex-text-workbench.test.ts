@@ -129,7 +129,7 @@ test(
 		await pollUntil(
 			() => paneCanvas(browser),
 			(value) => value.panes === 1 && value.model === "workbench" && value.drawn,
-			"the seeded board to draw in the one pane",
+			"the seeded model to draw in the one pane",
 		);
 		await browser.run(["console", "--clear"]);
 		await browser.run(["errors", "--clear"]);

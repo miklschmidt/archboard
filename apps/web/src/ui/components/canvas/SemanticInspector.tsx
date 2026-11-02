@@ -430,18 +430,18 @@ function explain(
 		on: null,
 	} as const;
 	if (read.error !== null) {
-		return { ...nothing, notice: `This board could not be read. ${read.error.message}` };
+		return { ...nothing, notice: `This model could not be read. ${read.error.message}` };
 	}
 	if (document === undefined) {
-		return { ...nothing, notice: "Reading the board…" };
+		return { ...nothing, notice: "Reading the model…" };
 	}
 	const reading = readDocument(document);
 	if (!reading.ok) {
-		return { ...nothing, notice: `This board could not be read. ${reading.problem}` };
+		return { ...nothing, notice: `This model could not be read. ${reading.problem}` };
 	}
 	const opened = addressedVariant(reading.board, variant);
 	if (!opened.ok) {
-		return { ...nothing, notice: `This board cannot say what is on screen: ${opened.problem}.` };
+		return { ...nothing, notice: `This model cannot say what is on screen: ${opened.problem}.` };
 	}
 	const shown = opened.variant;
 	const compared = comparedSubject(reading.board, shown, selection);
@@ -458,7 +458,7 @@ function explain(
 			variant: shown.id,
 			version: reading.board.version,
 		},
-		notice: "This is not on the board any more. It may have gone since the picture was drawn.",
+		notice: "This is not on the model any more. It may have gone since the picture was drawn.",
 	};
 }
 

@@ -90,7 +90,7 @@ const PANEL_STYLE: CSSProperties = { width: SIDEBAR_WIDTH };
 
 /** The two tabs, in order. */
 const TABS: readonly { readonly tab: SidebarTab; readonly label: string }[] = [
-	{ tab: "model", label: "Board" },
+	{ tab: "model", label: "Model" },
 	{ tab: "selection", label: "Selection" },
 ];
 
@@ -326,7 +326,7 @@ function SemanticSidebar(props: SemanticSidebarProps): JSX.Element | null {
 function NothingSelected(): JSX.Element {
 	return (
 		<p className="text-muted-foreground text-body px-4 py-4">
-			Pick something out of the diagram to see what the board says about it.
+			Pick something out of the diagram to see what the model says about it.
 		</p>
 	);
 }

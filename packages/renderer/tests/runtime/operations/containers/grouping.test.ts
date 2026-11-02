@@ -99,7 +99,7 @@ const nodes = [
 	{ id: "api", name: "API", kind: "api", parent: "plain" },
 ];
 
-test("the cards of a group stand together on the board", async () => {
+test("the cards of a group stand together on the document", async () => {
 	const nodes = ["a", "b", "c", "d", "e", "f"].map((id, at) => ({
 		id,
 		name: `Card ${id}`,

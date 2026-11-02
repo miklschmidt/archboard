@@ -53,7 +53,7 @@ function drawnIds(svg: string, kind: "edge" | "step"): string[] {
 		.filter((id, index, all) => all.indexOf(id) === index);
 }
 
-describe("a flow drawn on its board", () => {
+describe("a flow drawn on its document", () => {
 	test("each message between two participants is a dashed, open-headed step line; a return, a self step and a repeated pair draw nothing more", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
@@ -71,7 +71,7 @@ describe("a flow drawn on its board", () => {
 		expect(rendered.atlas.edges["s1"]).toBeDefined();
 	});
 
-	test("a board with any authored relationship is drawn from its relationships alone", async () => {
+	test("a document with any authored relationship is drawn from its relationships alone", async () => {
 		const rendered = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,
 			content: document([{ id: "e1", from: "grp", to: "run", kind: "call", label: "invoke" }]),

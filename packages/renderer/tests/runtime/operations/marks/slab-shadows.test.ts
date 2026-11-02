@@ -121,7 +121,7 @@ function expectShadowsUnderCards(svg: string, cards: readonly string[]): void {
 }
 
 test.each(["track", "blocks"] as const)(
-	"every card's shadow lies under every card on a board (%s)",
+	"every card's shadow lies under every card on a document (%s)",
 	async (layout) => {
 		const drawing = await renderArchitecture({
 			policy: DEFAULT_SEMANTIC_POLICY,

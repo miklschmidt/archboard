@@ -311,7 +311,7 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 		return null;
 	}
 	if (pane === null) {
-		res.status(503).json(noBrowserBody("Showing a board"));
+		res.status(503).json(noBrowserBody("Showing a model"));
 	}
 	return pane;
 }

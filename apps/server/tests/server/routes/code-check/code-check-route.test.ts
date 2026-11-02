@@ -119,7 +119,7 @@ beforeAll(async () => {
 	git("config", "user.email", "route@example.test");
 	git("config", "commit.gpgsign", "false");
 	git("add", "-A");
-	git("commit", "-q", "--no-gpg-sign", "-m", "the board and its code");
+	git("commit", "-q", "--no-gpg-sign", "-m", "the document and its code");
 	writeFileSync(join(checkout, "src", "a.ts"), "2\n");
 	git("commit", "-q", "--no-gpg-sign", "-am", "change a.ts");
 	const target = { model: "Shop", state: "Current" };

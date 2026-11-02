@@ -110,7 +110,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.key back into the brief's context.
+			 * Install the trimmed model.key back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
@@ -209,7 +209,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.name back into the brief's context.
+			 * Install the trimmed model.name back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
@@ -221,7 +221,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.vault back into the brief's context.
+			 * Install the trimmed model.vault back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {
@@ -233,7 +233,7 @@ function textSlots(context: BriefContext): readonly TextSlot[] {
 			empty: "",
 			minimum: SEMANTIC_CONTEXT_ELLIPSIS,
 			/**
-			 * Install the trimmed board.file back into the brief's context.
+			 * Install the trimmed model.file back into the brief's context.
 			 * @param value - The trimmed text, or null when the field is dropped entirely.
 			 */
 			set: (value) => {

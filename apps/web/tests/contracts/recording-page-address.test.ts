@@ -30,7 +30,7 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 	return addressFromSearch(parseWorkspaceSearchString(url.search)).panes;
 }
 
-test("the recording page shows the board in pane A, in the repository of the vault the command found", () => {
+test("the recording page shows the model in pane A, in the repository of the vault the command found", () => {
 	expect(panesOpenedFor("github.com/acme/shop", null)).toMatchObject([
 		{ paneId: "A", paneKey: "Checkout", repository: "github.com/acme/shop" },
 	]);

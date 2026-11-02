@@ -213,7 +213,7 @@ test("a named draft reports a bound path that its branch lacks, and the checkout
 
 test("a historical candidate reads its authoritative commit even at dirty HEAD", async () => {
 	const read = check.readStatesToCheck(vault);
-	if (!read.ok || read.states[0] === undefined) throw new Error("fixture board missing");
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
 	const base = read.states[0];
 	const commit = headCommit();
 	const variant = {
@@ -272,7 +272,7 @@ test("a historical candidate reads its authoritative commit even at dirty HEAD",
 
 test("candidate revision evidence refuses duplicates, omissions, branch names and unavailable commits", async () => {
 	const read = check.readStatesToCheck(vault);
-	if (!read.ok || read.states[0] === undefined) throw new Error("fixture board missing");
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
 	const base = read.states[0];
 	const commit = headCommit();
 	const revision = { repo: SHOP, commit };
@@ -295,7 +295,7 @@ test("candidate revision evidence refuses duplicates, omissions, branch names an
 
 test("historical suggestions use HEAD ancestry and report missing timestamp history", async () => {
 	const read = check.readStatesToCheck(vault);
-	if (!read.ok || read.states[0] === undefined) throw new Error("fixture board missing");
+	if (!read.ok || read.states[0] === undefined) throw new Error("fixture document missing");
 	const variant = read.states[0].variant;
 	const commit = headCommit();
 	const signal = new AbortController().signal;

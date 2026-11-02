@@ -50,9 +50,9 @@ const check: VaultCheck = {
 		},
 		{
 			severity: "error",
-			code: "BOARD_UNREADABLE",
+			code: "MODEL_UNREADABLE",
 			file: "/vault/Broken.semantic.json",
-			message: "Not a board.",
+			message: "Not a model.",
 		},
 	],
 };

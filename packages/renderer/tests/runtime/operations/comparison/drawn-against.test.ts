@@ -84,7 +84,7 @@ function drawn(built: boolean, choices: { variant: string; against?: string }) {
 function replyOf(
 	outcome: Awaited<ReturnType<typeof drawn>>,
 ): SemanticRenderReply & { svg: string } {
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 
@@ -110,7 +110,7 @@ test("a stacked proposal marks only what it adds over the proposal below it, not
 	expect(added(stacked)).toEqual(["cache"]);
 });
 
-test("a picture drawn against a variant carries no planned frame, also on a board with no current variant", async () => {
+test("a picture drawn against a variant carries no planned frame, also on a document with no current variant", async () => {
 	const framed = replyOf(await drawn(false, { variant: "two" }));
 	expect(framed.svg).toContain('data-slot="planned-frame"');
 
@@ -125,7 +125,7 @@ test("the variant to read against is found by name as well as by id", async () =
 	expect(byName.changes?.against.id).toBe("one");
 });
 
-test("a variant the board lacks, and the drawn variant itself, are refused", async () => {
+test("a variant the document lacks, and the drawn variant itself, are refused", async () => {
 	const unknown = await drawn(true, { variant: "two", against: "nope" });
 	expect(unknown).toMatchObject({ ok: false, code: "UNKNOWN_VARIANT" });
 	const itself = await drawn(true, { variant: "two", against: "two" });

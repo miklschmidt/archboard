@@ -41,7 +41,7 @@ const VARIANT = SemanticVariantSchema.parse(
 					description: "Holds no state between requests.",
 					drillDown: { board: "api", variant: { kind: "current" } },
 				},
-				{ id: "n2", name: "Store", kind: "service", responsibility: "Keeps boards" },
+				{ id: "n2", name: "Store", kind: "service", responsibility: "Keeps models" },
 				{ id: "c1", name: "Server", kind: "system", description: "One process per vault." },
 			],
 			edges: [
@@ -143,7 +143,7 @@ test("a card's tip adds what the card does not draw at this distance, and what a
 test("a card with nothing more to say has a tip only from far away", () => {
 	const plain = tipTargetAt(at(drawn(), "plain"), 0)!;
 	expect(subjectTip(VARIANT, plain, undefined, false)).toBeNull();
-	expect(subjectTip(VARIANT, plain, undefined, true)!.lead).toBe("Keeps boards");
+	expect(subjectTip(VARIANT, plain, undefined, true)!.lead).toBe("Keeps models");
 });
 
 test("a label's tip names its words and the kind of line the picture draws them on", () => {

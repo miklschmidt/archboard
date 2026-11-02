@@ -162,7 +162,7 @@ const doingOnWrites: Guardrail = (context) => {
 		(command) => command.write && !command.command.includes("--doing"),
 	);
 	const found = [
-		...(patched.length === 0 ? [] : [`${patched.length} board files patched directly`]),
+		...(patched.length === 0 ? [] : [`${patched.length} document files patched directly`]),
 		...(direct.length === 0 ? [] : [`${direct.length} commands wrote into the vault`]),
 	];
 	return {
@@ -336,7 +336,8 @@ const noWrites: Guardrail = (context) => {
 	);
 	return {
 		passed: moved.length === 0,
-		detail: moved.length === 0 ? "no board moved" : `moved, added or removed: ${moved.join(", ")}`,
+		detail:
+			moved.length === 0 ? "no document moved" : `moved, added or removed: ${moved.join(", ")}`,
 	};
 };
 

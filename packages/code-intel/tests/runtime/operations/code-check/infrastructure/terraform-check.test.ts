@@ -225,7 +225,7 @@ beforeAll(async () => {
 	]);
 	check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
+	if (!read.ok) throw new Error("no documents");
 	withoutPlan = await check.checkCode(vault, read.states, new AbortController().signal);
 	const plans = await check.readPlans(
 		vault,
@@ -271,7 +271,7 @@ test("a part bound to an address its root module no longer declares is reported,
 	expect(skipped("path-never-read")).toEqual(["pT"]);
 });
 
-test("a reference that joins two resource-bound parts supports their relationship, through a module's output and variable, and one the board does not draw is undrawn", () => {
+test("a reference that joins two resource-bound parts supports their relationship, through a module's output and variable, and one the document does not draw is undrawn", () => {
 	const undrawn = withoutPlan.findings.find((each) => each.code === "RELATIONSHIP_UNDRAWN");
 	expect(undrawn?.evidence).toEqual([
 		{

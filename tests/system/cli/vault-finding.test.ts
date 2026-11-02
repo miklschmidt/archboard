@@ -213,7 +213,7 @@ test("inside a checkout without a vault a command refuses, and creates and regis
 	expect(existsSync(fixture.registry) ? readFileSync(fixture.registry) : null).toEqual(before);
 });
 
-test("a checkout without a vault is told which known vault holds boards of its code, and nothing is created", () => {
+test("a checkout without a vault is told which known vault holds models of its code, and nothing is created", () => {
 	// Another directory keeps the architecture of the billing checkout's code.
 	const architecture = holdingVault(join(fixture.root, "architecture"));
 	seedCanonicalFixture(join(architecture, ".archboard/vault"), "Billing flow", [

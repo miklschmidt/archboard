@@ -50,7 +50,7 @@ async function drawn(built: boolean) {
 		{ theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 
@@ -64,7 +64,7 @@ function offset(a: DiagramBox, b: DiagramBox): readonly number[] {
 	return [b.x - a.x, b.y - a.y];
 }
 
-test("a board nothing is built of is framed as planned, its atlas moved with its drawing", async () => {
+test("a document nothing is built of is framed as planned, its atlas moved with its drawing", async () => {
 	const built = await drawn(true);
 	const planned = await drawn(false);
 

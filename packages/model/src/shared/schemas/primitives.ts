@@ -39,7 +39,7 @@ const StatedIdSchema = z
 	.string()
 	.regex(
 		BLOCK_ID_RE,
-		"must be an id the board already has: one to eight characters of the block-id alphabet. " +
+		"must be an id the model already has: one to eight characters of the block-id alphabet. " +
 			"Every id is minted by the server, so a new node, relationship, step, flow, view or beat " +
 			'leaves "id" out',
 	);

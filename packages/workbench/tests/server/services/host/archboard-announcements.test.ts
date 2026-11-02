@@ -60,7 +60,7 @@ const INPUT: SemanticContextInput = {
 	claim: { holder: "agent", doing: "campaign: payments redesign" },
 	doing: "mapping",
 	cursor: null,
-	description: "Architecture board",
+	description: "Architecture model",
 };
 
 /**
@@ -178,7 +178,7 @@ describe("a pane report", () => {
 		}
 	});
 
-	test("only the parts the user changed are said, and the board always is", () => {
+	test("only the parts the user changed are said, and the model always is", () => {
 		const view = { id: "w1", name: "Data flow", grammar: "sequence" as const };
 		const text = voiceText(paneAnnouncement(reading(["view"], { view }), tab(), 1));
 
@@ -269,7 +269,7 @@ describe("a pane report", () => {
 	});
 });
 
-describe("a settled board change", () => {
+describe("a settled model change", () => {
 	test("both models are told another agent's write as one quiet sentence, under its writer", () => {
 		const { change: event } = sources("another-agent-thread");
 		const change = modelChangeAnnouncement(event, tab());
@@ -291,7 +291,7 @@ describe("a settled board change", () => {
 		expect(sentence).not.toMatch(/\buser\b/u);
 	});
 
-	test("a write to a board no pane of the canvas shows tells neither model", () => {
+	test("a write to a legacy board no pane of the canvas shows tells neither model", () => {
 		const change = modelChangeAnnouncement(sources(null, "payments").change, tab());
 
 		expect(change.voice).toEqual({ withheld: "not_shown" });
@@ -327,7 +327,7 @@ describe("a settled board change", () => {
 		expect(voiceText(change)).not.toContain("mapping");
 	});
 
-	test("the workhorse of the board's checkout reads the same Archboard context bytes it always did", () => {
+	test("the workhorse of the model's checkout reads the same Archboard context bytes it always did", () => {
 		const { change: event } = sources();
 		const change = modelChangeAnnouncement(event, tab());
 		const workhorse = change.workhorse;

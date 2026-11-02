@@ -14,7 +14,7 @@ import {
 	type OpenerFixtureOptions,
 } from "./support/opener-fixture.ts";
 
-test("opens the file of the worktree whose vault holds the board, though the main checkout is the chosen one", async () => {
+test("opens the file of the worktree whose vault holds the model, though the main checkout is the chosen one", async () => {
 	await using resources = new AsyncDisposableStack();
 	const options: OpenerFixtureOptions = { defaultDependencies: true };
 	const fixture = await createOpenerFixture(options);

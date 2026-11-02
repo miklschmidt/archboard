@@ -159,12 +159,12 @@ function describeHold(
 ): string {
 	const waited = `Waited ${seconds(waitedMs)}.`;
 	if (!holder) {
-		return `Board "${model}" is being written by somebody else and did not come free. ${waited}`;
+		return `Model "${model}" is being written by somebody else and did not come free. ${waited}`;
 	}
 	const held = seconds(Math.max(0, Date.now() - Date.parse(holder.since)));
 	const who = describeWriter(holder);
 	const where = holder.process === processName() ? "" : ` on another server (${holder.process})`;
-	return `Board "${model}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
+	return `Model "${model}" is held by ${who}${where}, since ${clock(holder.since)} (${held}). ${waited}`;
 }
 
 /** A bounded lock wait ended while another holder still owned the model. */

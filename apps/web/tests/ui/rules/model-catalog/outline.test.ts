@@ -49,10 +49,10 @@ function shape(nodes: readonly OutlineNode<OutlineModel>[], depth = 0): string[]
 test("a vault with drill links draws its hierarchy under the closest coarser parent", () => {
 	const outline = buildOutline(
 		[
-			model("Archboard", "system", "Archboard server", "Browser application", "Board persistence"),
-			model("Archboard server", "service", "Board persistence", "Semantic renderer", "Archboard"),
+			model("Archboard", "system", "Archboard server", "Browser application", "Model persistence"),
+			model("Archboard server", "service", "Model persistence", "Semantic renderer", "Archboard"),
 			model("Browser application", "service", "^Archboard", "Semantic renderer"),
-			model("Board persistence", "module"),
+			model("Model persistence", "module"),
 			model("Semantic renderer", "module", "Renderer layout"),
 			model("Renderer layout", "module", "Semantic renderer"),
 		],
@@ -61,14 +61,14 @@ test("a vault with drill links draws its hierarchy under the closest coarser par
 	expect(shape(outline)).toEqual([
 		"Archboard",
 		"  Archboard server",
-		"    Board persistence +Archboard",
+		"    Model persistence +Archboard",
 		"    Semantic renderer +Browser application",
 		"  Browser application",
 		"Renderer layout",
 	]);
 });
 
-test("a vault of independent boards is one level, by name, numbers in order", () => {
+test("a vault of independent models is one level, by name, numbers in order", () => {
 	const outline = buildOutline(
 		[
 			model("Platform Cluster", "system"),
@@ -86,7 +86,7 @@ test("a vault of independent boards is one level, by name, numbers in order", ()
 	]);
 });
 
-test("folders come first, count their boards, and a link never crosses a folder", () => {
+test("folders come first, count their models, and a link never crosses a folder", () => {
 	const outline = buildOutline(
 		[
 			model("platform/Cluster", "system", "platform/Ingress", "billing/Ledger"),
@@ -109,7 +109,7 @@ test("folders come first, count their boards, and a link never crosses a folder"
 	]);
 });
 
-test("a cycle of container links roots the first board of the cycle by name", () => {
+test("a cycle of container links roots the first model of the cycle by name", () => {
 	const outline = buildOutline(
 		[model("Beta", "service", "^Alpha"), model("Alpha", "service", "^Beta")],
 		LEVELS,
@@ -117,7 +117,7 @@ test("a cycle of container links roots the first board of the cycle by name", ()
 	expect(shape(outline)).toEqual(["Alpha +Beta", "  Beta"]);
 });
 
-test("a board with an unconfigured level only nests by container links", () => {
+test("a model with an unconfigured level only nests by container links", () => {
 	const outline = buildOutline(
 		[model("Top", "system", "Odd"), model("Odd", "zone"), model("Inner", "zone", "^Odd")],
 		LEVELS,
@@ -125,7 +125,7 @@ test("a board with an unconfigured level only nests by container links", () => {
 	expect(shape(outline)).toEqual(["Odd", "  Inner", "Top"]);
 });
 
-test("ancestors and path ids lead to a board through folders and parents", () => {
+test("ancestors and path ids lead to a model through folders and parents", () => {
 	const outline = buildOutline(
 		[
 			model("platform/Cluster", "system", "platform/Ingress"),
@@ -140,13 +140,13 @@ test("ancestors and path ids lead to a board through folders and parents", () =>
 	]);
 	expect(pathIds(outline, "platform/Routes")).toEqual([
 		"folder:platform",
-		"board:platform/cluster",
-		"board:platform/ingress",
+		"model:platform/cluster",
+		"model:platform/ingress",
 	]);
 	expect(pathIds(outline, "missing")).toEqual([]);
 });
 
-test("a container link that runs down the levels places the linked board under the linker", () => {
+test("a container link that runs down the levels places the linked model under the linker", () => {
 	// Platform draws Payments as a container of its modules: Platform is still Payments' parent.
 	const outline = buildOutline(
 		[model("Platform", "system", "^Payments"), model("Payments", "service")],
@@ -160,7 +160,7 @@ test("folders spelled in two cases are one folder", () => {
 	expect(shape(outline)).toEqual(["Payments/ 2", "  a", "  b"]);
 });
 
-test("a link that names a repository places no board of this vault under its parent", () => {
+test("a link that names a repository places no model of this vault under its parent", () => {
 	const outline = buildOutline(
 		[
 			{

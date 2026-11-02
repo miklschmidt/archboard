@@ -88,7 +88,7 @@ interface LocalPictureSetup {
  */
 async function modelFor(client: QueryClient, vault: string, model: string): Promise<LegacyBoard> {
 	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, model)));
-	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
+	if (!parsed.ok) throw new ReadingError("MODEL_UNREADABLE", parsed.problem);
 	return parsed.board;
 }
 

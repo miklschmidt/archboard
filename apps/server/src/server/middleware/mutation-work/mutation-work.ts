@@ -90,7 +90,7 @@ function mountMutationAdmission(app: Express): void {
 				code: "SERVER_STOPPING",
 				error:
 					"The Archboard server is checking whether it can stop and is not accepting writes. " +
-					"If the server remains running, retry after resolving any held board it reports.",
+					"If the server remains running, retry after resolving any held model it reports.",
 			});
 			return;
 		}

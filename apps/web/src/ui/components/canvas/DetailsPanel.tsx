@@ -183,7 +183,7 @@ function Relationships(props: RelationshipsProps): JSX.Element {
 	const onward = useMemo(() => reachOf(content, partId, "onward").parts, [content, partId]);
 	const back = useMemo(() => reachOf(content, partId, "back").parts, [content, partId]);
 	if (sends.length + receives.length === 0) {
-		return <p className="text-muted-foreground text-body">Nothing on this board connects to it.</p>;
+		return <p className="text-muted-foreground text-body">Nothing on this model connects to it.</p>;
 	}
 	return (
 		<>

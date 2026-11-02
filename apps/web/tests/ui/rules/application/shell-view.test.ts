@@ -57,7 +57,7 @@ function twoPaneRecords(): PaneRecords {
 	});
 }
 
-test("the shell view names the active pane's board and carries its mounted panes", () => {
+test("the shell view names the active pane's model and carries its mounted panes", () => {
 	const list = addPane(initialPaneList());
 	const view = assembleShellView({
 		theme: "dark",
@@ -78,7 +78,7 @@ test("the shell view names the active pane's board and carries its mounted panes
 	expect(view.selectedPaneKey).toBeNull();
 });
 
-test("the focused pane's board key is the selected navigator entry", () => {
+test("the focused pane's model key is the selected navigator entry", () => {
 	const records = twoPaneRecords();
 	const view = assembleShellView({
 		theme: "light",

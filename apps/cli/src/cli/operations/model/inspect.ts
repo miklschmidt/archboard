@@ -39,7 +39,7 @@ const modelInspectContract = defineCommand({
 		"A group answers with its members, the relationships between them, the relationships that cross its boundary with their direction, and the modules at the far end. A configured group that no module joined answers empty.",
 	].join("\n"),
 	examples: [
-		"archboard model inspect 'Board store'",
+		"archboard model inspect 'Order store'",
 		"archboard model inspect 'Shop#Gateway' --state 'Queued fulfilment' -C /tmp/shop",
 		"archboard model inspect --group fulfillment",
 	],

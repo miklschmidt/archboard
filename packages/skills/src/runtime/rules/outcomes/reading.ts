@@ -202,7 +202,8 @@ function located(
 	variant: string | undefined,
 ): { readonly document: EvaluatedDocument; readonly variant: SemanticVariant } | Finding {
 	const found = namedValue(reading.documents, document);
-	if (found === undefined) return finding(false, `board "${document ?? "?"}" is not in the vault`);
+	if (found === undefined)
+		return finding(false, `document "${document ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
 	if (chosen === undefined)
 		return finding(

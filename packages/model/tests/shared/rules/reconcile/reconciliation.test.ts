@@ -174,7 +174,7 @@ describe("a real disagreement", () => {
 
 	test("a subject one side removed and the other changed is reported, not dropped", () => {
 		const mine = content({
-			nodes: [API, { ...STORE, responsibility: "Holds every board" }],
+			nodes: [API, { ...STORE, responsibility: "Holds every model" }],
 			edges: [WIRE],
 		});
 		const theirs = content({ nodes: [API], edges: [] });
@@ -187,7 +187,7 @@ describe("a real disagreement", () => {
 		// fields it says changed come with what they were changed to, so the side
 		// that has to be written out again is read rather than retyped.
 		expect(about(settled.issues, "n2")[0]?.changed).toEqual([
-			{ field: "responsibility", before: null, after: "Holds every board" },
+			{ field: "responsibility", before: null, after: "Holds every model" },
 		]);
 		// Still there, so what is left is a picture somebody can read.
 		expect(settled.content.nodes.map((node) => node.id)).toEqual(["n1", "n2"]);
@@ -203,7 +203,7 @@ describe("a real disagreement", () => {
 			id: "n3",
 			name: "Lease",
 			kind: "module",
-			responsibility: "Keeps one writer at a time on a board",
+			responsibility: "Keeps one writer at a time on a model",
 			description: "Keeps one writer at a time",
 		};
 		const reworded = "Keeps one writer at a time, and says who and since when";
@@ -232,7 +232,7 @@ describe("a real disagreement", () => {
 		// The printed disagreement line cuts a long value to fit; the issue is
 		// where the whole of it lives, so a settled value is carried across
 		// rather than retyped from what was printed.
-		const long = `${"Keeps one writer at a time on a board, ".repeat(3)}and says since when`;
+		const long = `${"Keeps one writer at a time on a model, ".repeat(3)}and says since when`;
 		const lease = { id: "n3", name: "Lease", kind: "module", description: "short" };
 		const settled = reconcileVariant({
 			base: content({ nodes: [API, lease], edges: [] }),

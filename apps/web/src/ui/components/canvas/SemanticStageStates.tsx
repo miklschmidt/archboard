@@ -51,7 +51,7 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
 function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 	return (
 		<section
-			aria-label={`Semantic board ${props.model}`}
+			aria-label={`Picture of ${props.model}`}
 			data-slot="canvas-stage"
 			data-state="loading"
 			aria-busy="true"
@@ -88,7 +88,7 @@ interface SemanticEmptyProps extends SemanticStateProps {
 function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 	return (
 		<section
-			aria-label={`Semantic board ${props.model}`}
+			aria-label={`Picture of ${props.model}`}
 			data-slot="canvas-stage"
 			data-state={props.notice === null ? "empty" : "stale"}
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}
@@ -101,7 +101,7 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 			</p>
 			<p className="text-muted-foreground text-body max-w-prose">
 				{props.view === null
-					? "The board is here and readable. Ask an agent to put some architecture on it."
+					? "The model is here and readable. Ask an agent to put some architecture on it."
 					: "This variant has no subjects in this view. Choose another view or variant to continue."}
 			</p>
 		</section>
@@ -110,10 +110,10 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 
 /** What each way of failing is called, in the shell's voice. */
 const FAILURE_TITLES: Readonly<Record<string, string>> = {
-	MODEL_MISSING: "There is no such board",
+	MODEL_MISSING: "There is no such model",
 	UNKNOWN_VARIANT: "There is no such variant",
 	UNKNOWN_VIEW: "There is no such view",
-	MODEL_UNREADABLE: "This board could not be read",
+	MODEL_UNREADABLE: "This model could not be read",
 	UNREACHABLE: "The Archboard server did not answer",
 	REPLY_INVALID: "The Archboard server sent something unexpected",
 };
@@ -126,12 +126,12 @@ const FAILURE_TITLES: Readonly<Record<string, string>> = {
 function failureWords(error: unknown): { title: string; detail: string } {
 	if (error instanceof ReadingError) {
 		return {
-			title: FAILURE_TITLES[error.code] ?? "This board could not be drawn",
+			title: FAILURE_TITLES[error.code] ?? "This model could not be drawn",
 			detail: error.message,
 		};
 	}
 	return {
-		title: "This board could not be drawn",
+		title: "This model could not be drawn",
 		detail: error instanceof Error ? error.message : "The reason was not reported.",
 	};
 }
@@ -152,7 +152,7 @@ function SemanticStageProblem(props: SemanticStageProblemProps): JSX.Element {
 	const { title, detail } = failureWords(props.error);
 	return (
 		<section
-			aria-label={`Semantic board ${props.model}`}
+			aria-label={`Picture of ${props.model}`}
 			data-slot="canvas-stage"
 			data-state="error"
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}

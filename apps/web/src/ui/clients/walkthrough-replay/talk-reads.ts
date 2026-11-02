@@ -58,7 +58,7 @@ function talkReads(talk: Talk, foreign: (model: string) => void): RetainedReads 
  */
 function retainedListing(talk: Talk): RetainedListing {
 	const parsed = parseLegacyBoard(talk.document);
-	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
+	if (!parsed.ok) throw new ReadingError("MODEL_UNREADABLE", parsed.problem);
 	const model = parsed.board;
 	return {
 		levels: [],

@@ -73,7 +73,7 @@ const SCENARIO: Scenario = {
 	sources: ["src/flask/app.py"],
 	prompt: "Create it.",
 	expectedFeatures: [
-		{ feature: "board.create", requirement: "one board", skill: ["SKILL.md#essentials"] },
+		{ feature: "board.create", requirement: "one document", skill: ["SKILL.md#essentials"] },
 		{ feature: "render.svg", requirement: "drawn", skill: ["SKILL.md#essentials"] },
 	],
 	outcomes: [{ check: "check-clean" }],
@@ -89,7 +89,7 @@ const RUN: CompletedRun = {
 	status: "completed",
 	exitCode: 0,
 	durationMs: 1000,
-	finalMessage: "I read /run/home/.agents/skills/archboard/SKILL.md and wrote the board.",
+	finalMessage: "I read /run/home/.agents/skills/archboard/SKILL.md and wrote the document.",
 	usage: { input: 10, cached: 4, cacheWrite: null, output: 5, reasoning: null, total: 15 },
 	fileChanges: [],
 	commands: [
@@ -224,7 +224,7 @@ describe("the grader contract", () => {
 					feature: "board.create",
 					verdict: "pass",
 					evidence: "boards/Flask.json",
-					reason: "one board",
+					reason: "one document",
 					finding: null,
 				},
 				{

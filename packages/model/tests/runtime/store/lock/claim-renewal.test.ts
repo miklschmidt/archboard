@@ -58,7 +58,7 @@ async function writeUnderClaim(model: string): Promise<void> {
 	expect(await written).toBe(model);
 }
 
-test("claims on several boards of one server stand through a stall while their holders write", async () => {
+test("claims on several models of one server stand through a stall while their holders write", async () => {
 	const models = ["payments", "ledger", "queues", "audit"];
 	const claims = new Map<string, lock.Claim>();
 	for (const model of models) {

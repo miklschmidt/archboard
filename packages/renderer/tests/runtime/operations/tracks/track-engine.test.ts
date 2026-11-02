@@ -175,7 +175,7 @@ test("a line into a wide container stays between its ends and its label", async 
 	}
 });
 
-test("a tall board of containers folds into columns that each hold a container whole", async () => {
+test("a tall document of containers folds into columns that each hold a container whole", async () => {
 	const stages = [0, 1, 2, 3, 4, 5];
 	const tall = orderedFixture({
 		nodes: stages.flatMap((stage) => [
@@ -285,7 +285,7 @@ test("two joined cards stacked on one centre take one width", async () => {
 				name: "Service",
 				kind: "module",
 				responsibility:
-					"Holds every board the vault keeps and writes each one through one atomic write",
+					"Holds every document the vault keeps and writes each one through one atomic write",
 			},
 		],
 		edges: [{ id: "e", from: "a", to: "b", kind: "call", label: "requests" }],
@@ -355,7 +355,7 @@ test("cards on one rank stand on one top, and the lines into them end there", as
 				name: "Adopt",
 				kind: "module",
 				responsibility:
-					"Makes a settled draft current, or gives a board its first current variant; refuses a draft derived from an older architecture unless forced",
+					"Makes a settled draft current, or gives a document its first current variant; refuses a draft derived from an older architecture unless forced",
 			},
 			{ id: "short", name: "Shelve", kind: "module", responsibility: "Lets a proposal go" },
 		],

@@ -46,7 +46,7 @@ function auditReasons(run: RunRecord): string[] {
 		.filter(([, count]) => count > 0)
 		.map(([kind, count]) => `${kind} ×${count}`);
 	return [
-		...(wroteDirectly(run) ? [`wrote ${run.directWrites} board files outside the CLI`] : []),
+		...(wroteDirectly(run) ? [`wrote ${run.directWrites} document files outside the CLI`] : []),
 		...(exposure.length === 0 ? [] : [`read evaluation material: ${exposure.join(", ")}`]),
 	];
 }

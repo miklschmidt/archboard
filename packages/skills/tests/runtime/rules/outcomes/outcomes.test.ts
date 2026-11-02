@@ -144,7 +144,7 @@ describe("content checks", () => {
 		).toEqual([true, false, true]);
 	});
 
-	test("a missing board or variant is a failed finding that says which", () => {
+	test("a missing document or variant is a failed finding that says which", () => {
 		const verdicts = evaluateOutcomes(
 			[
 				{ check: "nodes-named", board: "Nope", names: ["x"] },

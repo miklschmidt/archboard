@@ -33,7 +33,7 @@ function input(selection: readonly string[] = []): SemanticContextInput {
 		},
 		doing: null,
 		cursor: { feedId: "feed", sequence: 0 },
-		description: "compact board",
+		description: "compact model",
 	};
 }
 

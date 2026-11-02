@@ -42,7 +42,7 @@ let current: PictureSource | null = null;
 function pictureSource(): PictureSource {
 	if (current === null)
 		throw new ReadingError(
-			"BOARD_UNREADABLE",
+			"MODEL_UNREADABLE",
 			"Start the local renderer before drawing a retained recording.",
 		);
 	return current;

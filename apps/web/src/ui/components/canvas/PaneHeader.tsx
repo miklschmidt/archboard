@@ -176,7 +176,7 @@ function Folded(props: { readonly places: readonly KeyedPlace[] }): JSX.Element 
 		<li className="flex shrink-0 items-center gap-1 @min-[880px]/pane-header:hidden">
 			<DropdownMenu>
 				<DropdownMenu.Trigger
-					aria-label="Boards above"
+					aria-label="Scopes above"
 					className="text-muted-foreground hover:text-foreground hover:bg-sidebar-accent rounded-control flex size-7 items-center justify-center"
 				>
 					<RiMoreLine className="size-4" />
@@ -211,7 +211,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 	const ancestors = keyed(props.ancestors);
 	const middle = ancestors.slice(0, -1);
 	return (
-		<nav aria-label="Where this board sits" className="min-w-0 shrink">
+		<nav aria-label="Where this model sits" className="min-w-0 shrink">
 			<ol className="flex min-w-0 items-center gap-1">
 				<Folded places={middle} />
 				{ancestors.map(({ place, key }, index) => (
@@ -283,7 +283,7 @@ function NoModelHeader(): JSX.Element {
 		<HeaderRow>
 			<HeaderStart>
 				<h2 className="text-muted-foreground truncate text-[13px] leading-[18px] font-[650]">
-					No board
+					No model
 				</h2>
 			</HeaderStart>
 			<HeaderEnd>{controls}</HeaderEnd>

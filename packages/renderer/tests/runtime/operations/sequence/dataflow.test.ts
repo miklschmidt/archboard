@@ -44,7 +44,7 @@ const SAMPLE: VariantContent = variant({
 	flows: [
 		{
 			id: "claim",
-			name: "An agent claims a board and edits it",
+			name: "An agent claims a document and edits it",
 			summary: "One writer at a time, and the note still decides",
 			participants: ["agent", "cli", "server", "io", "vault"],
 			steps: [

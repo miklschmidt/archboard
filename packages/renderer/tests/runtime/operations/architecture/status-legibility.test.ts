@@ -31,7 +31,7 @@ const CONTENT: VariantContent = orderedFixture({
 			from: "gw",
 			to: "io",
 			kind: "call",
-			label: "reads the board",
+			label: "reads the document",
 			emphasis: "hero",
 			traffic: {},
 		},
@@ -70,7 +70,7 @@ const CONTENT: VariantContent = orderedFixture({
 			participants: ["gw", "io"],
 			steps: [
 				{ id: "asks", from: "gw", to: "io", label: "asks for it", kind: "sync" },
-				{ id: "answers", from: "io", to: "gw", label: "the board", kind: "return" },
+				{ id: "answers", from: "io", to: "gw", label: "the document", kind: "return" },
 			],
 		},
 	],
@@ -400,7 +400,7 @@ describe("what nobody has decided is said in its own corner", () => {
 		]);
 	});
 
-	test("a subject the board has settled wears none, and nor does a picture with nothing open", async () => {
+	test("a subject the document has settled wears none, and nor does a picture with nothing open", async () => {
 		expect(badges(await architecture(["io"])).has("store")).toBe(false);
 		const plain = await architecture();
 		expect(badges(plain).size).toBe(0);
@@ -447,7 +447,7 @@ describe("what nobody has decided is said in its own corner", () => {
 		expect(checked).toBeGreaterThan(3);
 	});
 
-	test("what the board has not decided does not move anything", async () => {
+	test("what the document has not decided does not move anything", async () => {
 		const plain = await architecture();
 		const badged = await architecture(["io", "gw", "moved", "gone", "store"]);
 		// The same subjects in the same places against one another: a reflowed

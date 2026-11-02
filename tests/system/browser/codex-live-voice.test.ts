@@ -106,7 +106,7 @@ test(
 					return (${MODEL_NAME_EXPRESSION}) === 'workbench';
 				})()`),
 			Boolean,
-			"the seeded board to render",
+			"the seeded model to render",
 		);
 
 		await browser.run(["console", "--clear"]);
@@ -157,7 +157,7 @@ test(
 		const wire = await pollUntil(
 			() => talkWire(records().slice(beforeTalk), "workbench"),
 			(value) => value.catalogueAt >= 0,
-			"the coordinator to be given the board catalogue voice speaks about",
+			"the coordinator to be given the model catalogue voice speaks about",
 			{ timeoutMs: TEST_PANE_MESSAGE_TIMEOUT_MS },
 		);
 		expect(wire.threadStarts).toBe(2);

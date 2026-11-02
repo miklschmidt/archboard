@@ -101,7 +101,7 @@ test("CLI planning and preview share explicit vaults and preserve structured sta
 	expect(result(stale.stdout)).toMatchObject({ success: false, code: "MAPPING_STALE" });
 });
 
-test("CLI and HTTP retain original migration history and open its exact board coverage", async () => {
+test("CLI and HTTP retain original migration history and open its exact model coverage", async () => {
 	const root = mkdtempSync(join(tmpdir(), "archboard-migration-history-surface-"));
 	try {
 		const addressed = vaultIn(root);

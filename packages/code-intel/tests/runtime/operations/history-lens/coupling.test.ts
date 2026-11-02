@@ -208,7 +208,7 @@ beforeAll(async () => {
 	lens = await import("#tests/runtime/support/history-lens/lens.ts");
 	const value = document();
 	const [variant] = value.variants;
-	if (variant === undefined) throw new Error("the board has no variant");
+	if (variant === undefined) throw new Error("the document has no variant");
 	answer = LocalityAnswerSchema.parse(
 		await lens.createVariantLocality().read(scratch, value, variant, undefined),
 	);

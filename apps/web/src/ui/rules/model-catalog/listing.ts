@@ -101,10 +101,10 @@ function failureMessage(failure: unknown): string {
  */
 function listingError(vault: unknown, panes: unknown, panesRead: boolean): string | null {
 	if (vault !== null && vault !== undefined) {
-		return `The board listing could not be read: ${failureMessage(vault)}`;
+		return `The model listing could not be read: ${failureMessage(vault)}`;
 	}
 	if (panes !== null && panes !== undefined && !panesRead) {
-		return `The open boards could not be read: ${failureMessage(panes)}`;
+		return `The open models could not be read: ${failureMessage(panes)}`;
 	}
 	return null;
 }

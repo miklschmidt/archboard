@@ -99,7 +99,7 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	if (!/^\d+$/u.test(raw.trim())) {
 		throw new CliUsageError(
 			`--expect-version takes a whole number — the version your last write reported, or the one ` +
-				`\`board info\` says. Got ${JSON.stringify(raw)}.`,
+				`\`model read\` says. Got ${JSON.stringify(raw)}.`,
 		);
 	}
 	return Number(raw.trim());

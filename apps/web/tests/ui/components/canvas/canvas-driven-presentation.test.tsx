@@ -25,7 +25,7 @@ import {
 /** One walkthrough of three beats about the two drawn subjects. */
 const WALKTHROUGH = {
 	id: "w1",
-	name: "For the board",
+	name: "For the model",
 	beats: [
 		{ id: "b1", heading: "The shape of it", body: "Two modules and one call.", subjects: [] },
 		{ id: "b2", heading: "One writer", body: "board-io owns every write.", subjects: ["n1"] },

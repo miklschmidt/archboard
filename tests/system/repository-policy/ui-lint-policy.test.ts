@@ -293,7 +293,7 @@ describe("the lint configs split app tests the way they split package tests", ()
 	});
 });
 
-describe("the frame clock rule follows the board canvas into apps/web", () => {
+describe("the frame clock rule follows the model canvas into apps/web", () => {
 	// A frame-clocked file reads the browser's clock directly, which a recording cannot step.
 	const CLOCK_READ = "export const stamp = [Date.now(), requestAnimationFrame];\n";
 	const canvas = [

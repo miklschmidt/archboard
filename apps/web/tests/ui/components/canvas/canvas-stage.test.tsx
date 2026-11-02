@@ -40,7 +40,7 @@ test("a pane with no answer yet shows the shape of a diagram rather than a void"
 	expect(document.body.textContent).toContain("Drawing pipeline");
 });
 
-test("a board that is there with nothing on it says exactly that", async () => {
+test("a model that is there with nothing on it says exactly that", async () => {
 	server.reply = NOTHING_DRAWN;
 	mountStage();
 	await settle();
@@ -48,16 +48,16 @@ test("a board that is there with nothing on it says exactly that", async () => {
 	expect(document.body.textContent).toContain("has nothing on it yet");
 });
 
-test("a board the vault has not got is named rather than shrugged at", async () => {
+test("a model the vault has not got is named rather than shrugged at", async () => {
 	server.reply = NO_SUCH_MODEL;
 	mountStage();
 	await settle();
 	expect(stageState()).toBe("error");
-	expect(document.body.textContent).toContain("There is no such board");
+	expect(document.body.textContent).toContain("There is no such model");
 	expect(document.body.textContent).toContain("pipeline");
 });
 
-test("a drawn board puts the server's picture on screen, asked for in no theme", async () => {
+test("a drawn model puts the server's picture on screen, asked for in no theme", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
@@ -69,7 +69,7 @@ test("a drawn board puts the server's picture on screen, asked for in no theme",
 	expect(renderCalls()[0]).not.toContain("theme=");
 });
 
-test("a drawn board is fitted to the pane, and `0` puts it back", async () => {
+test("a drawn model is fitted to the pane, and `0` puts it back", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
@@ -100,7 +100,7 @@ test("a drawn board is fitted to the pane, and `0` puts it back", async () => {
 	}
 });
 
-test("the camera moves with the keyboard and survives the board changing under it", async () => {
+test("the camera moves with the keyboard and survives the model changing under it", async () => {
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
@@ -347,7 +347,7 @@ test("a refresh that fails keeps the diagram, says the picture is old, and retri
 	expect(surface().style.transform).toBe(camera);
 });
 
-test("an empty board whose refresh fails says so rather than looking current", async () => {
+test("an empty model whose refresh fails says so rather than looking current", async () => {
 	server.reply = NOTHING_DRAWN;
 	mountStage();
 	await settle();
@@ -391,7 +391,7 @@ async function stateOverReply(body: Record<string, unknown>): Promise<string | n
 	return state;
 }
 
-test("a torn render answer is a failure, and never looks like an empty board", async () => {
+test("a torn render answer is a failure, and never looks like an empty model", async () => {
 	// The half-answers a bag of optional fields would have accepted: a picture
 	// with no size, a size with no picture, and an identity with neither. A
 	// model with an architecture on it must never be shown as one nobody has

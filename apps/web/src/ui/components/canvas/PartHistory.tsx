@@ -40,7 +40,7 @@ const FIRST_COMMITS = 5;
 const SKIPPED: Readonly<Record<BehindSkip["reason"], string>> = {
 	unbound: "It is bound to no code, so Git has no history of it.",
 	"drill-down":
-		"It opens a board of its own, and the parts of that board carry the history of its code.",
+		"It opens a model of its own, and the parts of that model carry the history of its code.",
 	"repository-unregistered":
 		"The history of its code is not read, because its repository is not registered on this machine.",
 	"checkout-unavailable":

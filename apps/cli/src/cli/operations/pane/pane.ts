@@ -275,8 +275,8 @@ const panesContract = defineCommand({
 	shared: ["url"],
 	summary: "What every pane is showing and reading",
 	description:
-		"Reports where each pane sits, which board and variant it shows, which view it is read " +
-		"through, and what the user has picked out. View state only: never board content. Each " +
+		"Reports where each pane sits, which model and variant it shows, which view it is read " +
+		"through, and what the user has picked out. View state only: never model content. Each " +
 		"pane names its repository and checkout, and own says whether it shows the vault that a " +
 		"command run in this directory finds. It needs no vault: where none is found, no pane is own.",
 	examples: ["archboard browser panes", "archboard browser panes --text"],

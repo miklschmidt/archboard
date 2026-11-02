@@ -88,7 +88,7 @@ const noSuchDraftRefusal = {
 	code: "NO_SUCH_DRAFT",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "--state names no draft on any board. The refusal names the drafts that exist.",
+	description: "--state names no draft on any model. The refusal names the drafts that exist.",
 };
 
 const planRefusal = {
@@ -338,7 +338,7 @@ const embedsRelationships = [
 		path: "/api/semantic-boards",
 		cardinality: "conditional",
 		description:
-			"Each vault an embed's recipe names, listed once, to find its board by id, and this vault's boards with the embeds they track",
+			"Each vault an embed's recipe names, listed once, to find its model by id, and this vault's models with the embeds they track",
 	},
 	{
 		method: "GET",

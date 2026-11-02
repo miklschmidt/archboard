@@ -170,7 +170,7 @@ test("a cancelled pass leaves the memory as it was", async () => {
 	expect((await readFindings(base)).size).toBe(0);
 });
 
-test("what a pass found in one vault is not shown for a board of the same name in another", async () => {
+test("what a pass found in one vault is not shown for a document of the same name in another", async () => {
 	const other = mkdtempSync(join(tmpdir(), "archboard-code-findings-other-"));
 	const otherVault = vaultIn(other);
 	try {

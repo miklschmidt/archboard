@@ -129,7 +129,7 @@ async function everyDraft() {
 	return { read, outcome };
 }
 
-test("every draft of a board is read, and no current, shelved or historical variant", async () => {
+test("every draft of a document is read, and no current, shelved or historical variant", async () => {
 	const { read } = await everyDraft();
 	expect(read.states.map((one) => [one.variant.id, one.named])).toEqual([
 		["v1", true],

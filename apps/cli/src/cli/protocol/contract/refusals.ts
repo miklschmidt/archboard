@@ -4,7 +4,7 @@ const modelRequiredRefusal = {
 	code: "MODEL_REQUIRED",
 	exit: 2,
 	stream: "stderr" as const,
-	description: "A board-sensitive request did not name a board.",
+	description: "A request that needs a model named none.",
 };
 const vaultNotFoundRefusal = {
 	code: "VAULT_NOT_FOUND",
@@ -13,7 +13,7 @@ const vaultNotFoundRefusal = {
 	description:
 		"No vault was found from the working directory or the directory -C names. " +
 		"Inside a checkout only <root>/.archboard/vault counts; outside one, the nearest enclosing <dir>/.archboard/vault. " +
-		"In a checkout with no vault, the refusal names each known vault whose boards bind the checkout's repository, as the -C to give. Nothing was done.",
+		"In a checkout with no vault, the refusal names each known vault whose models bind the checkout's repository, as the -C to give. Nothing was done.",
 };
 const vaultRequiredRefusal = {
 	code: "VAULT_REQUIRED",
@@ -46,19 +46,19 @@ const doingRefusal = {
 	code: "DOING_REQUIRED",
 	exit: 1,
 	stream: "stderr" as const,
-	description: "A board write did not declare what it was doing.",
+	description: "A model write did not declare what it was doing.",
 };
 const modelHeldRefusal = {
 	code: "MODEL_HELD",
 	exit: 5,
 	stream: "stderr" as const,
-	description: "Another writer currently holds the board lease.",
+	description: "Another writer currently holds the model lease.",
 };
 const modelVersionRefusal = {
 	code: "MODEL_VERSION_CONFLICT",
 	exit: 5,
 	stream: "stderr" as const,
-	description: "The board advanced past expect-version.",
+	description: "The model advanced past expect-version.",
 };
 const claimRevokedRefusal = {
 	code: "CLAIM_REVOKED",

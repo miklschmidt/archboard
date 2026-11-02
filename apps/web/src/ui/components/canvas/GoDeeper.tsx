@@ -235,10 +235,10 @@ function unresolvedWords(unresolved: Unresolved, model: string): string {
 		return `The link to ${model} names a repository, and this vault could not be listed to tell whether that is its own. ${unresolved.problem}`;
 	}
 	if (unresolved.kind === "unregistered") {
-		return `${model} is a board of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;
+		return `${model} is a model of ${unresolved.repo}, and this machine knows no checkout of it with a vault. Register one with archboard repo add <directory>.`;
 	}
 	if (unresolved.kind === "unreachable") {
-		return `${model} is a board of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`;
+		return `${model} is a model of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Model navigation, or add one with archboard repo add <directory>.`;
 	}
 	return modelWords(unresolved, model);
 }

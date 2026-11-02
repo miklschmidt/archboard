@@ -6,7 +6,7 @@ import type { ShellNotice } from "#ui/rules/shell/contracts.ts";
 
 /** Fail if a model action reaches an unrelated shell owner. */
 function unrelated(): never {
-	throw new Error("The board action reached an unrelated shell owner.");
+	throw new Error("The model action reached an unrelated shell owner.");
 }
 
 /**
@@ -200,7 +200,7 @@ function picker() {
 	};
 }
 
-test("the board picker does not address a reconnecting pane before registration", async () => {
+test("the model picker does not address a reconnecting pane before registration", async () => {
 	const fixture = picker();
 	fixture.connected(false);
 	expect(await fixture.actions.selectModel("Payments")).toBe(false);

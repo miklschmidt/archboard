@@ -82,9 +82,9 @@ function pastTitle(point: { y: number }, drawing: { svg: string }, frame: string
 }
 
 test.each([
-	["the whole board", application],
+	["the whole document", application],
 	["a selection view", overview],
-	["a board that reads left to right", wide],
+	["a document that reads left to right", wide],
 ])(
 	"a frame's call into its own part leaves its title divider and stays inside in %s",
 	async (_, content: VariantContent) => {

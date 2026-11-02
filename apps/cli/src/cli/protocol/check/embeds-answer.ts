@@ -54,10 +54,10 @@ const EMBED_FINDING_CODES = [
 ] as const;
 
 /** A model by id, with the name a recipe or the vault gives it. */
-const EmbedLegacyBoardSchema = z.object({ id: z.string(), name: z.string() });
+const EmbedModelSchema = z.object({ id: z.string(), name: z.string() });
 
 /** What is gone of what a recipe names: the model, its variant, its view, or anything to draw. */
-const MissingSourceSchema = z.enum(["board", "variant", "view", "picture"]);
+const MissingSourceSchema = z.enum(["model", "variant", "view", "picture"]);
 type MissingSource = z.infer<typeof MissingSourceSchema>;
 
 const EmbedFindingSchema = z.object({
@@ -71,15 +71,14 @@ const EmbedFindingSchema = z.object({
 	 */
 	embedRepo: z.string().optional(),
 	/** The model as the recipe names it; absent when the recipe cannot be read. */
-	paneKey: EmbedLegacyBoardSchema.optional(),
-	model: EmbedLegacyBoardSchema.optional(),
+	model: EmbedModelSchema.optional(),
 	message: z.string(),
 	/** For `EMBED_SOURCE_MISSING`: what is gone. */
 	missing: MissingSourceSchema.optional(),
 	/** For a model that is gone: the commit of the vault's history that removed its file. */
 	removedIn: z.object({ commit: z.string(), subject: z.string() }).optional(),
 	/** For a model that is gone: the model that holds its name now. */
-	nameHeldBy: EmbedLegacyBoardSchema.optional(),
+	nameHeldBy: EmbedModelSchema.optional(),
 	/**
 	 * For a model that is gone: the models its vault lists and cannot read,
 	 * any of which can be the model, because the listing names no id for them.
@@ -124,8 +123,8 @@ const EmbedFixSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("re-pointed"),
 		...FixedFileShape,
-		from: EmbedLegacyBoardSchema,
-		to: EmbedLegacyBoardSchema,
+		from: EmbedModelSchema,
+		to: EmbedModelSchema,
 	}),
 ]);
 type EmbedFix = z.infer<typeof EmbedFixSchema>;
@@ -162,9 +161,7 @@ const EmbedsPartSchema = z.object({
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
 	/** Every tracked embed of the vault's models (ADR 0057), in the order the models list them. */
-	tracked: z.array(
-		z.object({ paneKey: EmbedLegacyBoardSchema, repo: z.string(), path: z.string() }),
-	),
+	tracked: z.array(z.object({ model: EmbedModelSchema, repo: z.string(), path: z.string() })),
 	/** Every vault an embed's recipe names that the check read, in the order the embeds name them. */
 	vaults: z.array(EmbedVaultSchema),
 	findings: z.array(EmbedFindingSchema),

@@ -392,7 +392,7 @@ test("a user's open pushes a history entry only when it moved the pane", async (
 	expect(window.history.length).toBe(before);
 });
 
-test("a board a restore cannot reach is named, and the address settles on what is shown", async () => {
+test("a model a restore cannot reach is named, and the address settles on what is shown", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=nowhere");
 	expect(shell.opens.map((open) => open.paneKey)).toEqual(["nowhere"]);
@@ -451,7 +451,7 @@ test("an address spelled one way and resolved another still gives the slot back"
 	expect(second?.kind).toBe("granted");
 });
 
-test("a restore whose board resolves to another spelling settles on what the pane shows", async () => {
+test("a restore whose model resolves to another spelling settles on what the pane shows", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments@current");
 	expect(shell.opens.map((open) => open.paneKey)).toEqual(["payments@current"]);
@@ -462,7 +462,7 @@ test("a restore whose board resolves to another spelling settles on what the pan
 	expect(shownSearch()).toBe("paneA=payments");
 });
 
-test("a restore reads the view it names once the server says how it spells the board", async () => {
+test("a restore reads the view it names once the server says how it spells the model", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	// `Engine@current` and `engine` are one model and one variant, and only the
 	// server knows it (ADR 0010, the `current` designation, a former name).
@@ -474,7 +474,7 @@ test("a restore reads the view it names once the server says how it spells the b
 	expect(new URLSearchParams(shownSearch()).get("viewA")).toBe("v1");
 });
 
-test("a person opening the same board in another repository has moved, and it waits for the pane and pushes", async () => {
+test("a person opening the same model in another repository has moved, and it waits for the pane and pushes", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	const pane = shell.panes[0];
 	if (pane) pane.repository = "github.com/acme/shop";
@@ -498,7 +498,7 @@ test("a person opening the same board in another repository has moved, and it wa
 	expect(window.history.length).toBe(before + 1);
 });
 
-test("a restore of the same board in another repository reads its view once the pane is there", async () => {
+test("a restore of the same model in another repository reads its view once the pane is there", async () => {
 	const shell = fakeShell([["A", "pipeline"]]);
 	const pane = shell.panes[0];
 	if (pane) pane.repository = "github.com/acme/shop";

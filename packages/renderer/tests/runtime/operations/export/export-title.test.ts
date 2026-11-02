@@ -75,7 +75,7 @@ test("a title wider than the picture widens the page to hold it", async () => {
 	expect(titled.width).toBeGreaterThan(plain.width);
 });
 
-test("asked for without words, the title names the board, the view, the variant and what it is compared with", async () => {
+test("asked for without words, the title names the document, the view, the variant and what it is compared with", async () => {
 	const compared = titleOf(
 		(await exported({ variant: "Worker pool", view: "Intake", title: true })).svg,
 	);

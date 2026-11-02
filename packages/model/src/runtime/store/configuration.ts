@@ -93,7 +93,7 @@ function configurationWarnings(
 					code: "INVALID_CONFIG",
 					file,
 					...(at === undefined ? {} : { path: at }),
-					message: `${problem} Bundled defaults are active; structurally valid board writes remain available. Correct this file to restore vocabulary validation.`,
+					message: `${problem} Bundled defaults are active; structurally valid model writes remain available. Correct this file to restore vocabulary validation.`,
 				},
 			];
 }

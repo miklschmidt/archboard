@@ -104,7 +104,7 @@ function modelPending(rendering: Rendering): string | null {
 	}
 	return reading.version === talk.board.version
 		? null
-		: `the board at version ${talk.board.version}, not ${reading.version}`;
+		: `the model at version ${talk.board.version}, not ${reading.version}`;
 }
 
 /**
@@ -139,7 +139,7 @@ function paintersStarting(rendering: Rendering): boolean {
  * @returns What it waits for, in words, or null when nothing.
  */
 function pendingOf(rendering: Rendering): string | null {
-	if (rendering.client.isFetching() > 0) return "the board's picture to be drawn";
+	if (rendering.client.isFetching() > 0) return "the model's picture to be drawn";
 	if (paintersStarting(rendering)) return "the painter to start";
 	const model = modelPending(rendering);
 	if (model !== null) return model;
@@ -163,7 +163,7 @@ function stepPending(rendering: Rendering): string | null {
  */
 function violationsOf(rendering: Rendering): readonly string[] {
 	const moved = rendering.clock.violations().map((violation) => violation.what);
-	const read = rendering.foreign.map((model) => `The board ${model} was read, not the talk's.`);
+	const read = rendering.foreign.map((model) => `The model ${model} was read, not the talk's.`);
 	return [...moved, ...read];
 }
 

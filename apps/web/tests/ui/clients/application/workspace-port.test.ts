@@ -121,7 +121,7 @@ test("a repository the page does not list with a vault is unreachable, and nothi
 	expect(shownIn).toEqual([]);
 });
 
-test("a board the address asked of a repository with no vault is reported by its repository", () => {
+test("a model the address asked of a repository with no vault is reported by its repository", () => {
 	const { port, raised } = portOver(listed);
 	port.reportUnreachable([
 		{ paneKey: "ledger", repository: "github.com/acme/elsewhere" },

@@ -61,7 +61,7 @@ const opens = (value: unknown, asked?: string): string | null => {
 	return found.ok ? found.variant.id : null;
 };
 
-describe("a board for something nobody has built", () => {
+describe("a model for something nobody has built", () => {
 	test("has no current variant and is coherent", () => {
 		const planned = parsed(model([["v1", "draft"]]));
 		expect(currentVariant(planned)).toBeUndefined();

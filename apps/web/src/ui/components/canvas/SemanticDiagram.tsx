@@ -61,13 +61,13 @@ function stageMarks(
 ): { "aria-label": string; "aria-busy"?: true; "data-state": string } {
 	if (departure !== null) {
 		return {
-			"aria-label": `Semantic board ${departure.model}`,
+			"aria-label": `Picture of ${departure.model}`,
 			"aria-busy": true,
 			"data-state": "loading",
 		};
 	}
 	return {
-		"aria-label": `Semantic board ${drawing.model}`,
+		"aria-label": `Picture of ${drawing.model}`,
 		"data-state": stale ? "stale" : "drawn",
 	};
 }

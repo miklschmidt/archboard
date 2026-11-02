@@ -88,8 +88,8 @@ function variantClause(event: PaneNewsSource, changed: readonly SemanticUserChan
  */
 function focusNews(event: PaneFocusEvent): string {
 	return event.focus.focused
-		? `The user is now in the pane showing board "${event.model.name}" (data).`
-		: `The user is now in another pane, not the one showing board "${event.model.name}" (data).`;
+		? `The user is now in the pane showing model "${event.model.name}" (data).`
+		: `The user is now in another pane, not the one showing model "${event.model.name}" (data).`;
 }
 
 /**
@@ -104,7 +104,7 @@ function readingNews(event: PaneSelectionEvent, changed: readonly SemanticUserCh
 		changed.includes("view") ? viewClause(event) : "",
 		changed.includes("selection") ? selectionClause(event) : "",
 	];
-	return `The user is now looking at board "${event.model.name}"${clauses.join("")} (data).`;
+	return `The user is now looking at model "${event.model.name}"${clauses.join("")} (data).`;
 }
 
 /**
@@ -138,7 +138,7 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
 	const by = event.change.origin === "agent" ? "agent" : "external";
 	const writer = by === "agent" ? "by another agent" : "outside this session";
 	return {
-		sentence: `Board "${event.model.name}" was just changed ${writer}${doing} (data).`,
+		sentence: `Model "${event.model.name}" was just changed ${writer}${doing} (data).`,
 		// Narration retains its source and target snapshots. Live edits only update context.
 		stops: false,
 		by,
@@ -154,12 +154,12 @@ function outsideWriteNews(event: SettledSemanticChangeEvent): CoordinatorPaneNew
  * @returns The news.
  */
 function agentSwitchNews(event: PaneFocusEvent, from: string | null): CoordinatorPaneNews {
-	const now = `board "${event.model.name}"`;
+	const now = `model "${event.model.name}"`;
 	let sentence = `A pane now shows ${now}; an agent put it there (data).`;
 	if (from === event.model.name) {
 		sentence = `The pane showing ${now} now shows another reading of it; an agent put it there (data).`;
 	} else if (from !== null) {
-		sentence = `The pane that showed board "${from}" now shows ${now}; an agent put it there (data).`;
+		sentence = `The pane that showed model "${from}" now shows ${now}; an agent put it there (data).`;
 	}
 	return { sentence, stops: true, by: "agent", model: null };
 }

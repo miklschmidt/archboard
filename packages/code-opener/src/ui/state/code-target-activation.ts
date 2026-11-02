@@ -67,7 +67,7 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
 	if (request === null) {
 		onNotice({
 			kind: "error",
-			message: "No board is available for this code target.",
+			message: "No model is available for this code target.",
 			actions: [],
 		});
 		return;

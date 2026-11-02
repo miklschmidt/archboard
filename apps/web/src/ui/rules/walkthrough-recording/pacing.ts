@@ -179,7 +179,7 @@ function overdue(beat: number, reading: StepReading): PaceTurn | null {
 	const { waited } = reading;
 	if (!reading.landed && waited > RECORDING_MS.speechStart) {
 		return failed(
-			`Step ${step} never finished arriving on screen. Check that the board still states the walkthrough and that step, then record again.`,
+			`Step ${step} never finished arriving on screen. Check that the model still states the walkthrough and that step, then record again.`,
 		);
 	}
 	if (reading.spoken.length === 0 && waited > RECORDING_MS.speechStart) {

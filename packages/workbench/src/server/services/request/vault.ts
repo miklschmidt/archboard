@@ -44,7 +44,7 @@ function vaultRequiredRefusal(): VaultRefusal {
 		status: 400,
 		code: "VAULT_REQUIRED",
 		error:
-			`This call names no vault, so there is no telling which boards it means. Nothing was done. ` +
+			`This call names no vault, so there is no telling which models it means. Nothing was done. ` +
 			`${HOW_TO_NAME} There is no default vault on purpose: one server serves every vault (ADR 0049).`,
 	};
 }
@@ -52,7 +52,7 @@ function vaultRequiredRefusal(): VaultRefusal {
 /** What a caller does with a readable directory in no layout. */
 const HOW_TO_LAY_OUT =
 	"The server serves only a vault at <dir>/.archboard/vault, because its agents work in <dir>. " +
-	"Move the boards to <dir>/.archboard/vault and name that directory.";
+	"Move the models to <dir>/.archboard/vault and name that directory.";
 
 /**
  * The refusal for a vault the server cannot read.
@@ -66,7 +66,7 @@ function vaultUnreadableRefusal(named: string, why: string, next = HOW_TO_NAME):
 		status: 404,
 		code: "VAULT_UNREADABLE",
 		error:
-			`The vault "${named}" is ${why}, so the server cannot read boards from it. Nothing was done ` +
+			`The vault "${named}" is ${why}, so the server cannot read models from it. Nothing was done ` +
 			`and nothing was created. ${next}`,
 	};
 }

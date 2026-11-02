@@ -229,7 +229,7 @@ test("each warning stands where the picture puts its own badge, in the group tha
 	);
 });
 
-test("findings about another version of the board draw nothing", async () => {
+test("findings about another version of the model draw nothing", async () => {
 	serving(remembered(2, [finding("warning", { id: "n1", kind: "node" }, "Gone.")]));
 	mountStage();
 	await settled();
@@ -268,7 +268,7 @@ test("the header counts only warnings and cycles their subjects with a focused c
 	expect(server.calls.some((url) => url.includes("code-check"))).toBe(false);
 });
 
-test("a warning hidden by a limited view opens the whole board before focusing", async () => {
+test("a warning hidden by a limited view opens the whole model before focusing", async () => {
 	serving(remembered(1, [finding("warning", { id: "e1", kind: "edge" }, "Missing anchor.")]));
 	const limited = drawing(1);
 	server.reply = {

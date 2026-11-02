@@ -55,7 +55,7 @@ const AS_IT_IS = {
 /** A draft proposed against it. */
 const PROPOSED = {
 	id: "v2",
-	name: "Semantic boards",
+	name: "Semantic models",
 	lifecycle: "draft",
 	parent: "v1",
 	content: { nodes: [{ id: "n1", name: "board-io", kind: "module" }], edges: [] },
@@ -276,7 +276,7 @@ test("switching variants animates the scale toward the selected view's fit", asy
 	}
 });
 
-test("switching boards lands at once when motion is reduced", async () => {
+test("switching models lands at once when motion is reduced", async () => {
 	serving([LINKED]);
 	server.documents["archive"] = { ...documentOf([AS_IT_IS]), name: "archive" };
 	mountStage("n1", { live: true, reducedMotion: true });

@@ -306,7 +306,7 @@ test("a plain address waits for a choice and returns to it, and choosing a check
 	await pollUntil(
 		() => paneSays(browser, "B", "Main checkout"),
 		Boolean,
-		"the right-hand pane to draw the board of the chosen checkout",
+		"the right-hand pane to draw the model of the chosen checkout",
 	);
 
 	const before = await addressSearch(browser);

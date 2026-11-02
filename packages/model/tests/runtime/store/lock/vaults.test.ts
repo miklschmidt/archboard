@@ -13,7 +13,7 @@ afterAll(() => {
 });
 
 // One server serves several vaults (ADR 0049), so a model of one name in two vaults is two models.
-test("a board of one name in two vaults keeps its claim, lease, announcements and doing line apart", async () => {
+test("a model of one name in two vaults keeps its claim, lease, announcements and doing line apart", async () => {
 	const vaultA = join(home, "a");
 	const vaultB = join(home, "b");
 	const told: Array<{ vault: string; model: string; held: boolean }> = [];
@@ -57,7 +57,7 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 
 // A lease another server took is seen only by the sweep, which must read each model on screen
 // in the vault its pane shows.
-test("the lock sweep reads each board on screen in its own vault", async () => {
+test("the lock sweep reads each model on screen in its own vault", async () => {
 	const vaultA = join(home, "sweep-a");
 	const vaultB = join(home, "sweep-b");
 	await lock.holdModel({

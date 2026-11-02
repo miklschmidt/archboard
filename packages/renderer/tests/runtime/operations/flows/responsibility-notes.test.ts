@@ -21,7 +21,7 @@ const content = orderedFixture({
 			name: "API",
 			kind: "service",
 			parent: "system",
-			responsibility: "Accepts board changes.\nChecks the writer.\nSaves every accepted edit.",
+			responsibility: "Accepts document changes.\nChecks the writer.\nSaves every accepted edit.",
 		},
 		{
 			id: "store",
@@ -29,14 +29,14 @@ const content = orderedFixture({
 			kind: "datastore",
 			parent: "system",
 			responsibility:
-				"Keeps the complete board and its proposals together, writes every accepted revision to disk before answering, and preserves every word an agent authored for readers to understand the system.",
+				"Keeps the complete document and its proposals together, writes every accepted revision to disk before answering, and preserves every word an agent authored for readers to understand the system.",
 		},
 	],
 	edges: [{ id: "write", from: "api", to: "store", kind: "data", label: "write revision" }],
 	flows: [
 		{
 			id: "save",
-			name: "Save a board",
+			name: "Save a document",
 			participants: ["api", "store"],
 			steps: [{ id: "saveit", from: "api", to: "store", kind: "sync", label: "persist" }],
 		},

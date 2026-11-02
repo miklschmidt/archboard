@@ -39,7 +39,7 @@ function plural(count: number, noun: string): string {
 /** Why the last change of a document cannot be found, in words. */
 const UNKNOWN_REASON = {
 	"vault-outside-git": "the vault is in no Git repository",
-	"model-file-ignored": "Git ignores the board file",
+	"model-file-ignored": "Git ignores the model file",
 } as const;
 
 /**

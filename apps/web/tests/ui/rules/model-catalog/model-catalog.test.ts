@@ -96,7 +96,7 @@ test("named variants retain their addresses and every current spelling selects t
 	expect(listedLegacyKey(listing, null)).toBeNull();
 });
 
-test("on a board nothing is built, the bare name lists the draft it opens and current finds no row", () => {
+test("on a model nothing is built, the bare name lists the draft it opens and current finds no row", () => {
 	const variants: DocumentEntry["variants"] = [
 		{ id: "plan", name: "Queued ingest", lifecycle: "draft", parentId: null },
 		{ id: "alt", name: "Batch ingest", lifecycle: "draft", parentId: "plan" },
@@ -139,7 +139,7 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 	]);
 });
 
-test("an unreadable board stays listed with its error beside the healthy ones", () => {
+test("an unreadable model stays listed with its error beside the healthy ones", () => {
 	const listing = composeListing(
 		vault([
 			...VAULT,
@@ -150,7 +150,7 @@ test("an unreadable board stays listed with its error beside the healthy ones", 
 				variants: [],
 				links: [],
 				description: null,
-				error: "invalid board",
+				error: "invalid model",
 			},
 		]),
 		undefined,
@@ -158,7 +158,7 @@ test("an unreadable board stays listed with its error beside the healthy ones", 
 	expect(listing.models.map((model) => [model.key, model.error ?? null])).toEqual([
 		["checkout", null],
 		["payments", null],
-		["broken", "invalid board"],
+		["broken", "invalid model"],
 	]);
 });
 
@@ -184,14 +184,14 @@ test("a failed pane read does not report the listing as unreadable", () => {
 	const paneFailure = new Error("panes offline");
 	expect(listingError(null, paneFailure, true)).toBeNull();
 	expect(listingError(null, paneFailure, false)).toBe(
-		"The open boards could not be read: panes offline",
+		"The open models could not be read: panes offline",
 	);
 	expect(listingError(new Error("vault offline"), null, true)).toBe(
-		"The board listing could not be read: vault offline",
+		"The model listing could not be read: vault offline",
 	);
 	// The vault's failure is the one that decides, whatever the panes did.
 	expect(listingError(new Error("vault offline"), paneFailure, false)).toBe(
-		"The board listing could not be read: vault offline",
+		"The model listing could not be read: vault offline",
 	);
 	expect(listingError(null, null, true)).toBeNull();
 });

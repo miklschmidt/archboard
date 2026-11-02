@@ -155,7 +155,7 @@ test(
 		await pollUntil(
 			() => browser.eval<string | null>(MODEL_NAME_EXPRESSION),
 			(shown) => shown === "fixedpoint",
-			"fixedpoint to become the visible board",
+			"fixedpoint to become the visible model",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await pollUntil(
@@ -170,7 +170,7 @@ test(
 		await pollUntil(
 			() => modelDrawn(browser.eval.bind(browser)),
 			Boolean,
-			"the board to be drawn in its pane",
+			"the model to be drawn in its pane",
 			{ timeoutMs: TEST_BROWSER_CONDITION_TIMEOUT_MS },
 		);
 		await browser.eval<boolean>("document.fonts.ready.then(() => true)");

@@ -230,7 +230,7 @@ const EVERY_PART = {
 	view: { grammar: "architecture", scope: { kind: "all" } },
 } as const;
 
-test("a board drawn from its flow keeps a line for every message the draft keeps", async () => {
+test("a document drawn from its flow keeps a line for every message the draft keeps", async () => {
 	const nodes = [
 		{ id: "web", name: "Console", kind: "ui" },
 		{ id: "api", name: "Orders API", kind: "service" },

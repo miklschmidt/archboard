@@ -238,7 +238,7 @@ describe("a removal this proposal made", () => {
 	test("stands, and the predecessor's change to the same subject is still reported", () => {
 		const mine = content({ nodes: [API], edges: [] });
 		const theirs = content({
-			nodes: [API, { ...STORE, responsibility: "Holds every board" }],
+			nodes: [API, { ...STORE, responsibility: "Holds every model" }],
 			edges: [WIRE],
 		});
 		const settled = reconcileVariant({ base: BASE, mine, theirs });
@@ -403,7 +403,7 @@ describe("what a merged candidate may not be left saying", () => {
 		// What it keeps is exactly what it had, which is coherent.
 		expect(settled.content).toEqual(mine);
 		// And the repair quotes the contract's own words about what is wrong.
-		expect(settled.issues.at(-1)?.repair).toContain("no board may hold");
+		expect(settled.issues.at(-1)?.repair).toContain("no model may hold");
 	});
 
 	test("a step field nobody wrote survives being written down and read back", () => {

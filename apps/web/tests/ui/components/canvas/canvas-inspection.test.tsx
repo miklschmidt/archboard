@@ -96,7 +96,7 @@ function lostEnd(end: string): Record<string, unknown> {
 		theirs: "changed under it",
 		repair:
 			"Merging the change from the variant this proposal came from would leave it saying " +
-			`something no board may hold — "${end}" is not a node on this board. This proposal keeps ` +
+			`something no model may hold — "${end}" is not a node on this model. This proposal keeps ` +
 			"what it said; say what it should say instead.",
 	};
 }
@@ -186,7 +186,7 @@ test("an unbound node with nothing written says nothing of what it does not have
 	expect(inspector()).toContain("Write Lease");
 });
 
-test("two nodes of one board can name two different repositories", async () => {
+test("two nodes of one model can name two different repositories", async () => {
 	serving();
 	mountStage("n3", { onOpenCode: record });
 	await settled();
@@ -204,7 +204,7 @@ test("a binding that names a symbol shows it beside the file", async () => {
 	expect(slot("semantic-inspector-symbol")?.textContent).toBe("VoiceBridge.connect");
 });
 
-test("opening a part's code hands the shell the binding the board states", async () => {
+test("opening a part's code hands the shell the binding the model states", async () => {
 	serving();
 	opened.length = 0;
 	mountStage("n1", { onOpenCode: record });
@@ -278,7 +278,7 @@ test("a drill-down naming a variant the target has not got says so and opens not
 	expect(slot("semantic-drill-down-open")).toBeNull();
 });
 
-test("a drill-down whose board the vault has not got names the board rather than shrugging", async () => {
+test("a drill-down whose model the vault has not got names the model rather than shrugging", async () => {
 	serving();
 	mountStage("n1");
 	await settled();
@@ -287,10 +287,10 @@ test("a drill-down whose board the vault has not got names the board rather than
 	expect(slot("semantic-drill-down-open")).toBeNull();
 });
 
-test("following a drill-down shows the target board and offers the way back", async () => {
+test("following a drill-down shows the target model and offers the way back", async () => {
 	serving();
 	// The way back is named as the model is, not as its key is spelled.
-	server.documents["pipeline"] = documentOf("Pipeline Board", NODES);
+	server.documents["pipeline"] = documentOf("Pipeline Model", NODES);
 	server.documents["engine"] = documentOf(
 		"engine",
 		[{ id: "m1", name: "atomic-write", kind: "module" }],
@@ -317,7 +317,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	// The pane says where it came from and how to get back, with no navigator to
 	// place the model: the address still names the model the pane was opened on,
 	// so the way back has to be in the pane's own breadcrumb.
-	expect(slot("pane-crumb")?.textContent).toContain("Pipeline Board");
+	expect(slot("pane-crumb")?.textContent).toContain("Pipeline Model");
 
 	await act(async () => {
 		fireEvent.click(slot("pane-crumb")!);
@@ -327,7 +327,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	expect(slot("pane-crumb")).toBeNull();
 });
 
-test("a link written before its board and variant were renamed opens them by the names they have now", async () => {
+test("a link written before its model and variant were renamed opens them by the names they have now", async () => {
 	// The link on n1 still says "engine" and "as built" (ADR 0036).
 	serving();
 	const renamed = {
@@ -363,7 +363,7 @@ test("a link written before its board and variant were renamed opens them by the
 	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("Board Engine");
 });
 
-test("the way back survives drilling into a board with nothing on it", async () => {
+test("the way back survives drilling into a model with nothing on it", async () => {
 	serving();
 	server.documents["engine"] = documentOf(
 		"engine",
@@ -492,22 +492,22 @@ test("a subject held up by two disagreements of one kind says both", async () =>
 	expect(complaints.filter((said) => said.includes("same key"))).toEqual([]);
 });
 
-test("a board the inspector cannot read says so rather than reading forever", async () => {
+test("a model the inspector cannot read says so rather than reading forever", async () => {
 	// Nothing was put in `server.documents`, so the model route refuses.
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage("n1");
 	await settled();
 
 	expect(inspector()).toContain("could not be read");
-	expect(inspector()).not.toContain("Reading the board…");
+	expect(inspector()).not.toContain("Reading the model…");
 });
 
-test("a selection the board no longer holds says so instead of showing a blank panel", async () => {
+test("a selection the model no longer holds says so instead of showing a blank panel", async () => {
 	serving();
 	mountStage("gone");
 	await settled();
 
-	expect(inspector()).toContain("not on the board any more");
+	expect(inspector()).toContain("not on the model any more");
 });
 
 test("picking a joined line of the overview shows its drawn ends and every relationship it joins", async () => {

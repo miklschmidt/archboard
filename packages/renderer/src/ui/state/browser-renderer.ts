@@ -121,7 +121,7 @@ async function drawLegacyBoardHere(
 	policy: SemanticPolicy,
 ): Promise<LegacyRenderOutcome> {
 	if (started === undefined) {
-		throw new Error("startBrowserRenderer was not called before drawing a board.");
+		throw new Error("startBrowserRenderer was not called before drawing a document.");
 	}
 	await Promise.all([started, loadDiagramIcons(policy)]);
 	return renderLegacyBoard(document, choices, policy);

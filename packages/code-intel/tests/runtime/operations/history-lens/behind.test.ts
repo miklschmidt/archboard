@@ -229,7 +229,7 @@ beforeAll(async () => {
 		),
 	);
 	write(other, { "lib.ts": "1\n" });
-	commit(other, "other before the board");
+	commit(other, "other before the document");
 	write(shop, {
 		"src/a.ts": "1\n",
 		"src/old.ts": "1\n",
@@ -238,12 +238,12 @@ beforeAll(async () => {
 		"src/dir/sub/y.ts": "1\n",
 		"elsewhere.ts": "1\n",
 	});
-	commit(shop, "code before the board");
+	commit(shop, "code before the document");
 	write(shop, { "src/a.ts": "2\n" });
 	writeDocument(document(1));
-	subjects["created"] = commit(shop, "create the board, with a change to a.ts");
+	subjects["created"] = commit(shop, "create the document, with a change to a.ts");
 	write(other, { "lib.ts": "2\n" });
-	commit(other, "other after the board");
+	commit(other, "other after the document");
 	write(shop, { "src/a.ts": "3\n" });
 	commit(shop, "change a.ts");
 	write(shop, { "src/dir/sub/y.ts": "2\n", "elsewhere.ts": "2\n" });
@@ -278,7 +278,7 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a board is behind by the commits to each part's bound files after its last change, and a draft edit or a tracked embed is no change", async () => {
+test("a document is behind by the commits to each part's bound files after its last change, and a draft edit or a tracked embed is no change", async () => {
 	const answer = await behind(document(2, [], "a draft edit"));
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: subjects["created"] });
 	expect(partSubjects(answer, "pA")).toEqual([
@@ -291,7 +291,7 @@ test("a board is behind by the commits to each part's bound files after its last
 	expect(answer.commits.find((one) => one.subject === "change a.ts")?.large).toBe(false);
 });
 
-test("a binding to a directory counts every file below it, and a part that drills into another board is skipped", async () => {
+test("a binding to a directory counts every file below it, and a part that drills into another document is skipped", async () => {
 	const answer = await behind(document(2, [], "a draft edit"));
 	expect(partSubjects(answer, "pD")).toEqual(["change a file deep below the bound directory"]);
 	expect(partSubjects(answer, "pX")).toBeUndefined();
@@ -331,12 +331,12 @@ test("an unregistered repository stays silent, and a part pinned to a ref its ch
 test("a checkout without the last change's commit counts the commits after its time, and its next commit reaches a remembered answer", async () => {
 	const reading = lens.createBehindReading();
 	const current = document(2, [], "a draft edit");
-	expect(partSubjects(await behind(current, reading), "pO")).toEqual(["other after the board"]);
+	expect(partSubjects(await behind(current, reading), "pO")).toEqual(["other after the document"]);
 	write(other, { "lib.ts": "3\n" });
 	commit(other, "other later");
 	expect(partSubjects(await behind(current, reading), "pO")).toEqual([
 		"other later",
-		"other after the board",
+		"other after the document",
 	]);
 });
 
@@ -359,7 +359,7 @@ test("an edit in place moves the last change, and the commit that carries it wit
 	expect(partSubjects(await behind(edited, reading), "pA")).toEqual(["change a.ts after the edit"]);
 });
 
-test("a board file Git does not track is a change no commit holds, and one Git ignores or outside Git cannot be read", async () => {
+test("a document file Git does not track is a change no commit holds, and one Git ignores or outside Git cannot be read", async () => {
 	const fresh = join(shop, "vault", "Fresh.semantic.json");
 	writeDocument(document(1), fresh);
 	expect((await behind(document(1), undefined, fresh)).lastChange.kind).toBe("uncommitted");
@@ -384,8 +384,8 @@ test("Behind migrates historical bytes without writing and a schema-only migrati
 		for (const node of variant.content.nodes) delete node.order;
 	}
 	writeFileSync(documentFile, JSON.stringify(legacy));
-	const created = commit(shop, "create a board in an old schema");
-	write(shop, { "src/a.ts": "a source change after the old board\n" });
+	const created = commit(shop, "create a document in an old schema");
+	write(shop, { "src/a.ts": "a source change after the old document\n" });
 	commit(shop, "change code before the migration");
 	const bytes = readFileSync(documentFile, "utf8");
 	const modified = statSync(documentFile).mtimeMs;
@@ -402,7 +402,7 @@ test("Behind migrates historical bytes without writing and a schema-only migrati
 		updatedAt: "2026-10-07T00:00:00.000Z",
 	};
 	writeDocument(migrated);
-	commit(shop, "migrate the board schema only");
+	commit(shop, "migrate the document schema only");
 	const answer = await behind(migrated);
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: created });
 	expect(partSubjects(answer, "pA")).toEqual(["change code before the migration"]);

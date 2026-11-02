@@ -151,7 +151,7 @@ function documentReply(model: string): StubReply {
 			body: {
 				success: false,
 				code: "MODEL_MISSING",
-				error: `there is no semantic board called "${model}"`,
+				error: `there is no legacy board called "${model}"`,
 			},
 		};
 	}
@@ -193,7 +193,7 @@ async function captured(resource: string): Promise<unknown> {
 		const refusal = z
 			.object({
 				code: z
-					.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"])
+					.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"])
 					.optional(),
 				error: z.string(),
 			})

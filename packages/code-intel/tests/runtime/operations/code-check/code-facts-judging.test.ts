@@ -149,7 +149,7 @@ afterAll(() => {
  */
 async function pass() {
 	const read = check.readStatesToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
+	if (!read.ok) throw new Error("no documents");
 	return check.checkCode(vault, read.states, new AbortController().signal);
 }
 

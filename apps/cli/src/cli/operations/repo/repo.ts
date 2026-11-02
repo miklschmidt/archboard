@@ -413,7 +413,7 @@ const repoUseContract = defineCommand({
 	shared: [],
 	summary: "Choose the checkout that this machine reads for its repository",
 	description:
-		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused. Every running server sees the change, so every pane that shows a board of the repository moves to this checkout with its board, and every tab lists it.",
+		"Makes the checkout the chosen one of its repository identity: the browser reads its vault, and a binding that another vault makes into that identity resolves there. Registers the checkout, with its worktrees, when it is unknown. An untracked vault has no repository identity and is refused. Every running server sees the change, so every pane that shows a model of the repository moves to this checkout with its model, and every tab lists it.",
 	examples: ["archboard repo use ../payments-worktree"],
 	parameters: dirParameters,
 	input: { ingress: RepoUseInputSchema },

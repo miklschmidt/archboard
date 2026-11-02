@@ -99,7 +99,7 @@ test("the view the pane is told to read rides in the request", async () => {
 	expect(choices()[2]?.getAttribute("aria-pressed")).toBe("true");
 });
 
-test("two panes read one board two ways at once", async () => {
+test("two panes read one model two ways at once", async () => {
 	server.reply = { status: 200, body: drawnAs(1, VIEWS[0]) };
 	mountStage(null, { view: "v1", onViewChange: ignoreChoice });
 	await settle();
@@ -166,7 +166,7 @@ test("a selected view with no subjects keeps its resolved identity and remains v
 	expect(stage.textContent).toContain("This variant has no subjects in this view");
 });
 
-test("a state that is out of step with what it came from says so, in the board's words", async () => {
+test("a state that is out of step with what it came from says so, in the model's words", async () => {
 	server.reply = {
 		status: 200,
 		body: {
@@ -232,7 +232,7 @@ test("a state that has not been brought forward at all names what it is waiting 
 		variants: [
 			{
 				id: "v1",
-				name: "Drawing is the board",
+				name: "Drawing is the model",
 				lifecycle: "current",
 				content: { nodes: [], edges: [] },
 			},
@@ -247,7 +247,7 @@ test("a state that has not been brought forward at all names what it is waiting 
 	expect(said.textContent).toContain("has not been brought forward");
 	// And the state it is waiting for is named the way the navigator names it.
 	// An id in the sentence is a reader being told to go and look it up.
-	expect(said.textContent).toContain("Drawing is the board");
+	expect(said.textContent).toContain("Drawing is the model");
 	expect(said.textContent).not.toContain('"v1" is itself unsettled');
 	expect(said.getAttribute("data-blocked-by")).toBe("v1");
 });

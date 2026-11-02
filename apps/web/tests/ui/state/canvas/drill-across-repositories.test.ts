@@ -36,7 +36,7 @@ describe("the drill trail", () => {
 		expect(stopsOf(step.trail, SHOP)).toEqual([SHOP, CART]);
 	});
 
-	test("a dive into another vault keeps the trail before the board it arrives on", () => {
+	test("a dive into another vault keeps the trail before the model it arrives on", () => {
 		const down = drillInto(drillInto(NO_TRAIL, SHOP, CART).trail, SHOP, LEDGER);
 		expect(down.dive).toEqual(LEDGER);
 		// The shell moved the pane: the server announces the model, whose name may differ in case.
@@ -54,7 +54,7 @@ describe("the drill trail", () => {
 		expect(stopsOf(drillArrived(back.trail, SHOP), SHOP)).toEqual([SHOP]);
 	});
 
-	test("going back to the board the pane holds, from a trail that came back to it, stays in place", () => {
+	test("going back to the model the pane holds, from a trail that came back to it, stays in place", () => {
 		// shop, then ledger in another vault, then a link from ledger back to shop.
 		const there = drillArrived(drillInto(NO_TRAIL, SHOP, LEDGER).trail, LEDGER);
 		const home = drillArrived(drillInto(there, LEDGER, SHOP).trail, SHOP);

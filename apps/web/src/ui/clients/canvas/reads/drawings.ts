@@ -117,7 +117,7 @@ type SemanticFailureCode =
 	| "MODEL_MISSING"
 	| "UNKNOWN_VARIANT"
 	| "UNKNOWN_VIEW"
-	| "BOARD_UNREADABLE"
+	| "MODEL_UNREADABLE"
 	| "UNREACHABLE"
 	| "REPLY_INVALID";
 
@@ -157,7 +157,7 @@ function isRecord(value: unknown): value is JsonRecord {
 function codeOf(body: unknown): SemanticFailureCode | null {
 	const named = z
 		.object({
-			code: z.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"]),
+			code: z.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "MODEL_UNREADABLE"]),
 		})
 		.safeParse(body);
 	return named.success ? named.data.code : null;

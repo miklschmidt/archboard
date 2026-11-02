@@ -72,7 +72,7 @@ function reading(view: string | null): WorkspaceAddress {
 	});
 }
 
-test("choosing another way of reading a board is a move the user made", () => {
+test("choosing another way of reading a model is a move the user made", () => {
 	const navigation = createDeliberateNavigation();
 	navigation.expect({ kind: "view", paneId: "A", from: null });
 	expect(navigation.settle(reading("k3f9"))).toBe(true);

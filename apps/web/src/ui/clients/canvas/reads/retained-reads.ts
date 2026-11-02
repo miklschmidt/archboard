@@ -47,8 +47,8 @@ interface RetainedReads {
  */
 async function captureRequired(): Promise<never> {
 	throw new ReadingError(
-		"BOARD_UNREADABLE",
-		"Open an exact retained recording to read original board content.",
+		"MODEL_UNREADABLE",
+		"Open an exact retained recording to read original legacy board content.",
 	);
 }
 

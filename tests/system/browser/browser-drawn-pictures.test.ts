@@ -85,7 +85,7 @@ const drawn = (browser: AgentBrowserSession, what: string): Promise<boolean> =>
 		WAIT,
 	);
 
-test("the page draws a board itself, keeps the picture, recolours it for a theme, and draws it again when the board changes", async () => {
+test("the page draws a model itself, keeps the picture, recolours it for a theme, and draws it again when the model changes", async () => {
 	await using resources = new AsyncDisposableStack();
 	const { ownerRoot } = browserTestRoots();
 	const root = join(ownerRoot, "drawn-here-vault");
@@ -104,7 +104,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	const browser = resources.use(await createAgentBrowser());
 	await browser.run(["open", modelAddress(server.base, model)]);
 	await browser.run(["set", "viewport", "1920", "1080"]);
-	await drawn(browser, "the board to be drawn in the page");
+	await drawn(browser, "the model to be drawn in the page");
 	await switchTheme(browser, "light");
 
 	// Drawn here: the engine worker started, the icons were fetched by name, and
@@ -158,7 +158,7 @@ test("the page draws a board itself, keeps the picture, recolours it for a theme
 	await pollUntil(
 		() => browser.eval<string>(`document.querySelector("${SURFACE}")?.textContent ?? ""`),
 		(text) => text.includes("Ledger"),
-		"the board's new version to be drawn in the page",
+		"the model's new version to be drawn in the page",
 		WAIT,
 	);
 	expect(

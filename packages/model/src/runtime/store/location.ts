@@ -116,8 +116,8 @@ function locateLegacyBoard(asked: string, root: string): LegacyBoardLocation {
 	const file = vaultPathFor(makeIdentity({ board: asked }), root, LEGACY_BOARD_FILE_SUFFIX);
 	if (!insideVault(file, root)) {
 		throw new Error(
-			`Refusing to resolve board "${address.key}": it resolves through a link that leaves the ` +
-				`vault at ${root}. A board lives in the vault, and nothing here writes outside it.`,
+			`Refusing to resolve model "${address.key}": it resolves through a link that leaves the ` +
+				`vault at ${root}. A model lives in the vault, and nothing here writes outside it.`,
 		);
 	}
 	return { ...address, file };

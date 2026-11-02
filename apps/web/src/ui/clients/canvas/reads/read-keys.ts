@@ -12,7 +12,7 @@ import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import { comparisonKey, type SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
 
 /** The one root every semantic resource hangs under, so a sweep can find it. */
-const SEMANTIC_KEY = "semantic-board";
+const SEMANTIC_KEY = "retained";
 
 /** The cache keys, spelled once. */
 const readKeys = {

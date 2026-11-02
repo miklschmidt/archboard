@@ -73,7 +73,7 @@ test("the tab says what the variant is about, and what the view on screen answer
 	).toBe(true);
 });
 
-test("on a board nobody has built, the tab speaks for the draft its bare name opens", async () => {
+test("on a model nobody has built, the tab speaks for the draft its bare name opens", async () => {
 	const draft = { ...DESCRIBED.variants[0], lifecycle: "draft", name: "first idea" };
 	const { current: _current, ...unbuilt } = DESCRIBED;
 	server.documents["pipeline"] = { ...unbuilt, variants: [draft] };

@@ -125,7 +125,7 @@ function modelActions(deps: ShellActionDeps): ModelActions {
 			deps.notices.raise(
 				failureNotice(
 					"model-command",
-					"Show board",
+					"Show model",
 					error instanceof Error ? error.message : String(error),
 				),
 			);
@@ -247,7 +247,7 @@ function placeFor(
 		return {
 			...failureNotice(
 				"model-command",
-				"Show board",
+				"Show model",
 				"This pane is reconnecting. Try again once it is connected, or reload the page.",
 			),
 			actions: [{ kind: "select", id: NOTICE_ACTIONS.reloadFrontend, label: "Reload" }],
@@ -258,7 +258,7 @@ function placeFor(
 		vault ??
 		failureNotice(
 			"model-command",
-			"Show board",
+			"Show model",
 			`${repository ?? "This repository"} has no checkout with a vault to read. Choose another checkout in its menu.`,
 		)
 	);

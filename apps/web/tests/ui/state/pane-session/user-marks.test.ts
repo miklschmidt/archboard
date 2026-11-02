@@ -121,7 +121,7 @@ describe("what a report says the user changed", () => {
 		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, undefined]);
 	});
 
-	test("a board the user asked for is theirs when it arrives, across the moment the pane reads nothing", async () => {
+	test("a model the user asked for is theirs when it arrives, across the moment the pane reads nothing", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("payments", null));
 		await settled();
@@ -139,7 +139,7 @@ describe("what a report says the user changed", () => {
 		expect(sent.map((body) => body.byUser)).toEqual([undefined, undefined, ["model"]]);
 	});
 
-	test("a board the server could not open leaves nothing waiting for an agent's switch to use", async () => {
+	test("a model the server could not open leaves nothing waiting for an agent's switch to use", async () => {
 		const { publisher, sent } = watched();
 		publisher.publish(reading("payments", null));
 		await settled();

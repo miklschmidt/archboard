@@ -61,7 +61,7 @@ const SUCCESS = {
 const VAULT = "/work/archboard/.archboard/vault";
 
 describe("code-target activation", () => {
-	test("posts the board and the subject's identity, and a plain open tells nothing", async () => {
+	test("posts the model and the subject's identity, and a plain open tells nothing", async () => {
 		const fetchMock = answering(SUCCESS);
 
 		const onNotice = activate("system/payments");
@@ -91,14 +91,14 @@ describe("code-target activation", () => {
 		});
 	});
 
-	test("refuses a pane that is on no board without reaching the server", () => {
+	test("refuses a pane that is on no model without reaching the server", () => {
 		const fetchMock = answering({});
 
 		const onNotice = activate(null);
 
 		expect(fetchMock).not.toHaveBeenCalled();
 		expect(onNotice.mock.calls[0]?.[0]).toMatchObject({
-			message: "No board is available for this code target.",
+			message: "No model is available for this code target.",
 		});
 	});
 

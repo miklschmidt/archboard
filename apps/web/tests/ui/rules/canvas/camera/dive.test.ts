@@ -13,8 +13,8 @@ import { cameraAtInset, insetOf, legInto, legOut, reached } from "#ui/rules/canv
 const CARD = { x: 400, y: 300, width: 260, height: 80 };
 const CHILD = { width: 1400, height: 900 };
 
-describe("the board inside its card", () => {
-	test("is centred in the card, fits it with the card's frame showing, and keeps the board's shape", () => {
+describe("the model inside its card", () => {
+	test("is centred in the card, fits it with the card's frame showing, and keeps the model's shape", () => {
 		const inset = insetOf(CARD, CHILD);
 		expect(inset.width / inset.height).toBeCloseTo(CHILD.width / CHILD.height, 9);
 		expect(inset.x + inset.width / 2).toBeCloseTo(CARD.x + CARD.width / 2, 9);
@@ -25,7 +25,7 @@ describe("the board inside its card", () => {
 		expect(inset.height).toBeCloseTo(CARD.height * 0.86, 9);
 	});
 
-	test("is limited by the card's width when the board is wider than the card", () => {
+	test("is limited by the card's width when the model is wider than the card", () => {
 		const inset = insetOf({ x: 0, y: 0, width: 100, height: 400 }, CHILD);
 		expect(inset.width).toBeCloseTo(86, 9);
 	});
@@ -50,7 +50,7 @@ function onScreen(camera: Look, x: number, y: number): { x: number; y: number } 
 }
 
 describe("the camera at the inset", () => {
-	test("puts the inset where the board stands when it is seen through its own camera", () => {
+	test("puts the inset where the model stands when it is seen through its own camera", () => {
 		const own = { x: 120, y: 60, scale: 0.9 };
 		const inset = insetOf(CARD, CHILD);
 		const over = cameraAtInset(inset, CHILD, own);
@@ -65,7 +65,7 @@ describe("the camera at the inset", () => {
 		expect(insetFar.y).toBeCloseTo(pictureFar.y, 6);
 	});
 
-	test("zooms in by as much as the board is larger than its inset", () => {
+	test("zooms in by as much as the model is larger than its inset", () => {
 		const own = { x: 0, y: 0, scale: 1 };
 		const inset = insetOf(CARD, CHILD);
 		const over = cameraAtInset(inset, CHILD, own);
@@ -74,7 +74,7 @@ describe("the camera at the inset", () => {
 	});
 });
 
-describe("the flight between a board and its card", () => {
+describe("the flight between a model and its card", () => {
 	const PARENT = {
 		width: 800,
 		height: 600,
@@ -87,7 +87,7 @@ describe("the flight between a board and its card", () => {
 	const ROOM = { width: 1200, height: 800 };
 	const FIT = { x: 100, y: 50, scale: 0.8 };
 
-	test("goes into the card, to where the board stands once it is opened and fitted", () => {
+	test("goes into the card, to where the model stands once it is opened and fitted", () => {
 		const leg = legInto(PARENT, "card", { ...CHILD, atlas: PARENT.atlas }, ROOM);
 		expect(leg).not.toBeNull();
 		// Seen through the camera the leg ends at, the model is where its own fit puts it.
@@ -100,7 +100,7 @@ describe("the flight between a board and its card", () => {
 		expect(leg!.from).toBeNull();
 	});
 
-	test("goes back out from where the board was left, to the whole board above", () => {
+	test("goes back out from where the model was left, to the whole model above", () => {
 		const leg = legOut(PARENT, "card", { ...CHILD, atlas: PARENT.atlas }, ROOM, FIT);
 		expect(leg).not.toBeNull();
 		const start = onScreen(leg!.from!, leg!.inset.x, leg!.inset.y);

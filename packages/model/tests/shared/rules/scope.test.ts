@@ -117,7 +117,7 @@ describe("a flow a view selects", () => {
 	});
 });
 
-describe("the overview a board opens on", () => {
+describe("the overview a model opens on", () => {
 	// A service whose gateway holds a router, and a ledger beside it.
 	const ROUTER = { id: "rt", name: "Router", kind: "function", parent: "gw" };
 	const AUDIT = { id: "au", name: "Audit", kind: "function", parent: "gw" };

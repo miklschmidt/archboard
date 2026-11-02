@@ -99,7 +99,7 @@ async function exported(
 	policy = DEFAULT_SEMANTIC_POLICY,
 ): Promise<DrawnPicture> {
 	const outcome = await renderLegacyBoard(EXPORT_DOCUMENT, { theme: "light", ...choices }, policy);
-	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
+	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn document");
 	return outcome.reply;
 }
 

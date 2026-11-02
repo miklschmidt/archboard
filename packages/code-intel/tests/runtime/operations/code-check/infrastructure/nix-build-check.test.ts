@@ -119,7 +119,7 @@ beforeAll(async () => {
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
 	const read = check.readStatesToCheck(vault, undefined);
-	if (!read.ok) throw new Error("no boards");
+	if (!read.ok) throw new Error("no documents");
 	outcome = await check.checkCode(vault, read.states, new AbortController().signal);
 });
 
@@ -131,7 +131,7 @@ afterAll(() => {
 	rmSync(scratch, { recursive: true, force: true });
 });
 
-test("a package built from another that the board does not draw is an undrawn dependency, and a drawn one is supported", () => {
+test("a package built from another that the document does not draw is an undrawn dependency, and a drawn one is supported", () => {
 	const found = outcome.findings.map((each) => `${each.code} ${each.subject?.id} ${each.severity}`);
 	expect(found.toSorted()).toEqual(
 		[

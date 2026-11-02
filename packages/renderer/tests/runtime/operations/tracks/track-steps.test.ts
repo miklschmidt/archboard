@@ -244,7 +244,7 @@ test("a line squeezed between a card and a wall passes on one column", async () 
 	expect(sidewaysLevels(corridorPoints(drawing.svg).get("FWJMAVKj")!).size).toBeLessThanOrEqual(2);
 });
 
-test("a packed group's pin stands where the board's line turns to it", async () => {
+test("a packed group's pin stands where the document's line turns to it", async () => {
 	const content = orderedFixture(commandGroups);
 	const drawing = await renderArchitecture({ content, theme: "light", layout: "track", policy });
 	const crossings = scorecardOf(drawing, content).find(({ name }) => name === "crossings")!;

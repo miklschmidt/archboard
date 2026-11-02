@@ -298,7 +298,7 @@ test("what counts as answering off the checklist is one rule, and it needs both 
 	expect(checklistStanding(expected, answer("c", "d"))).toBe("off-checklist");
 });
 
-test("a verdict answered off the checklist sets its run aside without calling its board wrong", () => {
+test("a verdict answered off the checklist sets its run aside without calling its document wrong", () => {
 	const offChecklist = {
 		checklist: {
 			standing: "off-checklist" as const,

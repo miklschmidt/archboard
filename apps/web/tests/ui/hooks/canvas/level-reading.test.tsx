@@ -85,7 +85,7 @@ function viewRead(): string | null {
 	return document.querySelector("button")?.getAttribute("data-view") ?? null;
 }
 
-test("a view chosen a level down stays with that repository's board", () => {
+test("a view chosen a level down stays with that repository's model", () => {
 	const { rerender } = render(paneIn("/shop"));
 	act(() => {
 		fireEvent.click(document.querySelector("button")!);
@@ -141,7 +141,7 @@ function DrillProbe(props: Pointed): null {
 	return null;
 }
 
-test("a pane that dives into another repository never draws a board of the vault it left there", () => {
+test("a pane that dives into another repository never draws a model of the vault it left there", () => {
 	const drawn: string[] = [];
 	/**
 	 * The model on screen was drawn.
@@ -167,7 +167,7 @@ test("a pane that dives into another repository never draws a board of the vault
 	expect(moves.current?.trail.map((stop) => stop.model)).toEqual(["shop", "cart"]);
 });
 
-test("a drill asked for before the pane was pointed elsewhere opens nothing over the new board", () => {
+test("a drill asked for before the pane was pointed elsewhere opens nothing over the new model", () => {
 	const drawn: string[] = [];
 	/**
 	 * The model on screen was drawn.

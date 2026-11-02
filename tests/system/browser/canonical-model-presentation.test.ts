@@ -158,7 +158,7 @@ test("a person presents a walkthrough step by step, and leaving gives the pane b
 	await pollUntil(
 		() => presented(browser),
 		(state) => state.arrived && state.camera !== "",
-		"the board to be drawn in its pane",
+		"the model to be drawn in its pane",
 		WAIT,
 	);
 	const reader = await presented(browser);
