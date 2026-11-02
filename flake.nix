@@ -22,7 +22,6 @@
       bunPlatforms = {
         x86_64-linux = "linux-x64";
         aarch64-linux = "linux-aarch64";
-        x86_64-darwin = "darwin-x64";
         aarch64-darwin = "darwin-aarch64";
       };
       # The release archives of a Bun that nixpkgs does not carry yet.
@@ -30,7 +29,6 @@
         "1.4.4" = {
           linux-x64 = "sha256-v4zL+ysLgBWeD5ptFcVTF63YB3U028YTCj7bUvzLOVw=";
           linux-aarch64 = "sha256-uqa7NvUdblhWHgK76oJQOKnfRU9nPW13bou/hvjHhQ4=";
-          darwin-x64 = "sha256-UKNJH3Orwv6BZzFxqFdi07wswWgMzsrdmD3pmt93l34=";
           darwin-aarch64 = "sha256-wkDX8My5DCY6hJ/NsJt+5iYw2SE0jtaq/ahrnVd7xRA=";
         };
       };

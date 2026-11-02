@@ -40,6 +40,8 @@ machine has flakes turned on, use Nix. Otherwise use rustup.
 ### Build with Nix
 
 The shell in `flake.nix` gives Bun and the Rust tools. It does not give Node.js.
+It does not run on an Intel Mac, because the pinned nixpkgs dropped
+`x86_64-darwin`. On an Intel Mac, build with rustup.
 
 ```bash
 nix develop --command bash -c 'bun install && bun run build'
