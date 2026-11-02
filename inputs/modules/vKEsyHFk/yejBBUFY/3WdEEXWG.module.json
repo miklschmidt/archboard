@@ -53,6 +53,19 @@
       "to": "vKEsyHFk#ZTh8T7Ym"
     },
     {
+      "order": 37000,
+      "kind": "render",
+      "label": "the recording's stage, so both pages draw alike",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
+        "symbol": "RecordingStage"
+      },
+      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
+      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
+    },
+    {
       "order": 47000,
       "kind": "render",
       "label": "the one orb, in the voice box's socket",
@@ -90,19 +103,6 @@
       },
       "id": "vKEsyHFk/yejBBUFY#3BpWAgaf",
       "to": "vKEsyHFk/yejBBUFY#3IbTeWiR"
-    },
-    {
-      "order": 37000,
-      "kind": "render",
-      "label": "the recording's stage, so both pages draw alike",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-        "symbol": "RecordingStage"
-      },
-      "id": "vKEsyHFk/yejBBUFY#3cky5MpR",
-      "to": "vKEsyHFk/yejBBUFY#H17EYQ6u"
     }
   ]
 }

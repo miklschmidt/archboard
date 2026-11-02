@@ -10,6 +10,9 @@
   "schemaVersion": 1,
   "id": "vKEsyHFk#ksn35ZHp",
   "parent": "vKEsyHFk/gbyqW4H3#CzHSL7yr",
+  "formerNames": [
+    "Legend key"
+  ],
   "outgoing": [
     {
       "order": 53000,
@@ -24,8 +27,5 @@
       "id": "vKEsyHFk/gbyqW4H3#m9XkQSPd",
       "to": "vKEsyHFk/gbyqW4H3#X0CpwpF1"
     }
-  ],
-  "formerNames": [
-    "Legend key"
   ]
 }

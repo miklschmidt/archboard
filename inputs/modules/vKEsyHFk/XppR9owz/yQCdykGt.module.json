@@ -74,6 +74,19 @@
       },
       "id": "vKEsyHFk/XppR9owz#g8rnkuaR",
       "to": "vKEsyHFk/XppR9owz#s25sE5P3"
+    },
+    {
+      "order": 1008070,
+      "kind": "call",
+      "label": "read a code check answer",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/operations/vault/vault.ts",
+        "symbol": "codeCheckOnServer"
+      },
+      "id": "vKEsyHFk#BnbTGVun",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     }
   ]
 }

@@ -8,8 +8,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board/src/shared/rules/inspect/container-interface.ts"
   },
-  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
   "schemaVersion": 1,
   "id": "vKEsyHFk#DKzh4lMo",
+  "parent": "vKEsyHFk/0T9enjhi#1VHRyajb",
   "outgoing": []
 }

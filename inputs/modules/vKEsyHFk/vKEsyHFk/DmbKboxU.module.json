@@ -3,6 +3,9 @@
   "name": "board",
   "kind": "package",
   "responsibility": "The board document and its one reader and writer",
+  "groups": [
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/board"
@@ -15,8 +18,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }

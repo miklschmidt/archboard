@@ -84,6 +84,19 @@
       },
       "id": "vKEsyHFk/0T9enjhi#txWnt33L",
       "to": "vKEsyHFk/0T9enjhi#W6wFcSQz"
+    },
+    {
+      "order": 1008030,
+      "kind": "call",
+      "label": "name the vault of a checkout",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/flow-routes.ts",
+        "symbol": "vaultIdentity"
+      },
+      "id": "vKEsyHFk#OFwD2rtg",
+      "to": "vKEsyHFk/0T9enjhi#klNuMiwC"
     }
   ]
 }

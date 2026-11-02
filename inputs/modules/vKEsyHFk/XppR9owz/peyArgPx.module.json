@@ -51,6 +51,19 @@
       "to": "vKEsyHFk/XppR9owz#iIVu1bGE"
     },
     {
+      "order": 19000,
+      "kind": "dependency",
+      "label": "the package it hands off through",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/bin.ts",
+        "symbol": "handOff"
+      },
+      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
+      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
+    },
+    {
       "order": 22000,
       "kind": "call",
       "label": "take --url",
@@ -92,19 +105,6 @@
       },
       "id": "vKEsyHFk/XppR9owz#4y3I6aju",
       "to": "vKEsyHFk/XppR9owz#e5UQUj78"
-    },
-    {
-      "order": 19000,
-      "kind": "dependency",
-      "label": "the package it hands off through",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/bin.ts",
-        "symbol": "handOff"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#wImHhbk7",
-      "to": "vKEsyHFk/XppR9owz#NG7OXLv9"
     }
   ]
 }
