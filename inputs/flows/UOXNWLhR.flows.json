@@ -1,7 +1,11 @@
 {
   "schemaVersion": 1,
   "id": "UOXNWLhR",
-  "name": "Board viewer",
+  "name": "Canvas viewer",
+  "formerNames": [
+    "Canvas viewer",
+    "Board viewer"
+  ],
   "flows": [
     {
       "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
@@ -1636,8 +1640,5 @@
         }
       ]
     }
-  ],
-  "formerNames": [
-    "Canvas viewer"
   ]
 }
