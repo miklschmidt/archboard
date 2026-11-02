@@ -18,6 +18,8 @@ interface StageCamera {
 interface StageMarks {
 	readonly selected: ReadonlySet<string>;
 	readonly whole: ReadonlySet<string>;
+	/** Whether a selected line goes without its ring. */
+	readonly quietLines: boolean;
 }
 
 /** A distance, in the surface's own pixels or the picture's units. */
@@ -87,6 +89,7 @@ function marksJson(marks: StageMarks): string {
 	return JSON.stringify({
 		selected: [...marks.selected],
 		whole: [...marks.whole],
+		quietLines: marks.quietLines,
 	});
 }
 

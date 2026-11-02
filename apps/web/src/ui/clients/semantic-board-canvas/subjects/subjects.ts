@@ -123,29 +123,31 @@ function controlAt(target: EventTarget | null): boolean {
  * which is what keeps the drawing the server's and the highlight the pane's.
  * @param surface The element the picture was put into.
  * @param attended Which subjects are being attended to; empty for none.
+ * @param quiet Whether a relationship's line goes without the ring.
  */
-function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
+function markSubjects(surface: Element, attended: ReadonlySet<string>, quiet: boolean): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
 		const id = markedId(group);
-		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
+		const ringless = quiet && group.getAttribute("data-semantic-kind") === "edge";
+		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id) && !ringless);
 	}
 }
 
 /**
- * What wears the selection ring. A line wears it alone: among several, the light
- * says which stand, and a ring round each would turn the picture gold.
+ * Whether selected lines go without the ring. A line wears it alone: among
+ * several, the light says which stand, and a ring round each would turn the
+ * picture gold.
  * @param attended Which subjects are being attended to.
  * @param veil What the light leaves standing, or null for no light.
  * @param atlas Where every subject ended up, which says which are lines.
- * @returns The subjects to ring.
+ * @returns True when they do.
  */
-function ringed(
+function quietLines(
 	attended: ReadonlySet<string>,
 	veil: ReadonlySet<string> | null,
 	atlas: Pick<SemanticAtlas, "edges">,
-): ReadonlySet<string> {
-	const others = [...attended].filter((id) => atlas.edges[id] === undefined);
-	return veil === null || attended.size - others.length < 2 ? attended : new Set(others);
+): boolean {
+	return veil !== null && [...attended].filter((id) => atlas.edges[id] !== undefined).length > 1;
 }
 
 /** The class the surface carries while a presented step veils what it is not about. */
@@ -287,7 +289,7 @@ export {
 	markReach,
 	markSubjects,
 	markVeil,
-	ringed,
+	quietLines,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

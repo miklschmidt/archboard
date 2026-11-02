@@ -58,7 +58,7 @@ class PictureStage {
 		camera: { x: 0, y: 0, scale: 1 },
 		farLine: { scale: 0, ms: 0 },
 		awaited: false,
-		marks: { selected: new Set(), whole: new Set() },
+		marks: { selected: new Set(), whole: new Set(), quietLines: false },
 		light: null,
 		trafficShown: true,
 		heads: {},

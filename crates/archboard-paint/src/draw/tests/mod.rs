@@ -5,10 +5,11 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::drawing::Toggle;
 use archboard_scene::geometry::{Curve, Point, Rect, Segment};
+use archboard_scene::request::{Arrowhead, Dash, LineAppearance};
 use archboard_scene::scene::{
-    Atlas, Cap, Colour, Definition, Geometry, Group, Item, Mask, MaskId, Motion, Painting,
-    PathStep, PulseLook, Purpose, Role, Scene, Shape, Stroke, Subject, SubjectKind, Token,
-    TrafficMark,
+    Atlas, Cap, Colour, Definition, Geometry, Group, Item, LineFacts, Mask, MaskId, Motion,
+    Painting, PathStep, PulseLook, Purpose, Role, Scene, Shape, Stroke, Subject, SubjectKind,
+    Token, TrafficMark,
 };
 use kurbo::{Affine, BezPath, Shape as _, Vec2};
 
@@ -531,6 +532,52 @@ fn a_lit_line_keeps_its_gaps_and_a_picked_line_has_no_mask() {
         ..Marks::default()
     });
     assert_eq!(cuts(&mut stage), 0);
+}
+
+/// A line of a picture, with its facts.
+fn drawn_line(id: &str, x: f64) -> Item {
+    let facts = LineFacts {
+        appearance: LineAppearance {
+            name: "Call".to_owned(),
+            color: None,
+            dash: Dash::Solid,
+            arrowhead: Arrowhead::Filled,
+        },
+        kind: "call".to_owned(),
+    };
+    Item::Group(
+        Group::new(Role::Line(Some(Box::new(facts))), route(x))
+            .drawing(subject(SubjectKind::Edge, id)),
+    )
+}
+
+#[test]
+fn among_several_lines_each_goes_without_its_ring_and_stays_on_top() {
+    let mut stage = Stage::new(Theme::Light, (400.0, 400.0));
+    stage.show(painting(vec![
+        drawn_line("first", 0.0),
+        drawn_line("second", 10.0),
+    ]));
+    let selected = HashSet::from(["first".to_owned()]);
+    stage.set_marks(Marks {
+        selected: selected.clone(),
+        ..Marks::default()
+    });
+    let (ringed, _) = frame(&mut stage, 0.0);
+    stage.set_marks(Marks {
+        selected,
+        quiet_lines: true,
+        ..Marks::default()
+    });
+    let (quiet, _) = frame(&mut stage, 1.0);
+    // Two routes and one ring, then the two routes alone.
+    assert_eq!(ringed.iter().filter(|op| op.stroked).count(), 3);
+    assert_eq!(quiet.iter().filter(|op| op.stroked).count(), 2);
+    // The chosen line still draws last, so it still takes the pointer.
+    assert_eq!(
+        quiet.iter().rfind(|op| op.stroked).map(|op| op.x),
+        Some(0.0)
+    );
 }
 
 #[test]

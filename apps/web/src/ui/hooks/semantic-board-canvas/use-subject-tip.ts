@@ -28,11 +28,10 @@ interface TipScene {
 	readonly camera: Pick<BoardCamera, "subscribe">;
 }
 
-/** An open tip, the picture it opened on, and the corner it stands in. */
+/** An open tip, and the picture it opened on. */
 interface OpenTip {
 	readonly drawing: object;
 	readonly target: TipTarget;
-	readonly corner: TipCorner;
 }
 
 /** The open tip, and what moves it. */
@@ -77,6 +76,7 @@ function cornerAcross(event: PointerEvent<HTMLElement>): TipCorner {
  */
 function useSubjectTip(scene: TipScene): SubjectTipControls {
 	const [open, setOpen] = useState<OpenTip | null>(null);
+	const [corner, setCorner] = useState<TipCorner>("right");
 	const waiting = useRef<{ readonly target: TipTarget; readonly timer: number } | null>(null);
 	const shown =
 		open !== null && open.drawing === scene.drawing && open.target.drawn.isConnected
@@ -108,12 +108,12 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				dismiss();
 				return;
 			}
-			const corner = cornerAcross(event);
+			setCorner(cornerAcross(event));
 			if (shown !== null) {
 				// One tip is open: the next opens at once, and the same one stays.
 				forget();
 				if (!samePart(shown, target)) {
-					setOpen({ target, drawing, corner });
+					setOpen({ target, drawing });
 				}
 				return;
 			}
@@ -125,14 +125,14 @@ function useSubjectTip(scene: TipScene): SubjectTipControls {
 				target,
 				timer: frameClock().after(EXPLORING_MS.subjectTip, () => {
 					waiting.current = null;
-					setOpen({ target, drawing, corner });
+					setOpen({ target, drawing });
 				}),
 			};
 		},
 		[shown, drawing, dismiss, forget],
 	);
 
-	return { shown, corner: open?.corner ?? "right", onHover, dismiss };
+	return { shown, corner, onHover, dismiss };
 }
 
 export { useSubjectTip };

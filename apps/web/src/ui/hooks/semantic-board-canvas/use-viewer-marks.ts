@@ -16,7 +16,7 @@ import {
 	markReach,
 	markSubjects,
 	markVeil,
-	ringed,
+	quietLines,
 } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** No subjects. */
@@ -45,11 +45,12 @@ interface ViewerMarks {
  */
 function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void {
 	const { attended, veil, reach, atlas } = marks;
+	const quiet = quietLines(attended, veil, atlas);
 	useLayoutEffect(() => {
 		if (picture !== null) {
-			markSubjects(picture.root, attended);
+			markSubjects(picture.root, attended, quiet);
 		}
-	}, [picture, attended]);
+	}, [picture, attended, quiet]);
 	// The veil is its own mark, independent of attention.
 	useLayoutEffect(() => {
 		if (picture !== null) {
@@ -66,11 +67,12 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 	useLayoutEffect(() => {
 		if (picture !== null) {
 			stageOf(picture.surface)?.setMarks({
-				selected: ringed(attended, veil, atlas),
+				selected: attended,
 				whole: veil ?? NOTHING,
+				quietLines: quiet,
 			});
 		}
-	}, [picture, attended, veil, atlas]);
+	}, [picture, attended, veil, quiet]);
 }
 
 export { useViewerMarks };

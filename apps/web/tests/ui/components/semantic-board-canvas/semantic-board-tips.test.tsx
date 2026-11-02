@@ -28,24 +28,30 @@ function restOn(id: string, clientX: number): void {
 }
 
 /**
- * The corner the tips stand in.
- * @returns Its name.
+ * The corner that shows a tip.
+ * @returns Its name, or nothing while no tip is shown.
  */
-function corner(): string | null | undefined {
-	return document.querySelector("[data-slot='picture-tip-corner']")?.getAttribute("data-corner");
+function cornerOfTip(): string | null | undefined {
+	return document
+		.querySelector("[data-slot='semantic-subject-tip']")
+		?.closest("[data-slot='picture-tip-corner']")
+		?.getAttribute("data-corner");
 }
 
-test("a tip stands in the top corner across from the pointer", async () => {
+test("a tip stands in the top corner across from the pointer, and keeps across as the pointer moves", async () => {
 	await served();
 	viewport().getBoundingClientRect = paneBox;
 	const frames = takeFrames();
 	try {
 		restOn("q", 100);
 		frames.run(500);
-		expect(corner()).toBe("right");
-		// The next part's tip opens at once, on the other side of a pointer that crossed the pane.
+		expect(cornerOfTip()).toBe("right");
+		// The next part's tip opens at once, across from a pointer that crossed the pane.
 		restOn("l", 900);
-		expect(corner()).toBe("left");
+		expect(cornerOfTip()).toBe("left");
+		// A wide part stays under a pointer that crosses the middle of the pane.
+		restOn("l", 100);
+		expect(cornerOfTip()).toBe("right");
 	} finally {
 		frames.restore();
 	}

@@ -481,7 +481,7 @@ impl<C: Canvas> Walk<'_, C> {
             shape.purpose,
             Purpose::Halo | Purpose::Ring | Purpose::LitLine
         );
-        if ring && !inside.selected {
+        if ring && (!inside.selected || (inside.line && self.presentation.quiet_lines)) {
             return;
         }
         let (path, bounds) = outline_of(&shape.geometry);
