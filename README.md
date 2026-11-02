@@ -10,7 +10,7 @@
 
 <p>
   <a href="#quick-start"><img alt="Agents: Claude Code and Codex" src="https://img.shields.io/badge/agents-Claude%20Code%20%C2%B7%20Codex-559cdb?style=flat-square"></a>
-  <a href="#quick-start"><img alt="Runs on: Bun 1.4.3 or newer" src="https://img.shields.io/badge/runs%20on-Bun%201.4.3%2B-a087e5?style=flat-square"></a>
+  <a href="#quick-start"><img alt="Runs on: Bun 1.4.4 or newer" src="https://img.shields.io/badge/runs%20on-Bun%201.4.4%2B-a087e5?style=flat-square"></a>
   <a href="LICENSE"><img alt="Licence: BUSL-1.1" src="https://img.shields.io/badge/licence-BUSL--1.1-8ce99a?style=flat-square"></a>
 </p>
 
@@ -343,7 +343,7 @@ Archboard's SVG renderer began as a fork of the PR Lens renderer (MIT, Coldtea A
 
 ## Quick start
 
-You need Linux or macOS, Git, Bun 1.4.3 or newer, and Node.js. Nix with flakes supplies the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) gives the way with rustup, for a machine without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
+You need Linux or macOS, Git, Bun 1.4.4 or newer, and a patched Node.js. Nix with flakes supplies the Rust tools that build the renderer. [INSTALL.md](INSTALL.md) gives the way with rustup, for a machine without Nix. Chromium or Google Chrome draws PNGs and the frames of a video, and `ffmpeg` (or Nix, which fetches it) encodes the video.
 
 The agent, the voice, narration and recordings also need a Codex sign-in. You sign in from the agent dock with ChatGPT or an API key.
 

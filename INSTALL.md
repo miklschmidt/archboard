@@ -14,9 +14,9 @@ archboard itself, read [TESTING.md](TESTING.md).
 
 You need these things:
 
-- Linux or macOS, Bash, Git, and Bun 1.4.3 or newer. Bun must be on the `PATH` of
+- Linux or macOS, Bash, Git, and Bun 1.4.4 or newer. Bun must be on the `PATH` of
   every process that runs archboard.
-- Node.js that satisfies `^22.18.0 || ^24.11.0 || >=26.0.0`, for the Vite+ build and validation tools.
+- Node.js that satisfies `^22.23.4 || ^24.22.1 || >=26.12.1`, for the Vite+ build and validation tools. These are the security releases of October 2026 and later.
 - A desktop browser, to read architecture. The browser layout is for desktop
   screens only.
 - The Rust tools that build the renderer core. Section 1 installs them with
@@ -600,7 +600,9 @@ gh 2.99 or newer.
 
 ## Update and remove
 
-To update archboard, run `git pull` in the checkout. Then run `bun install` and
+To update archboard, run `git pull` in the checkout. Make sure that `bun --version`
+and `node --version` still satisfy [What you need](#what-you-need), because nothing
+refuses an older one. Then run `bun install` and
 `archboard restart` with the Rust tools on your `PATH`, because the restart builds
 the renderer core when its sources changed. With Nix, run this command:
 
