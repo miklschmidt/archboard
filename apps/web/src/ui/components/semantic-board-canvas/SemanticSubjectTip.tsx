@@ -1,7 +1,7 @@
 // The tip about the part of the picture the pointer rests on: a small card that
 // says what the part is, drawn as the picture draws its kind, and what the
-// picture leaves out about it. It stands in a top corner of the pane, across
-// from the pointer, so it never covers the part or what the part lights.
+// picture leaves out about it. It stands against the part, on the spot that
+// leaves what the part lights in view.
 
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -26,10 +26,10 @@ import { vaultCheckQuery } from "#ui/clients/semantic-board-canvas/reads/queries
 import {
 	subjectTip,
 	type SubjectTip,
-	type TipCorner as TipCornerName,
 	type TipTarget,
 } from "#ui/clients/semantic-board-canvas/subjects/subject-tips.ts";
 import { usePaneVault } from "#ui/hooks/semantic-board-canvas/use-pane-vault.ts";
+import { useTipPlace, type PlacedTip } from "#ui/hooks/semantic-board-canvas/use-tip-place.ts";
 
 /**
  * What the picture has to add about the part under the pointer, placed against it.
@@ -58,24 +58,26 @@ function SemanticSubjectTip(props: {
 }
 
 /**
- * Where a picture's tips stand.
- * @param props The corner and the tips.
- * @param props.corner The top corner of the pane.
+ * Where a picture's tips stand. It rests in the pane's corner and moves by a
+ * transform, so that the room it has never narrows the tip it measures.
+ * @param props The open tip, the light and the tips.
+ * @param props.tip The open tip.
+ * @param props.standing What the light leaves standing, or null.
  * @param props.children The tips.
- * @returns The corner, which takes no pointer.
+ * @returns The place, which takes no pointer.
  */
-function TipCorner(props: {
-	readonly corner: TipCornerName;
+function TipPlace(props: {
+	readonly tip: PlacedTip;
+	readonly standing: ReadonlySet<string> | null;
 	readonly children: ReactNode;
 }): JSX.Element {
+	const { place, style } = useTipPlace(props.tip, props.standing);
 	return (
 		<div
-			data-slot="picture-tip-corner"
-			data-corner={props.corner}
-			className={cn(
-				"pointer-events-none absolute top-3 z-10 flex max-h-[calc(100%-1.5rem)] max-w-[calc(100%-1.5rem)] flex-col gap-2",
-				props.corner === "left" ? "left-3" : "right-3",
-			)}
+			ref={place}
+			data-slot="picture-tip-place"
+			className="pointer-events-none absolute top-0 left-0 z-10 flex max-h-[calc(100%-1.5rem)] max-w-[min(24rem,calc(100%-1.5rem))] flex-col gap-2"
+			style={style}
 		>
 			{props.children}
 		</div>
@@ -93,7 +95,7 @@ function TipCard(props: { readonly slot: string; readonly children: ReactNode })
 	return (
 		<div
 			data-slot={props.slot}
-			className="bg-popover text-popover-foreground border-border text-body shadow-float animate-in fade-in-0 flex min-h-0 w-max max-w-[min(24rem,100%)] min-w-[min(14rem,100%)] flex-col items-stretch gap-2.5 rounded-lg border px-3.5 py-3 [overflow-wrap:anywhere]"
+			className="bg-popover text-popover-foreground border-border text-body shadow-float animate-in fade-in-0 flex min-h-0 w-max max-w-full min-w-[min(14rem,100%)] flex-col items-stretch gap-2.5 rounded-lg border px-3.5 py-3 [overflow-wrap:anywhere]"
 		>
 			{props.children}
 		</div>
@@ -268,4 +270,4 @@ function useCut(element: { readonly current: HTMLElement | null }): boolean {
 	return cut;
 }
 
-export { SemanticSubjectTip, SubjectTipBox, TipCard, TipCorner };
+export { SemanticSubjectTip, SubjectTipBox, TipCard, TipPlace };

@@ -46,7 +46,7 @@ import { useCameraHandover } from "#ui/hooks/architecture-model/use-camera-hando
 import { useSubjectTip } from "#ui/hooks/semantic-board-canvas/use-subject-tip.ts";
 import {
 	SubjectTipBox,
-	TipCorner,
+	TipPlace,
 } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import {
 	subjectTip,
@@ -193,6 +193,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		reach: beat.reach ?? lighting.reach,
 		lighting,
 	});
+	const standing = veil ?? lighting.standing;
 	useSweep(staged, lighting.light, lighting.reach, reducedMotion);
 	useRelease(gesture === "dragging", lighting.release);
 	useStickyHeads(staged, drawing.atlas);
@@ -202,7 +203,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			probing: lighting.mode,
 			veiled: veil !== null,
 			presenting,
-			standing: veil ?? lighting.standing,
+			standing,
 			reach: beat.reach ?? lighting.reach,
 			reducedMotion,
 		},
@@ -249,10 +250,10 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 				onWholeScope={props.onWholeScope}
 				onOpenState={props.onOpenState}
 			/>
-			<TipCorner corner={tip.corner}>
+			<TipPlace tip={tip} standing={standing}>
 				<ModelSubjectTip target={tip.shown} scene={scene} camera={camera} />
 				<ModelLineTip target={tip.shown} model={model} projection={projection} />
-			</TipCorner>
+			</TipPlace>
 			<LeavingPart departure={leaving} at="spinner" />
 			{rectangle !== null && <ModelSelectionRectangle rectangle={rectangle} />}
 		</section>
@@ -357,7 +358,7 @@ function useSceneTip(
 	camera: BoardCamera,
 	lighting: ReturnType<typeof useLighting>,
 ) {
-	const { shown, corner, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
+	const { shown, at, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
 	const { onHover: lightHover, release } = lighting;
 	const onHover = useCallback(
 		(event: PointerEvent<HTMLElement>): void => {
@@ -370,7 +371,7 @@ function useSceneTip(
 		dismiss();
 		release();
 	}, [dismiss, release]);
-	return { shown, corner, onHover, dismiss, leave };
+	return { shown, at, onHover, dismiss, leave };
 }
 
 /**

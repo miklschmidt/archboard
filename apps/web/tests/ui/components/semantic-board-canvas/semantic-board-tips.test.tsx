@@ -1,57 +1,59 @@
-// Where a tip stands: the pointer rests on a part to see what it touches, so a
-// tip keeps clear of the part and of what lights around it.
+// Where a tip stands: against the part it is about, inside its pane.
 
 import { act, fireEvent } from "@testing-library/react";
-import { expect, test } from "bun:test";
+import { expect, spyOn, test } from "bun:test";
 
 import { takeFrames } from "#tests/ui/support/semantic-board-canvas/camera-probes.ts";
-import { viewport } from "#tests/ui/support/semantic-board-canvas/stage-harness.tsx";
 import { group, served } from "#tests/ui/support/semantic-board-canvas/wiring-fixture.tsx";
 
 /**
- * The pane's box, in a DOM that does no layout.
- * @returns The box.
+ * Give an element a box, in a DOM that does no layout.
+ * @param element The element.
+ * @param box Its box on the screen.
  */
-function paneBox(): DOMRect {
-	return new DOMRect(0, 0, 1000, 600);
+function boxed(element: Element, box: DOMRect): void {
+	spyOn(element, "getBoundingClientRect").mockReturnValue(box);
 }
 
 /**
- * Rest the pointer on a part, somewhere across the pane.
- * @param id The part.
- * @param clientX How far across the pane the pointer is.
+ * The element that stands a picture's tips.
+ * @returns The element.
  */
-function restOn(id: string, clientX: number): void {
+function tipPlace(): HTMLElement {
+	const place = document.querySelector<HTMLElement>("[data-slot='picture-tip-place']");
+	if (place === null) throw new Error("The picture has no place for tips.");
+	return place;
+}
+
+/**
+ * Rest the pointer on a part.
+ * @param id The part.
+ */
+function restOn(id: string): void {
 	act(() => {
-		fireEvent.pointerMove(group(id), { pointerId: 2, buttons: 0, clientX, clientY: 5 });
+		fireEvent.pointerMove(group(id), { pointerId: 2, buttons: 0, clientX: 5, clientY: 5 });
 	});
 }
 
-/**
- * The corner that shows a tip.
- * @returns Its name, or nothing while no tip is shown.
- */
-function cornerOfTip(): string | null | undefined {
-	return document
-		.querySelector("[data-slot='semantic-subject-tip']")
-		?.closest("[data-slot='picture-tip-corner']")
-		?.getAttribute("data-corner");
-}
-
-test("a tip stands in the top corner across from the pointer, and keeps across as the pointer moves", async () => {
+test("a tip stands against its part, and the next part's tip keeps inside the pane", async () => {
 	await served();
-	viewport().getBoundingClientRect = paneBox;
+	const place = tipPlace();
+	boxed(place.parentElement!, new DOMRect(0, 0, 1000, 600));
+	boxed(place, new DOMRect(0, 0, 200, 100));
+	boxed(group("q"), new DOMRect(100, 100, 80, 40));
+	boxed(group("l"), new DOMRect(860, 100, 130, 40));
 	const frames = takeFrames();
 	try {
-		restOn("q", 100);
+		restOn("q");
+		expect(place.style.visibility).toBe("hidden");
 		frames.run(500);
-		expect(cornerOfTip()).toBe("right");
-		// The next part's tip opens at once, across from a pointer that crossed the pane.
-		restOn("l", 900);
-		expect(cornerOfTip()).toBe("left");
-		// A wide part stays under a pointer that crosses the middle of the pane.
-		restOn("l", 100);
-		expect(cornerOfTip()).toBe("right");
+		expect(place.querySelector("[data-slot='semantic-subject-tip']")).not.toBeNull();
+		expect(place.style.transform).toStartWith("translate(190px,");
+		// The next part's tip opens at once, and the pane's edge turns it to where it has room.
+		restOn("l");
+		const [left = 0] = (place.style.transform.match(/\d+/g) ?? []).map(Number);
+		expect(left).toBeGreaterThan(190);
+		expect(left + 200).toBeLessThanOrEqual(1000);
 	} finally {
 		frames.restore();
 	}

@@ -24,7 +24,7 @@ import { CameraSurface } from "#ui/components/semantic-board-canvas/CameraSurfac
 import { LeavingPart } from "#ui/components/semantic-board-canvas/LeavingPart.tsx";
 import {
 	SemanticSubjectTip,
-	TipCorner,
+	TipPlace,
 } from "#ui/components/semantic-board-canvas/SemanticSubjectTip.tsx";
 import { STAGE_CLASS } from "#ui/components/semantic-board-canvas/SemanticStageStates.tsx";
 import {
@@ -371,7 +371,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					/>
 				</div>
 				{/* oxlint-enable jsx-a11y/no-noninteractive-tabindex */}
-				<TipCorner corner={tip.corner}>
+				<TipPlace tip={tip} standing={lighting.standing}>
 					<SemanticSubjectTip
 						target={tip.shown}
 						appearance={drawing.appearances.find((one) => one.id === tip.shown?.id)}
@@ -379,7 +379,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 						far={far}
 						overview={drawing.view === null}
 					/>
-				</TipCorner>
+				</TipPlace>
 				<LeavingPart departure={departure} at="spinner" />
 			</div>
 		</section>

@@ -35,8 +35,11 @@ interface TipTarget {
 	readonly drawn: Element;
 }
 
-/** The top corner of the pane a tip stands in. */
-type TipCorner = "left" | "right";
+/** Where the pointer rests, on the screen. */
+interface TipPoint {
+	readonly x: number;
+	readonly y: number;
+}
 
 /** What a tip says, each line only when there is something to say. */
 interface SubjectTip {
@@ -298,4 +301,13 @@ function messageKind(kind: string): string {
 /** The lines a label's tip leaves out unless it has them. */
 const UNSAID = { lead: undefined, body: undefined, hint: undefined } as const;
 
-export { openableAt, subjectTip, tipTargetAt, type SubjectTip, type TipCorner, type TipTarget };
+export {
+	PART_ATTRIBUTE,
+	SUBJECT_ATTRIBUTE,
+	openableAt,
+	subjectTip,
+	tipTargetAt,
+	type SubjectTip,
+	type TipPoint,
+	type TipTarget,
+};

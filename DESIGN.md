@@ -203,7 +203,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 **The One Ring Rule.** The gold ring goes round a card, a door or a frame that is chosen. A line wears a faint gold bed under its own ink, and only when it is the one line chosen. Among several lines the light says which stand, and each keeps its own ink.
 
-**The Clear Tip Rule.** A reader rests on a part to see what it touches, so a tip never covers the part or what lights round it. A tip stands in a top corner of the pane, across from the pointer, and takes no pointer.
+**The Clear Tip Rule.** A reader rests on a part to read it and to see what it touches. So a tip stands against its part, on the nearest spot that leaves the part and what lights round it in view. On a dense picture it hides dim parts first, and it takes no pointer.
 
 ## Typography
 
