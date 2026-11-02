@@ -6,7 +6,7 @@
   "description": "Narrative statements join the same structural candidate, claims, identity retirement, durable journal, and exact retry.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/model-edit/structure.ts"
+    "path": "packages/model/src/runtime/operations/model-edit/structure.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#llmZ5fau",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+        "path": "packages/model/src/runtime/operations/model-edit/structure.ts",
         "symbol": "applyStructure"
       },
       "id": "vKEsyHFk/0T9enjhi#UHKlormM",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+        "path": "packages/model/src/runtime/operations/model-edit/structure.ts",
         "symbol": "selectedId"
       },
       "id": "vKEsyHFk/0T9enjhi#erkB0gWt",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+        "path": "packages/model/src/runtime/operations/model-edit/structure.ts",
         "symbol": "selectedId"
       },
       "id": "vKEsyHFk/0T9enjhi#Idigw8VU",
@@ -79,7 +79,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/structure.ts",
+        "path": "packages/model/src/runtime/operations/model-edit/structure.ts",
         "symbol": "applyWalkthroughChanges"
       },
       "id": "vKEsyHFk/0T9enjhi#JGBxddlN",

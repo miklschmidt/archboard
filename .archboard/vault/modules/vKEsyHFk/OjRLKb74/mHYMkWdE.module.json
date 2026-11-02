@@ -7,7 +7,7 @@
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-layout/src/blocks/place.rs",
-    "symbol": "lay_out_board"
+    "symbol": "lay_out_picture"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/OjRLKb74#mHYMkWdE",

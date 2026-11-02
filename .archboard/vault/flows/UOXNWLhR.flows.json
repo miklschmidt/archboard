@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
   "id": "UOXNWLhR",
-  "name": "Board viewer",
+  "name": "Canvas viewer",
   "flows": [
     {
       "id": "vKEsyHFk/UOXNWLhR#hzYlFfAp",
-      "name": "A reader opens a card's board",
-      "summary": "Follows a card's drill-down to a board and variant, in this vault or in the repository that the link names. When nothing can open, the inspector beside the picture says why.",
+      "name": "A reader opens a card's picture",
+      "summary": "Follows a card's drill-down to a model and variant, in this vault or in the repository that the link names. When nothing can open, the inspector beside the picture says why.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#2YI34Bnu",
@@ -26,7 +26,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
             "symbol": "useDrillOpen"
           }
         },
@@ -46,7 +46,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
                     "symbol": "readTarget"
                   }
                 },
@@ -58,7 +58,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
                     "symbol": "RepositoryPlacesContext"
                   }
                 },
@@ -70,7 +70,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/state/semantic-board-canvas/repository-places.ts",
+                    "path": "apps/web/src/ui/state/canvas/repository-places.ts",
                     "symbol": "RepositoryPlacesContext"
                   }
                 },
@@ -86,12 +86,12 @@
                           "id": "vKEsyHFk/UOXNWLhR#jY67brGD",
                           "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
                           "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                          "label": "this vault's repository, from its board list",
+                          "label": "this vault's repository, from its model list",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-                            "symbol": "semanticBoardListQuery"
+                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                            "symbol": "retainedListingQuery"
                           }
                         },
                         {
@@ -102,8 +102,8 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-                            "symbol": "semanticBoardListQuery"
+                            "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                            "symbol": "retainedListingQuery"
                           }
                         }
                       ]
@@ -118,18 +118,18 @@
                   "id": "vKEsyHFk/UOXNWLhR#kQbTreOX",
                   "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
                   "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
-                  "label": "the vault the board is in, or why it cannot be read",
+                  "label": "the vault the model is in, or why it cannot be read",
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
                     "symbol": "placeOf"
                   }
                 },
                 {
                   "id": "vKEsyHFk/UOXNWLhR#5dMmZaIi",
                   "kind": "decision",
-                  "question": "Can the target board be read?",
+                  "question": "Can the target model be read?",
                   "note": "When nothing opens, the inspector beside the picture says why.",
                   "alternatives": [
                     {
@@ -139,24 +139,24 @@
                           "id": "vKEsyHFk/UOXNWLhR#3g4p69YC",
                           "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
                           "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                          "label": "the target board, in its vault",
+                          "label": "the target model, in its vault",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-                            "symbol": "semanticBoardDocumentQuery"
+                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+                            "symbol": "retainedDocumentQuery"
                           }
                         },
                         {
                           "id": "vKEsyHFk/UOXNWLhR#4AxKlNAx",
                           "from": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
                           "to": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
-                          "label": "the board's document",
+                          "label": "the model's document",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-                            "symbol": "semanticBoardDocumentQuery"
+                            "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+                            "symbol": "retainedDocumentQuery"
                           }
                         },
                         {
@@ -167,7 +167,7 @@
                           "kind": "self",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
                             "symbol": "variantOf"
                           }
                         },
@@ -175,11 +175,11 @@
                           "id": "vKEsyHFk/UOXNWLhR#73SmSd76",
                           "from": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
                           "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
-                          "label": "the board and its variant, or why there is none",
+                          "label": "the model and its variant, or why there is none",
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
                             "symbol": "readTarget"
                           }
                         },
@@ -195,18 +195,18 @@
                                   "id": "vKEsyHFk/UOXNWLhR#azDstCp9",
                                   "from": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
                                   "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
-                                  "label": "the board and the variant to open",
+                                  "label": "the model and the variant to open",
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-open.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-drill-open.ts",
                                     "symbol": "onOpenDown"
                                   }
                                 },
                                 {
                                   "id": "vKEsyHFk/UOXNWLhR#PIcwiXJz",
                                   "kind": "decision",
-                                  "question": "Is the board in another repository?",
+                                  "question": "Is the model in another repository?",
                                   "alternatives": [
                                     {
                                       "label": "another repository",
@@ -219,7 +219,7 @@
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
                                             "symbol": "open"
                                           }
                                         }
@@ -232,11 +232,11 @@
                                           "id": "vKEsyHFk/UOXNWLhR#i2rMSHdr",
                                           "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
                                           "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
-                                          "label": "fly into the card, then open the board",
+                                          "label": "fly into the card, then open the model",
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
                                             "symbol": "into"
                                           }
                                         },
@@ -244,11 +244,11 @@
                                           "id": "vKEsyHFk/UOXNWLhR#oLMJm9OH",
                                           "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
                                           "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
-                                          "label": "landed: open the board",
+                                          "label": "landed: open the model",
                                           "kind": "return",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                                             "symbol": "proceed"
                                           }
                                         },
@@ -256,11 +256,11 @@
                                           "id": "vKEsyHFk/UOXNWLhR#t4PcndeY",
                                           "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
                                           "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
-                                          "label": "open the board down",
+                                          "label": "open the model down",
                                           "kind": "sync",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
-                                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+                                            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
                                             "symbol": "open"
                                           }
                                         }
@@ -292,12 +292,15 @@
             }
           ]
         }
+      ],
+      "formerNames": [
+        "A reader opens a card's board"
       ]
     },
     {
       "id": "vKEsyHFk/UOXNWLhR#kLbQ8AUu",
       "name": "A flight carries the reader into a card",
-      "summary": "Flies the camera into a card with the target board placed inside it, so the reader keeps their place. With no motion, picture or drawn card, the board opens the plain way.",
+      "summary": "Flies the camera into a card with the target model placed inside it, so the reader keeps their place. With no motion, picture or drawn card, the model opens the plain way.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#gIakrnWa",
         "vKEsyHFk/UOXNWLhR#hc77pwzB",
@@ -313,11 +316,11 @@
           "id": "vKEsyHFk/UOXNWLhR#f6rguFRY",
           "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
           "to": "vKEsyHFk/UOXNWLhR#hc77pwzB",
-          "label": "fly into the card, then open the board",
+          "label": "fly into the card, then open the model",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
             "symbol": "into"
           }
         },
@@ -337,7 +340,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                     "symbol": "frameClock"
                   }
                 },
@@ -345,11 +348,11 @@
                   "id": "vKEsyHFk/UOXNWLhR#sXXqUBYS",
                   "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
                   "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
-                  "label": "the picture of the board the card opens",
+                  "label": "the picture of the model the card opens",
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+                    "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
                     "symbol": "semanticRenderQuery"
                   }
                 },
@@ -361,7 +364,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+                    "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
                     "symbol": "semanticRenderQuery"
                   }
                 },
@@ -377,11 +380,11 @@
                           "id": "vKEsyHFk/UOXNWLhR#bPspXroW",
                           "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
                           "to": "vKEsyHFk/UOXNWLhR#IH0j4qQo",
-                          "label": "where the board sits and where the camera goes",
+                          "label": "where the model sits and where the camera goes",
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                             "symbol": "legInto"
                           }
                         },
@@ -393,7 +396,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/rules/semantic-board-canvas/camera/dive.ts",
+                            "path": "apps/web/src/ui/rules/canvas/camera/dive.ts",
                             "symbol": "legInto"
                           }
                         },
@@ -413,7 +416,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                                     "symbol": "glide"
                                   }
                                 },
@@ -421,11 +424,11 @@
                                   "id": "vKEsyHFk/UOXNWLhR#qbLnF7rB",
                                   "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
                                   "to": "vKEsyHFk/UOXNWLhR#UCjVcfWj",
-                                  "label": "put the board inside the card",
+                                  "label": "put the model inside the card",
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                                     "symbol": "startDive"
                                   }
                                 },
@@ -435,10 +438,10 @@
                                   "to": "vKEsyHFk/UOXNWLhR#D6ZnKISi",
                                   "label": "glide into the card",
                                   "kind": "sync",
-                                  "note": "If something moves the camera off its course, the board opens the plain way.",
+                                  "note": "If something moves the camera off its course, the model opens the plain way.",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
                                     "symbol": "glide"
                                   }
                                 },
@@ -450,7 +453,7 @@
                                   "kind": "return",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
                                     "symbol": "glide"
                                   }
                                 }
@@ -482,11 +485,11 @@
           "id": "vKEsyHFk/UOXNWLhR#FDi2pdnU",
           "from": "vKEsyHFk/UOXNWLhR#hc77pwzB",
           "to": "vKEsyHFk/UOXNWLhR#gIakrnWa",
-          "label": "open the board the plain way",
+          "label": "open the model the plain way",
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
             "symbol": "proceed"
           }
         },
@@ -494,11 +497,11 @@
           "id": "vKEsyHFk/UOXNWLhR#sPZdeihL",
           "from": "vKEsyHFk/UOXNWLhR#gIakrnWa",
           "to": "vKEsyHFk/UOXNWLhR#3KtX2jdA",
-          "label": "open the board down",
+          "label": "open the model down",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-moves.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-drill-moves.ts",
             "symbol": "open"
           }
         }
@@ -526,7 +529,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
             "symbol": "useWalkthrough"
           }
         },
@@ -538,7 +541,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-walkthrough.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-walkthrough.ts",
             "symbol": "useWalkthrough"
           }
         },
@@ -550,7 +553,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-settled-focus.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-settled-focus.ts",
             "symbol": "beatFocus"
           }
         },
@@ -562,7 +565,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
             "symbol": "subjectOf"
           }
         },
@@ -574,7 +577,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/semantic-board-canvas/board/board-document.ts",
+            "path": "apps/web/src/ui/rules/canvas/reading/document.ts",
             "symbol": "subjectOf"
           }
         },
@@ -586,7 +589,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
             "symbol": "subjectBox"
           }
         },
@@ -598,7 +601,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
             "symbol": "subjectBox"
           }
         },
@@ -618,7 +621,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
                     "symbol": "focusTarget"
                   }
                 }
@@ -635,7 +638,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -659,7 +662,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -676,7 +679,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+                    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
                     "symbol": "beatFocus"
                   }
                 }
@@ -692,7 +695,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+            "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
             "symbol": "beatFocus"
           }
         },
@@ -704,7 +707,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
             "symbol": "useAutoFit"
           }
         },
@@ -724,7 +727,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
                     "symbol": "remember"
                   }
                 },
@@ -736,7 +739,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
                     "symbol": "glide"
                   }
                 }
@@ -753,7 +756,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#DVK0aLi6",
       "name": "A reader works the picture with the pointer",
-      "summary": "Decides what a press becomes: a drag pans, a click picks what is under it or opens a door, and a double-click opens the card's board. The press stops any zoom or ease first, so the picture answers the hand.",
+      "summary": "Decides what a press becomes: a drag pans, a click picks what is under it or opens a door, and a double-click opens the card's model. The press stops any zoom or ease first, so the picture answers the hand.",
       "participants": [
         "vKEsyHFk/UOXNWLhR#3KqRuOEN",
         "vKEsyHFk/UOXNWLhR#FyxVdk20",
@@ -770,7 +773,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
             "symbol": "useDiagramGestures"
           }
         },
@@ -782,7 +785,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
             "symbol": "subjectAt"
           }
         },
@@ -794,7 +797,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
             "symbol": "subjectAt"
           }
         },
@@ -806,7 +809,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
             "symbol": "stop"
           }
         },
@@ -831,7 +834,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                        "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
                         "symbol": "panBy"
                       }
                     }
@@ -850,7 +853,7 @@
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
                     "symbol": "onSelect"
                   }
                 }
@@ -863,11 +866,11 @@
                   "id": "vKEsyHFk/UOXNWLhR#rY5R9er5",
                   "from": "vKEsyHFk/UOXNWLhR#FyxVdk20",
                   "to": "vKEsyHFk/UOXNWLhR#3KqRuOEN",
-                  "label": "open the card's board",
+                  "label": "open the card's model",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-diagram-gestures.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-diagram-gestures.ts",
                     "symbol": "openDown"
                   }
                 },
@@ -877,10 +880,10 @@
                   "to": "vKEsyHFk/UOXNWLhR#2YI34Bnu",
                   "label": "the card picked, when it links down",
                   "kind": "sync",
-                  "note": "Goes on as 'A reader opens a card's board'.",
+                  "note": "Goes on as 'A reader opens a card's picture'.",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+                    "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
                     "symbol": "useDrillOpen"
                   }
                 }
@@ -918,7 +921,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
                     "symbol": "zoomCameraAbout"
                   }
                 },
@@ -930,7 +933,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
                     "symbol": "createCameraStore"
                   }
                 }
@@ -947,7 +950,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
                     "symbol": "zoomAt"
                   }
                 },
@@ -967,7 +970,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
                             "symbol": "zoomCameraAbout"
                           }
                         }
@@ -989,7 +992,7 @@
                               "kind": "sync",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
                                 "symbol": "frameClock"
                               }
                             },
@@ -1001,7 +1004,7 @@
                               "kind": "return",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
                                 "symbol": "frameClock"
                               }
                             },
@@ -1013,7 +1016,7 @@
                               "kind": "self",
                               "anchor": {
                                 "repo": "github.com/miklschmidt/archboard",
-                                "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-camera-motion.ts",
+                                "path": "apps/web/src/ui/hooks/canvas/use-camera-motion.ts",
                                 "symbol": "tick"
                               }
                             }
@@ -1035,7 +1038,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-board-camera.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-picture-camera.ts",
             "symbol": "frameClock"
           }
         }
@@ -1060,7 +1063,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticBoardStage.tsx",
+            "path": "apps/web/src/ui/components/canvas/CanvasStage.tsx",
             "symbol": "useReveal"
           }
         },
@@ -1096,7 +1099,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-reveal.ts",
                             "symbol": "subjectBox"
                           }
                         },
@@ -1108,7 +1111,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/subjects/subjects.ts",
+                            "path": "apps/web/src/ui/clients/canvas/subjects/subjects.ts",
                             "symbol": "subjectBox"
                           }
                         },
@@ -1132,7 +1135,7 @@
                                   "kind": "sync",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
-                                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-reveal.ts",
+                                    "path": "apps/web/src/ui/hooks/canvas/use-reveal.ts",
                                     "symbol": "glide"
                                   }
                                 }
@@ -1172,7 +1175,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
             "symbol": "useLighting"
           }
         },
@@ -1184,7 +1187,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
             "symbol": "LightingInputs"
           }
         },
@@ -1196,7 +1199,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-resting-part.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-resting-part.ts",
             "symbol": "frameClock"
           }
         },
@@ -1216,7 +1219,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
                     "symbol": "standsDown"
                   }
                 }
@@ -1241,7 +1244,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
                             "symbol": "reachOf"
                           }
                         },
@@ -1253,7 +1256,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/rules/semantic-board-canvas/board/reach.ts",
+                            "path": "apps/web/src/ui/rules/canvas/reading/reach.ts",
                             "symbol": "reachOf"
                           }
                         }
@@ -1273,7 +1276,7 @@
                   "kind": "sync",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-sweep.ts",
+                    "path": "apps/web/src/ui/clients/canvas/picture/picture-sweep.ts",
                     "symbol": "sweepLines"
                   }
                 }
@@ -1289,7 +1292,7 @@
           "kind": "return",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
             "symbol": "useLighting"
           }
         },
@@ -1301,7 +1304,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-viewer-marks.ts",
+            "path": "apps/web/src/ui/hooks/canvas/use-viewer-marks.ts",
             "symbol": "lightInk"
           }
         }
@@ -1310,7 +1313,7 @@
     {
       "id": "vKEsyHFk/UOXNWLhR#8y13ofdf",
       "name": "A replay draws a talk frame by frame",
-      "summary": "Drives the viewer from a stepped clock with boards read from the talk. A frame fails if anything moved outside the clock or read another board, so the video shows what was recorded.",
+      "summary": "Drives the viewer from a stepped clock with models read from the talk. A frame fails if anything moved outside the clock or read another model, so the video shows what was recorded.",
       "participants": [
         "vKEsyHFk/yejBBUFY#aixSjfNe",
         "vKEsyHFk/UOXNWLhR#qV7dcNI5",
@@ -1322,12 +1325,12 @@
           "id": "vKEsyHFk/UOXNWLhR#B7t6AbnH",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5",
-          "label": "read the boards from the talk",
+          "label": "read the models from the talk",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/web/src/ui/clients/walkthrough-replay/replay-page.ts",
-            "symbol": "readBoardsFrom"
+            "symbol": "readRetainedFrom"
           }
         },
         {
@@ -1346,12 +1349,12 @@
           "id": "vKEsyHFk/UOXNWLhR#SNxH5IuT",
           "from": "vKEsyHFk/yejBBUFY#aixSjfNe",
           "to": "vKEsyHFk/UOXNWLhR#aYC7if1N",
-          "label": "mount the viewer on the talk's board",
+          "label": "mount the viewer on the talk's model",
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
             "path": "apps/web/src/ui/components/walkthrough-replay/ReplayStage.tsx",
-            "symbol": "SemanticBoardStage"
+            "symbol": "CanvasStage"
           }
         },
         {
@@ -1386,13 +1389,13 @@
             {
               "id": "vKEsyHFk/UOXNWLhR#0jnrsAdp",
               "kind": "loop",
-              "condition": "until the pane shows the talk's board at its step",
+              "condition": "until the pane shows the talk's model at its step",
               "steps": [
                 {
                   "id": "vKEsyHFk/UOXNWLhR#NP2VXtuV",
                   "from": "vKEsyHFk/UOXNWLhR#aYC7if1N",
                   "to": "vKEsyHFk/yejBBUFY#aixSjfNe",
-                  "label": "board, version and step on screen",
+                  "label": "model, version and step on screen",
                   "kind": "return",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
@@ -1417,7 +1420,7 @@
             {
               "id": "vKEsyHFk/UOXNWLhR#hNwozhyx",
               "kind": "decision",
-              "question": "Did anything move outside the clock, or read another board?",
+              "question": "Did anything move outside the clock, or read another model?",
               "alternatives": [
                 {
                   "label": "it did",
@@ -1479,7 +1482,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/web/src/ui/components/semantic-board-canvas/SemanticDiagram.tsx",
+            "path": "apps/web/src/ui/components/canvas/SemanticDiagram.tsx",
             "symbol": "usePictureTransition"
           }
         },
@@ -1499,7 +1502,7 @@
                   "kind": "self",
                   "anchor": {
                     "repo": "github.com/miklschmidt/archboard",
-                    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                    "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                     "symbol": "showPicture"
                   }
                 }
@@ -1521,7 +1524,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     },
@@ -1533,7 +1536,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     }
@@ -1560,7 +1563,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                            "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                             "symbol": "ghostPicture"
                           }
                         },
@@ -1572,7 +1575,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts",
+                            "path": "apps/web/src/ui/clients/canvas/picture/picture-departure.ts",
                             "symbol": "runTraffic"
                           }
                         },
@@ -1584,7 +1587,7 @@
                           "kind": "sync",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-traffic.ts",
+                            "path": "apps/web/src/ui/clients/canvas/picture/picture-traffic.ts",
                             "symbol": "PICTURE_CLOCK"
                           }
                         }
@@ -1609,7 +1612,7 @@
                       "kind": "sync",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     },
@@ -1621,7 +1624,7 @@
                       "kind": "return",
                       "anchor": {
                         "repo": "github.com/miklschmidt/archboard",
-                        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-picture-transition.ts",
+                        "path": "apps/web/src/ui/hooks/canvas/use-picture-transition.ts",
                         "symbol": "frameClock"
                       }
                     }

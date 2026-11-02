@@ -2,11 +2,11 @@
   "order": 34000,
   "name": "Fly into a card",
   "kind": "function",
-  "responsibility": "Opens a card's board by flying the camera into the card, and goes back out the same way; a request it cannot fly opens the plain way",
-  "description": "The flight holds the camera controller's rest from takeoff until the opened board has taken over and fitted. Both pictures inherit the same near or far reading during the flight; releasing the hold applies the opened board's reading once. Reduced motion, missing prefetched pictures and interrupted flights use the plain opening path.",
+  "responsibility": "Opens a card's model by flying the camera into the card, and goes back out the same way; a request it cannot fly opens the plain way",
+  "description": "The flight holds the camera controller's rest from takeoff until the opened model has taken over and fitted. Both pictures inherit the same near or far reading during the flight; releasing the hold applies the opened model's reading once. Reduced motion, missing prefetched pictures and interrupted flights use the plain opening path.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts"
+    "path": "apps/web/src/ui/hooks/canvas/use-dive.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#hc77pwzB",
@@ -15,11 +15,11 @@
     {
       "order": 60000,
       "kind": "call",
-      "label": "where the board sits and where the camera goes",
+      "label": "where the model sits and where the camera goes",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "legInto"
       },
       "id": "vKEsyHFk/UOXNWLhR#h0Y3tFJb",
@@ -28,11 +28,11 @@
     {
       "order": 61000,
       "kind": "call",
-      "label": "the board inside its card, and the fades",
+      "label": "the model inside its card, and the fades",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "startDive"
       },
       "id": "vKEsyHFk/UOXNWLhR#1PbM9cTg",
@@ -46,7 +46,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "glide"
       },
       "id": "vKEsyHFk/UOXNWLhR#gR2omDZs",
@@ -55,11 +55,11 @@
     {
       "order": 63000,
       "kind": "data",
-      "label": "the picture of the board, asked for ahead",
+      "label": "the picture of the model, asked for ahead",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
         "symbol": "semanticRenderQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#9T6sHrUv",
@@ -72,7 +72,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
         "symbol": "FitRequest"
       },
       "id": "vKEsyHFk/UOXNWLhR#glLEAt7s",
@@ -81,11 +81,11 @@
     {
       "order": 65000,
       "kind": "call",
-      "label": "the board above, put up to fly out of its card",
+      "label": "the model above, put up to fly out of its card",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "PICTURE_MOTION_ATTRIBUTE"
       },
       "id": "vKEsyHFk/UOXNWLhR#RORIgWix",
@@ -98,7 +98,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-dive.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-dive.ts",
         "symbol": "frameClock"
       },
       "id": "vKEsyHFk/UOXNWLhR#115rtbFD",

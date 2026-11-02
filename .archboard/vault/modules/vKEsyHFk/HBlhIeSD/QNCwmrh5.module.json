@@ -3,7 +3,7 @@
   "name": "Vault checkouts",
   "kind": "module",
   "responsibility": "Which repository identity the vault's own checkout holds, and which checkout holds any other",
-  "description": "The board listing needs it: a drill-down that names the vault's own repository is a link within the vault, not a link out of it (ADR 0049).",
+  "description": "The model listing needs it: a drill-down that names the vault's own repository is a link within the vault, not a link out of it (ADR 0049).",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-binding/src/runtime/services/vault-checkout.ts"
@@ -34,19 +34,6 @@
   ],
   "outgoing": [
     {
-      "order": 66000,
-      "kind": "call",
-      "label": "the checkouts the registry knows",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
-        "symbol": "listRegistry"
-      },
-      "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
-      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
-    },
-    {
       "order": 40000,
       "kind": "data",
       "label": "resolve bindings through the chosen checkouts",
@@ -57,6 +44,19 @@
         "symbol": "chosenCheckouts"
       },
       "id": "vKEsyHFk/vKEsyHFk#0SFK7vbb",
+      "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
+    },
+    {
+      "order": 66000,
+      "kind": "call",
+      "label": "the checkouts the registry knows",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/code-binding/src/runtime/services/vault-checkout.ts",
+        "symbol": "listRegistry"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#qwdogTBE",
       "to": "vKEsyHFk/HBlhIeSD#nLp2hILd"
     }
   ]

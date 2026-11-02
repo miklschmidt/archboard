@@ -6,7 +6,7 @@
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts",
-    "symbol": "formatBoardRefusal"
+    "symbol": "formatModelRefusal"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/nAmiQ3Vc#cIVCKJIR",

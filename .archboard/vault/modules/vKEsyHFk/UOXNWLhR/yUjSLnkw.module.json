@@ -3,10 +3,10 @@
   "name": "Follow drill-downs",
   "kind": "function",
   "responsibility": "Reads where a card's drill-down leads, one way for the inspector's Open and the card's double-click",
-  "description": "Finds the vault the target board is in (this one, or the chosen checkout of the repository the link names, read from this vault's listing first), reads the target board there and picks the variant the link names, by a name it has or had. A named variant that is not there is reported, never swapped for the current one. The inspector subscribes to the reading and hears the target board change under the name it goes by now; the double-click asks once and gets a promise.",
+  "description": "Finds the vault the target model is in (this one, or the chosen checkout of the repository the link names, read from this vault's listing first), reads the target model there and picks the variant the link names, by a name it has or had. A named variant that is not there is reported, never swapped for the current one. The inspector subscribes to the reading and hears the target model change under the name it goes by now; the double-click asks once and gets a promise.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts"
+    "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#yUjSLnkw",
@@ -15,12 +15,12 @@
     {
       "order": 8000,
       "kind": "call",
-      "label": "read the target board",
+      "label": "read the target model",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-        "symbol": "readBoard"
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "symbol": "readDocument"
       },
       "id": "vKEsyHFk/UOXNWLhR#EIAfMMlW",
       "to": "vKEsyHFk/UOXNWLhR#ntOE7caV"
@@ -28,12 +28,12 @@
     {
       "order": 105000,
       "kind": "call",
-      "label": "the target board's document, in the vault it is in",
+      "label": "the target model's document, in the vault it is in",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-        "symbol": "semanticBoardDocumentQuery"
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "symbol": "retainedDocumentQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#61t3maku",
       "to": "vKEsyHFk/UOXNWLhR#TK7SUGoc"
@@ -45,7 +45,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
         "symbol": "usePaneVault"
       },
       "id": "vKEsyHFk/UOXNWLhR#1mkfOmRs",
@@ -58,7 +58,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
         "symbol": "RepositoryPlacesContext"
       },
       "id": "vKEsyHFk/UOXNWLhR#1YBYgVBE",
@@ -67,28 +67,15 @@
     {
       "order": 131000,
       "kind": "call",
-      "label": "hear the target board change, by the name it has now",
+      "label": "hear the target model change, by the name it has now",
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-drill-target.ts",
-        "symbol": "useSemanticBoardChanges"
+        "path": "apps/web/src/ui/hooks/canvas/use-drill-target.ts",
+        "symbol": "useModelChanges"
       },
       "id": "vKEsyHFk/UOXNWLhR#X1i20uYe",
       "to": "vKEsyHFk/UOXNWLhR#VC7yvPZB"
-    },
-    {
-      "order": 54000,
-      "kind": "call",
-      "label": "move the pane into the repository a drill-down names",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/application/use-drill-repositories.ts",
-        "symbol": "useDrillRepositories"
-      },
-      "id": "vKEsyHFk/yejBBUFY#A19ksdGe",
-      "to": "vKEsyHFk/yejBBUFY#WWPvFeLg"
     }
   ]
 }

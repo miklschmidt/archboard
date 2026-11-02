@@ -3,7 +3,7 @@
   "name": "Model catalogue",
   "kind": "module",
   "responsibility": "Lists repositories and their canonical architecture authority",
-  "description": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live board listings or levels.",
+  "description": "Reads repository identities and canonical model authority through the shared query cache. The navigator opens each model in the active pane. Legacy authority exposes migration guidance instead of fetching live legacy board listings or levels.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "apps/web/src/ui/hooks/architecture-model/use-model-catalog.ts"

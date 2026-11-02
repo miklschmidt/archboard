@@ -5,7 +5,7 @@
   "responsibility": "Combines vault listings and live pane inventory",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/board-catalog/listing.ts"
+    "path": "apps/web/src/ui/rules/model-catalog/listing.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#j7j12e3U",
@@ -32,8 +32,8 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/board-catalog/listing.ts",
-        "symbol": "boardKeyFor"
+        "path": "apps/web/src/ui/rules/model-catalog/listing.ts",
+        "symbol": "paneKeyFor"
       },
       "id": "vKEsyHFk#YZOiFcZt",
       "to": "vKEsyHFk/yejBBUFY#DW1hIFRx"

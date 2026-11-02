@@ -40,7 +40,7 @@
     {
       "order": 17000,
       "kind": "call",
-      "label": "report the pane, show a board, take back, pick a checkout",
+      "label": "report the pane, show a model, take back, pick a checkout",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -49,6 +49,20 @@
       },
       "id": "vKEsyHFk/yejBBUFY#5U5bpM9T",
       "to": "vKEsyHFk/yejBBUFY#6uWT4mUj"
+    },
+    {
+      "order": 66000,
+      "kind": "http",
+      "label": "the person activated a checkout (/api/panes/conversation)",
+      "description": "A focus, a model the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
+        "symbol": "showConversation"
+      },
+      "id": "vKEsyHFk/9ncuT5DP#99za8lFO",
+      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     },
     {
       "order": 67000,
@@ -62,20 +76,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#MCGiGynf",
       "to": "vKEsyHFk/Oi6SBIAM#80IozszZ"
-    },
-    {
-      "order": 66000,
-      "kind": "http",
-      "label": "the person activated a checkout (/api/panes/conversation)",
-      "description": "A focus, a board the person opened or a pick from the dock's list names the checkout whose conversation the tab shows. shown-conversation-route.ts calls showConversation inside the Archboard server; no browser imports the private tab-sessions file.",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/shown-conversation.ts",
-        "symbol": "showConversation"
-      },
-      "id": "vKEsyHFk/9ncuT5DP#99za8lFO",
-      "to": "vKEsyHFk/9ncuT5DP#Q2sXZO7T"
     }
   ]
 }

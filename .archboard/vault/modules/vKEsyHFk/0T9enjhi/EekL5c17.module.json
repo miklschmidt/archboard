@@ -4,6 +4,10 @@
   "kind": "module",
   "responsibility": "Decodes legacy board documents only for explicit migration inventory and exact retained-original readings.",
   "description": "Retains the legacy decoder for explicit migration and exact originals. Legacy public authoring, ownership, moves, and automatic schema persistence retire.",
+  "binding": {
+    "repo": "github.com/miklschmidt/archboard",
+    "path": "packages/model/src/runtime/store/format"
+  },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#EekL5c17",
   "parent": "vKEsyHFk/vKEsyHFk#DmbKboxU",
@@ -31,9 +35,5 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": [],
-  "binding": {
-    "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/format"
-  }
+  "outgoing": []
 }

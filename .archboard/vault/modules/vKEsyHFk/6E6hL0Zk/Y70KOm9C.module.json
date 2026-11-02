@@ -3,7 +3,7 @@
   "name": "Route handlers",
   "kind": "module",
   "responsibility": "Routes canonical model read, initialization, edit, migration, archive, render, code, repository, and pane operations through their owners.",
-  "description": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy semantic-board content, writer, claim, rename, discard, and move routes are no longer mounted.",
+  "description": "The application mounts canonical architecture routes alongside code, repository, service, and pane routes. Legacy board content, writer, claim, rename, discard, and move routes are no longer mounted.",
   "groups": [
     "drawing"
   ],

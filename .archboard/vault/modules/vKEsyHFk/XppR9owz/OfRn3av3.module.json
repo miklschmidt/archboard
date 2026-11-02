@@ -6,7 +6,7 @@
   "description": "The remaining client calls the vault diagnostic route through the shared request transport. Canonical model reads, writes, and rendering use their dedicated client.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+    "path": "apps/cli/src/cli/clients/server/vault-check.ts",
     "symbol": "checkSemanticVaultOnServer"
   },
   "schemaVersion": 1,
@@ -39,23 +39,6 @@
   "outgoing": [
     {
       "order": 23000,
-      "kind": "call",
-      "label": "requestJson",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
-        "symbol": "requestJson"
-      },
-      "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
-      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
-    },
-    {
-      "order": 23000,
       "kind": "http",
       "label": "check code",
       "emphasis": "normal",
@@ -66,6 +49,23 @@
       },
       "id": "vKEsyHFk/HBlhIeSD#trvs8oQv",
       "to": "vKEsyHFk/HBlhIeSD#3bPZg9a5"
+    },
+    {
+      "order": 23000,
+      "kind": "call",
+      "label": "requestJson",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/cli/src/cli/clients/server/vault-check.ts",
+        "symbol": "requestJson"
+      },
+      "id": "vKEsyHFk/XppR9owz#EBy8Rjwh",
+      "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     }
   ]
 }

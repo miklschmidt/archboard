@@ -5,7 +5,7 @@
   "responsibility": "Resolves current bindings and refuses substitutes for historical source",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/read/model-code.ts"
+    "path": "packages/model/src/runtime/operations/read/model-code.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#jQ671Dxs",
@@ -39,7 +39,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-code.ts",
+        "path": "packages/model/src/runtime/operations/read/model-code.ts",
         "symbol": "git"
       },
       "id": "vKEsyHFk/0T9enjhi#RQgSYJGP",

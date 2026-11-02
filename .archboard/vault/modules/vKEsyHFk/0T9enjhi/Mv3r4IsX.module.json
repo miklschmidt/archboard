@@ -6,7 +6,7 @@
   "description": "Resolves explicit repository, model, subject, and state references. Same-model reads use the captured candidate without reopening its public write barrier. Foreign reads retain their normal ownership checks.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/read/model-references.ts"
+    "path": "packages/model/src/runtime/operations/read/model-references.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#Mv3r4IsX",
@@ -40,7 +40,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "path": "packages/model/src/runtime/operations/read/model-references.ts",
         "symbol": "readSelectedState"
       },
       "id": "vKEsyHFk#bNZaCkOt",
@@ -53,7 +53,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "path": "packages/model/src/runtime/operations/read/model-references.ts",
         "symbol": "readCheckpointModel"
       },
       "id": "vKEsyHFk/0T9enjhi#vpsNmFef",
@@ -66,7 +66,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/read/model-references.ts",
+        "path": "packages/model/src/runtime/operations/read/model-references.ts",
         "symbol": "readArchitectureModel"
       },
       "id": "vKEsyHFk/0T9enjhi#Yw4B2gp3",

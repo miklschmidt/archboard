@@ -5,7 +5,7 @@
   "responsibility": "Shares repository requests and the tab query cache",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/board-catalog"
+    "path": "apps/web/src/ui/clients/model-catalog"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk#dneK7oM5",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/board-catalog/queries.ts",
+        "path": "apps/web/src/ui/clients/model-catalog/queries.ts",
         "symbol": "fetchPaneInventory"
       },
       "id": "vKEsyHFk/yejBBUFY#fbpFPAWn",
@@ -31,7 +31,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
+        "path": "apps/web/src/ui/clients/model-catalog/repositories.ts",
         "symbol": "requestJson"
       },
       "id": "vKEsyHFk/yejBBUFY#n41AFv0z",
@@ -44,11 +44,11 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/board-catalog/repositories.ts",
+        "path": "apps/web/src/ui/clients/model-catalog/repositories.ts",
         "symbol": "fetchRepositories"
       },
-      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa",
-      "id": "vKEsyHFk#sbRLNpob"
+      "id": "vKEsyHFk#sbRLNpob",
+      "to": "vKEsyHFk/HBlhIeSD#KLt72lWa"
     }
   ]
 }

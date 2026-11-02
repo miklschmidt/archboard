@@ -5,7 +5,7 @@
   "responsibility": "Reads the vault's vocabulary and appearance from its config.yaml, and seeds that file in a new vault",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/store/configuration.ts"
+    "path": "packages/model/src/runtime/store/configuration.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#AJGft3Pe",

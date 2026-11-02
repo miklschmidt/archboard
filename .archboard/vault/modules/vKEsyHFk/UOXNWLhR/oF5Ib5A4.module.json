@@ -2,10 +2,10 @@
   "order": 53000,
   "name": "Picture departure",
   "kind": "module",
-  "responsibility": "A picture leaving a pane for another board: it zooms into an opened card, draws away going back, else fades, and a late leaver finishes as a ghost",
+  "responsibility": "A picture leaving a pane for another model: it zooms into an opened card, draws away going back, else fades, and a late leaver finishes as a ghost",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts"
+    "path": "apps/web/src/ui/clients/canvas/picture/picture-departure.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#oF5Ib5A4",
@@ -18,7 +18,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/picture/picture-departure.ts",
+        "path": "apps/web/src/ui/clients/canvas/picture/picture-departure.ts",
         "symbol": "runTraffic"
       },
       "id": "vKEsyHFk/UOXNWLhR#OAY8mj0y",

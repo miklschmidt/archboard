@@ -2,8 +2,8 @@
   "order": 17000,
   "name": "Server client",
   "kind": "module",
-  "responsibility": "Reads what the server reports about itself, its health and its sync status, and shows a refused board request the way the CLI prints it",
-  "description": "Health and sync status ask the shared request transport, which handles server identity and errors. The claim, pane and board routes have clients of their own.",
+  "responsibility": "Reads what the server reports about itself, its health and its sync status, and shows a refused model request the way the CLI prints it",
+  "description": "Health and sync status ask the shared request transport, which handles server identity and errors. The claim, pane and model routes have clients of their own.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/server-lifecycle/src/runtime/clients/server-client.ts"

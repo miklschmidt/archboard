@@ -2,14 +2,14 @@
   "order": 15000,
   "name": "Semantic queries",
   "kind": "function",
-  "responsibility": "The query options and freshness of the listing, a board's document, a picture and a board's locality",
-  "description": "No timer: a picture and a document stay fresh until their board announces a new version, and are read again on a reconnect. The last picture of the same board stays as the placeholder while another reading of it is drawn. A board's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a board of the same name. A listing it reads is handed to the refresh module, which reads again what moved since.",
+  "responsibility": "The query options and freshness of the listing, a model's document, a picture and a model's locality",
+  "description": "No timer: a picture and a document stay fresh until their model announces a new version, and are read again on a reconnect. The last picture of the same model stays as the placeholder while another reading of it is drawn. A model's locality is asked once for each pick of a part, and never on a timer, a return to the tab or a reconnect. Every key names a vault, because two repositories can each have a model of the same name. A listing it reads is handed to the refresh module, which reads again what moved since.",
   "groups": [
     "drawing"
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts"
+    "path": "apps/web/src/ui/clients/canvas/reads/queries.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#TK7SUGoc",
@@ -18,11 +18,11 @@
     {
       "order": 3000,
       "kind": "data",
-      "label": "the board document",
+      "label": "the legacy board",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/semantic-board-canvas/board/board-document.ts",
+        "path": "apps/web/src/ui/rules/canvas/reading/document.ts",
         "symbol": "readVariant"
       },
       "id": "vKEsyHFk/UOXNWLhR#55rosWUN",
@@ -31,11 +31,11 @@
     {
       "order": 4000,
       "kind": "data",
-      "label": "the render answer, code findings, a board's locality",
+      "label": "the render answer, code findings, a model's locality",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
         "symbol": "codeFindingsQuery"
       },
       "id": "vKEsyHFk/UOXNWLhR#IJQe6RQy",
@@ -48,7 +48,7 @@
       "emphasis": "hero",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
         "symbol": "pictureSource"
       },
       "id": "vKEsyHFk/UOXNWLhR#HPCTlv5B",
@@ -61,8 +61,8 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-        "symbol": "boardReads"
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+        "symbol": "retainedReads"
       },
       "id": "vKEsyHFk#f43RMTLN",
       "to": "vKEsyHFk/UOXNWLhR#qV7dcNI5"
@@ -74,8 +74,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-        "symbol": "semanticBoardKeys"
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+        "symbol": "readKeys"
       },
       "id": "vKEsyHFk/UOXNWLhR#p9gP1ZtC",
       "to": "vKEsyHFk/UOXNWLhR#nMKLaMje"
@@ -87,8 +87,8 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/clients/semantic-board-canvas/reads/queries.ts",
-        "symbol": "boardsListed"
+        "path": "apps/web/src/ui/clients/canvas/reads/queries.ts",
+        "symbol": "modelsListed"
       },
       "id": "vKEsyHFk/UOXNWLhR#GNx2x7VX",
       "to": "vKEsyHFk/UOXNWLhR#OeUYLDxp"

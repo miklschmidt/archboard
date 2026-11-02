@@ -1,6 +1,6 @@
 {
   "order": 12000,
-  "name": "Board announcements",
+  "name": "Model announcements",
   "kind": "module",
   "responsibility": "Publishes complete canonical subject-claim and durable action snapshots with explicit vault identity to panes.",
   "description": "Consumes the public model feed and sends complete vault snapshots through the existing pane broadcast. Multiple subject claims may coexist. Only a durable operation receipt supplies writer and doing attribution. After the last claim ends, a durable action lingers briefly and then the tracker sends an empty snapshot.",
@@ -26,5 +26,8 @@
       "path": "backlog/tasks/task-549 - Replace-board-documents-with-a-canonical-module-model-and-compact-proposal-history.md"
     }
   ],
-  "outgoing": []
+  "outgoing": [],
+  "formerNames": [
+    "Board announcements"
+  ]
 }

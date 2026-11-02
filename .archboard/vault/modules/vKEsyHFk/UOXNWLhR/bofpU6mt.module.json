@@ -6,7 +6,7 @@
   "description": "The stage provides it over the picture and the sidebar, which are siblings. Both asks belong to the part that is picked out and go when the pick does.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/components/semantic-board-canvas/Peek.tsx"
+    "path": "apps/web/src/ui/components/canvas/Peek.tsx"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#bofpU6mt",
@@ -19,7 +19,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-lighting.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-lighting.ts",
         "symbol": "LightingInputs"
       },
       "id": "vKEsyHFk/UOXNWLhR#Nkoad0P5",

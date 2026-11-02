@@ -1,9 +1,9 @@
 {
   "order": 30000,
-  "name": "Board catalogue",
+  "name": "Context catalogue",
   "kind": "module",
-  "responsibility": "Archboard's context for the coordinator: the catalogue of the boards and variants in the vault of the pane the session presents through, read whole",
-  "description": "Realtime voice reads it as the brief of each voice start, and keeps it on the coordinator's thread while voice is live: when the presenting vault or its boards change, the whole catalogue is read again and replaces the one before.",
+  "responsibility": "Archboard's context for the coordinator: the catalogue of the models and variants in the vault of the pane the session presents through, read whole",
+  "description": "Realtime voice reads it as the brief of each voice start, and keeps it on the coordinator's thread while voice is live: when the presenting vault or its models change, the whole catalogue is read again and replaces the one before.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workbench/src/server/services/host/archboard-context-source.ts"
@@ -31,5 +31,8 @@
       "id": "vKEsyHFk#zeayswzH",
       "to": "vKEsyHFk/Oi6SBIAM#mStVd7fZ"
     }
+  ],
+  "formerNames": [
+    "Board catalogue"
   ]
 }

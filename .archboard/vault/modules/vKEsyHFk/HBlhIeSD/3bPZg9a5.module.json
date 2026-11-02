@@ -35,7 +35,7 @@
     {
       "order": 31000,
       "kind": "call",
-      "label": "run: the boards, the plans, the pass and behind",
+      "label": "run: the models, the plans, the pass and behind",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -74,7 +74,7 @@
     {
       "order": 65000,
       "kind": "call",
-      "label": "runs the code check: boards, plans, pass and behind",
+      "label": "runs the code check: models, plans, pass and behind",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",

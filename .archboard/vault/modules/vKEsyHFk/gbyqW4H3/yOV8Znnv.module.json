@@ -1,12 +1,12 @@
 {
   "order": 14000,
-  "name": "Board answer",
+  "name": "Legacy board answer",
   "kind": "function",
-  "responsibility": "Resolves variant, view, scope and standing from one board before anything is drawn, and names the input that the picture is drawn from",
-  "description": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored. A title asked for without words is named here, from the board, the view, the variant and what it is compared with, because only the board knows those names. A picture asked against a named variant reads relative to that variant and is drawn without the Planned frame, because what it adds is judged against the variant named and not against the board's lack of a current one (ADR 0031). After the drawing, the answer keeps the standing to the subjects the drawing placed and names each of them (nodes, edges, flows and steps), so the panel, a receipt and the key count only marks the picture draws. Beside the answer it names the drawn input: the drawn variant and the variant it is read against without their walkthroughs, the view's reading, the vault's presentation policy, the board's level, the Planned frame and the title, so a render recipe can fingerprint what the picture says and not the board's version or name.",
+  "responsibility": "Resolves variant, view, scope and standing from one model before anything is drawn, and names the input that the picture is drawn from",
+  "description": "How a proposal's added, removed and changed subjects are worked out from the two variants' shared identities, per render, and never stored. A title asked for without words is named here, from the model, the view, the variant and what it is compared with, because only the model knows those names. A picture asked against a named variant reads relative to that variant and is drawn without the Planned frame, because what it adds is judged against the variant named and not against the model's lack of a current one (ADR 0031). After the drawing, the answer keeps the standing to the subjects the drawing placed and names each of them (nodes, edges, flows and steps), so the panel, a receipt and the key count only marks the picture draws. Beside the answer it names the drawn input: the drawn variant and the variant it is read against without their walkthroughs, the view's reading, the vault's presentation policy, the model's level, the Planned frame and the title, so a render recipe can fingerprint what the picture says and not the model's version or name.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/renderer/src/shared/rules/render/board.ts"
+    "path": "packages/renderer/src/shared/rules/render/legacy-board.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/gbyqW4H3#yOV8Znnv",
@@ -23,7 +23,7 @@
       },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
+        "path": "packages/renderer/src/shared/rules/render/legacy-board.ts",
         "symbol": "renderSemanticView"
       },
       "id": "vKEsyHFk/gbyqW4H3#iyXO5GUb",
@@ -32,15 +32,18 @@
     {
       "order": 29000,
       "kind": "dependency",
-      "label": "the board document",
+      "label": "the legacy board",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/renderer/src/shared/rules/render/board.ts",
+        "path": "packages/renderer/src/shared/rules/render/legacy-board.ts",
         "symbol": "addressedVariant"
       },
       "id": "vKEsyHFk/vKEsyHFk#8j8wv5FT",
       "to": "vKEsyHFk#vZUWUgyb"
     }
+  ],
+  "formerNames": [
+    "Board answer"
   ]
 }

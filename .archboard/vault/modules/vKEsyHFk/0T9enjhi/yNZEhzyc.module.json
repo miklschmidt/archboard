@@ -6,7 +6,7 @@
   "description": "Applies flow and message changes within one complete model edit. Explicitly removed messages do not block endpoint removal. Surviving edited or moved messages still require valid endpoints.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/model-edit/flows.ts"
+    "path": "packages/model/src/runtime/operations/model-edit/flows.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#yNZEhzyc",
@@ -40,7 +40,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/board/src/runtime/operations/model-edit/flows.ts",
+        "path": "packages/model/src/runtime/operations/model-edit/flows.ts",
         "symbol": "applyFlowChanges"
       },
       "id": "vKEsyHFk/0T9enjhi#yUvd87du",

@@ -2,7 +2,7 @@
   "order": 22000,
   "name": "Block layout",
   "kind": "module",
-  "responsibility": "Lays the board out as blocks: ranks the cards of each block, packs blocks and routes the lines between them",
+  "responsibility": "Lays the model out as blocks: ranks the cards of each block, packs blocks and routes the lines between them",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "crates/archboard-layout/src/blocks/mod.rs"

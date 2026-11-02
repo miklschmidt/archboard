@@ -2,10 +2,10 @@
   "order": 46000,
   "name": "Workspace restore decisions",
   "kind": "module",
-  "responsibility": "Plans workspace restore steps and records unreachable boards",
+  "responsibility": "Plans workspace restore steps and records unreachable models",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/board-routing/restore.ts"
+    "path": "apps/web/src/ui/rules/reading-routing/restore.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/yejBBUFY#KjwB3zCC",

@@ -6,6 +6,7 @@
     {
       "id": "vKEsyHFk/XppR9owz#QLEP9gr2",
       "name": "Taking argv to one command",
+      "summary": "Hands the run to another checkout's bin/archboard when one holds it, applies --url and -C, refuses a removed variable and selects one contract. The command then runs one source against one vault.",
       "participants": [
         "vKEsyHFk/XppR9owz#peyArgPx",
         "vKEsyHFk/XppR9owz#NG7OXLv9",
@@ -215,12 +216,12 @@
                                   "id": "vKEsyHFk/XppR9owz#riGzuPxU",
                                   "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
                                   "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                  "label": "refuse the removed board forms",
+                                  "label": "refuse the removed model forms",
                                   "kind": "self",
                                   "anchor": {
                                     "repo": "github.com/miklschmidt/archboard",
                                     "path": "apps/cli/src/cli/operations/invocation/session.ts",
-                                    "symbol": "refuseRetiredBoardForms"
+                                    "symbol": "refuseRetiredForms"
                                   }
                                 },
                                 {
@@ -276,7 +277,7 @@
                                           "id": "vKEsyHFk/XppR9owz#h0icdPzJ",
                                           "from": "vKEsyHFk/XppR9owz#PQcK5dF2",
                                           "to": "vKEsyHFk/XppR9owz#PQcK5dF2",
-                                          "label": "keep the stated board, doing and version for every request",
+                                          "label": "keep the stated model, doing and version for every request",
                                           "kind": "self",
                                           "anchor": {
                                             "repo": "github.com/miklschmidt/archboard",
@@ -324,12 +325,12 @@
             }
           ]
         }
-      ],
-      "summary": "Hands the run to another checkout's bin/archboard when one holds it, applies --url and -C, refuses a removed variable and selects one contract. The command then runs one source against one vault."
+      ]
     },
     {
       "id": "vKEsyHFk/XppR9owz#Xlfo3lAv",
       "name": "Read canonical vault diagnostics",
+      "summary": "The CLI's read of /api/vault/check, which first proves that this checkout's server answers. Another service or checkout gets SERVER_UNREACHABLE, so a command never reports another vault's diagnostics.",
       "participants": [
         "vKEsyHFk/XppR9owz#OfRn3av3",
         "vKEsyHFk/XppR9owz#yHgIapK7",
@@ -347,7 +348,7 @@
           "kind": "sync",
           "anchor": {
             "repo": "github.com/miklschmidt/archboard",
-            "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
             "symbol": "requestJson"
           }
         },
@@ -458,7 +459,7 @@
                           "kind": "return",
                           "anchor": {
                             "repo": "github.com/miklschmidt/archboard",
-                            "path": "apps/cli/src/cli/clients/server/semantic-boards.ts",
+                            "path": "apps/cli/src/cli/clients/server/vault-check.ts",
                             "symbol": "checkSemanticVaultOnServer"
                           }
                         }
@@ -470,12 +471,12 @@
             }
           ]
         }
-      ],
-      "summary": "The CLI's read of /api/vault/check, which first proves that this checkout's server answers. Another service or checkout gets SERVER_UNREACHABLE, so a command never reports another vault's diagnostics."
+      ]
     },
     {
       "id": "vKEsyHFk/XppR9owz#ekeJcn8d",
       "name": "Starting the server",
+      "summary": "Gives a command its server: it reuses one that identifies itself, refuses a port that something else holds, or spawns one and waits for /health. A failed start is stopped and cleaned up.",
       "participants": [
         "vKEsyHFk/XppR9owz#XKjn4icZ",
         "vKEsyHFk/XppR9owz#eMSAZPvG",
@@ -739,8 +740,7 @@
             }
           ]
         }
-      ],
-      "summary": "Gives a command its server: it reuses one that identifies itself, refuses a port that something else holds, or spawns one and waits for /health. A failed start is stopped and cleaned up."
+      ]
     }
   ]
 }

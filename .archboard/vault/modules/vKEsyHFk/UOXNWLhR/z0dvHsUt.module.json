@@ -9,7 +9,7 @@
   ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts"
+    "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/UOXNWLhR#z0dvHsUt",
@@ -22,7 +22,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/hooks/semantic-board-canvas/use-auto-fit.ts",
+        "path": "apps/web/src/ui/hooks/canvas/use-auto-fit.ts",
         "symbol": "useAutoFit"
       },
       "id": "vKEsyHFk/UOXNWLhR#ttcJkRoJ",
@@ -35,7 +35,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
         "symbol": "subjectBox"
       },
       "id": "vKEsyHFk/UOXNWLhR#pjGLTugH",
@@ -48,7 +48,7 @@
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
         "symbol": "subjectOf"
       },
       "id": "vKEsyHFk/UOXNWLhR#5oNIinxP",
@@ -61,7 +61,7 @@
       "emphasis": "muted",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/web/src/ui/rules/semantic-board-canvas/walkthrough/narrative.ts",
+        "path": "apps/web/src/ui/rules/canvas/walkthrough/narrative.ts",
         "symbol": "unionRect"
       },
       "id": "vKEsyHFk/UOXNWLhR#gPCozayF",

@@ -6,7 +6,7 @@
   "description": "Reads one live canonical model or an exact retained reading. The shared decoder orders collections and walkthroughs consistently. Legacy bytes serve explicit migration and original history only.",
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
-    "path": "packages/board/src/runtime/operations/read"
+    "path": "packages/model/src/runtime/operations/read"
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/0T9enjhi#cNaEpWjJ",

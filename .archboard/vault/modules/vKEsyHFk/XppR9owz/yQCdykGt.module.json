@@ -39,7 +39,7 @@
     {
       "order": 17000,
       "kind": "call",
-      "label": "board operation",
+      "label": "model operation",
       "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
@@ -85,8 +85,8 @@
         "path": "apps/cli/src/cli/operations/vault/vault.ts",
         "symbol": "codeCheckOnServer"
       },
-      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS",
-      "id": "vKEsyHFk#BnbTGVun"
+      "id": "vKEsyHFk#BnbTGVun",
+      "to": "vKEsyHFk/HBlhIeSD#5SMX69gS"
     }
   ]
 }
