@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T15:00:00Z'
+updated_date: '2026-11-02T16:48:00Z'
 labels:
   - reader
   - design
@@ -31,7 +31,7 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #7 This model names applications as Application, and keeps Service for what serves
 - [x] #8 Page start to Talk contract is a call
 - [x] #9 A label never stands over a stretch of its own line (Vault address to Vault finder)
-- [ ] #10 The full gate passes and an independent review of the final diff approves
+- [x] #10 The full gate passes and an independent review of the final diff approves
 - [ ] #11 The README assets show the final picture
 <!-- AC:END -->
 
@@ -41,4 +41,6 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 Decisions: a tip stands in the top corner across from the pointer, with its delay unchanged at 450 ms. A presented walkthrough box takes the foot of the pane, so the tip keeps to the top. One picked line keeps a gold bed at 0.3 opacity. Several lines keep their own ink and stay selected for raising and picking, through the quietLines mark. A door with no colour stands in the neutral finish everywhere, which also affects external and other in the default configuration. In this model, module, function and external claim no colour, Source code is a new group, and eight packages take the colour of their concern. The other eight root packages share teal because they are the shared foundation. Route and datastore share cyan, and ui, config and checks share pink, because these kinds are rare. Doors avoid amber, green and red because these read as gold, added and removed. Relationship colours stay. The model change is a direct edit of current. Proposal JTZvj2vi followed it and was not adopted. capture-native-fixture.ts refuses here, because reading proposal LjzZMsi7 of examples/web-shop needs an archive, so the svg of the recommendations fixture was redrawn from its stored request.
 
 Undecided, for the owner: why flowcharts show the module icon so often. Boxes carry the receiver's kind, and I recommended dropping the icon because the line under each box already names the receiver. Nothing changed yet. Superseded decisions: the top corner for tips, the faint bed under one line, the quiet lines mark, and the row of tags under a name are all gone. Tips now stand against their part, a chosen line's label wears the ring, and a card widens for its tags.
+
+Gate 9 on 600456d1a passed with exit 0, 21 of 21 tasks and 49 of 49 browser owners. The review of 204e86cc2..600456d1a ended APPROVE after five delivered rounds; one round was cancelled unread. S4 was at first declined on a sampling check that was too coarse; a check at one pixel steps showed the reviewer's U-shaped overlap on board-rasterizer.json, so first_fit in selection.rs takes a later route when words would stand on their own line, and keeps the first route when none is clear. S8, a nit about partial improvement when an overlap persists across every candidate, is declined: no reading shows that case. The block packing test was deleted because its outcome depended on that overlap; the column rule is now a unit test. A wider tagged card can change how a fan wraps: the fan test's group is now named Writes, and with Board writes that fan takes three rows.
 <!-- SECTION:NOTES:END -->
