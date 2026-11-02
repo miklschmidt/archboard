@@ -396,6 +396,17 @@ impl Stage {
         self.lighting.set(light, now);
     }
 
+    /// Start a flight's clock, and tell it where the last picture stands.
+    fn take_off(&mut self, now: f64) {
+        let Some(flight) = &mut self.flight else {
+            return;
+        };
+        flight.begin(now);
+        if let Some(ghost) = &self.ghost {
+            flight.rebase(ghost.camera, self.presentation.camera);
+        }
+    }
+
     /// Bring every changing value to a moment.
     fn advance(&mut self, now: f64) {
         self.now = now;
@@ -406,9 +417,7 @@ impl Stage {
         };
         self.swap_views(now);
         self.presentation.far = self.far.at(now);
-        if let Some(flight) = &mut self.flight {
-            flight.begin(now);
-        }
+        self.take_off(now);
         if std::mem::take(&mut self.lit_afresh) {
             self.lighting.stand();
         }

@@ -10,15 +10,15 @@
 use std::collections::HashMap;
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Group, Item, Purpose, Shape, Stroke, Token, Viewport};
+use archboard_scene::scene::{Group, Item, Purpose, Shape, Stroke, Token, Transform, Viewport};
 
-use super::ease::{ease_out, phase};
+use super::ease::{carried, ease_out, phase};
 use super::found::Found;
 use crate::timing::Curve;
 
 /// The curve of the front: it leaves the wave of cards behind early and settles
 /// slowly, so that nothing is seen to stop.
-const OPENS: Curve = Curve(0.3, 0.0, 0.1, 1.0);
+pub(super) const OPENS: Curve = Curve(0.3, 0.0, 0.1, 1.0);
 
 /// How far past its box a container's drawing can reach.
 const ROOM: f64 = 3.0;
@@ -66,7 +66,7 @@ impl Front {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct Way {
     /// All that the container draws.
-    whole: Rect,
+    pub(super) whole: Rect,
     /// The well, where the edge lands: the tab stands above it.
     well: Rect,
     front: Front,
@@ -74,6 +74,13 @@ pub(super) struct Way {
     near: f64,
     /// How far the front goes before it has passed all of the container.
     far: f64,
+}
+
+impl Way {
+    /// Where the front finishes.
+    pub(super) fn end(&self) -> f64 {
+        self.front.end
+    }
 }
 
 /// The two boxes in one.
@@ -111,6 +118,41 @@ fn distances(rect: Rect, middle: Point) -> (f64, f64) {
     (near_x.max(near_y), far_x.max(far_y))
 }
 
+/// The box a container shows itself in while a move that was cut short has it.
+fn under_way(group: &Group) -> Option<Rect> {
+    let Item::Viewport(viewport) = group.items.first()? else {
+        return None;
+    };
+    let placed = group.transform.unwrap_or(Transform::translate(0.0, 0.0));
+    Some(carried(viewport.frame, placed))
+}
+
+/// The containers among some groups: each one's id, all that it draws, and its well.
+pub(super) fn containers<'a>(groups: &[Found<'a>]) -> Vec<(&'a str, Rect, Rect)> {
+    let mut boxes: Vec<(&str, Rect, Rect)> = Vec::new();
+    for group in groups.iter().filter(|group| group.is_region()) {
+        let cut_short = under_way(group.group);
+        let Some(frame) = cut_short.or(group.frame) else {
+            continue;
+        };
+        let landed = group.atlas.map_or(frame, |atlas| union(atlas, frame));
+        let drawn = cut_short.unwrap_or(landed);
+        match boxes.iter_mut().find(|(id, ..)| *id == group.id) {
+            Some((_, whole, _)) => *whole = union(*whole, drawn),
+            None => boxes.push((group.id, drawn, frame)),
+        }
+    }
+    for (_, whole, _) in &mut boxes {
+        *whole = Rect {
+            x: whole.x - ROOM,
+            y: whole.y - ROOM,
+            width: whole.width + ROOM * 2.0,
+            height: whole.height + ROOM * 2.0,
+        };
+    }
+    boxes
+}
+
 /// How the containers among some groups open, by id: one front out of `middle`
 /// between two points of the move, which ends as it passes the last of them. A
 /// container's frame and its header open as one.
@@ -119,23 +161,10 @@ pub(super) fn ways<'a>(
     middle: Point,
     (start, end): (f64, f64),
 ) -> HashMap<&'a str, Way> {
-    let mut boxes: Vec<(&str, Rect, Rect)> = Vec::new();
-    for group in groups.iter().filter(|group| group.is_region()) {
-        let Some(frame) = group.frame else { continue };
-        match boxes.iter_mut().find(|(id, ..)| *id == group.id) {
-            Some((_, whole, _)) => *whole = union(*whole, frame),
-            None => boxes.push((group.id, frame, frame)),
-        }
-    }
-    let grown = |whole: Rect| Rect {
-        x: whole.x - ROOM,
-        y: whole.y - ROOM,
-        width: whole.width + ROOM * 2.0,
-        height: whole.height + ROOM * 2.0,
-    };
+    let boxes = containers(groups);
     let reach = boxes
         .iter()
-        .map(|&(_, whole, _)| distances(grown(whole), middle).1)
+        .map(|&(_, whole, _)| distances(whole, middle).1)
         .fold(0.0, f64::max);
     let front = Front {
         middle,
@@ -146,7 +175,6 @@ pub(super) fn ways<'a>(
     boxes
         .into_iter()
         .map(|(id, whole, well)| {
-            let whole = grown(whole);
             let (near, far) = distances(whole, middle);
             let way = Way {
                 whole,
@@ -181,7 +209,7 @@ impl Opening {
 
     /// Where the container finishes opening.
     pub(super) fn end(&self) -> f64 {
-        self.way.front.end
+        self.way.end()
     }
 
     /// The container at a moment of the move.
@@ -235,10 +263,18 @@ mod tests {
 
     use super::super::found::found;
     use super::super::testing::{PHASES, card, drawing, rect, region, scene};
-    use super::super::{Between, Entrance};
+    use super::super::{Between, Entrance, Handover};
     use super::{Opening, ways};
 
     const MIDDLE: Point = Point { x: 200.0, y: 100.0 };
+
+    /// A tall container round the middle of the board.
+    const TALL: Rect = Rect {
+        x: 170.0,
+        y: 20.0,
+        width: 60.0,
+        height: 160.0,
+    };
 
     /// What box shows a group, when one does.
     fn shown_box(group: &Group) -> Option<Rect> {
@@ -330,6 +366,78 @@ mod tests {
         let begins = PHASES.entry.cards_start + PHASES.entry.cards_start_by * 0.2;
         let area = shown_box(first_group(&frame.at(begins))).expect("a box shows it");
         assert!(area.y <= 90.0 && area.y + area.height >= 110.0);
+    }
+
+    /// An entrance of the board after a picture of one tall container.
+    fn after_a_tall_tray(wide: &Scene) -> Entrance {
+        let tall = scene(vec![region("near", TALL)], &[]);
+        let handover = Handover {
+            last: &tall,
+            shown: 1.0,
+        };
+        Entrance::new(wide, &PHASES, Some(handover))
+    }
+
+    #[test]
+    fn a_container_the_last_picture_drew_flies_over_and_lands_as_it_was_drawn() {
+        let wide = board();
+        let entrance = after_a_tall_tray(&wide);
+        assert!(entrance.flown().contains("near"));
+        assert!(!entrance.flown().contains("far"), "that one opens");
+        assert_eq!(entrance.at(entrance.length()), wide.body);
+    }
+
+    #[test]
+    fn a_container_the_last_picture_drew_starts_at_its_old_size() {
+        let wide = board();
+        let entrance = after_a_tall_tray(&wide);
+        let start = entrance.at(0.0);
+        let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
+        assert!((held.width - (TALL.width + 6.0)).abs() < 1e-6);
+        assert!((held.height - (TALL.height + 6.0)).abs() < 1e-6);
+        assert_eq!(
+            entrance.holder_at(0.0),
+            Some(rect(167.0, 17.0, 66.0, 166.0)),
+            "the last picture stays in it"
+        );
+    }
+
+    #[test]
+    fn a_second_change_takes_the_tray_from_where_the_first_had_it() {
+        let tall = scene(vec![region("near", TALL)], &[]);
+        let wide = board();
+        let first = after_a_tall_tray(&wide);
+        let mid = first.holder_at(0.2).expect("the tray stays on");
+        let cut_short = Scene {
+            body: first.at(0.2),
+            ..wide
+        };
+        let handover = Handover {
+            last: &cut_short,
+            shown: 1.0,
+        };
+        let second = Entrance::new(&tall, &PHASES, Some(handover));
+        let start = second.at(0.0);
+        let held = shown_box(drawing(&start, "near")[0]).expect("a box shows it");
+        assert!((held.width - (mid.width + 6.0)).abs() < 1.0);
+    }
+
+    #[test]
+    fn a_picture_with_a_card_outside_the_tray_does_not_leave_inside_it() {
+        let last = scene(
+            vec![
+                region("near", TALL),
+                card("out", rect(300.0, 20.0, 40.0, 20.0), &["O"]),
+            ],
+            &[],
+        );
+        let handover = Handover {
+            last: &last,
+            shown: 1.0,
+        };
+        let entrance = Entrance::new(&board(), &PHASES, Some(handover));
+        assert!(entrance.keeps_tray());
+        assert_eq!(entrance.holder_at(0.0), None);
     }
 
     #[test]

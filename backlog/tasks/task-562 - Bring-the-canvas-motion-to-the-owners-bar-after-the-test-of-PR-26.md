@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-01T12:52:00Z'
-updated_date: '2026-11-02T01:16:00Z'
+updated_date: '2026-11-02T01:54:00Z'
 labels:
   - renderer
   - motion
@@ -113,4 +113,6 @@ Pass before the push. A gpt-6.1-sol review of e25501ab2..42923cc56 found two sta
 Junction marks now recede with their lines. The painter read the light from groups only, and a junction mark names its lines on the shape, so its dots and bars stayed at full strength while the lines receded. A mark now shows as much as the brightest of its lines, and this matches the rule in markVeil. On the real page with the pointer on a card, unlit dots measured a fade of 1.0 before the fix and 0.38 after it on the CPU painter. They measured 0.39 after it on the GPU painter, which had no before run. Lines measured 0.25 and 0.24, and lit dots stayed at 1.0. A dimmed dot reads a little stronger than its line because it sits over that line, as it does in the SVG.
 
 Containers now open on entry. One square front leaves the middle of the picture and passes the last container in 456 ms, each container shows where the front passed, and a thin edge runs with the front and cools as the container lands. The cards start up to 46 ms later and the sparks 45 ms later, so that the front stays ahead of them. The owner reported that containers just popped in. Filmed on the held clock on the largest board and on one with three open doors, on both grounds, with prefers-reduced-motion, and with a door pressed during the opening. A door pressed during an opening showed dark patches beside some cards, and the same patches showed with the old fade, so they are not from this change and stay unexplained.
+
+The owner asked that a change between flowchart and sequence keeps the container. A container that the last picture also drew now resizes from its old box under the old camera, and the tray keeps its corners, walls and tab. The entrance has no lens when a tray stays. The last picture leaves inside the tray that held all its cards. A second change takes the tray from the box that it held. A flow frame now opens as a container on a first load. A rim uses a body that a group draws, which removed the glow up the first column, and a rim waits for its card. Films of both directions on the GPU, reduced motion, and an interrupted switch were looked at. The GPU gave a mean gap of 16.7 ms in three runs of each direction at 60 Hz in headless Chrome. The walkthrough failure came from the lab copy, which has no Git repository and no archive. It is not a product fault in this branch.
 <!-- SECTION:NOTES:END -->

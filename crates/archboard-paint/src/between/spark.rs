@@ -13,7 +13,7 @@ use kurbo::{ParamCurve as _, ParamCurveArclen as _, ParamCurveNearest as _};
 use super::arrive::{Grow, Leave};
 use super::circuit::{Span, holder, label_span};
 use super::ease::{ease_out, phase};
-use super::found::{Form, Found};
+use super::found::{Form, Found, largest_rect};
 use super::line::{end_of, in_flight};
 use super::morph::{length, route_of};
 use super::phases::Transition;
@@ -180,13 +180,20 @@ fn paint_of(group: &Group) -> Option<Paint> {
 }
 
 /// The rims of the cards that a spark lands on: each lights once, with the first
-/// line to land there, in that line's colour.
-pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> {
-    let cards: Vec<Rect> = groups
+/// line to land there, in that line's colour, as soon as its card has landed. A rim
+/// goes round a body that a group draws: the atlas's box of a participant's lifeline
+/// holds its whole column.
+pub(super) fn rims(
+    groups: &[Found<'_>],
+    spans: &[(usize, Span)],
+    landed: &dyn Fn(&str) -> f64,
+) -> Vec<Mover> {
+    let bodies: Vec<(Rect, f64)> = groups
         .iter()
-        .filter(|group| group.form() == Form::Card && !group.is_label() && !group.is_region())
-        .filter_map(|group| group.frame)
+        .filter(|group| group.is_card())
+        .filter_map(|group| Some((largest_rect(group.group)?, landed(group.id))))
         .collect();
+    let cards: Vec<Rect> = bodies.iter().map(|&(card, _)| card).collect();
     let mut first: Vec<Option<(f64, Paint, Point)>> = vec![None; cards.len()];
     for &(at, (_, end)) in spans {
         let group = groups[at].group;
@@ -198,11 +205,11 @@ pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> 
             first[card] = Some((end, paint, point));
         }
     }
-    cards
+    bodies
         .iter()
         .zip(first)
-        .filter_map(|(card, landed)| {
-            let (start, paint, point) = landed?;
+        .filter_map(|(&(card, there), lit)| {
+            let (end, paint, point) = lit?;
             let edge = Rect {
                 x: card.x - RIM_ROOM,
                 y: card.y - RIM_ROOM,
@@ -217,7 +224,7 @@ pub(super) fn rims(groups: &[Found<'_>], spans: &[(usize, Span)]) -> Vec<Mover> 
                 shape,
                 landed,
                 edge,
-                start,
+                start: end.max(there),
             })))
         })
         .collect()
@@ -341,14 +348,57 @@ impl DrawOn {
 #[cfg(test)]
 mod tests {
     use archboard_scene::geometry::{Point, Rect};
-    use archboard_scene::scene::{Item, Purpose, Shape, Stroke, Token};
+    use archboard_scene::scene::{
+        Geometry, Group, Item, Purpose, Role, Shape, Stroke, Subject, SubjectKind, Token,
+    };
 
-    use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline};
+    use super::super::found::found;
+    use super::super::plan::Mover;
+    use super::super::testing::{card, line, rect, scene};
+    use super::{RIM_CLOSES, RIM_SPAN, Rim, along_outline, rims};
+
+    #[test]
+    fn a_line_that_lands_on_a_lifeline_lights_no_rim_round_the_column() {
+        let column = rect(0.0, 0.0, 100.0, 400.0);
+        let stem = Shape::new(
+            Purpose::Line,
+            Geometry::Line {
+                from: Point { x: 50.0, y: 60.0 },
+                to: Point { x: 50.0, y: 400.0 },
+            },
+        );
+        let lifeline = Group::new(Role::Lifeline, vec![Item::Shape(stem)]).drawing(Subject {
+            id: "actor".to_owned(),
+            kind: SubjectKind::Node,
+            standing: None,
+        });
+        let body = vec![
+            Item::Group(lifeline),
+            line("m", &[(300.0, 200.0), (50.0, 200.0)]),
+        ];
+        let board = scene(body, &[("actor", column)]);
+        let groups = found(&board);
+        assert!(rims(&groups, &[(1, (0.0, 1.0))], &|_| 0.0).is_empty());
+    }
+
+    #[test]
+    fn a_rim_waits_for_a_card_that_lands_after_its_line() {
+        let body = vec![
+            card("c", rect(0.0, 0.0, 100.0, 40.0), &[]),
+            line("l", &[(300.0, 20.0), (50.0, 20.0)]),
+        ];
+        let board = scene(body, &[]);
+        let groups = found(&board);
+        let lit = rims(&groups, &[(1, (0.0, 0.3))], &|_| 0.7);
+        let [Mover::Rim(rim)] = lit.as_slice() else {
+            panic!("one rim")
+        };
+        assert_eq!(rim.start, 0.7);
+    }
 
     #[test]
     fn a_dashed_line_keeps_its_dashes_and_waits_to_show_its_arrowhead() {
-        let Item::Group(mut group) = super::super::testing::line("e", &[(0.0, 0.0), (100.0, 0.0)])
-        else {
+        let Item::Group(mut group) = line("e", &[(0.0, 0.0), (100.0, 0.0)]) else {
             panic!("a line group")
         };
         let Some(Item::Shape(stroke)) = group.items.get_mut(1) else {

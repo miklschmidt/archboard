@@ -260,7 +260,10 @@ impl Stage {
         let camera = self.presentation.camera;
         let height = self.size.1;
         let flying = self.dive.as_ref().filter(|dive| !dive.ended(now));
-        let entrance = self.flight.as_ref().and_then(|flight| flight.entering(now));
+        // A tray that stays on stays in focus: it is what the eye holds on to.
+        let entrance = (self.flight.as_ref())
+            .filter(|flight| !flight.keeps_tray())
+            .and_then(|flight| flight.entering(now));
         let door = self.flight.as_ref().and_then(|flight| flight.opening(now));
         let page = page_of(scene);
         let lens = if let Some(dive) = flying {

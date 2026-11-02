@@ -9,10 +9,39 @@ use crate::palette::Theme;
 use crate::passage::{Plane, Side};
 use crate::presentation::{Camera, Light, Shine};
 use archboard_scene::geometry::Rect;
+use archboard_scene::scene::{Group, Item, Purpose, Role, Shape, Subject, SubjectKind};
 use std::collections::HashMap;
 
 fn stage() -> Stage {
     Stage::new(Theme::Light, (100.0, 100.0))
+}
+
+/// A picture of one container.
+fn tray() -> Vec<Item> {
+    let body = Rect {
+        x: 10.0,
+        y: 10.0,
+        width: 40.0,
+        height: 40.0,
+    };
+    let plate = Shape::rect(Purpose::Plate, body, None);
+    vec![Item::Group(
+        Group::new(Role::Frame(None), vec![Item::Shape(plate)]).drawing(Subject {
+            kind: SubjectKind::Region,
+            id: "r".to_owned(),
+            standing: None,
+        }),
+    )]
+}
+
+#[test]
+fn a_tray_that_stays_on_stays_in_focus() {
+    let mut stage = stage();
+    stage.set_phases(PHASES);
+    stage.show(painting(tray()));
+    stage.enter(painting(tray()), None, 100.0, (0.0, 0.0), 0.0);
+    stage.advance(10.0);
+    assert_eq!(stage.lens_at(10.0), None);
 }
 
 #[test]

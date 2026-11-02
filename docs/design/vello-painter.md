@@ -305,6 +305,18 @@ A container that only the next picture has opens on the same front in a move, be
 
 On the board of the film, in headless Chrome at 60 Hz, three runs of a first load gave a mean frame gap of 17.5 to 18.4 ms on the GPU, against 17.2 to 18.4 ms with the old fade. Two runs on the CPU painter gave a mean of 50.0 to 56.1 ms against 48.5 to 49.2 ms, and a longest gap of 150 to 167 ms against 100 ms.
 
+### A container stays on
+
+The owner said that a change between flowchart and sequence must keep the container, because it only resizes. Both grammars draw a flow's tray under one id. The tray left with the last picture and a second tray opened, so the eye lost the one thing that stays.
+
+A container that the last picture also drew now changes its size. It starts in the box that the last picture gave it, under that picture's camera, and it lands in its new box on the curve of the opening. Each point of the tray keeps its distance from the nearer edge of the box, so corners, walls, and the tab keep their shape. The page sends the picture and the camera apart, so the stage tells the entrance how the two cameras relate on each frame. A test owns the start, the landing, and the camera.
+
+Three smaller changes follow from one tray. The lens of an entrance blurred the tab outside its circle, so the entrance has no lens when a tray stays. The old cards hung outside a tray that shrank, so the last picture now leaves inside the tray when all its cards stood there. A second change that interrupts the first takes the tray from the box that it held, and a film of a second press 233 ms in shows widths of 971, 976, 972 and 960 pixels with no jump.
+
+A sequence's flow frame now counts as a container, so it opens on a first load. A card's rim no longer uses the box of the atlas, because the box of a lifeline holds its whole column. That box caused the glow up the first column. A rim goes round a body that a group draws, so it now runs round an activation bar. A rim also waits for its card to land.
+
+Films of both directions on the GPU show one tray, a sharp tab, and no pop at the landing. With reduced motion, the change is one cut. In headless Chrome at 60 Hz, three runs of each direction gave a mean frame gap of 16.7 ms and a longest gap of 16.8 ms on the GPU. One run of each direction on the CPU painter gave a mean of 30.3 to 32.3 ms and a longest gap of 50 ms. These films ran on the board of a flow with twelve steps and eight participants, not on the largest board.
+
 ### What the lens costs
 
 The lens takes no measurable frame time. A flight on the large board at 6144x1725 CSS pixels, DPR 1.25, gave these numbers in headless Chrome at 60 Hz.

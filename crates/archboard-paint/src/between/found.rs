@@ -35,6 +35,8 @@ pub(super) struct Found<'a> {
     pub(super) subject: &'a Subject,
     /// The box the group is drawn in, when the scene says.
     pub(super) frame: Option<Rect>,
+    /// The box the atlas gives its subject.
+    pub(super) atlas: Option<Rect>,
     /// How the plain groups it stands in move it, outermost first.
     pub(super) outer: Option<Transform>,
 }
@@ -54,9 +56,15 @@ impl Found<'_> {
         matches!(self.group.role, Role::Label)
     }
 
-    /// Whether the group is a container's frame or header.
+    /// Whether the group is a card's or a lifeline's, one that arrives on its own.
+    pub(super) fn is_card(&self) -> bool {
+        self.form() == Form::Card && !self.is_region() && !self.is_label()
+    }
+
+    /// Whether the group is a container's frame or header. A flow is one in both of
+    /// its grammars, under one id, so it stays one tray as the grammar changes.
     pub(super) fn is_region(&self) -> bool {
-        self.subject.kind == SubjectKind::Region
+        matches!(self.subject.kind, SubjectKind::Region | SubjectKind::Flow)
     }
 }
 
@@ -132,6 +140,7 @@ fn walk<'a>(
             group,
             subject,
             frame: largest_rect(group).or_else(|| atlas.get(id).copied()),
+            atlas: atlas.get(id).copied(),
             outer,
         });
         *ordinal += 1;

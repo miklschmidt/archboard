@@ -6,7 +6,7 @@
 use std::collections::HashSet;
 
 use archboard_scene::geometry::Rect;
-use archboard_scene::scene::{Item, Scene};
+use archboard_scene::scene::{Item, Scene, Transform, Viewport};
 use serde::Deserialize;
 
 use crate::between::{
@@ -123,6 +123,30 @@ impl Flight {
         match self {
             Flight::Enter { entrance, .. } => Some(entrance.flown()),
             Flight::Carry { .. } => None,
+        }
+    }
+
+    /// Whether a container of the last picture stays on as a tray of this one.
+    pub(crate) fn keeps_tray(&self) -> bool {
+        matches!(self, Flight::Enter { entrance, .. } if entrance.keeps_tray())
+    }
+
+    /// The box of the tray the last picture leaves inside, when it has one.
+    pub(crate) fn holder_at(&self, now: f64) -> Option<Rect> {
+        match self {
+            Flight::Enter { entrance, .. } => entrance.holder_at(self.progress(now)),
+            Flight::Carry { .. } => None,
+        }
+    }
+
+    /// Tell an entrance how the ghost's picture maps onto the one that comes in.
+    pub(crate) fn rebase(&mut self, ghost: Camera, camera: Camera) {
+        if let Flight::Enter { entrance, .. } = self {
+            entrance.rebase(Transform {
+                x: (ghost.x - camera.x) / camera.scale,
+                y: (ghost.y - camera.y) / camera.scale,
+                scale: Some(ghost.scale / camera.scale),
+            });
         }
     }
 
@@ -307,6 +331,23 @@ impl Ghost {
         let rest = EASE_OUT.at(self.time.share(now));
         let progress = self.from + (1.0 - self.from) * rest;
         departure(&self.picture.scene, progress)
+    }
+
+    /// What the ghost shows at a moment, kept inside a box of a picture that a
+    /// camera shows.
+    pub(crate) fn items_inside(&self, now: f64, tray: Rect, camera: Camera) -> Vec<Item> {
+        let ours = self.camera;
+        let frame = Rect {
+            x: (tray.x * camera.scale + camera.x - ours.x) / ours.scale,
+            y: (tray.y * camera.scale + camera.y - ours.y) / ours.scale,
+            width: tray.width * camera.scale / ours.scale,
+            height: tray.height * camera.scale / ours.scale,
+        };
+        vec![Item::Viewport(Viewport {
+            frame,
+            view: frame,
+            items: self.items(now),
+        })]
     }
 }
 

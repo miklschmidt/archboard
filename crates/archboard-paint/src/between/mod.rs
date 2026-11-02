@@ -22,6 +22,7 @@ mod departure;
 mod ease;
 mod entrance;
 mod found;
+mod handover;
 #[cfg(test)]
 mod interrupted;
 mod line;
@@ -30,6 +31,7 @@ mod open;
 mod phases;
 mod plan;
 mod rename;
+mod resize;
 mod ride;
 #[cfg(test)]
 mod settling;
@@ -63,7 +65,8 @@ use unfold::{Doors, Inside, Unfold};
 pub(crate) use departure::departing;
 pub use departure::{Heading, departure, visible_at};
 pub(crate) use ease::phase;
-pub use entrance::{Entrance, Handover};
+pub use entrance::Entrance;
+pub use handover::Handover;
 #[cfg(test)]
 pub(crate) use phases::fixtures::PHASES;
 pub use phases::{Entry, Phases, Transition};
@@ -477,7 +480,7 @@ impl Between {
             furniture: &furniture,
         };
         let mut plan = Plan::new(&next.body, movers, &wiring);
-        plan.cover(rims(&new, &times));
+        plan.cover(rims(&new, &times, &|_| 0.0));
         let mut leavers: Vec<(usize, Mover)> = pairing
             .removed
             .iter()

@@ -1,6 +1,7 @@
 //! One frame of a stage: its ground, the picture, the board inside a card, and
 //! over them what is left of the last picture.
 
+use archboard_scene::geometry::Rect;
 use archboard_scene::scene::Item;
 use kurbo::{Affine, RoundedRect, Shape as _};
 
@@ -88,8 +89,9 @@ impl Stage {
                 &mut plain_inks,
             );
         }
+        let tray = flight.as_ref().and_then(|flight| flight.holder_at(now));
         for ghost in behind.iter().chain(ghost.as_ref()) {
-            draw_ghost(canvas, ghost, now, &mut plain_inks);
+            draw_ghost(canvas, ghost, now, tray, &mut plain_inks);
         }
     }
 }
@@ -106,8 +108,14 @@ fn plane_at(leaving: Option<&Leaving>, ghost: Option<&Ghost>, now: f64) -> Plane
 }
 
 /// Draw what is left of the last picture over the rest, in its own light and
-/// where its passage has taken it.
-fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: &mut Inks<'_>) {
+/// where its passage has taken it, inside the tray that held it if that stays on.
+fn draw_ghost<C: Canvas>(
+    canvas: &mut C,
+    ghost: &Ghost,
+    now: f64,
+    tray: Option<Rect>,
+    inks: &mut Inks<'_>,
+) {
     let own = ghost
         .passage(now)
         .map_or(Plane::STILL, |(axis, place)| axis.left(place));
@@ -115,7 +123,10 @@ fn draw_ghost<C: Canvas>(canvas: &mut C, ghost: &Ghost, now: f64, inks: &mut Ink
     let place = own.transform
         * held.transform
         * placed(ghost.camera.x, ghost.camera.y, Some(ghost.camera.scale));
-    let items = ghost.items(now);
+    let items = match tray.filter(|_| ghost.axis.is_none()) {
+        Some(tray) => ghost.items_inside(now, tray, inks.presentation.camera),
+        None => ghost.items(now),
+    };
     let look = Presentation {
         camera: inks.presentation.camera,
         far: inks.presentation.far,

@@ -78,6 +78,17 @@ pub(super) fn scale_about(rect: Rect, scale: f64) -> Transform {
     }
 }
 
+/// Where a box stands after a move.
+pub(super) fn carried(rect: Rect, by: Transform) -> Rect {
+    let scale = by.scale.unwrap_or(1.0);
+    Rect {
+        x: rect.x * scale + by.x,
+        y: rect.y * scale + by.y,
+        width: rect.width * scale,
+        height: rect.height * scale,
+    }
+}
+
 /// The move that does `inner` first and `outer` after it.
 pub(super) fn then(outer: Transform, inner: Option<Transform>) -> Transform {
     let Some(inner) = inner else { return outer };

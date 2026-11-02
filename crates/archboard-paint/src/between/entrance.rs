@@ -16,14 +16,16 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use archboard_scene::geometry::{Point, Rect};
-use archboard_scene::scene::{Group, Item, Role, Scene};
+use archboard_scene::scene::{Group, Item, Role, Scene, Transform};
 
 use super::arrive::Grow;
 use super::circuit::{Span, Spans, label_span, length_of, line_spans};
 use super::found::{Form, Found, found, holds_subject};
+use super::handover::{Handover, Last};
 use super::open::{Opening, ways};
 use super::phases::{Entry, Phases};
 use super::plan::{Mover, Plan, Wiring};
+use super::resize::Resizing;
 use super::spark::{DrawOn, rims};
 
 /// How far a card starts from its place, as a share of its way to the middle.
@@ -31,9 +33,6 @@ const PULL: f64 = 0.16;
 
 /// How far through an entrance a card that flies lands.
 const FLOWN_BY: f64 = 0.8;
-
-/// How much bigger or smaller a card can be in the next picture and still fly.
-const MOST_CHANGE: f64 = 2.5;
 
 /// How far along the wave a point is: its distance from the middle. A smaller
 /// key arrives sooner.
@@ -89,80 +88,14 @@ pub struct Entrance {
     length: f64,
     /// The subjects that fly over from the last picture.
     flown: HashSet<String>,
-}
-
-/// What an entrance takes over from the picture that was there.
-#[derive(Clone, Copy, Debug)]
-pub struct Handover<'a> {
-    /// The last picture.
-    pub last: &'a Scene,
-    /// How much of it still shows, from 0 to 1.
-    pub shown: f64,
-}
-
-/// Where the cards of the next picture stood in the last one, and how much of
-/// the last one shows. Only a card that stayed about its size flies: a door that
-/// became a tile has no shape to keep.
-struct Last<'a> {
-    stood: HashMap<&'a str, (Rect, f64)>,
-    shown: f64,
-}
-
-impl<'a> Last<'a> {
-    /// What an entrance can take over, of what stands in the next picture.
-    fn of(handover: Option<Handover<'a>>) -> Last<'a> {
-        let Some(handover) = handover else {
-            return Last {
-                stood: HashMap::new(),
-                shown: 0.0,
-            };
-        };
-        let stood = found(handover.last)
-            .iter()
-            .filter(|group| is_card(group) && group.ordinal == 0)
-            .filter_map(|group| {
-                let frame = group.frame?;
-                let moved = super::ease::then(
-                    group
-                        .outer
-                        .unwrap_or(archboard_scene::scene::Transform::translate(0.0, 0.0)),
-                    group.group.transform,
-                );
-                let scale = moved.scale.unwrap_or(1.0);
-                let frame = Rect {
-                    x: frame.x * scale + moved.x,
-                    y: frame.y * scale + moved.y,
-                    width: frame.width * scale,
-                    height: frame.height * scale,
-                };
-                Some((group.id, (frame, group.group.opacity.unwrap_or(1.0))))
-            })
-            .collect();
-        Last {
-            stood,
-            shown: handover.shown,
-        }
-    }
-
-    /// The box a card stood in, when it can fly from there.
-    fn stood_for(&self, card: &Found<'_>) -> Option<(Rect, Rect, f64)> {
-        let ((old, shown), new) = (*self.stood.get(card.id)?, card.frame?);
-        let ratio = old.width / new.width;
-        (1.0 / MOST_CHANGE..=MOST_CHANGE)
-            .contains(&ratio)
-            .then_some((old, new, shown))
-    }
-}
-
-/// Whether a group is a card, one that blooms on its own.
-fn is_card(group: &Found<'_>) -> bool {
-    group.form() == Form::Card && !group.is_region() && !group.is_label()
+    /// Whether a container of the last picture stays on as a tray of this one.
+    keeps_tray: bool,
 }
 
 /// When each card grows, by its place in the groups: the wave's start and end.
 fn card_times(groups: &[Found<'_>], entry: &Entry, middle: Point) -> Vec<(usize, f64, f64)> {
     let places: Vec<usize> = (0..groups.len())
-        .filter(|&at| is_card(&groups[at]))
+        .filter(|&at| groups[at].is_card())
         .collect();
     let keys: Vec<Option<f64>> = places
         .iter()
@@ -253,14 +186,19 @@ fn frames_and_labels(
     spans: &Spans<'_>,
     entry: &Entry,
     middle: Point,
+    last: &Last<'_>,
 ) -> Vec<(usize, Mover)> {
     let ways = ways(groups, middle, (0.0, entry.region_span));
     groups
         .iter()
         .enumerate()
         .filter_map(|(at, group)| {
-            if let Some(way) = ways.get(group.id) {
-                Some((at, Mover::Open(Box::new(Opening::new(group, *way)))))
+            if let Some(&way) = ways.get(group.id) {
+                let mover = last.trays.get(group.id).map_or_else(
+                    || Mover::Open(Box::new(Opening::new(group, way))),
+                    |&tray| Mover::Resize(Box::new(Resizing::new(group, tray, way, last))),
+                );
+                Some((at, mover))
             } else if group.is_label() {
                 let (start, end) = spans
                     .get(group.id)
@@ -341,7 +279,7 @@ fn movers(
     let by_place: BTreeMap<usize, Mover> = [
         cards(groups, &phases.entry, middle, last),
         lines(groups, times, phases),
-        frames_and_labels(groups, &spans, &phases.entry, middle),
+        frames_and_labels(groups, &spans, &phases.entry, middle, last),
     ]
     .into_iter()
     .flatten()
@@ -371,9 +309,12 @@ impl Entrance {
             .collect();
         let flown = groups
             .iter()
-            .filter(|group| is_card(group) && last.stood_for(group).is_some())
+            .filter(|group| {
+                last.keeps(group) || (group.is_card() && last.stood_for(group).is_some())
+            })
             .map(|group| group.id.to_owned())
             .collect();
+        let keeps_tray = groups.iter().any(|group| last.keeps(group));
         let spans: Spans<'_> = times
             .iter()
             .map(|&(at, span)| (groups[at].id, span))
@@ -401,14 +342,22 @@ impl Entrance {
             furniture: &furniture,
         };
         let mut plan = Plan::new(&scene.body, all, &wiring);
-        plan.cover(rims(&groups, &times));
+        let landed = |id: &str| cards.get(id).map_or(0.0, |&(_, _, end)| end);
+        plan.cover(rims(&groups, &times, &landed));
         let length = plan.length();
         Entrance {
             plan,
             landed: scene.body.clone(),
             length,
             flown,
+            keeps_tray,
         }
+    }
+
+    /// Say how the last picture's units map onto this picture's: the two can stand
+    /// under different cameras.
+    pub(crate) fn rebase(&mut self, carry: Transform) {
+        self.plan.rebase(carry);
     }
 
     /// Where the entrance ends, as a share of its time.
@@ -419,6 +368,16 @@ impl Entrance {
     /// The subjects that fly over from the last picture.
     pub(crate) fn flown(&self) -> &HashSet<String> {
         &self.flown
+    }
+
+    /// Whether a container of the last picture stays on as a tray of this one.
+    pub(crate) fn keeps_tray(&self) -> bool {
+        self.keeps_tray
+    }
+
+    /// The box of the tray the last picture leaves inside, when it has one.
+    pub(crate) fn holder_at(&self, progress: f64) -> Option<Rect> {
+        self.plan.holder_at(progress)
     }
 
     /// The picture at a progress from 0 to its length, as a scene body. At its

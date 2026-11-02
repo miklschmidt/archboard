@@ -3,6 +3,7 @@
 //! left as it is. Each frame clones what is still and asks each mover for its
 //! moment.
 
+use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Mask, Role, Transform};
 
 use super::arrive::{Ground, Grow, Leave, Swap};
@@ -11,6 +12,7 @@ use super::content::shell;
 use super::ease::{ease_out, emphasised, phase};
 use super::line::LineCarry;
 use super::open::Opening;
+use super::resize::Resizing;
 use super::ride::Ride;
 use super::spark::{DrawOn, Rim};
 use super::unfold::Inside;
@@ -46,6 +48,8 @@ pub(super) enum Mover {
     Rim(Box<Rim>),
     /// A container only the next scene has, on its way open.
     Open(Box<Opening>),
+    /// A container both pictures draw, changing its size.
+    Resize(Box<Resizing>),
 }
 
 impl Mover {
@@ -56,6 +60,7 @@ impl Mover {
             Mover::Grow(grow) => grow.end(),
             Mover::Rim(rim) => rim.end(),
             Mover::Open(opening) => opening.end(),
+            Mover::Resize(resizing) => resizing.end(),
             Mover::Frame(_, _, end) => *end,
             Mover::Both(old, new) => old.end().max(new.end()),
             _ => 1.0,
@@ -77,6 +82,7 @@ impl Mover {
             Mover::Inside(inside) => inside.at(progress),
             Mover::Rim(rim) => rim.at(progress),
             Mover::Open(opening) => opening.at(progress),
+            Mover::Resize(resizing) => vec![Item::Group(resizing.at(progress))],
             Mover::Both(old, new) => {
                 let mut both = old.at(progress);
                 both.extend(new.at(progress));
@@ -250,6 +256,23 @@ impl Plan {
             place.min(self.slots.len()),
             Slot::Mover(self.movers.len() - 1),
         );
+    }
+
+    /// Say how the last picture's units map onto this picture's.
+    pub(super) fn rebase(&mut self, carry: Transform) {
+        for mover in &mut self.movers {
+            if let Mover::Resize(resizing) = mover {
+                resizing.rebase(carry);
+            }
+        }
+    }
+
+    /// The box of the tray the last picture leaves inside, when it has one.
+    pub(super) fn holder_at(&self, progress: f64) -> Option<Rect> {
+        self.movers.iter().find_map(|mover| match mover {
+            Mover::Resize(resizing) if resizing.holds_last => Some(resizing.held(progress)),
+            _ => None,
+        })
     }
 
     /// Where every part of the move finishes.
