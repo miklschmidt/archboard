@@ -295,7 +295,7 @@ right in one crisp concave curve. The well's top edge runs on under the tab, so
 a line parts the tab from the floor. The tab hugs its words with 12 units on
 either side, and one outline runs round the tab and the well. The first row of
 cards stands as far under the edge as from the sides and the bottom of the well.
-In a live reader, a door that holds parts ends with a plus behind a thin rule, and
+In a live reader, a door ends with a plus behind a thin rule, and
 the tab of an expanded module ends with a minus in the same place. The piece keeps its
 look, and only the control takes a plate under the pointer. An export and a presented
 step draw neither control.
@@ -304,8 +304,9 @@ alone.
 A group shows on each of its cards as a tag at the top right, the same bright
 piece as in the Legend, and the cards of a group stand together. No frame is
 drawn round a group. A card's face and front edge stay neutral in every group.
-A door is a bright button with the finish of a primary action, in the color of
-its group, or of its kind when it has no group, in both themes. A door with
+A door is a bright button for a module that holds parts, with the finish of a
+primary action, in the color of its group, or of its kind when it has no group,
+in both themes. A module with no parts stands as its card. A door with
 neither color stands in a card's tone and takes no gold, so two doors that share
 a color share something real. Its arrow points up, sideways or down by where its
 module lies in the tree.

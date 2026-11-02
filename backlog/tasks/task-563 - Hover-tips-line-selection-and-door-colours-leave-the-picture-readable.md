@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T19:39:00Z'
+updated_date: '2026-11-02T19:42:00Z'
 labels:
   - reader
   - design
@@ -36,6 +36,7 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #12 A flowchart's lines that reach one step join into one trunk: no two run side by side and none stops short of the join (dTfYgmVn, End)
 - [x] #13 A consumer without Nix can follow INSTALL.md to the toolchain that builds the product
 - [x] #14 The project requires Bun 1.4.4 and a patched Node.js on every route
+- [ ] #15 A module with no parts outside the open one stands as a card, not a door
 <!-- AC:END -->
 
 ## Implementation Notes

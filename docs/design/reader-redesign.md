@@ -92,7 +92,8 @@ Other long lists and evidence never go into the right panel, because a small rig
 
 These rules live in the projection, so the CLI, exports and the reader draw the same picture.
 
-1. One module is open. Its children are parts, and the modules that it touches are doors. One edge tab on the
+1. One module is open. Its children are parts, and the modules that it touches are doors, or cards when they hold
+   no parts. One edge tab on the
    frame names the open module, and no card stands for it inside the frame. A flow and a deliberate focus keep
    their own extent, because they cross branches.
    A reading can also expand a door: that module stands open as another frame in the same picture, and the same rules
@@ -130,8 +131,9 @@ These rules live in the projection, so the CLI, exports and the reader draw the 
    child, up to eight of them. About lists them all. With Ctrl, a click selects the door. A comparison can draw a
    door of a module that its state removed, which has nowhere to open, so a click selects it.
    A door that holds parts ends with a plus, which expands it, and the tab of an expanded module ends with a minus,
-   which collapses it and brings the door back. A door with no parts and a removed door have no plus, and a closed
-   part has none either: a door is the way in, so that a picture grows only along a line.
+   which collapses it and brings the door back. A removed door has no plus, and a closed part has none either: a
+   door is the way in, so that a picture grows only along a line. A module with no parts stands as its card outside
+   the frame, because a door would open onto that one card (ADR 0070).
    From three lines of one kind to one door, each way, the lines share a trunk, and each line wears its words on its
    own branch, beside the part that owns it. A line that finds no room for its words draws none, and the panel of
    the selected line shows them.

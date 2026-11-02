@@ -131,3 +131,15 @@ A door whose group and kind name no color used to take the gold of a primary
 action. Gold marks what is chosen, so a reading of such doors looked chosen
 everywhere. A door with no color now stands in a card's tone. A color on a door
 then says that the door belongs to a group or a colored kind.
+
+## Amendment of 2026-11-02: a module with no parts stands as a card
+
+The owner saw doors of modules that hold no parts. One click opened a reading of
+one card with a way back, and the door had hidden what that card says. So a door
+now stands only for a module that holds parts. A module outside the open one
+with no parts stands as its card beside the frame, with its responsibility and
+its code path. A click selects it, as a click selects any card. The frame shows
+that such a card is not a part.
+
+The same rule holds in a focus and in a comparison. A removed module that holds
+parts is still a door with nowhere to open, so a click selects it.

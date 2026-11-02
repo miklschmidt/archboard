@@ -39,7 +39,9 @@ function holdingPart(
  * @returns Each reaching child and its relationships, in drawn order, or nothing for another module.
  */
 function doorEndpoints(projection: Projection, door: string): DoorEndpoints[] {
-	if (!projection.context.some((module) => module.id === door)) return [];
+	if (!projection.content.nodes.some((node) => node.id === door && node.door !== undefined)) {
+		return [];
+	}
 	const parents = new Map(projection.complete.nodes.map((node) => [node.id, node.parent]));
 	const parts = new Set(projection.children.map((node) => node.id));
 	const doorSide = new Set([door]);
