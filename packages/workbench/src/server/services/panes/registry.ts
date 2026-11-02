@@ -535,7 +535,7 @@ const broadcastObservers = new Set<
  * @param observer What to tell.
  * @returns Stops watching.
  */
-function onBoardBroadcast(
+function onModelBroadcast(
 	observer: (message: WebSocketMessage, vault: string, model: string) => void,
 ): () => void {
 	broadcastObservers.add(observer);
@@ -544,4 +544,4 @@ function onBoardBroadcast(
 	};
 }
 
-export { onBoardBroadcast };
+export { onModelBroadcast };

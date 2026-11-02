@@ -456,7 +456,7 @@ function mountPaneRoutes(app: Express): void {
 	app.post("/api/panes/close", asyncEndpoint(closePaneRoute));
 }
 
-export { arrivedOnBoard, mountPaneRoutes, noBrowserBody };
+export { arrivedOnModel, mountPaneRoutes, noBrowserBody };
 
 /**
  * Register a live pane, acknowledge its arrival and publish changed focus.
@@ -512,7 +512,7 @@ function noteWhatChanged(
 	const paneKey = registration.paneKey;
 	const moved = previous?.paneKey !== paneKey;
 	if (moved && paneKey !== null) {
-		arrivedOnBoard(registration.clientId, paneKey);
+		arrivedOnModel(registration.clientId, paneKey);
 	}
 	const userChanged = focusChange(previous, registration);
 	if (moved || userChanged.length > 0) {
@@ -546,6 +546,6 @@ function focusChange(
  * @param clientId The pane's client id.
  * @param paneKey The model it is now showing.
  */
-function arrivedOnBoard(clientId: string, paneKey: string): void {
+function arrivedOnModel(clientId: string, paneKey: string): void {
 	paneKeys.set(clientId, paneKey);
 }

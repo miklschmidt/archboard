@@ -31,7 +31,7 @@ import type {
 
 /** What other owners hear from the panes; bound live each render. */
 interface PaneEvents {
-	readonly onBoardError: (paneId: string, error: string) => void;
+	readonly onModelError: (paneId: string, error: string) => void;
 	/** Which models an agent is working on in one vault (ADR 0022). */
 	readonly onAgentActivity: (vault: string, activity: readonly AgentActivityEntry[]) => void;
 	/** A checkout was chosen somewhere, so the repositories are read again (ADR 0050). */
@@ -43,8 +43,8 @@ interface PaneEvents {
 	/** A pane's status was published; the workbench re-reads its transport. */
 	readonly onStatusPublished: (paneId: string) => void;
 	/** The server moved a pane onto a model, which the address bar records. */
-	readonly onBoardAdopted: NonNullable<
-		PaneSessionOptions<BrowserWorkbenchTransport>["onBoardAdopted"]
+	readonly onModelAdopted: NonNullable<
+		PaneSessionOptions<BrowserWorkbenchTransport>["onModelAdopted"]
 	>;
 	/** A pane reported its session, or went. */
 	readonly onSession: (paneId: string, session: PaneSession | null) => void;
@@ -61,11 +61,11 @@ type PaneCallbacks = Required<
 		| "onCodeTargetNotice"
 		| "onAgentActivity"
 		| "onRepositoriesChanged"
-		| "onBoardAdopted"
+		| "onModelAdopted"
 	>
 > & {
 	/** A model could not be shown in one pane. */
-	readonly onBoardError: (paneId: string, error: string) => void;
+	readonly onModelError: (paneId: string, error: string) => void;
 	/**
 	 * The server asked the shell for another pane, or for one to go. Carried
 	 * with the pane it is about, because a close names the pane to close.
@@ -168,8 +168,8 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		 * @param paneId The pane.
 		 * @param error The refusal.
 		 */
-		onBoardError: (paneId: string, error: string): void => {
-			events.read().onBoardError(paneId, error);
+		onModelError: (paneId: string, error: string): void => {
+			events.read().onModelError(paneId, error);
 		},
 		/**
 		 * This tab runs a bundle the server no longer serves.
@@ -203,8 +203,8 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		 * @param paneKey The model it is showing now.
 		 * @param previousKey The model key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
-			events.read().onBoardAdopted(paneId, paneKey, previousKey);
+		onModelAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
+			events.read().onModelAdopted(paneId, paneKey, previousKey);
 		},
 		onSession,
 	};

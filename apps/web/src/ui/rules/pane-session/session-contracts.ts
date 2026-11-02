@@ -96,7 +96,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * The model could not be shown.
 	 * @param error What the server said, in words a person can act on.
 	 */
-	onBoardError?: (error: string) => void;
+	onModelError?: (error: string) => void;
 	/**
 	 * This tab is running a bundle the server no longer serves (TASK-056).
 	 * @param message What the server said about it.
@@ -124,7 +124,7 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * @param paneKey The model key.
 	 * @param previousKey The previously opened model key, or null on first adoption.
 	 */
-	onBoardAdopted?: (paneId: string, paneKey: string, previousKey: string | null) => void;
+	onModelAdopted?: (paneId: string, paneKey: string, previousKey: string | null) => void;
 	/** The workbench sockets this pane carries, when the shell gives it one. */
 	createWorkbenchSockets?: () => PaneWorkbenchSocketOwner<Transport>;
 }

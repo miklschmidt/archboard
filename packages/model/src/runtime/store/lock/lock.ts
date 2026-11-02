@@ -66,8 +66,8 @@ export {
 } from "#runtime/store/lock/claims.ts";
 export {
 	modelLockState,
-	onBoardLockChanged,
-	onBoardSweep,
+	onModelLockChanged,
+	onModelSweep,
 	releaseHold,
 	watchModelLocks,
 	type WatchedModel,

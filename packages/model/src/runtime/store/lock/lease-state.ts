@@ -340,7 +340,7 @@ function watchModelLocks(watched: WatchedModels | null): void {
  * which models are on screen.
  * @param sink What to run for each model of a vault, or null to stop.
  */
-function onBoardSweep(sink: ((vault: string, model: string) => void) | null): void {
+function onModelSweep(sink: ((vault: string, model: string) => void) | null): void {
 	processSweep.also = sink;
 }
 
@@ -348,7 +348,7 @@ function onBoardSweep(sink: ((vault: string, model: string) => void) | null): vo
  * Hear who has a model whenever it changes.
  * @param sink Where to send the news, or null to stop.
  */
-function onBoardLockChanged(sink: LockSink | null): void {
+function onModelLockChanged(sink: LockSink | null): void {
 	processSink.notify = sink;
 }
 
@@ -371,8 +371,8 @@ export {
 	liveRecord,
 	lockPathFor,
 	newToken,
-	onBoardLockChanged,
-	onBoardSweep,
+	onModelLockChanged,
+	onModelSweep,
 	readRecord,
 	releaseHold,
 	renewRecord,

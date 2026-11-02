@@ -162,8 +162,8 @@ test("claims keep one hold, renew, expire, and report both lapsed takeovers once
 		expect(lock.takeClaimRevocation(vault, plain)).toBeNull();
 	} finally {
 		lock.watchModelLocks(null);
-		lock.onBoardSweep(null);
-		lock.onBoardLockChanged(null);
+		lock.onModelSweep(null);
+		lock.onModelLockChanged(null);
 		for (const model of models) {
 			lock.releaseClaim(vault, model);
 			for (const id of ["user", "camera", "one-write"]) {

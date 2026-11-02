@@ -21,7 +21,7 @@ export {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	notePaneOpened,
-	onBoardBroadcast,
+	onModelBroadcast,
 	paneKeyOfClient,
 	paneKeys,
 	paneFromRequest,

@@ -60,7 +60,7 @@ function onLocated(
  * @param judge What to conclude from the document.
  * @returns The finding.
  */
-function onBoard(
+function onDocument(
 	check: OutcomeCheck,
 	reading: Reading,
 	judge: (document: EvaluatedDocument) => Finding,
@@ -198,7 +198,7 @@ function lifecycleMatches(variant: SemanticVariant, check: OutcomeCheck): boolea
  * @returns The finding.
  */
 const variantExists: Check = (check, reading) =>
-	onBoard(check, reading, (document) => {
+	onDocument(check, reading, (document) => {
 		const variant =
 			findVariant(document, check.variant ?? "") ??
 			namedSubject(document.variants, (candidate) => candidate.name, check.variant);
@@ -225,7 +225,7 @@ function isNamed(variant: SemanticVariant | undefined, asked: string | undefined
  * @returns The finding.
  */
 const currentIs: Check = (check, reading) =>
-	onBoard(check, reading, (document) => {
+	onDocument(check, reading, (document) => {
 		const current = currentVariant(document);
 		return finding(isNamed(current, check.variant), `current is "${current?.name ?? "?"}"`);
 	});
@@ -246,7 +246,7 @@ function currentJson(document: EvaluatedDocument | undefined): string {
  * @returns The finding.
  */
 const currentUntouched: Check = (check, reading) =>
-	onBoard(check, reading, (document) => {
+	onDocument(check, reading, (document) => {
 		// Two absences are not two equal architectures: a document with no current
 		// variant has nothing for this check to hold still, and passing it would
 		// say the author left alone something that was never there.
@@ -279,7 +279,7 @@ const reconciliationSettled: Check = (check, reading) =>
  * @returns The finding.
  */
 const adoptionsCount: Check = (check, reading) =>
-	onBoard(check, reading, (document) => {
+	onDocument(check, reading, (document) => {
 		const adoptions = document.adoptions ?? [];
 		const reasons = adoptions.every((adoption) => adoption.reason !== undefined);
 		const reasonsOk = check.withReason !== true || reasons;
@@ -376,7 +376,7 @@ function viewMatches(view: SemanticView, check: OutcomeCheck): boolean {
  * @returns The finding.
  */
 const viewExists: Check = (check, reading) =>
-	onBoard(check, reading, (document) => {
+	onDocument(check, reading, (document) => {
 		const view = viewNamed(document, check.view);
 		if (view === undefined) return finding(false, `view "${check.view}" is missing`);
 		const selection = selectionOf(view);

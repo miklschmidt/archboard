@@ -6,8 +6,8 @@
 import { forgetDoing } from "#runtime/store/doing.ts";
 import {
 	forgetLockAnnouncements,
-	onBoardLockChanged,
-	onBoardSweep,
+	onModelLockChanged,
+	onModelSweep,
 } from "#runtime/store/lock/lock.ts";
 
 /**
@@ -15,8 +15,8 @@ import {
  * watch and its listeners. The leases in each vault are left as they are.
  */
 function forgetModelMemory(): void {
-	onBoardLockChanged(null);
-	onBoardSweep(null);
+	onModelLockChanged(null);
+	onModelSweep(null);
 	forgetLockAnnouncements();
 	forgetDoing();
 }

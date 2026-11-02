@@ -14,7 +14,7 @@ import {
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 import { messageOf, vaultOfRequest } from "@archboard/workbench/host";
 import { logger } from "@archboard/diagnostics/logger";
-import { arrivedOnBoard, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
+import { arrivedOnModel, noBrowserBody } from "#server/routes/panes/pane-routes.ts";
 import { movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import { followRegistry } from "#server/routes/repositories/repository-routes.ts";
@@ -165,7 +165,7 @@ function showResolvedPane(
 		},
 		`model:${model.manifest.id}`,
 	);
-	arrivedOnBoard(pane.clientId, `model:${model.manifest.id}`);
+	arrivedOnModel(pane.clientId, `model:${model.manifest.id}`);
 	publishPaneContext(pane.clientId, "focus", [], moved);
 	if (chose !== undefined) followRegistry();
 	res.json({

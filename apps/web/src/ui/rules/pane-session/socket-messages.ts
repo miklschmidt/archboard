@@ -75,7 +75,7 @@ interface MessageContext {
 	readonly onLayoutRequest: ((request: "open" | "close") => void) | undefined;
 	readonly onPresentRequest: ((request: PanePresentRequest) => void) | undefined;
 	readonly onModelRequest?: ((request: PaneModelRequest) => void) | undefined;
-	readonly onBoardError: ((error: string) => void) | undefined;
+	readonly onModelError: ((error: string) => void) | undefined;
 	readonly onAgentActivity:
 		| ((vault: string, activity: readonly AgentActivityEntry[]) => void)
 		| undefined;
@@ -189,7 +189,7 @@ function agentActivity(context: MessageContext, data: WebSocketMessage): void {
  */
 function modelError(context: MessageContext, data: WebSocketMessage): void {
 	if (typeof data.error === "string") {
-		context.onBoardError?.(data.error);
+		context.onModelError?.(data.error);
 	}
 }
 

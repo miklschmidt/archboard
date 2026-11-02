@@ -17,7 +17,7 @@ test("a model of one name in two vaults keeps its claim, lease, announcements an
 	const vaultA = join(home, "a");
 	const vaultB = join(home, "b");
 	const told: Array<{ vault: string; model: string; held: boolean }> = [];
-	lock.onBoardLockChanged((vault, model, holder) => {
+	lock.onModelLockChanged((vault, model, holder) => {
 		told.push({ vault, model, held: holder !== null });
 	});
 	try {
@@ -49,7 +49,7 @@ test("a model of one name in two vaults keeps its claim, lease, announcements an
 		expect(recentDoing(vaultB, "payments")).toEqual([]);
 	} finally {
 		lock.releaseClaim(vaultA, "payments");
-		lock.onBoardLockChanged(null);
+		lock.onModelLockChanged(null);
 		lock.forgetLockAnnouncements();
 		forgetDoing();
 	}
@@ -68,7 +68,7 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 	});
 	lock.forgetLockAnnouncements();
 	const told: Array<{ vault: string; held: boolean }> = [];
-	lock.onBoardLockChanged((vault, _model, holder) => {
+	lock.onModelLockChanged((vault, _model, holder) => {
 		told.push({ vault, held: holder !== null });
 	});
 	jest.useFakeTimers();
@@ -87,7 +87,7 @@ test("the lock sweep reads each model on screen in its own vault", async () => {
 	} finally {
 		lock.watchModelLocks(null);
 		jest.useRealTimers();
-		lock.onBoardLockChanged(null);
+		lock.onModelLockChanged(null);
 		lock.releaseHold(vaultB, "payments", "another-server");
 		lock.forgetLockAnnouncements();
 	}

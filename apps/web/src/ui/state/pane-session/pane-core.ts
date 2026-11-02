@@ -255,7 +255,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 * @param previousKey The model it was pointed at before, or null.
 		 */
 		arrived: (key: string, previousKey: string | null): void => {
-			ports.options().onBoardAdopted?.(paneId, key, previousKey);
+			ports.options().onModelAdopted?.(paneId, key, previousKey);
 			ports.arrived();
 		},
 		publish: publishStatus,
@@ -318,8 +318,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		 * Where a model refusal goes; read live.
 		 * @returns The listener, or undefined when the shell wants none.
 		 */
-		get onBoardError() {
-			return ports.options().onBoardError;
+		get onModelError() {
+			return ports.options().onModelError;
 		},
 		/**
 		 * Where the agent-activity snapshot goes; read live.

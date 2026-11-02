@@ -69,7 +69,7 @@ interface ApplicationPaneProps {
 
 /** The pane-bound callbacks the shared ones cannot supply. */
 interface BoundCallbacks {
-	onBoardError: (error: string) => void;
+	onModelError: (error: string) => void;
 	onLayoutRequest: (request: "open" | "close") => void;
 	createWorkbenchSockets: () => PaneWorkbenchSocketOwner<BrowserWorkbenchTransport>;
 }
@@ -99,8 +99,8 @@ function optionsFor(
 		onCodeTargetNotice: callbacks.onCodeTargetNotice,
 		onAgentActivity: callbacks.onAgentActivity,
 		onRepositoriesChanged: callbacks.onRepositoriesChanged,
-		onBoardAdopted: callbacks.onBoardAdopted,
-		onBoardError: bound.onBoardError,
+		onModelAdopted: callbacks.onModelAdopted,
+		onModelError: bound.onModelError,
 		onLayoutRequest: bound.onLayoutRequest,
 		createWorkbenchSockets: bound.createWorkbenchSockets,
 	};
@@ -113,8 +113,8 @@ function optionsFor(
  */
 function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 	const { paneId, callbacks, handles } = props;
-	const onBoardError = useCallback(
-		(error: string): void => callbacks.onBoardError(paneId, error),
+	const onModelError = useCallback(
+		(error: string): void => callbacks.onModelError(paneId, error),
 		[callbacks, paneId],
 	);
 	const onLayoutRequest = useCallback(
@@ -130,8 +130,8 @@ function useBoundCallbacks(props: ApplicationPaneProps): BoundCallbacks {
 		[handles, paneId],
 	);
 	return useMemo(
-		() => ({ onBoardError, onLayoutRequest, createWorkbenchSockets }),
-		[onBoardError, onLayoutRequest, createWorkbenchSockets],
+		() => ({ onModelError, onLayoutRequest, createWorkbenchSockets }),
+		[onModelError, onLayoutRequest, createWorkbenchSockets],
 	);
 }
 
@@ -145,7 +145,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const bound = useBoundCallbacks(props);
 	const { arrival, driven, onModelRequest, onPresentRequest, endPresentation } = useModelArrival(
 		paneId,
-		bound.onBoardError,
+		bound.onModelError,
 	);
 	const [canonicalReading, reportCanonicalReading] = useState<PaneReading | null>(null);
 	const client = useQueryClient();
@@ -167,7 +167,7 @@ function ApplicationPane(props: ApplicationPaneProps): JSX.Element {
 	const narration = usePublishedNarration(
 		props.narration,
 		session.flushReading,
-		bound.onBoardError,
+		bound.onModelError,
 	);
 	// The pictures of the vault this pane is in follow that vault's policy.
 	useVaultPolicyRefresh(vault);

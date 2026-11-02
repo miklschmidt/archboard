@@ -58,7 +58,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		 * @param paneId The pane.
 		 * @param error The refusal.
 		 */
-		onBoardError: (paneId: string, error: string): void => {
+		onModelError: (paneId: string, error: string): void => {
 			notices.raise(modelErrorNotice(paneId, error));
 		},
 		/**
@@ -67,7 +67,7 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 		 * @param paneKey The model key it adopted.
 		 * @param previousKey The model key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
+		onModelAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
 			owners.readings.modelChanged(paneId, paneKey, previousKey);
 		},
 		/**

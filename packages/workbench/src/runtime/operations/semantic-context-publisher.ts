@@ -443,7 +443,7 @@ export function createSemanticContextPublisher(
 			return;
 		}
 		const eventCursor = sourceCursor(event.cursor);
-		const eventModel = textValue(event.model, "change.board", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+		const eventModel = textValue(event.model, "change.model", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
 		const eventAt = textValue(event.at, "change.at", SEMANTIC_CONTEXT_LIMITS.reasonBytes);
 		const capture = dateCapture(eventAt.value, clock);
 		let context: SemanticContextInput;

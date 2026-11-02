@@ -17,7 +17,7 @@ test("announcements isolate passenger failure and report release at once", async
 			warnings.push(args);
 			return logger;
 		};
-		lock.onBoardSweep(() => {
+		lock.onModelSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
 		lock.watchModelLocks({ models: () => [{ vault, model: "passenger" }] });
@@ -26,10 +26,10 @@ test("announcements isolate passenger failure and report release at once", async
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();
 		lock.watchModelLocks(null);
-		lock.onBoardSweep(null);
+		lock.onModelSweep(null);
 
 		const news: Array<{ model: string; id: string | null; held: boolean }> = [];
-		lock.onBoardLockChanged((_vault, model, holder) =>
+		lock.onModelLockChanged((_vault, model, holder) =>
 			news.push({ model, id: holder?.id ?? null, held: holder !== null }),
 		);
 		await lock.holdModel({
@@ -64,8 +64,8 @@ test("announcements isolate passenger failure and report release at once", async
 		);
 	} finally {
 		lock.watchModelLocks(null);
-		lock.onBoardSweep(null);
-		lock.onBoardLockChanged(null);
+		lock.onModelSweep(null);
+		lock.onModelLockChanged(null);
 		lock.releaseHold(vault, "broadcast", "pane");
 		lock.releaseClaim(vault, "broadcast");
 		lock.forgetLockAnnouncements();

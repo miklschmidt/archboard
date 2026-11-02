@@ -25,8 +25,8 @@ async function advanceLockTime(ms: number): Promise<void> {
 
 async function cleanup(): Promise<void> {
 	lock.watchModelLocks(null);
-	lock.onBoardSweep(null);
-	lock.onBoardLockChanged(null);
+	lock.onModelSweep(null);
+	lock.onModelLockChanged(null);
 	for (const model of models) {
 		lock.releaseClaim(vault, model);
 		for (const id of ["first", "user", "later", "patient", "upper", "nested", "departed"]) {

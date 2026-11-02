@@ -37,7 +37,7 @@ import {
 	sendToPane,
 } from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
-import { arrivedOnBoard } from "#server/routes/panes/pane-routes.ts";
+import { arrivedOnModel } from "#server/routes/panes/pane-routes.ts";
 import { listRepositories, placeOfVault, vaultIn } from "@archboard/workspace/repository-listing";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 import type { z } from "zod";
@@ -236,7 +236,7 @@ function moveCanonicalPane(
 		},
 		key,
 	);
-	arrivedOnBoard(clientId, key);
+	arrivedOnModel(clientId, key);
 }
 /**
  * Move one pane into another checkout's vault, keeping its model.
@@ -267,7 +267,7 @@ function movePane(clientId: string, to: string, repository: string | null): void
 		{ type: "pane_place", identity: parsePaneKey(key), vault: to, repository },
 		key,
 	);
-	arrivedOnBoard(clientId, key);
+	arrivedOnModel(clientId, key);
 }
 
 /**
