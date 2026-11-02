@@ -11,7 +11,7 @@ import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { z } from "zod";
 
 import { SEMANTIC_PANE_CONTEXT_ROUTE } from "@archboard/model/pane-context";
-import { packageBin } from "../cli/support/package-cli.ts";
+import { createPackageCliOwner, packageBin, packageFailure } from "../cli/support/package-cli.ts";
 import {
 	createRepositoryFixture,
 	type RepositoryFixture,
@@ -176,6 +176,38 @@ afterAll(async () => {
 });
 
 describe.serial("browser show and the chosen checkout", () => {
+	test("browser layout commands return the pane keys they put on screen", async () => {
+		await using resources = new AsyncDisposableStack();
+		const cli = resources.use(createPackageCliOwner());
+		const left = await paneIn(mainVault, "layout-left");
+		resources.defer(() => left.close());
+
+		const opening = cli.run(["browser", "open"], { url: server.base });
+		expect(await left.waitFor("pane_open")).toBeDefined();
+		const right = await paneIn(mainVault, "layout-right", 640);
+		resources.defer(() => right.close());
+		const opened = await opening;
+		expect(opened.status, packageFailure(opened)).toBe(0);
+		expect(JSON.parse(opened.stdout)).toMatchObject({
+			paneCount: 2,
+			onScreen: [
+				{ paneId: "layout-left", paneKey: "payments" },
+				{ paneId: "layout-right", paneKey: "payments" },
+			],
+		});
+
+		const closing = cli.run(["browser", "close", "layout-right"], { url: server.base });
+		expect(await right.waitFor("pane_close")).toBeDefined();
+		await right.close();
+		const closed = await closing;
+		expect(closed.status, packageFailure(closed)).toBe(0);
+		expect(JSON.parse(closed.stdout)).toMatchObject({
+			closed: { paneId: "layout-right", paneKey: "payments" },
+			paneCount: 1,
+			onScreen: [{ paneId: "layout-left", paneKey: "payments" }],
+		});
+	});
+
 	test("a show from a checkout that is not chosen chooses it, and every pane of the repository follows", async () => {
 		await using resources = new AsyncDisposableStack();
 		const left = await paneIn(mainVault, "pane-left");

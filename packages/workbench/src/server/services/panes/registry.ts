@@ -86,11 +86,11 @@ function paneKeyOfClient(clientId: string): string | null {
  * What each pane holds, in reading order.
  * @returns One entry per pane with its place on screen and its model.
  */
-function paneKeysOnScreen(): Array<{ paneId: string; place: string; model: string | null }> {
+function paneKeysOnScreen(): Array<{ paneId: string; place: string; paneKey: string | null }> {
 	return panesInOrder(addressablePanes([...panes.values()])).map((entry) => ({
 		paneId: entry.pane.paneId,
 		place: entry.place,
-		model: paneKeyOf(entry.pane),
+		paneKey: paneKeyOf(entry.pane),
 	}));
 }
 
