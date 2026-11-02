@@ -70,7 +70,7 @@ These signs are hard to see in a file tree. They are easy to see in a model of t
 
 Open Measures in the left column. It lists every module and sorts by the measure that you choose. Use Show to select all modules, modules with parts, or modules with no parts. Sort from either end.
 
-<img src="https://github.com/user-attachments/assets/e54fb434-156e-4cc2-89e9-49dc9a07e335" width="100%" alt="Measures lists the modules of Archboard's own model. Sorted by Unjoined, Walkthrough recording comes near the top, and the Right panel shows the four modules that change with it. Sorted by Entries, server-lifecycle has 9 entries and 0 hidden parts. Sorted by Pass-through, the About page of Command contract names the target of each entry.">
+<img src="https://github.com/user-attachments/assets/587e5537-7dc4-4827-98e1-a270f9d06700" width="100%" alt="Measures lists the modules of Archboard's own model. Sorted by Unjoined, Walkthrough recording comes near the top, and the Right panel shows the four modules that change with it. Sorted by Entries, workspace has 7 entries and 0 hidden parts. Sorted by Pass-through, the About page of Command contract names the target of each entry.">
 
 <p align="center"><sub>Archboard's own model, read from its own Git history. Every count comes from the model and the commits.</sub></p>
 

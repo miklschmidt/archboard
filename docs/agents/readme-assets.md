@@ -128,7 +128,7 @@ The take refuses missing counts and a module that no longer demonstrates its bea
 Each refusal names the module and gives a recovery step.
 
 Walkthrough recording demonstrates Unjoined with at least one unjoined connection.
-server-lifecycle demonstrates Entries with several entry points and no hidden parts.
+workspace demonstrates Entries with several entry points and no hidden parts.
 Command contract demonstrates Pass-through with at least one entry that passes a call on.
 The clip ends on its About page, where each such entry names its target.
 The terminal prints the summary of `archboard model locality`.

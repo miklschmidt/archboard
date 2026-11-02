@@ -5,7 +5,7 @@ status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T19:39:00Z'
-updated_date: '2026-11-02T22:45:00Z'
+updated_date: '2026-11-02T23:31:00Z'
 labels:
   - naming
   - refactor
@@ -58,14 +58,16 @@ Final validation at e99e1eec0: bun run check exited 0 with 21 of 21 tasks succes
 Two collections list their current name in formerNames as well as the old one, because the repair renamed them away and back. Module WaIHZ8sZ already had this shape. It changes no lookup, so it stays.
 
 The clip that README.md attaches still shows the old module names. Only the owner can upload it, because an upload is public.
+
+Correction: the note above is wrong. The agent can upload the clip, and docs/agents/readme-assets.md says to attach every file that the kit names. The clip is now attached and README.md names its address.
+
+The Entries beat of the clip moved from server-lifecycle to workspace. Removing the refusal formatter left server-lifecycle with 8 entries and 1 hidden part, so it no longer shows a module with nothing behind its interface. workspace has 7 entries and 0 hidden parts.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Renamed @archboard/board to @archboard/model and moved live paths, exported names, copy, skills, guides and the current model to the glossary. ADR 0072 records the rename, the rule for a kept use and each kept use. Decided that an unmerged record is not history, so ADR 0071 and the Vello painter record were rewritten. The architecture pictures and the design smells poster are filmed again.
+Renamed @archboard/board to @archboard/model and moved live paths, exported names, copy, skills, guides and the current model to the glossary. ADR 0072 records the rename, the rule for a kept use and each kept use. Decided that an unmerged record is not history, so ADR 0071 and the Vello painter record were rewritten. The architecture pictures and the design smells poster and clip are filmed again, and README.md names the new clip.
 
 Every continuing subject kept its identity through the shared writer, proposal JTZvj2vi stays a draft, and retained originals, legacy decoding and talk replay read as before. bun run check exits 0.
-
-Follow-up for the owner: upload the clip that README.md attaches.
 <!-- SECTION:FINAL_SUMMARY:END -->
