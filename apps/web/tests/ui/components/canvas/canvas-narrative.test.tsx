@@ -86,7 +86,7 @@ const VIEWS = [{ ...VIEW, scope: { kind: "selection", nodes: ["n1"], edges: [], 
  * @param content What its one variant says.
  * @returns The document.
  */
-function boardOf(content: Record<string, unknown>): Record<string, unknown> {
+function documentOf(content: Record<string, unknown>): Record<string, unknown> {
 	return withVariants([{ id: "v1", name: "as it is", lifecycle: "current", content }]);
 }
 
@@ -123,7 +123,7 @@ function withVariants(variants: readonly Record<string, unknown>[]): Record<stri
  * @param content What the variant says; the explained one by default.
  */
 function serving(content: Record<string, unknown> = CONTENT): void {
-	server.documents["pipeline"] = boardOf(content);
+	server.documents["pipeline"] = documentOf(content);
 	server.reply = { status: 200, body: { ...drawing(1), views: [VIEW] } };
 }
 
@@ -152,7 +152,7 @@ function expectCamera(actual: typeof WHOLE_PICTURE, expected: typeof WHOLE_PICTU
 }
 
 test("a variant that explains itself nowhere offers nothing at all", async () => {
-	server.documents["pipeline"] = boardOf({ nodes: CONTENT.nodes, edges: [] });
+	server.documents["pipeline"] = documentOf({ nodes: CONTENT.nodes, edges: [] });
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage();
 	await settle();
@@ -176,7 +176,7 @@ test("choosing a walkthrough presents its first step, in the frame, with where i
 	expect(steps[0]?.getAttribute("aria-current")).toBe("step");
 	// The pane is the picture and its caption while it lasts: the sidebar steps aside.
 	expect(part("semantic-reading-area").hasAttribute("data-walkthrough")).toBe(true);
-	expect(part("semantic-board-stage").getAttribute("data-presentation-step")).toBe("0");
+	expect(part("canvas-stage").getAttribute("data-presentation-step")).toBe("0");
 });
 
 test("steps change only when the reader asks: keys, the controls, or a step chosen", async () => {
@@ -371,7 +371,7 @@ const JOINED = [
 
 for (const { about, content, picture, lit, regions } of JOINED) {
 	test(`a step about ${about} lights and frames the parts at both of its ends`, async () => {
-		server.documents["pipeline"] = boardOf(content);
+		server.documents["pipeline"] = documentOf(content);
 		server.reply = { status: 200, body: picture };
 		mountStage(null, { reducedMotion: true });
 		await presenting();
@@ -410,7 +410,7 @@ const ANSWERED = {
 };
 
 test("a step about several cards lights and frames the lines between them, and only those", async () => {
-	server.documents["pipeline"] = boardOf(ANSWERED);
+	server.documents["pipeline"] = documentOf(ANSWERED);
 	server.reply = {
 		status: 200,
 		body: pictureOf(
@@ -497,7 +497,7 @@ test("Escape leaves, and gives the reader back the camera and the view they had"
 	await settle();
 	await settle();
 	expect(document.querySelector("[data-slot='semantic-presentation']")).toBeNull();
-	expect(part("semantic-board-stage").hasAttribute("data-presentation-step")).toBe(false);
+	expect(part("canvas-stage").hasAttribute("data-presentation-step")).toBe(false);
 	// The step read the board through its view; the reader never chose one.
 	expect(views).toContain(VIEW.id);
 	expect(views.at(-1)).toBeNull();
@@ -532,7 +532,7 @@ test("the same walkthrough stays presented when the reader moves to the proposal
 });
 
 test("the subjects a disagreement is about are marked in the picture", async () => {
-	server.documents["pipeline"] = boardOf(CONTENT);
+	server.documents["pipeline"] = documentOf(CONTENT);
 	server.reply = {
 		status: 200,
 		body: {

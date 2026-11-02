@@ -6,7 +6,7 @@ import type {
 	SemanticChild,
 	SemanticClaim,
 	SemanticCoordinator,
-	SemanticBoard,
+	LegacyBoard,
 	SemanticCursor,
 	SemanticCursorInput,
 	SemanticAgentSwitch,
@@ -37,7 +37,7 @@ interface NormalizedContext {
 	readonly threadLink: SemanticThreadLink;
 	readonly workhorse: SemanticWorkhorse;
 	readonly coordinator: SemanticCoordinator;
-	readonly board: SemanticBoard & { readonly version: number | null };
+	readonly board: LegacyBoard & { readonly version: number | null };
 	readonly pane: SemanticPane;
 	readonly architecture: SemanticArchitecture;
 	readonly claim: SemanticClaim;
@@ -202,11 +202,11 @@ function boundedReasons(values: readonly unknown[], field: string): BoundedValue
  * @param board - The board input.
  * @returns The frozen board with its version.
  */
-function normalizeBoard(
+function normalizeModel(
 	board: SemanticContextInput["board"],
 ): BoundedValue<NormalizedContext["board"]> {
-	const key = textValue(board.key, "board.key", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
-	const name = textValue(board.name, "board.name", SEMANTIC_CONTEXT_LIMITS.boardKeyBytes);
+	const key = textValue(board.key, "board.key", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
+	const name = textValue(board.name, "board.name", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
 	const vault = textValue(board.vault, "board.vault", SEMANTIC_CONTEXT_LIMITS.fileBytes);
 	const file = textValue(board.file, "board.file", SEMANTIC_CONTEXT_LIMITS.fileBytes);
 	const version = numberValue(board.version, "board.version");
@@ -275,7 +275,7 @@ function agentSwitchOf(stated: SemanticAgentSwitch | undefined): SemanticAgentSw
 	const from = nullableTextValue(
 		stated.from,
 		"pane.agentSwitch.from",
-		SEMANTIC_CONTEXT_LIMITS.boardKeyBytes,
+		SEMANTIC_CONTEXT_LIMITS.paneKeyBytes,
 	);
 	const by = nullableTextValue(
 		stated.by,
@@ -430,7 +430,7 @@ function normalizeContext(
 		"repository",
 		SEMANTIC_CONTEXT_LIMITS.repositoryBytes,
 	);
-	const board = normalizeBoard(input.board);
+	const board = normalizeModel(input.board);
 	const pane = normalizePane(input.pane);
 	const description = textValue(
 		input.description,

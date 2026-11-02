@@ -45,7 +45,7 @@ import type {
 	LocalityCommit,
 	LocalityPeriod,
 } from "#shared/protocol/locality.ts";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import { LOCALITY_DEFAULT_PERIOD_MS } from "@archboard/timing";
 
 /** How many answers the server keeps: the boards that somebody selects parts on. */
@@ -314,7 +314,7 @@ interface VariantLocality {
 	 */
 	read(
 		vault: string,
-		board: SemanticBoard,
+		board: LegacyBoard,
 		variant: SemanticVariant,
 		since: Date | undefined,
 		signal?: AbortSignal,

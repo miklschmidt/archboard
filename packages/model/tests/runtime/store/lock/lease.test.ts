@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-lease-"));
 const originalWarn = logger.warn;
@@ -15,7 +15,7 @@ const boards = new Set<string>();
 async function advanceLockTime(ms: number): Promise<void> {
 	let elapsed = 0;
 	while (elapsed < ms) {
-		const step = Math.min(BOARD_LOCK_MS.poll, ms - elapsed);
+		const step = Math.min(MODEL_LOCK_MS.poll, ms - elapsed);
 		jest.advanceTimersByTime(step);
 		await Promise.resolve();
 		await Promise.resolve();
@@ -24,7 +24,7 @@ async function advanceLockTime(ms: number): Promise<void> {
 }
 
 async function cleanup(): Promise<void> {
-	lock.watchBoardLocks(null);
+	lock.watchModelLocks(null);
 	lock.onBoardSweep(null);
 	lock.onBoardLockChanged(null);
 	for (const board of boards) {
@@ -42,7 +42,7 @@ async function cleanup(): Promise<void> {
 test("post-attempt cancellation preserves a reentrant claim for explicit release", async () => {
 	const board = "cancelled-reentrant-claim";
 	boards.add(board);
-	const originalClaim = await lock.claimBoard({
+	const originalClaim = await lock.claimModel({
 		vault,
 		board,
 		reason: "Keep the original claim",
@@ -50,7 +50,7 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 	});
 	try {
 		const controller = new AbortController();
-		const cancelledRenewal = lock.claimBoard({
+		const cancelledRenewal = lock.claimModel({
 			vault,
 			board,
 			reason: "This renewal is canceled after its reentrant attempt",
@@ -58,12 +58,12 @@ test("post-attempt cancellation preserves a reentrant claim for explicit release
 			signal: controller.signal,
 		});
 		controller.abort();
-		await expect(cancelledRenewal).rejects.toBeInstanceOf(lock.BoardLockCancelledError);
+		await expect(cancelledRenewal).rejects.toBeInstanceOf(lock.ModelLockCancelledError);
 		expect(lock.claimOn(vault, board)?.holder.id).toBe(originalClaim.claim.holder.id);
-		expect(lock.boardLockState(vault, board)?.id).toBe(originalClaim.claim.holder.id);
+		expect(lock.modelLockState(vault, board)?.id).toBe(originalClaim.claim.holder.id);
 		expect(lock.releaseClaim(vault, board)?.holder.id).toBe(originalClaim.claim.holder.id);
 		expect(lock.claimOn(vault, board)).toBeNull();
-		expect(lock.boardLockState(vault, board)).toBeNull();
+		expect(lock.modelLockState(vault, board)).toBeNull();
 	} finally {
 		lock.releaseClaim(vault, board);
 	}
@@ -75,46 +75,44 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		const board = "interface";
 		boards.add(board);
 		let writes = 0;
-		expect(await lock.withBoardLock({ vault, board, holder: agent("first") }, () => ++writes)).toBe(
-			1,
-		);
-		expect(lock.boardLockState(vault, board)).toBeNull();
-		const held = await lock.holdBoard({
+		expect(await lock.withLease({ vault, board, holder: agent("first") }, () => ++writes)).toBe(1);
+		expect(lock.modelLockState(vault, board)).toBeNull();
+		const held = await lock.holdModel({
 			vault,
 			board,
 			holder: human("user"),
-			leaseMs: BOARD_LOCK_MS.waitCap + BOARD_LOCK_MS.lease,
+			leaseMs: MODEL_LOCK_MS.waitCap + MODEL_LOCK_MS.lease,
 			waitMs: 0,
 		});
 		expect(held.created).toBeTrue();
 		const refusal = lock
-			.holdBoard({ vault, board, holder: agent("later") })
+			.holdModel({ vault, board, holder: agent("later") })
 			.catch((error: unknown) => error);
-		await advanceLockTime(BOARD_LOCK_MS.waitCap);
+		await advanceLockTime(MODEL_LOCK_MS.waitCap);
 		const refused = await refusal;
-		expect(refused).toBeInstanceOf(lock.BoardHeldError);
-		if (!(refused instanceof lock.BoardHeldError)) {
-			throw new Error("Expected BoardHeldError.");
+		expect(refused).toBeInstanceOf(lock.ModelHeldError);
+		if (!(refused instanceof lock.ModelHeldError)) {
+			throw new Error("Expected ModelHeldError.");
 		}
-		expect(refused.code).toBe("BOARD_HELD");
+		expect(refused.code).toBe("MODEL_HELD");
 		expect(refused.board).toBe(board);
 		expect(refused.holder).toMatchObject({ id: "user", kind: "human" });
 		expect(refused.message).toMatch(/held by the user at the canvas, since/);
-		expect(refused.waitedMs).toBe(BOARD_LOCK_MS.waitCap);
+		expect(refused.waitedMs).toBe(MODEL_LOCK_MS.waitCap);
 		jest.advanceTimersByTime(1);
-		const renewed = await lock.holdBoard({ vault, board, holder: human("user"), waitMs: 0 });
+		const renewed = await lock.holdModel({ vault, board, holder: human("user"), waitMs: 0 });
 		expect(renewed.created).toBeFalse();
 		expect(renewed.holder.since).toBe(held.holder.since);
 		expect(Date.parse(renewed.holder.until)).toBeGreaterThan(Date.parse(held.holder.until));
-		await lock.withBoardLock({ vault, board, holder: human("user") }, () => ++writes);
+		await lock.withLease({ vault, board, holder: human("user") }, () => ++writes);
 		expect(writes).toBe(2);
-		expect(lock.boardLockState(vault, board)?.id).toBe("user");
+		expect(lock.modelLockState(vault, board)?.id).toBe("user");
 		// A user behind another user's hold is refused at once, without the
 		// agent's wait (TASK-153): no timer is advanced and no time is waited.
 		const otherUser = await lock
-			.holdBoard({ vault, board, holder: human("other-pane") })
+			.holdModel({ vault, board, holder: human("other-pane") })
 			.catch((error: unknown) => error);
-		if (!(otherUser instanceof lock.BoardHeldError)) {
+		if (!(otherUser instanceof lock.ModelHeldError)) {
 			throw new Error("Expected the other user's hold to be refused.");
 		}
 		expect(otherUser.holder).toMatchObject({ id: "user" });
@@ -124,26 +122,26 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 
 		const expired = "expired";
 		boards.add(expired);
-		await lock.holdBoard({
+		await lock.holdModel({
 			vault,
 			board: expired,
 			holder: agent("departed"),
 			leaseMs: 100,
 			waitMs: 0,
 		});
-		const expiredTakeover = lock.holdBoard({
+		const expiredTakeover = lock.holdModel({
 			vault,
 			board: expired,
 			holder: agent("later"),
 			waitMs: 1_000,
 		});
-		await advanceLockTime(100 + BOARD_LOCK_MS.stealGuard);
+		await advanceLockTime(100 + MODEL_LOCK_MS.stealGuard);
 		expect(await expiredTakeover).toMatchObject({ created: true, holder: { id: "later" } });
-		expect(BOARD_LOCK_MS.waitCap).toBeGreaterThan(BOARD_LOCK_MS.lease);
+		expect(MODEL_LOCK_MS.waitCap).toBeGreaterThan(MODEL_LOCK_MS.lease);
 
 		const waiting = "waiting";
 		boards.add(waiting);
-		await lock.holdBoard({
+		await lock.holdModel({
 			vault,
 			board: waiting,
 			holder: human("user"),
@@ -151,7 +149,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			waitMs: 0,
 		});
 		setTimeout(() => lock.releaseHold(vault, waiting, "user"), 250);
-		const waitingTakeover = lock.holdBoard({
+		const waitingTakeover = lock.holdModel({
 			vault,
 			board: waiting,
 			holder: agent("patient"),
@@ -162,7 +160,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 
 		const cancelled = "cancelled";
 		boards.add(cancelled);
-		await lock.holdBoard({
+		await lock.holdModel({
 			vault,
 			board: cancelled,
 			holder: human("user"),
@@ -173,7 +171,7 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 		setTimeout(() => controller.abort(), 25);
 		const cancelStart = Date.now();
 		const cancellationRequest = lock
-			.holdBoard({
+			.holdModel({
 				vault,
 				board: cancelled,
 				holder: agent("later"),
@@ -183,35 +181,35 @@ test("lease interface excludes, renews, expires, and normalizes", async () => {
 			.catch((error: unknown) => error);
 		await advanceLockTime(25);
 		const cancellation = await cancellationRequest;
-		expect(cancellation).toBeInstanceOf(lock.BoardLockCancelledError);
+		expect(cancellation).toBeInstanceOf(lock.ModelLockCancelledError);
 		expect(Date.now() - cancelStart).toBeLessThan(500);
-		expect(lock.boardLockState(vault, cancelled)?.id).toBe("user");
+		expect(lock.modelLockState(vault, cancelled)?.id).toBe("user");
 		expect(lock.releaseHold(vault, cancelled, "user")).toBeTrue();
 
 		boards.add("Payments");
-		await lock.holdBoard({ vault, board: "Payments", holder: agent("upper"), waitMs: 0 });
+		await lock.holdModel({ vault, board: "Payments", holder: agent("upper"), waitMs: 0 });
 		const canonicalRefusal = await lock
-			.holdBoard({ vault, board: "payments", holder: agent("later"), waitMs: 0 })
+			.holdModel({ vault, board: "payments", holder: agent("later"), waitMs: 0 })
 			.catch((error: unknown) => error);
-		expect(canonicalRefusal).toBeInstanceOf(lock.BoardHeldError);
+		expect(canonicalRefusal).toBeInstanceOf(lock.ModelHeldError);
 		lock.releaseHold(vault, "payments", "upper");
 		boards.add("systems/payments");
-		await lock.holdBoard({ vault, board: "systems/payments", holder: agent("nested"), waitMs: 0 });
+		await lock.holdModel({ vault, board: "systems/payments", holder: agent("nested"), waitMs: 0 });
 		expect(existsSync(join(vault, ".archboard/locks/systems%2Fpayments.lock"))).toBeTrue();
 
 		const unreadable = "unreadable";
 		boards.add(unreadable);
-		await lock.holdBoard({ vault, board: unreadable, holder: agent("first"), waitMs: 0 });
+		await lock.holdModel({ vault, board: unreadable, holder: agent("first"), waitMs: 0 });
 		const file = join(vault, ".archboard/locks/unreadable.lock");
 		mkdirSync(join(vault, ".archboard/locks"), { recursive: true });
 		writeFileSync(file, "{ half a record");
-		const unreadableTakeover = lock.holdBoard({
+		const unreadableTakeover = lock.holdModel({
 			vault,
 			board: unreadable,
 			holder: agent("later"),
 			waitMs: 0,
 		});
-		await advanceLockTime(BOARD_LOCK_MS.stealGuard);
+		await advanceLockTime(MODEL_LOCK_MS.stealGuard);
 		expect(await unreadableTakeover).toMatchObject({ created: true });
 	} finally {
 		await cleanup();

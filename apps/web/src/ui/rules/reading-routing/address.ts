@@ -28,7 +28,7 @@ interface AddressedPane {
 	readonly paneId: string;
 	readonly model?: ModelAddress | undefined;
 	/** The board key, or null while the pane has not said what it holds. */
-	readonly boardKey: string | null;
+	readonly paneKey: string | null;
 	/**
 	 * The repository the board is in (ADR 0050), by identity or by an untracked
 	 * vault's registry name, never by a path; or null when the address does not
@@ -55,7 +55,7 @@ interface WorkspaceAddress {
 /** One pane whose board must change to reach a wanted address. */
 interface AddressOpen {
 	readonly paneId: string;
-	readonly boardKey: string | null;
+	readonly paneKey: string | null;
 	readonly model?: ModelAddress;
 	/** The repository the board is in, or null for the one the pane is in. */
 	readonly repository: string | null;
@@ -82,7 +82,7 @@ function modelOpen(
 ): AddressOpen[] {
 	const { paneId, repository } = pane;
 	return repository !== null && repository !== repositoryIn(displayed, paneId)
-		? [{ paneId, boardKey: null, model, repository }]
+		? [{ paneId, paneKey: null, model, repository }]
 		: [];
 }
 
@@ -93,9 +93,9 @@ function modelOpen(
  * @returns The move, when the pane has to be pointed there.
  */
 function placeOpen(displayed: WorkspaceAddress, pane: AddressedPane): AddressOpen[] {
-	const { paneId, boardKey, repository } = pane;
-	return (boardKey ?? repository) !== null && elsewhere(displayed, pane)
-		? [{ paneId, boardKey, repository }]
+	const { paneId, paneKey, repository } = pane;
+	return (paneKey ?? repository) !== null && elsewhere(displayed, pane)
+		? [{ paneId, paneKey, repository }]
 		: [];
 }
 
@@ -138,8 +138,8 @@ const NOTHING_TO_DO: AddressPlan = Object.freeze({
  * @param paneId The pane.
  * @returns The board key, or null when the pane is absent or says nothing.
  */
-function boardIn(address: WorkspaceAddress, paneId: string): string | null {
-	return address.panes.find((pane) => pane.paneId === paneId)?.boardKey ?? null;
+function modelIn(address: WorkspaceAddress, paneId: string): string | null {
+	return address.panes.find((pane) => pane.paneId === paneId)?.paneKey ?? null;
 }
 
 /**
@@ -186,7 +186,7 @@ function sameAddress(one: WorkspaceAddress, other: WorkspaceAddress): boolean {
 			const against = other.panes[index];
 			return (
 				against?.paneId === pane.paneId &&
-				against.boardKey === pane.boardKey &&
+				against.paneKey === pane.paneKey &&
 				against.repository === pane.repository &&
 				against.view === pane.view &&
 				sameModelAddress(against.model, pane.model)
@@ -253,7 +253,7 @@ function withModelAddresses(
 			if (wanted?.model === undefined) return pane;
 			return {
 				...pane,
-				boardKey: null,
+				paneKey: null,
 				view: null,
 				model: wanted.model,
 				repository: wanted.repository ?? pane.repository,
@@ -285,7 +285,7 @@ function settledAddress(address: WorkspaceAddress): WorkspaceAddress {
  * @returns True when the pane has to be pointed somewhere.
  */
 function elsewhere(displayed: WorkspaceAddress, pane: AddressedPane): boolean {
-	if (pane.boardKey !== boardIn(displayed, pane.paneId)) return true;
+	if (pane.paneKey !== modelIn(displayed, pane.paneId)) return true;
 	return pane.repository !== null && pane.repository !== repositoryIn(displayed, pane.paneId);
 }
 
@@ -359,7 +359,7 @@ function planIsEmpty(plan: AddressPlan): boolean {
 export {
 	EMPTY_ADDRESS,
 	withModelAddresses,
-	boardIn,
+	modelIn,
 	repositoryIn,
 	viewIn,
 	hasAddressedPane,

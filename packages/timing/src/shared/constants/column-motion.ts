@@ -30,7 +30,7 @@ const COLUMN_MS = durations({
 	 * How long a board's viewport keeps its size before the camera fits to it: longer than
 	 * a slow frame, so a slide is fitted at its end, and short enough not to trail a resize.
 	 */
-	boardResizeSettle: 64,
+	pictureResizeSettle: 64,
 	/**
 	 * How long a select's or a menu's popover takes to arrive: it fades in and grows a
 	 * little from the control that opened it, so a reader sees where it came from.
@@ -52,7 +52,7 @@ const SIDEBAR_MS = durations({
 	/**
 	 * How long a docked sidebar takes to open or shut. Its column eases between
 	 * no width and its own, the picture beside it gives way frame by frame, and
-	 * the board is fitted once, at the end (`COLUMN_MS.boardResizeSettle`). The panel
+	 * the board is fitted once, at the end (`COLUMN_MS.pictureResizeSettle`). The panel
 	 * keeps its own width throughout, held to the pane's edge, so it slides in
 	 * and never reflows.
 	 *

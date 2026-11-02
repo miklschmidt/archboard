@@ -24,17 +24,17 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-	boardKey,
+	paneKey,
 	makeIdentity,
-	normalizeBoardKey,
+	normalizePaneKey,
 	vaultPathFor,
 } from "#runtime/store/legacy-address.ts";
 
 /** What a semantic board's aggregate is stored under, inside the vault. */
-const SEMANTIC_BOARD_FILE_SUFFIX = ".semantic.json";
+const LEGACY_BOARD_FILE_SUFFIX = ".semantic.json";
 
 /** A board's name and the key every writer, lock and broadcast agrees on. */
-interface SemanticBoardAddress {
+interface LegacyBoardAddress {
 	/** The name as the caller spelled it, validated and trimmed. */
 	readonly name: string;
 	/** The comparison form of that name (ADR 0010). */
@@ -42,7 +42,7 @@ interface SemanticBoardAddress {
 }
 
 /** An address, and the file that holds it. */
-interface SemanticBoardLocation extends SemanticBoardAddress {
+interface LegacyBoardLocation extends LegacyBoardAddress {
 	/** The absolute path of the aggregate. */
 	readonly file: string;
 }
@@ -58,11 +58,11 @@ interface SemanticBoardLocation extends SemanticBoardAddress {
  * @returns The name and the key.
  * @throws {Error} When the name is not usable as a board name.
  */
-function semanticBoardAddress(asked: string): SemanticBoardAddress {
+function legacyBoardAddress(asked: string): LegacyBoardAddress {
 	const identity = makeIdentity({ board: asked });
 	return {
 		name: identity.displayName ?? identity.board,
-		key: normalizeBoardKey(boardKey(identity)),
+		key: normalizePaneKey(paneKey(identity)),
 	};
 }
 
@@ -111,9 +111,9 @@ function insideVault(file: string, root: string): boolean {
  * @returns Where that board is.
  * @throws {Error} When the name is not usable or would escape the vault.
  */
-function locateSemanticBoard(asked: string, root: string): SemanticBoardLocation {
-	const address = semanticBoardAddress(asked);
-	const file = vaultPathFor(makeIdentity({ board: asked }), root, SEMANTIC_BOARD_FILE_SUFFIX);
+function locateLegacyBoard(asked: string, root: string): LegacyBoardLocation {
+	const address = legacyBoardAddress(asked);
+	const file = vaultPathFor(makeIdentity({ board: asked }), root, LEGACY_BOARD_FILE_SUFFIX);
 	if (!insideVault(file, root)) {
 		throw new Error(
 			`Refusing to resolve board "${address.key}": it resolves through a link that leaves the ` +
@@ -124,9 +124,9 @@ function locateSemanticBoard(asked: string, root: string): SemanticBoardLocation
 }
 
 export {
-	SEMANTIC_BOARD_FILE_SUFFIX,
-	type SemanticBoardAddress,
-	type SemanticBoardLocation,
-	semanticBoardAddress,
-	locateSemanticBoard,
+	LEGACY_BOARD_FILE_SUFFIX,
+	type LegacyBoardAddress,
+	type LegacyBoardLocation,
+	legacyBoardAddress,
+	locateLegacyBoard,
 };

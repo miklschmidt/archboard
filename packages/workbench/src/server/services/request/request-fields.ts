@@ -52,15 +52,6 @@ function queryString(req: Request, key: string): string | undefined {
 }
 
 /**
- * The board a request names: `?board=` first, then the body's `board`.
- * @param req The request.
- * @returns The board as the caller spelled it, or undefined when it named none.
- */
-function boardOfRequest(req: Request): string | undefined {
-	return queryString(req, "board") ?? bodyString(req, "board");
-}
-
-/**
  * A thrown value as the message a route answers with.
  * @param error The thrown value.
  * @returns Its message, or the value's string form when it is not an Error.
@@ -69,4 +60,4 @@ function messageOf(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-export { boardOfRequest, bodyOf, bodyString, isRecord, messageOf, queryString };
+export { bodyOf, bodyString, isRecord, messageOf, queryString };

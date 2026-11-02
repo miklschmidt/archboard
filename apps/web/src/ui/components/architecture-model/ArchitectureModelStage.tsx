@@ -72,7 +72,7 @@ interface ModelStageProps
 
 /**
  * A canonical model occupies a pane that holds no legacy board.
- * @param props The vault and the existing empty-board fallback.
+ * @param props The vault and the existing empty-model fallback.
  * @returns A model reader, or the existing board surface.
  */
 function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
@@ -111,7 +111,7 @@ function ArchitectureModelStage(props: ModelStageProps): JSX.Element {
 /**
  * Explicit canonical intent stays canonical even when the target still holds legacy boards.
  * @param props The resolved repository and requested pane.
- * @returns Its canonical reader or the existing empty-board surface.
+ * @returns Its canonical reader or the existing empty-model surface.
  */
 function LocatedModelStage(props: ModelStageProps): JSX.Element {
 	const { preview, subject } = useModelLocation(props.paneId);

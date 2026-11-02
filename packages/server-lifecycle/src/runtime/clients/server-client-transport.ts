@@ -1,8 +1,8 @@
 // One request to the Archboard server, and the identity gate in front of it.
 
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
-import { withBoard, withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
-import { isBoardRefusal } from "#runtime/protocol/server-client-refusal.ts";
+import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
+import { isModelRefusal } from "#runtime/protocol/server-client-refusal.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -191,7 +191,7 @@ function responseError(data: unknown, response: Response): Error {
 	const error: ServerError = new Error([reason, ...diagnosticLines(body)].join("\n"));
 	describeFailure(error, body);
 	error.answer = body;
-	if (isBoardRefusal(data)) {
+	if (isModelRefusal(data)) {
 		error.refusal = data;
 	}
 	return error;
@@ -252,7 +252,7 @@ function describeFailure(error: ServerError, body: Record<string, unknown>): voi
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 	await assertServerIdentity();
 	const response = await fetch(
-		`${ARCHBOARD_URL}${withWriteClaims(withVault(withBoard(path)), init?.method)}`,
+		`${ARCHBOARD_URL}${withWriteClaims(withVault(path), init?.method)}`,
 		init,
 	);
 	const data: unknown = await response.json().catch(() => null);

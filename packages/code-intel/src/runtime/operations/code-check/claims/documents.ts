@@ -10,7 +10,7 @@
 // missing too. A repository this machine has not registered and a ref the
 // checkout cannot resolve are skipped with the reason, as a binding's are.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import { otherRefOf, type Checkout } from "#runtime/operations/code-check/checkouts.ts";
 import {
 	codeFor,
@@ -35,7 +35,7 @@ interface DocumentReading {
  * @param boards The boards, each at the variant the check reads.
  * @returns The references.
  */
-function documentsOf(boards: readonly BoardToCheck[]): DocumentReference[] {
+function documentsOf(boards: readonly StateToCheck[]): DocumentReference[] {
 	return boards.flatMap((read) => read.variant.documents ?? []);
 }
 
@@ -46,7 +46,7 @@ function documentsOf(boards: readonly BoardToCheck[]): DocumentReference[] {
  * @param where The code that was read: the checkout, or a ref in it.
  * @returns The finding.
  */
-function documentPathMissing(read: BoardToCheck, index: number, where: string): CodeFinding {
+function documentPathMissing(read: StateToCheck, index: number, where: string): CodeFinding {
 	const document = read.variant.documents?.[index];
 	return {
 		severity: "warning",
@@ -100,7 +100,7 @@ function codeOf(
  * @returns What it comes to.
  */
 function judgeDocument(
-	read: BoardToCheck,
+	read: StateToCheck,
 	index: number,
 	document: DocumentReference,
 	reading: DocumentReading,
@@ -119,7 +119,7 @@ function judgeDocument(
  * @returns The findings, and the references that were not read with the reason.
  */
 function judgeDocuments(
-	boards: readonly BoardToCheck[],
+	boards: readonly StateToCheck[],
 	reading: DocumentReading,
 ): { findings: CodeFinding[]; skipped: CodeCheckSkip[] } {
 	const judged = boards.flatMap((read) =>

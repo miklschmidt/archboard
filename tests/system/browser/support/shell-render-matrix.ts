@@ -231,19 +231,19 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		const stages = document.querySelector('${STAGE_ROOT}');
 		const bar = document.querySelector('${AGENT_DOCK}');
 		// The switcher names the repository of the focused pane, a human label beside the header's.
-		const selectedBoard = nav?.querySelector('[data-slot="repository-switcher"]');
+		const selectedModel = nav?.querySelector('[data-slot="repository-switcher"]');
 		const rowLabel = nav?.querySelector('[data-row-id]');
 		// The pane's window on the picture: the room the camera fits a drawing into.
 		const picture = pane?.querySelector('[data-slot="model-diagram"]');
 		const panel = pane?.querySelector('[data-slot="model-panel"]');
 		if (!shell || !header || !wordmark || !control || !paneHeader || !board || !variant || !technical ||
-			!present || !column || !nav || !stages || !bar || !pane || !selectedBoard || !rowLabel ||
+			!present || !column || !nav || !stages || !bar || !pane || !selectedModel || !rowLabel ||
 			!picture || !panel) {
 			throw new Error('shell matrix probe is incomplete: ' + JSON.stringify({
 				shell: !!shell, header: !!header, wordmark: !!wordmark, control: !!control,
 				paneHeader: !!paneHeader, board: !!board, variant: !!variant, technical: !!technical,
 				present: !!present, column: !!column, nav: !!nav, stages: !!stages, bar: !!bar,
-				pane: !!pane, selectedBoard: !!selectedBoard, rowLabel: !!rowLabel,
+				pane: !!pane, selectedModel: !!selectedModel, rowLabel: !!rowLabel,
 				picture: !!picture, panel: !!panel }));
 		}
 		const round = value => Math.round(value * 1000) / 1000;
@@ -267,7 +267,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 			return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 		};
 		const flat = [shell, header, paneHeader, nav, stages, bar, pane];
-		const humanLabels = [selectedBoard, board];
+		const humanLabels = [selectedModel, board];
 		control.focus();
 		const focusStyle = getComputedStyle(control);
 		const focusRect = control.getBoundingClientRect();
@@ -303,7 +303,7 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 		};
 		const foreground = luminance(getComputedStyle(wordmark).color);
 		const backdrop = luminance(surface(header));
-		const boardRect = board.getBoundingClientRect();
+		const pictureRect = board.getBoundingClientRect();
 		const presentRect = present.getBoundingClientRect();
 		const headerRect = header.getBoundingClientRect();
 		const paneHeaderRect = paneHeader.getBoundingClientRect();
@@ -343,11 +343,11 @@ async function probe(browser: AgentBrowserSession): Promise<MatrixProbe> {
 				flatSurfaces: flat.every(node => getComputedStyle(node).backgroundImage === 'none'),
 				visibleFocus: ringVisible,
 				modelIdentity: board.textContent.trim(), stateName: variant.textContent.trim(),
-				selectedRepository: selectedBoard.getAttribute('title'),
+				selectedRepository: selectedModel.getAttribute('title'),
 				focusedPaneCount: panes.filter(node => node.getAttribute('aria-current') === 'true').length,
 				connectionTrouble,
-				headerSectionsAligned: boardRect.right < presentRect.left &&
-					Math.abs((boardRect.top + boardRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
+				headerSectionsAligned: pictureRect.right < presentRect.left &&
+					Math.abs((pictureRect.top + pictureRect.height / 2) - (presentRect.top + presentRect.height / 2)) < 0.5,
 				fontChecks,
 				fontResources: performance.getEntriesByType('resource').map(entry => entry.name)
 					.filter(name => /(?:Onest-wght|MapleMonoNL-(?:Regular|Medium)).*[.]ttf/.test(name)),

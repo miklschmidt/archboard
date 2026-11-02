@@ -63,7 +63,7 @@ test("the tab says what the variant is about, and what the view on screen answer
 	mountStage(null, { view: VIEW.id, onViewChange: ignoreChoice });
 	await settle();
 	await settle();
-	expect(part("semantic-board-summary").textContent).toBe(SUMMARY);
+	expect(part("canvas-summary").textContent).toBe(SUMMARY);
 	const described = part("semantic-view-summary");
 	expect(described.textContent).toBe(VIEW_SUMMARY);
 	expect(
@@ -84,7 +84,7 @@ test("on a board nobody has built, the tab speaks for the draft its bare name op
 	mountStage();
 	await settle();
 	await settle();
-	expect(part("semantic-board-summary").textContent).toBe(SUMMARY);
+	expect(part("canvas-summary").textContent).toBe(SUMMARY);
 });
 
 test("a proposal's key counts each standing it has, in one order, and leaves out the rest", async () => {

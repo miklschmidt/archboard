@@ -30,7 +30,7 @@ import {
 	repositoryIn,
 	type WorkspaceAddress,
 } from "#ui/rules/reading-routing/address.ts";
-import type { AskedBoard, WorkspacePort } from "#ui/rules/reading-routing/contracts.ts";
+import type { AskedModel, WorkspacePort } from "#ui/rules/reading-routing/contracts.ts";
 
 /** One thing a restore does next. */
 type RestoreStep =
@@ -49,7 +49,7 @@ interface Restore {
 	/** The steps applied for this target. */
 	readonly attempted: Set<string>;
 	/** The boards this target asked for and could not reach. */
-	readonly unreachable: readonly AskedBoard[];
+	readonly unreachable: readonly AskedModel[];
 	/** Whether this target has settled. */
 	readonly done: boolean;
 }
@@ -100,7 +100,7 @@ function abandonRestore(restore: Restore): Restore {
  * @param asked The board that could not be reached, and the repository the address named.
  * @returns The restore, with that board named when it is still this target's.
  */
-function boardUnreachable(restore: Restore, target: number, asked: AskedBoard): Restore {
+function modelUnreachable(restore: Restore, target: number, asked: AskedModel): Restore {
 	return target === restore.target
 		? { ...restore, unreachable: [...restore.unreachable, asked] }
 		: restore;
@@ -119,12 +119,12 @@ function boardUnreachable(restore: Restore, target: number, asked: AskedBoard): 
  * @param openedKey The board the server says that pane is on.
  * @returns The restore, wanting that pane on the server's spelling.
  */
-function boardOpened(restore: Restore, target: number, paneId: string, openedKey: string): Restore {
+function modelOpened(restore: Restore, target: number, paneId: string, openedKey: string): Restore {
 	if (target !== restore.target) {
 		return restore;
 	}
 	const panes = restore.wanted.panes.map((pane) =>
-		pane.paneId === paneId ? { ...pane, boardKey: openedKey } : pane,
+		pane.paneId === paneId ? { ...pane, paneKey: openedKey } : pane,
 	);
 	return { ...restore, wanted: { ...restore.wanted, panes } };
 }
@@ -160,7 +160,7 @@ function stepKey(step: RestoreStep, displayed: WorkspaceAddress): string {
  */
 function openStepKey(step: Extract<RestoreStep, { kind: "open" }>): string {
 	const reading = step.model === undefined ? "" : `:${JSON.stringify(step.model)}`;
-	return `open:${step.paneId}:${String(step.repository)}:${step.boardKey}${reading}`;
+	return `open:${step.paneId}:${String(step.repository)}:${step.paneKey}${reading}`;
 }
 
 /**
@@ -263,7 +263,7 @@ interface RestoreCommands {
 	/** Take the command slot and point a pane at a board of a repository, or of its own. */
 	readonly open: (
 		paneId: string,
-		boardKey: string | null,
+		paneKey: string | null,
 		repository: string | null,
 		model?: ModelAddress,
 	) => void;
@@ -309,7 +309,7 @@ function advanceRestore(
 		if (outcome.step.kind === "open") {
 			commands.open(
 				outcome.step.paneId,
-				outcome.step.boardKey,
+				outcome.step.paneKey,
 				outcome.step.repository,
 				outcome.step.model,
 			);
@@ -325,8 +325,8 @@ function advanceRestore(
 export {
 	abandonRestore,
 	advanceRestore,
-	boardOpened,
-	boardUnreachable,
+	modelOpened,
+	modelUnreachable,
 	createRestore,
 	nextRestoreStep,
 	reportRestoreEnd,

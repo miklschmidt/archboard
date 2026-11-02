@@ -3,8 +3,8 @@
 import type { RememberedFindings } from "@archboard/code-intel/code-check";
 import {
 	fetchCodeFindings,
-	SemanticBoardError,
-	type SemanticBoardListing,
+	ReadingError,
+	type RetainedListing,
 	fetchVaultCheck,
 } from "#ui/clients/canvas/reads/drawings.ts";
 import type { VaultCheckSchema } from "@archboard/model/policy";
@@ -13,9 +13,9 @@ import type { z } from "zod";
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 /** Where boards are read from. */
-interface BoardReads {
+interface RetainedReads {
 	/** List only the original documents supplied by the capture. */
-	readonly listing: (vault: string, signal?: AbortSignal) => Promise<SemanticBoardListing>;
+	readonly listing: (vault: string, signal?: AbortSignal) => Promise<RetainedListing>;
 	/**
 	 * One board's whole document.
 	 * @param vault The vault the board is in.
@@ -43,29 +43,29 @@ interface BoardReads {
 /**
  * Retained documents require a capture supplied by replay.
  * @returns An explicit refusal without a live board request.
- * @throws {SemanticBoardError} When no retained provider is installed.
+ * @throws {ReadingError} When no retained provider is installed.
  */
 async function captureRequired(): Promise<never> {
-	throw new SemanticBoardError(
+	throw new ReadingError(
 		"BOARD_UNREADABLE",
 		"Open an exact retained recording to read original board content.",
 	);
 }
 
-const liveEvidence: BoardReads = {
+const liveEvidence: RetainedReads = {
 	document: captureRequired,
 	listing: captureRequired,
 	vaultCheck: fetchVaultCheck,
 	codeFindings: fetchCodeFindings,
 };
 
-let current: BoardReads = liveEvidence;
+let current: RetainedReads = liveEvidence;
 
 /**
  * Where boards are read from now.
  * @returns The reads.
  */
-function boardReads(): BoardReads {
+function retainedReads(): RetainedReads {
 	return current;
 }
 
@@ -73,8 +73,8 @@ function boardReads(): BoardReads {
  * Read boards from somewhere else from now on.
  * @param reads Where.
  */
-function readBoardsFrom(reads: BoardReads): void {
+function readRetainedFrom(reads: RetainedReads): void {
 	current = reads;
 }
 
-export { boardReads, readBoardsFrom, type BoardReads };
+export { retainedReads, readRetainedFrom, type RetainedReads };

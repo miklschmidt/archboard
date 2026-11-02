@@ -13,7 +13,7 @@ import type { JSX } from "react";
 import { SemanticDiagram } from "#ui/components/canvas/SemanticDiagram.tsx";
 import { SemanticStageLoading } from "#ui/components/canvas/SemanticStageStates.tsx";
 import type { Leaving } from "#ui/hooks/canvas/use-departure.ts";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 
 /** What the waiting pane is drawn from. */
 interface WaitingView {
@@ -22,7 +22,7 @@ interface WaitingView {
 	/** The last board's picture on its way out, or null. */
 	readonly leaving: Leaving | null;
 	/** The pane's camera, kept across the wait. */
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** Whether the person asked for reduced motion. */
 	readonly reducedMotion?: boolean | undefined;
 }

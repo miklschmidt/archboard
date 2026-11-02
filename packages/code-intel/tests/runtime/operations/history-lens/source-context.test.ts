@@ -6,8 +6,8 @@ import { join } from "node:path";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
 	currentVariant,
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
 } from "@archboard/model/legacy-board";
 
 test("bound declarations retain historical C, Objective-C and Nix parser context outside their binding", async () => {
@@ -74,8 +74,8 @@ test("bound declarations retain historical C, Objective-C and Nix parser context
 		writeFileSync(join(root, "api.cpp"), '#include "api.h"\n');
 		writeFileSync(join(root, "Shared/Macros.h"), "");
 		writeFileSync(join(root, "outputs1.nix"), "{ self }: {}\n");
-		const board = SemanticBoardSchema.parse({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		const board = LegacyBoardSchema.parse({
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "board1",
 			name: "API",

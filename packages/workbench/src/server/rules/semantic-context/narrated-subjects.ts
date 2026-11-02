@@ -16,7 +16,7 @@ import {
 	comparedWith,
 } from "@archboard/model/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import type { VariantContent } from "@archboard/model/content";
 import type { WalkthroughBeatSchema } from "@archboard/model/content";
 import type { z } from "zod";
@@ -119,7 +119,7 @@ function standingSpoken(id: string, against: Against | null): Omit<StepSubject, 
  * one is read against when there is one.
  */
 function narratedSubjects(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	beat: WalkthroughBeat,
 	named: string | null = null,

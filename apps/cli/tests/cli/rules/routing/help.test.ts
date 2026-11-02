@@ -132,7 +132,7 @@ test("every route answers every help spelling on stdout, exit 0, and runs nothin
 		for (const argv of spellingsOf(path)) {
 			stdout.mockClear();
 			process.exitCode = 0;
-			await runCli([...argv, "--board", "somewhere", "--doing", "nothing"]);
+			await runCli([...argv, "--doing", "nothing"]);
 			expect(process.exitCode, argv.join(" ")).toBe(0);
 			expect(stderr).not.toHaveBeenCalled();
 			const text = printed();
@@ -141,7 +141,6 @@ test("every route answers every help spelling on stdout, exit 0, and runs nothin
 			expect(usage, argv.join(" ")).toContain(path.join(" "));
 		}
 		for (const handler of handlers) expect(handler).not.toHaveBeenCalled();
-		expect(statedInvocation().board).toBeNull();
 		expect(statedInvocation().doing).toBeNull();
 	}
 });

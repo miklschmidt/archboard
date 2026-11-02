@@ -17,7 +17,7 @@ import type { JSX, ReactNode } from "react";
 
 import {
 	addressedVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import { everyStep, isMessage, stepWords, type FlowStep } from "@archboard/model/flow";
@@ -39,12 +39,12 @@ import { SidebarRegion, SidebarSection } from "#ui/components/canvas/SemanticSid
 import type { CodeStanding } from "#ui/components/canvas/SemanticInspectorCode.tsx";
 import { cn } from "@archboard/ui-kit/components";
 import { useCodeFindings, type ReadingOnScreen } from "#ui/hooks/canvas/use-code-findings.ts";
-import { useSemanticBoardChanges } from "#ui/hooks/canvas/use-model-changes.ts";
+import { useModelChanges } from "#ui/hooks/canvas/use-model-changes.ts";
 import type { KindLook } from "#ui/rules/canvas/reading/kind-look.ts";
-import { semanticBoardDocumentQuery } from "#ui/clients/canvas/reads/queries.ts";
+import { retainedDocumentQuery } from "#ui/clients/canvas/reads/queries.ts";
 import {
 	depictionOf,
-	readBoard,
+	readDocument,
 	subjectOf,
 	type EdgeSubject,
 	type FlowSubject,
@@ -372,7 +372,7 @@ interface Explanation {
  * @returns The subject and how it stands, or neither.
  */
 function comparedSubject(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	shown: SemanticVariant,
 	selection: string,
 ): Pick<Explanation, "subject" | "against" | "held"> {
@@ -435,7 +435,7 @@ function explain(
 	if (document === undefined) {
 		return { ...nothing, notice: "Reading the board…" };
 	}
-	const reading = readBoard(document);
+	const reading = readDocument(document);
 	if (!reading.ok) {
 		return { ...nothing, notice: `This board could not be read. ${reading.problem}` };
 	}
@@ -531,13 +531,13 @@ interface SemanticInspectorProps {
  */
 function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	const vault = usePaneVault();
-	const document = useQuery(semanticBoardDocumentQuery(vault, props.board));
+	const document = useQuery(retainedDocumentQuery(vault, props.board));
 	// Read on the same terms as the picture — no timer, fresh when the board
 	// announces a new version — and subscribed here rather than relied on from
 	// above, under the same spelling of the board name that the read used. A
 	// subscription that does not cover the thing being read is an
 	// infinitely-fresh answer to a question whose answer has moved.
-	useSemanticBoardChanges(vault, props.board);
+	useModelChanges(vault, props.board);
 	const explained = explain(vault, document, props.variant, props.selection, props.overview);
 	const { subject } = explained;
 	const code = codeOn(useCodeFindings(explained.on), explained.ids);

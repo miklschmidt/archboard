@@ -14,7 +14,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import { boardAddressOf, sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf, sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
@@ -55,10 +55,10 @@ interface PaneReadings {
 	/**
 	 * A pane moved: clear its selection, retaining the view within one board.
 	 * @param paneId The pane.
-	 * @param boardKey The board key it adopted.
+	 * @param paneKey The board key it adopted.
 	 * @param previousKey The board key it left, or null on first adoption.
 	 */
-	readonly boardChanged: (paneId: string, boardKey: string, previousKey: string | null) => void;
+	readonly modelChanged: (paneId: string, paneKey: string, previousKey: string | null) => void;
 }
 
 /** Nothing is being read yet. */
@@ -104,11 +104,11 @@ function usePaneReadings(): PaneReadings {
 			subject === null ? cleared(current, paneId) : held(current, paneId, subject),
 		);
 	}, []);
-	const boardChanged = useCallback(
-		(paneId: string, boardKey: string, previousKey: string | null): void => {
-			const board = boardAddressOf(boardKey);
-			const previous = boardAddressOf(previousKey);
-			if (board === null || previous === null || !sameBoardName(board.board, previous.board)) {
+	const modelChanged = useCallback(
+		(paneId: string, paneKey: string, previousKey: string | null): void => {
+			const board = paneAddressOf(paneKey);
+			const previous = paneAddressOf(previousKey);
+			if (board === null || previous === null || !sameModelName(board.board, previous.board)) {
 				setViews((current) => cleared(current, paneId));
 			}
 			setPicked((current) => cleared(current, paneId));
@@ -121,8 +121,8 @@ function usePaneReadings(): PaneReadings {
 		[picked],
 	);
 	return useMemo(
-		() => ({ viewOf, showView, pickedIn, pick, boardChanged }),
-		[viewOf, showView, pickedIn, pick, boardChanged],
+		() => ({ viewOf, showView, pickedIn, pick, modelChanged }),
+		[viewOf, showView, pickedIn, pick, modelChanged],
 	);
 }
 

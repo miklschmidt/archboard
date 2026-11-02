@@ -13,17 +13,17 @@ import type {
  * is the only spelling that can be compared with what a pane reports, and the
  * repository the pane is in now, which is what the pane reports beside it.
  */
-interface OpenedBoard {
-	readonly boardKey: string | null;
+interface OpenedModel {
+	readonly paneKey: string | null;
 	/** The repository the server lists the pane's vault under, or null when none. */
 	readonly repository: string | null;
 }
 
 /** A board an address asked for, and the repository it named, or null for the pane's own. */
-type AskedBoard = Pick<AddressOpen, "boardKey" | "repository" | "model">;
+type AskedModel = Pick<AddressOpen, "paneKey" | "repository" | "model">;
 
 /** How pointing one pane at one board ended. */
-type OpenOutcome = ({ readonly kind: "opened" } & OpenedBoard) | { readonly kind: "unreachable" };
+type OpenOutcome = ({ readonly kind: "opened" } & OpenedModel) | { readonly kind: "unreachable" };
 
 /** The workspace the address bar reads and addresses. */
 interface WorkspacePort {
@@ -34,12 +34,12 @@ interface WorkspacePort {
 	/**
 	 * Point one pane at one board, through the application's open command.
 	 * @param paneId The pane.
-	 * @param boardKey The board.
+	 * @param paneKey The board.
 	 * @param repository The repository the board is in, or null for the one the pane is in.
 	 */
 	readonly open: (
 		paneId: string,
-		boardKey: string | null,
+		paneKey: string | null,
 		repository: string | null,
 		model?: ModelAddress,
 	) => Promise<OpenOutcome>;
@@ -66,7 +66,7 @@ interface WorkspacePort {
 	readonly closePane: (paneId: string) => boolean;
 	readonly selectPane: (paneId: string) => boolean;
 	/** A restore could not reach these boards; the workspace is what is shown. */
-	readonly reportUnreachable: (boards: readonly AskedBoard[]) => void;
+	readonly reportUnreachable: (boards: readonly AskedModel[]) => void;
 }
 
-export type { AskedBoard, OpenedBoard, OpenOutcome, WorkspacePort };
+export type { AskedModel, OpenedModel, OpenOutcome, WorkspacePort };

@@ -22,8 +22,8 @@ import {
 	settle,
 } from "#tests/ui/support/canvas/stage-harness.tsx";
 import {
-	boardOf,
-	cardBoard,
+	documentOf,
+	cardDocument,
 	twoCardDrawing,
 	twoCardPipeline,
 } from "#tests/ui/support/canvas/legacy-documents.ts";
@@ -56,7 +56,7 @@ const PIPELINE_CURRENT = {
 } as const;
 
 /** The board the pane is opened on. */
-const PIPELINE = boardOf("pipeline", [PIPELINE_CURRENT], "v1", [
+const PIPELINE = documentOf("pipeline", [PIPELINE_CURRENT], "v1", [
 	{ ...PIPELINE_VIEW, scope: { kind: "all" } },
 ]);
 
@@ -94,7 +94,7 @@ const SHIPPED = {
 const ENGINE_SCOPES = ENGINE_VIEWS.map((view) => ({ ...view, scope: { kind: "all" } }));
 
 /** The board below: two states, two ways of reading it. */
-const ENGINE = boardOf("engine", [AS_BUILT, SHIPPED], "e2", ENGINE_SCOPES);
+const ENGINE = documentOf("engine", [AS_BUILT, SHIPPED], "e2", ENGINE_SCOPES);
 
 /**
  * Every button of one bar, in order.
@@ -164,8 +164,8 @@ test("double-clicking a card opens the board it drills down to", async () => {
 		fireEvent.doubleClick(document.querySelector("#card")!);
 	});
 	await settle();
-	const stage = document.querySelector("[data-slot='semantic-board-stage']");
-	expect(stage?.getAttribute("data-board")).toBe("engine");
+	const stage = document.querySelector("[data-slot='canvas-stage']");
+	expect(stage?.getAttribute("data-model")).toBe("engine");
 	// The variant the link names, as the inspector's way in would have opened.
 	expect(renderCalls().at(-1)).toContain("variant=e1");
 });
@@ -178,7 +178,7 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 		lifecycle: "draft",
 		parent: "v1",
 	};
-	server.documents["pipeline"] = boardOf("pipeline", [PIPELINE_CURRENT, proposed], "v1", [
+	server.documents["pipeline"] = documentOf("pipeline", [PIPELINE_CURRENT, proposed], "v1", [
 		{ ...PIPELINE_VIEW, scope: { kind: "all" } },
 	]);
 	server.documents["engine"] = ENGINE;
@@ -216,8 +216,8 @@ test("a double-click whose board answers after the pane moved on opens nothing",
 test("a newer double-click wins over an older one whose board answers first", async () => {
 	// Two cards, each opening a different board.
 	server.documents["pipeline"] = twoCardPipeline();
-	server.documents["engine"] = cardBoard("engine", undefined);
-	server.documents["store"] = cardBoard("store", undefined);
+	server.documents["engine"] = cardDocument("engine", undefined);
+	server.documents["store"] = cardDocument("store", undefined);
 	const engineRead = Promise.withResolvers<void>();
 	const storeRead = Promise.withResolvers<void>();
 	server.held["engine"] = engineRead.promise;
@@ -235,7 +235,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 	await act(async () => {
 		fireEvent.doubleClick(document.querySelector("#card2")!);
 	});
-	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+	const stage = document.querySelector("[data-slot='canvas-stage']");
 
 	// The older double-click's board answers while the newer one's is still being
 	// read. The reader has asked for something else since, so it opens nothing.
@@ -243,7 +243,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 		engineRead.resolve();
 	});
 	await settle();
-	expect(stage?.getAttribute("data-board")).toBe("pipeline");
+	expect(stage?.getAttribute("data-model")).toBe("pipeline");
 	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
 
 	// The newer one's board then answers, and is the one that opens and stays open.
@@ -252,7 +252,7 @@ test("a newer double-click wins over an older one whose board answers first", as
 		storeRead.resolve();
 	});
 	await settle();
-	expect(stage?.getAttribute("data-board")).toBe("store");
+	expect(stage?.getAttribute("data-model")).toBe("store");
 	expect(renderCalls().filter((call) => call.includes("board=engine"))).toEqual([]);
 });
 
@@ -272,13 +272,13 @@ test("while the board below is drawn, the board above stays on the pane only to 
 		fireEvent.click(document.querySelector<HTMLElement>("[data-slot='semantic-drill-down-open']")!);
 	});
 	await settle();
-	const stage = document.querySelector("[data-slot='semantic-board-stage']");
+	const stage = document.querySelector("[data-slot='canvas-stage']");
 	// The pane is waiting on the board below, and says so, under that board's name.
 	expect(stage?.getAttribute("data-state")).toBe("loading");
 	expect(stage?.getAttribute("aria-busy")).toBe("true");
 	expect(stage?.getAttribute("aria-label")).toContain("engine");
 	// What it shows is the board above, which cannot be reached into.
-	const viewport = document.querySelector("[data-slot='semantic-board-viewport']");
+	const viewport = document.querySelector("[data-slot='canvas-viewport']");
 	expect(viewport?.querySelector("g[data-semantic-id='n1']")).not.toBeNull();
 	expect(viewport?.hasAttribute("inert")).toBe(true);
 	expect(document.querySelector("[data-slot='semantic-inspector']")).toBeNull();
@@ -331,8 +331,8 @@ test("coming back up leaves the pane reading its own board as it was", async () 
 	await settle();
 	// The level below's choice went with the level; the pane's own board is read
 	// the way the shell says it is, which is where the address carries it.
-	const stage = document.querySelector("[data-slot='semantic-board-stage']");
-	expect(stage?.getAttribute("data-board")).toBe("pipeline");
+	const stage = document.querySelector("[data-slot='canvas-stage']");
+	expect(stage?.getAttribute("data-model")).toBe("pipeline");
 	expect(buttons("semantic-view-choice").map((one) => one.textContent)).toEqual([
 		"Overview",
 		"Where writes go",
@@ -357,9 +357,9 @@ async function doubleClickInto(board: string): Promise<void> {
 }
 
 test("a crumb two levels up goes straight back to its board, as one change by hand", async () => {
-	server.documents["pipeline"] = cardBoard("pipeline", "engine");
-	server.documents["engine"] = cardBoard("engine", "store");
-	server.documents["store"] = cardBoard("store", undefined);
+	server.documents["pipeline"] = cardDocument("pipeline", "engine");
+	server.documents["engine"] = cardDocument("engine", "store");
+	server.documents["store"] = cardDocument("store", undefined);
 	server.reply = { status: 200, body: drawing(1) };
 	const changed: string[] = [];
 	/**
@@ -382,9 +382,9 @@ test("a crumb two levels up goes straight back to its board, as one change by ha
 		fireEvent.click(crumbs[0]!);
 	});
 	await settle();
-	expect(
-		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-board"),
-	).toBe("pipeline");
+	expect(document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-model")).toBe(
+		"pipeline",
+	);
 	expect(buttons("pane-crumb")).toEqual([]);
 	expect(changed).toEqual(["board"]);
 });
@@ -460,7 +460,7 @@ test("a link into a proposal that was let go says so before it opens, and after"
 	// goes on opening it (ADR 0030); what a reader must not be left guessing is
 	// that what they followed is a proposal nobody is carrying out.
 	server.documents["pipeline"] = PIPELINE;
-	server.documents["engine"] = boardOf(
+	server.documents["engine"] = documentOf(
 		"engine",
 		[{ ...AS_BUILT, lifecycle: "shelved" }, SHIPPED],
 		"e2",
@@ -480,5 +480,5 @@ test("a link into a proposal that was let go says so before it opens, and after"
 
 	await openDown();
 	// And on screen once it is open: the header names the variant that is shown.
-	expect(document.querySelector("[data-slot='board-state']")?.textContent).toContain("as built");
+	expect(document.querySelector("[data-slot='crumb-state']")?.textContent).toContain("as built");
 });

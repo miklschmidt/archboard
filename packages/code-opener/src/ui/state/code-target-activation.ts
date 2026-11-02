@@ -22,7 +22,7 @@ type CodeTargetActivationOptions = {
 	 */
 	onNotice: (notice: CodeTargetNotice) => void;
 } & (
-	| { boardKey: string | null; elementId: string }
+	| { paneKey: string | null; elementId: string }
 	| { target: Extract<CodeTargetOpenRequest, { model: string }> }
 );
 
@@ -88,8 +88,8 @@ function activateCodeTarget(options: CodeTargetActivationOptions): void {
  */
 function activationRequest(options: CodeTargetActivationOptions): CodeTargetOpenRequest | null {
 	if ("target" in options) return options.target;
-	if (options.boardKey === null || options.boardKey === "") return null;
-	return { board: options.boardKey, element: options.elementId };
+	if (options.paneKey === null || options.paneKey === "") return null;
+	return { board: options.paneKey, element: options.elementId };
 }
 
 export { activateCodeTarget, type CodeTargetActivationOptions };

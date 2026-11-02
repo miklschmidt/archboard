@@ -3,7 +3,7 @@
 // A step only changes a decoded value. The pure decoder validates the completed
 // document; the disk read boundary persists a migration under the board lease.
 
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "#shared/schemas/legacy-board.ts";
+import { LEGACY_BOARD_SCHEMA_VERSION } from "#shared/schemas/legacy-board.ts";
 
 interface Migration {
 	readonly from: string;
@@ -126,21 +126,21 @@ function before(version: string, target: string): boolean {
  * @param value The decoded document.
  * @returns The upgraded document or a missing-path refusal.
  */
-function migrateSemanticBoardDocument(value: unknown): MigrationResult {
+function migrateLegacyBoard(value: unknown): MigrationResult {
 	if (!isRecord(value) || typeof value["schemaVersion"] !== "string") {
 		return { ok: true, value, changed: false };
 	}
 	let version = value["schemaVersion"];
-	if (!before(version, SEMANTIC_BOARD_SCHEMA_VERSION)) {
+	if (!before(version, LEGACY_BOARD_SCHEMA_VERSION)) {
 		return { ok: true, value, changed: false };
 	}
 	const visited = new Set<string>();
-	while (before(version, SEMANTIC_BOARD_SCHEMA_VERSION)) {
+	while (before(version, LEGACY_BOARD_SCHEMA_VERSION)) {
 		const step = nextStep(version, visited);
 		if (step === null) {
 			return {
 				ok: false,
-				problem: `no safe migration from semantic board schema ${version} to ${SEMANTIC_BOARD_SCHEMA_VERSION}`,
+				problem: `no safe migration from semantic board schema ${version} to ${LEGACY_BOARD_SCHEMA_VERSION}`,
 			};
 		}
 		visited.add(version);
@@ -171,4 +171,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export { migrateSemanticBoardDocument };
+export { migrateLegacyBoard };

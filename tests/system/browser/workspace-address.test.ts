@@ -221,7 +221,7 @@ const ORDERS = "github.com/acme/orders";
  */
 function paneSays(browser: AgentBrowserSession, letter: string, word: string): Promise<boolean> {
 	return browser.eval<boolean>(
-		`document.querySelector(${JSON.stringify(`${PANE_SECTIONS}[aria-label^="Pane ${letter}"] [data-slot="semantic-board-surface"]`)})?.textContent?.includes(${JSON.stringify(word)}) ?? false`,
+		`document.querySelector(${JSON.stringify(`${PANE_SECTIONS}[aria-label^="Pane ${letter}"] [data-slot="canvas-surface"]`)})?.textContent?.includes(${JSON.stringify(word)}) ?? false`,
 	);
 }
 

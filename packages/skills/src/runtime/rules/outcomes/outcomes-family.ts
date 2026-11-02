@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // Checks about the family rather than one variant's content: identity kept
 // across the run, versions, variants and their lifecycle, comparison against
 // the predecessor, reconciliation, adoption, flows, views and walkthroughs.
@@ -35,7 +35,7 @@ import {
 import type { OutcomeCheck } from "#runtime/schemas/suite.ts";
 
 type Check = (check: OutcomeCheck, reading: Reading) => Finding;
-type Located = { readonly board: SemanticBoard; readonly variant: SemanticVariant };
+type Located = { readonly board: EvaluatedDocument; readonly variant: SemanticVariant };
 
 /**
  * Runs a check that needs the board and variant it names.
@@ -63,7 +63,7 @@ function onLocated(
 function onBoard(
 	check: OutcomeCheck,
 	reading: Reading,
-	judge: (board: SemanticBoard) => Finding,
+	judge: (board: EvaluatedDocument) => Finding,
 ): Finding {
 	const board = namedValue(reading.boards, check.board);
 	return board === undefined
@@ -232,7 +232,7 @@ const currentIs: Check = (check, reading) =>
  * @param board The board, if any.
  * @returns The JSON text.
  */
-function currentJson(board: SemanticBoard | undefined): string {
+function currentJson(board: EvaluatedDocument | undefined): string {
 	return JSON.stringify(board === undefined ? null : currentVariant(board)?.content);
 }
 

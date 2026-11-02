@@ -32,10 +32,10 @@ function panesOpenedFor(repository: string | null, variant: string | null) {
 
 test("the recording page shows the board in pane A, in the repository of the vault the command found", () => {
 	expect(panesOpenedFor("github.com/acme/shop", null)).toMatchObject([
-		{ paneId: "A", boardKey: "Checkout", repository: "github.com/acme/shop" },
+		{ paneId: "A", paneKey: "Checkout", repository: "github.com/acme/shop" },
 	]);
 	expect(panesOpenedFor(null, "v2")).toMatchObject([
-		{ paneId: "A", boardKey: "Checkout@v2", repository: null },
+		{ paneId: "A", paneKey: "Checkout@v2", repository: null },
 	]);
 });
 

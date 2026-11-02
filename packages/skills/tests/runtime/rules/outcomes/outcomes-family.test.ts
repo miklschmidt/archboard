@@ -12,11 +12,11 @@ import {
 	type OutcomeCheck,
 } from "#runtime/rules/outcomes/outcomes.ts";
 import { type Reading } from "#runtime/rules/outcomes/reading.ts";
-import { SemanticBoardSchema, type SemanticBoard } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { AFTER, BEFORE, passes, READING } from "#tests/runtime/support/reading-fixture.ts";
 
-type Walkthroughs = SemanticBoard["variants"][number]["content"]["walkthroughs"];
+type Walkthroughs = LegacyBoard["variants"][number]["content"]["walkthroughs"];
 type Beats = Walkthroughs[number]["beats"];
 
 /**
@@ -198,7 +198,7 @@ describe("family checks", () => {
 	});
 
 	test("on a board nobody has built, nothing is held still and no draft is judged as current", () => {
-		const planned = SemanticBoardSchema.parse(
+		const planned = LegacyBoardSchema.parse(
 			withFixtureOrders({
 				...BEFORE,
 				current: undefined,
@@ -404,8 +404,8 @@ describe("relationship identity", () => {
 		{ id: "b", name: "B", kind: "module", responsibility: "b" },
 		{ id: "c", name: "C", kind: "module", responsibility: "c" },
 	];
-	const withEdges = (edges: readonly object[], version: number): SemanticBoard =>
-		SemanticBoardSchema.parse(
+	const withEdges = (edges: readonly object[], version: number): LegacyBoard =>
+		LegacyBoardSchema.parse(
 			withFixtureOrders({
 				schemaVersion: "2.2.0",
 				kind: "semantic-board",
@@ -429,7 +429,7 @@ describe("relationship identity", () => {
 		],
 		1,
 	);
-	const judge = (after: SemanticBoard) =>
+	const judge = (after: LegacyBoard) =>
 		evaluateGuardrails(["ids-stable"], {
 			snapshot: new Map([["Flask", before]]),
 			boards: new Map([["Flask", after]]),

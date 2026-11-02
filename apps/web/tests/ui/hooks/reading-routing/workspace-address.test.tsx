@@ -12,7 +12,7 @@ import type { OpenOutcome, WorkspacePort } from "#ui/rules/reading-routing/contr
 GlobalRegistrator.register({ url: "http://localhost/" });
 Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, writable: true });
 
-const { createBoardRoutingHost } =
+const { createReadingRoutingHost } =
 	await import("#ui/components/reading-routing/ReadingRoutingHost.tsx");
 const { useWorkspaceAddress } = await import("#ui/hooks/reading-routing/use-workspace-address.ts");
 
@@ -27,7 +27,7 @@ function noop(): void {
 /** One pane, as the fake shell holds it. */
 interface FakePane {
 	paneId: string;
-	boardKey: string | null;
+	paneKey: string | null;
 	/** The repository the board is in, or null for the pane's own. */
 	repository: string | null;
 	/** The view a semantic board is being read through, or null. */
@@ -37,7 +37,7 @@ interface FakePane {
 /** An open the fake server has been asked for and has not answered. */
 interface HeldOpen {
 	readonly paneId: string;
-	readonly boardKey: string | null;
+	readonly paneKey: string | null;
 	readonly repository: string | null;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
@@ -71,7 +71,7 @@ interface FakeShell {
 	/** Answer the oldest open the server was given. */
 	readonly answer: (answer: boolean | FakeOpenAnswer) => Promise<void>;
 	/** The socket told a pane its board, and the shell rendered. */
-	readonly adopt: (paneId: string, boardKey: string, repository?: string | null) => Promise<void>;
+	readonly adopt: (paneId: string, paneKey: string, repository?: string | null) => Promise<void>;
 	readonly port: () => WorkspacePort;
 }
 
@@ -101,7 +101,7 @@ function fakeShell(
 				notify = noop;
 			};
 		},
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
+		panes: panes.map(([paneId, paneKey]) => ({ paneId, paneKey, repository: null, view: null })),
 		opens: [] as HeldOpen[],
 		unreachable: [] as string[],
 		addressing: null,
@@ -125,7 +125,7 @@ function fakeShell(
 					given.reached
 						? {
 								kind: "opened",
-								boardKey: given.openedKey ?? open.boardKey,
+								paneKey: given.openedKey ?? open.paneKey,
 								repository: given.repository ?? open.repository,
 							}
 						: { kind: "unreachable" },
@@ -135,13 +135,13 @@ function fakeShell(
 		/**
 		 * The socket told a pane its board.
 		 * @param paneId The pane.
-		 * @param boardKey The board it now shows.
+		 * @param paneKey The board it now shows.
 		 * @param repository The repository it is in now; where it was when not said.
 		 */
-		adopt: async (paneId: string, boardKey: string, repository?: string | null): Promise<void> => {
+		adopt: async (paneId: string, paneKey: string, repository?: string | null): Promise<void> => {
 			const pane = shell.panes.find((entry) => entry.paneId === paneId);
 			if (pane) {
-				pane.boardKey = boardKey;
+				pane.paneKey = paneKey;
 				pane.repository = repository === undefined ? pane.repository : repository;
 			}
 			await shell.render();
@@ -164,17 +164,17 @@ function fakeShell(
 			/**
 			 * Point a pane at a board; the answer waits for the test.
 			 * @param paneId The pane.
-			 * @param boardKey The board.
+			 * @param paneKey The board.
 			 * @param repository The repository it is in, or null for the pane's own.
 			 * @returns The outcome, once the test gives one.
 			 */
 			open: (
 				paneId: string,
-				boardKey: string | null,
+				paneKey: string | null,
 				repository: string | null,
 			): Promise<OpenOutcome> =>
 				new Promise<OpenOutcome>((resolve) => {
-					shell.opens.push({ paneId, boardKey, repository, answer: resolve });
+					shell.opens.push({ paneId, paneKey, repository, answer: resolve });
 				}),
 			/**
 			 * Read a pane's board another way.
@@ -198,7 +198,7 @@ function fakeShell(
 				if (shell.panes.length > 1) {
 					return false;
 				}
-				shell.panes.push({ paneId: "B", boardKey: "scratch", repository: null, view: null });
+				shell.panes.push({ paneId: "B", paneKey: "scratch", repository: null, view: null });
 				active = "B";
 				return true;
 			},
@@ -233,7 +233,7 @@ function fakeShell(
 			 * @param boards The boards.
 			 */
 			reportUnreachable: (boards): void => {
-				shell.unreachable.push(...boards.map(({ boardKey }) => boardKey));
+				shell.unreachable.push(...boards.map(({ paneKey }) => paneKey));
 			},
 		}),
 	};
@@ -262,7 +262,7 @@ async function mount(shell: FakeShell, search: string): Promise<Root> {
 		return null;
 	}
 	// The harness renders nothing; the address bar is the whole subject.
-	const Host = createBoardRoutingHost(Harness);
+	const Host = createReadingRoutingHost(Harness);
 	const container = document.createElement("div");
 	document.body.append(container);
 	const root = createRoot(container);
@@ -308,7 +308,7 @@ afterAll(async () => {
 test("an open is not over when the server answers it, but when the pane is seen to move", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=billing");
-	expect(shell.opens.map((open) => open.boardKey)).toEqual(["billing"]);
+	expect(shell.opens.map((open) => open.paneKey)).toEqual(["billing"]);
 	await shell.answer(true);
 	await settle();
 	// The note was read, but the pane is still showing payments. Writing the
@@ -395,7 +395,7 @@ test("a user's open pushes a history entry only when it moved the pane", async (
 test("a board a restore cannot reach is named, and the address settles on what is shown", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=nowhere");
-	expect(shell.opens.map((open) => open.boardKey)).toEqual(["nowhere"]);
+	expect(shell.opens.map((open) => open.paneKey)).toEqual(["nowhere"]);
 	await shell.answer(false);
 	await settle();
 	expect(shell.unreachable).toEqual(["nowhere"]);
@@ -454,7 +454,7 @@ test("an address spelled one way and resolved another still gives the slot back"
 test("a restore whose board resolves to another spelling settles on what the pane shows", async () => {
 	const shell = fakeShell([["A", "payments"]]);
 	mounted = await mount(shell, "?paneA=payments@current");
-	expect(shell.opens.map((open) => open.boardKey)).toEqual(["payments@current"]);
+	expect(shell.opens.map((open) => open.paneKey)).toEqual(["payments@current"]);
 	// The server resolves the alias to the board the pane is already on, so
 	// there is nothing to adopt and the address settles on what is shown.
 	await shell.answer({ reached: true, openedKey: "payments" });

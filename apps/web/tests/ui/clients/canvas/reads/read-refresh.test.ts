@@ -16,18 +16,18 @@ import { afterEach, beforeEach, expect, test } from "bun:test";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 
 import { paneInventoryQuery, repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
-import { readBoardsFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
 import {
-	boardChanged,
-	boardsChanged,
+	modelChanged,
+	modelsChanged,
 	listingsChanged,
 	policyChanged,
 	readEverythingAgain,
 } from "#ui/clients/canvas/reads/read-refresh.ts";
 import { takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
 import {
-	semanticBoardDocumentQuery,
-	semanticBoardListQuery,
+	retainedDocumentQuery,
+	retainedListingQuery,
 	semanticRenderQuery,
 } from "#ui/clients/canvas/reads/queries.ts";
 import type { SemanticRender, SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
@@ -60,7 +60,7 @@ const realFetch = globalThis.fetch;
 beforeEach(() => {
 	server.set(SHOP, { name: "Payments", formerNames: ["Old payments"], version: 1 });
 	server.set(BILLING, { name: "Payments", formerNames: [], version: 1 });
-	readBoardsFrom({
+	readRetainedFrom({
 		document: readDocument,
 		listing: readListing,
 		vaultCheck: notReadHere,
@@ -201,7 +201,7 @@ async function drawFromDocument(
 	client: QueryClient,
 ): Promise<SemanticRender> {
 	const document = said(
-		await client.fetchQuery(semanticBoardDocumentQuery(request.vault, request.board)),
+		await client.fetchQuery(retainedDocumentQuery(request.vault, request.board)),
 	);
 	drawn.push(request.vault);
 	return {
@@ -267,7 +267,7 @@ function pane(
 	vault: string,
 	name: string,
 ): { versions: () => (number | undefined)[]; close: () => void } {
-	const document = new QueryObserver(client, semanticBoardDocumentQuery(vault, name));
+	const document = new QueryObserver(client, retainedDocumentQuery(vault, name));
 	const picture = new QueryObserver(client, semanticRenderQuery({ vault, board: name }));
 	const stops = [document.subscribe(ignore), picture.subscribe(ignore)];
 	/**
@@ -294,8 +294,8 @@ function pane(
  */
 function navigator(client: QueryClient): () => void {
 	const stops = [
-		new QueryObserver(client, semanticBoardListQuery(SHOP)).subscribe(ignore),
-		new QueryObserver(client, semanticBoardListQuery(BILLING)).subscribe(ignore),
+		new QueryObserver(client, retainedListingQuery(SHOP)).subscribe(ignore),
+		new QueryObserver(client, retainedListingQuery(BILLING)).subscribe(ignore),
 		new QueryObserver(client, paneInventoryQuery()).subscribe(ignore),
 		new QueryObserver(client, repositoriesQuery()).subscribe(ignore),
 	];
@@ -312,10 +312,10 @@ test("a changed board is read from after the change: an answer decided before it
 	// A read of the board is on the wire, and the server has answered it with
 	// version 1, when an agent writes version 2 and the news arrives.
 	holding = true;
-	void client.refetchQueries({ queryKey: semanticBoardDocumentQuery(SHOP, "Payments").queryKey });
+	void client.refetchQueries({ queryKey: retainedDocumentQuery(SHOP, "Payments").queryKey });
 	await until(() => held.length === 1);
 	server.get(SHOP)!.version = 2;
-	const refreshed = boardChanged(client, SHOP, "payments");
+	const refreshed = modelChanged(client, SHOP, "payments");
 	release();
 	await refreshed;
 
@@ -342,7 +342,7 @@ test("a board let go under the server's spelling reads again what was asked by a
 	// proposal of the shop's board, by the key it lists it under.
 	server.get(SHOP)!.version = 2;
 	server.get(BILLING)!.version = 2;
-	await boardsChanged(client, SHOP, ["payments@proposed"]);
+	await modelsChanged(client, SHOP, ["payments@proposed"]);
 
 	await until(() => [spelled, former].every((one) => one.versions().join() === "2,2"));
 	await settle();
@@ -395,14 +395,14 @@ test("a listing reads again a board this tab drew ahead at another version, by a
 	await client.fetchQuery(semanticRenderQuery({ vault: BILLING, board: "payments" }));
 
 	// Listed at the version it was drawn at, it is not read again.
-	await client.fetchQuery(semanticBoardListQuery(SHOP));
+	await client.fetchQuery(retainedListingQuery(SHOP));
 	asked.length = 0;
 	await client.fetchQuery(semanticRenderQuery({ vault: SHOP, board: "PAYMENTS" }));
 	expect(asked).toEqual([]);
 
 	server.get(SHOP)!.version = 2;
 	server.get(BILLING)!.version = 2;
-	await client.fetchQuery(semanticBoardListQuery(SHOP));
+	await client.fetchQuery(retainedListingQuery(SHOP));
 
 	// Opening the shop's board shows the version listed; the billing board,
 	// whose vault was not listed, is still the one drawn ahead.

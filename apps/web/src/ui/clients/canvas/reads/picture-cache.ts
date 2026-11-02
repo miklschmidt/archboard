@@ -33,7 +33,7 @@ import {
 	type SemanticRenderReply,
 } from "@archboard/model/render-reply";
 import { comparisonKey, type SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 
 /** What a cached picture has to agree with to be shown. */
 interface PictureStamp {
@@ -276,7 +276,7 @@ async function forgetStalePictures(
 	renderer: string,
 ): Promise<void> {
 	try {
-		const stale = (await storage.keys()).filter(isBoardPicture).filter((key) => {
+		const stale = (await storage.keys()).filter(isModelPicture).filter((key) => {
 			const parts = keyParts(key);
 			if (parts.length !== KEY_FIELDS) return true;
 			const [ofVault, board, , , , , version, , drawnBy] = parts;
@@ -284,7 +284,7 @@ async function forgetStalePictures(
 			const listed = boards.find(
 				({ name, key: listedKey }) =>
 					typeof board === "string" &&
-					(sameBoardName(board, listedKey) || sameBoardName(board, name)),
+					(sameModelName(board, listedKey) || sameModelName(board, name)),
 			);
 			return drawnBy !== renderer || listed === undefined || listed.version !== version;
 		});
@@ -299,7 +299,7 @@ async function forgetStalePictures(
  * @param key A stored key.
  * @returns True for a board picture's key, or for a key of an older page.
  */
-function isBoardPicture(key: IDBValidKey): key is string {
+function isModelPicture(key: IDBValidKey): key is string {
 	return typeof key === "string" && keyParts(key)[0] !== CANONICAL_KEY;
 }
 

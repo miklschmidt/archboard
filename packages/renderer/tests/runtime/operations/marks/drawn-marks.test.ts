@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DrawnBoard } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { markCounts } from "#shared/rules/render/key-marks.ts";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { type BoardRenderChoices } from "#shared/rules/render/legacy-board.ts";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { type LegacyRenderChoices } from "#shared/rules/render/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { subjectGroups } from "#tests/runtime/support/drawn-subjects.ts";
 
@@ -60,8 +60,8 @@ const DRAFT = {
 	],
 };
 
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const BOARD = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board",
 	name: "Ingest",
@@ -102,9 +102,9 @@ const BOARD = SemanticBoardSchema.parse({
  * @returns The drawn reply.
  */
 async function drawn(
-	choices: Pick<BoardRenderChoices, "view" | "comparison">,
+	choices: Pick<LegacyRenderChoices, "view" | "comparison">,
 ): Promise<DrawnBoard> {
-	const outcome = await renderBoard(
+	const outcome = await renderLegacyBoard(
 		BOARD,
 		{ variant: "draft", theme: "light", legend: "horizontal", ...choices },
 		DEFAULT_SEMANTIC_POLICY,

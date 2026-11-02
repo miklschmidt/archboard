@@ -16,7 +16,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureBoard,
+	board as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -48,7 +48,7 @@ function git(...args: string[]): void {
  * @param variants Its variants.
  */
 function board(name: string, variants: readonly FixtureVariant[]): void {
-	fixtureBoard(vault, name, variants);
+	fixtureDocument(vault, name, variants);
 }
 
 /**
@@ -257,7 +257,7 @@ afterAll(() => {
  * @returns The boards read and the outcome.
  */
 async function pass(variant?: string) {
-	const read = check.readBoardsToCheck(vault, variant);
+	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
 	const outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
 	return { read, outcome };

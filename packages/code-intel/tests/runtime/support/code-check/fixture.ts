@@ -5,7 +5,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { z } from "zod";
 import type { LanguageServersSchema } from "@archboard/workspace/checkouts";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 
 /**
  * Run Git in a checkout with an owner's identity and no configuration of the machine.
@@ -63,7 +63,7 @@ function board(vault: string, name: string, variants: readonly FixtureVariant[])
 	const current = variants.find((variant) => variant.lifecycle === "current");
 	write(vault, {
 		[`${name}.semantic.json`]: JSON.stringify({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: name.slice(0, 8).replaceAll(" ", ""),
 			name,

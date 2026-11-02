@@ -14,7 +14,7 @@ import {
 	ownRefs,
 	refOfBinding,
 	type OwnRef,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import type { SemanticNode } from "@archboard/model/content";
@@ -72,7 +72,7 @@ function pinAway(
  * @returns The variant's parts.
  */
 async function nodesAtOwnRef(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	rootOf: (repo: string) => string | undefined,
 	options: GitRunOptions,

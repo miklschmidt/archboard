@@ -1,7 +1,7 @@
 // How a pane hears that the semantic board it is showing has changed.
 //
 // The server announces a semantic write on the existing pane socket, as
-// `{ type: "board_note", semantic: true, board, version }`, to every socket
+// `{ type: "model_note", semantic: true, board, version }`, to every socket
 // the tab has. There is no second socket here and there must not be one: the
 // pane's own socket is already open, already reconnects, and is already the
 // one thing that says whether this tab is in contact with the server.
@@ -19,9 +19,9 @@
  * version. Two repositories can each have a board of the same name, and news of
  * one is not news of the other.
  */
-type SemanticBoardListener = (vault: string, board: string, version: number) => void;
+type ModelChangeListener = (vault: string, board: string, version: number) => void;
 
-const listeners = new Set<SemanticBoardListener>();
+const listeners = new Set<ModelChangeListener>();
 
 /**
  * Tell every pane that a semantic board has a new version.
@@ -29,7 +29,7 @@ const listeners = new Set<SemanticBoardListener>();
  * @param board The board key the server announced.
  * @param version The version the board is at now.
  */
-function announceSemanticBoardChange(vault: string, board: string, version: number): void {
+function announceModelChange(vault: string, board: string, version: number): void {
 	for (const listener of listeners) {
 		listener(vault, board, version);
 	}
@@ -40,11 +40,11 @@ function announceSemanticBoardChange(vault: string, board: string, version: numb
  * @param listener What to tell.
  * @returns Stops listening.
  */
-function onSemanticBoardChange(listener: SemanticBoardListener): () => void {
+function onModelChange(listener: ModelChangeListener): () => void {
 	listeners.add(listener);
 	return (): void => {
 		listeners.delete(listener);
 	};
 }
 
-export { announceSemanticBoardChange, onSemanticBoardChange, type SemanticBoardListener };
+export { announceModelChange, onModelChange, type ModelChangeListener };

@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, type RefObject } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { projectModel, type Model } from "@archboard/model/content";
 import { modelDrawingQuery } from "#ui/clients/architecture-model/drawing.ts";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { useDive, type Destination } from "#ui/hooks/canvas/use-dive.ts";
 import { useLayoutEngine } from "#ui/hooks/canvas/use-layout-engine.ts";
 import { toggled } from "#ui/rules/architecture-model/expansion.ts";
 import {
 	moveTo,
 	parentOf,
-	sceneBoard,
+	sceneModel,
 	sceneView,
 	type AcceptedScene,
 	type ScenePicture,
@@ -20,7 +20,7 @@ import {
 const ROOTS = "";
 
 interface MoveInputs {
-	camera: BoardCamera;
+	camera: PictureCamera;
 	/** The picture's area. */
 	area: RefObject<HTMLElement | null>;
 	/** The scene on screen. */
@@ -59,7 +59,7 @@ function useModelMoves(inputs: MoveInputs) {
 			const destination = { ...reading, scope, focus: null, expand: [], grammar: "architecture" };
 			return {
 				...(await client.fetchQuery(modelDrawingQuery(model, opened, "architecture", layout))),
-				board: sceneBoard(destination),
+				board: sceneModel(destination),
 				view: sceneView(destination),
 			};
 		},

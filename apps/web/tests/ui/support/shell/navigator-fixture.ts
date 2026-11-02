@@ -118,10 +118,10 @@ function viewOf(workspace: Workspace): ShellView {
 	return {
 		theme: "light",
 		repositories: [repositoryOf(ready(SHOP, SHOP_VAULT), model, agentActivity)],
-		boardsError: null,
-		boardsLoading: false,
+		modelsError: null,
+		modelsLoading: false,
 		choosing: false,
-		selectedBoardKey: null,
+		selectedPaneKey: null,
 		panes: [pane("A", null)],
 		activePaneId: "A",
 		presentation: null,
@@ -157,7 +157,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		 * @param repository The repository the board is in.
 		 * @returns That the pane shows it.
 		 */
-		selectBoard: (key, _paneId, repository) => {
+		selectModel: (key, _paneId, repository) => {
 			asked.selected.push(key);
 			asked.opened.push(`${repository}|${key}`);
 			return Promise.resolve(true);
@@ -179,7 +179,7 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 		chooseCheckout: (repository, checkout) => {
 			asked.chosen.push(`${repository}|${checkout}`);
 		},
-		refreshBoards: ignore,
+		refreshModels: ignore,
 		selectPane: ignore,
 		addPane: ignore,
 		closePane: ignore,
@@ -226,14 +226,14 @@ function mountNavigator(overrides: Workspace = {}): Mounted {
 /**
  * One local pane.
  * @param paneId The pane.
- * @param boardKey What it shows, or null.
+ * @param paneKey What it shows, or null.
  * @param repository The repository the server says it is in: the shop unless said.
  * @param vault The vault it is in: the shop's unless said.
  * @returns The pane.
  */
 function pane(
 	paneId: string,
-	boardKey: string | null,
+	paneKey: string | null,
 	repository: string | null = SHOP,
 	vault = SHOP_VAULT,
 ): ShellPane {
@@ -245,8 +245,8 @@ function pane(
 			registered: true,
 			vault,
 			repository,
-			boardKey,
-			opened: boardKey,
+			paneKey,
+			opened: paneKey,
 			board: null,
 			view: null,
 			lastChangeAt: null,

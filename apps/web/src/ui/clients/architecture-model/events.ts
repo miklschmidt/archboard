@@ -6,7 +6,7 @@ import {
 	architectureModelKeys,
 	type ModelSummary,
 } from "#ui/clients/architecture-model/queries.ts";
-import { semanticBoardKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import { readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
 
 type CurrentReading = Extract<ArchitectureModelRead, { success: true }>;
 type ModelEvent = Exclude<ArchitectureEvent, { type: "architecture_claims" }>;
@@ -143,7 +143,7 @@ function createFeed(
 		await Promise.all([
 			client.invalidateQueries(changingReadings),
 			client.invalidateQueries({ queryKey: architectureModelKeys.modules(vault) }),
-			client.invalidateQueries({ queryKey: semanticBoardKeys.vaultCheck(vault) }),
+			client.invalidateQueries({ queryKey: readKeys.vaultCheck(vault) }),
 		]);
 	}
 	/**

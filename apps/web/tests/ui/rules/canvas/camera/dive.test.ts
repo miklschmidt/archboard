@@ -57,12 +57,12 @@ describe("the camera at the inset", () => {
 		// The corners of the inset, over the parent, land on the corners of the board.
 		const insetCorner = onScreen(over, inset.x, inset.y);
 		const insetFar = onScreen(over, inset.x + inset.width, inset.y + inset.height);
-		const boardCorner = onScreen(own, 0, 0);
-		const boardFar = onScreen(own, CHILD.width, CHILD.height);
-		expect(insetCorner.x).toBeCloseTo(boardCorner.x, 6);
-		expect(insetCorner.y).toBeCloseTo(boardCorner.y, 6);
-		expect(insetFar.x).toBeCloseTo(boardFar.x, 6);
-		expect(insetFar.y).toBeCloseTo(boardFar.y, 6);
+		const pictureCorner = onScreen(own, 0, 0);
+		const pictureFar = onScreen(own, CHILD.width, CHILD.height);
+		expect(insetCorner.x).toBeCloseTo(pictureCorner.x, 6);
+		expect(insetCorner.y).toBeCloseTo(pictureCorner.y, 6);
+		expect(insetFar.x).toBeCloseTo(pictureFar.x, 6);
+		expect(insetFar.y).toBeCloseTo(pictureFar.y, 6);
 	});
 
 	test("zooms in by as much as the board is larger than its inset", () => {

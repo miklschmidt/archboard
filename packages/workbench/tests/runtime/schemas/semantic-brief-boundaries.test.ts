@@ -149,7 +149,7 @@ function maximumContext(cursorFeedId: string, includeStaleReasons = true): Seman
 		workhorse: { threadId: identity, turnId: identity },
 		coordinator: { threadId: identity, realtimeSessionId: identity },
 		board: {
-			key: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
+			key: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.paneKeyBytes),
 			name: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.subjectNameBytes),
 			vault: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),
 			file: rawAtMost(publicHostileUnit, SEMANTIC_CONTEXT_LIMITS.fileBytes),

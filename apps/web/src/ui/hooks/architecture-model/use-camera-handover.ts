@@ -1,6 +1,6 @@
 import { useContext, useLayoutEffect, useRef } from "react";
 import { PRESENTATION_MS } from "@archboard/timing";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import {
 	ModelPaneContext,
 	type CameraHandover,
@@ -15,7 +15,7 @@ import {
  * @param board The board on this surface.
  * @param reducedMotion Whether the person asked for no motion.
  */
-function useCameraHandover(camera: BoardCamera, board: string, reducedMotion: boolean): void {
+function useCameraHandover(camera: PictureCamera, board: string, reducedMotion: boolean): void {
 	const handover = useContext(ModelPaneContext)?.handover ?? null;
 	const measured = camera.room !== null;
 	const leaves = useRef({ board, camera });
@@ -43,7 +43,7 @@ function useCameraHandover(camera: BoardCamera, board: string, reducedMotion: bo
  * @param board The board on this surface.
  * @param camera The camera of this surface.
  */
-function startFrom(handover: CameraHandover, board: string, camera: BoardCamera): void {
+function startFrom(handover: CameraHandover, board: string, camera: PictureCamera): void {
 	const left = handover.take();
 	if (left?.board !== board) return;
 	const { rest } = camera.view();

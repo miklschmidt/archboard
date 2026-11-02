@@ -54,7 +54,7 @@ const EMBED_FINDING_CODES = [
 ] as const;
 
 /** A board by id, with the name a recipe or the vault gives it. */
-const EmbedBoardSchema = z.object({ id: z.string(), name: z.string() });
+const EmbedLegacyBoardSchema = z.object({ id: z.string(), name: z.string() });
 
 /** What is gone of what a recipe names: the board, its variant, its view, or anything to draw. */
 const MissingSourceSchema = z.enum(["board", "variant", "view", "picture"]);
@@ -71,20 +71,20 @@ const EmbedFindingSchema = z.object({
 	 */
 	embedRepo: z.string().optional(),
 	/** The board as the recipe names it; absent when the recipe cannot be read. */
-	board: EmbedBoardSchema.optional(),
-	model: EmbedBoardSchema.optional(),
+	board: EmbedLegacyBoardSchema.optional(),
+	model: EmbedLegacyBoardSchema.optional(),
 	message: z.string(),
 	/** For `EMBED_SOURCE_MISSING`: what is gone. */
 	missing: MissingSourceSchema.optional(),
 	/** For a board that is gone: the commit of the vault's history that removed its file. */
 	removedIn: z.object({ commit: z.string(), subject: z.string() }).optional(),
 	/** For a board that is gone: the board that holds its name now. */
-	nameHeldBy: EmbedBoardSchema.optional(),
+	nameHeldBy: EmbedLegacyBoardSchema.optional(),
 	/**
 	 * For a board that is gone: the boards its vault lists and cannot read,
 	 * any of which can be the board, because the listing names no id for them.
 	 */
-	unreadableBoards: z.array(z.string()).optional(),
+	unreadableModels: z.array(z.string()).optional(),
 	/**
 	 * For `EMBED_VAULT_UNAVAILABLE`, `EMBED_VAULT_FETCH_FAILED` and
 	 * `EMBED_VAULT_MOVED`: the repository identity of the vault the recipe
@@ -124,8 +124,8 @@ const EmbedFixSchema = z.discriminatedUnion("action", [
 	z.object({
 		action: z.literal("re-pointed"),
 		...FixedFileShape,
-		from: EmbedBoardSchema,
-		to: EmbedBoardSchema,
+		from: EmbedLegacyBoardSchema,
+		to: EmbedLegacyBoardSchema,
 	}),
 ]);
 type EmbedFix = z.infer<typeof EmbedFixSchema>;
@@ -162,7 +162,7 @@ const EmbedsPartSchema = z.object({
 	/** Every embed found: each tracked SVG document and PNG that carries a recipe. */
 	embeds: z.array(z.string()),
 	/** Every tracked embed of the vault's boards (ADR 0057), in the order the boards list them. */
-	tracked: z.array(z.object({ board: EmbedBoardSchema, repo: z.string(), path: z.string() })),
+	tracked: z.array(z.object({ board: EmbedLegacyBoardSchema, repo: z.string(), path: z.string() })),
 	/** Every vault an embed's recipe names that the check read, in the order the embeds name them. */
 	vaults: z.array(EmbedVaultSchema),
 	findings: z.array(EmbedFindingSchema),

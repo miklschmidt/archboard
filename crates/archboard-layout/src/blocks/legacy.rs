@@ -225,7 +225,7 @@ fn lay_all(
 }
 
 /// Settle ports after both ends are known. An unsettled overlap cannot win by drawing less ink.
-fn settled_board(mut board: Board) -> Board {
+fn settled_picture(mut board: Board) -> Board {
     settle_ports(&mut board.settling());
     board
 }
@@ -264,12 +264,12 @@ fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Board, String
     };
     let orders = held_orders(&last.settling());
     if orders.is_empty() {
-        return Ok(settled_board(last));
+        return Ok(settled_picture(last));
     }
     let mut held = kept;
     held.kept.orders = orders;
     let held = lay_all(gv, graph, &held, way)?;
-    let (one, other) = (settled_board(last), settled_board(held));
+    let (one, other) = (settled_picture(last), settled_picture(held));
     let ((crossings, bends), (fewer, straighter)) =
         (crossings_and_bends(&one), crossings_and_bends(&other));
     let chosen = if fewer < crossings && straighter <= bends {
@@ -350,7 +350,7 @@ impl Candidates<'_> {
                 self.settled = true;
                 let settled: Vec<_> = std::mem::take(&mut self.unsettled)
                     .into_iter()
-                    .map(settled_board)
+                    .map(settled_picture)
                     .collect();
                 self.ready = drawings(&settled);
             }
@@ -407,7 +407,7 @@ pub(super) fn candidates<'g>(
     unsettled.sort_by(|a, b| area(a).total_cmp(&area(b)));
     let best = unsettled.remove(0);
     let mut ready = vec![Assembly::new(&best.tree, &best.laid).placed()];
-    let best = settled_board(best);
+    let best = settled_picture(best);
     ready.push(Assembly::new(&best.tree, &best.laid).placed());
     ready.extend(drawings(&unsettled));
     ready.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));

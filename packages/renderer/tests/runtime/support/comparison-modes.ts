@@ -3,9 +3,9 @@
 
 import { expect } from "bun:test";
 
-import { renderBoard } from "#runtime/operations/render.ts";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DrawnBoard, LayoutEngineName } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
@@ -24,8 +24,8 @@ async function bothModes(
 	draft: unknown,
 	how: { layout?: LayoutEngineName; view?: { grammar: string; scope?: unknown } },
 ): Promise<{ compared: DrawnBoard; plain: DrawnBoard }> {
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const board = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Removals",
@@ -49,8 +49,8 @@ async function bothModes(
 	const ask = { variant: "draft", layout: how.layout } as const;
 	const view = how.view === undefined ? {} : { view: "view" };
 	const [compared, plain] = await Promise.all([
-		renderBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
-		renderBoard(board, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
+		renderLegacyBoard(board, { ...ask, ...view }, DEFAULT_SEMANTIC_POLICY),
+		renderLegacyBoard(board, { ...ask, ...view, comparison: false }, DEFAULT_SEMANTIC_POLICY),
 	]);
 	if (!compared.ok || !plain.ok || !("svg" in compared.reply) || !("svg" in plain.reply)) {
 		throw new Error("Expected two drawn proposals");

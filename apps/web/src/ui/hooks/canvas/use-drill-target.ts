@@ -22,25 +22,22 @@ import { use, useCallback } from "react";
 import {
 	resolveVariant,
 	variantNamed,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import type { RepositoryEntry } from "@archboard/workspace/repositories";
 import type { SemanticNode } from "@archboard/model/content";
-import { readBoard } from "#ui/rules/canvas/reading/document.ts";
+import { readDocument } from "#ui/rules/canvas/reading/document.ts";
 import type {
 	OtherRepository,
 	RepositoryPlace,
 	RepositoryPlaces,
 } from "#ui/rules/canvas/drilling/drill-target.ts";
-import {
-	semanticBoardDocumentQuery,
-	semanticBoardListQuery,
-} from "#ui/clients/canvas/reads/queries.ts";
-import type { SemanticBoardListing } from "#ui/clients/canvas/reads/drawings.ts";
+import { retainedDocumentQuery, retainedListingQuery } from "#ui/clients/canvas/reads/queries.ts";
+import type { RetainedListing } from "#ui/clients/canvas/reads/drawings.ts";
 import { RepositoryPlacesContext } from "#ui/state/canvas/repository-places.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
-import { useSemanticBoardChanges } from "#ui/hooks/canvas/use-model-changes.ts";
+import { useModelChanges } from "#ui/hooks/canvas/use-model-changes.ts";
 
 type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 
@@ -48,7 +45,7 @@ type DrillDown = NonNullable<SemanticNode["drillDown"]>;
 type DrillTarget =
 	| {
 			readonly kind: "ready";
-			readonly board: SemanticBoard;
+			readonly board: LegacyBoard;
 			readonly variant: SemanticVariant;
 			/** The other repository it is in, or undefined for the vault the link is drawn in. */
 			readonly there: OtherRepository | undefined;
@@ -98,7 +95,7 @@ const NOT_ASKED: Read<never> = { kind: "reading" };
  */
 function placeOf(
 	target: DrillDown,
-	listing: Read<SemanticBoardListing>,
+	listing: Read<RetainedListing>,
 	places: RepositoryPlaces,
 ): Place | Exclude<DrillTarget, { readonly kind: "ready" }> {
 	const repo = target.repo;
@@ -141,7 +138,7 @@ function destinationOf(
 ): DrillTarget {
 	if (document.kind === "reading") return document;
 	if (document.kind === "failed") return { kind: "unreadable", problem: document.problem };
-	const reading = readBoard(document.value);
+	const reading = readDocument(document.value);
 	return reading.ok
 		? variantOf(target, reading.board, there)
 		: { kind: "unreadable", problem: reading.problem };
@@ -156,7 +153,7 @@ function destinationOf(
  */
 function variantOf(
 	target: DrillDown,
-	board: SemanticBoard,
+	board: LegacyBoard,
 	there: OtherRepository | undefined,
 ): DrillTarget {
 	const asked = target.variant;
@@ -212,7 +209,7 @@ async function settled<T>(asked: Promise<T>): Promise<Read<T>> {
  */
 function nameNow(target: DrillDown, document: unknown): string {
 	if (document === undefined) return target.board;
-	const reading = readBoard(document);
+	const reading = readDocument(document);
 	return reading.ok ? reading.board.name : target.board;
 }
 
@@ -227,17 +224,17 @@ function useDrillTarget(target: DrillDown): DrillTarget {
 	const vault = usePaneVault();
 	const places = use(RepositoryPlacesContext);
 	const listing = useQuery({
-		...semanticBoardListQuery(vault),
+		...retainedListingQuery(vault),
 		enabled: target.repo !== undefined,
 	});
 	const place = placeOf(target, subscribed(listing), places);
 	const there = place.kind === "readable" ? place.there : undefined;
 	const inVault = there?.vault ?? vault;
 	const document = useQuery({
-		...semanticBoardDocumentQuery(inVault, target.board),
+		...retainedDocumentQuery(inVault, target.board),
 		enabled: place.kind === "readable",
 	});
-	useSemanticBoardChanges(inVault, target.board, nameNow(target, document.data));
+	useModelChanges(inVault, target.board, nameNow(target, document.data));
 	return place.kind === "readable" ? destinationOf(target, there, subscribed(document)) : place;
 }
 
@@ -254,12 +251,12 @@ function useDrillTargetReader(): (target: DrillDown) => Promise<DrillTarget> {
 			const listing =
 				target.repo === undefined
 					? NOT_ASKED
-					: await settled(queryClient.fetchQuery(semanticBoardListQuery(vault)));
+					: await settled(queryClient.fetchQuery(retainedListingQuery(vault)));
 			const place = placeOf(target, listing, places);
 			if (place.kind !== "readable") return place;
 			const inVault = place.there?.vault ?? vault;
 			const document = await settled(
-				queryClient.fetchQuery(semanticBoardDocumentQuery(inVault, target.board)),
+				queryClient.fetchQuery(retainedDocumentQuery(inVault, target.board)),
 			);
 			return destinationOf(target, place.there, document);
 		},

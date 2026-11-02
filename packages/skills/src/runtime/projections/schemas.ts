@@ -6,7 +6,7 @@ import {
 	ArchitectureImportRequestSchema,
 	ArchitectureMigrationRequestSchema,
 } from "@archboard/model/contract";
-import { SemanticBoardConfigurationSchema } from "@archboard/model/vault-policy";
+import { VaultConfigurationSchema } from "@archboard/model/vault-policy";
 interface GeneratedSchema {
 	readonly file: string;
 	readonly purpose: string;
@@ -46,7 +46,7 @@ function generatedSchemas(): GeneratedSchema[] {
 			"Explicit legacy migration intent",
 			ArchitectureMigrationRequestSchema,
 		],
-		["vault-config.schema.json", "Shared semantic vocabulary", SemanticBoardConfigurationSchema],
+		["vault-config.schema.json", "Shared semantic vocabulary", VaultConfigurationSchema],
 	] as const;
 	return definitions.map(([file, purpose, schema]) => ({
 		file,

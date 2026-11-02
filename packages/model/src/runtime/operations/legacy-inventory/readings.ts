@@ -96,7 +96,7 @@ function behavioralReading(
  * @param inventory Captured original families.
  * @returns Complete original states that contribute to this reading.
  */
-function selectedBoards(inventory: LegacyInventory) {
+function selectedModels(inventory: LegacyInventory) {
 	return inventory.boards.flatMap(({ document, file }) => {
 		if (document === undefined) return [];
 		const state = document.variants.find((entry) => entry.id === document.current);
@@ -114,7 +114,7 @@ function convertedReadings(inventory: LegacyInventory) {
 	const readingDiagnostics: NonNullable<
 		NonNullable<ArchitectureModel["migrationPreview"]>["readingDiagnostics"]
 	> = [];
-	for (const { document, file, state } of selectedBoards(inventory)) {
+	for (const { document, file, state } of selectedModels(inventory)) {
 		/**
 		 * Preserve one original local identity under its family namespace.
 		 * @param id The original local identity.

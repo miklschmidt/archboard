@@ -33,21 +33,21 @@ import type { QueryClient } from "@tanstack/react-query";
 
 import {
 	addressedVariant,
-	type SemanticBoard,
-	parseSemanticBoard,
+	type LegacyBoard,
+	parseLegacyBoard,
 } from "@archboard/model/legacy-board";
 import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
 import type { SemanticPolicy } from "@archboard/model/policy";
-import type { drawBoardHere } from "@archboard/renderer/browser";
+import type { drawLegacyBoardHere } from "@archboard/renderer/browser";
 import {
-	SemanticBoardError,
+	ReadingError,
 	comparisonKey,
-	type SemanticBoardEntry,
+	type DocumentEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
 } from "#ui/clients/canvas/reads/drawings.ts";
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
-import { onSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import { onModelChange } from "#ui/state/canvas/model-changes.ts";
 import { layoutEngineNow } from "#ui/clients/canvas/reads/layout-engine.ts";
 import {
 	forgetStalePictures,
@@ -58,20 +58,20 @@ import {
 } from "#ui/clients/canvas/reads/picture-cache.ts";
 import type { PictureSource } from "#ui/clients/canvas/reads/picture-source.ts";
 import {
-	semanticBoardDocumentQuery,
+	retainedDocumentQuery,
 	semanticRenderQuery,
 	vaultCheckQuery,
 } from "#ui/clients/canvas/reads/queries.ts";
 import { cachedReadings } from "#ui/clients/canvas/reads/read-keys.ts";
-import { boardGoneStale } from "#ui/clients/canvas/reads/read-refresh.ts";
+import { modelGoneStale } from "#ui/clients/canvas/reads/read-refresh.ts";
 
 /** Draws one board in this page. */
-type DrawBoard = typeof drawBoardHere;
+type DrawLegacyBoard = typeof drawLegacyBoardHere;
 
 /** What drawing in this page needs. */
 interface LocalPictureSetup {
 	/** The renderer, as this page runs it. */
-	readonly draw: DrawBoard;
+	readonly draw: DrawLegacyBoard;
 	/** Which build of the renderer that is; a kept picture of another build is not shown. */
 	readonly renderer: string;
 	/** Where pictures are kept, or nothing when this browser keeps none. */
@@ -84,13 +84,11 @@ interface LocalPictureSetup {
  * @param vault The vault the board is in.
  * @param board The board name.
  * @returns The board.
- * @throws {SemanticBoardError} When what the server sent is not a coherent board.
+ * @throws {ReadingError} When what the server sent is not a coherent board.
  */
-async function boardFor(client: QueryClient, vault: string, board: string): Promise<SemanticBoard> {
-	const parsed = parseSemanticBoard(
-		await client.fetchQuery(semanticBoardDocumentQuery(vault, board)),
-	);
-	if (!parsed.ok) throw new SemanticBoardError("BOARD_UNREADABLE", parsed.problem);
+async function modelFor(client: QueryClient, vault: string, board: string): Promise<LegacyBoard> {
+	const parsed = parseLegacyBoard(await client.fetchQuery(retainedDocumentQuery(vault, board)));
+	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
 	return parsed.board;
 }
 
@@ -101,7 +99,7 @@ async function boardFor(client: QueryClient, vault: string, board: string): Prom
  * @param client The tab's cache.
  * @param drawing The pictures being laid out now, by request and stamp.
  * @returns The drawing, or the news that there is nothing to draw.
- * @throws {SemanticBoardError} When the board has no such variant or view, or cannot be read.
+ * @throws {ReadingError} When the board has no such variant or view, or cannot be read.
  */
 async function drawHere(
 	setup: LocalPictureSetup,
@@ -110,7 +108,7 @@ async function drawHere(
 	drawing: Map<string, Promise<SemanticRenderReply>>,
 ): Promise<SemanticRender> {
 	const [board, vault] = await Promise.all([
-		boardFor(client, request.vault, request.board),
+		modelFor(client, request.vault, request.board),
 		client.fetchQuery(vaultCheckQuery(request.vault)),
 	]);
 	const stamp = {
@@ -157,7 +155,7 @@ async function drawHere(
 function startDrawing(
 	setup: LocalPictureSetup,
 	what: {
-		board: SemanticBoard;
+		board: LegacyBoard;
 		request: SemanticRenderRequest;
 		stamp: PictureStamp;
 		policy: SemanticPolicy;
@@ -183,11 +181,11 @@ function startDrawing(
  * @param request What is asked for.
  * @param policy The vault policy.
  * @returns The render answer.
- * @throws {SemanticBoardError} When the board has no such variant or view.
+ * @throws {ReadingError} When the board has no such variant or view.
  */
 async function drawn(
 	setup: LocalPictureSetup,
-	board: SemanticBoard,
+	board: LegacyBoard,
 	request: SemanticRenderRequest,
 	policy: SemanticPolicy,
 ): Promise<SemanticRenderReply> {
@@ -202,7 +200,7 @@ async function drawn(
 		},
 		policy,
 	);
-	if (!outcome.ok) throw new SemanticBoardError(outcome.code, outcome.error);
+	if (!outcome.ok) throw new ReadingError(outcome.code, outcome.error);
 	return outcome.reply;
 }
 
@@ -220,7 +218,7 @@ function readingsOf(
 ): { name: string; views: Set<string> } {
 	const reading = { name: board, views: new Set([""]) };
 	for (const { kind, asked, view } of cachedReadings(client, vault)) {
-		if (kind !== "picture" || !sameBoardName(asked, board)) continue;
+		if (kind !== "picture" || !sameModelName(asked, board)) continue;
 		reading.name = asked;
 		reading.views.add(view);
 	}
@@ -242,8 +240,8 @@ async function picturesToDrawAhead(
 	const reading = readingsOf(client, vault, board);
 	// Marked stale without reading anything yet: a pane showing the board reads
 	// its own again, and the drawing below reads the rest.
-	await boardGoneStale(client, vault, reading.name);
-	const document = await boardFor(client, vault, reading.name);
+	await modelGoneStale(client, vault, reading.name);
+	const document = await modelFor(client, vault, reading.name);
 	// The About page asks for the variant the board's name opens by no name, and any other by
 	// id. A board whose name opens nothing, because it has several drafts and no current variant,
 	// is asked for by id throughout.
@@ -291,7 +289,7 @@ async function drawAhead(client: QueryClient, vault: string, board: string): Pro
 async function drawListedAhead(
 	client: QueryClient,
 	vault: string,
-	boards: readonly SemanticBoardEntry[],
+	boards: readonly DocumentEntry[],
 ): Promise<void> {
 	for (const entry of boards) {
 		// Asked by its key, as a pane and an address ask for it, so the picture
@@ -327,7 +325,7 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 		draw: (request, client) => {
 			if (!warmed.has(client)) {
 				warmed.add(client);
-				onSemanticBoardChange((vault, board) => {
+				onModelChange((vault, board) => {
 					void drawAhead(client, vault, board).catch(() => undefined);
 				});
 			}
@@ -360,4 +358,4 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	};
 }
 
-export { createLocalPictureSource, type DrawBoard, type LocalPictureSetup };
+export { createLocalPictureSource, type DrawLegacyBoard, type LocalPictureSetup };

@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import {
-	board as fixtureBoard,
+	board as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -97,7 +97,7 @@ beforeAll(async () => {
 	git("checkout", "-q", "main");
 	register(scratch, { [SHOP]: shop });
 	// v2 keeps Keeper and drops Audit and Extra from v1.
-	fixtureBoard(vault, "Shop", [
+	fixtureDocument(vault, "Shop", [
 		{ id: "v0", name: "Built", lifecycle: "current", content: { nodes: base } },
 		draft("v1", "v0", [onA, keeper, extra]),
 		draft("v2", "v1", [keeper, part("pB", "Bookkeeping", { path: "src", branch: "feat/b" })]),
@@ -199,7 +199,7 @@ test("a draft whose ref the checkout lacks, or that names several refs, is skipp
 });
 
 test("a draft named with --variant is held to what it dropped too", async () => {
-	const read = check.readBoardsToCheck(vault, "draft v1");
+	const read = check.readStatesToCheck(vault, "draft v1");
 	if (!read.ok) throw new Error("no draft v1");
 	const outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
 	expect(

@@ -1,7 +1,7 @@
 // The layout engine a worker runs, under Bun and in the browser alike. The
 // pool's first message hands the worker the renderer core its main thread
 // compiled and checked (ADR 0059); the worker instantiates it and answers each
-// solve after that, one at a time, with the core's `layOutBoard`, which runs
+// solve after that, one at a time, with the core's `layOutPicture`, which runs
 // Graphviz in the core (ADR 0060). A solve's answer depends on its graph
 // alone, so neither which worker answers it nor what that worker solved
 // before changes a drawing.
@@ -76,7 +76,7 @@ async function answer(engine: Promise<Solve>, id: number, graph: string): Promis
 /**
  * Serve the layout engine in this worker.
  * @param scope The worker's global scope.
- * @param instantiate Instantiates the core the pool handed over, answering its `layOutBoard`.
+ * @param instantiate Instantiates the core the pool handed over, answering its `layOutPicture`.
  */
 export function serveLayoutEngine(
 	scope: WorkerScope,

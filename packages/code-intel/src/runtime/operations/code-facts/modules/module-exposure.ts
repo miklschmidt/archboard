@@ -377,7 +377,7 @@ const RULES: readonly ExposureRule[] = [
 /** One name a module exposes, and the definition it reaches. */
 interface ExposedName {
 	/**
-	 * The name as a caller spells it after importing the root file: `readBoard`,
+	 * The name as a caller spells it after importing the root file: `readDocument`,
 	 * `default`, `Ledger.post` for a public member, `ns.read` through `export * as ns`.
 	 */
 	readonly name: string;

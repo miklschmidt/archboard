@@ -52,8 +52,8 @@ import {
 import {
 	abandonRestore,
 	advanceRestore,
-	boardOpened,
-	boardUnreachable,
+	modelOpened,
+	modelUnreachable,
 	createRestore,
 	retargetRestore,
 	type Restore,
@@ -64,7 +64,7 @@ import {
 	searchFromAddress,
 	validateWorkspaceSearch,
 } from "#ui/rules/reading-routing/search.ts";
-import type { OpenedBoard, WorkspacePort } from "#ui/rules/reading-routing/contracts.ts";
+import type { OpenedModel, WorkspacePort } from "#ui/rules/reading-routing/contracts.ts";
 import type { modelReading } from "#ui/rules/reading-routing/model-address.ts";
 
 /** What a user's own board open reports back when it is over. */
@@ -105,7 +105,7 @@ interface WorkspaceAddressing {
 }
 
 /** The router this hook writes through. */
-type BoardRouter = ReturnType<typeof useRouter>;
+type ReadingRouter = ReturnType<typeof useRouter>;
 
 /** Somebody waiting for the command slot. */
 interface Waiting {
@@ -122,7 +122,7 @@ interface Reconciliation {
 	displayed: WorkspaceAddress;
 	wanted: WorkspaceAddress;
 	port: WorkspacePort;
-	router: BoardRouter;
+	router: ReadingRouter;
 	readonly deliberate: DeliberateNavigation;
 	/** The one command outstanding, or null when the slot is free. */
 	operation: Operation | null;
@@ -140,7 +140,7 @@ interface Reconciliation {
 function isSettled(address: WorkspaceAddress): boolean {
 	return (
 		address.panes.length > 0 &&
-		address.panes.every((pane) => pane.boardKey !== null || pane.model !== undefined)
+		address.panes.every((pane) => pane.paneKey !== null || pane.model !== undefined)
 	);
 }
 
@@ -173,7 +173,7 @@ function answerOperation(
 	state: Reconciliation,
 	operation: Operation,
 	answer: OperationAnswer,
-	opened: OpenedBoard | null = null,
+	opened: OpenedModel | null = null,
 ): void {
 	// An answer is taken once, and only by the operation it belongs to.
 	if (state.operation === operation) {
@@ -226,11 +226,11 @@ function finishUserOperation(state: Reconciliation, operation: Operation): void 
  */
 function restoreAnswered(restore: Restore, target: number, operation: Operation): Restore {
 	if (operation.answer === "unreachable" && operation.asked !== null) {
-		return boardUnreachable(restore, target, operation.asked);
+		return modelUnreachable(restore, target, operation.asked);
 	}
 	return operation.openedKey === null
 		? restore
-		: boardOpened(restore, target, operation.paneId, operation.openedKey);
+		: modelOpened(restore, target, operation.paneId, operation.openedKey);
 }
 
 /**
@@ -261,7 +261,7 @@ function grantSlot(state: Reconciliation): void {
 					reconcile(state);
 					return;
 				}
-				answerOperation(state, operation, "opened", { boardKey: openedKey, repository });
+				answerOperation(state, operation, "opened", { paneKey: openedKey, repository });
 			},
 			/** The command did not finish. */
 			failed: (): void => {
@@ -302,24 +302,24 @@ function commandsOver(state: Reconciliation) {
 		/**
 		 * Take the slot and point a pane at its requested architecture.
 		 * @param paneId The pane.
-		 * @param boardKey The board.
+		 * @param paneKey The board.
 		 * @param repository The repository the board is in, or null for the pane's own.
 		 * @param model The complete canonical reading, when this address names one.
 		 */
 		open: (
 			paneId: string,
-			boardKey: string | null,
+			paneKey: string | null,
 			repository: string | null,
 			model?: ModelAddress,
 		): void => {
 			const operation = startOperation(
 				{ kind: "restore", target: state.restore.target },
 				paneId,
-				{ boardKey, repository, ...(model === undefined ? {} : { model }) },
+				{ paneKey, repository, ...(model === undefined ? {} : { model }) },
 				state.displayed,
 			);
 			state.operation = operation;
-			void state.port.open(paneId, boardKey, repository, model).then((outcome) => {
+			void state.port.open(paneId, paneKey, repository, model).then((outcome) => {
 				if (outcome.kind === "opened") {
 					answerOperation(state, operation, "opened", outcome);
 				} else {
@@ -373,7 +373,7 @@ function revealOpenedPane(state: Reconciliation, paneId: string): void {
 		...state.displayed,
 		panes: state.displayed.panes.map((pane) => {
 			if (pane.paneId !== paneId) return pane;
-			return actual.boardKey === null && pane.model !== undefined
+			return actual.paneKey === null && pane.model !== undefined
 				? { ...actual, model: pane.model }
 				: actual;
 		}),

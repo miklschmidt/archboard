@@ -4,7 +4,7 @@ import { LegacyOriginalInputsSchema } from "#shared/schemas/migration-inputs.ts"
 import { ModelDiagnosticSchema } from "#shared/schemas/model-diagnostic.ts";
 import { ProposalChangeSchema } from "#shared/schemas/model-changes.ts";
 import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
-import { SemanticBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
+import { LegacyBoardSchema, SemanticVariantSchema } from "#shared/schemas/legacy-board.ts";
 import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
 import { SemanticEdgeSchema, SemanticNodeSchema } from "#shared/schemas/content.ts";
 import {
@@ -68,8 +68,8 @@ const MigrationPreviewSchema = MigrationReadingsSchema.extend({
 				}).optional(),
 				canonical: QualifiedSubjectIdSchema,
 				state: SemanticVariantSchema.omit({ content: true }),
-				adoptions: SemanticBoardSchema.shape.adoptions,
-				shelvings: SemanticBoardSchema.shape.shelvings,
+				adoptions: LegacyBoardSchema.shape.adoptions,
+				shelvings: LegacyBoardSchema.shape.shelvings,
 			}),
 		)
 		.optional(),
@@ -80,7 +80,7 @@ const MigrationPreviewSchema = MigrationReadingsSchema.extend({
 				file: z.string(),
 				source: z.string(),
 				sourceBase64: z.string().optional(),
-				document: SemanticBoardSchema.optional(),
+				document: LegacyBoardSchema.optional(),
 			}),
 		)
 		.optional(),

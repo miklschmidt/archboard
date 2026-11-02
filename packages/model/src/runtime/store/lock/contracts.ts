@@ -168,8 +168,8 @@ function describeHold(
 }
 
 /** A bounded lock wait ended while another holder still owned the board. */
-class BoardHeldError extends Error {
-	public readonly code = "BOARD_HELD";
+class ModelHeldError extends Error {
+	public readonly code = "MODEL_HELD";
 	public readonly board: string;
 	public readonly holder: Readonly<LockHolder> | null;
 	public readonly waitedMs: number;
@@ -182,7 +182,7 @@ class BoardHeldError extends Error {
 	 */
 	public constructor(board: string, holder: Readonly<LockHolder> | null, waitedMs: number) {
 		super(describeHold(board, holder, waitedMs));
-		this.name = "BoardHeldError";
+		this.name = "ModelHeldError";
 		this.board = board;
 		this.holder = holder;
 		this.waitedMs = waitedMs;
@@ -190,7 +190,7 @@ class BoardHeldError extends Error {
 }
 
 export {
-	BoardHeldError,
+	ModelHeldError,
 	type Claim,
 	type ClaimEndCause,
 	type ClaimEntry,

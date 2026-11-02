@@ -16,14 +16,14 @@ import { useCallback, useEffect, useRef } from "react";
 import { FIT_MARGIN } from "@archboard/renderer/shell-geometry";
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticAtlas } from "#ui/clients/canvas/reads/drawings.ts";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { Rect } from "#ui/rules/canvas/camera/camera.ts";
 import { revealCamera } from "#ui/rules/canvas/camera/reveal.ts";
 import { subjectBox } from "#ui/clients/canvas/subjects/subjects.ts";
 
 /** What decides whether, and where, the camera moves. */
 interface RevealInputs {
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** Where every subject of the picture on screen ended up, or null before there is one. */
 	readonly atlas: SemanticAtlas | null;
 	/** The relationships the picture on screen draws. */

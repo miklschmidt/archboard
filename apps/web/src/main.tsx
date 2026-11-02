@@ -8,7 +8,7 @@ import { createRoot } from "react-dom/client";
 import { replayAskedOf } from "@archboard/walkthrough/talk";
 import { Application } from "#ui/components/application/Application.tsx";
 import { applyShellDurations } from "#ui/clients/application/shell-durations.ts";
-import { createBoardRoutingHost } from "#ui/components/reading-routing/ReadingRoutingHost.tsx";
+import { createReadingRoutingHost } from "#ui/components/reading-routing/ReadingRoutingHost.tsx";
 
 const root = document.getElementById("root");
 if (!root) {
@@ -33,7 +33,7 @@ if (replayAskedOf(window.location.search)) {
 		module.startWalkthroughReplay(root, renderer),
 	);
 } else {
-	const Root = createBoardRoutingHost(Application);
+	const Root = createReadingRoutingHost(Application);
 	createRoot(root).render(
 		<StrictMode>
 			<Root />

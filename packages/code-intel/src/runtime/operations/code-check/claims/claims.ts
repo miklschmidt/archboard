@@ -6,7 +6,7 @@
 // claims that its file holds its symbol, and that where the symbol is defined
 // in the checkout, the bound code of an end or of a part inside one holds it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import { edgeSubjects, nodeSubject } from "@archboard/model/vault-policy";
 import type { CodeAnchor, CodeBinding } from "@archboard/code-binding/bindings";
 import { messagesOf } from "@archboard/model/flow";
@@ -51,7 +51,7 @@ type Claim = BindingClaim | AnchorClaim;
 
 /** One variant as its claims read it: where a claim sits, and its parts by id. */
 interface ReadVariant {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly byId: ReadonlyMap<string, SemanticNode>;
 	/** The parts directly inside each part, by its id. */
 	readonly inside: ReadonlyMap<string, readonly SemanticNode[]>;
@@ -182,7 +182,7 @@ function stepClaims(variant: ReadVariant): AnchorClaim[] {
  * @param read The board, its variant, and whether the variant is the named draft.
  * @returns The claims, in the variant's order: parts, relationships, then steps.
  */
-function claimsOf(read: BoardToCheck): Claim[] {
+function claimsOf(read: StateToCheck): Claim[] {
 	const { content } = read.variant;
 	const inside = new Map<string, SemanticNode[]>();
 	for (const node of content.nodes) {

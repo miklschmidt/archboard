@@ -4,7 +4,7 @@ import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import boardRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
+import modelRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
 import legacyRouting from "#tests/runtime/support/fixtures/legacy-routing.json";
 import voiceCoordinator from "#tests/runtime/support/fixtures/voice-coordinator.json";
 
@@ -42,7 +42,7 @@ const policy = SemanticPolicySchema.parse({
 });
 
 test("a line's words stand clear of its own legs on a board of tight rows", async () => {
-	const content = orderedFixture(boardRasterizer);
+	const content = orderedFixture(modelRasterizer);
 	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
 	expect(labelsOverOwnLine(drawing)).toEqual([]);
 });

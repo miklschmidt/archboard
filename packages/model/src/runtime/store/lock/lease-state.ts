@@ -4,11 +4,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 import {
 	VAULT_STATE_DIR,
-	boardMemoryKey,
-	normalizeBoardKey,
+	modelMemoryKey,
+	normalizePaneKey,
 } from "#runtime/store/legacy-address.ts";
 import { logger } from "@archboard/diagnostics/logger";
 import type { LockHolder, LockRecord, LockSink } from "#runtime/store/lock/contracts.ts";
@@ -18,19 +18,19 @@ const processAnnounced = new Map<string, string>();
 const processSink = { notify: null as LockSink | null };
 const processSweep = { also: null as ((vault: string, board: string) => void) | null };
 const processWatcher: {
-	watched: WatchedBoards | null;
+	watched: WatchedModels | null;
 	timer: ReturnType<typeof setInterval> | null;
 } = { watched: null, timer: null };
 
 /** One board of one vault. */
-interface WatchedBoard {
+interface WatchedModel {
 	readonly vault: string;
 	readonly board: string;
 }
 
 /** The boards a browser has on screen, each with the vault it lives in. */
-interface WatchedBoards {
-	readonly boards: () => readonly WatchedBoard[];
+interface WatchedModels {
+	readonly boards: () => readonly WatchedModel[];
 }
 
 /**
@@ -68,7 +68,7 @@ function lockPathFor(vault: string, board: string): string {
 		vault,
 		VAULT_STATE_DIR,
 		"locks",
-		`${encodeURIComponent(normalizeBoardKey(board))}.lock`,
+		`${encodeURIComponent(normalizePaneKey(board))}.lock`,
 	);
 }
 
@@ -162,8 +162,8 @@ function holderOf(record: LockRecord): LockHolder {
  * @param board The board key.
  * @returns The holder, or null when the board is free.
  */
-function boardLockState(vault: string, board: string): LockHolder | null {
-	const live = liveRecord(readRecord(lockPathFor(vault, normalizeBoardKey(board))));
+function modelLockState(vault: string, board: string): LockHolder | null {
+	const live = liveRecord(readRecord(lockPathFor(vault, normalizePaneKey(board))));
 	return live ? holderOf(live) : null;
 }
 
@@ -193,12 +193,12 @@ function announce(vault: string, board: string, holder: LockHolder | null): void
 	// Reserved internal locks are not boards. Their public operation owns its news.
 	if (board.startsWith("@")) return;
 	const announced = lockFingerprint(holder);
-	const key = boardMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, board);
 	if (processAnnounced.get(key) === announced) {
 		return;
 	}
 	processAnnounced.set(key, announced);
-	processSink.notify?.(vault, normalizeBoardKey(board), holder);
+	processSink.notify?.(vault, normalizePaneKey(board), holder);
 }
 
 /**
@@ -222,7 +222,7 @@ function announceHeld(vault: string, board: string, holder: LockHolder): void {
  * @param board The board key.
  */
 function announceFree(vault: string, board: string): void {
-	announce(vault, board, boardLockState(vault, board));
+	announce(vault, board, modelLockState(vault, board));
 }
 
 /**
@@ -237,7 +237,7 @@ function announceFree(vault: string, board: string): void {
  * @returns True when this holder had it to release.
  */
 function releaseHold(vault: string, board: string, holderId: string): boolean {
-	const key = normalizeBoardKey(board);
+	const key = normalizePaneKey(board);
 	const file = lockPathFor(vault, key);
 	const current = readRecord(file);
 	if (!current || current.id !== holderId) {
@@ -284,13 +284,13 @@ function renewRecord(vault: string, board: string, id: string, leaseMs: number):
 /**
  * Look at every board on screen and announce who has it.
  */
-function sweepBoardLocks(): void {
+function sweepModelLocks(): void {
 	if (!processWatcher.watched) {
 		return;
 	}
-	const watched = new Map<string, WatchedBoard>();
+	const watched = new Map<string, WatchedModel>();
 	for (const { vault, board } of processWatcher.watched.boards()) {
-		watched.set(boardMemoryKey(vault, board), { vault, board: normalizeBoardKey(board) });
+		watched.set(modelMemoryKey(vault, board), { vault, board: normalizePaneKey(board) });
 	}
 	for (const { vault, board } of watched.values()) {
 		// The note-watch passenger shares this exact board list and cadence. It runs
@@ -302,7 +302,7 @@ function sweepBoardLocks(): void {
 				error,
 			});
 		}
-		announce(vault, board, boardLockState(vault, board));
+		announce(vault, board, modelLockState(vault, board));
 	}
 }
 
@@ -315,7 +315,7 @@ function sweepBoardLocks(): void {
  * @param watched Which boards are on screen, each with the vault it lives in, or
  *   null to stop watching.
  */
-function watchBoardLocks(watched: WatchedBoards | null): void {
+function watchModelLocks(watched: WatchedModels | null): void {
 	processWatcher.watched = watched;
 	if (!watched) {
 		if (processWatcher.timer) {
@@ -328,8 +328,8 @@ function watchBoardLocks(watched: WatchedBoards | null): void {
 		return;
 	}
 	const timer = setInterval(() => {
-		sweepBoardLocks();
-	}, BOARD_LOCK_MS.watch);
+		sweepModelLocks();
+	}, MODEL_LOCK_MS.watch);
 	// The poll must not be the reason a process stays alive.
 	timer.unref();
 	processWatcher.timer = timer;
@@ -362,10 +362,10 @@ function forgetLockState(): void {
 }
 
 export {
-	type WatchedBoard,
-	type WatchedBoards,
+	type WatchedModel,
+	type WatchedModels,
 	announceHeld,
-	boardLockState,
+	modelLockState,
 	forgetLockState,
 	holderOf,
 	liveRecord,
@@ -377,6 +377,6 @@ export {
 	releaseHold,
 	renewRecord,
 	stamp,
-	watchBoardLocks,
+	watchModelLocks,
 	writeRecord,
 };

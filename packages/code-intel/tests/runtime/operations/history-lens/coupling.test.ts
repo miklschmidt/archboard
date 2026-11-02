@@ -13,9 +13,9 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -106,7 +106,7 @@ const PARTS = [
  * step from Mailer to Templates.
  * @returns The board.
  */
-function board(): SemanticBoard {
+function board(): LegacyBoard {
 	const nodes = [
 		...PARTS.map(([id, name, path, parent], index) => ({
 			id,
@@ -118,8 +118,8 @@ function board(): SemanticBoard {
 		})),
 		{ id: "pPy", order: (PARTS.length + 1) * 1000, name: "Payments", kind: "service" },
 	];
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",

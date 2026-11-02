@@ -11,7 +11,7 @@ import {
 } from "@archboard/model/policy";
 import type { SemanticVariant } from "@archboard/model/legacy-board";
 import type {
-	EvaluationArchitecture as SemanticBoard,
+	EvaluationArchitecture as EvaluatedDocument,
 	InspectionAttempt,
 	RenderAttempt,
 } from "#runtime/rules/outcomes/reading.ts";
@@ -105,7 +105,7 @@ function evaluationState(model: Model): SemanticVariant {
  * @param cli The isolated command context.
  * @returns One derived evaluation record for the one live model.
  */
-async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
+async function readVault(cli: CliContext): Promise<Map<string, EvaluatedDocument>> {
 	const model = await readModel(cli);
 	const proposals = await Promise.all(
 		model.proposals.map((proposal) => readModel(cli, proposal.id)),
@@ -114,7 +114,7 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
 		...(model.manifest.current === null ? [] : [evaluationState(model)]),
 		...proposals.map(evaluationState),
 	];
-	const board: SemanticBoard = {
+	const board: EvaluatedDocument = {
 		id: model.manifest.id,
 		name: model.manifest.name,
 		current: model.manifest.current?.id,
@@ -131,7 +131,7 @@ async function readVault(cli: CliContext): Promise<Map<string, SemanticBoard>> {
  * @param name The expected model name.
  * @returns The derived evaluation evidence.
  */
-async function readBoard(cli: CliContext, name: string): Promise<SemanticBoard> {
+async function readDocument(cli: CliContext, name: string): Promise<EvaluatedDocument> {
 	const vault = await readVault(cli);
 	const model = vault.get(name);
 	if (model === undefined) throw new Error(`The model ${name} is unavailable.`);
@@ -155,7 +155,7 @@ async function vaultDiagnostics(cli: CliContext): Promise<VaultDiagnostic[]> {
  * @param directory The artifact directory.
  * @returns The rendering attempt.
  */
-async function renderBoard(
+async function renderLegacyBoard(
 	cli: CliContext,
 	request: RenderRequest,
 	directory: string,
@@ -250,7 +250,7 @@ async function forgetCheckout(cli: CliContext, flask: string): Promise<void> {
  * @param boards The derived records.
  * @param directory The evidence directory.
  */
-function writeBoards(boards: ReadonlyMap<string, SemanticBoard>, directory: string): void {
+function writeBoards(boards: ReadonlyMap<string, EvaluatedDocument>, directory: string): void {
 	fs.mkdirSync(directory, { recursive: true });
 	for (const [name, record] of boards)
 		fs.writeFileSync(
@@ -264,11 +264,11 @@ export {
 	forgetCheckout,
 	inspectGroup,
 	layFixture,
-	readBoard,
+	readDocument,
 	readConfigurationText,
 	readPolicy,
 	readVault,
-	renderBoard,
+	renderLegacyBoard,
 	vaultDiagnostics,
 	writeBoards,
 	fixturePolicy,

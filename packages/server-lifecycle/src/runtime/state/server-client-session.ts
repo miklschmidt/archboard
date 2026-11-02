@@ -1,14 +1,11 @@
 // What one CLI invocation says about itself on every request it makes: which
-// board it is for, what it says it is doing, and which version of that board it
+// vault it is for, what it says it is doing, and which version of the model it
 // believes it is writing against.
 //
 // Carried here rather than threaded through thirty call sites. The CLI is one
 // command per process, so "this invocation" is a process-wide fact and stating
-// it once is what keeps a write's `--board`, `--doing` and `--expect-version`
+// it once is what keeps a write's `--doing` and `--expect-version`
 // from being forgotten by whichever call site was written last.
-
-/** The board this invocation names, or null when it names none. */
-let requestedBoard: string | null = null;
 
 /**
  * The vault this invocation names, which every server call states (ADR 0049):
@@ -56,15 +53,6 @@ function withVault(requestPath: string): string {
 }
 
 /**
- * A path carrying the board this invocation named, when it named one.
- * @param path The path.
- * @returns The path, with `?board=` when there is a board to state.
- */
-function withBoard(path: string): string {
-	return requestedBoard === null ? path : addQuery(path, "board", requestedBoard);
-}
-
-/**
  * A path carrying what this invocation is doing, when it said.
  *
  * Unless the caller has already said it. A command that builds its own query —
@@ -100,7 +88,7 @@ function withExpectedVersion(path: string): string {
  * A path carrying everything a write states about itself: the line it is doing
  * under, and the version it believes it is writing against. Only a write, so a
  * read never carries either.
- * @param path The path, board already stated.
+ * @param path The path.
  * @param method The request method; anything but GET is a write.
  * @returns The path.
  */
@@ -113,8 +101,6 @@ function withWriteClaims(path: string, method?: string): string {
 
 /** What one invocation states about itself, which every later request carries. */
 interface InvocationStatement {
-	/** The board it names, or null. */
-	readonly board: string | null;
 	/** The vault directory it names, absolute, or null. */
 	readonly vault: string | null;
 	/** What it says it is doing, or null. */
@@ -136,7 +122,6 @@ interface InvocationStatement {
  */
 function stateInvocation(stated: Partial<InvocationStatement>): void {
 	const next = { ...statedInvocation(), ...stated };
-	requestedBoard = next.board;
 	requestedVault = next.vault;
 	writeDoing = next.doing;
 	writeSession = next.session;
@@ -149,7 +134,6 @@ function stateInvocation(stated: Partial<InvocationStatement>): void {
  */
 function statedInvocation(): InvocationStatement {
 	return {
-		board: requestedBoard,
 		vault: requestedVault,
 		doing: writeDoing,
 		session: writeSession,
@@ -157,11 +141,4 @@ function statedInvocation(): InvocationStatement {
 	};
 }
 
-export {
-	type InvocationStatement,
-	stateInvocation,
-	statedInvocation,
-	withBoard,
-	withVault,
-	withWriteClaims,
-};
+export { type InvocationStatement, stateInvocation, statedInvocation, withVault, withWriteClaims };

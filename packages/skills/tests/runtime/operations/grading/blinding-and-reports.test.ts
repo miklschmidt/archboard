@@ -6,7 +6,7 @@ import { describe, expect, test } from "bun:test";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { SemanticBoardSchema } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
@@ -35,7 +35,7 @@ const usage = (input: number, output: number) => ({
 	total: input + output,
 });
 
-const BOARD = SemanticBoardSchema.parse(
+const BOARD = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",

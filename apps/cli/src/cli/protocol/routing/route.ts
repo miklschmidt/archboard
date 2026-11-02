@@ -29,7 +29,7 @@ type CommandRoutes = Readonly<Record<string, CommandRoute>>;
 interface CliRegistryEntry {
 	name: string;
 	parent: string | null;
-	classification: "board" | "browser" | "neither";
+	classification: "browser" | "neither";
 	handlerOwner: string;
 	parserOwner: string;
 	bare?: CommandRoute["bare"];

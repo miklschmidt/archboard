@@ -5,7 +5,7 @@
 // request with a native build of the core, Graphviz included, and holds it to
 // the same document.
 //
-// Each solve runs here, one at a time, with the core's `layOutBoard`, as a
+// Each solve runs here, one at a time, with the core's `layOutPicture`, as a
 // layout worker runs it; a solve's answer depends on its graph alone, so the
 // document is the one the worker pool draws.
 //
@@ -47,7 +47,7 @@ installRendererHost({
 			});
 		},
 	}),
-	solve: async (graph) => core.layOutBoard(graph),
+	solve: async (graph) => core.layOutPicture(graph),
 	themeColors: readThemeColors(readFileSync(THEME_STYLESHEET, "utf8")),
 	iconPaths,
 });

@@ -34,7 +34,7 @@ interface RendererHost {
 	readonly core: () => CoreRenderer;
 	/**
 	 * Solve one graph with the layout engine, laid out the way its root
-	 * options name, as the core's `layOutBoard` answers it.
+	 * options name, as the core's `layOutPicture` answers it.
 	 * @param graph The complete measured graph, as the core wrote it.
 	 * @param signal Calls the solve off: one still waiting for the engine is
 	 * never solved, and is refused with the signal's reason; one the engine

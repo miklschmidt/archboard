@@ -15,7 +15,7 @@ import {
 } from "#ui/rules/pane-session/session-contracts.ts";
 import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-port.ts";
 import type {
-	BoardIdentity,
+	LegacyIdentity,
 	DoingEntry,
 	LockHolder,
 } from "#ui/rules/pane-session/session-types.ts";
@@ -38,8 +38,8 @@ function mintClientId(paneId: string): string {
 interface SessionState {
 	contact: PaneContact;
 	setConnected: (connected: boolean) => void;
-	board: BoardIdentity | null;
-	setBoard: (board: BoardIdentity | null) => void;
+	board: LegacyIdentity | null;
+	setModel: (board: LegacyIdentity | null) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
 	openedKey: string | null;
 	setOpened: (key: string | null) => void;
@@ -61,7 +61,7 @@ interface SessionState {
  */
 function useSessionState(openingVault: string): SessionState {
 	const { contact, setConnected } = usePaneContact();
-	const [board, setBoard] = useState<BoardIdentity | null>(null);
+	const [board, setModel] = useState<LegacyIdentity | null>(null);
 	const [openedKey, setOpened] = useState<string | null>(null);
 	const [arrivals, setArrivals] = useState(0);
 	const arrived = useCallback((): void => setArrivals((count) => count + 1), []);
@@ -74,7 +74,7 @@ function useSessionState(openingVault: string): SessionState {
 		contact,
 		setConnected,
 		board,
-		setBoard,
+		setModel,
 		openedKey,
 		setOpened,
 		arrivals,
@@ -161,7 +161,7 @@ function usePaneSession<Transport extends WorkbenchTransportPort>(
 			paneElement: box.element.bind(box),
 			workbenchSockets: box.options().createWorkbenchSockets?.() ?? null,
 			setConnected: state.setConnected,
-			setBoard: state.setBoard,
+			setModel: state.setModel,
 			setVault: state.setVault,
 			setOpened: state.setOpened,
 			arrived: state.arrived,

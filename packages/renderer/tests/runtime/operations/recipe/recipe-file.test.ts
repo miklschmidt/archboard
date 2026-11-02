@@ -8,15 +8,15 @@
 import { expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { crc32, deflateSync } from "node:zlib";
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { renderBoard } from "#runtime/operations/render.ts";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
 import { readPngDimensions } from "#runtime/operations/rasterizer/png.ts";
 import { embedRecipeInPng } from "#runtime/operations/recipe/png-recipe.ts";
 import { readRenderRecipe, replaceRenderRecipe } from "#runtime/operations/recipe/read-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 import type { RenderRecipe } from "#runtime/operations/recipe/schema.ts";
-import { EXPORT_BOARD } from "#tests/runtime/support/export-picture.ts";
+import { EXPORT_DOCUMENT } from "#tests/runtime/support/export-picture.ts";
 
 /**
  * The SVG of a board's draft, with or without its recipe.
@@ -25,8 +25,12 @@ import { EXPORT_BOARD } from "#tests/runtime/support/export-picture.ts";
  * @param view The view drawn.
  * @returns The document.
  */
-async function drawnSvg(recipe: boolean, board = EXPORT_BOARD, view = "intake"): Promise<string> {
-	const outcome = await renderBoard(
+async function drawnSvg(
+	recipe: boolean,
+	board = EXPORT_DOCUMENT,
+	view = "intake",
+): Promise<string> {
+	const outcome = await renderLegacyBoard(
 		board,
 		{ theme: "light", variant: "draft", view, legend: "vertical" },
 		DEFAULT_SEMANTIC_POLICY,
@@ -97,7 +101,7 @@ test("an SVG drawn for a file reads back as its recipe, and its picture digest i
 	const recipe = recipeIn(Buffer.from(carried, "utf8"));
 	expect(recipe).toMatchObject({
 		recipe: 1,
-		board: { id: EXPORT_BOARD.id, name: EXPORT_BOARD.name },
+		board: { id: EXPORT_DOCUMENT.id, name: EXPORT_DOCUMENT.name },
 		vault: { repo: "github.com/example/vault" },
 		variant: { id: "draft" },
 		view: { id: "intake" },
@@ -129,7 +133,7 @@ test("a recipe stays readable after a serializer renames its prefix and escapes 
 test("a recipe's text reads back as written whichever way a serializer spells its characters", async () => {
 	const recipe: RenderRecipe = {
 		...recipeIn(Buffer.from(await drawnSvg(true), "utf8")),
-		board: { id: EXPORT_BOARD.id, name: "R&D <core> &lt; ]]>" },
+		board: { id: EXPORT_DOCUMENT.id, name: "R&D <core> &lt; ]]>" },
 	};
 	const carried = embedRecipeInSvg("<svg><g/>\n</svg>", recipe);
 	const json = JSON.stringify(recipe);
@@ -208,9 +212,9 @@ test("a recipe that cannot be read is said to be unreadable, not absent", async 
 
 test("a code citation on a relationship or a step moves neither the picture nor its fingerprint", async () => {
 	const anchor = { repo: "github.com/example/app", path: "src/queue.ts", symbol: "enqueue" };
-	const cited: SemanticBoard = {
-		...EXPORT_BOARD,
-		variants: EXPORT_BOARD.variants.map((variant) => ({
+	const cited: LegacyBoard = {
+		...EXPORT_DOCUMENT,
+		variants: EXPORT_DOCUMENT.variants.map((variant) => ({
 			...variant,
 			content: {
 				...variant.content,
@@ -223,7 +227,7 @@ test("a code citation on a relationship or a step moves neither the picture nor 
 		})),
 	};
 	for (const view of ["intake", "exchange"]) {
-		const plain = recipeIn(Buffer.from(await drawnSvg(true, EXPORT_BOARD, view), "utf8"));
+		const plain = recipeIn(Buffer.from(await drawnSvg(true, EXPORT_DOCUMENT, view), "utf8"));
 		const citing = recipeIn(Buffer.from(await drawnSvg(true, cited, view), "utf8"));
 		expect(citing.picture).toBe(plain.picture);
 		expect(citing.fingerprint).toBe(plain.fingerprint);

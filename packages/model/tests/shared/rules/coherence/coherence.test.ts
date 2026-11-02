@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { NewStepSchema } from "#shared/schemas/model-flows.ts";
 import { SemanticEdgeSchema } from "#shared/schemas/content.ts";
 import { FlowStepSchema } from "#shared/schemas/views.ts";
-import { parseSemanticBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
 /**
@@ -42,18 +42,18 @@ const withContent = (content: Record<string, unknown>) => [
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (value: unknown): string => {
-	const parsed = parseSemanticBoard(withFixtureOrders(value));
+	const parsed = parseLegacyBoard(withFixtureOrders(value));
 	return parsed.ok ? "" : parsed.problem;
 };
 
 describe("what a board has to be before it is drawn", () => {
 	test("a coherent board is accepted", () => {
-		expect(parseSemanticBoard(withFixtureOrders(board())).ok).toBe(true);
+		expect(parseLegacyBoard(withFixtureOrders(board())).ok).toBe(true);
 	});
 
 	test("a document written for a different major contract is refused", () => {
 		expect(refusal(board({ schemaVersion: "999.0.0" }))).toContain("999.0.0");
-		expect(parseSemanticBoard(withFixtureOrders(board({ schemaVersion: "2.7.0" }))).ok).toBe(true);
+		expect(parseLegacyBoard(withFixtureOrders(board({ schemaVersion: "2.7.0" }))).ok).toBe(true);
 	});
 
 	test("two variants claiming to be the implemented architecture is refused", () => {
@@ -311,7 +311,7 @@ describe("what a reader can address by name", () => {
 
 	test("two nodes may share a name; which one is meant is settled where it is used", () => {
 		expect(
-			parseSemanticBoard(
+			parseLegacyBoard(
 				withFixtureOrders(
 					explaining({
 						nodes: [
@@ -450,7 +450,7 @@ describe("one namespace for every subject of a variant", () => {
 
 	test("two variants may hold the same entity, which is what makes them comparable", () => {
 		expect(
-			parseSemanticBoard(
+			parseLegacyBoard(
 				withFixtureOrders(
 					board({
 						variants: [

@@ -3,8 +3,8 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import {
-	SemanticBoardError,
-	type SemanticBoardEntry,
+	ReadingError,
+	type DocumentEntry,
 	type SemanticRender,
 	type SemanticRenderRequest,
 } from "#ui/clients/canvas/reads/drawings.ts";
@@ -29,11 +29,7 @@ interface PictureSource {
 	 * @param boards The boards, with their versions.
 	 * @param client The tab's cache, for drawing listed boards ahead.
 	 */
-	readonly listed?: (
-		vault: string,
-		boards: readonly SemanticBoardEntry[],
-		client: QueryClient,
-	) => void;
+	readonly listed?: (vault: string, boards: readonly DocumentEntry[], client: QueryClient) => void;
 }
 
 let current: PictureSource | null = null;
@@ -41,11 +37,11 @@ let current: PictureSource | null = null;
 /**
  * The source pictures come from now.
  * @returns The source.
- * @throws {SemanticBoardError} When replay has not installed its local renderer.
+ * @throws {ReadingError} When replay has not installed its local renderer.
  */
 function pictureSource(): PictureSource {
 	if (current === null)
-		throw new SemanticBoardError(
+		throw new ReadingError(
 			"BOARD_UNREADABLE",
 			"Start the local renderer before drawing a retained recording.",
 		);

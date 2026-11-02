@@ -23,11 +23,11 @@ import {
 	type GitRunOptions,
 } from "#runtime/clients/history-lens/git.ts";
 import { parseLog } from "#runtime/operations/history-lens/commits.ts";
-import { decodeSemanticBoardDocument } from "@archboard/model/store-read";
+import { decodeLegacyBoard } from "@archboard/model/store-read";
 import { compareVariants } from "@archboard/model/comparison";
 import {
 	currentVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 
@@ -35,7 +35,7 @@ import {
 type LastChange =
 	| { readonly kind: "commit"; readonly commit: string; readonly committedAt: number }
 	| { readonly kind: "uncommitted" }
-	| { readonly kind: "unknown"; readonly reason: "vault-outside-git" | "board-file-ignored" };
+	| { readonly kind: "unknown"; readonly reason: "vault-outside-git" | "model-file-ignored" };
 
 /** How many commits of a board file's history are read from Git at a time. */
 const VERSIONS_PER_BATCH = 8;
@@ -54,9 +54,9 @@ const FOUND_HEADER = /^[0-9a-f]{40,64} [a-z]+ (\d+)$/u;
  * @param bytes The file's bytes at that commit.
  * @returns The board, or undefined.
  */
-function boardOf(bytes: Uint8Array | undefined): SemanticBoard | undefined {
+function documentOf(bytes: Uint8Array | undefined): LegacyBoard | undefined {
 	if (bytes === undefined) return undefined;
-	const parsed = decodeSemanticBoardDocument(new TextDecoder().decode(bytes));
+	const parsed = decodeLegacyBoard(new TextDecoder().decode(bytes));
 	return parsed.ok ? parsed.board : undefined;
 }
 
@@ -87,10 +87,7 @@ function variantChanged(
  * @param after The version after, or undefined when it is unreadable.
  * @returns True when the current variant changed.
  */
-function changedCurrent(
-	before: SemanticBoard | undefined,
-	after: SemanticBoard | undefined,
-): boolean {
+function changedCurrent(before: LegacyBoard | undefined, after: LegacyBoard | undefined): boolean {
 	if (before === undefined || after === undefined) return true;
 	return (
 		before.current !== after.current ||
@@ -205,7 +202,7 @@ async function lastChangingCommit(
 		// oxlint-disable-next-line no-await-in-loop -- most boards stop in the first batch
 		const blobs = await readBlobs(root, specs, options);
 		const at = batch.findIndex((_, index) =>
-			changedCurrent(boardOf(blobs[index * 2 + 1]), boardOf(blobs[index * 2])),
+			changedCurrent(documentOf(blobs[index * 2 + 1]), documentOf(blobs[index * 2])),
 		);
 		if (at !== -1) return batch[at];
 	}
@@ -221,7 +218,7 @@ async function lastChangingCommit(
  * @returns The last change, or why it cannot be found.
  */
 async function lastChangeOf(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	file: string,
 	vaultRoot: string | undefined,
 	options: GitRunOptions,
@@ -231,9 +228,9 @@ async function lastChangeOf(
 	const [atHead] = await readBlobs(vaultRoot, [`HEAD:${relative}`], options);
 	if (atHead === undefined) {
 		const ignored = await gitSays(vaultRoot, ["check-ignore", "-q", "--", relative], options);
-		return ignored ? { kind: "unknown", reason: "board-file-ignored" } : { kind: "uncommitted" };
+		return ignored ? { kind: "unknown", reason: "model-file-ignored" } : { kind: "uncommitted" };
 	}
-	if (changedCurrent(boardOf(atHead), board)) return { kind: "uncommitted" };
+	if (changedCurrent(documentOf(atHead), board)) return { kind: "uncommitted" };
 	const found = await lastChangingCommit(
 		vaultRoot,
 		await fileHistory(vaultRoot, relative, options),

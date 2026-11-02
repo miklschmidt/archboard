@@ -150,7 +150,7 @@ impl<'t> Clusters<'t> {
 
     /// Every line Graphviz ranks, by where its ends stand in the board's order,
     /// a container at its first member.
-    pub(crate) fn board_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
+    pub(crate) fn picture_order(&self, vendor_of: impl Fn(&str) -> String) -> Vec<&'t Line> {
         let block = self.block;
         let mut place: Map<String, f64> = block
             .items

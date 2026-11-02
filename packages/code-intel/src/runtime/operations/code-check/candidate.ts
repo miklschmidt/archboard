@@ -6,15 +6,15 @@ import {
 	resolveRegisteredCheckout,
 } from "@archboard/code-binding/resolution";
 import { HistoricalRevisionSchema } from "@archboard/model/contract";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
-import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import { commitOf } from "#runtime/clients/history-lens/source-history.ts";
 import { messagesOf } from "@archboard/model/flow";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { gitAnswer } from "#runtime/clients/history-lens/git.ts";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 import { checkCode, type CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { z } from "zod";
 
 type HistoricalRevision = z.infer<typeof HistoricalRevisionSchema>;
@@ -25,7 +25,7 @@ type CandidateRevision = Readonly<HistoricalRevision>;
 /** The in-memory candidate and the immutable code it is to describe. */
 interface CandidateCodeRequest {
 	readonly vault: string;
-	readonly board: SemanticBoard;
+	readonly board: LegacyBoard;
 	readonly file: string;
 	readonly variant: SemanticVariant;
 	readonly revisions: readonly CandidateRevision[];
@@ -148,8 +148,8 @@ async function checkCandidateCode(request: CandidateCodeRequest): Promise<Candid
 	const parsed = candidateRevisions(request.revisions);
 	if (!(parsed instanceof Map)) return parsed;
 	const revisions = parsed;
-	const { relationshipKinds } = readSemanticBoardConfiguration(vault).configuration;
-	const read: BoardToCheck = { board, file, variant, named: true, relationshipKinds };
+	const { relationshipKinds } = readVaultConfiguration(vault).configuration;
+	const read: StateToCheck = { board, file, variant, named: true, relationshipKinds };
 	const bindings = candidateBindings(variant);
 	const missing = bindings.find((binding) => !revisions.has(binding.repo));
 	if (missing !== undefined)

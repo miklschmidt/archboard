@@ -17,9 +17,9 @@ const NOTICE_ACTIONS = Object.freeze({
  * @param error The server's refusal.
  * @returns The notice.
  */
-function boardErrorNotice(paneId: string, error: string): ShellNotice {
+function modelErrorNotice(paneId: string, error: string): ShellNotice {
 	return {
-		id: `board-error:${paneId}`,
+		id: `pane-error:${paneId}`,
 		title: `Pane ${paneId} could not show its board`,
 		description: error,
 		tone: "destructive",
@@ -82,15 +82,15 @@ function failureNotice(id: string, title: string, description: string): ShellNot
 /**
  * The address named boards that could not be opened (TASK-166). What is on
  * screen is what the panes could reach, and the address bar now says so.
- * @param boardKeys The boards that could not be opened.
+ * @param paneKeys The boards that could not be opened.
  * @returns The notice.
  */
-function unreachableBoardsNotice(boardKeys: readonly string[]): ShellNotice {
-	const named = boardKeys.join(", ");
+function unreachableModelsNotice(paneKeys: readonly string[]): ShellNotice {
+	const named = paneKeys.join(", ");
 	return {
-		id: "unreachable-boards",
+		id: "unreachable-models",
 		title:
-			boardKeys.length === 1 ? `${named} could not be opened` : "Some boards could not be opened",
+			paneKeys.length === 1 ? `${named} could not be opened` : "Some boards could not be opened",
 		description: `The address asked for ${named}. Check the key in Board navigation; the panes are showing what they could reach, and the address now says so.`,
 		tone: "destructive",
 		actions: [],
@@ -163,13 +163,13 @@ function withoutNotice(notices: readonly ShellNotice[], id: string): readonly Sh
 
 export {
 	NOTICE_ACTIONS,
-	boardErrorNotice,
+	modelErrorNotice,
 	codeTargetShellNotice,
 	failureNotice,
 	infoNotice,
 	presentationNotice,
 	staleFrontendNotice,
-	unreachableBoardsNotice,
+	unreachableModelsNotice,
 	unreachableRepositoryNotice,
 	withNotice,
 	withoutNotice,

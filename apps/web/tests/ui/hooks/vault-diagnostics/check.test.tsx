@@ -4,7 +4,7 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { act, createElement, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
-import { semanticBoardKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import { readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import {
 	useVaultCheck,
@@ -58,7 +58,7 @@ test("check failure preserves issues; recovery clears only checked issues and re
 	function Observer() {
 		const check = useVaultCheck(VAULT);
 		useQuery({
-			queryKey: [...semanticBoardKeys.rendersIn(VAULT), "observed-board"],
+			queryKey: [...readKeys.rendersIn(VAULT), "observed-board"],
 			staleTime: Number.POSITIVE_INFINITY,
 			/**
 			 * Count requests for pictures under the checked policy.
@@ -144,7 +144,7 @@ test.each([false, true])(
 		function Picture() {
 			useVaultPolicyRefresh(VAULT);
 			const drawing = useQuery({
-				queryKey: [...semanticBoardKeys.rendersIn(VAULT), "test-board"],
+				queryKey: [...readKeys.rendersIn(VAULT), "test-model"],
 				staleTime: Number.POSITIVE_INFINITY,
 				/**
 				 * Draw from the policy in force when this request reaches the renderer.
@@ -207,7 +207,7 @@ test("a pane moved into another vault refreshes that vault's pictures, even unde
 	function Picture(props: { vault: string }) {
 		useVaultPolicyRefresh(props.vault);
 		useQuery({
-			queryKey: [...semanticBoardKeys.rendersIn(props.vault), "test-board"],
+			queryKey: [...readKeys.rendersIn(props.vault), "test-model"],
 			staleTime: Number.POSITIVE_INFINITY,
 			/**
 			 * Count the drawings of this vault's picture.

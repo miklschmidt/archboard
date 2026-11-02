@@ -1,6 +1,6 @@
 import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { readLegacyInventory } from "@archboard/model/store-read";
 import { retainArchitectureCheckpoint, saveLegacyMappingPlan } from "@archboard/model/store-write";
 import { vaultIn } from "../../support/test-vault.ts";
@@ -19,7 +19,7 @@ async function legacyNavigation(root: string) {
 	initializeSource(root);
 	fixtureGit(root, "config", "commit.gpgsign", "false");
 	const file = join(vault, "Shop.semantic.json");
-	const board = JSON.parse(readFileSync(file, "utf8")) as SemanticBoard;
+	const board = JSON.parse(readFileSync(file, "utf8")) as LegacyBoard;
 	board.views = [
 		{
 			id: "Entry",

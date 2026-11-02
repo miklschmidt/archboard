@@ -2,7 +2,7 @@ import { expect } from "bun:test";
 import type { createJsonRequester } from "../../support/http.ts";
 
 type Requester = ReturnType<typeof createJsonRequester>;
-async function createBoard(
+async function createModel(
 	request: Readonly<Requester> & Requester,
 	board: string,
 	options: Readonly<{ save?: boolean; variant?: string }> = {},
@@ -44,4 +44,4 @@ async function addBox(
 	expect(added.status).toBe(200);
 }
 
-export { addBox, createBoard };
+export { addBox, createModel };

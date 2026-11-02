@@ -6,7 +6,7 @@
 // and a click go down one path and get the same refusals.
 
 import {
-	unreachableBoardsNotice,
+	unreachableModelsNotice,
 	unreachableRepositoryNotice,
 } from "#ui/rules/application/notices.ts";
 import { PANE_IDS, paneListOf, type PaneList } from "#ui/rules/application/pane-list.ts";
@@ -17,8 +17,8 @@ import type { NoticeStack } from "#ui/hooks/application/use-notices.ts";
 import type { PaneReadings } from "#ui/hooks/application/use-pane-reading.ts";
 import type { Panes } from "#ui/hooks/application/use-panes.ts";
 import type {
-	AskedBoard,
-	OpenedBoard,
+	AskedModel,
+	OpenedModel,
 	OpenOutcome,
 	WorkspacePort,
 } from "#ui/rules/reading-routing/contracts.ts";
@@ -120,7 +120,7 @@ const NO_READINGS: PaneReadings = Object.freeze({
 		// A caller with no readings has nothing to pick.
 	},
 	/** Nothing to forget. */
-	boardChanged: (): void => {
+	modelChanged: (): void => {
 		// A caller with no readings has nothing held against a board.
 	},
 });
@@ -139,28 +139,28 @@ interface WorkspacePortDeps {
 	/**
 	 * Point a pane at a board, injectable for checks.
 	 * @param clientId The pane's identity to the server.
-	 * @param boardKey The board.
+	 * @param paneKey The board.
 	 * @param vault The vault the board is in.
 	 * @returns The board the server says the pane is on now, and the repository it is in.
 	 */
-	readonly show?: (clientId: string, boardKey: string, vault: string) => Promise<OpenedBoard>;
+	readonly show?: (clientId: string, paneKey: string, vault: string) => Promise<OpenedModel>;
 }
 
 /**
  * Point a pane at a board through the server, which is the one owner of which
  * pane holds what.
  * @param clientId The pane's identity to the server.
- * @param boardKey The board.
+ * @param paneKey The board.
  * @param vault The vault the board is in.
  * @returns The board key the server says the pane is on, and the repository it is in.
  */
 async function showThroughServer(
 	clientId: string,
-	boardKey: string,
+	paneKey: string,
 	vault: string,
-): Promise<OpenedBoard> {
-	const reply = await showModel(vault, clientId, { legacyAddress: boardKey });
-	return { boardKey: null, repository: reply.repository };
+): Promise<OpenedModel> {
+	const reply = await showModel(vault, clientId, { legacyAddress: paneKey });
+	return { paneKey: null, repository: reply.repository };
 }
 
 /**
@@ -202,7 +202,7 @@ function displayedAddress(panes: Panes, _readings: PaneReadings = NO_READINGS): 
 				// The board the pane says it is on, variant and all: the server told
 				// it, so the address records what is actually on screen rather than
 				// what somebody asked for.
-				boardKey: status.boardKey,
+				paneKey: status.paneKey,
 				repository: status.repository,
 				view: status.view,
 			});
@@ -242,14 +242,14 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		/**
 		 * Point one pane at one board.
 		 * @param paneId The pane.
-		 * @param boardKey The board.
+		 * @param paneKey The board.
 		 * @param repository The repository the board is in, or null for the pane's own.
 		 * @param model The complete canonical reading, when this address names one.
 		 * @returns Whether the board was reached.
 		 */
 		open: async (
 			paneId: string,
-			boardKey: string | null,
+			paneKey: string | null,
 			repository: string | null,
 			model?: ModelAddress,
 		): Promise<OpenOutcome> => {
@@ -264,13 +264,13 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			try {
 				if (model !== undefined) {
 					await showModel(vault, clientId, modelReading(model));
-					return { kind: "opened", boardKey: null, repository };
+					return { kind: "opened", paneKey: null, repository };
 				}
-				if (boardKey === null) {
+				if (paneKey === null) {
 					await showModel(vault, clientId, {});
-					return { kind: "opened", boardKey: null, repository };
+					return { kind: "opened", paneKey: null, repository };
 				}
-				return { kind: "opened", ...(await show(clientId, boardKey, vault)) };
+				return { kind: "opened", ...(await show(clientId, paneKey, vault)) };
 			} catch {
 				move.failed();
 				return { kind: "unreachable" };
@@ -299,7 +299,7 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 		 * the next step is about the repository and not the board.
 		 * @param boards The boards, and the repositories the address named.
 		 */
-		reportUnreachable: (boards: readonly AskedBoard[]): void => {
+		reportUnreachable: (boards: readonly AskedModel[]): void => {
 			const unread = new Set(
 				boards.flatMap(({ repository }) =>
 					repository !== null && (deps.vaultOf?.(repository) ?? null) === null ? [repository] : [],
@@ -313,8 +313,8 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 			);
 			if (others.length > 0) {
 				deps.notices.raise(
-					unreachableBoardsNotice(
-						others.map(({ boardKey, model }) => boardKey ?? model?.id ?? "Architecture"),
+					unreachableModelsNotice(
+						others.map(({ paneKey, model }) => paneKey ?? model?.id ?? "Architecture"),
 					),
 				);
 			}

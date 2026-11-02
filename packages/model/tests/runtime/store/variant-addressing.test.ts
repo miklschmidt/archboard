@@ -3,9 +3,9 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-	boardKey,
+	paneKey,
 	makeIdentity,
-	parseBoardKey,
+	parsePaneKey,
 	vaultPathFor,
 } from "#runtime/store/legacy-address.ts";
 
@@ -26,7 +26,7 @@ test("a lasting name with a space in it is addressable", () => {
 	expect(makeIdentity({ board: "payments", variant: "Queued ingest" }).variant).toBe(
 		"Queued ingest",
 	);
-	expect(parseBoardKey("payments@Queued ingest").variant).toBe("Queued ingest");
+	expect(parsePaneKey("payments@Queued ingest").variant).toBe("Queued ingest");
 });
 
 test("an address ends its board at the first mark, so a selector may hold one too", () => {
@@ -34,7 +34,7 @@ test("an address ends its board at the first mark, so a selector may hold one to
 	// everything after it is the selector. A proposal somebody called "Queue @
 	// edge" is a name a branch command takes, so it has to be a name an address
 	// takes as well.
-	const named = parseBoardKey("payments@Queue @ edge");
+	const named = parsePaneKey("payments@Queue @ edge");
 	expect(named.board).toBe("payments");
 	expect(named.variant).toBe("Queue @ edge");
 	expect(makeIdentity({ board: "payments", variant: "Queue @ edge" }).variant).toBe("Queue @ edge");
@@ -48,7 +48,7 @@ test("a name a proposal may be given is a name an address may carry", () => {
 	// make a proposal nobody could open.
 	for (const named of ["Proposed: queued ingest", "Option A [draft]", "Cache reads?", "A @ B"]) {
 		expect(makeIdentity({ board: "payments", variant: named }).variant).toBe(named);
-		expect(parseBoardKey(`payments@${named}`).variant).toBe(named);
+		expect(parsePaneKey(`payments@${named}`).variant).toBe(named);
 	}
 });
 
@@ -74,7 +74,7 @@ test("a variant from the old vocabulary is unaffected", () => {
 });
 
 test("a key spelling a variant reads back the same variant", () => {
-	const parsed = parseBoardKey("payments@A8zpTnVI");
+	const parsed = parsePaneKey("payments@A8zpTnVI");
 	expect(parsed.variant).toBe("A8zpTnVI");
 	expect(parsed.board).toBe("payments");
 });
@@ -84,11 +84,11 @@ test("the identity keeps the casing and the key does not", () => {
 	// because a minted id is mixed-case and a name is written as it was stated.
 	// What a lock, a lease and a catalogue entry are filed under does not, because
 	// one address a person typed two ways is one board (ADR 0010).
-	expect(boardKey(parseBoardKey("payments@Option-A"))).toBe(
-		boardKey(parseBoardKey("payments@option-a")),
+	expect(paneKey(parsePaneKey("payments@Option-A"))).toBe(
+		paneKey(parsePaneKey("payments@option-a")),
 	);
 	// And the designation is a word somebody says, so its casing means nothing:
 	// spelled either way it is the board itself, with no variant in its key.
-	expect(boardKey(parseBoardKey("payments@Current"))).toBe("payments");
-	expect(boardKey(makeIdentity({ board: "payments" }))).toBe("payments");
+	expect(paneKey(parsePaneKey("payments@Current"))).toBe("payments");
+	expect(paneKey(makeIdentity({ board: "payments" }))).toBe("payments");
 });

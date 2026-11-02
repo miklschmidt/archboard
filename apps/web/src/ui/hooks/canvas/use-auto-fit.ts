@@ -21,7 +21,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 
 import { PICTURE_MS, PRESENTATION_MS } from "@archboard/timing";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { BeatFocus } from "#ui/rules/canvas/walkthrough/narrative.ts";
 import type { Camera, FitTarget, Size } from "#ui/rules/canvas/camera/camera.ts";
 
@@ -95,7 +95,7 @@ function stepDuration(reading: FitReading, pictureChanged: boolean): number {
  * @param reading How the pane is being read now.
  * @returns Whether it was given back.
  */
-function giveBack(camera: BoardCamera, held: HeldCamera | null, reading: FitReading): boolean {
+function giveBack(camera: PictureCamera, held: HeldCamera | null, reading: FitReading): boolean {
 	if (held === null || reading.presenting) {
 		return false;
 	}
@@ -112,7 +112,7 @@ function giveBack(camera: BoardCamera, held: HeldCamera | null, reading: FitRead
  * @returns Whether the camera moved.
  */
 function moveTo(
-	camera: BoardCamera,
+	camera: PictureCamera,
 	target: FitTarget,
 	reading: FitReading,
 	fitted: Fitted,
@@ -147,7 +147,7 @@ interface FitMoment {
  * @param camera The camera.
  * @returns True when there is nothing to do.
  */
-function upToDate(last: Fitted, moment: FitMoment, camera: BoardCamera): boolean {
+function upToDate(last: Fitted, moment: FitMoment, camera: PictureCamera): boolean {
 	if (last.subject !== moment.subject) {
 		return false;
 	}
@@ -162,7 +162,7 @@ function upToDate(last: Fitted, moment: FitMoment, camera: BoardCamera): boolean
  * @param last What was last fitted.
  * @returns Whether the camera moved.
  */
-function returnTo(camera: BoardCamera, moment: FitMoment, last: Fitted): boolean {
+function returnTo(camera: PictureCamera, moment: FitMoment, last: Fitted): boolean {
 	const asked = last.picture !== moment.picture && !moment.reading.cut;
 	const left = asked ? moment.recall?.() : null;
 	return (
@@ -179,7 +179,7 @@ function returnTo(camera: BoardCamera, moment: FitMoment, last: Fitted): boolean
  */
 function remember(
 	held: { current: HeldCamera | null },
-	camera: BoardCamera,
+	camera: PictureCamera,
 	reading: FitReading,
 ): void {
 	if (reading.presenting && held.current === null) {
@@ -197,7 +197,7 @@ function remember(
  * @param held.current The camera, or null.
  */
 function keepFitted(
-	camera: BoardCamera,
+	camera: PictureCamera,
 	moment: FitMoment,
 	fitted: { current: Fitted },
 	held: { current: HeldCamera | null },
@@ -230,7 +230,7 @@ function keepFitted(
  * @param request Whether a walkthrough is presented, whether motion is reduced, and whether the picture on screen is the one a flight arrived at.
  */
 function useAutoFit(
-	camera: BoardCamera,
+	camera: PictureCamera,
 	drawing: Size | null,
 	focus: BeatFocus,
 	request: FitRequest,

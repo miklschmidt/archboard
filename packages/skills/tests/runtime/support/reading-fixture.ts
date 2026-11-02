@@ -4,9 +4,9 @@
 // open disagreement, and one adoption recorded.
 
 import {
-	parseSemanticBoard,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
+	parseLegacyBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
@@ -31,11 +31,11 @@ interface VariantSpec {
  * @returns The board.
  * @throws {Error} When the fixture is not a board the store would read.
  */
-function board(variants: readonly VariantSpec[], extra: object = {}): SemanticBoard {
+function board(variants: readonly VariantSpec[], extra: object = {}): LegacyBoard {
 	const current = variants.find((variant) => variant.lifecycle === "current")?.id;
-	const parsed = parseSemanticBoard(
+	const parsed = parseLegacyBoard(
 		withFixtureOrders({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "Flask",

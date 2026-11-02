@@ -7,13 +7,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
-import { BoardBehindSchema } from "#shared/protocol/code-check.ts";
+import { ModelBehindSchema } from "#shared/protocol/code-check.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
 import {
 	currentVariant,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -28,8 +28,8 @@ process.env["ARCHBOARD_REPOS"] = registry;
 let lens: typeof LensModule;
 let base = "";
 
-const board = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const board = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board1",
 	name: "Shop",
@@ -131,7 +131,7 @@ afterAll(() => {
 
 test("Behind counts every changed file in a project directory after the board changed", async () => {
 	const [read] = await lens.createBehindReading().read(vault, [{ board, file }]);
-	const answer = BoardBehindSchema.parse(read);
+	const answer = ModelBehindSchema.parse(read);
 	if (!("parts" in answer)) throw new Error("no last change");
 	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: base });
 	expect(answer.parts.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);

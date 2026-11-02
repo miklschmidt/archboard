@@ -15,7 +15,7 @@ import { WalkthroughReplay } from "#ui/clients/walkthrough-replay/replay-page.ts
  */
 function startWalkthroughReplay(
 	root: HTMLElement,
-	renderer: Promise<Pick<typeof import("@archboard/renderer/browser"), "drawBoardHere">>,
+	renderer: Promise<Pick<typeof import("@archboard/renderer/browser"), "drawLegacyBoardHere">>,
 ): void {
 	takePicturesFrom(
 		createLocalPictureSource({
@@ -27,7 +27,7 @@ function startWalkthroughReplay(
 			 * @returns The retained drawing.
 			 */
 			draw: async (board, choices, policy) =>
-				(await renderer).drawBoardHere(board, choices, policy),
+				(await renderer).drawLegacyBoardHere(board, choices, policy),
 			renderer: rendererBuild,
 			storage: browserPictureStorage(),
 		}),

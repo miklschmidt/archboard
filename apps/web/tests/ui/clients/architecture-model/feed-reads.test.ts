@@ -12,7 +12,7 @@ const { architectureFeed } = await import("#ui/clients/architecture-model/events
 const { architectureCheckpointsQuery, architectureModelQuery } =
 	await import("#ui/clients/architecture-model/queries.ts");
 const { vaultCheckQuery } = await import("#ui/clients/canvas/reads/queries.ts");
-const { readBoardsFrom } = await import("#ui/clients/canvas/reads/retained-reads.ts");
+const { readRetainedFrom } = await import("#ui/clients/canvas/reads/retained-reads.ts");
 
 const VAULT = "/work/shop/.archboard/vault";
 const OLD = "a".repeat(64);
@@ -74,7 +74,7 @@ async function answer(input: Parameters<typeof fetch>[0]): Promise<Response> {
 }
 globalThis.fetch = Object.assign(answer, { preconnect: realFetch.preconnect });
 
-readBoardsFrom({
+readRetainedFrom({
 	/**
 	 * No board is listed here.
 	 * @returns No boards.

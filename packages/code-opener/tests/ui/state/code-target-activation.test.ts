@@ -32,14 +32,14 @@ function answering(body: unknown, status = 200): ReturnType<typeof mock> {
 
 /**
  * Activate a subject's code target, with a spy for what the person is told.
- * @param boardKey The board key the subject is on.
+ * @param paneKey The board key the subject is on.
  * @returns The spy.
  */
 function activate(
-	boardKey: string | null = "board-a",
+	paneKey: string | null = "board-a",
 ): ReturnType<typeof mock<(notice: CodeTargetNotice) => void>> {
 	const onNotice = mock((_notice: CodeTargetNotice) => undefined);
-	activateCodeTarget({ vault: VAULT, boardKey, elementId: "7c40IV7N", onNotice });
+	activateCodeTarget({ vault: VAULT, paneKey, elementId: "7c40IV7N", onNotice });
 	return onNotice;
 }
 

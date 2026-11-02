@@ -4,26 +4,23 @@
 // meet. Pure: no React, no fetching.
 
 import { asksForDesignation } from "@archboard/model/legacy-board";
-import { boardAddressOf, boardKeyFor, sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf, paneKeyFor, sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import type { DocumentEntry, RetainedListing } from "#ui/clients/canvas/reads/drawings.ts";
 import type {
-	SemanticBoardEntry,
-	SemanticBoardListing,
-} from "#ui/clients/canvas/reads/drawings.ts";
-import type {
-	BoardListing,
+	LegacyListing,
 	BrowserPaneListing,
-	CatalogBoard,
+	CatalogModel,
 	ListedVariant,
 } from "#ui/rules/pane-session/session-types.ts";
 
 /** The listing before either half has been read. */
-const EMPTY_LISTING: BoardListing = Object.freeze({ boards: [], levels: [], onScreen: [] });
+const EMPTY_LISTING: LegacyListing = Object.freeze({ boards: [], levels: [], onScreen: [] });
 
 /** The vault's half of the listing: its boards as the shell lists them, and its levels. */
-type VaultHalf = Omit<BoardListing, "onScreen">;
+type VaultHalf = Omit<LegacyListing, "onScreen">;
 
 /** The vault's half while it is unread. */
-const NO_BOARDS: VaultHalf = Object.freeze({ boards: [], levels: [] });
+const NO_MODELS: VaultHalf = Object.freeze({ boards: [], levels: [] });
 
 /**
  * One board as the shell lists it: every variant carries the key a pane opens
@@ -31,12 +28,12 @@ const NO_BOARDS: VaultHalf = Object.freeze({ boards: [], levels: [] });
  * @param board The board as the vault lists it.
  * @returns The listed board.
  */
-function catalogBoard(board: SemanticBoardEntry): CatalogBoard {
+function catalogModel(board: DocumentEntry): CatalogModel {
 	return {
 		...board,
 		variants: board.variants.map((variant): ListedVariant => ({
 			...variant,
-			key: boardKeyFor(board.key, variant.id === board.opens ? undefined : variant.id),
+			key: paneKeyFor(board.key, variant.id === board.opens ? undefined : variant.id),
 		})),
 	};
 }
@@ -56,11 +53,11 @@ function catalogBoard(board: SemanticBoardEntry): CatalogBoard {
 function composeListing(
 	vault: VaultHalf | undefined,
 	panes: BrowserPaneListing | undefined,
-): BoardListing {
+): LegacyListing {
 	if (vault === undefined && panes === undefined) {
 		return EMPTY_LISTING;
 	}
-	return { ...(vault ?? NO_BOARDS), onScreen: paneHalf(panes) };
+	return { ...(vault ?? NO_MODELS), onScreen: paneHalf(panes) };
 }
 
 /**
@@ -68,8 +65,8 @@ function composeListing(
  * @param vault The vault's listing.
  * @returns The boards and levels.
  */
-function vaultHalf(vault: SemanticBoardListing): VaultHalf {
-	return { boards: vault.boards.map(catalogBoard), levels: vault.levels };
+function vaultHalf(vault: RetainedListing): VaultHalf {
+	return { boards: vault.boards.map(catalogModel), levels: vault.levels };
 }
 
 /**
@@ -77,7 +74,7 @@ function vaultHalf(vault: SemanticBoardListing): VaultHalf {
  * @param panes The live panes, or undefined while unread.
  * @returns The panes.
  */
-function paneHalf(panes: BrowserPaneListing | undefined): BoardListing["onScreen"] {
+function paneHalf(panes: BrowserPaneListing | undefined): LegacyListing["onScreen"] {
 	return (panes?.panes ?? []).map(({ paneId, place, board }) => ({ paneId, place, board }));
 }
 
@@ -118,8 +115,8 @@ function listingError(vault: unknown, panes: unknown, panesRead: boolean): strin
  * @param board The board's name or key.
  * @returns The board, or undefined when it is not listed.
  */
-function listedBoard(listing: BoardListing, board: string): CatalogBoard | undefined {
-	return listing.boards.find((entry) => sameBoardName(entry.name, board));
+function listedLegacyBoard(listing: LegacyListing, board: string): CatalogModel | undefined {
+	return listing.boards.find((entry) => sameModelName(entry.name, board));
 }
 
 /**
@@ -129,7 +126,7 @@ function listedBoard(listing: BoardListing, board: string): CatalogBoard | undef
  * @param wanted The variant the address asks for, or undefined for the bare name.
  * @returns The variant, or undefined when none matches.
  */
-function listedVariant(board: CatalogBoard, wanted: string | undefined): ListedVariant | undefined {
+function listedVariant(board: CatalogModel, wanted: string | undefined): ListedVariant | undefined {
 	const { variants } = board;
 	if (wanted === undefined) {
 		return variants.find((variant) => variant.id === board.opens);
@@ -150,12 +147,12 @@ function listedVariant(board: CatalogBoard, wanted: string | undefined): ListedV
  * @param key The pane address.
  * @returns The variant's key, or the original address when it is not listed.
  */
-function listedBoardKey(listing: BoardListing, key: string | null): string | null {
-	const target = boardAddressOf(key);
+function listedLegacyKey(listing: LegacyListing, key: string | null): string | null {
+	const target = paneAddressOf(key);
 	if (target === null) {
 		return key;
 	}
-	const board = listedBoard(listing, target.board);
+	const board = listedLegacyBoard(listing, target.board);
 	const variant = board === undefined ? undefined : listedVariant(board, target.variant);
 	return variant?.key ?? key;
 }
@@ -167,17 +164,17 @@ function listedBoardKey(listing: BoardListing, key: string | null): string | nul
  * @param board The board's name.
  * @returns True when the board has variants and no current one.
  */
-function nothingBuiltOn(listing: BoardListing, board: string): boolean {
-	const variants = listedBoard(listing, board)?.variants ?? [];
+function nothingBuiltOn(listing: LegacyListing, board: string): boolean {
+	const variants = listedLegacyBoard(listing, board)?.variants ?? [];
 	return variants.length > 0 && variants.every((variant) => variant.lifecycle !== "current");
 }
 
 export {
 	EMPTY_LISTING,
 	composeListing,
-	listedBoard,
+	listedLegacyBoard,
 	listingError,
-	listedBoardKey,
+	listedLegacyKey,
 	nothingBuiltOn,
 	vaultHalf,
 	type VaultHalf,

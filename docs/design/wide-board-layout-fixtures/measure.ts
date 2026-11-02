@@ -20,12 +20,12 @@
 // running again with the experiment applied and AGAINST pointing at the save.
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/model/legacy-board";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { REFERENCE_PANE } from "@archboard/renderer/shell-geometry";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { DEFAULT_LAYOUT_ENGINE, LayoutEngineSchema } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
-import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import {
 	scorecardOf,
@@ -73,12 +73,12 @@ for (const file of fs
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
-const { configuration: policy } = readSemanticBoardConfiguration(vault);
+const { configuration: policy } = readVaultConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
+	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) {
 		console.error(`unparsed ${file}: ${JSON.stringify(parsed).slice(0, 200)}`);
 		continue;

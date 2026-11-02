@@ -47,7 +47,10 @@ function belowPicture(): Record<string, unknown> {
  * @param nodes Its parts.
  * @returns The document.
  */
-function boardOf(name: string, nodes: readonly Record<string, unknown>[]): Record<string, unknown> {
+function documentOf(
+	name: string,
+	nodes: readonly Record<string, unknown>[],
+): Record<string, unknown> {
 	return {
 		schemaVersion: "2.0.0",
 		kind: "semantic-board",
@@ -71,7 +74,7 @@ function boardOf(name: string, nodes: readonly Record<string, unknown>[]): Recor
 }
 
 /** The board above has one card, which opens the board below. */
-const ABOVE = boardOf("pipeline", [
+const ABOVE = documentOf("pipeline", [
 	{
 		id: "n1",
 		name: "board-io",
@@ -81,7 +84,7 @@ const ABOVE = boardOf("pipeline", [
 ]);
 
 /** The board below. */
-const BELOW_BOARD = boardOf("engine", [{ id: "m1", name: "atomic-write", kind: "module" }]);
+const BELOW_PICTURE = documentOf("engine", [{ id: "m1", name: "atomic-write", kind: "module" }]);
 
 /** The navigator's way to a board; going back along the drill never uses it. */
 function open(): void {}
@@ -125,7 +128,7 @@ interface Setup {
 async function aboveOnScreen(setup: Setup = {}): Promise<FramesByHand> {
 	const frames = takeFrames();
 	server.documents["pipeline"] = ABOVE;
-	server.documents["engine"] = BELOW_BOARD;
+	server.documents["engine"] = BELOW_PICTURE;
 	server.reply = { status: 200, body: { ...drawing(1), ...setup.above } };
 	mountStage("n1", {
 		live: true,
@@ -162,9 +165,7 @@ async function goBack(): Promise<void> {
  * @returns Its name.
  */
 function board(): string | null {
-	return (
-		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-board") ?? null
-	);
+	return document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-model") ?? null;
 }
 
 /**
@@ -308,7 +309,7 @@ interface FarBefore {
 }
 
 /** Which board the stage showed before one change of it. */
-interface BoardBefore {
+interface PictureBefore {
 	readonly board: string | null;
 }
 
@@ -317,7 +318,7 @@ interface BoardBefore {
  * @param seen The change.
  * @returns True when it is.
  */
-function ofFar(seen: FarBefore | BoardBefore): seen is FarBefore {
+function ofFar(seen: FarBefore | PictureBefore): seen is FarBefore {
 	return "far" in seen;
 }
 
@@ -326,7 +327,7 @@ function ofFar(seen: FarBefore | BoardBefore): seen is FarBefore {
  * @param seen The change.
  * @returns True when it is.
  */
-function ofBoard(seen: FarBefore | BoardBefore): seen is BoardBefore {
+function ofModel(seen: FarBefore | PictureBefore): seen is PictureBefore {
 	return "board" in seen;
 }
 
@@ -338,14 +339,14 @@ function ofBoard(seen: FarBefore | BoardBefore): seen is BoardBefore {
  * @returns The far view and the board on screen just after it.
  */
 function after(
-	seen: readonly (FarBefore | BoardBefore)[],
+	seen: readonly (FarBefore | PictureBefore)[],
 	index: number,
 	stage: Element,
 ): { readonly far: boolean; readonly shown: string | null } {
 	const later = seen.slice(index + 1);
 	return {
 		far: later.find(ofFar)?.far ?? surface().classList.contains("is-far"),
-		shown: later.find(ofBoard)?.board ?? stage.getAttribute("data-board"),
+		shown: later.find(ofModel)?.board ?? stage.getAttribute("data-model"),
 	};
 }
 
@@ -355,15 +356,15 @@ function after(
  * @returns Stop watching, and say what changed: "<board>: far" or "<board>: near", in order.
  */
 function watchFarView(): () => string[] {
-	const stage = document.querySelector("[data-slot='semantic-board-stage']")!;
-	const seen: (FarBefore | BoardBefore)[] = [];
+	const stage = document.querySelector("[data-slot='canvas-stage']")!;
+	const seen: (FarBefore | PictureBefore)[] = [];
 	/**
 	 * Note what each change replaced.
 	 * @param records The changes.
 	 */
 	const note = (records: MutationRecord[]): void => {
 		for (const record of records) {
-			if (record.attributeName === "data-board") {
+			if (record.attributeName === "data-model") {
 				seen.push({ board: record.oldValue });
 			} else if (record.target === surface()) {
 				seen.push({ far: (record.oldValue ?? "").split(/\s+/).includes("is-far") });
@@ -375,7 +376,7 @@ function watchFarView(): () => string[] {
 		subtree: true,
 		attributes: true,
 		attributeOldValue: true,
-		attributeFilter: ["class", "data-board"],
+		attributeFilter: ["class", "data-model"],
 	});
 	return () => {
 		note(observer.takeRecords());
@@ -483,9 +484,9 @@ test("a board opens by flying only when it can be seen in time", async () => {
 		await settle();
 		expect(insets()).toBe(0);
 		expect(board()).toBe("pipeline");
-		expect(
-			document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-state"),
-		).toBe("loading");
+		expect(document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-state")).toBe(
+			"loading",
+		);
 	} finally {
 		frames.restore();
 	}

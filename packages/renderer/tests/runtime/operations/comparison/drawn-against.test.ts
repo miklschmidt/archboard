@@ -6,8 +6,8 @@
 // anyway; and a picture asked for with no variant to read against that no longer draws as it did.
 
 import { expect, test } from "bun:test";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { SemanticRenderReply } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -46,8 +46,8 @@ function variantOf(
  * @returns The board.
  */
 function stack(built: boolean) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Ingest",
@@ -73,7 +73,7 @@ function stack(built: boolean) {
  * @returns The outcome of the render.
  */
 function drawn(built: boolean, choices: { variant: string; against?: string }) {
-	return renderBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
+	return renderLegacyBoard(stack(built), { theme: "light", ...choices }, DEFAULT_SEMANTIC_POLICY);
 }
 
 /**

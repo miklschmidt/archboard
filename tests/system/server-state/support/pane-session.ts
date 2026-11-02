@@ -53,7 +53,7 @@ export async function openPaneSession(
 		base,
 		clientId: options.clientId,
 		vault: requireVault(request.vault),
-		...(options.board === undefined ? {} : { preferredBoard: options.board }),
+		...(options.board === undefined ? {} : { preferredModel: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {
 				method: "POST",

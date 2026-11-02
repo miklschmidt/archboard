@@ -2,11 +2,11 @@
 // (TASK-293): the boards its panes show, and the board a narration in one of them is on.
 
 import type { CoordinatorCallbackCanvas } from "#runtime/protocol/coordinator-callbacks/contract.ts";
-import { boardForPane, panes } from "#server/services/panes/registry.ts";
+import { paneKeyOf, panes } from "#server/services/panes/registry.ts";
 import { aggregateKey } from "#server/projections/semantic-context/architecture-context.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import { tabSessionOf } from "#server/services/panes/tab-sessions.ts";
-import { narratedBoardOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
+import { narratedModelOf } from "#server/projections/semantic-context/walkthrough-narration.ts";
 import type { TabSessionId } from "@archboard/codex-realtime-voice/server";
 
 /**
@@ -34,11 +34,11 @@ function canvasOf(tabSessionId: TabSessionId): CoordinatorCallbackCanvas {
 			return [];
 		}
 		const said = reportedKey(pane.clientId);
-		return [boardForPane(pane), said].flatMap((board) =>
+		return [paneKeyOf(pane), said].flatMap((board) =>
 			board === null ? [] : [aggregateKey(board)],
 		);
 	});
-	return { boards, narrated: narratedBoardOf(tabSessionId) };
+	return { boards, narrated: narratedModelOf(tabSessionId) };
 }
 
 export { canvasOf };

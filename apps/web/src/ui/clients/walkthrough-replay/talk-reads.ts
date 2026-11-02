@@ -5,14 +5,11 @@
 // snapshot, and a read of any other board is a failure of the rendering rather
 // than a quiet trip to the server.
 
-import { parseSemanticBoard } from "@archboard/model/legacy-board";
-import {
-	SemanticBoardError,
-	type SemanticBoardListing,
-} from "#ui/clients/canvas/reads/drawings.ts";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
+import { ReadingError, type RetainedListing } from "#ui/clients/canvas/reads/drawings.ts";
 import type { Talk } from "@archboard/walkthrough/talk";
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
-import { type BoardReads } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import { type RetainedReads } from "#ui/clients/canvas/reads/retained-reads.ts";
 
 /**
  * Board reads answered from a talk.
@@ -20,7 +17,7 @@ import { type BoardReads } from "#ui/clients/canvas/reads/retained-reads.ts";
  * @param foreign Told of a read of another board, which the talk cannot answer.
  * @returns The reads.
  */
-function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
+function talkReads(talk: Talk, foreign: (board: string) => void): RetainedReads {
 	return {
 		/**
 		 * List the original document inside this capture.
@@ -35,7 +32,7 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
 		 * @throws {Error} When another board is asked for.
 		 */
 		document: async (_vault, board) => {
-			if (sameBoardName(board, talk.board.name)) return talk.document;
+			if (sameModelName(board, talk.board.name)) return talk.document;
 			foreign(board);
 			throw new Error(`The talk is of ${talk.board.name}; ${board} was read while rendering it.`);
 		},
@@ -57,11 +54,11 @@ function talkReads(talk: Talk, foreign: (board: string) => void): BoardReads {
  * Describe the captured original without discovering live boards.
  * @param talk The immutable recording.
  * @returns The one available original document.
- * @throws {SemanticBoardError} When the retained document is invalid.
+ * @throws {ReadingError} When the retained document is invalid.
  */
-function retainedListing(talk: Talk): SemanticBoardListing {
-	const parsed = parseSemanticBoard(talk.document);
-	if (!parsed.ok) throw new SemanticBoardError("BOARD_UNREADABLE", parsed.problem);
+function retainedListing(talk: Talk): RetainedListing {
+	const parsed = parseLegacyBoard(talk.document);
+	if (!parsed.ok) throw new ReadingError("BOARD_UNREADABLE", parsed.problem);
 	const board = parsed.board;
 	return {
 		levels: [],

@@ -8,7 +8,7 @@ import type { SemanticRender } from "#ui/clients/canvas/reads/drawings.ts";
 import { CodeWarnings } from "#ui/components/canvas/CodeWarnings.tsx";
 import {
 	PaneHeader,
-	type BoardPlace,
+	type CrumbPlace,
 	type PaneHeaderProps,
 } from "#ui/components/canvas/PaneHeader.tsx";
 import type { DrillNavigation } from "#ui/hooks/canvas/use-drill-down.ts";
@@ -36,7 +36,7 @@ interface StageHeaderView {
 	 * @param board The board on screen.
 	 * @returns The boards above it.
 	 */
-	readonly placeOf?: ((board: string) => readonly BoardPlace[]) | undefined;
+	readonly placeOf?: ((board: string) => readonly CrumbPlace[]) | undefined;
 	/** The sidebar, which a control in the header shows and hides. */
 	readonly sidebar: Sidebar;
 }

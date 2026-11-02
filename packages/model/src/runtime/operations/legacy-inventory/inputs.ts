@@ -1,7 +1,7 @@
 import { errorMessage } from "@archboard/diagnostics/errno";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
-import { SemanticBoardConfigurationSchema } from "#runtime/store/configuration.ts";
-import { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
+import { VaultConfigurationSchema } from "#runtime/store/configuration.ts";
+import { decodeLegacyBoard } from "#runtime/store/format/decode.ts";
 import { unknownVocabularyReferences } from "#runtime/operations/check/vocabulary.ts";
 import { migrationConflict } from "#shared/rules/legacy-inventory/conflict.ts";
 
@@ -18,7 +18,7 @@ function decodeLegacyInput(
 	diagnostics: LegacyInventory["diagnostics"],
 ): LegacyInventory["boards"][number] {
 	const source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
-	const decoded = decodeSemanticBoardDocument(source);
+	const decoded = decodeLegacyBoard(source);
 	if (decoded.ok) return { file, source, document: decoded.board };
 	diagnostics.push({
 		code: "LEGACY_INVALID",
@@ -40,7 +40,7 @@ function decodeLegacyPolicy(
 	diagnostics: LegacyInventory["diagnostics"],
 ): LegacyInventory["policy"] {
 	try {
-		return SemanticBoardConfigurationSchema.parse(
+		return VaultConfigurationSchema.parse(
 			Bun.YAML.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes)),
 		);
 	} catch (error) {

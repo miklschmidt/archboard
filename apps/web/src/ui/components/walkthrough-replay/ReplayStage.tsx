@@ -21,7 +21,7 @@ import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
 import { ModelWalkthrough } from "#ui/components/architecture-model/ModelWalkthrough.tsx";
 import { readingOf } from "#ui/rules/application/pane-reading.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { SemanticBoardStage } from "#ui/components/canvas/CanvasStage.tsx";
+import { CanvasStage } from "#ui/components/canvas/CanvasStage.tsx";
 import { useOverlayPlace } from "#ui/hooks/canvas/use-overlay-place.ts";
 import { type SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 import {
@@ -147,7 +147,7 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 						<div data-slot="pane-stage" className="relative flex min-h-0 min-w-0 flex-1 flex-col">
 							<PaneVaultContext value={TALK_VAULT}>
 								{talk.architecture === undefined ? (
-									<SemanticBoardStage
+									<CanvasStage
 										board={talk.board.name}
 										variant={talk.board.variant ?? undefined}
 										selection={null}

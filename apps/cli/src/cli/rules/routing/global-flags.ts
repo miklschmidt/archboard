@@ -1,4 +1,4 @@
-// The global flags every command shares (-C, --board, --doing, --expect-version,
+// The global flags every command shares (-C, --doing, --expect-version,
 // --as-session), pulled out of argv before a command's own parser sees them.
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
@@ -30,7 +30,7 @@ function takeGlobalFlag(argv: string[], flag: string): string | null {
 /**
  * Pull `-C <dir>` out of the arguments before the command sees it.
  *
- * Global for the reason `--board` is: every server call a command makes names
+ * Global: every server call a command makes names
  * the vault, and `-C` says where that vault is found from (ADR 0049). It
  * changes nothing else; a relative `--input` or `--out` still resolves
  * against the working directory.
@@ -39,21 +39,6 @@ function takeGlobalFlag(argv: string[], flag: string): string | null {
  */
 function takeDirectoryFlag(argv: string[]): string | null {
 	return takeGlobalFlag(argv, "-C");
-}
-
-/**
- * Pull `--board <key>` out of the arguments before the command sees it.
- *
- * Global, like `--url`, because it applies to every server request a command
- * makes rather than to one of them. It is the only way to name the persisted
- * board for a command because there is no active or default board (ADR 0020).
- * Stripped here so no command has to declare it and none can forget to pass it
- * on.
- * @param argv - The arguments after the command name; the flag is spliced out.
- * @returns The board key, or null when none was passed.
- */
-function takeBoardFlag(argv: string[]): string | null {
-	return takeGlobalFlag(argv, "--board");
 }
 
 /**
@@ -120,4 +105,4 @@ function takeExpectVersionFlag(argv: string[]): number | null {
 	return Number(raw.trim());
 }
 
-export { takeBoardFlag, takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };
+export { takeDirectoryFlag, takeDoingFlag, takeExpectVersionFlag, takeSessionFlag };

@@ -45,7 +45,7 @@ import {
 	bindingPathMissing,
 	bindingSymbolMissing,
 } from "#runtime/operations/code-check/claims/claim-findings.ts";
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import { documentsOf, judgeDocuments } from "#runtime/operations/code-check/claims/documents.ts";
 import {
 	droppedBindings,
@@ -372,7 +372,7 @@ async function anchorMismatch(
  * @param read The board, at the variant the check reads.
  * @param pass The pass.
  */
-async function judgeBoardRelationships(read: BoardToCheck, pass: Pass): Promise<void> {
+async function judgeStateRelationships(read: StateToCheck, pass: Pass): Promise<void> {
 	const codes = await partCodesOf(read.variant.content.nodes, {
 		snapshot: pass.snapshot,
 		checkouts: pass.checkouts,
@@ -458,7 +458,7 @@ async function judgeAll(claims: readonly Claim[], pass: Pass): Promise<void> {
  * @param boards The boards.
  * @returns Each binding.
  */
-function partBindings(boards: readonly BoardToCheck[]): CodeBinding[] {
+function partBindings(boards: readonly StateToCheck[]): CodeBinding[] {
 	return boards.flatMap((read) =>
 		read.variant.content.nodes.flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
@@ -508,7 +508,7 @@ function timedFacts(facts: FactsPass) {
  */
 async function checkCode(
 	vault: string,
-	boards: readonly BoardToCheck[],
+	boards: readonly StateToCheck[],
 	signal: AbortSignal,
 	plans: FactsPass["plans"] = [],
 	serverOf?: ServerOf,
@@ -557,7 +557,7 @@ async function checkCode(
 		pass.outcome.skipped.push(...documented.skipped);
 		for (const read of reads) {
 			// oxlint-disable-next-line no-await-in-loop -- one board at a time keeps the findings in board order, and a file one board reads is cached for the next
-			await judgeBoardRelationships(read, pass);
+			await judgeStateRelationships(read, pass);
 		}
 		const dropped = await judgeDroppedParts(boards, { checkouts, facts, signal });
 		pass.outcome.findings.push(...dropped.findings);

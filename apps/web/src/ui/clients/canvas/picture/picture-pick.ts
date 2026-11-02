@@ -4,7 +4,7 @@
 import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
 
 /** The picture's surface, inside a viewport. */
-const SURFACE = "[data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='canvas-surface']";
 
 /** A pointer event, as far as a pick reads it. */
 interface PointerPlace {

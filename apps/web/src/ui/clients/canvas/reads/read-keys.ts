@@ -15,7 +15,7 @@ import { comparisonKey, type SemanticRenderRequest } from "#ui/clients/canvas/re
 const SEMANTIC_KEY = "semantic-board";
 
 /** The cache keys, spelled once. */
-const semanticBoardKeys = {
+const readKeys = {
 	/**
 	 * A vault's checked policy and diagnostics, which every picture of it is drawn under.
 	 * @param vault The vault.
@@ -29,7 +29,7 @@ const semanticBoardKeys = {
 	 */
 	codeFindings: (vault: string) => ["code-findings", vault] as const,
 	/** Every vault's semantic boards. */
-	allBoards: [SEMANTIC_KEY, "boards"] as const,
+	allModels: [SEMANTIC_KEY, "boards"] as const,
 	/**
 	 * One vault's semantic boards.
 	 * @param vault The vault.
@@ -60,7 +60,7 @@ const semanticBoardKeys = {
 	 * @param board The board name.
 	 * @returns Its render prefix.
 	 */
-	boardRenders: (vault: string, board: string) => [SEMANTIC_KEY, "render", vault, board] as const,
+	modelRenders: (vault: string, board: string) => [SEMANTIC_KEY, "render", vault, board] as const,
 	/**
 	 * One board's own document, which inspection reads for what a picture does
 	 * not carry. It is the same versioned board the drawing is of, so a change
@@ -111,8 +111,8 @@ interface CachedReading {
  */
 function cachedReadings(client: QueryClient, vault: string): CachedReading[] {
 	const cache = client.getQueryCache();
-	const documents = cache.findAll({ queryKey: semanticBoardKeys.documentsIn(vault) });
-	const pictures = cache.findAll({ queryKey: semanticBoardKeys.rendersIn(vault) });
+	const documents = cache.findAll({ queryKey: readKeys.documentsIn(vault) });
+	const pictures = cache.findAll({ queryKey: readKeys.rendersIn(vault) });
 	return [
 		...documents.flatMap(({ queryKey: [, , , asked], state }): CachedReading[] =>
 			typeof asked === "string" ? [{ kind: "document", asked, view: "", data: state.data }] : [],
@@ -138,11 +138,11 @@ function cachedReadings(client: QueryClient, vault: string): CachedReading[] {
  * @param request What this query asks for.
  * @returns True when a placeholder from it is of this board.
  */
-function sameBoardAsked(
+function sameModelAsked(
 	previous: readonly unknown[] | undefined,
 	request: Pick<SemanticRenderRequest, "vault" | "board">,
 ): boolean {
 	return previous?.[2] === request.vault && previous[3] === request.board;
 }
 
-export { cachedReadings, sameBoardAsked, semanticBoardKeys, type CachedReading };
+export { cachedReadings, sameModelAsked, readKeys, type CachedReading };

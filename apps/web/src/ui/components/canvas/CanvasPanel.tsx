@@ -37,7 +37,7 @@ import type { GroupChoice } from "#ui/rules/canvas/reading/groups.ts";
 import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
 
 /** Inputs for the board tab. */
-interface SemanticBoardPanelProps {
+interface CanvasPanelProps {
 	/** The render the server gave, or undefined before one has. */
 	answer: SemanticRender | undefined;
 	/** What the board says about itself, or null while it has not arrived. */
@@ -79,13 +79,13 @@ interface SemanticBoardPanelProps {
  * @param props What the tab is assembled from.
  * @returns The summary, or null when the variant states none.
  */
-function summary(props: SemanticBoardPanelProps): ReactNode {
+function summary(props: CanvasPanelProps): ReactNode {
 	const text = props.reading?.variant?.summary;
 	if (text === undefined) {
 		return null;
 	}
 	return (
-		<p data-slot="semantic-board-summary" className="text-control font-normal whitespace-pre-line">
+		<p data-slot="canvas-summary" className="text-control font-normal whitespace-pre-line">
 			{text}
 		</p>
 	);
@@ -96,7 +96,7 @@ function summary(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The section, or null when the variant is read against nothing.
  */
-function changes(props: SemanticBoardPanelProps): ReactNode {
+function changes(props: CanvasPanelProps): ReactNode {
 	const { answer } = props;
 	if (answer === undefined) {
 		return null;
@@ -124,13 +124,13 @@ function changes(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The section, or null when the variant states no walkthrough.
  */
-function walkthroughSection(props: SemanticBoardPanelProps): ReactNode {
+function walkthroughSection(props: CanvasPanelProps): ReactNode {
 	const { narrative } = props;
 	if (narrative.offered.length === 0) {
 		return null;
 	}
 	return (
-		<SidebarSection title="Walkthroughs" slot="semantic-board-panel-walkthroughs">
+		<SidebarSection title="Walkthroughs" slot="canvas-panel-walkthroughs">
 			<SemanticWalkthroughBar
 				walkthroughs={narrative.offered}
 				open={narrative.open?.id ?? null}
@@ -146,14 +146,14 @@ function walkthroughSection(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The section, or null when there is no choice to offer here.
  */
-function viewSection(props: SemanticBoardPanelProps): ReactNode {
+function viewSection(props: CanvasPanelProps): ReactNode {
 	const { answer, onChooseView } = props;
 	if (answer === undefined || onChooseView === undefined) {
 		return null;
 	}
 	const described = props.reading?.views.find((view) => view.id === answer.view?.id);
 	return (
-		<SidebarSection title="Views" slot="semantic-board-panel-views">
+		<SidebarSection title="Views" slot="canvas-panel-views">
 			<SemanticViewBar
 				views={answer.views}
 				showing={answer.view}
@@ -170,12 +170,12 @@ function viewSection(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The section, or null before anything has been drawn or when the variant uses none.
  */
-function groupSection(props: SemanticBoardPanelProps): ReactNode {
+function groupSection(props: CanvasPanelProps): ReactNode {
 	if (props.answer === undefined || props.reading === null || props.groups.length === 0) {
 		return null;
 	}
 	return (
-		<SidebarSection title="Groups" slot="semantic-board-panel-groups">
+		<SidebarSection title="Groups" slot="canvas-panel-groups">
 			<SemanticGroupList
 				choices={props.groups}
 				selected={props.selectedGroup}
@@ -190,7 +190,7 @@ function groupSection(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The legend, or null while nothing typed is drawn.
  */
-function legend(props: SemanticBoardPanelProps): ReactNode {
+function legend(props: CanvasPanelProps): ReactNode {
 	const picture = props.pictureLegend;
 	return picture === null ? null : <SemanticLegend picture={picture} />;
 }
@@ -200,24 +200,24 @@ function legend(props: SemanticBoardPanelProps): ReactNode {
  * @param props What the tab is assembled from.
  * @returns The tab's content.
  */
-function SemanticBoardPanel(props: SemanticBoardPanelProps): JSX.Element {
+function CanvasPanel(props: CanvasPanelProps): JSX.Element {
 	return (
-		<div data-slot="semantic-board-panel" className="flex flex-col">
-			<SidebarRegion slot="semantic-board-panel-about">
+		<div data-slot="canvas-panel" className="flex flex-col">
+			<SidebarRegion slot="canvas-panel-about">
 				{summary(props)}
 				{changes(props)}
 			</SidebarRegion>
-			<SidebarRegion slot="semantic-board-panel-reading">
+			<SidebarRegion slot="canvas-panel-reading">
 				{walkthroughSection(props)}
 				{viewSection(props)}
 				{groupSection(props)}
 			</SidebarRegion>
-			<SidebarRegion slot="semantic-board-panel-key">{legend(props)}</SidebarRegion>
-			<SidebarRegion slot="semantic-board-panel-engine">
+			<SidebarRegion slot="canvas-panel-key">{legend(props)}</SidebarRegion>
+			<SidebarRegion slot="canvas-panel-engine">
 				<SemanticEngineBar />
 			</SidebarRegion>
 		</div>
 	);
 }
 
-export { SemanticBoardPanel, type SemanticBoardPanelProps };
+export { CanvasPanel, type CanvasPanelProps };

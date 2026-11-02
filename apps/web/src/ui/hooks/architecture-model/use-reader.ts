@@ -10,7 +10,7 @@ import { useProjectedSelection } from "#ui/hooks/architecture-model/use-model-se
 import { useModuleBranches } from "#ui/hooks/architecture-model/use-module-branches.ts";
 import { useReaderChoices } from "#ui/hooks/architecture-model/use-reader-choices.ts";
 import { useReaderMoves } from "#ui/hooks/architecture-model/use-reader-moves.ts";
-import { useBoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { usePictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { reviewsChanges } from "#ui/rules/architecture-model/change-list.ts";
 import { openModules, toggled } from "#ui/rules/architecture-model/expansion.ts";
 import { moduleTree } from "#ui/rules/architecture-model/module-tree.ts";
@@ -131,7 +131,7 @@ function useReader(inputs: ReaderInputs) {
 	const { scene, shown } = accepted;
 	const selection = useProjectedSelection(shown.projection, pane.selection);
 	const { clear, selectMany } = selection;
-	const camera = useBoardCamera(reducedMotion);
+	const camera = usePictureCamera(reducedMotion);
 	const area = useRef<HTMLDivElement | null>(null);
 	const { id: modelId } = model.manifest;
 	const openModule = useCallback(

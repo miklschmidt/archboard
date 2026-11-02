@@ -60,11 +60,11 @@ const NOTHING_DRAWN = {
 } as const;
 
 /** The vault has no such board. */
-const NO_SUCH_BOARD = {
+const NO_SUCH_MODEL = {
 	status: 404,
 	body: {
 		success: false,
-		code: "BOARD_MISSING",
+		code: "MODEL_MISSING",
 		error: 'there is no semantic board called "pipeline"',
 	},
 } as const;
@@ -90,7 +90,7 @@ function walkthrough(id: string, name: string): Record<string, unknown> {
 }
 
 /** A board that explains itself twice. */
-const EXPLAINED_BOARD = {
+const EXPLAINED_DOCUMENT = {
 	schemaVersion: "2.0.0",
 	kind: "semantic-board",
 	id: "bd",
@@ -115,4 +115,4 @@ const EXPLAINED_BOARD = {
 	],
 };
 
-export { EXPLAINED_BOARD, NOTHING_DRAWN, NO_SUCH_BOARD, UNREADABLE, drawing };
+export { EXPLAINED_DOCUMENT, NOTHING_DRAWN, NO_SUCH_MODEL, UNREADABLE, drawing };

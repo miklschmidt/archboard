@@ -29,7 +29,7 @@
 // the container of its subject, so no part stands for it. Everything is every
 // part and every relationship, asked for as the view of that name.
 
-import type { SemanticBoard } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import type { SemanticEdge, VariantContent } from "#shared/schemas/content.ts";
 import type { SemanticView, ViewScope } from "#shared/schemas/views.ts";
 
@@ -427,7 +427,7 @@ function containersOf(parentOf: ReadonlyMap<string, string | undefined>, id: str
  * @param asked The view's id or the name it was written under.
  * @returns The view, or undefined when nothing on this board answers to it.
  */
-function findView(board: Pick<SemanticBoard, "views">, asked: string): SemanticView | undefined {
+function findView(board: Pick<LegacyBoard, "views">, asked: string): SemanticView | undefined {
 	if (asked === EVERYTHING_VIEW.id) {
 		return EVERYTHING_VIEW;
 	}

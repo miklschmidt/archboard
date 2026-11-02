@@ -64,7 +64,7 @@ interface DrillNavigation {
 }
 
 /** The board the shell pointed the pane at, and what counts as being pointed again. */
-interface OwnBoard {
+interface OwnModel {
 	readonly board: string;
 	readonly variant: string | undefined;
 	/** Which time the pane has been pointed at a board, when the shell counts. */
@@ -86,7 +86,7 @@ interface OwnBoard {
  * @returns The trail, the arrival folded in.
  */
 function useArrivals(
-	own: OwnBoard,
+	own: OwnModel,
 	held: DrillTrail,
 	setTrail: (next: DrillTrail) => void,
 ): DrillTrail {
@@ -114,7 +114,7 @@ function useArrivals(
  * @param dive Ask the shell to show a board of another vault, when it can.
  * @returns The board on screen, the trail behind it, and the moves.
  */
-function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
+function useDrillDown(own: OwnModel, dive: Dive | undefined): DrillNavigation {
 	const [held, setTrail] = useState<DrillTrail>(NO_TRAIL);
 	const trail = useArrivals(own, held, setTrail);
 	const ownStop = useMemo<DrillStop>(
@@ -188,4 +188,4 @@ function useDrillDown(own: OwnBoard, dive: Dive | undefined): DrillNavigation {
 	}, [trail, ownStop, open, backTo]);
 }
 
-export { type Dive, type DrillNavigation, type OwnBoard, useDrillDown };
+export { type Dive, type DrillNavigation, type OwnModel, useDrillDown };

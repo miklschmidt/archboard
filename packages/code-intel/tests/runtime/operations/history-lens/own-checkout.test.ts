@@ -15,10 +15,10 @@ import { createBehindReading } from "#runtime/operations/history-lens/behind.ts"
 import { createVariantLocality } from "#runtime/operations/history-lens/locality.ts";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -91,8 +91,8 @@ function commit(root: string, subject: string, files: Record<string, string>): s
 }
 
 /** A board with one part, pinned to the branch the vault's checkout is on. */
-const board: SemanticBoard = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const board: LegacyBoard = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
 	name: "Shop",

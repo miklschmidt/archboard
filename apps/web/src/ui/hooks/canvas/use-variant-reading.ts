@@ -15,7 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
 import { readVariant, type VariantReading } from "#ui/rules/canvas/reading/document.ts";
-import { semanticBoardDocumentQuery } from "#ui/clients/canvas/reads/queries.ts";
+import { retainedDocumentQuery } from "#ui/clients/canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 
 /**
@@ -26,7 +26,7 @@ import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
  * @returns The reading, or null while the board has not arrived or cannot be read.
  */
 function useVariantReading(board: string, variant: string | undefined): VariantReading | null {
-	const held = useQuery(semanticBoardDocumentQuery(usePaneVault(), board));
+	const held = useQuery(retainedDocumentQuery(usePaneVault(), board));
 	const answer = held.data;
 	return useMemo(() => readVariant(answer, variant), [answer, variant]);
 }

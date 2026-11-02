@@ -105,14 +105,14 @@ function captureAmbiguity(timestampTruncated: boolean, capture: SemanticCapture)
 /**
  * The stale reason for a change whose board is not the board its context describes, which means
  * the brief and the change are talking about different boards.
- * @param eventBoard - The board the change named.
- * @param contextBoard - The board the context names.
+ * @param eventModel - The board the change named.
+ * @param contextModel - The board the context names.
  * @returns The reasons, which is empty when the two agree.
  */
-function boardMismatchReasons(eventBoard: string, contextBoard: string): string[] {
-	return eventBoard === contextBoard
+function modelMismatchReasons(eventModel: string, contextModel: string): string[] {
+	return eventModel === contextModel
 		? []
-		: [`settled event names board "${eventBoard}" but context names "${contextBoard}"`];
+		: [`settled event names board "${eventModel}" but context names "${contextModel}"`];
 }
 
 /**
@@ -443,11 +443,7 @@ export function createSemanticContextPublisher(
 			return;
 		}
 		const eventCursor = sourceCursor(event.cursor);
-		const eventBoard = textValue(
-			event.board,
-			"change.board",
-			SEMANTIC_CONTEXT_LIMITS.boardKeyBytes,
-		);
+		const eventModel = textValue(event.board, "change.board", SEMANTIC_CONTEXT_LIMITS.paneKeyBytes);
 		const eventAt = textValue(event.at, "change.at", SEMANTIC_CONTEXT_LIMITS.reasonBytes);
 		const capture = dateCapture(eventAt.value, clock);
 		let context: SemanticContextInput;
@@ -459,7 +455,7 @@ export function createSemanticContextPublisher(
 		}
 		publishSettledChange(event, context, {
 			cursor: eventCursor,
-			board: eventBoard,
+			board: eventModel,
 			at: eventAt,
 			capture,
 		});
@@ -478,7 +474,7 @@ export function createSemanticContextPublisher(
 		context: SemanticContextInput,
 		settled: SettledChangeFields,
 	): void => {
-		const staleReasons = boardMismatchReasons(settled.board.value, context.board.key);
+		const staleReasons = modelMismatchReasons(settled.board.value, context.board.key);
 		const changeText = textValue(
 			event.text,
 			"change.text",

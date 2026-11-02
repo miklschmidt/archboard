@@ -34,7 +34,7 @@ import type {
 import { nodesAtOwnRef } from "#runtime/operations/history-lens/own-ref.ts";
 import { compareVariants } from "@archboard/model/comparison";
 import { emptyContent, type SemanticNode } from "@archboard/model/content";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 
 /**
  * What to read, once the variants are chosen (`footprint-reading.ts`): the
@@ -44,7 +44,7 @@ import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-boa
 interface VariantFootprintRequest {
 	/** The vault directory the board is in: its own checkout is read for its own repository. */
 	readonly vault: string;
-	readonly board: Pick<SemanticBoard, "id" | "name" | "variants" | "current">;
+	readonly board: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
 	/**
 	 * The variant the proposal is read against: the board's current variant by
 	 * default. Undefined only with a proposal, which is then read against
@@ -470,7 +470,7 @@ async function readFootprintEvidence(request: VariantFootprintRequest): Promise<
  * @returns The original semantic receipt.
  */
 async function readVariantFootprint(
-	request: Omit<VariantFootprintRequest, "board"> & { board: SemanticBoard },
+	request: Omit<VariantFootprintRequest, "board"> & { board: LegacyBoard },
 ): Promise<FootprintAnswer> {
 	return {
 		board: request.board.name,

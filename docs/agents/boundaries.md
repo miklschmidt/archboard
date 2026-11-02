@@ -145,7 +145,7 @@ split by behavior.
 
 The first package is `timing` (`@archboard/timing`). Its one `.` export holds every product duration,
 grouped by the subsystem that owns it. Each owner has one frozen group in a file of its own, such as
-`BOARD_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
+`MODEL_LOCK_MS`, `CODEX_PROCESS_MS`, `SERVER_LIFECYCLE_MS` or `PANE_MS`, and each key has what it
 pulls against written beside it. A caller imports its owner's group and reads a key of it. A
 computation that callers would repeat from a group is one function of the package, such as the
 Codex restart backoff `codexRestartDelayMs`. A duration with one owner and no siblings stays one
@@ -419,7 +419,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   It asks the host for two things through `RenderHost`: each solve of the layout, which `engine/` runs side by side on
   as many workers as the place has and calls off when the core drops it, and the path data of the icons it draws. A
   worker (`engine/layout-engine.ts`) instantiates the core its host's thread compiled and handed it, and runs one
-  solve at a time with the core's `layOutBoard`, which lays out each graph it ranks with the core's own Graphviz
+  solve at a time with the core's `layOutPicture`, which lays out each graph it ranks with the core's own Graphviz
   (`crates/archboard-graphviz` over the vendored graphviz-pure, ADR 0060).
 - `runtime/` holds the Bun host. `services/bun-host.ts` installs the core, the theme colors, the icon paths and the
   pool of layout workers. `processes/layout-worker.ts` is the worker thread, started with
@@ -429,7 +429,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   `store/` reads the theme stylesheet and names where the assets are.
 - `ui/` holds the browser host. `state/` keeps what the page loads once (the core, the icons, whether the renderer has
   started) and `workers/` holds the browser layout worker. `api/browser.ts` starts the renderer with
-  `startBrowserRenderer()` and draws a board with `drawBoardHere`. The worker is started inside the
+  `startBrowserRenderer()` and draws a board with `drawLegacyBoardHere`. The worker is started inside the
   package with `new Worker(new URL("../workers/layout-worker.ts", import.meta.url), { type: "module" })`, which Vite
   bundles into its own chunk. So there is no `./worker` subpath: no code outside the package runs the worker. The
   page fetches and compiles the core's WebAssembly, served beside its glue, and hands each worker the compiled module.
@@ -437,7 +437,7 @@ The files of `runtime/api/` are Node-bound and run only in Bun.
   the canvas draws with, the code warnings, and what a render asks and answers. The kinds the key lists and each
   subject's appearance arrive with the picture (`@archboard/model/render-reply`). `./shell-geometry` is the shell's fixed geometry and the
   page shape that boards are laid out for. `./browser` is the browser host. `./bun` draws with the Bun host:
-  `renderBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
+  `renderLegacyBoard`, `renderArchitecture` and the diagram icon paths. `./rasterizer` is the bitmap of a
   picture and the receipt of the capture.
   `./recipe` reads, embeds, and replaces render recipes in SVG and PNG artifacts.
   Canonical recipes record the model, vault repository, reading selectors, exact fingerprint, and picture digest.
@@ -571,8 +571,8 @@ CLI route clients remain in `apps/cli/src/cli/clients/server/`.
   `bin.ts` imports `./config` alone and late, because loading it reads `.env`.
 - `./server-client` is one CLI request to a running server (`requestJson`), behind the identity gate, carrying what
   the invocation states about itself on every request. `stateInvocation` states its board, vault, doing line, write
-  session and expected version, and `statedInvocation` reads them back. `formatBoardRefusal` and
-  `BOARD_REFUSAL_CODES` are how a refused board request is shown, and `responseError` is the error the transport
+  session and expected version, and `statedInvocation` reads them back. `formatModelRefusal` and
+  `MODEL_REFUSAL_CODES` are how a refused board request is shown, and `responseError` is the error the transport
   builds from a refused answer.
 - `./server-host` is what the server process does for itself: whether it is the entry point, whether its source or
   frontend bundle is stale, its pid file (`recordServerPid` once it listens, which also sweeps the pid files of

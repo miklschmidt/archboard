@@ -5,7 +5,7 @@ import {
 	soloPane,
 	type PaneRegistration,
 } from "#runtime/rules/panes.ts";
-import { parseBoardKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 
 // Which pane a caller means, beside a recording page's pane (TASK-304).
 //
@@ -50,7 +50,7 @@ test("a recording page's pane is nobody's to address but by its client id, count
 	expect(resolvePaneSpec([recording, user], "record")).toBe(recording);
 
 	const report = buildPanesReport([recording, user], {
-		identity: (key) => parseBoardKey(key),
+		identity: (key) => parsePaneKey(key),
 		reading: () => null,
 		architecture: () => null,
 		whereabouts: () => ({ repository: null, checkout: "/checkout" }),

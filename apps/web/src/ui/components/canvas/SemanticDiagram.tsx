@@ -24,7 +24,7 @@ import { CameraSurface } from "#ui/components/canvas/CameraSurface.tsx";
 import { LeavingPart } from "#ui/components/canvas/LeavingPart.tsx";
 import { SemanticSubjectTip, TipPlace } from "#ui/components/canvas/SemanticSubjectTip.tsx";
 import { STAGE_CLASS } from "#ui/components/canvas/SemanticStageStates.tsx";
-import { useCameraWith, type BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { useCameraWith, type PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { VariantReading } from "#ui/rules/canvas/reading/document.ts";
 import { useCodeMarks } from "#ui/hooks/canvas/use-code-marks.ts";
 import { useDiagramGestures } from "#ui/hooks/canvas/use-diagram-gestures.ts";
@@ -84,7 +84,7 @@ function isLeaving(departure: Departure | null): boolean {
 /** Inputs for a drawn board. */
 interface SemanticDiagramProps {
 	/** The stage owns the camera across picture requests. */
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** The picture and the atlas, as the server drew them. */
 	drawing: SemanticDrawing;
 	/** The selected semantic id, or null for none. */
@@ -316,8 +316,8 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	return (
 		<section
 			{...stageMarks(departure, drawing, props.stale === true)}
-			data-slot="semantic-board-stage"
-			data-board={drawing.board}
+			data-slot="canvas-stage"
+			data-model={drawing.board}
 			data-variant={drawing.variant.name}
 			data-version={drawing.version}
 			data-group={props.group?.group}
@@ -338,7 +338,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 				{/* oxlint-disable-next-line jsx-a11y/no-static-element-interactions */}
 				<div
 					ref={attachViewport}
-					data-slot="semantic-board-viewport"
+					data-slot="canvas-viewport"
 					inert={isLeaving(departure)}
 					tabIndex={0}
 					onKeyDown={onKeyDown}

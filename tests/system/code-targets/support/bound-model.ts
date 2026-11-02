@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { mintId } from "@archboard/model/ids";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 /** Canonical input and bound module for opener integration fixtures. */
-interface BoundBoard {
+interface BoundFixture {
 	readonly key: string;
 	readonly node: string;
 	readonly file: string;
@@ -15,7 +15,11 @@ interface BoundBoard {
  * @param path The bound path.
  * @returns The canonical model, module, and authored input path.
  */
-async function boundBoard(vault: string, repository: string, path: string): Promise<BoundBoard> {
+async function boundFixture(
+	vault: string,
+	repository: string,
+	path: string,
+): Promise<BoundFixture> {
 	mkdirSync(vault, { recursive: true });
 	mkdirSync(join(vault, ".archboard"), { recursive: true });
 	writeFileSync(join(vault, ".archboard/config.yaml"), Bun.YAML.stringify(DEFAULT_SEMANTIC_POLICY));
@@ -45,4 +49,4 @@ async function boundBoard(vault: string, repository: string, path: string): Prom
 	);
 	return { key, node, file };
 }
-export { type BoundBoard, boundBoard };
+export { type BoundFixture, boundFixture };

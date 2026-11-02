@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { CodeTargetOpenReplySchema } from "@archboard/code-opener/opening";
-import { boundBoard } from "./support/bound-model.ts";
+import { boundFixture } from "./support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -163,7 +163,7 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundBoard(ownerVault, fixture.repository, "src/index.ts");
+		const board = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
 		const { key, file: note } = board;
 		const beforeBytes = readFileSync(note);
 		const beforeMtime = statSync(note, { bigint: true }).mtimeNs;
@@ -366,7 +366,7 @@ describe("public code-target activation contract", () => {
 		resources.defer(() => fixture.dispose());
 		const invocation = fixture.invocation("immediate");
 		resources.defer(() => invocation.releaseAndWait());
-		const board = await boundBoard(ownerVault, fixture.repository, "src/index.ts");
+		const board = await boundFixture(ownerVault, fixture.repository, "src/index.ts");
 		const { key, file: note } = board;
 		const brokenExecutable = join(fixture.root, "broken-opener");
 		writeFileSync(brokenExecutable, `#!${join(fixture.root, "missing-interpreter")}\n`);

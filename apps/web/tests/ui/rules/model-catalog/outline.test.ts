@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 
 import {
-	boardAncestors,
+	modelAncestors,
 	buildOutline,
 	pathIds,
-	type OutlineBoard,
+	type OutlineModel,
 	type OutlineNode,
 } from "#ui/rules/model-catalog/outline.ts";
 
@@ -17,7 +17,7 @@ const LEVELS = ["system", "service", "module"] as const;
  * @param links The boards it links to, `^name` for a container link.
  * @returns The board.
  */
-function board(name: string, level: string | null, ...links: string[]): OutlineBoard {
+function board(name: string, level: string | null, ...links: string[]): OutlineModel {
 	return {
 		name,
 		level,
@@ -35,7 +35,7 @@ function board(name: string, level: string | null, ...links: string[]): OutlineB
  * @param depth How deep these nodes are.
  * @returns The lines.
  */
-function shape(nodes: readonly OutlineNode<OutlineBoard>[], depth = 0): string[] {
+function shape(nodes: readonly OutlineNode<OutlineModel>[], depth = 0): string[] {
 	return nodes.flatMap((node) => {
 		const pad = "  ".repeat(depth);
 		const line =
@@ -134,7 +134,7 @@ test("ancestors and path ids lead to a board through folders and parents", () =>
 		],
 		LEVELS,
 	);
-	expect(boardAncestors(outline, "PLATFORM/routes").map((node) => node.name)).toEqual([
+	expect(modelAncestors(outline, "PLATFORM/routes").map((node) => node.name)).toEqual([
 		"platform/Cluster",
 		"platform/Ingress",
 	]);

@@ -1,4 +1,4 @@
-import type { SemanticBoard } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import type { VariantContent } from "#shared/schemas/content.ts";
 import type {
 	DiagnosticSubject,
@@ -23,7 +23,7 @@ interface Reference {
  * @param includeBases Whether to include reconciliation snapshots in diagnostics.
  * @returns Every semantic vocabulary reference.
  */
-function references(board: SemanticBoard, includeBases = true): Reference[] {
+function references(board: LegacyBoard, includeBases = true): Reference[] {
 	const result: Reference[] = [
 		{ key: "board:level", path: "level", value: board.level, vocabulary: "levels" },
 	];
@@ -102,7 +102,7 @@ function known(reference: Reference, policy: SemanticPolicy): boolean {
  * @returns Unknown reference diagnostics.
  */
 function semanticVocabularyDiagnostics(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	file: string,
 	policy: SemanticPolicy,
 ): VaultDiagnostic[] {
@@ -123,7 +123,7 @@ function semanticVocabularyDiagnostics(
  * @param policy The valid authored vocabulary.
  * @returns Unconfigured original references.
  */
-function unknownVocabularyReferences(board: SemanticBoard, policy: SemanticPolicy): Reference[] {
+function unknownVocabularyReferences(board: LegacyBoard, policy: SemanticPolicy): Reference[] {
 	return references(board).filter((reference) => !known(reference, policy));
 }
 /**
@@ -134,8 +134,8 @@ function unknownVocabularyReferences(board: SemanticBoard, policy: SemanticPolic
  * @returns The first newly authored unknown reference, or null.
  */
 function newVocabularyProblem(
-	candidate: SemanticBoard,
-	before: SemanticBoard | null,
+	candidate: LegacyBoard,
+	before: LegacyBoard | null,
 	policy: SemanticPolicy,
 ): string | null {
 	const prior = new Set(

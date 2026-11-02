@@ -4,11 +4,11 @@ import {
 	EMPTY_LISTING,
 	composeListing,
 	listingError,
-	listedBoardKey,
+	listedLegacyKey,
 	nothingBuiltOn,
 	vaultHalf,
 } from "#ui/rules/model-catalog/listing.ts";
-import type { SemanticBoardEntry } from "#ui/clients/canvas/reads/drawings.ts";
+import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
 import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
 /**
@@ -16,11 +16,11 @@ import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts
  * @param boards The boards.
  * @returns The half.
  */
-function vault(boards: readonly SemanticBoardEntry[]): ReturnType<typeof vaultHalf> {
+function vault(boards: readonly DocumentEntry[]): ReturnType<typeof vaultHalf> {
 	return vaultHalf({ levels: ["system", "service", "module"], boards: [...boards] });
 }
 
-const VAULT: readonly SemanticBoardEntry[] = [
+const VAULT: readonly DocumentEntry[] = [
 	{
 		name: "Checkout",
 		key: "checkout",
@@ -57,7 +57,7 @@ const PANES: BrowserPaneListing = {
 };
 
 test("named variants retain their addresses and every current spelling selects the designated row", () => {
-	const variants: SemanticBoardEntry["variants"] = [
+	const variants: DocumentEntry["variants"] = [
 		{ id: "old", name: "Initial", lifecycle: "historical", parentId: null },
 		{ id: "now", name: "Queued ingest", lifecycle: "current", parentId: null },
 		{ id: "next", name: "Queue @ edge", lifecycle: "draft", parentId: "now" },
@@ -88,16 +88,16 @@ test("named variants retain their addresses and every current spelling selects t
 		"checkout@now",
 		"checkout@Queued ingest",
 	]) {
-		expect(listedBoardKey(listing, address)).toBe("checkout");
+		expect(listedLegacyKey(listing, address)).toBe("checkout");
 	}
-	expect(listedBoardKey(listing, "Checkout@Queue @ edge")).toBe("checkout@next");
-	expect(listedBoardKey(listing, "checkout@Initial")).toBe("checkout@old");
-	expect(listedBoardKey(listing, "checkout@unknown")).toBe("checkout@unknown");
-	expect(listedBoardKey(listing, null)).toBeNull();
+	expect(listedLegacyKey(listing, "Checkout@Queue @ edge")).toBe("checkout@next");
+	expect(listedLegacyKey(listing, "checkout@Initial")).toBe("checkout@old");
+	expect(listedLegacyKey(listing, "checkout@unknown")).toBe("checkout@unknown");
+	expect(listedLegacyKey(listing, null)).toBeNull();
 });
 
 test("on a board nothing is built, the bare name lists the draft it opens and current finds no row", () => {
-	const variants: SemanticBoardEntry["variants"] = [
+	const variants: DocumentEntry["variants"] = [
 		{ id: "plan", name: "Queued ingest", lifecycle: "draft", parentId: null },
 		{ id: "alt", name: "Batch ingest", lifecycle: "draft", parentId: "plan" },
 	];
@@ -111,9 +111,9 @@ test("on a board nothing is built, the bare name lists the draft it opens and cu
 		"ingest",
 		"ingest@alt",
 	]);
-	expect(listedBoardKey(listing, "ingest")).toBe("ingest");
-	expect(listedBoardKey(listing, "ingest@alt")).toBe("ingest@alt");
-	expect(listedBoardKey(listing, "ingest@current")).toBe("ingest@current");
+	expect(listedLegacyKey(listing, "ingest")).toBe("ingest");
+	expect(listedLegacyKey(listing, "ingest@alt")).toBe("ingest@alt");
+	expect(listedLegacyKey(listing, "ingest@current")).toBe("ingest@current");
 	// The board says nothing is built; a board with a current variant, an unreadable one and
 	// one nobody listed say nothing of the kind.
 	expect(nothingBuiltOn(listing, "Ingest")).toBe(true);

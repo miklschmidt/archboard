@@ -24,7 +24,7 @@ import type {
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 /** What the server says a pane is showing after a show, and the repository it is in. */
-type ShownBoard = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
+type ShownModel = Pick<Awaited<ReturnType<typeof showModel>>, "repository"> & {
 	board: string | null;
 };
 
@@ -45,7 +45,7 @@ interface ShellActionDeps {
 	 * @param vault The vault the board is in, which the pane moves into.
 	 * @returns What the server says the pane is showing, and the repository it is in.
 	 */
-	readonly show?: (board: string, pane: string, vault: string) => Promise<ShownBoard>;
+	readonly show?: (board: string, pane: string, vault: string) => Promise<ShownModel>;
 	/**
 	 * Say that the user asked for a pane to move (ADR 0034). Supplied by a test; the pane's own
 	 * session otherwise.
@@ -64,7 +64,7 @@ interface ShellActionDeps {
 }
 
 /** The board actions. */
-type BoardActions = Pick<ShellActions, "selectBoard" | "refreshBoards" | "chooseCheckout">;
+type ModelActions = Pick<ShellActions, "selectModel" | "refreshModels" | "chooseCheckout">;
 
 /** Every shell action but opening beside, which waits on the panes and is composed over these. */
 type ComposedShellActions = Omit<ShellActions, "openBeside">;
@@ -74,12 +74,12 @@ type ComposedShellActions = Omit<ShellActions, "openBeside">;
  * @param deps The owners.
  * @returns Those actions.
  */
-function boardActions(deps: ShellActionDeps): BoardActions {
+function modelActions(deps: ShellActionDeps): ModelActions {
 	const { panes } = deps;
 	const moving = deps.userMoves ?? ((paneId: string): UserMove => userMoves(panes.handles, paneId));
 	const show =
 		deps.show ??
-		(async (board: string, pane: string, vault: string): Promise<ShownBoard> => {
+		(async (board: string, pane: string, vault: string): Promise<ShownModel> => {
 			const { repository } = await showModel(vault, pane, { legacyAddress: board });
 			return { board: null, repository };
 		});
@@ -91,10 +91,10 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 	 * @param repository The repository the board is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now.
 	 */
-	async function selectBoard(key: string, inPane?: string, repository?: string): Promise<boolean> {
+	async function selectModel(key: string, inPane?: string, repository?: string): Promise<boolean> {
 		const paneId = inPane ?? panes.active.status.paneId;
 		const { status } = recordFor(panes.records, paneId);
-		const { clientId, boardKey, repository: from } = status;
+		const { clientId, paneKey, repository: from } = status;
 		const place = placeFor(deps.catalog, status, repository);
 		if (typeof place !== "string") {
 			deps.notices.raise(place);
@@ -106,7 +106,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		const permission = await deps.addressing.claim({
 			kind: "board",
 			paneId,
-			from: boardKey,
+			from: paneKey,
 			repository: from,
 		});
 		const move = moving(paneId);
@@ -115,7 +115,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			permission.move.done(opened.board, opened.repository);
 			// The person opened it, so the dock shows the conversation of its checkout.
 			void activate(paneId, { vault });
-			deps.notices.dismiss("board-command");
+			deps.notices.dismiss("model-command");
 			// The listing says which pane holds what, and this just moved one.
 			deps.catalog.refresh();
 			return true;
@@ -124,7 +124,7 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 			move.failed();
 			deps.notices.raise(
 				failureNotice(
-					"board-command",
+					"model-command",
 					"Show board",
 					error instanceof Error ? error.message : String(error),
 				),
@@ -133,9 +133,9 @@ function boardActions(deps: ShellActionDeps): BoardActions {
 		}
 	}
 	return {
-		selectBoard,
+		selectModel,
 		/** Read the listing and every drawing again. */
-		refreshBoards: (): void => {
+		refreshModels: (): void => {
 			deps.catalog.reload();
 		},
 		/**
@@ -175,7 +175,7 @@ async function openModel(
 		kind: "board",
 		...(model === null ? {} : { destination: { model, repository } }),
 		paneId,
-		from: status.boardKey,
+		from: status.paneKey,
 		repository: status.repository,
 	});
 	const move = userMoves(deps.panes.handles, paneId);
@@ -246,7 +246,7 @@ function placeFor(
 	if (!paneReady(status)) {
 		return {
 			...failureNotice(
-				"board-command",
+				"model-command",
 				"Show board",
 				"This pane is reconnecting. Try again once it is connected, or reload the page.",
 			),
@@ -257,7 +257,7 @@ function placeFor(
 	return (
 		vault ??
 		failureNotice(
-			"board-command",
+			"model-command",
 			"Show board",
 			`${repository ?? "This repository"} has no checkout with a vault to read. Choose another checkout in its menu.`,
 		)
@@ -356,7 +356,7 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 		 */
 		openModel: (model, repository, paneId, reading) =>
 			openModel(deps, model, repository, paneId ?? deps.panes.active.status.paneId, reading),
-		...boardActions(deps),
+		...modelActions(deps),
 		...paneActions(deps),
 		/**
 		 * Open a settings surface.

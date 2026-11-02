@@ -179,7 +179,7 @@ describe("semantic context publisher", () => {
 			repository: "r".repeat(SEMANTIC_CONTEXT_LIMITS.repositoryBytes),
 			threadLink: { state: "inspect_only", reason: "界".repeat(170) },
 			board: {
-				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.boardKeyBytes),
+				key: "b".repeat(SEMANTIC_CONTEXT_LIMITS.paneKeyBytes),
 				name: "界".repeat(50),
 				vault: "界".repeat(1_365),
 				file: "界".repeat(1_365),

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { logger } from "@archboard/diagnostics/logger";
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-lock-news-"));
 const originalWarn = logger.warn;
@@ -20,19 +20,19 @@ test("announcements isolate passenger failure and report release at once", async
 		lock.onBoardSweep(() => {
 			throw new Error("note-watch fixture failed");
 		});
-		lock.watchBoardLocks({ boards: () => [{ vault, board: "passenger" }] });
-		jest.advanceTimersByTime(BOARD_LOCK_MS.watch);
+		lock.watchModelLocks({ boards: () => [{ vault, board: "passenger" }] });
+		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);
 		expect(
 			warnings.some(([message]) => String(message).includes("lock watch continues")),
 		).toBeTrue();
-		lock.watchBoardLocks(null);
+		lock.watchModelLocks(null);
 		lock.onBoardSweep(null);
 
 		const news: Array<{ board: string; id: string | null; held: boolean }> = [];
 		lock.onBoardLockChanged((_vault, board, holder) =>
 			news.push({ board, id: holder?.id ?? null, held: holder !== null }),
 		);
-		await lock.holdBoard({
+		await lock.holdModel({
 			vault,
 			board: "broadcast",
 			holder: { id: "pane", kind: "human" },
@@ -40,7 +40,7 @@ test("announcements isolate passenger failure and report release at once", async
 		});
 		expect(news.at(-1)).toEqual({ board: "broadcast", id: "pane", held: true });
 		const beforeRenew = news.length;
-		await lock.holdBoard({
+		await lock.holdModel({
 			vault,
 			board: "broadcast",
 			holder: { id: "pane", kind: "human" },
@@ -53,7 +53,7 @@ test("announcements isolate passenger failure and report release at once", async
 
 		const start = news.length;
 		for (let index = 0; index < 8; index += 1) {
-			await lock.withBoardLock(
+			await lock.withLease(
 				{ vault, board: "broadcast", holder: { id: `fan-${index}`, kind: "agent" } },
 				() => undefined,
 			);
@@ -63,7 +63,7 @@ test("announcements isolate passenger failure and report release at once", async
 			Array.from({ length: 16 }, (_, index) => index % 2 === 0),
 		);
 	} finally {
-		lock.watchBoardLocks(null);
+		lock.watchModelLocks(null);
 		lock.onBoardSweep(null);
 		lock.onBoardLockChanged(null);
 		lock.releaseHold(vault, "broadcast", "pane");

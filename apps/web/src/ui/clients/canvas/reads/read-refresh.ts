@@ -14,15 +14,15 @@ import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts
 // because a picture reads its board the moment it is asked for again and a
 // document not yet marked is the one from before the write.
 //
-// `boardsListed` and `boardGoneStale` serve the module's own listing query and
+// `modelsListed` and `modelGoneStale` serve the module's own listing query and
 // drawing ahead; nothing outside `reads/` calls them.
 
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
-import { boardCatalogKeys } from "#ui/clients/model-catalog/queries.ts";
-import { cachedReadings, semanticBoardKeys } from "#ui/clients/canvas/reads/read-keys.ts";
-import type { SemanticBoardEntry } from "#ui/clients/canvas/reads/drawings.ts";
-import { boardAddressOf, sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { modelCatalogKeys } from "#ui/clients/model-catalog/queries.ts";
+import { cachedReadings, readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
+import { paneAddressOf, sameModelName } from "#ui/rules/canvas/reading/address.ts";
 
 /**
  * Read these queries again, so that an event is answered from after it and
@@ -75,7 +75,7 @@ function namesAskedFor(client: QueryClient, vault: string, board: string): strin
 		said.set(reading.asked, [...(said.get(reading.asked) ?? []), ...namesIn(reading.data)]);
 	}
 	return [...said].flatMap(([asked, names]) =>
-		[asked, ...names].some((name) => sameBoardName(name, board)) ? [asked] : [],
+		[asked, ...names].some((name) => sameModelName(name, board)) ? [asked] : [],
 	);
 }
 
@@ -87,8 +87,8 @@ function namesAskedFor(client: QueryClient, vault: string, board: string): strin
  */
 function readingsOf(vault: string, names: readonly string[]): QueryKey[] {
 	return [
-		...names.map((name) => semanticBoardKeys.document(vault, name)),
-		...names.map((name) => semanticBoardKeys.boardRenders(vault, name)),
+		...names.map((name) => readKeys.document(vault, name)),
+		...names.map((name) => readKeys.modelRenders(vault, name)),
 	];
 }
 
@@ -100,28 +100,28 @@ function readingsOf(vault: string, names: readonly string[]): QueryKey[] {
  * @param board The board, by any of its names, or a board key naming a variant.
  * @returns Settles once the fresh reads have been asked for.
  */
-function boardChanged(client: QueryClient, vault: string, board: string): Promise<void> {
-	const name = boardAddressOf(board)?.board ?? board;
+function modelChanged(client: QueryClient, vault: string, board: string): Promise<void> {
+	const name = paneAddressOf(board)?.board ?? board;
 	return readAgain(client, readingsOf(vault, namesAskedFor(client, vault, name)));
 }
 
 /**
  * These boards of one vault have been written, or stopped being worked on:
  * the vault's listing and which pane holds what are read again either way, and
- * each named board as `boardChanged` reads it.
+ * each named board as `modelChanged` reads it.
  * @param client The tab's cache.
  * @param vault The vault the boards are in.
  * @param boards The board keys, which may be none. A key that names a variant is of the whole board.
  * @returns Settles once the fresh reads have been asked for.
  */
-async function boardsChanged(
+async function modelsChanged(
 	client: QueryClient,
 	vault: string,
 	boards: readonly string[],
 ): Promise<void> {
 	await Promise.all([
-		readAgain(client, [semanticBoardKeys.boards(vault), boardCatalogKeys.panes]),
-		...boards.map((board) => boardChanged(client, vault, board)),
+		readAgain(client, [readKeys.boards(vault), modelCatalogKeys.panes]),
+		...boards.map((board) => modelChanged(client, vault, board)),
 	]);
 }
 
@@ -133,7 +133,7 @@ async function boardsChanged(
  * @returns Settles once the fresh reads have been asked for.
  */
 function listingsChanged(client: QueryClient): Promise<void> {
-	return readAgain(client, [semanticBoardKeys.allBoards, boardCatalogKeys.panes]);
+	return readAgain(client, [readKeys.allModels, modelCatalogKeys.panes]);
 }
 
 /**
@@ -142,7 +142,7 @@ function listingsChanged(client: QueryClient): Promise<void> {
  * @returns Settles once the fresh reads have been asked for.
  */
 function repositoriesChanged(client: QueryClient): Promise<void> {
-	return readAgain(client, [boardCatalogKeys.repositories]);
+	return readAgain(client, [modelCatalogKeys.repositories]);
 }
 
 /**
@@ -154,7 +154,7 @@ function repositoriesChanged(client: QueryClient): Promise<void> {
  * @returns Settles once the fresh reads have been asked for.
  */
 function policyChanged(client: QueryClient, vault: string): Promise<void> {
-	return readAgain(client, [semanticBoardKeys.rendersIn(vault)]);
+	return readAgain(client, [readKeys.rendersIn(vault)]);
 }
 
 /**
@@ -172,11 +172,7 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
 	await Promise.all([
 		repositoriesChanged(client),
 		listingsChanged(client),
-		readAgain(client, [
-			semanticBoardKeys.documents,
-			semanticBoardKeys.renders,
-			architectureModelKeys.all,
-		]),
+		readAgain(client, [readKeys.documents, readKeys.renders, architectureModelKeys.all]),
 	]);
 }
 
@@ -188,7 +184,7 @@ async function readEverythingAgain(client: QueryClient): Promise<void> {
  * @param vault The vault the board is in.
  * @param board The board, by any of its names.
  */
-async function boardGoneStale(client: QueryClient, vault: string, board: string): Promise<void> {
+async function modelGoneStale(client: QueryClient, vault: string, board: string): Promise<void> {
 	for (const queryKey of readingsOf(vault, namesAskedFor(client, vault, board))) {
 		// oxlint-disable-next-line no-await-in-loop -- in order: the documents before the pictures drawn from them
 		await client.invalidateQueries({ queryKey, refetchType: "none" });
@@ -219,11 +215,7 @@ function versionOf(data: unknown): number | undefined {
  * @param vault The vault.
  * @param boards The boards listed there, with their versions.
  */
-function boardsListed(
-	client: QueryClient,
-	vault: string,
-	boards: readonly SemanticBoardEntry[],
-): void {
+function modelsListed(client: QueryClient, vault: string, boards: readonly DocumentEntry[]): void {
 	const moved = new Set(
 		cachedReadings(client, vault).flatMap(({ asked, data }) => {
 			const held = versionOf(data);
@@ -231,7 +223,7 @@ function boardsListed(
 			// goes by now, which only the reading itself says (ADR 0036).
 			const names = [asked, ...namesIn(data)];
 			const listed = boards.find((entry) =>
-				names.some((name) => sameBoardName(name, entry.key) || sameBoardName(name, entry.name)),
+				names.some((name) => sameModelName(name, entry.key) || sameModelName(name, entry.name)),
 			)?.version;
 			return held !== undefined && listed !== undefined && listed !== held ? [asked] : [];
 		}),
@@ -245,10 +237,10 @@ function boardsListed(
 }
 
 export {
-	boardChanged,
-	boardGoneStale,
-	boardsChanged,
-	boardsListed,
+	modelChanged,
+	modelGoneStale,
+	modelsChanged,
+	modelsListed,
 	listingsChanged,
 	policyChanged,
 	readEverythingAgain,

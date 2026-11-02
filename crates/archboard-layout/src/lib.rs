@@ -1,7 +1,7 @@
 //! The renderer core's layout of architecture boards (ADR 0059): a board's
 //! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
 //! drawing is chosen between the solves of one board, each a measured graph
-//! laid out one way ([`lay_out_board`]) and read for what the choice weighs;
+//! laid out one way ([`lay_out_picture`]) and read for what the choice weighs;
 //! the host runs the solves ([`Solver`]), side by side where it can, and each
 //! solve lays out its graphs with a [`Graphviz`]. The chosen drawing is put on
 //! a page fitted to it, and its crossings are settled before the drawing is
@@ -29,7 +29,7 @@ pub use architecture::{
     shown_drawing,
 };
 pub use blocks::choosing::pair_crossings;
-pub use blocks::place::lay_out_board;
+pub use blocks::place::lay_out_picture;
 pub use routes::LineLook;
 
 /// Graphviz: lay out one graph and answer its `json0` output, y inverted. The

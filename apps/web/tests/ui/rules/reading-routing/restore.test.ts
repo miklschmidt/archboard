@@ -12,7 +12,7 @@ import type { OpenOutcome, WorkspacePort } from "#ui/rules/reading-routing/contr
 /** An open the shell has been asked for and has not answered. */
 interface HeldOpen {
 	readonly paneId: string;
-	readonly boardKey: string | null;
+	readonly paneKey: string | null;
 	readonly answer: (outcome: OpenOutcome) => void;
 }
 
@@ -30,7 +30,7 @@ interface FakeShell {
 	readonly held: HeldOpen[];
 	restore: Restore;
 	/** What the panes will show at the next render. */
-	readonly pending: { panes: { paneId: string; boardKey: string | null }[]; activePaneId: string };
+	readonly pending: { panes: { paneId: string; paneKey: string | null }[]; activePaneId: string };
 	/** Reconcile against what the last render showed, the way the hook does. */
 	readonly reconcile: () => void;
 	/** Commit the queued pane changes and reconcile again, as a render does. */
@@ -38,7 +38,7 @@ interface FakeShell {
 	/** Answer the oldest outstanding open. */
 	readonly answer: (reached: boolean) => Promise<void>;
 	/** Tell a pane's board over the socket, which is what adoption looks like. */
-	readonly adopt: (paneId: string, boardKey: string) => void;
+	readonly adopt: (paneId: string, paneKey: string) => void;
 }
 
 /** What a fake shell starts as. */
@@ -60,7 +60,7 @@ function address(
 	activePaneId: string | null = null,
 ): WorkspaceAddress {
 	return settledAddress({
-		panes: panes.map(([paneId, boardKey]) => ({ paneId, boardKey, repository: null, view: null })),
+		panes: panes.map(([paneId, paneKey]) => ({ paneId, paneKey, repository: null, view: null })),
 		activePaneId,
 	});
 }
@@ -72,9 +72,9 @@ function address(
  * @returns The fake.
  */
 function fakeShell(options: FakeOptions): FakeShell {
-	const start = options.panes.map(([paneId, boardKey]) => ({
+	const start = options.panes.map(([paneId, paneKey]) => ({
 		paneId,
-		boardKey,
+		paneKey,
 		repository: null,
 		view: null as string | null,
 	}));
@@ -111,13 +111,13 @@ function fakeShell(options: FakeOptions): FakeShell {
 		 * Point a pane at a board. The answer waits for the test, and the pane is
 		 * told separately, as the socket tells it.
 		 * @param paneId The pane.
-		 * @param boardKey The board.
+		 * @param paneKey The board.
 		 * @returns The outcome, once the test gives one.
 		 */
-		open: (paneId: string, boardKey: string | null): Promise<OpenOutcome> => {
-			applied.push(`open:${paneId}:${boardKey}`);
+		open: (paneId: string, paneKey: string | null): Promise<OpenOutcome> => {
+			applied.push(`open:${paneId}:${paneKey}`);
 			return new Promise<OpenOutcome>((resolve) => {
-				held.push({ paneId, boardKey, answer: resolve });
+				held.push({ paneId, paneKey, answer: resolve });
 			});
 		},
 		/**
@@ -145,7 +145,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 			if (free === undefined || pending.panes.some((pane) => pane.paneId === free)) {
 				return false;
 			}
-			pending.panes.push({ paneId: free, boardKey: "scratch", repository: null, view: null });
+			pending.panes.push({ paneId: free, paneKey: "scratch", repository: null, view: null });
 			pending.activePaneId = free;
 			return true;
 		},
@@ -182,7 +182,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 		 * @param boards The boards.
 		 */
 		reportUnreachable: (boards): void => {
-			unreachable.push(...boards.map(({ boardKey }) => boardKey));
+			unreachable.push(...boards.map(({ paneKey }) => paneKey));
 		},
 	};
 
@@ -217,11 +217,11 @@ function fakeShell(options: FakeOptions): FakeShell {
 				 * Ask for an open. The hook owns the answer; this owner is about what
 				 * a restore asks for, and in which order.
 				 * @param paneId The pane.
-				 * @param boardKey The board.
+				 * @param paneKey The board.
 				 * @param repository The repository the board is in, or null for the pane's own.
 				 */
-				open: (paneId: string, boardKey: string | null, repository: string | null): void => {
-					void port.open(paneId, boardKey, repository);
+				open: (paneId: string, paneKey: string | null, repository: string | null): void => {
+					void port.open(paneId, paneKey, repository);
 				},
 			};
 			shell.restore = advanceRestore(shell.restore, port.displayed, port, commands).restore;
@@ -243,7 +243,7 @@ function fakeShell(options: FakeOptions): FakeShell {
 			expect(open).toBeDefined();
 			open?.answer(
 				reached
-					? { kind: "opened", boardKey: open.boardKey, repository: null }
+					? { kind: "opened", paneKey: open.paneKey, repository: null }
 					: { kind: "unreachable" },
 			);
 			await Promise.resolve();
@@ -252,12 +252,12 @@ function fakeShell(options: FakeOptions): FakeShell {
 		/**
 		 * The socket told a pane its board.
 		 * @param paneId The pane.
-		 * @param boardKey The board it now shows.
+		 * @param paneKey The board it now shows.
 		 */
-		adopt: (paneId: string, boardKey: string): void => {
+		adopt: (paneId: string, paneKey: string): void => {
 			const pane = pending.panes.find((entry) => entry.paneId === paneId);
 			if (pane) {
-				pane.boardKey = boardKey;
+				pane.paneKey = paneKey;
 			}
 			shell.render();
 		},
@@ -296,7 +296,7 @@ test("a restore going back to one pane closes the other", () => {
 	expect(shell.applied).toEqual(["close:A"]);
 	expect(shell.restore.done).toBe(true);
 	expect(shell.port.displayed.panes).toEqual([
-		{ paneId: "B", boardKey: "billing", repository: null, view: null },
+		{ paneId: "B", paneKey: "billing", repository: null, view: null },
 	]);
 });
 
@@ -338,7 +338,7 @@ test("an address that asks for another view reads the board again without reopen
 	const shell = fakeShell({
 		panes: [["A", "pipeline"]],
 		wanted: settledAddress({
-			panes: [{ paneId: "A", boardKey: "pipeline", repository: null, view: "k3f9" }],
+			panes: [{ paneId: "A", paneKey: "pipeline", repository: null, view: "k3f9" }],
 			activePaneId: "A",
 		}),
 	});
@@ -356,7 +356,7 @@ test("a pane being pointed at another board is not read on the way there", () =>
 	const shell = fakeShell({
 		panes: [["A", "payments"]],
 		wanted: settledAddress({
-			panes: [{ paneId: "A", boardKey: "semantic:pipeline", repository: null, view: "k3f9" }],
+			panes: [{ paneId: "A", paneKey: "semantic:pipeline", repository: null, view: "k3f9" }],
 			activePaneId: "A",
 		}),
 	});

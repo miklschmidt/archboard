@@ -11,8 +11,8 @@
 // questions inspection asks. Nothing here writes: the browser never states
 // anything about a semantic board (ADR 0023).
 
-import { addressedVariant, parseSemanticBoard } from "@archboard/model/legacy-board";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import { addressedVariant, parseLegacyBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import { comparedWith, compareVariants, standingOf } from "@archboard/model/comparison";
 import type { ChangeKind, FieldChange } from "@archboard/model/comparison";
 import { everyStep, isMessage, stepWords } from "@archboard/model/flow";
@@ -24,8 +24,8 @@ import type { z } from "zod";
 import type { VariantContent } from "@archboard/model/content";
 
 type SemanticWalkthrough = VariantContent["walkthroughs"][number];
-type Shelving = NonNullable<SemanticBoard["shelvings"]>[number];
-type Adoption = NonNullable<SemanticBoard["adoptions"]>[number];
+type Shelving = NonNullable<LegacyBoard["shelvings"]>[number];
+type Adoption = NonNullable<LegacyBoard["adoptions"]>[number];
 
 type VariantComparison = ReturnType<typeof compareVariants>;
 type VariantLifecycle = z.infer<typeof VariantLifecycleSchema>;
@@ -248,7 +248,7 @@ function movedOn(comparison: VariantComparison, id: string): readonly FieldChang
  * @param variant The variant being shown.
  * @returns The depiction.
  */
-function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction {
+function depictionOf(board: LegacyBoard, variant: SemanticVariant): Depiction {
 	const against = comparedWith(board, variant);
 	// Compared whole, before any view narrowed it, exactly as the server compares
 	// it: a view that hides a node is a narrower reading of the variant, never a
@@ -277,8 +277,8 @@ function depictionOf(board: SemanticBoard, variant: SemanticVariant): Depiction 
 	return { against, standing, moved };
 }
 
-type BoardReading =
-	| { readonly ok: true; readonly board: SemanticBoard }
+type DocumentReading =
+	| { readonly ok: true; readonly board: LegacyBoard }
 	| { readonly ok: false; readonly problem: string };
 
 /**
@@ -286,8 +286,8 @@ type BoardReading =
  * @param document Whatever the board route answered with.
  * @returns The board, or why it is not one.
  */
-function readBoard(document: unknown): BoardReading {
-	return parseSemanticBoard(document);
+function readDocument(document: unknown): DocumentReading {
+	return parseLegacyBoard(document);
 }
 
 /** One of a board's variants, as a picker needs to know it. */
@@ -490,7 +490,7 @@ function readingOf(
  * @returns The reading, or null when the board or that variant cannot be read.
  */
 function readVariant(document: unknown, asked: string | undefined): VariantReading | null {
-	const reading = readBoard(document);
+	const reading = readDocument(document);
 	if (!reading.ok) {
 		return null;
 	}
@@ -575,7 +575,7 @@ function nameOfSubject(subject: Subject): string | undefined {
 }
 
 export {
-	type BoardReading,
+	type DocumentReading,
 	type SelectedSubject,
 	type Depiction,
 	type EdgeSubject,
@@ -587,7 +587,7 @@ export {
 	type VariantReading,
 	ancestryOf,
 	depictionOf,
-	readBoard,
+	readDocument,
 	readVariant,
 	selectedSubject,
 	subjectOf,

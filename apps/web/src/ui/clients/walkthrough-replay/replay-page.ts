@@ -25,7 +25,7 @@ import {
 	type Talk,
 	type publishReplayPage,
 } from "@archboard/walkthrough/talk";
-import { createBoardQueryClient } from "#ui/clients/model-catalog/query-client.ts";
+import { createModelQueryClient } from "#ui/clients/model-catalog/query-client.ts";
 import {
 	createSteppedClock,
 	driveFramesFrom,
@@ -33,9 +33,9 @@ import {
 } from "@archboard/ui-kit/frame-clock";
 import { chooseLayoutEngine } from "#ui/clients/canvas/reads/layout-engine.ts";
 import { pictureSource, takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
-import { readBoardsFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
 import { stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import { ReplayStage } from "#ui/components/walkthrough-replay/ReplayStage.tsx";
 import { FrameReadiness } from "#ui/clients/walkthrough-replay/frame-readiness.ts";
@@ -96,10 +96,10 @@ function drawAgainst(against: string): void {
  * @param rendering The rendering.
  * @returns What it waits for, in words, or null when the board is drawn.
  */
-function boardPending(rendering: Rendering): string | null {
+function modelPending(rendering: Rendering): string | null {
 	const { reading, talk } = rendering;
 	if (talk.architecture !== undefined) return canonicalPending(talk.architecture, reading);
-	if (reading?.board == null || !sameBoardName(reading.board.name, talk.board.name)) {
+	if (reading?.board == null || !sameModelName(reading.board.name, talk.board.name)) {
 		return `the pane to draw ${talk.board.name}`;
 	}
 	return reading.version === talk.board.version
@@ -129,7 +129,7 @@ function canonicalPending(
  * @returns True while one starts.
  */
 function paintersStarting(rendering: Rendering): boolean {
-	const surfaces = rendering.root.querySelectorAll("[data-slot='semantic-board-surface']");
+	const surfaces = rendering.root.querySelectorAll("[data-slot='canvas-surface']");
 	return [...surfaces].some((surface) => stageOf(surface)?.starting === true);
 }
 
@@ -141,7 +141,7 @@ function paintersStarting(rendering: Rendering): boolean {
 function pendingOf(rendering: Rendering): string | null {
 	if (rendering.client.isFetching() > 0) return "the board's picture to be drawn";
 	if (paintersStarting(rendering)) return "the painter to start";
-	const board = boardPending(rendering);
+	const board = modelPending(rendering);
 	if (board !== null) return board;
 	return stepPending(rendering);
 }
@@ -232,7 +232,7 @@ class WalkthroughReplay {
 			talk,
 			clock,
 			playback: new TalkPlayback(talk, levels),
-			client: createBoardQueryClient(),
+			client: createModelQueryClient(),
 			root: this.#root,
 			readiness: new FrameReadiness(this.#root),
 			foreign: [],
@@ -240,7 +240,7 @@ class WalkthroughReplay {
 			beat: null,
 			next: 0,
 		};
-		readBoardsFrom(talkReads(talk, (board) => rendering.foreign.push(board)));
+		readRetainedFrom(talkReads(talk, (board) => rendering.foreign.push(board)));
 		if (talk.board.against !== undefined) drawAgainst(talk.board.against);
 		this.#rendering = rendering;
 		createRoot(this.#root).render(

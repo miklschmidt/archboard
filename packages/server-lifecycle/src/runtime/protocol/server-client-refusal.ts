@@ -6,7 +6,7 @@
 
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 
-interface BoardRefusal {
+interface ModelRefusal {
 	success: false;
 	code: string;
 	error: string;
@@ -15,7 +15,7 @@ interface BoardRefusal {
 	[key: string]: unknown;
 }
 
-const BOARD_REFUSAL_CODES = new Set(["BOARD_HELD", "BOARD_VERSION_CONFLICT", "CLAIM_REVOKED"]);
+const MODEL_REFUSAL_CODES = new Set(["MODEL_HELD", "MODEL_VERSION_CONFLICT", "CLAIM_REVOKED"]);
 
 /**
  * Whether an answer is a refused board write, which is decided by the shape
@@ -23,7 +23,7 @@ const BOARD_REFUSAL_CODES = new Set(["BOARD_HELD", "BOARD_VERSION_CONFLICT", "CL
  * @param data Anything the server answered with.
  * @returns True when the answer is a refusal.
  */
-function isBoardRefusal(data: unknown): data is BoardRefusal {
+function isModelRefusal(data: unknown): data is ModelRefusal {
 	if (!isRecord(data)) {
 		return false;
 	}
@@ -46,4 +46,4 @@ function isVersion(value: unknown): boolean {
 	return typeof value === "number" || value === null;
 }
 
-export { type BoardRefusal, BOARD_REFUSAL_CODES, isBoardRefusal };
+export { type ModelRefusal, MODEL_REFUSAL_CODES, isModelRefusal };

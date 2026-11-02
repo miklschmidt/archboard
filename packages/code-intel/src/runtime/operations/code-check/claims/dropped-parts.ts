@@ -17,7 +17,7 @@
 // lacks, or several refs with none new on the draft, is a skip that names the
 // draft, never a finding.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import {
 	normalized,
 	type Checkout,
@@ -46,7 +46,7 @@ type BoundNode = SemanticNode & { readonly binding: CodeBinding };
 
 /** A draft, the variant before it, and the bound parts of one repository it lacks. */
 interface Drop {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly from: SemanticVariant;
 	readonly repo: string;
 	readonly nodes: readonly BoundNode[];
@@ -85,7 +85,7 @@ interface Judged {
  * @param read The board, at the variant the check reads.
  * @returns The variant before it, or undefined.
  */
-function predecessorOf(read: BoardToCheck): SemanticVariant | undefined {
+function predecessorOf(read: StateToCheck): SemanticVariant | undefined {
 	if (read.variant.lifecycle !== "draft") return undefined;
 	return read.board.variants.find((one) => one.id === read.variant.parent);
 }
@@ -96,7 +96,7 @@ function predecessorOf(read: BoardToCheck): SemanticVariant | undefined {
  * @param read The board, at the variant the check reads.
  * @returns One drop for each repository.
  */
-function dropsOf(read: BoardToCheck): Drop[] {
+function dropsOf(read: StateToCheck): Drop[] {
 	const from = predecessorOf(read);
 	if (from === undefined) return [];
 	const kept = new Set(read.variant.content.nodes.map((node) => node.id));
@@ -115,7 +115,7 @@ function dropsOf(read: BoardToCheck): Drop[] {
  * @param reads The boards, each at the variant the check reads.
  * @returns Each binding.
  */
-function droppedBindings(reads: readonly BoardToCheck[]): CodeBinding[] {
+function droppedBindings(reads: readonly StateToCheck[]): CodeBinding[] {
 	return reads.flatMap(dropsOf).flatMap((drop) => drop.nodes.map((node) => node.binding));
 }
 
@@ -273,7 +273,7 @@ async function judgeDrop(drop: Drop, context: DroppedContext, judged: Judged): P
  * @returns The findings, and the drafts whose code could not be read.
  */
 async function judgeDroppedParts(
-	reads: readonly BoardToCheck[],
+	reads: readonly StateToCheck[],
 	context: DroppedContext,
 ): Promise<Judged> {
 	const judged: Judged = { findings: [], skipped: [] };

@@ -8,15 +8,15 @@
 import { expect, test } from "bun:test";
 
 import { narratedSubjects } from "#server/rules/semantic-context/narrated-subjects.ts";
-import { SEMANTIC_BOARD_SCHEMA_VERSION, SemanticBoardSchema } from "@archboard/model/legacy-board";
+import { LEGACY_BOARD_SCHEMA_VERSION, LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { WalkthroughBeatSchema } from "@archboard/model/content";
 
 const GATEWAY = { id: "gw", name: "Gateway", kind: "service", order: 1000 };
 const INTAKE = { id: "in", name: "Legacy intake", kind: "service", order: 2000 };
 const LEDGER = { id: "ld", name: "Ledger", kind: "service", order: 3000 };
 
-const board = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const board = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
 	name: "payments",

@@ -12,7 +12,7 @@
 
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "#shared/protocol/code-check.ts";
 import {
-	readBoardsToCheck,
+	readStatesToCheck,
 	readEveryDraftToCheck,
 	type NoSuchDraft,
 } from "#runtime/operations/code-check/states.ts";
@@ -83,7 +83,7 @@ function planRefused(refused: PlanRefused): CodeCheckRefusal {
  * @returns The canonical finding or retained semantic evidence.
  */
 function canonicalFinding(
-	readings: readonly import("#runtime/operations/code-check/states.ts").BoardToCheck[],
+	readings: readonly import("#runtime/operations/code-check/states.ts").StateToCheck[],
 	finding: import("#shared/protocol/code-check.ts").CodeFinding,
 ) {
 	const model = readings.find(
@@ -100,7 +100,7 @@ function canonicalFinding(
  * @returns Its model and state identities.
  */
 function findingIdentity(
-	model: NonNullable<import("#runtime/operations/code-check/states.ts").BoardToCheck["model"]>,
+	model: NonNullable<import("#runtime/operations/code-check/states.ts").StateToCheck["model"]>,
 ) {
 	return { model: model.manifest.id, state: model.selectedState?.id ?? null };
 }
@@ -111,7 +111,7 @@ function findingIdentity(
  * @returns Its authored input path.
  */
 function findingOwner(
-	model: NonNullable<import("#runtime/operations/code-check/states.ts").BoardToCheck["model"]>,
+	model: NonNullable<import("#runtime/operations/code-check/states.ts").StateToCheck["model"]>,
 	subject: string | undefined,
 ) {
 	return model.modules.find(
@@ -134,7 +134,7 @@ function createCodeCheck(): CodeCheck {
 			const { vault } = request;
 			const read = await (request.everyDraft
 				? readEveryDraftToCheck(vault)
-				: readBoardsToCheck(vault, request.variant));
+				: readStatesToCheck(vault, request.variant));
 			if (!("ok" in read)) return noSuchDraft(read);
 			const plans = await readPlans(vault, request.plans, request.signal);
 			if (!plans.ok) return planRefused(plans);

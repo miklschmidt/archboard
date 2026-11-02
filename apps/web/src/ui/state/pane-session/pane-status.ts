@@ -2,7 +2,7 @@
 // the shell whole, so two readers never see two different panes.
 
 import type {
-	BoardIdentity,
+	LegacyIdentity,
 	DoingEntry,
 	PaneStatus,
 } from "#ui/rules/pane-session/session-types.ts";
@@ -11,8 +11,8 @@ import type {
 interface LivePaneStatus {
 	connected: boolean;
 	registered: boolean;
-	board: BoardIdentity | null;
-	boardKey: string | null;
+	board: LegacyIdentity | null;
+	paneKey: string | null;
 	opened: string | null;
 	view: string | null;
 	lastChangeAt: string | null;
@@ -48,7 +48,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 		connected: false,
 		registered: false,
 		board: null,
-		boardKey: null,
+		paneKey: null,
 		opened: null,
 		view: null,
 		lastChangeAt: null,
@@ -66,7 +66,7 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 			connected: live.connected,
 			registered: live.registered,
 			board: live.board,
-			boardKey: live.boardKey,
+			paneKey: live.paneKey,
 			opened: live.opened,
 			view: live.view,
 			lastChangeAt: live.lastChangeAt,

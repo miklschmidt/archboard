@@ -13,7 +13,7 @@ import { useCallback, useEffect, useRef, useState, type PointerEvent } from "rea
 
 import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import {
 	tipTargetAt,
 	type TipPoint,
@@ -24,7 +24,7 @@ import {
 interface TipScene {
 	/** The picture, by its identity. */
 	readonly drawing: object;
-	readonly camera: Pick<BoardCamera, "subscribe">;
+	readonly camera: Pick<PictureCamera, "subscribe">;
 }
 
 /** An open tip, the picture it opened on, and where the pointer rested. */

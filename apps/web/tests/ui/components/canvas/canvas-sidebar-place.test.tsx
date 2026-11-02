@@ -14,7 +14,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { beforeAll, expect, test } from "bun:test";
 import type { PaneChrome } from "#ui/components/canvas/PaneChrome.tsx";
-import { EXPLAINED_BOARD } from "#tests/ui/support/canvas/render-answers.ts";
+import { EXPLAINED_DOCUMENT } from "#tests/ui/support/canvas/render-answers.ts";
 import {
 	changeChromeInShell,
 	drawing,
@@ -204,7 +204,7 @@ test("a tab chosen in a docked sidebar does not turn it into a float when a seco
 });
 
 test("a presented walkthrough steps the sidebar aside: its control is held, and nothing brings the sidebar back", async () => {
-	server.documents["pipeline"] = EXPLAINED_BOARD;
+	server.documents["pipeline"] = EXPLAINED_DOCUMENT;
 	await mountPane(SHARED);
 	await settle();
 	driveInShell({ request: "present", walkthrough: "tour", beat: 0 });

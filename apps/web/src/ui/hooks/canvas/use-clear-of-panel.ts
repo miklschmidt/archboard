@@ -8,7 +8,7 @@
 import { useLayoutEffect, type RefObject } from "react";
 
 import { SIDEBAR_MS } from "@archboard/timing";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { panCamera } from "#ui/rules/canvas/camera/camera.ts";
 
 /** How far from the panel's edge the part is kept. */
@@ -43,7 +43,7 @@ function useClearOfPanel(
 	picture: RefObject<HTMLElement | null>,
 	floating: boolean,
 	selection: string | null,
-	camera: Pick<BoardCamera, "view" | "glide">,
+	camera: Pick<PictureCamera, "view" | "glide">,
 	reducedMotion: boolean,
 	width: (area: number) => number,
 ): void {

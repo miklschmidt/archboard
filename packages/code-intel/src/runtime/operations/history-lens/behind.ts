@@ -34,19 +34,19 @@ import {
 	type PartReading,
 	type ReadPart,
 } from "#runtime/operations/history-lens/parts.ts";
-import type { BehindCommit, BoardBehind } from "#shared/protocol/code-check.ts";
+import type { BehindCommit, ModelBehind } from "#shared/protocol/code-check.ts";
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { currentVariant, type SemanticBoard } from "@archboard/model/legacy-board";
+import { currentVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 
 /** One board to read, as the store read it, and the file it lives in. */
-interface BoardToRead {
-	readonly board: SemanticBoard;
+interface StateToRead {
+	readonly board: LegacyBoard;
 	readonly file: string;
 }
 
 /** One board on its way to an answer. */
-interface BoardInProgress {
-	readonly board: SemanticBoard;
+interface StateInProgress {
+	readonly board: LegacyBoard;
 	readonly variant: string;
 	readonly lastChange: LastChange;
 	readonly parts: PartReading;
@@ -106,7 +106,7 @@ async function countedAfter(
  * @param boards The boards, with their last changes and parts.
  * @returns Each repository by identity.
  */
-function repositoriesOf(boards: readonly BoardInProgress[]): Map<string, RepositoryRead> {
+function repositoriesOf(boards: readonly StateInProgress[]): Map<string, RepositoryRead> {
 	const repositories = new Map<string, RepositoryRead>();
 	for (const { lastChange, parts } of boards) {
 		for (const part of parts.read) {
@@ -167,7 +167,7 @@ async function walkRepository(
  * @returns Each repository's walk, by identity.
  */
 async function walkRepositories(
-	boards: readonly BoardInProgress[],
+	boards: readonly StateInProgress[],
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
 ): Promise<Map<string, WalkedRepository>> {
@@ -207,9 +207,9 @@ function countedAgainst(
  * @returns How far it is behind, per board and per part.
  */
 function answerFor(
-	board: BoardInProgress,
+	board: StateInProgress,
 	walks: ReadonlyMap<string, WalkedRepository>,
-): BoardBehind {
+): ModelBehind {
 	const { lastChange, parts, variant } = board;
 	if (lastChange.kind === "unknown") return { board: board.board.name, variant, lastChange };
 	const since = lastChange.kind === "commit" ? lastChange.commit : undefined;
@@ -265,17 +265,17 @@ async function vaultCheckoutOf(vault: string, options: GitRunOptions): Promise<s
  * @returns One answer per board, in the order given.
  */
 async function readBehind(
-	boards: readonly BoardToRead[],
+	boards: readonly StateToRead[],
 	vaultRoot: string | undefined,
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
-): Promise<BoardBehind[]> {
+): Promise<ModelBehind[]> {
 	const inProgress = await Promise.all(
 		boards.flatMap(({ board, file }) => {
 			const variant = currentVariant(board);
 			if (variant === undefined) return [];
 			return [
-				(async (): Promise<BoardInProgress> => ({
+				(async (): Promise<StateInProgress> => ({
 					board,
 					variant: variant.id,
 					lastChange: await lastChangeOf(board, fs.realpathSync.native(file), vaultRoot, options),
@@ -293,7 +293,7 @@ async function readBehind(
  * @param boards The boards.
  * @returns The bindings.
  */
-function bindingsOf(boards: readonly BoardToRead[]): CodeBinding[] {
+function bindingsOf(boards: readonly StateToRead[]): CodeBinding[] {
 	return boards.flatMap(({ board }) =>
 		(currentVariant(board)?.content.nodes ?? []).flatMap((node) =>
 			node.binding === undefined ? [] : [node.binding],
@@ -311,7 +311,7 @@ function bindingsOf(boards: readonly BoardToRead[]): CodeBinding[] {
  * @returns The key.
  */
 async function memoryKey(
-	boards: readonly BoardToRead[],
+	boards: readonly StateToRead[],
 	vaultRoot: string | undefined,
 	snapshot: CheckoutSnapshot,
 	options: GitRunOptions,
@@ -337,7 +337,7 @@ interface BehindReading {
 	 * @param signal Cancels the reading and every Git command it runs.
 	 * @returns One answer per board with a current variant, in the order given.
 	 */
-	read(vault: string, boards: readonly BoardToRead[], signal?: AbortSignal): Promise<BoardBehind[]>;
+	read(vault: string, boards: readonly StateToRead[], signal?: AbortSignal): Promise<ModelBehind[]>;
 }
 
 /**
@@ -347,7 +347,7 @@ interface BehindReading {
  * @returns The reading.
  */
 function createBehindReading(): BehindReading {
-	let memory: { readonly key: string; readonly answer: BoardBehind[] } | undefined;
+	let memory: { readonly key: string; readonly answer: ModelBehind[] } | undefined;
 	return {
 		/**
 		 * Read, or answer from memory when nothing the answer derives from moved.
@@ -376,4 +376,4 @@ function createBehindReading(): BehindReading {
 	};
 }
 
-export { type BehindReading, type BoardToRead, createBehindReading };
+export { type BehindReading, type StateToRead, createBehindReading };

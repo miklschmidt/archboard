@@ -1,7 +1,7 @@
 // The steps of one code check pass, which the package's tests drive one at a time. A test
 // imports this module after it sets the registry, so the pass reads that registry.
 export {
-	readBoardsToCheck,
+	readStatesToCheck,
 	readEveryDraftToCheck,
 } from "#tests/runtime/support/code-check/evidence.ts";
 export { checkCode } from "#runtime/operations/code-check/check.ts";

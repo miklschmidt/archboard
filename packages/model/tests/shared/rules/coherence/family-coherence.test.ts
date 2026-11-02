@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseSemanticBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
 /**
@@ -35,7 +35,7 @@ const board = (over: Record<string, unknown> = {}) => ({
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (value: unknown): string => {
-	const parsed = parseSemanticBoard(withFixtureOrders(value));
+	const parsed = parseLegacyBoard(withFixtureOrders(value));
 	return parsed.ok ? "" : parsed.problem;
 };
 
@@ -115,6 +115,6 @@ describe("what a variant says it is waiting on", () => {
 	});
 
 	test("a draft waiting on something real is a board that opens", () => {
-		expect(parseSemanticBoard(withFixtureOrders(waiting({}))).ok).toBe(true);
+		expect(parseLegacyBoard(withFixtureOrders(waiting({}))).ok).toBe(true);
 	});
 });

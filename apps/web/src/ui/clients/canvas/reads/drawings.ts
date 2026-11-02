@@ -7,7 +7,7 @@ import {
 } from "@archboard/code-intel/code-check";
 import { VaultCheckSchema } from "@archboard/model/policy";
 import { inVault } from "@archboard/server-requests";
-import { BoardListingSchema } from "@archboard/model/legacy-listing";
+import { LegacyListingSchema } from "@archboard/model/legacy-listing";
 import {
 	type DiagramAtlas,
 	type DiagramBox,
@@ -18,10 +18,10 @@ import {
 } from "@archboard/model/render-reply";
 import type { RenderedVariantSchema } from "@archboard/model/render-reply";
 
-type ListedBoard = z.infer<typeof BoardListingSchema>["boards"][number];
+type ListedLegacyBoard = z.infer<typeof LegacyListingSchema>["boards"][number];
 
 type RenderedVariant = z.infer<typeof RenderedVariantSchema>;
-type BoardListing = z.infer<typeof BoardListingSchema>;
+type LegacyListing = z.infer<typeof LegacyListingSchema>;
 type VaultCheck = z.infer<typeof VaultCheckSchema>;
 
 // The render contract itself is not described here. It is one external protocol
@@ -53,10 +53,10 @@ type PictureLegend = NonNullable<DrawnBoard["legend"]>;
 type SemanticOfferedView = OfferedView;
 
 /** One board the vault holds, as the listing reports it. */
-type SemanticBoardEntry = ListedBoard;
+type DocumentEntry = ListedLegacyBoard;
 
 /** What the listing says: the configured levels, coarsest first, and every board. */
-type SemanticBoardListing = Pick<BoardListing, "levels" | "boards" | "repository">;
+type RetainedListing = Pick<LegacyListing, "levels" | "boards" | "repository">;
 
 /** A variant with something on it, drawn, as the viewer carries it. */
 type SemanticDrawing = DrawnBoard & { readonly kind: "drawn" };
@@ -114,7 +114,7 @@ function comparisonKey(request: SemanticRenderRequest): string {
  * that was not the contract.
  */
 type SemanticFailureCode =
-	| "BOARD_MISSING"
+	| "MODEL_MISSING"
 	| "UNKNOWN_VARIANT"
 	| "UNKNOWN_VIEW"
 	| "BOARD_UNREADABLE"
@@ -122,7 +122,7 @@ type SemanticFailureCode =
 	| "REPLY_INVALID";
 
 /** A refused or unreachable semantic read, with the code to say which. */
-class SemanticBoardError extends Error {
+class ReadingError extends Error {
 	readonly code: SemanticFailureCode;
 
 	/**
@@ -132,7 +132,7 @@ class SemanticBoardError extends Error {
 	 */
 	constructor(code: SemanticFailureCode, message: string) {
 		super(message);
-		this.name = "SemanticBoardError";
+		this.name = "ReadingError";
 		this.code = code;
 	}
 }
@@ -157,7 +157,7 @@ function isRecord(value: unknown): value is JsonRecord {
 function codeOf(body: unknown): SemanticFailureCode | null {
 	const named = z
 		.object({
-			code: z.enum(["BOARD_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"]),
+			code: z.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"]),
 		})
 		.safeParse(body);
 	return named.success ? named.data.code : null;
@@ -169,13 +169,13 @@ function codeOf(body: unknown): SemanticFailureCode | null {
  * @param status The HTTP status, for the fallback words.
  * @returns The error to throw.
  */
-function refusalFrom(body: unknown, status: number): SemanticBoardError {
+function refusalFrom(body: unknown, status: number): ReadingError {
 	const said = isRecord(body) ? body["error"] : null;
 	const message =
 		typeof said === "string" && said !== ""
 			? said
 			: `The Archboard server refused the request (${status}).`;
-	return new SemanticBoardError(codeOf(body) ?? "REPLY_INVALID", message);
+	return new ReadingError(codeOf(body) ?? "REPLY_INVALID", message);
 }
 
 /**
@@ -195,7 +195,7 @@ async function requestRoute(url: string, vault: string, signal?: AbortSignal): P
 		if (signal?.aborted === true) {
 			throw error;
 		}
-		throw new SemanticBoardError("UNREACHABLE", "The Archboard server did not answer.");
+		throw new ReadingError("UNREACHABLE", "The Archboard server did not answer.");
 	}
 }
 
@@ -248,7 +248,7 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 		await readRoute(CODE_FINDINGS_URL, vault, signal),
 	);
 	if (!parsed.success) {
-		throw new SemanticBoardError(
+		throw new ReadingError(
 			"REPLY_INVALID",
 			"The Archboard server sent no findings of the code check.",
 		);
@@ -257,15 +257,15 @@ async function fetchCodeFindings(vault: string, signal?: AbortSignal): Promise<R
 }
 
 export {
-	SemanticBoardError,
+	ReadingError,
 	fetchCodeFindings,
 	comparisonKey,
 	fetchVaultCheck,
 	type AppliedAppearance,
 	type PictureLegend,
 	type SemanticAtlas,
-	type SemanticBoardEntry,
-	type SemanticBoardListing,
+	type DocumentEntry,
+	type RetainedListing,
 	type SemanticBox,
 	type SemanticDrawing,
 	type SemanticFailureCode,

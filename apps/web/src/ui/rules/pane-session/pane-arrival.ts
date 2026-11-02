@@ -5,7 +5,7 @@
 
 import type { LivePaneStatus } from "#ui/state/pane-session/pane-status.ts";
 import type { PanePlace } from "#ui/rules/pane-session/socket-messages.ts";
-import type { BoardIdentity, DoingEntry } from "#ui/rules/pane-session/session-types.ts";
+import type { LegacyIdentity, DoingEntry } from "#ui/rules/pane-session/session-types.ts";
 
 /** What an arrival changes, and whom it tells. */
 interface PaneArrivalParts {
@@ -13,10 +13,10 @@ interface PaneArrivalParts {
 	/** The server put the pane in another vault. */
 	readonly setVault: (vault: string) => void;
 	readonly setOpened: (key: string | null) => void;
-	readonly setBoard: (board: BoardIdentity | null) => void;
+	readonly setModel: (board: LegacyIdentity | null) => void;
 	readonly setDoing: (entries: DoingEntry[]) => void;
 	/** The board on screen moved: who holds it and what was reported of it are not known yet. */
-	readonly forgetBoard: () => void;
+	readonly forgetModel: () => void;
 	/** The server pointed the pane somewhere other than the board on screen. */
 	readonly arrived: (key: string, previousKey: string | null) => void;
 	/** Tell the shell what the pane is now. */
@@ -46,7 +46,7 @@ function createPaneArrival(
 	parts: PaneArrivalParts,
 ): (
 	key: string | null | undefined,
-	identity: BoardIdentity | null | undefined,
+	identity: LegacyIdentity | null | undefined,
 	place: PanePlace | null,
 ) => void {
 	const { status } = parts;
@@ -77,28 +77,28 @@ function createPaneArrival(
 	 */
 	function arrive(
 		key: string,
-		identity: BoardIdentity | null | undefined,
+		identity: LegacyIdentity | null | undefined,
 		otherVault: boolean,
 	): void {
 		const previousKey = status.opened;
 		// The board on screen moves, even when the pane is pointed back at the board
 		// it was opened on: a drill-down had put another board there. The same board
 		// of another checkout is another board too: another file, version and writer.
-		const moved = otherVault || previousKey !== key || status.boardKey !== key;
+		const moved = otherVault || previousKey !== key || status.paneKey !== key;
 		// Arriving sets both: the pane is showing the board it was pointed at,
 		// and that is also where any later drill starts from.
 		status.opened = key;
-		status.boardKey = key;
+		status.paneKey = key;
 		status.board = identity ?? { board: key, variant: "current" };
 		parts.setOpened(key);
-		parts.setBoard(status.board);
+		parts.setModel(status.board);
 		if (moved) {
 			// A different board is a different version and a different writer, and
 			// what an agent said about the last one is not news about this one.
 			status.version = null;
 			status.doing = [];
 			parts.setDoing([]);
-			parts.forgetBoard();
+			parts.forgetModel();
 			parts.arrived(key, previousKey);
 		}
 	}
@@ -112,7 +112,7 @@ function createPaneArrival(
 	 * @param identity Its identity, when the server sent one.
 	 * @param place The vault the pane is in now, when the server said.
 	 */
-	return function adoptBoard(key, identity, place): void {
+	return function adoptModel(key, identity, place): void {
 		const otherVault = adoptPlace(place);
 		if (named(key)) {
 			arrive(key, identity, otherVault);
@@ -120,7 +120,7 @@ function createPaneArrival(
 			// Canonical arrivals carry no legacy board key. The server still drops
 			// the former vault's capture, even if this picture stays visible until
 			// the destination draws. Its next report must not be deduplicated.
-			parts.forgetBoard();
+			parts.forgetModel();
 		}
 		parts.publish();
 		// Immediately, not on the debounce: `browser panes` is read every turn.

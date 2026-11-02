@@ -13,7 +13,7 @@ import {
 } from "#ui/components/canvas/SemanticPresentation.tsx";
 import { projectModel, type Model } from "@archboard/model/content";
 import { useAcceptedScene } from "#ui/hooks/architecture-model/use-accepted-scene.ts";
-import { useBoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { usePictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { drawableGrammar } from "#ui/rules/architecture-model/scene.ts";
 import { projectFlow } from "#ui/rules/architecture-model/flow-reading.ts";
 import { useModelSelection } from "#ui/hooks/architecture-model/use-model-selection.ts";
@@ -177,7 +177,7 @@ function BeatStage(
 ): JSX.Element {
 	const { accepted, selection, reducedMotion } = props;
 	const { scene, failure } = accepted;
-	const camera = useBoardCamera(reducedMotion);
+	const camera = usePictureCamera(reducedMotion);
 	return (
 		<>
 			<Suspense fallback={null}>

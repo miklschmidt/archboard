@@ -3,7 +3,7 @@
 
 import { QueryClient } from "@tanstack/react-query";
 
-import { BOARD_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "@archboard/timing";
 
 /**
  * A cache with this product's read defaults.
@@ -20,16 +20,16 @@ import { BOARD_CACHE_MS } from "@archboard/timing";
  * automatic retry of a write and no second copy of what a person edited.
  * @returns A client for one tab.
  */
-function createBoardQueryClient(): QueryClient {
+function createModelQueryClient(): QueryClient {
 	return new QueryClient({
 		defaultOptions: {
 			queries: {
 				retry: false,
 				refetchOnWindowFocus: false,
-				gcTime: BOARD_CACHE_MS.gc,
+				gcTime: MODEL_CACHE_MS.gc,
 			},
 		},
 	});
 }
 
-export { createBoardQueryClient };
+export { createModelQueryClient };

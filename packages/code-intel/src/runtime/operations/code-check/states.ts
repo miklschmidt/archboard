@@ -1,23 +1,23 @@
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { modelContent } from "@archboard/model/content";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 
 type Model = Extract<ArchitectureModelRead, { success: true }>;
 /** Semantic evidence accepted by the existing code-inspection engine. */
-interface BoardToCheck {
-	readonly board: Pick<SemanticBoard, "id" | "name" | "variants" | "current">;
+interface StateToCheck {
+	readonly board: Pick<LegacyBoard, "id" | "name" | "variants" | "current">;
 	readonly variant: SemanticVariant;
 	readonly file: string;
 	readonly named: boolean;
 	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
 	readonly model?: Model;
 }
-interface BoardsToCheck {
+interface StatesToCheck {
 	readonly ok: true;
-	readonly boards: readonly BoardToCheck[];
+	readonly boards: readonly StateToCheck[];
 	readonly skipped: readonly CodeCheckSkip[];
 }
 type NoSuchDraft = Extract<ArchitectureModelRead, { success: false }>;
@@ -27,7 +27,7 @@ type NoSuchDraft = Extract<ArchitectureModelRead, { success: false }>;
  * @param predecessor Its exact comparison base, when available.
  * @returns The engine reading without a board document, level, or authored view.
  */
-function codeReading(model: Model, predecessor?: Model): BoardToCheck {
+function codeReading(model: Model, predecessor?: Model): StateToCheck {
 	const variant: SemanticVariant = {
 		...stateMetadata(model),
 		content: modelContent(model),
@@ -121,11 +121,11 @@ async function readPredecessor(vault: string, model: Model) {
  * @param selections.against The comparison source.
  * @returns Complete evidence or its structured refusal.
  */
-async function readBoardsToCheck(
+async function readStatesToCheck(
 	vault: string,
 	state?: string,
 	selections: { checkpoint?: string | undefined; against?: string | undefined } = {},
-): Promise<BoardsToCheck | NoSuchDraft> {
+): Promise<StatesToCheck | NoSuchDraft> {
 	const model = await readArchitectureModel(vault, undefined, undefined, {
 		checkpoint: selections.checkpoint,
 		against: selections.against,
@@ -142,11 +142,11 @@ async function readBoardsToCheck(
  * @param vault The addressed vault.
  * @returns Their exact canonical evidence or a structured refusal.
  */
-async function readEveryDraftToCheck(vault: string): Promise<BoardsToCheck | NoSuchDraft> {
+async function readEveryDraftToCheck(vault: string): Promise<StatesToCheck | NoSuchDraft> {
 	const current = readArchitectureModel(vault);
 	if (!current.success) return current;
 	const readings = await Promise.all(
-		current.proposals.map((proposal) => readBoardsToCheck(vault, proposal.id)),
+		current.proposals.map((proposal) => readStatesToCheck(vault, proposal.id)),
 	);
 	const failure = readings.find((reading) => !("ok" in reading));
 	if (failure !== undefined) return failure;
@@ -157,9 +157,9 @@ async function readEveryDraftToCheck(vault: string): Promise<BoardsToCheck | NoS
 	};
 }
 export {
-	type BoardToCheck,
-	type BoardsToCheck,
+	type StateToCheck,
+	type StatesToCheck,
 	type NoSuchDraft,
-	readBoardsToCheck,
+	readStatesToCheck,
 	readEveryDraftToCheck,
 };

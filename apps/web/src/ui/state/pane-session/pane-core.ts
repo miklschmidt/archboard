@@ -6,7 +6,7 @@
 // writing it and that the board has moved (ADR 0023). The picture itself is a
 // separate read, made by the viewer through the query cache.
 
-import { boardAddressOf } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import { createPaneArrival } from "#ui/rules/pane-session/pane-arrival.ts";
 import { createPaneReportDeadline } from "#ui/state/pane-session/pane-deadline.ts";
 import { createReadingPublisher, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
@@ -30,7 +30,7 @@ import type { WorkbenchTransportPort } from "#ui/rules/pane-session/workbench-po
 import type { CodeTargetNotice } from "@archboard/code-opener/opening";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import type {
-	BoardIdentity,
+	LegacyIdentity,
 	DoingEntry,
 	LockHolder,
 	PaneStatus,
@@ -56,7 +56,7 @@ interface PaneCorePorts<Transport extends WorkbenchTransportPort> {
 	readonly paneElement: () => HTMLElement | null;
 	readonly workbenchSockets: PaneWorkbenchSocketOwner<Transport> | null;
 	readonly setConnected: (connected: boolean) => void;
-	readonly setBoard: (board: BoardIdentity | null) => void;
+	readonly setModel: (board: LegacyIdentity | null) => void;
 	/** The server put the pane in another vault (ADR 0050). */
 	readonly setVault: (vault: string) => void;
 	/** Where the server pointed the pane; a drill-down does not move it. */
@@ -155,8 +155,8 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * The board this pane holds.
 	 * @returns Its key, or null.
 	 */
-	function boardKey(): string | null {
-		return status.boardKey;
+	function paneKey(): string | null {
+		return status.paneKey;
 	}
 
 	/**
@@ -166,7 +166,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 */
 	function setHolder(holder: LockHolder | null, _mine = false): void {
 		ports.setHeldBy(holder);
-		ports.options().onHolder?.(paneId, status.boardKey, holder);
+		ports.options().onHolder?.(paneId, status.paneKey, holder);
 	}
 
 	/**
@@ -236,14 +236,14 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 		}
 	}
 
-	const adoptBoard = createPaneArrival({
+	const adoptModel = createPaneArrival({
 		status,
 		setVault: ports.setVault,
 		setOpened: ports.setOpened,
-		setBoard: ports.setBoard,
+		setModel: ports.setModel,
 		setDoing: ports.setDoing,
 		/** Forget who holds the board on screen and what was reported of it. */
-		forgetBoard: (): void => {
+		forgetModel: (): void => {
 			// The board we are arriving at is somebody else's until we are told it
 			// is not; the server sends that immediately behind the board (ADR 0016).
 			setHolder(UNKNOWN_HOLDER);
@@ -286,9 +286,9 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 
 	const messageContext: MessageContext = {
 		clientId,
-		boardKey,
+		paneKey,
 		vault: paneVault,
-		adoptBoard,
+		adoptModel,
 		noteChange,
 		publishStatus,
 		setHolder,
@@ -414,7 +414,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	const paneReports = createPaneReportSender({
 		paneId,
 		clientId,
-		boardKey,
+		paneKey,
 		vault: paneVault,
 		paneElement: ports.paneElement,
 		primary: isPrimary,
@@ -441,7 +441,7 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	function openCode(subjectId: string): void {
 		activateCodeTarget({
 			vault: status.vault,
-			boardKey: status.boardKey,
+			paneKey: status.paneKey,
 			elementId: subjectId,
 			onNotice: tell,
 		});
@@ -511,18 +511,18 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	 * @param key The board on screen, or null when there is none.
 	 */
 	function showing(key: string | null): void {
-		if (key === null || status.boardKey === key) {
+		if (key === null || status.paneKey === key) {
 			return;
 		}
-		status.boardKey = key;
+		status.paneKey = key;
 		// And what that board IS, so the shell names what is on screen rather than
 		// the board somebody started from.
-		const address = boardAddressOf(key);
+		const address = paneAddressOf(key);
 		status.board =
 			address === null
 				? status.board
 				: { board: address.board, variant: address.variant ?? "current" };
-		ports.setBoard(status.board);
+		ports.setModel(status.board);
 		// A different board is a different version and a different writer.
 		status.version = null;
 		status.doing = [];

@@ -58,7 +58,7 @@ import { EvidenceKindSchema, VaultDiagnosticSchema } from "@archboard/model/poli
 const CodeCheckSubjectSchema = VaultDiagnosticSchema.shape.subject.unwrap();
 
 /** One board the check read, at the variant it read, and the version it read. */
-const CodeCheckBoardSchema = z
+const CodeCheckDocumentSchema = z
 	.object({ board: z.string(), variant: z.string(), version: z.int().nonnegative() })
 	.strict();
 
@@ -136,7 +136,7 @@ const OtherRefSchema = z.object({ named: z.string(), checkedOut: z.string() }).s
  * never looks like a subject with nothing to report.
  *
  * - `no-current-variant`: a board with nothing built and no draft of the
- *   named variant (ADR 0031). `board-unreadable`: its file is not a board.
+ *   named variant (ADR 0031). `model-unreadable`: its file is not a board.
  * - `repository-unregistered`: a part, relationship or step whose binding or
  *   anchor names a repository this machine has not registered. It stays
  *   silent, and is listed. Also a draft, with no subject, whose dropped parts
@@ -224,7 +224,7 @@ const CodeCheckSkipSchema = z
 	.object({
 		reason: z.enum([
 			"no-current-variant",
-			"board-unreadable",
+			"model-unreadable",
 			"unbound",
 			"repository-unregistered",
 			"ref-not-checked-out",
@@ -317,12 +317,12 @@ const KnownLastChangeSchema = z.discriminatedUnion("kind", [
 const UnknownLastChangeSchema = z
 	.object({
 		kind: z.literal("unknown"),
-		reason: z.enum(["vault-outside-git", "board-file-ignored"]),
+		reason: z.enum(["vault-outside-git", "model-file-ignored"]),
 	})
 	.strict();
 
 /** How far one board is behind its code, per board and per part. */
-const BoardBehindSchema = z.union([
+const ModelBehindSchema = z.union([
 	z
 		.object({
 			board: z.string(),
@@ -371,10 +371,10 @@ const CodeCheckModelSchema = z.strictObject({
 const CodeCheckAnswerSchema = z.object({
 	models: z.array(CodeCheckModelSchema).optional(),
 	timings: z.array(CheckTimingSchema),
-	boards: z.array(CodeCheckBoardSchema),
+	boards: z.array(CodeCheckDocumentSchema),
 	findings: z.array(CodeFindingSchema),
 	skipped: z.array(CodeCheckSkipSchema),
-	behind: z.array(BoardBehindSchema),
+	behind: z.array(ModelBehindSchema),
 });
 
 /**
@@ -383,7 +383,7 @@ const CodeCheckAnswerSchema = z.object({
  * version of the board the pass read, when the pass ran, and its findings on
  * that board. A pane draws them only over the version they were found on.
  */
-const RememberedReadingSchema = CodeCheckBoardSchema.extend({
+const RememberedReadingSchema = CodeCheckDocumentSchema.extend({
 	checkedAt: z.iso.datetime(),
 	findings: z.array(CodeFindingSchema),
 }).strict();
@@ -407,11 +407,11 @@ const RememberedFindingsSchema = z.object({
 type CodeCheckAnswer = z.infer<typeof CodeCheckAnswerSchema>;
 type RememberedReading = z.infer<typeof RememberedReadingSchema>;
 type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
-type CodeCheckBoard = z.infer<typeof CodeCheckBoardSchema>;
+type CodeCheckDocument = z.infer<typeof CodeCheckDocumentSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
-type BoardBehind = z.infer<typeof BoardBehindSchema>;
+type ModelBehind = z.infer<typeof ModelBehindSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindPart = z.infer<typeof BehindPartSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
@@ -425,12 +425,12 @@ export {
 	type BehindPart,
 	BehindSkipSchema,
 	type BehindSkip,
-	BoardBehindSchema,
-	type BoardBehind,
+	ModelBehindSchema,
+	type ModelBehind,
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
-	CodeCheckBoardSchema,
-	type CodeCheckBoard,
+	CodeCheckDocumentSchema,
+	type CodeCheckDocument,
 	CodeCheckSkipSchema,
 	type CodeCheckSkip,
 	CodeEvidenceSchema,

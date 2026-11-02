@@ -1,10 +1,7 @@
 import type { Express } from "express";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import { queryString, requireVault, vaultOfRequest } from "@archboard/workbench/host";
-import {
-	readSemanticBoardConfiguration,
-	structureDiagnostics,
-} from "@archboard/model/vault-policy";
+import { readVaultConfiguration, structureDiagnostics } from "@archboard/model/vault-policy";
 /**
  * Read canonical diagnostics, structure warnings and vocabulary without interpreting legacy boards
  * as live content. A `state` names the draft to check instead of the current architecture.
@@ -18,7 +15,7 @@ function mountArchitectureConfigurationRoutes(app: Express) {
 			state === undefined || state === ""
 				? readArchitectureModel(vault)
 				: await readArchitectureModel(vault, undefined, undefined, { state });
-		const policy = readSemanticBoardConfiguration(vault);
+		const policy = readVaultConfiguration(vault);
 		const diagnostics = model.success
 			? structureDiagnostics(model)
 			: model.diagnostics.map((item) => ({ ...item, severity: "error" as const }));

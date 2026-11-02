@@ -61,8 +61,8 @@ describe("machine-wide opener persistence", () => {
 				resources.defer(() => fixture.dispose());
 				// One board with one bound node, written through the store every other
 				// writer goes through, so the opener resolves a real binding.
-				const { boundBoard } = await import("./support/bound-model.ts");
-				const bound = await boundBoard(vault, fixture.repository, "src/index.ts");
+				const { boundFixture } = await import("./support/bound-model.ts");
+				const bound = await boundFixture(vault, fixture.repository, "src/index.ts");
 				boundNode = bound.node;
 				boundModel = bound.key;
 				const note = bound.file;

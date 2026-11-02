@@ -7,10 +7,10 @@ import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
 
 /** The skill that authors boards; its installed copy also carries the generated schemas and manual. */
-const BOARD_SKILL = "archboard";
+const CONSUMER_SKILL = "archboard";
 
 /** Every skill an install ships, each into its own directory of the skills root. */
-const BUNDLED_SKILLS = [BOARD_SKILL, "archboard-pr"] as const;
+const BUNDLED_SKILLS = [CONSUMER_SKILL, "archboard-pr"] as const;
 type BundledSkill = (typeof BUNDLED_SKILLS)[number];
 
 interface SkillDestination {
@@ -172,7 +172,7 @@ function resolveInvocation(): { command: string; onPath: boolean } {
 }
 
 export {
-	BOARD_SKILL,
+	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,

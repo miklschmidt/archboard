@@ -96,12 +96,12 @@ interface ShellView {
 	/** Every repository the navigator lists, in the server's order. */
 	repositories: readonly ShellRepository[];
 	/** Why the repositories could not be read, or null while they are current. */
-	boardsError: string | null;
+	modelsError: string | null;
 	/** The repositories have not answered yet and nothing of them is in hand. */
-	boardsLoading: boolean;
+	modelsLoading: boolean;
 	/** The page starts on the chooser, so the chooser takes the keys. */
 	choosing: boolean;
-	selectedBoardKey: string | null;
+	selectedPaneKey: string | null;
 	/** One or two panes, in reading order. */
 	panes: readonly ShellPane[];
 	activePaneId: string;
@@ -138,7 +138,7 @@ interface ShellActions {
 	 * @param repository The repository the board is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now. When it does not, a notice says why.
 	 */
-	selectBoard(key: string, paneId?: string, repository?: string): Promise<boolean>;
+	selectModel(key: string, paneId?: string, repository?: string): Promise<boolean>;
 	/**
 	 * Show a board beside the one being read: in the pane that is not active,
 	 * adding the second pane when there is only one.
@@ -154,7 +154,7 @@ interface ShellActions {
 	 * @param root One of its known checkouts.
 	 */
 	chooseCheckout(repository: string, root: string): void;
-	refreshBoards(): void;
+	refreshModels(): void;
 	selectPane(paneId: string): void;
 	addPane(): void;
 	closePane(paneId: string): void;

@@ -48,7 +48,7 @@ function twoPaneRecords(): PaneRecords {
 		clientId: "A-1",
 		connected: true,
 		board: CHECKOUT,
-		boardKey: "Checkout",
+		paneKey: "Checkout",
 		vault: VAULT,
 		version: 3,
 	};
@@ -75,7 +75,7 @@ test("the shell view names the active pane's board and carries its mounted panes
 		["A", "pane-a"],
 		["B", "pane-b"],
 	]);
-	expect(view.selectedBoardKey).toBeNull();
+	expect(view.selectedPaneKey).toBeNull();
 });
 
 test("the focused pane's board key is the selected navigator entry", () => {
@@ -90,8 +90,8 @@ test("the focused pane's board key is the selected navigator entry", () => {
 		notices: [],
 		agentActivity: {},
 	});
-	expect(view.selectedBoardKey).toBe("Checkout");
-	expect(view.boardsError).toBe("offline");
+	expect(view.selectedPaneKey).toBe("Checkout");
+	expect(view.modelsError).toBe("offline");
 	expect(view.presentation).toEqual({ kind: "live", paneId: "A" });
 	expect(view.panes[0]?.stage).toBeNull();
 });
@@ -118,7 +118,7 @@ test("what an agent does in a vault is shown whether or not a pane of the tab is
 			theme: "dark",
 			list: initialPaneList(),
 			records: patchRecord({}, "A", {
-				status: { ...emptyPaneStatus("A"), board: CHECKOUT, boardKey: "Checkout", vault },
+				status: { ...emptyPaneStatus("A"), board: CHECKOUT, paneKey: "Checkout", vault },
 				holder: null,
 			}),
 			panes: {},

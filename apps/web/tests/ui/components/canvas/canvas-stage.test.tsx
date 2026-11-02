@@ -9,7 +9,7 @@ import { expect, test } from "bun:test";
 import {
 	PANE_VAULT,
 	NOTHING_DRAWN,
-	NO_SUCH_BOARD,
+	NO_SUCH_MODEL,
 	UNREADABLE,
 	drawing,
 	mountStage,
@@ -31,7 +31,7 @@ import {
 	takeFrames,
 	wheelAt,
 } from "#tests/ui/support/canvas/camera-probes.ts";
-import { announceSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { announceModelChange } from "#ui/state/canvas/model-changes.ts";
 
 test("a pane with no answer yet shows the shape of a diagram rather than a void", () => {
 	mountStage();
@@ -49,7 +49,7 @@ test("a board that is there with nothing on it says exactly that", async () => {
 });
 
 test("a board the vault has not got is named rather than shrugged at", async () => {
-	server.reply = NO_SUCH_BOARD;
+	server.reply = NO_SUCH_MODEL;
 	mountStage();
 	await settle();
 	expect(stageState()).toBe("error");
@@ -129,13 +129,13 @@ test("the camera moves with the keyboard and survives the board changing under i
 	const transform = surface().style.transform;
 	server.reply = { status: 200, body: drawing(2) };
 	// News of a board of the same name in another repository is not news of this one.
-	act(() => announceSemanticBoardChange("/work/payments/.archboard/vault", "pipeline", 2));
+	act(() => announceModelChange("/work/payments/.archboard/vault", "pipeline", 2));
 	await settle();
 	expect(server.calls.length).toBe(asked);
-	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
+	act(() => announceModelChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(server.calls.length).toBeGreaterThan(asked);
-	expect(part("semantic-board-stage").getAttribute("data-version")).toBe("2");
+	expect(part("canvas-stage").getAttribute("data-version")).toBe("2");
 	expect(surface().style.transform).toBe(transform);
 });
 
@@ -319,12 +319,12 @@ test("a refresh that fails keeps the diagram, says the picture is old, and retri
 	// The board stops being readable after it had been readable. The picture
 	// stays: showing nothing would be worse than showing something old.
 	server.reply = UNREADABLE;
-	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
+	act(() => announceModelChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(stageState()).toBe("stale");
 	expect(surface().querySelector("svg")).not.toBeNull();
-	expect(part("semantic-board-stage").getAttribute("data-version")).toBe("1");
-	const disclosure = part("semantic-board-refresh-failure");
+	expect(part("canvas-stage").getAttribute("data-version")).toBe("1");
+	const disclosure = part("canvas-refresh-failure");
 	expect(disclosure.textContent).toContain("last picture that loaded");
 	expect(disclosure.textContent).toContain("not valid JSON");
 	expect(surface().style.transform).toBe(camera);
@@ -342,8 +342,8 @@ test("a refresh that fails keeps the diagram, says the picture is old, and retri
 	await settle();
 	expect(server.calls.length).toBeGreaterThan(asked);
 	expect(stageState()).toBe("drawn");
-	expect(document.querySelector("[data-slot='semantic-board-refresh-failure']")).toBeNull();
-	expect(part("semantic-board-stage").getAttribute("data-version")).toBe("2");
+	expect(document.querySelector("[data-slot='canvas-refresh-failure']")).toBeNull();
+	expect(part("canvas-stage").getAttribute("data-version")).toBe("2");
 	expect(surface().style.transform).toBe(camera);
 });
 
@@ -357,10 +357,10 @@ test("an empty board whose refresh fails says so rather than looking current", a
 	// said — and the read failed. Nothing on screen may go on implying that
 	// this board is still the empty one it was.
 	server.reply = UNREADABLE;
-	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 4));
+	act(() => announceModelChange(PANE_VAULT, "pipeline", 4));
 	await settle();
 	expect(stageState()).toBe("stale");
-	const disclosure = part("semantic-board-refresh-failure");
+	const disclosure = part("canvas-refresh-failure");
 	expect(disclosure.textContent).toContain("last picture that loaded");
 
 	const retry = disclosure.querySelector("button");
@@ -373,7 +373,7 @@ test("an empty board whose refresh fails says so rather than looking current", a
 	});
 	await settle();
 	expect(stageState()).toBe("drawn");
-	expect(document.querySelector("[data-slot='semantic-board-refresh-failure']")).toBeNull();
+	expect(document.querySelector("[data-slot='canvas-refresh-failure']")).toBeNull();
 });
 
 /**

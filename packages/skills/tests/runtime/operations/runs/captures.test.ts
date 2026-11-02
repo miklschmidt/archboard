@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import {
 	CAPTURE_TILE_SIDE_PX,
 	captureFromReceipt,
@@ -249,14 +249,14 @@ describe("the visual verdict as it stands", () => {
 });
 
 /** A saved board holding only the views a capture reads. */
-const boardWith = (views: SemanticBoard["views"]) => ({ views }) as unknown as SemanticBoard;
+const documentWith = (views: LegacyBoard["views"]) => ({ views }) as unknown as LegacyBoard;
 
 describe("every view of a board", () => {
 	test("comes to one capture per view the author made, in its grammar, with a unique label that never reads as a tile", () => {
 		const boards = new Map([
 			[
 				"Flask",
-				boardWith([
+				documentWith([
 					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
 					{ id: "w2", name: "Request path!", grammar: "sequence", scope: { kind: "all" } },
 					{ id: "w3", name: "Tile 3", grammar: "architecture", scope: { kind: "all" } },
@@ -292,7 +292,7 @@ describe("every view of a board", () => {
 		const boards = new Map([
 			[
 				"Flask JSON",
-				boardWith([
+				documentWith([
 					{ id: "w1", name: "Request path", grammar: "architecture", scope: { kind: "all" } },
 				]),
 			],
@@ -308,7 +308,7 @@ describe("every view of a board", () => {
 	test("adds nothing for a board with no views or no board at all", () => {
 		const named = { label: "flask", board: "Flask" };
 		const requests = [named, { label: "views", board: "Flask", views: "every" as const }];
-		expect(expandCaptures(requests, new Map([["Flask", boardWith([])]]))).toEqual([named]);
+		expect(expandCaptures(requests, new Map([["Flask", documentWith([])]]))).toEqual([named]);
 		expect(expandCaptures(requests, new Map())).toEqual([named]);
 	});
 });

@@ -16,8 +16,8 @@
 // key in another repository is another board (ADR 0050), so a pane moving
 // between them has moved.
 
-import { boardIn, repositoryIn, type WorkspaceAddress } from "#ui/rules/reading-routing/address.ts";
-import type { AskedBoard, OpenedBoard } from "#ui/rules/reading-routing/contracts.ts";
+import { modelIn, repositoryIn, type WorkspaceAddress } from "#ui/rules/reading-routing/address.ts";
+import type { AskedModel, OpenedModel } from "#ui/rules/reading-routing/contracts.ts";
 import type { NavigationIntent } from "#ui/state/reading-routing/intent.ts";
 import { modelReading } from "#ui/rules/reading-routing/model-address.ts";
 
@@ -32,7 +32,7 @@ interface Operation {
 	readonly operator: Operator;
 	readonly paneId: string;
 	/** The board a restore asked for, so one it cannot reach can be named. */
-	readonly asked: AskedBoard | null;
+	readonly asked: AskedModel | null;
 	/** What that pane was showing when it was asked, so its move is observable. */
 	readonly from: string | null;
 	/** The repository of that board, when it was asked. */
@@ -69,7 +69,7 @@ interface Operation {
 function startOperation(
 	operator: Operator,
 	paneId: string,
-	asked: AskedBoard | null,
+	asked: AskedModel | null,
 	displayed: WorkspaceAddress,
 	intent: NavigationIntent | null = null,
 ): Operation {
@@ -77,7 +77,7 @@ function startOperation(
 		operator,
 		paneId,
 		asked,
-		from: boardIn(displayed, paneId),
+		from: modelIn(displayed, paneId),
 		fromRepository: repositoryIn(displayed, paneId),
 		answer: null,
 		openedKey: null,
@@ -97,12 +97,12 @@ function startOperation(
 function operationAnswered(
 	operation: Operation,
 	answer: OperationAnswer,
-	opened: OpenedBoard | null = null,
+	opened: OpenedModel | null = null,
 ): Operation {
 	return {
 		...operation,
 		answer,
-		openedKey: opened?.boardKey ?? null,
+		openedKey: opened?.paneKey ?? null,
 		openedRepository: opened?.repository ?? null,
 	};
 }
@@ -148,7 +148,7 @@ function operationSettled(
  */
 function operationMovedPane(operation: Operation, displayed: WorkspaceAddress): boolean {
 	return (
-		boardIn(displayed, operation.paneId) !== operation.from ||
+		modelIn(displayed, operation.paneId) !== operation.from ||
 		repositoryIn(displayed, operation.paneId) !== operation.fromRepository
 	);
 }
@@ -180,7 +180,7 @@ function canonicalDestination(operation: Operation) {
  */
 function atOpenedDestination(operation: Operation, displayed: WorkspaceAddress): boolean {
 	return (
-		boardIn(displayed, operation.paneId) === operation.openedKey &&
+		modelIn(displayed, operation.paneId) === operation.openedKey &&
 		repositoryIn(displayed, operation.paneId) === operation.openedRepository
 	);
 }

@@ -123,7 +123,7 @@ describe.serial("the repositories of the navigator", () => {
 		const mark = pane.mark();
 		const reader = await inMain("/api/panes/show", { method: "POST", doing: false, body });
 		expect(reader.status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
+		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ board: null, vault, repository: ORDERS });
 	});
 
@@ -172,7 +172,7 @@ describe.serial("the repositories of the navigator", () => {
 			body: JSON.stringify({ repository: ORDERS, root: worktree }),
 		});
 		expect(chose.status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
+		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: worktreeVault, repository: ORDERS });
 		await pane.waitFor("repositories_changed", mark);
 		expect(await elsewhere.waitFor("repositories_changed", elsewhereMark)).toBeDefined();
@@ -239,7 +239,7 @@ describe.serial("the repositories of the navigator", () => {
 			back.once("error", fail);
 		});
 		expect(first).toMatchObject({
-			type: "pane_board",
+			type: "pane_place",
 			board: "ledger",
 			vault: mainVault,
 			repository: ORDERS,
@@ -269,7 +269,7 @@ describe.serial("the repositories of the navigator", () => {
 		// that checkout's server. This server follows the registry it reads all the same.
 		const used = pane.mark();
 		cli("repo", "use", worktree);
-		expect(await pane.waitFor("pane_board", used)).toMatchObject({
+		expect(await pane.waitFor("pane_place", used)).toMatchObject({
 			board: "payments",
 			vault: vaultOf(worktree),
 			repository: ORDERS,
@@ -281,12 +281,12 @@ describe.serial("the repositories of the navigator", () => {
 		expect(refused.status).toBe(422);
 		expect(((await refused.json()) as { code: string }).code).toBe("CHECKOUT_UNUSABLE");
 		await pane.sync();
-		expect(pane.events.slice(mark).filter((event) => event.type === "pane_board")).toEqual([]);
+		expect(pane.events.slice(mark).filter((event) => event.type === "pane_place")).toEqual([]);
 
 		// With a vault it is chosen, and the pane moves there with its board.
 		const fixVault = vaultOf(fix);
 		expect((await choose(fix)).status).toBe(200);
-		const moved = await pane.waitFor("pane_board", mark);
+		const moved = await pane.waitFor("pane_place", mark);
 		expect(moved).toMatchObject({ board: "payments", vault: fixVault, repository: ORDERS });
 	});
 

@@ -11,7 +11,7 @@
 // is no marker left over for a later change to be mistaken for.
 
 import {
-	boardIn,
+	modelIn,
 	repositoryIn,
 	viewIn,
 	type WorkspaceAddress,
@@ -78,7 +78,7 @@ function met(intent: NavigationIntent, address: WorkspaceAddress): boolean {
 	// once its own command has been seen through, so there is no window in which
 	// somebody else's change could be taken for theirs.
 	return (
-		boardIn(address, intent.paneId) !== intent.from ||
+		modelIn(address, intent.paneId) !== intent.from ||
 		repositoryIn(address, intent.paneId) !== intent.repository
 	);
 }

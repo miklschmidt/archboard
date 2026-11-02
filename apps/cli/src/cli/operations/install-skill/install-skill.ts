@@ -4,7 +4,7 @@ import { z } from "zod";
 import { defineCommand } from "#cli/protocol/contract/contract.ts";
 import type { CommandContext } from "#cli/protocol/contract/contract.ts";
 import {
-	BOARD_SKILL,
+	CONSUMER_SKILL,
 	BUNDLED_SKILLS,
 	type BundledSkill,
 	type SkillDestination,
@@ -138,7 +138,7 @@ interface PlannedSkill {
  */
 function stageSkill(plan: PlannedSkill, staging: string): void {
 	fs.cpSync(plan.source, staging, { recursive: true });
-	if (plan.skill === BOARD_SKILL) {
+	if (plan.skill === CONSUMER_SKILL) {
 		prepareSkillArtifacts(staging, { root: SOURCE_CHECKOUT });
 	}
 }

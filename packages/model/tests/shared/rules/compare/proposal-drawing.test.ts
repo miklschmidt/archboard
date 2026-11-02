@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
+	LegacyBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	type LegacyBoard,
 } from "#shared/schemas/legacy-board.ts";
 import { VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { drawingOf } from "#shared/rules/compare/drawing.ts";
@@ -14,17 +14,17 @@ const LEGACY = { id: "lg", name: "Legacy intake", kind: "module", parent: "pl" }
 const LEDGER = { id: "ld", name: "Ledger", kind: "service" };
 const OLD_WIRE = { id: "e1", from: "gw", to: "lg", kind: "call" };
 const KEPT_WIRE = { id: "e2", from: "gw", to: "ld", kind: "call" };
-const parseBoard = (value: unknown): SemanticBoard =>
-	SemanticBoardSchema.parse(withFixtureOrders(value));
+const parseBoard = (value: unknown): LegacyBoard =>
+	LegacyBoardSchema.parse(withFixtureOrders(value));
 
 /**
  * A board with a baseline and one proposal derived from it.
  * @param proposed What the proposal says its architecture is.
  * @returns The board.
  */
-const boardWith = (proposed: Record<string, unknown>): SemanticBoard =>
+const documentWith = (proposed: Record<string, unknown>): LegacyBoard =>
 	parseBoard({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "payments",
@@ -71,7 +71,7 @@ describe("the picture drawn for a proposal", () => {
 		],
 		edges: [KEPT_WIRE],
 	});
-	const board = boardWith(PROPOSED);
+	const board = documentWith(PROPOSED);
 	const proposal = board.variants[1]!;
 
 	test("puts back what the change took away, and says how each subject stands", () => {
@@ -116,7 +116,7 @@ describe("what a narrower reading is allowed to say", () => {
 		// elsewhere; this view is only about the ledger.
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
 		const board = parseBoard({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "payments",
@@ -155,7 +155,7 @@ describe("what a narrower reading is allowed to say", () => {
 
 	test("a view that selects a deleted module shows it with its container", () => {
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEDGER], edges: [KEPT_WIRE] });
-		const board = boardWith(proposed);
+		const board = documentWith(proposed);
 		const scope = { kind: "selection" as const, nodes: ["pl", "gw", "lg"], edges: [], flows: [] };
 		const drawing = drawingOf(board, board.variants[1]!, scope);
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual(["gw", "lg", "pl"]);
@@ -165,7 +165,7 @@ describe("what a narrower reading is allowed to say", () => {
 	});
 
 	test("a selected deleted edge excludes other deleted edges between the same nodes", () => {
-		const board = boardWith({ nodes: [PLATFORM, GATEWAY, LEGACY, LEDGER], edges: [] });
+		const board = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY, LEDGER], edges: [] });
 		board.variants[0]!.content.edges.push({
 			...board.variants[0]!.content.edges[0]!,
 			id: "parallel",
@@ -183,7 +183,7 @@ describe("what a narrower reading is allowed to say", () => {
 
 	test("a removed container brings its removed contents back with it", () => {
 		const proposed = content({ nodes: [LEDGER], edges: [] });
-		const board = boardWith(proposed);
+		const board = documentWith(proposed);
 		const drawing = drawingOf(board, board.variants[1]!);
 		expect(drawing.content.nodes.map((node) => node.id).toSorted()).toEqual([
 			"gw",
@@ -210,7 +210,7 @@ describe("a sequence a proposal cut into", () => {
 			flows: [{ ...FLOW, steps: [STEPS[1]] }],
 		});
 		const board = parseBoard({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "payments",
@@ -254,7 +254,7 @@ describe("a view that selects everything", () => {
 		// A named `all` view and no view at all are the same reading, so a root
 		// the proposal deleted has to appear in both or in neither.
 		const proposed = content({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [] });
-		const board = boardWith(proposed);
+		const board = documentWith(proposed);
 		const named = drawingOf(board, board.variants[1]!, { kind: "all" });
 		expect(named.content.nodes.map((node) => node.id)).toContain("ld");
 		expect(named.changes?.standing["ld"]).toBe("removed");
@@ -272,9 +272,9 @@ describe("what a whole picture owes a reader", () => {
 	 * A board whose proposal dropped the whole exchange.
 	 * @returns The board.
 	 */
-	const droppedFlow = (): SemanticBoard =>
+	const droppedFlow = (): LegacyBoard =>
 		parseBoard({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "payments",
@@ -339,9 +339,9 @@ describe("a sequence read through a view that dropped a participant", () => {
 	 * the board but no longer part of the exchange.
 	 * @returns The board.
 	 */
-	const rerouted = (): SemanticBoard =>
+	const rerouted = (): LegacyBoard =>
 		parseBoard({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "payments",
@@ -397,7 +397,7 @@ describe("a sequence read through a view that dropped a participant", () => {
 });
 
 test("a shared scope preserves its deleted exchange without unrelated deletions", () => {
-	const board = boardWith({
+	const board = documentWith({
 		nodes: [PLATFORM, GATEWAY, LEDGER],
 		edges: [KEPT_WIRE],
 		flows: [
@@ -455,7 +455,7 @@ test("a shared scope preserves its deleted exchange without unrelated deletions"
 
 describe("the overview of a proposal", () => {
 	test("marks what the proposal removed, as every reading does", () => {
-		const board = boardWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
+		const board = documentWith({ nodes: [PLATFORM, GATEWAY, LEGACY], edges: [OLD_WIRE] });
 		const drawn = drawingOf(board, board.variants[1]!, { kind: "overview" });
 		// The ledger is a root part and the line to it is drawn from the closed
 		// platform; the wire inside the platform is the platform's own business.

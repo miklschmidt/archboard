@@ -5,8 +5,8 @@ import {
 	closePane,
 	getPanes,
 	openPane,
-	showBoardInPane,
-	type ShowBoardResponse,
+	showModelInPane,
+	type ShowModelResponse,
 } from "#cli/clients/server/panes.ts";
 import { paneWords } from "@archboard/server-lifecycle/panes";
 import { findVault } from "@archboard/workspace/vault";
@@ -366,7 +366,7 @@ async function callerVault(): Promise<string | null> {
  * @param result The show's answer.
  * @returns The line, or none when the show changed no choice.
  */
-function choiceLine(result: Pick<ShowBoardResponse, "chose">): string[] {
+function choiceLine(result: Pick<ShowModelResponse, "chose">): string[] {
 	const { chose } = result;
 	if (chose === undefined) return [];
 	const instead = chose.replaced === null ? "" : ` in place of ${chose.replaced}`;
@@ -519,7 +519,7 @@ const browserShowContract = defineCommand({
 				? flags
 				: context.parse(ArchitecturePaneReadingSchema, await statedJson({ input: file }, context));
 		await context.require("browser", "Show architecture");
-		const result = await showBoardInPane(reading, pane);
+		const result = await showModelInPane(reading, pane);
 		return { result: ShowResultSchema.parse(result), diagnostics: choiceLine(result) };
 	},
 });

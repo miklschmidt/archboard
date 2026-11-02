@@ -225,9 +225,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="semantic-board-stage"]') === null`,
-		),
+		await browser.eval<boolean>(`document.querySelector('[data-slot="canvas-stage"]') === null`),
 	).toBe(true);
 	expect(readFileSync(join(fixture.vault, "Shop.semantic.json"), "utf8")).toBe(fixture.original);
 	expect(
@@ -271,9 +269,7 @@ test("an unmigrated repository exposes migration and follows durable recovery to
 		WAIT,
 	);
 	expect(
-		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="semantic-board-stage"]') === null`,
-		),
+		await browser.eval<boolean>(`document.querySelector('[data-slot="canvas-stage"]') === null`),
 	).toBe(true);
 	const recovered = await pollUntil(
 		() =>

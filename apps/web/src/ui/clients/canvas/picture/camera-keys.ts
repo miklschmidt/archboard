@@ -1,5 +1,5 @@
 import { EXPLORING_MS } from "@archboard/timing";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { PAN_STEP, type Size } from "#ui/rules/canvas/camera/camera.ts";
 
 /** Which way each arrow key moves the diagram under the viewport. */
@@ -24,7 +24,7 @@ const ZOOM_KEYS: Readonly<Record<string, number>> = { "+": 1, "=": 1, "-": -1, _
  */
 function moveCameraByKey(
 	key: string,
-	camera: Pick<BoardCamera, "ease" | "zoomCentre" | "glide">,
+	camera: Pick<PictureCamera, "ease" | "zoomCentre" | "glide">,
 	content: Size,
 	reducedMotion: boolean,
 ): boolean {

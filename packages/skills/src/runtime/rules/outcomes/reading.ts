@@ -5,7 +5,7 @@
 
 import {
 	currentVariant,
-	type SemanticBoard as LegacyBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import type { DiagramTheme } from "@archboard/model/render-reply";
@@ -23,7 +23,7 @@ import type { VaultDiagnosticSchema } from "@archboard/model/policy";
 import type { z } from "zod";
 
 type Model = Extract<import("@archboard/model/contract").ArchitectureModelRead, { success: true }>;
-type SemanticBoard = Omit<
+type EvaluatedDocument = Omit<
 	LegacyBoard,
 	"schemaVersion" | "kind" | "level" | "createdAt" | "updatedAt" | "version"
 > & { version?: number; revision?: string; architecture?: Model };
@@ -81,9 +81,9 @@ interface InspectedGroup {
 /** Everything a run's checks can see. */
 interface Reading {
 	/** Every board in the vault after the author ran, by name. */
-	readonly boards: ReadonlyMap<string, SemanticBoard>;
+	readonly boards: ReadonlyMap<string, EvaluatedDocument>;
 	/** Every board as the fixtures left it, before the author ran. */
-	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
+	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	/** The vault policy as configured after the run. */
 	readonly policy: SemanticPolicy;
 	/** What `archboard check semantics` reported after the run. */
@@ -115,7 +115,7 @@ type Finding = Omit<CheckVerdict, "check">;
  * @param asked The variant's id or name, when the check names one.
  * @returns The variant, or undefined when the board has no such variant.
  */
-function variantOf(board: SemanticBoard, asked?: string): SemanticVariant | undefined {
+function variantOf(board: EvaluatedDocument, asked?: string): SemanticVariant | undefined {
 	return asked === undefined ? currentVariant(board) : variantNamed(board, asked);
 }
 
@@ -200,7 +200,7 @@ function located(
 	reading: Reading,
 	board: string | undefined,
 	variant: string | undefined,
-): { readonly board: SemanticBoard; readonly variant: SemanticVariant } | Finding {
+): { readonly board: EvaluatedDocument; readonly variant: SemanticVariant } | Finding {
 	const found = namedValue(reading.boards, board);
 	if (found === undefined) return finding(false, `board "${board ?? "?"}" is not in the vault`);
 	const chosen = variantOf(found, variant);
@@ -242,4 +242,4 @@ export {
 	type VideoAttempt,
 };
 
-export type { SemanticBoard as EvaluationArchitecture };
+export type { EvaluatedDocument as EvaluationArchitecture };

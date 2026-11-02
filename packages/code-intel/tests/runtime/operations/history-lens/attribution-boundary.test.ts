@@ -9,8 +9,8 @@ import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
 import {
 	currentVariant,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -27,8 +27,8 @@ const together: string[] = [];
 let firstOnly = "";
 let clock = 1_790_000_000;
 
-const board = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const board = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "bd",
 	name: "Boundary",
@@ -156,7 +156,7 @@ test("large fallback commits do not suppress coupling among precise ordinary com
 test("footprint uses a proposal's changed symbol binding for the same subject id", async () => {
 	const current = currentVariant(board);
 	if (current === undefined) throw new Error("missing current variant");
-	const proposal = SemanticBoardSchema.parse({
+	const proposal = LegacyBoardSchema.parse({
 		...board,
 		variants: [
 			...board.variants,

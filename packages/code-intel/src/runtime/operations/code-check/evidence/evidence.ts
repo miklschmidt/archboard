@@ -71,7 +71,7 @@ import type { CodeEvidence } from "#shared/protocol/code-check.ts";
 type Piece = CodeEvidence & { readonly from: string; readonly to: string };
 
 /** The evidence between the parts of one board, and the files a grammar read. */
-interface BoardEvidence {
+interface StateEvidence {
 	readonly pieces: readonly Piece[];
 	/** For each checkout or tree of a ref, by its root, the files the pass read through code facts rather than as text. */
 	readonly parsed: ReadonlyMap<string, ReadonlySet<string>>;
@@ -532,7 +532,7 @@ async function evidenceInRepo(
 async function evidenceOf(
 	codes: ReadonlyMap<string, PartCode>,
 	reading: EvidenceReading,
-): Promise<BoardEvidence> {
+): Promise<StateEvidence> {
 	const byTree = new Map<string, [ReadPart, ...ReadPart[]]>();
 	for (const code of codes.values()) {
 		if (code.status !== "read") continue;
@@ -554,4 +554,4 @@ async function evidenceOf(
 	return { pieces: firstOfEach(pieces, values), parsed, unfollowed, values };
 }
 
-export { type BoardEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };
+export { type StateEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };

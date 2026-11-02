@@ -203,7 +203,7 @@ beforeAll(async () => {
 		},
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
+	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	outcome = await check.checkCode(vault, read.boards, new AbortController().signal);
 });

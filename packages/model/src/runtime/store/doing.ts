@@ -30,7 +30,7 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { boardMemoryKey } from "#runtime/store/legacy-address.ts";
+import { modelMemoryKey } from "#runtime/store/legacy-address.ts";
 import type { HolderKind } from "#runtime/store/lock/lock.ts";
 
 /**
@@ -65,11 +65,11 @@ interface DoingEntry {
 }
 
 interface Store {
-	/** Keyed by `boardMemoryKey`: one server serves several vaults (ADR 0049). */
-	byBoard: Map<string, DoingEntry[]>;
+	/** Keyed by `modelMemoryKey`: one server serves several vaults (ADR 0049). */
+	byModel: Map<string, DoingEntry[]>;
 }
 
-const processStore: Store = { byBoard: new Map<string, DoingEntry[]>() };
+const processStore: Store = { byModel: new Map<string, DoingEntry[]>() };
 /**
  * Where the lines are kept, which is this process and nowhere else: what an
  * agent said it was doing is a fact about a server that is running, not one
@@ -125,13 +125,13 @@ function checkDoing(raw: unknown): DoingCheck {
  * @returns The board's lines, oldest first.
  */
 function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntry[] {
-	const key = boardMemoryKey(vault, board);
-	const { byBoard } = store();
-	const existing = byBoard.get(key) ?? [];
+	const key = modelMemoryKey(vault, board);
+	const { byModel } = store();
+	const existing = byModel.get(key) ?? [];
 	const last = existing[existing.length - 1];
 	const repeat = last !== undefined && last.doing === entry.doing;
 	const list = [...(repeat ? existing.slice(0, -1) : existing), entry].slice(-DOING_KEPT);
-	byBoard.set(key, list);
+	byModel.set(key, list);
 	return list;
 }
 
@@ -142,7 +142,7 @@ function recordDoing(vault: string, board: string, entry: DoingEntry): DoingEntr
  * @returns The lines.
  */
 function recentDoing(vault: string, board: string): DoingEntry[] {
-	return store().byBoard.get(boardMemoryKey(vault, board)) ?? [];
+	return store().byModel.get(modelMemoryKey(vault, board)) ?? [];
 }
 
 /**
@@ -156,11 +156,11 @@ function recentDoing(vault: string, board: string): DoingEntry[] {
  * @param which.board Which board.
  */
 function forgetDoing(which?: { readonly vault: string; readonly board: string }): void {
-	const { byBoard } = store();
+	const { byModel } = store();
 	if (which === undefined) {
-		byBoard.clear();
+		byModel.clear();
 	} else {
-		byBoard.delete(boardMemoryKey(which.vault, which.board));
+		byModel.delete(modelMemoryKey(which.vault, which.board));
 	}
 }
 

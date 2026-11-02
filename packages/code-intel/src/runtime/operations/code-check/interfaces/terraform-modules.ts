@@ -28,7 +28,7 @@
 //
 // Each piece of evidence is the variable's one use: the argument it sets.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { RepoCheckout } from "#runtime/operations/code-check/part-code.ts";
 import { siteOf } from "#runtime/operations/code-check/evidence/relationships.ts";
 import { isMetaArgument } from "#runtime/operations/code-facts/terraform/terraform-providers.ts";
@@ -338,7 +338,7 @@ function shallowMessage(
  * @returns The finding, or none.
  */
 function terraformFindings(
-	read: BoardToCheck,
+	read: StateToCheck,
 	container: SemanticNode,
 	shape: ModuleShape | undefined,
 ): CodeFinding[] {

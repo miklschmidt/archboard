@@ -151,7 +151,7 @@ fn ready<T>(answer: Poll<T>) -> T {
 
 /// A board whose one block could stack: a line from a card in one container
 /// into a card in another.
-fn stacking_board() -> (Content, Measured) {
+fn stacking_picture() -> (Content, Measured) {
     let content: Content = serde_json::from_value(json!({
         "nodes": [
             { "id": "left", "name": "Left", "kind": "service" },
@@ -203,7 +203,7 @@ fn whole(width: f64) -> String {
 #[test]
 fn a_graph_with_containers_asks_one_whole_solve() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     waits(layout.as_mut());
@@ -243,7 +243,7 @@ fn nesting_is_fixed_before_the_only_solve() {
 #[test]
 fn a_solve_failure_reaches_the_caller_without_another_reply() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut layout = Box::pin(drawing(&host, &content, &measured));
     waits(layout.as_mut());
     host.answer(0, Err(Unsolved::Failed("host failure".to_owned())));
@@ -259,7 +259,7 @@ fn a_solve_failure_reaches_the_caller_without_another_reply() {
 fn independent_graphs_keep_their_answers_when_the_host_replies_in_reverse_order() {
     let host = Host::default();
     let (plain, plain_size) = board();
-    let (contained, contained_size) = stacking_board();
+    let (contained, contained_size) = stacking_picture();
     let mut first = Box::pin(drawing(&host, &plain, &plain_size));
     let mut second = Box::pin(drawing(&host, &contained, &contained_size));
     waits(first.as_mut());
@@ -282,7 +282,7 @@ fn independent_graphs_keep_their_answers_when_the_host_replies_in_reverse_order(
 #[test]
 fn dropping_a_layout_drops_its_solve_and_late_replies_do_not_answer_a_new_layout() {
     let host = Host::default();
-    let (content, measured) = stacking_board();
+    let (content, measured) = stacking_picture();
     let mut first = Box::pin(drawing(&host, &content, &measured));
     waits(first.as_mut());
     drop(first);

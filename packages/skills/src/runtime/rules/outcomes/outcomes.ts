@@ -9,7 +9,7 @@ import {
 	plausibleSubjects,
 	recordingMatches,
 } from "#runtime/rules/outcomes/naming.ts";
-import { boardCheck } from "#runtime/rules/outcomes/outcomes-content.ts";
+import { contentCheck } from "#runtime/rules/outcomes/outcomes-content.ts";
 import { familyCheck } from "#runtime/rules/outcomes/outcomes-family.ts";
 import { videoRendered } from "#runtime/operations/runs/replay.ts";
 import {
@@ -237,7 +237,7 @@ function evaluateOutcomes(checks: readonly OutcomeCheck[], reading: Reading): Ch
 		const run = recordingMatches(
 			() =>
 				VAULT_OWNERS[check.check]?.(check, reading) ??
-				boardCheck(check, reading) ??
+				contentCheck(check, reading) ??
 				familyCheck(check, reading),
 		);
 		const found = run.value ?? finding(false, `no owner for check "${check.check}"`);

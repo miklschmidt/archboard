@@ -57,7 +57,7 @@ import { DocumentReferenceSchema } from "@archboard/code-binding/bindings";
  * and refuses it by name. A bump would only have made every board of every
  * vault rewrite itself on its first read.
  */
-const SEMANTIC_BOARD_SCHEMA_VERSION = "2.5.0";
+const LEGACY_BOARD_SCHEMA_VERSION = "2.5.0";
 
 /**
  * The major version this build implements. A document whose major differs is
@@ -70,7 +70,7 @@ const SEMANTIC_BOARD_SCHEMA_VERSION = "2.5.0";
  * field rather than the version, because the parse runs before the version is
  * looked at and a later minor passes that check anyway.
  */
-const SUPPORTED_SCHEMA_MAJOR = Number(SEMANTIC_BOARD_SCHEMA_VERSION.split(".")[0]);
+const SUPPORTED_SCHEMA_MAJOR = Number(LEGACY_BOARD_SCHEMA_VERSION.split(".")[0]);
 
 /** The first version number a freshly created board carries. */
 const FIRST_BOARD_VERSION = 1;
@@ -129,7 +129,7 @@ const TimestampSchema = z.iso.datetime();
  * one. Keeping the value slug-shaped makes authored levels stable in JSON,
  * commands and the compact label shown to a reader.
  */
-const SemanticBoardLevelSchema = z
+const LegacyBoardLevelSchema = z
 	.string()
 	.trim()
 	.min(1, "level is required")
@@ -137,7 +137,7 @@ const SemanticBoardLevelSchema = z
 		/^[a-z0-9]+(?:[-_.][a-z0-9]+)*$/iu,
 		'level must use letters, digits, "-", "_" or "." (the vocabulary in use is system, service, module)',
 	);
-type SemanticBoardLevel = z.infer<typeof SemanticBoardLevelSchema>;
+type LegacyBoardLevel = z.infer<typeof LegacyBoardLevelSchema>;
 
 /**
  * One architectural state.
@@ -245,17 +245,17 @@ type Shelving = z.infer<typeof ShelvingSchema>;
  *
  * The shape alone does not make a document coherent — an edge can name a node
  * that is not there, and a containment chain can close on itself. Those are
- * checked by `checkSemanticBoard`, which runs on everything read and on every
+ * checked by `checkLegacyBoard`, which runs on everything read and on every
  * candidate before it is written.
  */
-const SemanticBoardSchema = z
+const LegacyBoardSchema = z
 	.object({
 		schemaVersion: SemanticVersionFieldSchema,
 		kind: z.literal("semantic-board"),
 		id: SemanticIdSchema,
 		name: DisplayNameSchema,
 		formerNames: FormerNamesSchema.optional(),
-		level: SemanticBoardLevelSchema,
+		level: LegacyBoardLevelSchema,
 		version: z.int().min(FIRST_BOARD_VERSION),
 		createdAt: TimestampSchema,
 		updatedAt: TimestampSchema,
@@ -289,7 +289,7 @@ const SemanticBoardSchema = z
 		trackedEmbeds: z.array(TrackedEmbedSchema).min(1).optional(),
 	})
 	.strict();
-type SemanticBoard = z.infer<typeof SemanticBoardSchema>;
+type LegacyBoard = z.infer<typeof LegacyBoardSchema>;
 
 /**
  * The version a board will carry once the write in flight lands.
@@ -301,7 +301,7 @@ type SemanticBoard = z.infer<typeof SemanticBoardSchema>;
  * @param board The board as it stands, or null before there is one.
  * @returns The version the write in flight will produce.
  */
-function nextVersion(board: Pick<SemanticBoard, "version"> | null): number {
+function nextVersion(board: Pick<LegacyBoard, "version"> | null): number {
 	return (board?.version ?? 0) + 1;
 }
 
@@ -311,7 +311,7 @@ function nextVersion(board: Pick<SemanticBoard, "version"> | null): number {
  * @returns The current variant, or undefined when the board has none.
  */
 function currentVariant(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 ): SemanticVariant | undefined {
 	return board.variants.find((variant) => variant.id === board.current);
 }
@@ -322,7 +322,7 @@ function currentVariant(
  * @param board The board, or as much of it as says what is current.
  * @returns True when the board has no current variant.
  */
-function nothingBuilt(board: Pick<SemanticBoard, "current">): boolean {
+function nothingBuilt(board: Pick<LegacyBoard, "current">): boolean {
 	return board.current === undefined;
 }
 
@@ -356,7 +356,7 @@ function asksForDesignation(asked: string): boolean {
  * @returns The variant, or undefined when nothing answers to it.
  */
 function variantNamed(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	name: string,
 ): SemanticVariant | undefined {
 	return (
@@ -374,7 +374,7 @@ function variantNamed(
  * @returns The variant, or undefined when nothing answers to it.
  */
 function findVariant(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	asked: string,
 ): SemanticVariant | undefined {
 	return board.variants.find((variant) => variant.id === asked) ?? variantNamed(board, asked);
@@ -393,7 +393,7 @@ function findVariant(
  * @returns The variant, or undefined when nothing answers to it.
  */
 function resolveVariant(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	asked?: string,
 ): SemanticVariant | undefined {
 	if (asked === undefined || asked === "" || asksForDesignation(asked)) {
@@ -427,7 +427,7 @@ type VariantAddress =
  * @returns The variant, or why the address opens nothing.
  */
 function addressedVariant(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	asked?: string,
 ): VariantAddress {
 	const stated = asked?.trim() ?? "";
@@ -441,7 +441,7 @@ function addressedVariant(
  * @returns The variant, or why there is none.
  */
 function statedAddress(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	stated: string,
 ): VariantAddress {
 	const variant = resolveVariant(board, stated);
@@ -464,7 +464,7 @@ function statedAddress(
  * @param board The board.
  * @returns The variant, or why there is no single one.
  */
-function bareAddress(board: Pick<SemanticBoard, "name" | "current" | "variants">): VariantAddress {
+function bareAddress(board: Pick<LegacyBoard, "name" | "current" | "variants">): VariantAddress {
 	const roots = board.variants.filter(
 		(variant) => variant.lifecycle === "draft" && !hasDraftAbove(variant, board.variants),
 	);
@@ -516,15 +516,15 @@ export {
 	ShelvingSchema,
 	type Adoption,
 	type Shelving,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
+	LEGACY_BOARD_SCHEMA_VERSION,
 	SUPPORTED_SCHEMA_MAJOR,
 	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
 	type SemanticVariant,
-	SemanticBoardLevelSchema,
-	type SemanticBoardLevel,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LegacyBoardLevelSchema,
+	type LegacyBoardLevel,
+	LegacyBoardSchema,
+	type LegacyBoard,
 	TrackedEmbedSchema,
 	type TrackedEmbed,
 	currentVariant,

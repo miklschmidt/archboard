@@ -4,10 +4,10 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { useState, type JSX, type ReactNode } from "react";
 
-import { createBoardQueryClient } from "#ui/clients/model-catalog/query-client.ts";
+import { createModelQueryClient } from "#ui/clients/model-catalog/query-client.ts";
 
 /** What the provider wraps. */
-interface BoardCatalogProviderProps {
+interface ModelCatalogProviderProps {
 	children: ReactNode;
 }
 
@@ -17,9 +17,9 @@ interface BoardCatalogProviderProps {
  * @param props The children.
  * @returns The provider.
  */
-function BoardCatalogProvider(props: BoardCatalogProviderProps): JSX.Element {
-	const [client] = useState(createBoardQueryClient);
+function ModelCatalogProvider(props: ModelCatalogProviderProps): JSX.Element {
+	const [client] = useState(createModelQueryClient);
 	return <QueryClientProvider client={client}>{props.children}</QueryClientProvider>;
 }
 
-export { BoardCatalogProvider, type BoardCatalogProviderProps };
+export { ModelCatalogProvider, type ModelCatalogProviderProps };

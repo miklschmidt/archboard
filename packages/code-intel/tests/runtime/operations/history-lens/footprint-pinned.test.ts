@@ -12,8 +12,8 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
 	resolveVariant,
 } from "@archboard/model/legacy-board";
@@ -76,8 +76,8 @@ function part(id: string, order: number, path: string, branch: string) {
  * @returns The board.
  */
 function board(variants: readonly object[]) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",

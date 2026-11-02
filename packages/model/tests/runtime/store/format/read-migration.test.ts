@@ -2,9 +2,9 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { locateSemanticBoard } from "#runtime/store/location.ts";
-import { decodeSemanticBoardDocument } from "#runtime/store/format/decode.ts";
-import { SEMANTIC_BOARD_SCHEMA_VERSION } from "#shared/schemas/legacy-board.ts";
+import { locateLegacyBoard } from "#runtime/store/location.ts";
+import { decodeLegacyBoard } from "#runtime/store/format/decode.ts";
+import { LEGACY_BOARD_SCHEMA_VERSION } from "#shared/schemas/legacy-board.ts";
 
 const vault = mkdtempSync(join(tmpdir(), "archboard-read-migration-"));
 
@@ -52,7 +52,7 @@ function legacyBoard(name: string) {
 }
 
 function put(name: string, board: Record<string, unknown>): string {
-	const file = locateSemanticBoard(name, vault).file;
+	const file = locateLegacyBoard(name, vault).file;
 	writeFileSync(file, `${JSON.stringify(board)}\n`);
 	return file;
 }
@@ -67,12 +67,12 @@ test("decoding old board bytes migrates every variant in memory without changing
 	const bytes = readFileSync(file, "utf8");
 	const files = readdirSync(vault, { recursive: true });
 	const modified = statSync(file).mtimeMs;
-	const decoded = decodeSemanticBoardDocument(bytes);
+	const decoded = decodeLegacyBoard(bytes);
 	expect(decoded.ok).toBe(true);
 	if (!decoded.ok) return;
 	expect(decoded.changed).toBe(true);
 	expect(decoded.board).toMatchObject({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		version: original.version,
 		createdAt: original.createdAt,
 		updatedAt: original.updatedAt,

@@ -14,7 +14,7 @@ import { createBrowserLeaseLedger } from "@archboard/codex-realtime-voice/server
 // is the board and the server holds no copy of one (ADR 0015, ADR 0023).
 //
 // Session and display state answers "what is on this screen, now": the sockets
-// below, `clientIds`, `panes`, `paneBoards`, the `pending*` sets and the Codex
+// below, `clientIds`, `panes`, `paneKeys`, the `pending*` sets and the Codex
 // wiring. None of it can live in a board file, all of it dies with the tab, and
 // a reading of ADR 0015 that forbade it would be unimplementable.
 //
@@ -32,7 +32,7 @@ const clientIds = new Map<WebSocket, string>();
 // The vault each socket named when it connected (ADR 0049). A board's news goes
 // only to the sockets of its own vault.
 const socketVaults = new Map<WebSocket, string>();
-// The vault each pane belongs to, by client id. Like `paneBoards` it outlives the socket.
+// The vault each pane belongs to, by client id. Like `paneKeys` it outlives the socket.
 const paneVaults = new Map<string, string>();
 // The exact socket currently presenting one pane identity. A reconnect may
 // overlap the prior transport; only this map's value owns client-id keyed pane,
@@ -61,7 +61,7 @@ const panes = new Map<string, PaneRegistration>();
 // Entries outlive the socket on purpose. A dropped connection reconnects with
 // the same client id, and a pane that came back showing a different board than
 // it had a second ago would undo a user's scene arrangement.
-const paneBoards = new Map<string, string>();
+const paneKeys = new Map<string, string>();
 
 /**
  * The board a pane is authoritatively showing: the server's decision where it
@@ -69,8 +69,8 @@ const paneBoards = new Map<string, string>();
  * @param pane The pane registration being asked about.
  * @returns The board key that pane holds, or null when it holds none.
  */
-function boardForPane(pane: PaneRegistration): string | null {
-	return paneBoards.get(pane.clientId) ?? pane.board;
+function paneKeyOf(pane: PaneRegistration): string | null {
+	return paneKeys.get(pane.clientId) ?? pane.board;
 }
 
 /**
@@ -79,19 +79,19 @@ function boardForPane(pane: PaneRegistration): string | null {
  * @param clientId The pane's client id.
  * @returns The board key, or null when that pane is on none.
  */
-function paneBoardOf(clientId: string): string | null {
-	return paneBoards.get(clientId) ?? null;
+function paneKeyOfClient(clientId: string): string | null {
+	return paneKeys.get(clientId) ?? null;
 }
 
 /**
  * What each pane holds, in reading order.
  * @returns One entry per pane with its place on screen and its board.
  */
-function boardsOnScreen(): Array<{ paneId: string; place: string; board: string | null }> {
+function paneKeysOnScreen(): Array<{ paneId: string; place: string; board: string | null }> {
 	return panesInOrder(addressablePanes([...panes.values()])).map((entry) => ({
 		paneId: entry.pane.paneId,
 		place: entry.place,
-		board: boardForPane(entry.pane),
+		board: paneKeyOf(entry.pane),
 	}));
 }
 
@@ -192,10 +192,10 @@ function sendToPane(clientId: string, message: WebSocketMessage, board: string):
  * would be inventing one. Kept separate from `sendToPane` so that omitting the
  * board stays a deliberate act rather than a missing argument.
  * @param clientId The pane's client id.
- * @param message The boardless message to send.
+ * @param message The keyless message to send.
  * @returns Whether the pane received it.
  */
-function sendBoardlessToPane(clientId: string, message: WebSocketMessage): boolean {
+function sendKeylessToPane(clientId: string, message: WebSocketMessage): boolean {
 	return deliverToPane(clientId, JSON.stringify(message));
 }
 
@@ -230,8 +230,8 @@ function referencePane(vault: string): PaneRegistration | null {
  * @param vault The vault the arriving pane named.
  * @returns The board key that pane starts on, or null when the vault is empty.
  */
-function boardForNewPane(clientId: string, vault: string): string | null {
-	for (const candidate of copyableBoards(clientId, vault)) {
+function paneKeyForNewPane(clientId: string, vault: string): string | null {
+	for (const candidate of copyableModels(clientId, vault)) {
 		if (stillThere(vault, candidate)) {
 			return candidate;
 		}
@@ -268,14 +268,14 @@ function stillThere(vault: string, _key: string): boolean {
  * @param vault The vault the arriving pane named.
  * @returns The candidates, best first.
  */
-function copyableBoards(clientId: string, vault: string): string[] {
-	const remembered = paneVaults.get(clientId) === vault ? paneBoards.get(clientId) : undefined;
+function copyableModels(clientId: string, vault: string): string[] {
+	const remembered = paneVaults.get(clientId) === vault ? paneKeys.get(clientId) : undefined;
 	const reference = referencePane(vault);
 	const boards: string[] = [];
 	if (remembered !== undefined) {
 		boards.push(remembered);
 	}
-	const shown = reference === null ? null : boardForPane(reference);
+	const shown = reference === null ? null : paneKeyOf(reference);
 	if (shown !== null) {
 		boards.push(shown);
 	}
@@ -482,16 +482,16 @@ function forgetDisplay(): void {
 	latestSocketAcceptanceByClient.clear();
 	codexSocketInstances.clear();
 	panes.clear();
-	paneBoards.clear();
+	paneKeys.clear();
 	browserLeaseLedger.sessions.clear();
 }
 
 export {
 	acceptedSockets,
 	aggregateOf,
-	boardForNewPane,
-	boardForPane,
-	boardsOnScreen,
+	paneKeyForNewPane,
+	paneKeyOf,
+	paneKeysOnScreen,
 	broadcast,
 	browserLeaseLedger,
 	clientIds,
@@ -502,8 +502,8 @@ export {
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
 	notePaneOpened,
-	paneBoardOf,
-	paneBoards,
+	paneKeyOfClient,
+	paneKeys,
 	paneFromRequest,
 	paneVaults,
 	paneRef,
@@ -513,7 +513,7 @@ export {
 	pendingPaneOpens,
 	primaryPane,
 	rejectPendingLayouts,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,

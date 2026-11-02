@@ -7,7 +7,7 @@ import type { CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine } from "@archboard/model/policy";
 
 /** How far one board is behind its code. */
-type BoardBehind = CodeCheckAnswer["behind"][number];
+type ModelBehind = CodeCheckAnswer["behind"][number];
 
 /** One subject the code check skipped, and why. */
 type CodeCheckSkip = CodeCheckAnswer["skipped"][number];
@@ -39,7 +39,7 @@ function plural(count: number, noun: string): string {
 /** Why the last change of a board cannot be found, in words. */
 const UNKNOWN_REASON = {
 	"vault-outside-git": "the vault is in no Git repository",
-	"board-file-ignored": "Git ignores the board file",
+	"model-file-ignored": "Git ignores the board file",
 } as const;
 
 /**
@@ -47,7 +47,7 @@ const UNKNOWN_REASON = {
  * @param board One board's reading.
  * @returns Its lines.
  */
-function behindLines(board: BoardBehind): string[] {
+function behindLines(board: ModelBehind): string[] {
 	const head = `behind: ${board.board}`;
 	if (board.lastChange.kind === "unknown") {
 		return [`${head}: cannot tell, because ${UNKNOWN_REASON[board.lastChange.reason]}`];

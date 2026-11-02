@@ -59,7 +59,7 @@ export async function openTestPane(
 		base,
 		clientId,
 		vault: request.vault,
-		...(options.board === undefined ? {} : { preferredBoard: options.board }),
+		...(options.board === undefined ? {} : { preferredModel: options.board }),
 		register: (board, signal) =>
 			request("/api/panes", {
 				method: "POST",

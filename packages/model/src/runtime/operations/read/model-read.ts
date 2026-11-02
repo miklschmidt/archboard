@@ -13,7 +13,7 @@ import {
 	type ArchitectureModel,
 	type ModelDiagnostic,
 } from "#shared/schemas/model.ts";
-import { SemanticBoardConfigurationSchema } from "#runtime/store/configuration.ts";
+import { VaultConfigurationSchema } from "#runtime/store/configuration.ts";
 import { readModelFiles } from "#runtime/store/model-files.ts";
 import { modelDiagnostics, compareModelSubjects } from "#shared/rules/coherence/model.ts";
 
@@ -71,7 +71,7 @@ function decodePolicy(captured: CapturedModel): ArchitectureModel["policy"] | un
 		const source = new TextDecoder("utf-8", { fatal: true }).decode(
 			captured.inputs.get(".archboard/config.yaml"),
 		);
-		return SemanticBoardConfigurationSchema.parse(Bun.YAML.parse(source));
+		return VaultConfigurationSchema.parse(Bun.YAML.parse(source));
 	} catch (error) {
 		captured.diagnostics.push({
 			code: "INVALID_POLICY",

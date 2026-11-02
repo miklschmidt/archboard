@@ -24,7 +24,7 @@
 // write. A disconnected pane fails closed outside this module.
 
 import { forgetClaimState } from "#runtime/store/lock/claim-state.ts";
-import { forgetLockState, watchBoardLocks } from "#runtime/store/lock/lease-state.ts";
+import { forgetLockState, watchModelLocks } from "#runtime/store/lock/lease-state.ts";
 
 /**
  * Forget what this process remembers about who has which board, and stop
@@ -34,18 +34,18 @@ import { forgetLockState, watchBoardLocks } from "#runtime/store/lock/lease-stat
 function forgetLockAnnouncements(): void {
 	forgetLockState();
 	forgetClaimState();
-	watchBoardLocks(null);
+	watchModelLocks(null);
 }
 
 export {
-	BoardLockCancelledError,
-	holdBoard,
+	ModelLockCancelledError,
+	holdModel,
 	sleep,
-	withBoardLock,
+	withLease,
 } from "#runtime/store/lock/acquisition.ts";
-export { withBoardLockIfFreeSync } from "#runtime/store/lock/migration-lease.ts";
+export { withLeaseIfFreeSync } from "#runtime/store/lock/migration-lease.ts";
 export {
-	BoardHeldError,
+	ModelHeldError,
 	type Claim,
 	type ClaimEndCause,
 	type ClaimRevocation,
@@ -57,20 +57,20 @@ export {
 } from "#runtime/store/lock/contracts.ts";
 export {
 	type LostClaim,
-	claimBoard,
+	claimModel,
 	claimOn,
 	claimWriterId,
 	releaseClaim,
-	takeBackBoard,
+	takeBackModel,
 	takeClaimRevocation,
 } from "#runtime/store/lock/claims.ts";
 export {
-	boardLockState,
+	modelLockState,
 	onBoardLockChanged,
 	onBoardSweep,
 	releaseHold,
-	watchBoardLocks,
-	type WatchedBoard,
-	type WatchedBoards,
+	watchModelLocks,
+	type WatchedModel,
+	type WatchedModels,
 } from "#runtime/store/lock/lease-state.ts";
 export { forgetLockAnnouncements };

@@ -12,13 +12,13 @@ import { pollUntil, type AgentBrowserSession, type PollOptions } from "./agent-b
 const WAIT: PollOptions = { timeoutMs: 10_000 };
 
 /** The stage one semantic pane draws into. */
-const STAGE = "[data-slot='semantic-board-stage']";
+const STAGE = "[data-slot='canvas-stage']";
 
 /** The element the camera moves, which the drawn subjects sit in. */
-const SURFACE = "[data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='canvas-surface']";
 
 /** The stage's tab stop: what hears the keys, and what a click retargets to. */
-const VIEWPORT = "[data-slot='semantic-board-viewport']";
+const VIEWPORT = "[data-slot='canvas-viewport']";
 
 /** The strip that says an agent has the board (ADR 0022). */
 const BANNER = "[data-slot='claim-banner']";
@@ -41,9 +41,9 @@ const stageState = (browser: AgentBrowserSession): Promise<string | null> =>
  * @param browser The page.
  * @returns The board name, or null before the pane is there.
  */
-const shownBoard = (browser: AgentBrowserSession): Promise<string | null> =>
+const shownModel = (browser: AgentBrowserSession): Promise<string | null> =>
 	browser.eval<string | null>(
-		`document.querySelector("${STAGE}")?.getAttribute("data-board") ?? null`,
+		`document.querySelector("${STAGE}")?.getAttribute("data-model") ?? null`,
 	);
 
 /**
@@ -159,7 +159,7 @@ export {
 	pick,
 	press,
 	readThrough,
-	shownBoard,
+	shownModel,
 	stageState,
 	textOf,
 };

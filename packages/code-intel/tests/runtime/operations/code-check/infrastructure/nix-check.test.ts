@@ -155,7 +155,7 @@ beforeAll(async () => {
 		},
 	]);
 	const check = await import("#tests/runtime/support/code-check/pass.ts");
-	const read = check.readBoardsToCheck(vault, undefined);
+	const read = check.readStatesToCheck(vault, undefined);
 	if (!read.ok) throw new Error("no boards");
 	const { spawn, spawnSync } = Bun;
 	Bun.spawn = ((command: { cmd: string[] } | string[], options?: object) => {

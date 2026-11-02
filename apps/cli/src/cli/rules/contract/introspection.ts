@@ -5,7 +5,7 @@ import { AnsweredVaultSchema } from "#cli/protocol/contract/schemas.ts";
 
 interface RegistryContractEntry {
 	name: string;
-	classification: "board" | "browser" | "neither";
+	classification: "browser" | "neither";
 	contract: AnyCommandContract;
 }
 

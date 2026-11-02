@@ -2,11 +2,11 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use archboard_layout::lay_out_board;
+use archboard_layout::lay_out_picture;
 use serde_json::{Value, json};
 
 fn drawing(graph: &Value) -> Value {
-    let answer = lay_out_board(&graph.to_string(), &mut archboard_graphviz::InCore)
+    let answer = lay_out_picture(&graph.to_string(), &mut archboard_graphviz::InCore)
         .expect("a planned drawing");
     let answer: Value = serde_json::from_str(&answer).expect("a planned drawing");
     serde_json::from_str(
@@ -43,7 +43,7 @@ fn graphs_laid(relationships: usize) -> usize {
     let graph = json!({"id":"root","layoutOptions":{"archboard.blocks.nesting":"blocks"},
         "children":cards.collect::<Vec<_>>(),"edges":edges.collect::<Vec<_>>()});
     let mut host = Counting(0);
-    lay_out_board(&graph.to_string(), &mut host).expect("a planned drawing");
+    lay_out_picture(&graph.to_string(), &mut host).expect("a planned drawing");
     host.0
 }
 

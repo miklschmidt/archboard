@@ -24,7 +24,6 @@ import { helpText, usageLine } from "#cli/rules/routing/help.ts";
 import { dispatchedCommand } from "#cli/rules/routing/dispatch.ts";
 import { exitCodeFor, reportFailure } from "#cli/operations/invocation/exit-codes.ts";
 import {
-	takeBoardFlag,
 	takeDirectoryFlag,
 	takeDoingFlag,
 	takeSessionFlag,
@@ -254,16 +253,16 @@ function printedHelp(routes: CommandRoutes, argv: readonly string[]): boolean {
  * @param name - The command name.
  * @param rest - The remaining arguments.
  */
-function refuseRetiredBoardForms(name: string, rest: readonly string[]): void {
+function refuseRetiredForms(name: string, rest: readonly string[]): void {
 	if (name !== "board") {
 		return;
 	}
 	if (rest[0] === "open") {
-		throw new CliUsageError("`board open` was removed. Use `browser show <board> --pane <spec>`.");
+		throw new CliUsageError("`board open` was removed. Use `browser show <model> --pane <spec>`.");
 	}
 	if (rest.some((token) => token === "--pane" || token.startsWith("--pane="))) {
 		throw new CliUsageError(
-			"Board commands do not change panes. Use `browser show <board> --pane <spec>`.",
+			"The removed `board` commands do not change panes. Use `browser show <model> --pane <spec>`.",
 		);
 	}
 }
@@ -272,7 +271,6 @@ function refuseRetiredBoardForms(name: string, rest: readonly string[]): void {
 interface StatedShared {
 	readonly url: string | null;
 	readonly directory: string | null;
-	readonly board: string | null;
 	readonly doing: string | null;
 	readonly session: string | null;
 	readonly expectVersion: number | null;
@@ -288,7 +286,6 @@ function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 	return {
 		url: bootstrap.url,
 		directory: takeDirectoryFlag(rest),
-		board: takeBoardFlag(rest),
 		doing: takeDoingFlag(rest),
 		session: takeSessionFlag(rest),
 		expectVersion: takeExpectVersionFlag(rest),
@@ -299,7 +296,6 @@ function takeShared(rest: string[], bootstrap: CliBootstrap): StatedShared {
 const STATED_FIELDS: Readonly<Record<SharedOptionKey, keyof StatedShared>> = {
 	url: "url",
 	directory: "directory",
-	board: "board",
 	doing: "doing",
 	"expect-version": "expectVersion",
 	"as-session": "session",
@@ -396,7 +392,6 @@ function dispatchedTo(
  */
 function applyShared(stated: StatedShared): void {
 	stateInvocation({
-		board: stated.board,
 		doing: stated.doing,
 		session: stated.session,
 		expectedVersion: stated.expectVersion,
@@ -480,7 +475,7 @@ async function runCliWith(
 	const [name = "", ...rest] = argv;
 	let selected: RouteOwner = command.owner;
 	try {
-		refuseRetiredBoardForms(name, rest);
+		refuseRetiredForms(name, rest);
 		const stated = takeShared(rest, bootstrap);
 		const dispatched = dispatchedTo(command, rest, stated);
 		selected = dispatched.selected;

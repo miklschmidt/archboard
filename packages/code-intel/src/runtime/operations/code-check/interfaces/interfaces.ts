@@ -36,7 +36,7 @@
 // outputs, so no entry point of it is judged unexposed, and its container
 // also gets the findings about the module's shape (terraform-modules.ts).
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import {
 	ownersAtLine,
@@ -71,7 +71,7 @@ type ContainerInterface = Parameters<typeof interfaceMeasures>[0];
 
 /** What judging the containers of one board needs. */
 interface InterfaceReading {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly codes: ReadonlyMap<string, PartCode>;
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;

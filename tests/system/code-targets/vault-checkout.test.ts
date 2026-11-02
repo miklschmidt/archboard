@@ -7,7 +7,7 @@ import { expect, test } from "bun:test";
 import { realpathSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { boundBoard } from "./support/bound-model.ts";
+import { boundFixture } from "./support/bound-model.ts";
 import {
 	createOpenerFixture,
 	jsonBody,
@@ -37,7 +37,7 @@ test("opens the file of the worktree whose vault holds the board, though the mai
 	writeFileSync(join(worktree, "src", "worktree-only.ts"), "export {};\n");
 	const vault = join(worktree, ".archboard", "vault");
 	options.vault = vault;
-	const board = await boundBoard(vault, fixture.repository, "src/worktree-only.ts");
+	const board = await boundFixture(vault, fixture.repository, "src/worktree-only.ts");
 	const saved = await fixture.request("/api/settings/opener", {
 		method: "PUT",
 		body: jsonBody(invocation.selection),

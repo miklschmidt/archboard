@@ -22,7 +22,7 @@ import {
 } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import archboard from "#tests/runtime/support/fixtures/archboard.json";
-import readingABoard from "#tests/runtime/support/fixtures/reading-a-model.json";
+import readingAModel from "#tests/runtime/support/fixtures/reading-a-model.json";
 
 /** The room a line's words keep from an unrelated line: archboard_layout::routes::LABEL_ROUTE_CLEARANCE. */
 const LABEL_ROUTE_CLEARANCE = 12;
@@ -149,7 +149,7 @@ function runsOf(points: readonly DrawnPoint[]) {
 
 // Blocks still runs two of this board's lines a part-lane apart.
 test("no line runs a part-lane beside another", async () => {
-	const content = orderedFixture(readingABoard);
+	const content = orderedFixture(readingAModel);
 	const drawn = await renderArchitecture({
 		policy: DEFAULT_SEMANTIC_POLICY,
 		content,

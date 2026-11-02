@@ -1,6 +1,6 @@
 // Browser-side selectors for the rebuilt shell, semantics first: roles,
 // accessible names, aria state, shadcn's data-slot vocabulary, and the small
-// set of Archboard identity hooks (data-board-key, data-pane-id,
+// set of Archboard identity hooks (data-pane-key, data-pane-id,
 // data-notice-id, data-presentation). Every owner reads the shell through
 // these so a markup change is one edit here, never a class-name hunt.
 
@@ -11,7 +11,7 @@ type PageEvaluator = Pick<AgentBrowserSession, "eval">;
 /** The element the browser presents fullscreen: the centre stage. */
 const STAGE_ROOT = '[data-slot="pane-stages"]';
 /** The breadcrumb in the header of the pane with focus: the boards above, the board, then the variant. */
-const BOARD_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
+const MODEL_BREADCRUMB = 'section[aria-current="true"] nav[aria-label="Where this board sits"]';
 /** Every pane section. */
 const PANE_SECTIONS = 'section[aria-label^="Pane "]';
 /** A pane's top row: where its board sits, the ways to read it and the pane's controls. */
@@ -43,11 +43,10 @@ const SHELL_NOTICES = `[...document.querySelectorAll('[data-slot="alert"]')]
 const PRESENTATION_BAR = '[data-slot="presentation-bar"]';
 
 /** A navigator row's name by the board key it selects (identity hook); a click on it opens the row. */
-const navigatorRow = (key: string): string =>
-	`${NAVIGATOR} [data-board-key=${JSON.stringify(key)}]`;
+const navigatorRow = (key: string): string => `${NAVIGATOR} [data-pane-key=${JSON.stringify(key)}]`;
 
 /** The board name the header of the pane with focus shows. */
-const BOARD_NAME_EXPRESSION = `document.querySelector('${BOARD_BREADCRUMB} [data-slot="pane-board-name"]')?.textContent?.trim() ?? null`;
+const PANE_NAME_EXPRESSION = `document.querySelector('${MODEL_BREADCRUMB} [data-slot="pane-model-name"]')?.textContent?.trim() ?? null`;
 /** The authored model name in the active pane. */
 const MODEL_NAME_EXPRESSION = `document.querySelector('section[aria-current="true"] [data-slot="pane-header"] h2')?.textContent?.trim() ?? null`;
 
@@ -60,7 +59,7 @@ const THEME_EXPRESSION = "document.documentElement.getAttribute('data-theme') ??
  * @returns The board name, or null before a board is shown.
  */
 function boardName(browser: PageEvaluator): Promise<string | null> {
-	return browser.eval<string | null>(BOARD_NAME_EXPRESSION);
+	return browser.eval<string | null>(PANE_NAME_EXPRESSION);
 }
 
 /**
@@ -167,8 +166,8 @@ function stageIsFullscreen(browser: PageEvaluator): Promise<boolean> {
 export {
 	AGENT_DOCK,
 	AGENT_PANEL,
-	BOARD_BREADCRUMB,
-	BOARD_NAME_EXPRESSION,
+	MODEL_BREADCRUMB,
+	PANE_NAME_EXPRESSION,
 	MODEL_NAME_EXPRESSION,
 	BRAND_BAR,
 	COMPOSER,

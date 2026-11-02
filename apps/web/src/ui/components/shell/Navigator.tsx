@@ -19,7 +19,7 @@ import type { ShellActions, ShellRepository, ShellView } from "#ui/rules/shell/c
 
 /** Inputs for the navigator. */
 interface NavigatorProps {
-	/** The application can replace empty-board guidance when another model format is present. */
+	/** The application can replace empty-model guidance when another model format is present. */
 	view: ShellView;
 	actions: ShellActions;
 	/** The column's top row: the brand and the application's own controls. */
@@ -90,7 +90,7 @@ function openRepository(actions: ShellActions, shell: ShellRepository, beside: b
  * @returns The reason, or null.
  */
 function listingFailure(view: ShellView): string | null {
-	if (view.boardsError !== null) return view.boardsError;
+	if (view.modelsError !== null) return view.modelsError;
 	const failed = view.repositories.find((shell) => shell.error !== null);
 	return failed === undefined ? null : `${failed.repository.name}: ${failed.error}`;
 }
@@ -118,7 +118,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 		},
 		[actions],
 	);
-	const openBoard = useCallback(
+	const openPaneKey = useCallback(
 		(_board: string, beside: boolean, repository: string): void => {
 			const shell = view.repositories.find((entry) => entry.repository.name === repository);
 			if (shell !== undefined) openRepository(actions, shell, beside);
@@ -164,7 +164,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 					</Popover>
 				)}
 				<ListingState
-					loading={view.boardsLoading}
+					loading={view.modelsLoading}
 					error={listingFailure(view)}
 					empty={view.repositories.length === 0}
 					actions={actions}
@@ -186,7 +186,7 @@ function Navigator(props: NavigatorProps): JSX.Element {
 						onLeave={leave}
 					/>
 				)}
-				<WorkingNow entries={workingEntries(view, panes)} onOpen={openBoard} />
+				<WorkingNow entries={workingEntries(view, panes)} onOpen={openPaneKey} />
 			</nav>
 			{props.foot}
 		</div>
@@ -209,7 +209,7 @@ interface ListingStateProps {
  */
 function ListingState(props: ListingStateProps): JSX.Element | null {
 	const { actions } = props;
-	const retry = useCallback(() => actions.refreshBoards(), [actions]);
+	const retry = useCallback(() => actions.refreshModels(), [actions]);
 	if (props.error !== null) {
 		return (
 			<div

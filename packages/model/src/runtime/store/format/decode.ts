@@ -2,20 +2,20 @@
 // persisting a migration. The disk reader and the history lens use exactly
 // the same legacy checks, registered migrations and canonical validation.
 
-import { migrateSemanticBoardDocument } from "#runtime/store/format/migrations.ts";
+import { migrateLegacyBoard } from "#runtime/store/format/migrations.ts";
 import {
-	parseSemanticBoard,
-	type SemanticBoardParse,
+	parseLegacyBoard,
+	type LegacyBoardParse,
 } from "#shared/rules/coherence/parse-legacy-board.ts";
 import { errorMessage } from "@archboard/diagnostics/errno";
 
-type DecodedSemanticBoard =
-	| (Extract<SemanticBoardParse, { readonly ok: true }> & {
+type DecodedLegacyBoard =
+	| (Extract<LegacyBoardParse, { readonly ok: true }> & {
 			/** Migrated raw JSON, kept for persistence without introducing parser defaults. */
 			readonly value: unknown;
 			readonly changed: boolean;
 	  })
-	| Extract<SemanticBoardParse, { readonly ok: false }>;
+	| Extract<LegacyBoardParse, { readonly ok: false }>;
 
 /**
  * Decode and migrate board bytes in memory, refusing malformed or unsupported
@@ -24,7 +24,7 @@ type DecodedSemanticBoard =
  * @param text The JSON document, from disk or a historical Git blob.
  * @returns A coherent current-shape board and its migrated raw document, or a refusal.
  */
-function decodeSemanticBoardDocument(text: string): DecodedSemanticBoard {
+function decodeLegacyBoard(text: string): DecodedLegacyBoard {
 	let value: unknown;
 	try {
 		value = JSON.parse(text);
@@ -33,9 +33,9 @@ function decodeSemanticBoardDocument(text: string): DecodedSemanticBoard {
 	}
 	const legacy = legacyGroupProblem(value);
 	if (legacy !== null) return { ok: false, problem: legacy };
-	const migration = migrateSemanticBoardDocument(value);
+	const migration = migrateLegacyBoard(value);
 	if (!migration.ok) return migration;
-	const parsed = parseSemanticBoard(migration.value);
+	const parsed = parseLegacyBoard(migration.value);
 	return parsed.ok ? { ...parsed, value: migration.value, changed: migration.changed } : parsed;
 }
 
@@ -122,4 +122,4 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export { type DecodedSemanticBoard, decodeSemanticBoardDocument };
+export { type DecodedLegacyBoard, decodeLegacyBoard };

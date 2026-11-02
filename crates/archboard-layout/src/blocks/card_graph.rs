@@ -48,7 +48,7 @@ impl CardLayout<'_> {
         }
         self.add_stubs();
         let links = self.links();
-        let ordered = self.clusters.board_order(|end| self.vendor_of(end));
+        let ordered = self.clusters.picture_order(|end| self.vendor_of(end));
         for line in ordered {
             if !block.header_line(line) {
                 self.connect(line);

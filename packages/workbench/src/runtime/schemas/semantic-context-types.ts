@@ -72,7 +72,7 @@ interface FreshBriefSource {
 	readonly read: () => SemanticContextInput;
 }
 
-interface SemanticBoardInput {
+interface SemanticModelInput {
 	readonly key: string;
 	/** The name every command spells the board with. */
 	readonly name: string;
@@ -268,7 +268,7 @@ interface SemanticContextInput {
 	readonly threadLink?: SemanticThreadLinkInput;
 	readonly workhorse?: SemanticWorkhorseInput;
 	readonly coordinator?: SemanticCoordinatorInput;
-	readonly board: SemanticBoardInput;
+	readonly board: SemanticModelInput;
 	readonly pane: SemanticPaneInput;
 	readonly architecture: SemanticArchitectureInput;
 	readonly claim?: SemanticClaimInput;
@@ -280,7 +280,7 @@ interface SemanticContextInput {
 	readonly staleReasons?: readonly string[];
 }
 
-type SemanticBoard = Pick<SemanticBoardInput, "key" | "name" | "vault" | "file">;
+type LegacyBoard = Pick<SemanticModelInput, "key" | "name" | "vault" | "file">;
 type SemanticPane = Pick<SemanticPaneInput, "paneId" | "focused">;
 type SemanticThreadLink = SemanticThreadLinkInput;
 type SemanticWorkhorse = SemanticWorkhorseInput;
@@ -319,7 +319,7 @@ interface SemanticBriefFields {
 	readonly threadLink: SemanticThreadLink;
 	readonly workhorse: SemanticWorkhorse;
 	readonly coordinator: SemanticCoordinator;
-	readonly board: SemanticBoard;
+	readonly board: LegacyBoard;
 	readonly pane: SemanticPane;
 	readonly version: number | null;
 	readonly architecture: SemanticArchitecture;
@@ -452,7 +452,7 @@ export {
 	type SettledChangeSource,
 	type PaneSignalSource,
 	type FreshBriefSource,
-	type SemanticBoardInput,
+	type SemanticModelInput,
 	type SemanticPaneInput,
 	type SemanticUserChange,
 	type SemanticThreadLinkInput,
@@ -470,7 +470,7 @@ export {
 	type SemanticReconciliationInput,
 	type SemanticArchitectureInput,
 	type SemanticContextInput,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticPane,
 	type SemanticAgentSwitch,
 	type SemanticThreadLink,

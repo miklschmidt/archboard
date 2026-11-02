@@ -9,7 +9,7 @@
 // several refs of a repository, none of them its own, is read part by part.
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
 import type { SemanticNode } from "#shared/schemas/content.ts";
 
 /**
@@ -19,7 +19,7 @@ import type { SemanticNode } from "#shared/schemas/content.ts";
  * @returns Its parent, the parent's parent, and so on.
  */
 function ancestorsOf(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant[] {
 	const chain: SemanticVariant[] = [];
@@ -65,7 +65,7 @@ function refsIn(variants: readonly SemanticVariant[], repo: string): Set<string>
  * @returns The refs, sorted; none when the draft names no ref there.
  */
 function draftRefs(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	repo: string,
 ): string[] {
@@ -100,7 +100,7 @@ interface OwnRef {
  * @returns The ref the draft is read at, by repository.
  */
 function ownRefs(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 ): Map<string, OwnRef> {
 	const own = new Map<string, OwnRef>();
@@ -121,7 +121,7 @@ function ownRefs(
  * @returns The ref and a binding that names it, or undefined when the draft names none or several of its own.
  */
 function ownRefIn(
-	board: Pick<SemanticBoard, "variants">,
+	board: Pick<LegacyBoard, "variants">,
 	variant: SemanticVariant,
 	repo: string,
 ): OwnRef | undefined {

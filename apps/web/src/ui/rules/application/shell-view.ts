@@ -112,10 +112,10 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	return {
 		theme: inputs.theme,
 		repositories: shellRepositories(inputs),
-		boardsError: inputs.catalog.error,
-		boardsLoading: inputs.catalog.loading,
+		modelsError: inputs.catalog.error,
+		modelsLoading: inputs.catalog.loading,
 		choosing: inputs.choosing === true,
-		selectedBoardKey: active.status.boardKey,
+		selectedPaneKey: active.status.paneKey,
 		panes: shellPanes(inputs),
 		activePaneId: inputs.list.activePaneId,
 		presentation: inputs.presentation,

@@ -1,15 +1,15 @@
 import { createServer } from "node:net";
 import { join } from "node:path";
-import { holdBoard } from "#runtime/store/lock/acquisition.ts";
+import { holdModel } from "#runtime/store/lock/acquisition.ts";
 import { releaseHold } from "#runtime/store/lock/lease-state.ts";
 async function lockMode(): Promise<void> {
 	const vault = process.env["ARCHBOARD_TEST_LOCK_VAULT"];
 	if (!vault) {
 		throw new Error("ARCHBOARD_TEST_LOCK_VAULT is required.");
 	}
-	const board = process.env["ARCHBOARD_TEST_LOCK_BOARD"] ?? "resource-cleanup";
+	const board = process.env["ARCHBOARD_TEST_LOCK_MODEL"] ?? "resource-cleanup";
 	const holderId = process.env["ARCHBOARD_TEST_LOCK_HOLDER"] ?? "resource-owner";
-	const hold = await holdBoard({
+	const hold = await holdModel({
 		vault,
 		board,
 		holder: { id: holderId, kind: "agent" },
@@ -25,7 +25,7 @@ async function lockMode(): Promise<void> {
 		});
 	}
 	const renewal = setInterval(() => {
-		void holdBoard({ vault, board, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
+		void holdModel({ vault, board, holder: { id: holderId, kind: "agent" }, waitMs: 0 });
 	}, 800);
 	const stop = () => {
 		clearInterval(renewal);

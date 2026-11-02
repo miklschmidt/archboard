@@ -11,15 +11,15 @@ import {
 	type VaultDiagnostic,
 } from "#shared/schemas/semantic-policy.ts";
 
-const SEMANTIC_BOARD_CONFIG_PATH = path.join(".archboard", "config.yaml");
-const SemanticBoardConfigurationSchema = createSemanticPolicySchema(
+const VAULT_CONFIGURATION_PATH = path.join(".archboard", "config.yaml");
+const VaultConfigurationSchema = createSemanticPolicySchema(
 	z.enum(
 		Object.keys(RemixIcons).filter((name) => /^Ri[A-Za-z0-9]+(?:Line|Fill)$/u.test(name)),
 		{ error: "Use an installed RemixIcon export name, for example RiServerLine" },
 	),
 );
-type SemanticBoardConfiguration = SemanticPolicy;
-interface SemanticBoardConfigurationRead {
+type VaultConfiguration = SemanticPolicy;
+interface VaultConfigurationRead {
 	readonly ok: boolean;
 	readonly file: string;
 	readonly configuration: SemanticPolicy;
@@ -33,8 +33,8 @@ interface SemanticBoardConfigurationRead {
  * @param root The vault root.
  * @returns The absolute policy path.
  */
-function semanticBoardConfigurationPath(root: string): string {
-	return path.join(root, SEMANTIC_BOARD_CONFIG_PATH);
+function vaultConfigurationPath(root: string): string {
+	return path.join(root, VAULT_CONFIGURATION_PATH);
 }
 
 /**
@@ -42,8 +42,8 @@ function semanticBoardConfigurationPath(root: string): string {
  * @param root The vault root.
  * @returns Current policy, health and fingerprint.
  */
-function readSemanticBoardConfiguration(root: string): SemanticBoardConfigurationRead {
-	const file = semanticBoardConfigurationPath(root);
+function readVaultConfiguration(root: string): VaultConfigurationRead {
+	const file = vaultConfigurationPath(root);
 	let source = "";
 	let problem: string | undefined;
 	let at: string | undefined;
@@ -104,12 +104,12 @@ function configurationWarnings(
  * @param configuration The initial vocabulary and appearance.
  * @returns Whether a file was created.
  */
-function initializeSemanticBoardConfiguration(
+function initializeVaultConfiguration(
 	root: string,
 	configuration: SemanticPolicy = DEFAULT_SEMANTIC_POLICY,
 ): boolean {
-	const parsed = SemanticBoardConfigurationSchema.parse(configuration);
-	const file = semanticBoardConfigurationPath(root);
+	const parsed = VaultConfigurationSchema.parse(configuration);
+	const file = vaultConfigurationPath(root);
 	fs.mkdirSync(path.dirname(file), { recursive: true });
 	try {
 		fs.writeFileSync(file, Bun.YAML.stringify(parsed), { encoding: "utf8", flag: "wx" });
@@ -120,13 +120,13 @@ function initializeSemanticBoardConfiguration(
 	}
 }
 export {
-	SEMANTIC_BOARD_CONFIG_PATH,
-	SemanticBoardConfigurationSchema,
-	type SemanticBoardConfiguration,
-	type SemanticBoardConfigurationRead,
-	semanticBoardConfigurationPath,
-	readSemanticBoardConfiguration,
-	initializeSemanticBoardConfiguration,
+	VAULT_CONFIGURATION_PATH,
+	VaultConfigurationSchema,
+	type VaultConfiguration,
+	type VaultConfigurationRead,
+	vaultConfigurationPath,
+	readVaultConfiguration,
+	initializeVaultConfiguration,
 };
 
 /**
@@ -139,7 +139,7 @@ function parsePolicy(source: string): {
 	problem?: string;
 	path?: string;
 } {
-	const parsed = SemanticBoardConfigurationSchema.safeParse(Bun.YAML.parse(source));
+	const parsed = VaultConfigurationSchema.safeParse(Bun.YAML.parse(source));
 	if (!parsed.success) {
 		const refused = parsed.error.issues[0]?.path ?? [];
 		return {

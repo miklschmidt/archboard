@@ -3,12 +3,12 @@
 // an id or draws anything.
 
 import { z } from "zod";
-import { SemanticBoardSchema, type SemanticBoard } from "#shared/schemas/legacy-board.ts";
-import { checkSemanticBoard, describeIntegrityIssues } from "#shared/rules/coherence/integrity.ts";
+import { LegacyBoardSchema, type LegacyBoard } from "#shared/schemas/legacy-board.ts";
+import { checkLegacyBoard, describeIntegrityIssues } from "#shared/rules/coherence/integrity.ts";
 
 /** A document that parsed and is coherent, or the reason it is neither. */
-type SemanticBoardParse =
-	| { readonly ok: true; readonly board: SemanticBoard }
+type LegacyBoardParse =
+	| { readonly ok: true; readonly board: LegacyBoard }
 	| { readonly ok: false; readonly problem: string };
 
 /**
@@ -19,16 +19,16 @@ type SemanticBoardParse =
  * @param value Anything at all, typically the contents of a board file.
  * @returns The board, or why it is not one.
  */
-function parseSemanticBoard(value: unknown): SemanticBoardParse {
-	const parsed = SemanticBoardSchema.safeParse(value);
+function parseLegacyBoard(value: unknown): LegacyBoardParse {
+	const parsed = LegacyBoardSchema.safeParse(value);
 	if (!parsed.success) {
 		return { ok: false, problem: z.prettifyError(parsed.error) };
 	}
-	const issues = checkSemanticBoard(parsed.data);
+	const issues = checkLegacyBoard(parsed.data);
 	if (issues.length > 0) {
 		return { ok: false, problem: describeIntegrityIssues(issues) };
 	}
 	return { ok: true, board: parsed.data };
 }
 
-export { type SemanticBoardParse, parseSemanticBoard };
+export { type LegacyBoardParse, parseLegacyBoard };

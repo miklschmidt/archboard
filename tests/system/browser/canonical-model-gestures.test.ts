@@ -20,7 +20,7 @@ const WAIT = { timeoutMs: 10_000 } as const;
 
 async function cameraTransform(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(
-		`document.querySelector('[data-slot="model-diagram"] [data-slot="semantic-board-surface"]')?.style.transform ?? ''`,
+		`document.querySelector('[data-slot="model-diagram"] [data-slot="canvas-surface"]')?.style.transform ?? ''`,
 	);
 }
 
@@ -185,7 +185,7 @@ test("a double click opens a card", async () => {
 	const takers = await pollUntil(
 		() =>
 			browser.eval<number | null>(`(() => {
-				const surface = document.querySelector('[data-slot="semantic-board-surface"][data-painter]');
+				const surface = document.querySelector('[data-slot="canvas-surface"][data-painter]');
 				if (surface === null) return null;
 				const box = surface.getBoundingClientRect();
 				const places = Array.from({ length: 64 }, (_, index) => [

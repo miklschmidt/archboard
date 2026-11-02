@@ -30,7 +30,7 @@ const rootRoute = createRootRoute({ validateSearch: validateWorkspaceSearch });
  * @param component The application, mounted at `/`.
  * @returns The router.
  */
-function createBoardRouter(component: () => JSX.Element | null) {
+function createReadingRouter(component: () => JSX.Element | null) {
 	const indexRoute = createRoute({
 		/**
 		 * The route this one hangs off, which is what types its search.
@@ -50,11 +50,11 @@ function createBoardRouter(component: () => JSX.Element | null) {
 }
 
 /** The router this application registers, so navigation and blocking are typed. */
-type BoardRouter = ReturnType<typeof createBoardRouter>;
+type ReadingRouter = ReturnType<typeof createReadingRouter>;
 
 declare module "@tanstack/react-router" {
 	interface Register {
-		router: BoardRouter;
+		router: ReadingRouter;
 	}
 }
 
@@ -63,15 +63,15 @@ declare module "@tanstack/react-router" {
  * @param component The application.
  * @returns The component to render, which owns the router for the tab's life.
  */
-function createBoardRoutingHost(component: () => JSX.Element | null): () => JSX.Element {
-	const router = createBoardRouter(component);
+function createReadingRoutingHost(component: () => JSX.Element | null): () => JSX.Element {
+	const router = createReadingRouter(component);
 	/**
 	 * The mounted router.
 	 * @returns The provider.
 	 */
-	return function BoardRoutingHost(): JSX.Element {
+	return function ReadingRoutingHost(): JSX.Element {
 		return <RouterProvider router={router} />;
 	};
 }
 
-export { createBoardRoutingHost, type BoardRouter };
+export { createReadingRoutingHost, type ReadingRouter };

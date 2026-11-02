@@ -213,7 +213,7 @@ test("the legend's words stay put while a reader filters, and a group's tag sele
 	expect(await wordsAt(browser)).toBe(rest);
 	expect(
 		await browser.eval<boolean>(
-			`document.querySelector('[data-slot="semantic-board-surface"]').classList.contains('is-probing') && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]:not(.is-lit)') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Router"].is-lit') !== null`,
+			`document.querySelector('[data-slot="canvas-surface"]').classList.contains('is-probing') && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Worker"]:not(.is-lit)') !== null && document.querySelector('[data-slot="model-diagram"] [data-semantic-id="Shop#Router"].is-lit') !== null`,
 		),
 	).toBe(true);
 	expect(

@@ -20,13 +20,10 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import type { BoardPlace, PaneHeaderProps } from "#ui/components/canvas/PaneHeader.tsx";
+import type { CrumbPlace, PaneHeaderProps } from "#ui/components/canvas/PaneHeader.tsx";
 import type { DrillNavigation } from "#ui/hooks/canvas/use-drill-down.ts";
-import { readBoard } from "#ui/rules/canvas/reading/document.ts";
-import {
-	semanticBoardDocumentQuery,
-	semanticBoardListQuery,
-} from "#ui/clients/canvas/reads/queries.ts";
+import { readDocument } from "#ui/rules/canvas/reading/document.ts";
+import { retainedDocumentQuery, retainedListingQuery } from "#ui/clients/canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 
 /** What a board calls itself, and its level. */
@@ -48,7 +45,7 @@ interface Located {
  */
 function namesOf(results: readonly { readonly data: unknown }[]): (Named | undefined)[] {
 	return results.map((result) => {
-		const read = readBoard(result.data);
+		const read = readDocument(result.data);
 		return read.ok ? { name: read.board.name, level: read.board.level } : undefined;
 	});
 }
@@ -75,15 +72,15 @@ function repositoryLabels(crumbs: readonly Located[]): (string | undefined)[] {
  * @returns The places, and the repository of the board on screen when it is named.
  */
 function useDrillPlaces(
-	placeOf: ((board: string) => readonly BoardPlace[]) | undefined,
+	placeOf: ((board: string) => readonly CrumbPlace[]) | undefined,
 	drill: Pick<DrillNavigation, "board" | "trail">,
 	onBackTo: (depth: number) => void,
 ): Pick<PaneHeaderProps, "ancestors" | "repository"> {
 	const { board, trail } = drill;
 	const vault = usePaneVault();
-	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
+	const repository = useQuery(retainedListingQuery(vault)).data?.repository ?? null;
 	const names = useQueries({
-		queries: trail.map((stop) => semanticBoardDocumentQuery(stop.vault, stop.board)),
+		queries: trail.map((stop) => retainedDocumentQuery(stop.vault, stop.board)),
 		combine: namesOf,
 	});
 	return useMemo(() => {
@@ -114,10 +111,10 @@ function useDrillPlaces(
  * @returns The places, outermost first.
  */
 function navigatorPlaces(
-	placeOf: ((board: string) => readonly BoardPlace[]) | undefined,
+	placeOf: ((board: string) => readonly CrumbPlace[]) | undefined,
 	first: Pick<Located, "vault"> & { readonly board: string },
 	vault: string,
-): readonly BoardPlace[] {
+): readonly CrumbPlace[] {
 	return first.vault === vault ? (placeOf?.(first.board) ?? []) : [];
 }
 
@@ -129,7 +126,7 @@ function navigatorPlaces(
  * @returns The places, and the repository of the board on screen when it is named.
  */
 function labelled(
-	ancestors: readonly { readonly place: BoardPlace; readonly where: Located }[],
+	ancestors: readonly { readonly place: CrumbPlace; readonly where: Located }[],
 	here: Located,
 ): Pick<PaneHeaderProps, "ancestors" | "repository"> {
 	const labels = repositoryLabels([...ancestors.map((each) => each.where), here]);

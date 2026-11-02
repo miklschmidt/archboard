@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { EXPLORING_MS } from "@archboard/timing";
 import type { SemanticRender } from "#ui/clients/canvas/reads/drawings.ts";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { subjectBox } from "#ui/clients/canvas/subjects/subjects.ts";
 
 /** One ask to fit a subject: a new one each time, so asking for one subject again fits it again. */
@@ -33,7 +33,7 @@ interface Ask {
  */
 function useSubjectFocus(
 	drawing: SemanticRender | undefined,
-	camera: BoardCamera,
+	camera: PictureCamera,
 	reducedMotion: boolean,
 	onView: (view: string | null) => void,
 ): (id: string) => void {

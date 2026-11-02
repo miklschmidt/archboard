@@ -10,7 +10,7 @@ Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, wri
 
 const { act, cleanup, renderHook, waitFor } = await import("@testing-library/react");
 const { createElement } = await import("react");
-const { BoardCatalogProvider } =
+const { ModelCatalogProvider } =
 	await import("#ui/components/model-catalog/ModelCatalogProvider.tsx");
 const { useModelCatalog } = await import("#ui/hooks/architecture-model/use-model-catalog.ts");
 
@@ -123,7 +123,7 @@ globalThis.fetch = Object.assign(fakeFetch, { preconnect: realFetch.preconnect }
  * @returns Its cache provider.
  */
 function Provided(props: { children: ReactNode }): ReactNode {
-	return createElement(BoardCatalogProvider, null, props.children);
+	return createElement(ModelCatalogProvider, null, props.children);
 }
 
 afterEach(() => {

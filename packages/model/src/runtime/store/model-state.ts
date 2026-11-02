@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, lstatSync } from "node:fs";
 import { join, resolve, dirname } from "node:path";
 import { z } from "zod";
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 import { git, GitCommandError } from "@archboard/process/git";
 import { writeFileAtomic } from "@archboard/workspace/atomic-write";
 import { mintId } from "#shared/rules/ids.ts";
@@ -22,8 +22,8 @@ import {
 	RecordedModuleEditSchema,
 	ArchitectureClaimSchema,
 } from "#shared/schemas/model-operations.ts";
-import { holdBoard, BoardHeldError } from "#runtime/store/lock/lock.ts";
-import { boardLockState, releaseHold, renewRecord } from "#runtime/store/lock/lease-state.ts";
+import { holdModel, ModelHeldError } from "#runtime/store/lock/lock.ts";
+import { modelLockState, releaseHold, renewRecord } from "#runtime/store/lock/lease-state.ts";
 import { ArchiveError, optionalValue, type ArchiveContext } from "#runtime/store/model-archive.ts";
 
 import {
@@ -282,13 +282,13 @@ async function withModelLock<T>(
 	const id = mintId();
 	const lease = modelLease(vault);
 	try {
-		await holdBoard({
+		await holdModel({
 			...lease,
 			holder: { id, kind: "agent" },
 			waitMs: 0,
 		});
 	} catch (error) {
-		if (error instanceof BoardHeldError)
+		if (error instanceof ModelHeldError)
 			throw new ArchiveError(
 				"MODEL_BUSY",
 				"Another architecture operation holds the installation lock. Retry after it completes.",
@@ -296,13 +296,13 @@ async function withModelLock<T>(
 		throw error;
 	}
 	const timer = setInterval(
-		() => renewRecord(lease.vault, lease.board, id, BOARD_LOCK_MS.lease),
-		BOARD_LOCK_MS.renew,
+		() => renewRecord(lease.vault, lease.board, id, MODEL_LOCK_MS.lease),
+		MODEL_LOCK_MS.renew,
 	);
 	timer.unref();
 	try {
 		return await work(() => {
-			if (boardLockState(lease.vault, lease.board)?.id !== id)
+			if (modelLockState(lease.vault, lease.board)?.id !== id)
 				throw new ArchiveError(
 					"MODEL_BUSY",
 					"The installation lease was lost. Retry through recovery.",
@@ -333,7 +333,7 @@ function modelBoundaryFailure(
 				recovery: recoveryDetails(journal),
 			};
 		const lease = modelLease(vault);
-		if (boardLockState(lease.vault, lease.board) !== null)
+		if (modelLockState(lease.vault, lease.board) !== null)
 			return blockedRead(
 				"MODEL_BUSY",
 				"An architecture operation is in progress.",

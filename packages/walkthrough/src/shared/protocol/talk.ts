@@ -24,8 +24,8 @@ import {
 } from "@archboard/model/render-reply";
 import {
 	addressedVariant,
-	type SemanticBoard,
-	parseSemanticBoard,
+	type LegacyBoard,
+	parseLegacyBoard,
 } from "@archboard/model/legacy-board";
 import { VaultCheckSchema } from "@archboard/model/policy";
 import { RecordingLanguageSchema } from "#shared/schemas/recording-language.ts";
@@ -262,7 +262,7 @@ function boardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
  * @returns Board failures.
  */
 function legacyBoardProblems(talk: z.infer<typeof TalkSchema>): readonly string[] {
-	const parsed = parseSemanticBoard(talk.document);
+	const parsed = parseLegacyBoard(talk.document);
 	if (!parsed.ok) return [`The talk's board cannot be read: ${parsed.problem}`];
 	const problems: string[] = [];
 	if (parsed.board.version !== talk.board.version) {
@@ -326,10 +326,7 @@ function canonicalProblems(talk: z.infer<typeof TalkSchema>): string[] {
  * @param board The talk's board, as read.
  * @returns The problems.
  */
-function againstProblems(
-	talk: z.infer<typeof TalkSchema>,
-	board: SemanticBoard,
-): readonly string[] {
+function againstProblems(talk: z.infer<typeof TalkSchema>, board: LegacyBoard): readonly string[] {
 	const { against } = talk.board;
 	if (against === undefined) return [];
 	if (!board.variants.some((variant) => variant.id === against)) {

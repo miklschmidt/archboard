@@ -17,10 +17,10 @@ import { memo, useCallback, useMemo, useRef, useState, type JSX, type ReactNode 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import type { SemanticDrawing, SemanticRender } from "#ui/clients/canvas/reads/drawings.ts";
-import type { BoardPlace } from "#ui/components/canvas/PaneHeader.tsx";
+import type { CrumbPlace } from "#ui/components/canvas/PaneHeader.tsx";
 import { SemanticStageView } from "#ui/components/canvas/SemanticStageView.tsx";
 import { useAutoFit } from "#ui/hooks/canvas/use-auto-fit.ts";
-import { useBoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { usePictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { SIDEBAR_WIDTH } from "@archboard/renderer/shell-geometry";
 import { useClearOfPanel } from "#ui/hooks/canvas/use-clear-of-panel.ts";
 import { useDeparture } from "#ui/hooks/canvas/use-departure.ts";
@@ -34,7 +34,7 @@ import { usePicking } from "#ui/hooks/canvas/use-picking.ts";
 import { usePresentationPosition } from "#ui/hooks/canvas/use-presentation-position.ts";
 import { useReported } from "#ui/hooks/canvas/use-reported-reading.ts";
 import { useReveal } from "#ui/hooks/canvas/use-reveal.ts";
-import { useSemanticBoardChanges } from "#ui/hooks/canvas/use-model-changes.ts";
+import { useModelChanges } from "#ui/hooks/canvas/use-model-changes.ts";
 import { useSettledFocus } from "#ui/hooks/canvas/use-settled-focus.ts";
 import { useSidebar } from "#ui/hooks/canvas/use-sidebar.ts";
 import { useStageAppearances } from "#ui/hooks/canvas/use-stage-appearances.ts";
@@ -44,7 +44,7 @@ import { useWalkthrough, type DrivenPlace } from "#ui/hooks/canvas/use-walkthrou
 import type { SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 import type { SelectedSubject } from "#ui/rules/canvas/reading/document.ts";
 import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
-import { semanticBoardListQuery, semanticRenderQuery } from "#ui/clients/canvas/reads/queries.ts";
+import { retainedListingQuery, semanticRenderQuery } from "#ui/clients/canvas/reads/queries.ts";
 import { usePaneVault } from "#ui/hooks/canvas/use-pane-vault.ts";
 import type { WalkthroughBeatSchema } from "@archboard/model/content";
 import type { z } from "zod";
@@ -54,7 +54,7 @@ type SemanticPanePart = NonNullable<z.infer<typeof SemanticPaneContextSchema>["b
 type WalkthroughBeat = z.infer<typeof WalkthroughBeatSchema>;
 
 /** Inputs for a semantic pane. */
-interface SemanticBoardStageProps {
+interface CanvasStageProps {
 	/** The board name, as the address names it. */
 	board: string;
 	/**
@@ -132,7 +132,7 @@ interface SemanticBoardStageProps {
 	 * @param board The board on screen.
 	 * @returns The boards above it.
 	 */
-	placeOf?: ((board: string) => readonly BoardPlace[]) | undefined;
+	placeOf?: ((board: string) => readonly CrumbPlace[]) | undefined;
 	/**
 	 * Show a board of another vault in this pane: a drill-down into another
 	 * repository, or back along a trail that came from one (ADR 0050). Without
@@ -203,13 +203,13 @@ function drawingIn(answer: SemanticRender | undefined): SemanticDrawing | null {
  * @param props The board, the variant, the selection and the pick.
  * @returns Whichever of the four states is true.
  */
-function SemanticBoardStage(props: SemanticBoardStageProps): JSX.Element {
+function CanvasStage(props: CanvasStageProps): JSX.Element {
 	const { shared } = usePaneChrome();
-	return <BoardReading {...props} resting={shared} />;
+	return <DocumentReading {...props} resting={shared} />;
 }
 
 /** Inputs for the reading of a pane's board. */
-interface BoardReadingProps extends SemanticBoardStageProps {
+interface DocumentReadingProps extends CanvasStageProps {
 	/** Whether the sidebar stays away unless the person docks it: while two panes share the centre. */
 	readonly resting: boolean;
 }
@@ -219,12 +219,12 @@ interface BoardReadingProps extends SemanticBoardStageProps {
  * @param props The pane's inputs, and whether another pane shares the centre.
  * @returns Whichever of the four states is true.
  */
-const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.Element {
+const DocumentReading = memo(function DocumentReading(props: DocumentReadingProps): JSX.Element {
 	const { resting, ...stage } = props;
 	const { board, variant, onSelect, onUserChanged } = props;
 	const [comparison, onComparisonChange] = useState(true);
 	const vault = usePaneVault();
-	const repository = useQuery(semanticBoardListQuery(vault)).data?.repository ?? null;
+	const repository = useQuery(retainedListingQuery(vault)).data?.repository ?? null;
 	const drill = useDrillDown(
 		{ board, variant, arrival: props.arrival, vault, repository },
 		props.onDive,
@@ -264,7 +264,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	);
 	// The board on screen, not the pane's own: a change to the board somebody is
 	// actually reading is the one that has to reach them.
-	useSemanticBoardChanges(vault, drill.board);
+	useModelChanges(vault, drill.board);
 
 	const drawn = drawingIn(render.data);
 	const presented = usePresentationPosition(
@@ -279,7 +279,7 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 		reading,
 	);
 	const reducedMotion = props.reducedMotion === true;
-	const camera = useBoardCamera(reducedMotion);
+	const camera = usePictureCamera(reducedMotion);
 	// The picture's area, which a flight over the picture and a panel laid over its edge both look inside.
 	const picture = useRef<HTMLDivElement | null>(null);
 	const attachPicture = useCallback((element: HTMLDivElement | null): void => {
@@ -425,4 +425,4 @@ const BoardReading = memo(function BoardReading(props: BoardReadingProps): JSX.E
 	);
 });
 
-export { SemanticBoardStage, type SemanticBoardStageProps };
+export { CanvasStage, type CanvasStageProps };

@@ -16,13 +16,13 @@ import { watchArchitectureModel } from "@archboard/model/store-read";
 import type { ArchitectureEvent } from "@archboard/model/contract";
 import type { SettledChangeSourceEvent } from "#runtime/schemas/semantic-context-types.ts";
 /** One settled change, as a context consumer reads it. */
-interface SettledBoardChange extends SettledChangeSourceEvent {
+interface SettledModelChange extends SettledChangeSourceEvent {
 	readonly by: string | null;
 	readonly doing: string | null;
 }
 
 /** Hears settled changes until the returned function is called. */
-type SettledChangeListener = (event: SettledBoardChange) => void;
+type SettledChangeListener = (event: SettledModelChange) => void;
 
 /**
  * This process's feed of settled board changes.
@@ -44,7 +44,7 @@ function changed(message: ArchitectureEvent): void {
 	if (message.type !== "architecture_changed") return;
 	cursor += 1;
 	const request = message.operation?.checkpoint.request;
-	const event: SettledBoardChange = {
+	const event: SettledModelChange = {
 		cursor,
 		vault: message.vault,
 		board: `model:${message.model}`,
@@ -94,4 +94,4 @@ const semanticChangeFeed = {
 	},
 };
 
-export { semanticChangeFeed, type SettledBoardChange, type SettledChangeListener };
+export { semanticChangeFeed, type SettledModelChange, type SettledChangeListener };

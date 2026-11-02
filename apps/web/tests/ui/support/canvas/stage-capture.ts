@@ -4,12 +4,9 @@ import { z } from "zod";
 import { VaultCheckSchema } from "@archboard/model/policy";
 import { RememberedFindingsSchema } from "@archboard/code-intel/code-check";
 import { SemanticRenderReplySchema } from "@archboard/model/render-reply";
-import { readBoardsFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
 import { takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
-import {
-	SemanticBoardError,
-	type SemanticRenderRequest,
-} from "#ui/clients/canvas/reads/drawings.ts";
+import { ReadingError, type SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
 import { withFixtureOrders } from "#tests/ui/support/canvas/fixture-orders.ts";
 
 /** What the fake server answers a request with. */
@@ -65,7 +62,7 @@ const VAULT_ROUTE = "/api/vault/check";
 const FINDINGS_ROUTE = "/api/vault/code-findings";
 
 /** The route a pane reads a whole board through. */
-const BOARD_ROUTE = "retained-document";
+const DOCUMENT_ROUTE = "retained-document";
 
 /** The route a pane asks for a picture through. */
 const RENDER_ROUTE = "retained-render";
@@ -88,7 +85,7 @@ function renderCalls(): string[] {
  * @returns The board name, or null when the request was for something else.
  */
 function documentAsked(url: string): string | null {
-	return url.startsWith(BOARD_ROUTE)
+	return url.startsWith(DOCUMENT_ROUTE)
 		? (new URLSearchParams(url.split("?")[1]).get("board") ?? "")
 		: null;
 }
@@ -153,7 +150,7 @@ function documentReply(board: string): StubReply {
 			status: 404,
 			body: {
 				success: false,
-				code: "BOARD_MISSING",
+				code: "MODEL_MISSING",
 				error: `there is no semantic board called "${board}"`,
 			},
 		};
@@ -187,7 +184,7 @@ function answered(reply: StubReply): Promise<Response> {
  * Read a fixture result through the explicit capture boundary.
  * @param resource The fixture resource, never a live board route.
  * @returns The authored fixture body.
- * @throws {SemanticBoardError} When the fixture supplies a refusal.
+ * @throws {ReadingError} When the fixture supplies a refusal.
  */
 async function captured(resource: string): Promise<unknown> {
 	const response = await fakeFetch(resource);
@@ -196,12 +193,12 @@ async function captured(resource: string): Promise<unknown> {
 		const refusal = z
 			.object({
 				code: z
-					.enum(["BOARD_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"])
+					.enum(["MODEL_MISSING", "UNKNOWN_VARIANT", "UNKNOWN_VIEW", "BOARD_UNREADABLE"])
 					.optional(),
 				error: z.string(),
 			})
 			.parse(body);
-		throw new SemanticBoardError(refusal.code ?? "REPLY_INVALID", refusal.error);
+		throw new ReadingError(refusal.code ?? "REPLY_INVALID", refusal.error);
 	}
 	return body;
 }
@@ -232,7 +229,7 @@ async function capturedDrawing(request: SemanticRenderRequest) {
 /** Install exact fixture providers before mounting the retained stage. */
 function supplyCapture(): void {
 	globalThis.fetch = serving;
-	readBoardsFrom({
+	readRetainedFrom({
 		/**
 		 * Keep repository discovery outside the retained fixture.
 		 * @returns No live repository discovery from a retained stage.
@@ -247,7 +244,7 @@ function supplyCapture(): void {
 		document: async (_vault, board) =>
 			z
 				.object({ board: z.unknown() })
-				.parse(await captured(`${BOARD_ROUTE}?board=${encodeURIComponent(board)}`)).board,
+				.parse(await captured(`${DOCUMENT_ROUTE}?board=${encodeURIComponent(board)}`)).board,
 		/**
 		 * Read the policy captured by this fixture.
 		 * @returns The captured policy.

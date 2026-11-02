@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The bitmaps the harness takes of every final diagram a scenario asked for,
 // through `archboard semantic rasterize`: the same capability a person uses,
 // never a renderer of the harness's own. A capture is declared by the
@@ -282,7 +282,7 @@ function viewLabel(label: string, view: string, taken: ReadonlySet<string>): str
  */
 function resolvedCapture(
 	request: CaptureDeclaration,
-	boards: ReadonlyMap<string, SemanticBoard>,
+	boards: ReadonlyMap<string, EvaluatedDocument>,
 ): CaptureDeclaration {
 	const entry = namedEntry(boards, request.board);
 	if (entry === undefined) return request;
@@ -298,7 +298,7 @@ function resolvedCapture(
  * @returns The selectors, each left out when the request names none.
  */
 function selectorsNamed(
-	board: SemanticBoard,
+	board: EvaluatedDocument,
 	request: CaptureDeclaration,
 ): Pick<CaptureDeclaration, "variant" | "view"> {
 	return {
@@ -334,7 +334,7 @@ function asWritten(
  */
 function expandCaptures(
 	requests: readonly CaptureRequest[],
-	boards: ReadonlyMap<string, SemanticBoard>,
+	boards: ReadonlyMap<string, EvaluatedDocument>,
 ): CaptureDeclaration[] {
 	const taken = new Set(requests.map((request) => request.label));
 	return requests.flatMap((request): CaptureDeclaration[] => {

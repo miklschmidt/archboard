@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { LegacyDraftMappingSchema } from "#shared/schemas/migration-drafts.ts";
 import { ModelReferenceSchema } from "#shared/schemas/model-definitions.ts";
-import { SemanticBoardSchema } from "#shared/schemas/legacy-board.ts";
+import { LegacyBoardSchema } from "#shared/schemas/legacy-board.ts";
 import { SemanticIdSchema } from "#shared/schemas/primitives.ts";
 import { SemanticPolicySchema } from "#shared/schemas/semantic-policy.ts";
 import {
@@ -74,7 +74,7 @@ const LegacyInventorySchema = z.strictObject({
 		z.strictObject({
 			file: z.string(),
 			source: z.string(),
-			document: SemanticBoardSchema.optional(),
+			document: LegacyBoardSchema.optional(),
 		}),
 	),
 	policy: SemanticPolicySchema.optional(),

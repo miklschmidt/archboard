@@ -10,15 +10,15 @@
 
 import { queryOptions } from "@tanstack/react-query";
 
-import { BOARD_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "@archboard/timing";
 import { fetchRepositories } from "#ui/clients/model-catalog/repositories.ts";
 import { fetchPaneInventory } from "#ui/clients/pane-session/pane-requests.ts";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */
-const CATALOG_KEY = "board-catalog";
+const CATALOG_KEY = "model-catalog";
 
 /** The cache keys, spelled once. */
-const boardCatalogKeys = {
+const modelCatalogKeys = {
 	/** Everything this module caches. */
 	all: [CATALOG_KEY] as const,
 	/** What the live panes hold, across every tab. */
@@ -42,14 +42,14 @@ const boardCatalogKeys = {
  */
 function paneInventoryQuery() {
 	return queryOptions({
-		queryKey: boardCatalogKeys.panes,
+		queryKey: modelCatalogKeys.panes,
 		/**
 		 * Read the live panes.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The pane inventory.
 		 */
 		queryFn: (context) => fetchPaneInventory(context.signal),
-		staleTime: BOARD_CACHE_MS.listingStale,
+		staleTime: MODEL_CACHE_MS.listingStale,
 		refetchOnWindowFocus: "always",
 	});
 }
@@ -64,16 +64,16 @@ function paneInventoryQuery() {
  */
 function repositoriesQuery() {
 	return queryOptions({
-		queryKey: boardCatalogKeys.repositories,
+		queryKey: modelCatalogKeys.repositories,
 		/**
 		 * Read the repositories.
 		 * @param context The query's context, whose signal ends the read.
 		 * @returns The listing.
 		 */
 		queryFn: (context) => fetchRepositories(context.signal),
-		staleTime: BOARD_CACHE_MS.listingStale,
+		staleTime: MODEL_CACHE_MS.listingStale,
 		refetchOnWindowFocus: "always",
 	});
 }
 
-export { boardCatalogKeys, paneInventoryQuery, repositoriesQuery };
+export { modelCatalogKeys, paneInventoryQuery, repositoriesQuery };

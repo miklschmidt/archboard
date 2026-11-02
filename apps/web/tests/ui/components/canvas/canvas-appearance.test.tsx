@@ -3,7 +3,7 @@ import { expect, test } from "bun:test";
 
 import type { AppliedAppearance } from "#ui/clients/canvas/reads/drawings.ts";
 import { HEAD_LENGTH } from "@archboard/renderer/picture";
-import { announceSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { announceModelChange } from "#ui/state/canvas/model-changes.ts";
 import { pressKey } from "#tests/ui/support/canvas/camera-probes.ts";
 import { sidebarSettled } from "#tests/ui/support/canvas/sidebar-probes.ts";
 import {
@@ -116,7 +116,7 @@ test("the legend explains the picture and survives a policy-only restyle", async
 	expect(document.querySelector('[data-slot="semantic-legend"]')).toBeNull();
 
 	server.reply = { status: 200, body: styledDrawing("blue") };
-	act(() => announceSemanticBoardChange(PANE_VAULT, "pipeline", 2));
+	act(() => announceModelChange(PANE_VAULT, "pipeline", 2));
 	await settle();
 	expect(surface().style.transform).toBe(camera);
 	expect(

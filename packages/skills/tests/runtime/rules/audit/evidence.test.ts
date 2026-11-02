@@ -7,10 +7,10 @@
 // cumulative usage, not its own.
 
 import { describe, expect, test } from "bun:test";
-import { SemanticBoardSchema } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/runtime/support/fixture-orders.ts";
 import { callUsageFrom, sessionUsage } from "#runtime/protocol/grader-usage.ts";
-import { countDirectBoardWrites } from "#runtime/rules/audit/guardrails.ts";
+import { countDirectVaultWrites } from "#runtime/rules/audit/guardrails.ts";
 import { exposureCounts } from "#runtime/protocol/events.ts";
 import { buildReport, type RunRecord } from "#runtime/rules/reports/report.ts";
 import {
@@ -60,7 +60,7 @@ function classified(command: string): ClassifiedCommand {
 	return one;
 }
 
-const BOARD = SemanticBoardSchema.parse(
+const BOARD = LegacyBoardSchema.parse(
 	withFixtureOrders({
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -223,7 +223,7 @@ describe("write attempts", () => {
 		expect(classified(command).class).toBe("operation");
 		expect(writeGuardrail([command]).passed).toBe(false);
 		expect(
-			countDirectBoardWrites({ commands: [classified(command)], fileChanges: [], vault: VAULT }),
+			countDirectVaultWrites({ commands: [classified(command)], fileChanges: [], vault: VAULT }),
 		).toBe(1);
 	});
 });

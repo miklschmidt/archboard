@@ -15,7 +15,7 @@ const { drawing, mountStage, server, settle, viewport } =
 	await import("#tests/ui/support/canvas/stage-harness.tsx");
 
 /** Components that are drawn around the picture and must not be drawn again for a camera move. */
-const AROUND_THE_PICTURE = ["SemanticBoardStage", "SemanticStageSidebar", "SemanticDiagram"];
+const AROUND_THE_PICTURE = ["CanvasStage", "SemanticStageSidebar", "SemanticDiagram"];
 
 test("a pan or a zoom draws the surface again and nothing around it", async () => {
 	server.reply = { status: 200, body: drawing(1) };

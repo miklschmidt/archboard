@@ -1,11 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
-import { BOARD_LOCK_MS } from "@archboard/timing";
-import { boardMemoryKey, normalizeBoardKey } from "#runtime/store/legacy-address.ts";
+import { MODEL_LOCK_MS } from "@archboard/timing";
+import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { noteClaimRevoked, processClaims } from "#runtime/store/lock/claim-state.ts";
 import {
-	BoardHeldError,
+	ModelHeldError,
 	processName,
 	type HolderKind,
 	type LockHold,
@@ -25,8 +25,8 @@ import {
 	writeRecord,
 } from "#runtime/store/lock/lease-state.ts";
 
-class BoardLockCancelledError extends Error {
-	readonly code = "BOARD_LOCK_CANCELLED";
+class ModelLockCancelledError extends Error {
+	readonly code = "MODEL_LOCK_CANCELLED";
 
 	/**
 	 * A wait given up because the request that was waiting went away.
@@ -34,7 +34,7 @@ class BoardLockCancelledError extends Error {
 	 */
 	constructor(readonly board: string) {
 		super(`Waiting to write "${board}" was canceled because the request disconnected.`);
-		this.name = "BoardLockCancelledError";
+		this.name = "ModelLockCancelledError";
 	}
 }
 
@@ -213,11 +213,11 @@ function sleep(ms: number): Promise<void> {
  * @param ms How long to wait.
  * @param signal Cancels the wait when the request goes away.
  * @returns When the interval is up.
- * @throws {BoardLockCancelledError} When the request goes away first.
+ * @throws {ModelLockCancelledError} When the request goes away first.
  */
 function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promise<void> {
 	if (signal?.aborted) {
-		return Promise.reject(new BoardLockCancelledError(board));
+		return Promise.reject(new ModelLockCancelledError(board));
 	}
 	return new Promise((resolve, reject) => {
 		let timer: ReturnType<typeof setTimeout> | null = null;
@@ -233,7 +233,7 @@ function waitForLockPoll(board: string, ms: number, signal?: AbortSignal): Promi
 			timer = null;
 			signal?.removeEventListener("abort", onAbort);
 			if (cancelled) {
-				reject(new BoardLockCancelledError(board));
+				reject(new ModelLockCancelledError(board));
 			} else {
 				resolve();
 			}
@@ -290,7 +290,7 @@ async function attempt(
 	 */
 	const endsClaimHere = (taker: LockRecord): void => {
 		const claimHere =
-			revoke && who.kind === "human" ? processClaims.get(boardMemoryKey(vault, board)) : undefined;
+			revoke && who.kind === "human" ? processClaims.get(modelMemoryKey(vault, board)) : undefined;
 		if (claimHere && claimHere.holder.id !== who.id) {
 			noteClaimRevoked(vault, board, claimHere.holder, holderOf(taker), "taken-back");
 		}
@@ -370,7 +370,7 @@ async function stealContested(
 	endsClaimHere: (taker: LockRecord) => void,
 ): Promise<Attempt> {
 	writeRecord(file, record);
-	await sleep(BOARD_LOCK_MS.stealGuard);
+	await sleep(MODEL_LOCK_MS.stealGuard);
 	const settled = readRecord(file);
 	if (settled?.token !== record.token) {
 		return { ok: false, record: liveRecord(settled) };
@@ -390,11 +390,11 @@ async function stealContested(
  * when anybody else holds the board (TASK-153). A zero wait asks exactly once.
  * @param request Who is asking, for which board, and how long to wait.
  * @returns The hold, saying whether this call created it or joined one.
- * @throws {BoardHeldError} When somebody else still has the board.
- * @throws {BoardLockCancelledError} When the request goes away while waiting.
+ * @throws {ModelHeldError} When somebody else still has the board.
+ * @throws {ModelLockCancelledError} When the request goes away while waiting.
  */
-async function holdBoard(request: LockRequest): Promise<LockHold> {
-	const board = normalizeBoardKey(request.board);
+async function holdModel(request: LockRequest): Promise<LockHold> {
+	const board = normalizePaneKey(request.board);
 	const plan = waitPlan(request);
 	const wait: WaitState = { blocker: null, attemptsPastDeadline: 0 };
 	for (;;) {
@@ -415,7 +415,7 @@ async function holdBoard(request: LockRequest): Promise<LockHold> {
 			await waitForLockPoll(request.board, pollFor(plan.deadline), request.signal);
 		}
 	}
-	throw new BoardHeldError(
+	throw new ModelHeldError(
 		request.board,
 		wait.blocker ? holderOf(wait.blocker) : null,
 		Date.now() - plan.startedAt,
@@ -447,9 +447,9 @@ type WaitVerdict = "stop" | "retry" | "wait";
 function waitPlan(request: LockRequest): WaitPlan {
 	const startedAt = Date.now();
 	return {
-		leaseMs: request.leaseMs ?? BOARD_LOCK_MS.lease,
+		leaseMs: request.leaseMs ?? MODEL_LOCK_MS.lease,
 		startedAt,
-		deadline: startedAt + (request.waitMs ?? BOARD_LOCK_MS.waitCap),
+		deadline: startedAt + (request.waitMs ?? MODEL_LOCK_MS.waitCap),
 	};
 }
 
@@ -460,7 +460,7 @@ function waitPlan(request: LockRequest): WaitPlan {
  * @returns The interval in milliseconds.
  */
 function pollFor(deadline: number): number {
-	return Math.min(BOARD_LOCK_MS.poll, Math.max(1, deadline - Date.now()));
+	return Math.min(MODEL_LOCK_MS.poll, Math.max(1, deadline - Date.now()));
 }
 
 /**
@@ -516,7 +516,7 @@ function givesUp(wait: WaitState): boolean {
  * @param request Who is asking.
  * @param leaseMs How long the lease runs for.
  * @returns This acquisition, or the live blocker that refused it.
- * @throws {BoardLockCancelledError} When the request goes away.
+ * @throws {ModelLockCancelledError} When the request goes away.
  */
 async function attemptOnce(board: string, request: LockRequest, leaseMs: number): Promise<Attempt> {
 	refuseIfCancelled(request);
@@ -537,11 +537,11 @@ async function attemptOnce(board: string, request: LockRequest, leaseMs: number)
 /**
  * Stop when the request that was waiting has gone away.
  * @param request Who was asking.
- * @throws {BoardLockCancelledError} When the request has gone away.
+ * @throws {ModelLockCancelledError} When the request has gone away.
  */
 function refuseIfCancelled(request: LockRequest): void {
 	if (request.signal?.aborted) {
-		throw new BoardLockCancelledError(request.board);
+		throw new ModelLockCancelledError(request.board);
 	}
 }
 
@@ -579,10 +579,10 @@ function refusedOutright(blocker: LockRecord, request: LockRequest): boolean {
  * @param request Who is asking, and for which board.
  * @param write The write, which runs while the board is held.
  * @returns Whatever the write returned.
- * @throws {BoardHeldError} When somebody else has the board.
+ * @throws {ModelHeldError} When somebody else has the board.
  */
-async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T> {
-	const hold = await holdBoard(request);
+async function withLease<T>(request: LockRequest, write: () => T): Promise<T> {
+	const hold = await holdModel(request);
 	try {
 		return write();
 	} finally {
@@ -592,4 +592,4 @@ async function withBoardLock<T>(request: LockRequest, write: () => T): Promise<T
 	}
 }
 
-export { BoardLockCancelledError, holdBoard, sleep, withBoardLock, freshRecord, createExclusively };
+export { ModelLockCancelledError, holdModel, sleep, withLease, freshRecord, createExclusively };

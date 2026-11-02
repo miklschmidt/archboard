@@ -5,10 +5,10 @@ import { tabSessionOf } from "@archboard/workbench/server";
 
 import type { Request, Response } from "express";
 
-import { parseBoardKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 import { buildPanesReport } from "@archboard/server-lifecycle/panes";
 import { serverUrl, statedVault } from "@archboard/workbench/host";
-import { boardForPane, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
+import { paneKeyOf, panes, semanticPaneContextFor } from "@archboard/workbench/panes";
 import { placeOfVault } from "@archboard/workspace/repository-listing";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
@@ -33,7 +33,7 @@ function readingAboutBoard(clientId: string): SemanticPaneContext | null {
 	if (context === null) return null;
 	if (context.architecture != null) return context;
 	const pane = panes.get(clientId);
-	const showing = pane === undefined ? null : boardForPane(pane);
+	const showing = pane === undefined ? null : paneKeyOf(pane);
 	return context.board?.key === showing ? context : null;
 }
 
@@ -55,7 +55,7 @@ function getPanesRoute(req: Request, res: Response): void {
 		 * @param key The board key.
 		 * @returns The identity.
 		 */
-		identity: (key) => parseBoardKey(key),
+		identity: (key) => parsePaneKey(key),
 		/**
 		 * What one pane last reported reading: its variant, its view and what the
 		 * person picked out (ADR 0023).

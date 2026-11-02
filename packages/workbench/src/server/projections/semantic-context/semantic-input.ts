@@ -247,7 +247,7 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
  * Build local agent input from canonical authority or its explicit migration refusal.
  * @param active The session owners.
  * @param vault The addressed vault.
- * @param _contextBoard The retained presentation address.
+ * @param _contextModel The retained presentation address.
  * @param cursor The current feed cursor.
  * @param pane The reporting pane.
  * @returns Canonical facts and session identities.
@@ -255,7 +255,7 @@ function linkedIdentities(active: SemanticInputOwners | null): LinkedIdentities 
 function semanticInputFor(
 	active: SemanticInputOwners | null,
 	vault: string,
-	_contextBoard: string,
+	_contextModel: string,
 	cursor: SemanticContextInput["cursor"],
 	pane: ContextPane,
 ): SemanticContextInput {

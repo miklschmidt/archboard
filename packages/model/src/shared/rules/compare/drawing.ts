@@ -29,7 +29,7 @@ import {
 } from "#shared/rules/compare/default-reference.ts";
 import {
 	currentVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "#shared/schemas/legacy-board.ts";
 import {
@@ -69,11 +69,11 @@ function comparedWith(
 	current: ArchitectureModelRead,
 ): ComparisonReference | undefined;
 function comparedWith(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant | undefined;
 function comparedWith(
-	selected: ArchitectureModel | Pick<SemanticBoard, "name" | "current" | "variants">,
+	selected: ArchitectureModel | Pick<LegacyBoard, "name" | "current" | "variants">,
 	reading: ArchitectureModelRead | SemanticVariant,
 ): ComparisonReference | SemanticVariant | undefined {
 	if ("success" in selected && "success" in reading)
@@ -91,7 +91,7 @@ function comparedWith(
  * @returns Its current variant or retained parent.
  */
 function legacyReference(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 ): SemanticVariant | undefined {
 	const current = currentVariant(board);
@@ -120,13 +120,13 @@ function drawingOf(
 	scope?: ReadingScope,
 ): ComparedContent;
 function drawingOf(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope?: ReadingScope,
 	named?: SemanticVariant,
 ): DrawnProposal;
 function drawingOf(
-	source: Pick<SemanticBoard, "name" | "current" | "variants"> | VariantContent,
+	source: Pick<LegacyBoard, "name" | "current" | "variants"> | VariantContent,
 	reading: SemanticVariant | VariantContent,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,
@@ -170,7 +170,7 @@ function comparedContent(
  * @returns The content to draw and the changes to mark on it.
  */
 function boardDrawing(
-	board: Pick<SemanticBoard, "name" | "current" | "variants">,
+	board: Pick<LegacyBoard, "name" | "current" | "variants">,
 	variant: SemanticVariant,
 	scope: ReadingScope = { kind: "all" },
 	named?: SemanticVariant,

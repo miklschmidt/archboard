@@ -7,29 +7,29 @@ import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-mess
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
 
-import type { SemanticBoardEntry } from "#ui/clients/canvas/reads/drawings.ts";
+import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
 
 /** A board's address: what it is called, and which of its variants is shown. */
-export interface BoardIdentity {
+export interface LegacyIdentity {
 	board: string;
 	/** The variant's name, or `current` when the pane follows the designation. */
 	variant: string;
 }
 
 /** One persisted variant of a listed board, with the key a pane opens it by. */
-export type ListedVariant = SemanticBoardEntry["variants"][number] & {
+export type ListedVariant = DocumentEntry["variants"][number] & {
 	/** The board key a pane is addressed with: bare for the variant the name opens, `board@id` otherwise. */
 	key: string;
 };
 
 /** One board as the vault lists it, each variant carrying the key a pane opens it by. */
-export type CatalogBoard = Omit<SemanticBoardEntry, "variants"> & {
+export type CatalogModel = Omit<DocumentEntry, "variants"> & {
 	variants: ListedVariant[];
 };
 
 /** Persisted board inventory returned by `/api/semantic-boards`. */
-export interface PersistedBoardListing {
-	boards: CatalogBoard[];
+export interface PersistedLegacyListing {
+	boards: CatalogModel[];
 	/** The vault's configured levels, coarsest first. */
 	levels: readonly string[];
 }
@@ -40,12 +40,12 @@ export interface BrowserPaneListing {
 		paneId: string;
 		place: string;
 		board: string;
-		identity: BoardIdentity;
+		identity: LegacyIdentity;
 	}>;
 }
 
 /** UI-local projection of persisted boards and the live pane inventory. */
-export interface BoardListing extends PersistedBoardListing {
+export interface LegacyListing extends PersistedLegacyListing {
 	/** What each pane is holding right now, in reading order. */
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
@@ -55,32 +55,32 @@ export interface WebSocketMessage {
 	type: string;
 	model?: string;
 	reading?: unknown;
-	/** On `board_error`: the actionable refusal the shell must keep visible. */
+	/** On `pane_error`: the actionable refusal the shell must keep visible. */
 	error?: string;
 	/** The board a message is about, as a pane board key. */
 	board?: string;
-	identity?: BoardIdentity;
-	/** On `pane_board`: the vault the pane is in now (ADR 0050). On `agent_activity`: the vault the boards are in. */
+	identity?: LegacyIdentity;
+	/** On `pane_place`: the vault the pane is in now (ADR 0050). On `agent_activity`: the vault the boards are in. */
 	vault?: string;
-	/** On `pane_board`: the repository that vault is listed under, or null. */
+	/** On `pane_place`: the repository that vault is listed under, or null. */
 	repository?: string | null;
 	/**
-	 * On `board_note`: a semantic board changed. The panes showing that board
+	 * On `model_note`: a semantic board changed. The panes showing that board
 	 * ask the server for a new picture; nothing about a pane's own state follows
 	 * from it, because the pane holds no copy of the content (ADR 0023).
 	 */
 	semantic?: boolean;
-	/** On `board_note`: the version the board is at now. */
+	/** On `model_note`: the version the board is at now. */
 	version?: number | null;
-	/** On `board_lock`: is anybody writing this board (ADR 0016). */
+	/** On `model_lock`: is anybody writing this board (ADR 0016). */
 	held?: boolean;
-	/** On `board_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
+	/** On `model_lock`: who, or null. `id` is their client id, so a pane can recognise itself. */
 	holder?: LockHolder | null;
-	/** On `board_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
+	/** On `model_doing`: the last few, oldest first, so a pane that has just arrived is not blank. */
 	recent?: DoingEntry[];
 	/**
 	 * On `agent_activity`: every board of the named vault that an agent holds
-	 * or has just written, as one snapshot. Boardless, and told to every pane.
+	 * or has just written, as one snapshot. Keyless, and told to every pane.
 	 */
 	activity?: AgentActivityEntry[];
 }
@@ -151,7 +151,7 @@ export interface PaneStatus {
 	 * point this pane at a board is told there is no such pane.
 	 */
 	registered: boolean;
-	board: BoardIdentity | null;
+	board: LegacyIdentity | null;
 	/**
 	 * The board this pane is showing, or null before it is on one.
 	 *
@@ -160,7 +160,7 @@ export interface PaneStatus {
 	 * pane is about this board: its lock, what an agent is told it is looking
 	 * at, the code a subject opens, the address, and what `browser panes` says.
 	 */
-	boardKey: string | null;
+	paneKey: string | null;
 	/**
 	 * The board the server pointed this pane at, or null before it pointed it
 	 * anywhere.
@@ -174,7 +174,7 @@ export interface PaneStatus {
 	 * The named view the board on screen is being read through, or null for the
 	 * whole variant.
 	 *
-	 * What is DRAWN, like `boardKey` beside it, and for the same reason: a view
+	 * What is DRAWN, like `paneKey` beside it, and for the same reason: a view
 	 * id is a subject of one variant's content, so the view somebody chose on the
 	 * board a pane was opened on names nothing on the board they followed a link
 	 * into. An address written from the shell's remembered preference instead

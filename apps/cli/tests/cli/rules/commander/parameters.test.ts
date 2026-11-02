@@ -224,13 +224,11 @@ describe("shared options", () => {
 		for (const option of sharedOptionsFor(reading.shared)) {
 			expect(help.indexOf(option.spellings[0])).toBeGreaterThan(own);
 		}
-		expect(help).not.toContain("--board");
 		expect(declareCommand(reading, "parse").command.helpInformation()).not.toContain("--doing");
 	});
 
 	test("what a command does not read is what an invocation is refused for", () => {
-		expect(inapplicableSharedOptions(["url", "doing"], ["doing", "board", "as-session"])).toEqual([
-			"--board",
+		expect(inapplicableSharedOptions(["url", "doing"], ["doing", "url", "as-session"])).toEqual([
 			"--as-session",
 		]);
 		expect(inapplicableSharedOptions([], [])).toEqual([]);

@@ -4,17 +4,17 @@
 // against them rather than around them: a number that governs the lock and
 // lives next to the lock is a number the next person tunes without seeing what
 // it pulls against. The lock of the checkout registry (`repo-registry.ts`)
-// reads two of `BOARD_LOCK_MS`, the lease and the poll, because it is a lock
+// reads two of `MODEL_LOCK_MS`, the lease and the poll, because it is a lock
 // file of the same kind: a crash costs the registry one lease, as it costs a
 // board.
 
 import { durations } from "#shared/constants/durations.ts";
 
-/** `BOARD_LOCK_MS.renew`, named once so that `watch` can be one renewal interval. */
+/** `MODEL_LOCK_MS.renew`, named once so that `watch` can be one renewal interval. */
 const LOCK_RENEW_MS = 1000;
 
 /** One writer at a time (ADR 0016): the lease file every board write takes. */
-const BOARD_LOCK_MS = durations({
+const MODEL_LOCK_MS = durations({
 	/**
 	 * How long a lock is held without renewal before it lapses.
 	 *
@@ -50,7 +50,7 @@ const BOARD_LOCK_MS = durations({
 	 * When it does give up it says who holds the board and since when, so a voice
 	 * session has something to say instead of going silent.
 	 *
-	 * Keep it above BOARD_LOCK_MS.lease. An agent waiting on a holder that crashed
+	 * Keep it above MODEL_LOCK_MS.lease. An agent waiting on a holder that crashed
 	 * should outlast the lease and get the board, rather than time out first and
 	 * report a holder that no longer exists. 3000 against 5000 leaves two seconds
 	 * for the wait to notice the lapse. This is the relationship most likely to be
@@ -149,12 +149,12 @@ const CLAIM_MS = durations({
 	 * arriving on a bigger scale.
 	 *
 	 * So it is a name rather than a number, kept separate because the reason for
-	 * the value differs: BOARD_LOCK_MS.lease has to clear the gap between two
+	 * the value differs: MODEL_LOCK_MS.lease has to clear the gap between two
 	 * writes of one holder plus a write, and this has to clear a renewal interval. Both are
 	 * satisfied by the same three seconds today, and the two would be tuned for
 	 * different reasons.
 	 */
-	lease: BOARD_LOCK_MS.lease,
+	lease: MODEL_LOCK_MS.lease,
 	/**
 	 * How long an agent's unclaimed write stays on every pane's activity list.
 	 *
@@ -173,4 +173,4 @@ const CLAIM_MS = durations({
 	activityLinger: 8000,
 });
 
-export { BOARD_LOCK_MS, CLAIM_MS };
+export { MODEL_LOCK_MS, CLAIM_MS };

@@ -418,9 +418,9 @@ const OWNERS: Partial<Record<OutcomeCheck["check"], Check>> = {
  * @param reading The reading.
  * @returns The finding, or undefined when this file owns no such check.
  */
-function boardCheck(check: OutcomeCheck, reading: Reading): Finding | undefined {
+function contentCheck(check: OutcomeCheck, reading: Reading): Finding | undefined {
 	const owner = OWNERS[check.check];
 	return owner === undefined ? undefined : onContent(check, reading, owner);
 }
 
-export { boardCheck, edgesOnContainers, fieldOf };
+export { contentCheck, edgesOnContainers, fieldOf };

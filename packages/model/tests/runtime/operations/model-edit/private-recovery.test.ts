@@ -15,7 +15,7 @@ import {
 	configureArchitecturePublication,
 	publishArchitectureHistory,
 } from "@archboard/model/store-write";
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 import {
 	untrackedFixture,
 	cleanPrivateArchiveFixtures,
@@ -67,7 +67,7 @@ test("a private interrupted transfer preserves affected subjects and publication
 		{ env: { ...process.env, ARCHBOARD_EDIT_CRASH: "file" }, stdout: "pipe", stderr: "pipe" },
 	);
 	expect(await child.exited, await new Response(child.stderr).text()).toBe(86);
-	Date.now = () => actualNow() + BOARD_LOCK_MS.lease;
+	Date.now = () => actualNow() + MODEL_LOCK_MS.lease;
 	const interrupted = readArchitectureModel(vault);
 	expect(interrupted).toMatchObject({
 		success: false,

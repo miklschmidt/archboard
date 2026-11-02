@@ -49,7 +49,7 @@ interface SemanticTarget {
  * @param key The key as a pane or an address carries it, prefix already gone.
  * @returns The board and variant, or null when the key names nothing.
  */
-function boardAddressOf(key: string | null): SemanticTarget | null {
+function paneAddressOf(key: string | null): SemanticTarget | null {
 	if (key === null || key === "") {
 		return null;
 	}
@@ -67,7 +67,7 @@ function boardAddressOf(key: string | null): SemanticTarget | null {
  * @param variant Which variant, or nothing for the board's current one.
  * @returns The key.
  */
-function boardKeyFor(board: string, variant?: string | null): string {
+function paneKeyFor(board: string, variant?: string | null): string {
 	return variant === undefined || variant === null || variant === ""
 		? board
 		: `${board}${VARIANT_MARK}${variant}`;
@@ -83,7 +83,7 @@ function boardKeyFor(board: string, variant?: string | null): string {
  * @param other Another board name or key.
  * @returns True when they name the same board.
  */
-function sameBoardName(one: string, other: string): boolean {
+function sameModelName(one: string, other: string): boolean {
 	return one.toLowerCase() === other.toLowerCase();
 }
 
@@ -149,9 +149,9 @@ interface PanePresentation {
 }
 
 export {
-	boardAddressOf,
-	boardKeyFor,
-	sameBoardName,
+	paneAddressOf,
+	paneKeyFor,
+	sameModelName,
 	type PanePresentation,
 	type SemanticPaneReading,
 	type SemanticTarget,

@@ -47,10 +47,10 @@
 // those names, or the infrastructure, when the code of the start reads names
 // that nothing the check reads sets for it.
 
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 import type { ClaimSite } from "#runtime/operations/code-check/claims/claims.ts";
 import type { EnvironmentJoin } from "#runtime/operations/code-check/evidence/environment-join.ts";
-import type { BoardEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
+import type { StateEvidence, Piece } from "#runtime/operations/code-check/evidence/evidence.ts";
 import { sideOf, sidesJoined } from "#runtime/operations/code-check/evidence/sides.ts";
 import { differingCode } from "#runtime/operations/code-check/part-code.ts";
 import type { PartCode, ReadPart, SkippedPart } from "#runtime/operations/code-check/part-code.ts";
@@ -73,9 +73,9 @@ const DEPENDENCY_KINDS: ReadonlySet<EvidenceKind> = new Set([
 
 /** What judging the relationships of one board needs. */
 interface RelationshipReading {
-	readonly read: BoardToCheck;
+	readonly read: StateToCheck;
 	readonly codes: ReadonlyMap<string, PartCode>;
-	readonly evidence: BoardEvidence;
+	readonly evidence: StateEvidence;
 	/** Each part and the parts that hold it, the part first. */
 	readonly lineages: ReadonlyMap<string, ReadonlySet<string>>;
 	readonly relationshipKinds: SemanticPolicy["relationshipKinds"];
@@ -96,7 +96,7 @@ interface RelationshipOutcome {
  * @param subject What it is about.
  * @returns The site.
  */
-function siteOf(read: BoardToCheck, path: string, subject: ClaimSite["subject"]): ClaimSite {
+function siteOf(read: StateToCheck, path: string, subject: ClaimSite["subject"]): ClaimSite {
 	return {
 		file: read.file,
 		board: read.board.name,

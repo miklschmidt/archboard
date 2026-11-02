@@ -1,7 +1,7 @@
 //! The renderer core as WebAssembly. Bun and the browser load this one build
 //! (ADR 0059), and `scripts/build-core.ts` makes it: a render in, the picture
 //! and its key out (`render`), and the one solve a host's layout engine runs
-//! for it (`layOutBoard`).
+//! for it (`layOutPicture`).
 
 use wasm_bindgen::prelude::*;
 

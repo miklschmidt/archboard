@@ -21,7 +21,7 @@ import {
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { SemanticAtlas } from "#ui/clients/canvas/reads/drawings.ts";
 import type { Gesture } from "#ui/components/canvas/CameraSurface.tsx";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { useTouchPinch } from "#ui/hooks/canvas/use-touch-pinch.ts";
 import { typingIn } from "#ui/hooks/shell/use-find-shortcut.ts";
 import {
@@ -37,7 +37,7 @@ import { controlAt, subjectAt } from "#ui/clients/canvas/subjects/subjects.ts";
 /** What the gestures act on. */
 interface DiagramGestureInputs {
 	/** The camera a drag moves. */
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** Where every subject of the picture ended up, which decides what a press landed on. */
 	readonly atlas: SemanticAtlas;
 	/**

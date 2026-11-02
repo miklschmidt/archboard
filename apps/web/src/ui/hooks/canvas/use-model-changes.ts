@@ -8,9 +8,9 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
-import { onSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
-import { boardChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
+import { onModelChange } from "#ui/state/canvas/model-changes.ts";
+import { modelChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
 
 /**
  * Ask the server for this board's picture again whenever it changes.
@@ -19,20 +19,20 @@ import { boardChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
  * @param goesBy The name the board goes by now, when this reader asks for it by
  *   a name it had before a rename (ADR 0036); its news is announced under this.
  */
-function useSemanticBoardChanges(vault: string, board: string, goesBy: string = board): void {
+function useModelChanges(vault: string, board: string, goesBy: string = board): void {
 	const client = useQueryClient();
 	useEffect(
 		() =>
-			onSemanticBoardChange((inVault, changed): void => {
+			onModelChange((inVault, changed): void => {
 				if (inVault !== vault) {
 					return;
 				}
-				if (sameBoardName(changed, board) || sameBoardName(changed, goesBy)) {
-					void boardChanged(client, vault, board);
+				if (sameModelName(changed, board) || sameModelName(changed, goesBy)) {
+					void modelChanged(client, vault, board);
 				}
 			}),
 		[board, client, goesBy, vault],
 	);
 }
 
-export { useSemanticBoardChanges };
+export { useModelChanges };

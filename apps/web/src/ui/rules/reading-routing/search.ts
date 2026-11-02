@@ -191,7 +191,7 @@ function paneFromSearch(search: WorkspaceSearch, paneId: string): AddressedPane 
 	return Object.freeze({
 		paneId,
 		model,
-		boardKey: model === undefined ? (search[paneParam(paneId)] ?? null) : null,
+		paneKey: model === undefined ? (search[paneParam(paneId)] ?? null) : null,
 		repository: search[repoParam(paneId)] ?? null,
 		view: search[viewParam(paneId)] ?? null,
 	});
@@ -266,9 +266,9 @@ function writtenActivePane(address: WorkspaceAddress): string | null {
  */
 function paneSearch(pane: AddressedPane): Record<string, string> {
 	if (pane.model !== undefined) return modelSearch(pane);
-	if (pane.boardKey === null) return {};
+	if (pane.paneKey === null) return {};
 	return {
-		[paneParam(pane.paneId)]: pane.boardKey,
+		[paneParam(pane.paneId)]: pane.paneKey,
 		...(pane.repository === null ? {} : { [repoParam(pane.paneId)]: pane.repository }),
 		...(pane.view === null ? {} : { [viewParam(pane.paneId)]: pane.view }),
 	};

@@ -22,7 +22,7 @@ import { requestJson } from "@archboard/server-lifecycle/server-client";
 import { checkSemanticVaultOnServer } from "#cli/clients/server/vault-check.ts";
 import { CodeCheckAnswerSchema, type CodeCheckAnswer } from "@archboard/code-intel/code-check";
 import { diagnosticLine, VaultCheckSchema } from "@archboard/model/policy";
-import { SemanticBoardConfigurationSchema } from "@archboard/model/vault-policy";
+import { VaultConfigurationSchema } from "@archboard/model/vault-policy";
 import { VAULT_DIRECTORY } from "@archboard/workspace/vault";
 
 /** How long one check took. */
@@ -574,7 +574,7 @@ const semanticConfigContract = defineCommand({
 	 * @returns Policy or generated schema.
 	 */
 	async handler(input, context) {
-		if (input.schema) return { result: z.toJSONSchema(SemanticBoardConfigurationSchema) };
+		if (input.schema) return { result: z.toJSONSchema(VaultConfigurationSchema) };
 		await context.require("server", "model config");
 		return { result: await checkSemanticVaultOnServer() };
 	},

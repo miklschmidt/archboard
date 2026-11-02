@@ -81,7 +81,7 @@ function trunkMask(id: string): string {
  * One board document, as its route answers with it.
  * @returns The document.
  */
-function boardOf(): Record<string, unknown> {
+function documentOf(): Record<string, unknown> {
 	return {
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -195,7 +195,7 @@ interface ServedOptions extends PictureOptions {
  * @param options What the picture hides and where subjects sit, and the person's preference for motion.
  */
 async function served(options: ServedOptions = {}): Promise<void> {
-	server.documents["pipeline"] = options.document ?? boardOf();
+	server.documents["pipeline"] = options.document ?? documentOf();
 	server.reply = { status: 200, body: picture(options) };
 	mountStage(null, { live: true, reducedMotion: options.reducedMotion });
 	await settle();

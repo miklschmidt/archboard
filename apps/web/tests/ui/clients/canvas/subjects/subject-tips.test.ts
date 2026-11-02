@@ -11,11 +11,11 @@ import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { afterAll, beforeAll, expect, test } from "bun:test";
 
 import type { AppliedAppearance } from "#ui/clients/canvas/reads/drawings.ts";
-import { SemanticBoardSchema } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
 import { withFixtureOrders } from "#tests/ui/support/canvas/fixture-orders.ts";
 import { openableAt, subjectTip, tipTargetAt } from "#ui/clients/canvas/subjects/subject-tips.ts";
 
-const SemanticVariantSchema = SemanticBoardSchema.shape.variants.element;
+const SemanticVariantSchema = LegacyBoardSchema.shape.variants.element;
 
 beforeAll(() => {
 	GlobalRegistrator.register();

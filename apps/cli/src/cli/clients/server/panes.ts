@@ -32,7 +32,7 @@ interface PaneLayoutResponse {
 	onScreen: Array<{ paneId: string; place: string; board: string }>;
 }
 
-type ShowBoardResponse = {
+type ShowModelResponse = {
 	success: true;
 	model: string;
 	reading: import("zod").infer<
@@ -83,12 +83,12 @@ function closePane(spec: string): Promise<PaneLayoutResponse> {
  * @param pane The pane spec, when the caller named one.
  * @returns What the pane is showing now.
  */
-function showBoardInPane(
-	reading: ShowBoardResponse["reading"],
+function showModelInPane(
+	reading: ShowModelResponse["reading"],
 	pane?: string,
-): Promise<ShowBoardResponse> {
+): Promise<ShowModelResponse> {
 	const { session } = statedInvocation();
-	return requestJson<ShowBoardResponse>(
+	return requestJson<ShowModelResponse>(
 		"/api/panes/show",
 		posting({
 			reading,
@@ -99,4 +99,4 @@ function showBoardInPane(
 	);
 }
 
-export { type ShowBoardResponse, closePane, getPanes, openPane, showBoardInPane };
+export { type ShowModelResponse, closePane, getPanes, openPane, showModelInPane };

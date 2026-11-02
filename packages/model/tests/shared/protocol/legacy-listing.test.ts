@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { BoardListingSchema, listedBoard } from "#shared/protocol/legacy-listing.ts";
+import { LegacyListingSchema, listedLegacyBoard } from "#shared/protocol/legacy-listing.ts";
 import { DrillDownSchema } from "#shared/schemas/content.ts";
-import { parseSemanticBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
-import { type SemanticBoard } from "#shared/schemas/legacy-board.ts";
+import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { type LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
 // What the listing route reports about one board, and that the browser's parse
@@ -25,8 +25,8 @@ type Variant = {
  * @param current The designated variant, if any.
  * @returns The board.
  */
-function board(variants: Variant[], current?: string): SemanticBoard {
-	const parsed = parseSemanticBoard(
+function board(variants: Variant[], current?: string): LegacyBoard {
+	const parsed = parseLegacyBoard(
 		withFixtureOrders({
 			schemaVersion: "2.4.0",
 			kind: "semantic-board",
@@ -83,7 +83,7 @@ const LOCATION = { name: "Archboard server", key: "archboard server" };
 
 describe("a listed board's links", () => {
 	test("are the opened variant's drill-downs, each once, marked when on a container, never to itself", () => {
-		const listed = listedBoard(LOCATION, {
+		const listed = listedLegacyBoard(LOCATION, {
 			ok: true,
 			board: board(
 				[
@@ -110,7 +110,7 @@ describe("a listed board's links", () => {
 	});
 
 	test("into another repository say so, keep the name the link spells, and are never a link back to the board itself", () => {
-		const listed = listedBoard(
+		const listed = listedLegacyBoard(
 			LOCATION,
 			{
 				ok: true,
@@ -160,7 +160,7 @@ describe("a listed board's links", () => {
 
 	test("into the vault's own repository are links within the vault", () => {
 		const own = "github.com/acme/archboard";
-		const listed = listedBoard(
+		const listed = listedLegacyBoard(
 			LOCATION,
 			{
 				ok: true,
@@ -192,11 +192,11 @@ describe("a listed board's links", () => {
 			lifecycle: "draft",
 			nodes: [drilling("n1", "API", ["api"])],
 		};
-		const planned = listedBoard(LOCATION, { ok: true, board: board([draft]) });
+		const planned = listedLegacyBoard(LOCATION, { ok: true, board: board([draft]) });
 		expect(planned.opens).toBe("v1");
 		expect(planned.links.map((link) => link.board)).toEqual(["api"]);
 
-		const undecided = listedBoard(LOCATION, {
+		const undecided = listedLegacyBoard(LOCATION, {
 			ok: true,
 			board: board([draft, { id: "v2", lifecycle: "draft", nodes: [drilling("n2", "B", ["b"])] }]),
 		});
@@ -210,7 +210,7 @@ describe("a listed board's links", () => {
  * @returns The listed description.
  */
 const described = (summary?: string) =>
-	listedBoard(LOCATION, {
+	listedLegacyBoard(LOCATION, {
 		ok: true,
 		board: board([{ id: "v1", lifecycle: "current", ...(summary ? { summary } : {}) }], "v1"),
 	}).description;
@@ -241,7 +241,7 @@ describe("a listed board's description", () => {
 });
 
 test("an unreadable board lists with its error and nothing it would have said", () => {
-	expect(listedBoard(LOCATION, { ok: false, problem: "not json" })).toEqual({
+	expect(listedLegacyBoard(LOCATION, { ok: false, problem: "not json" })).toEqual({
 		...LOCATION,
 		variants: [],
 		opens: null,
@@ -256,7 +256,7 @@ test("the browser's parse of the listing keeps the levels, the links, the descri
 		success: true as const,
 		levels: ["system", "service", "module"],
 		boards: [
-			listedBoard(LOCATION, {
+			listedLegacyBoard(LOCATION, {
 				ok: true,
 				board: board(
 					[
@@ -270,11 +270,11 @@ test("the browser's parse of the listing keeps the levels, the links, the descri
 					"v1",
 				),
 			}),
-			listedBoard({ name: "broken", key: "broken" }, { ok: false, problem: "not json" }),
+			listedLegacyBoard({ name: "broken", key: "broken" }, { ok: false, problem: "not json" }),
 		],
 	};
 	const wire: unknown = JSON.parse(JSON.stringify(listing));
-	expect(BoardListingSchema.parse(wire)).toEqual(listing);
+	expect(LegacyListingSchema.parse(wire)).toEqual(listing);
 	expect(listing.boards[0]).toMatchObject({
 		updatedAt: "2026-09-23T00:00:00.000Z",
 		description: "Serves boards.",

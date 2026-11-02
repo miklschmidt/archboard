@@ -3,14 +3,14 @@
 // held to both grammars and to a comparison.
 
 import {
-	SemanticBoardSchema,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	type SemanticBoard,
+	LegacyBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 import type { DrawnBoard } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { type BoardRenderChoices } from "#shared/rules/render/legacy-board.ts";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { type LegacyRenderChoices } from "#shared/rules/render/legacy-board.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 /** The built architecture. */
@@ -52,8 +52,8 @@ const DRAFT = {
 };
 
 /** The board. */
-const EXPORT_BOARD: SemanticBoard = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const EXPORT_DOCUMENT: LegacyBoard = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board",
 	name: "Ingest",
@@ -95,10 +95,10 @@ const EXPORT_BOARD: SemanticBoard = SemanticBoardSchema.parse({
  * @returns The drawn reply.
  */
 async function exported(
-	choices: Omit<BoardRenderChoices, "fonts">,
+	choices: Omit<LegacyRenderChoices, "fonts">,
 	policy = DEFAULT_SEMANTIC_POLICY,
 ): Promise<DrawnBoard> {
-	const outcome = await renderBoard(EXPORT_BOARD, { theme: "light", ...choices }, policy);
+	const outcome = await renderLegacyBoard(EXPORT_DOCUMENT, { theme: "light", ...choices }, policy);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
 	return outcome.reply;
 }
@@ -114,4 +114,4 @@ function paintedBody(svg: string): string {
 	return found;
 }
 
-export { EXPORT_BOARD, exported, paintedBody };
+export { EXPORT_DOCUMENT, exported, paintedBody };

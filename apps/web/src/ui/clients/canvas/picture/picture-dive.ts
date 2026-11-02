@@ -28,8 +28,8 @@ function slotIn(area: HTMLElement | null, slot: string): HTMLElement | null {
  * @returns The stage, or null when there is none to fly over.
  */
 function stageIn(area: HTMLElement | null): Stage | null {
-	const viewport = slotIn(area, "semantic-board-viewport") ?? slotIn(area, "model-diagram");
-	const surface = slotIn(area, "semantic-board-surface");
+	const viewport = slotIn(area, "canvas-viewport") ?? slotIn(area, "model-diagram");
+	const surface = slotIn(area, "canvas-surface");
 	if (viewport === null || surface === null) {
 		return null;
 	}

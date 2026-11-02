@@ -125,10 +125,10 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 	/**
 	 * Who holds a pane's board changed.
 	 * @param paneId The pane.
-	 * @param _boardKey The board.
+	 * @param _paneKey The board.
 	 * @param holder The holder, or null.
 	 */
-	function onHolder(paneId: string, _boardKey: string | null, holder: LockHolder | null): void {
+	function onHolder(paneId: string, _paneKey: string | null, holder: LockHolder | null): void {
 		patch(paneId, { holder });
 	}
 	/**
@@ -200,11 +200,11 @@ function createPaneCallbacks(setters: CallbackSetters): PaneCallbacks {
 		/**
 		 * The server moved a pane onto a board.
 		 * @param paneId The pane.
-		 * @param boardKey The board it is showing now.
+		 * @param paneKey The board it is showing now.
 		 * @param previousKey The board key it left, or null on first adoption.
 		 */
-		onBoardAdopted: (paneId: string, boardKey: string, previousKey: string | null): void => {
-			events.read().onBoardAdopted(paneId, boardKey, previousKey);
+		onBoardAdopted: (paneId: string, paneKey: string, previousKey: string | null): void => {
+			events.read().onBoardAdopted(paneId, paneKey, previousKey);
 		},
 		onSession,
 	};

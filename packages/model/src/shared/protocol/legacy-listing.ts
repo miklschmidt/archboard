@@ -11,9 +11,9 @@
 import { z } from "zod";
 import {
 	addressedVariant,
-	SemanticBoardLevelSchema,
+	LegacyBoardLevelSchema,
 	TrackedEmbedSchema,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "#shared/schemas/legacy-board.ts";
 import { RenderedVariantSchema } from "#shared/protocol/render-reply.ts";
@@ -35,7 +35,7 @@ const LISTED_DESCRIPTION_LIMIT = 160;
  * container points up, to the board this one is a part of, and one on a card
  * points down or sideways (ADR 0029).
  */
-const BoardLinkSchema = z.object({
+const LegacyLinkSchema = z.object({
 	/** The target board's name as it goes by now, which a former name resolves to. */
 	board: z.string(),
 	/** The target variant's name, or null for whichever is current there. */
@@ -45,10 +45,10 @@ const BoardLinkSchema = z.object({
 	node: z.string(),
 	container: z.boolean(),
 });
-type BoardLink = z.infer<typeof BoardLinkSchema>;
+type LegacyLink = z.infer<typeof LegacyLinkSchema>;
 
 /** One board the vault holds. */
-const ListedBoardSchema = z.object({
+const ListedLegacyBoardSchema = z.object({
 	/**
 	 * The board's id, absent for a board that could not be read. A render
 	 * recipe names its board by id, so the embeds check finds the name it goes
@@ -59,14 +59,14 @@ const ListedBoardSchema = z.object({
 	key: z.string(),
 	/** The board's version, absent for a board that could not be read. */
 	version: z.int().optional(),
-	level: SemanticBoardLevelSchema.optional(),
+	level: LegacyBoardLevelSchema.optional(),
 	/** When the board last changed, absent for a board that could not be read. */
 	updatedAt: z.string().optional(),
 	variants: z.array(RenderedVariantSchema.extend({ parentId: z.string().nullable() })),
 	/** The id of the variant the board's bare name opens, or null when it opens none. */
 	opens: z.string().nullable(),
 	/** The drill-downs on the variant the bare name opens; none when it opens none. */
-	links: z.array(BoardLinkSchema),
+	links: z.array(LegacyLinkSchema),
 	/** The first sentence of that variant's summary, or null when it has none. */
 	description: z.string().nullable(),
 	/**
@@ -77,14 +77,14 @@ const ListedBoardSchema = z.object({
 	/** Why the board could not be read. */
 	error: z.string().optional(),
 });
-type ListedBoard = z.infer<typeof ListedBoardSchema>;
+type ListedLegacyBoard = z.infer<typeof ListedLegacyBoardSchema>;
 
 /** The listing route's answer. */
-const BoardListingSchema = z.object({
+const LegacyListingSchema = z.object({
 	success: z.literal(true),
 	/** The vault's configured levels, coarsest first. */
-	levels: z.array(SemanticBoardLevelSchema),
-	boards: z.array(ListedBoardSchema),
+	levels: z.array(LegacyBoardLevelSchema),
+	boards: z.array(ListedLegacyBoardSchema),
 	/**
 	 * The repository identity of the checkout that holds the vault, so a reader
 	 * can tell a drill-down naming it from one into another repository (ADR
@@ -92,11 +92,11 @@ const BoardListingSchema = z.object({
 	 */
 	repository: z.string().optional(),
 });
-type BoardListing = z.infer<typeof BoardListingSchema>;
+type LegacyListing = z.infer<typeof LegacyListingSchema>;
 
 /** What reading one board answered, as far as the listing needs it. */
 type ListedRead =
-	| { readonly ok: true; readonly board: SemanticBoard }
+	| { readonly ok: true; readonly board: LegacyBoard }
 	| { readonly ok: false; readonly problem: string };
 
 /**
@@ -118,7 +118,7 @@ type AcceptedName = (name: string) => string;
  * @param reads What reading each board answered.
  * @returns The lookup; a name no board answers to is its own answer.
  */
-function acceptedBoardNames(reads: readonly ListedRead[]): AcceptedName {
+function acceptedLegacyNames(reads: readonly ListedRead[]): AcceptedName {
 	const boards = reads.flatMap((read) => (read.ok ? [read.board] : []));
 	const byName = new Map<string, string>();
 	for (const board of boards) {
@@ -141,15 +141,15 @@ function acceptedBoardNames(reads: readonly ListedRead[]): AcceptedName {
  * @returns The links, in node order.
  */
 function linksOf(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	accepted: AcceptedName,
 	vaultRepo: string | undefined,
-): BoardLink[] {
+): LegacyLink[] {
 	const { nodes } = variant.content;
 	const containers = new Set(nodes.map((node) => node.parent));
 	const seen = new Set<string>();
-	const links: BoardLink[] = [];
+	const links: LegacyLink[] = [];
 	for (const node of nodes) {
 		const link = linkOn(node, containers, accepted, vaultRepo);
 		// A link back to the board's own name is no link, unless it names a
@@ -182,7 +182,7 @@ function linkOn(
 	containers: ReadonlySet<string | undefined>,
 	accepted: AcceptedName,
 	vaultRepo: string | undefined,
-): BoardLink | null {
+): LegacyLink | null {
 	const drill = node.drillDown;
 	if (drill === undefined) {
 		return null;
@@ -242,7 +242,7 @@ function bounded(line: string): string {
  * @param board The board.
  * @returns The field, or nothing when it tracks none.
  */
-function trackedOf(board: SemanticBoard): Pick<ListedBoard, "trackedEmbeds"> {
+function trackedOf(board: LegacyBoard): Pick<ListedLegacyBoard, "trackedEmbeds"> {
 	return board.trackedEmbeds === undefined ? {} : { trackedEmbeds: board.trackedEmbeds };
 }
 
@@ -258,12 +258,12 @@ function trackedOf(board: SemanticBoard): Pick<ListedBoard, "trackedEmbeds"> {
  *   has one: a drill-down that names it is a link within the vault.
  * @returns The listed board.
  */
-function listedBoard(
+function listedLegacyBoard(
 	{ name, key }: { readonly name: string; readonly key: string },
 	read: ListedRead,
 	accepted: AcceptedName = asSpelled,
 	vaultRepo?: string,
-): ListedBoard {
+): ListedLegacyBoard {
 	if (!read.ok) {
 		return {
 			name,
@@ -300,13 +300,13 @@ function listedBoard(
 }
 
 export {
-	BoardLinkSchema,
-	type BoardLink,
-	ListedBoardSchema,
-	type ListedBoard,
-	BoardListingSchema,
-	type BoardListing,
+	LegacyLinkSchema,
+	type LegacyLink,
+	ListedLegacyBoardSchema,
+	type ListedLegacyBoard,
+	LegacyListingSchema,
+	type LegacyListing,
 	type ListedRead,
-	acceptedBoardNames,
-	listedBoard,
+	acceptedLegacyNames,
+	listedLegacyBoard,
 };

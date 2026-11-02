@@ -7,11 +7,11 @@
 import { queryOptions } from "@tanstack/react-query";
 import { z } from "zod";
 
-import { BOARD_CACHE_MS } from "@archboard/timing";
+import { MODEL_CACHE_MS } from "@archboard/timing";
 import { type SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
-import { sameBoardAsked, semanticBoardKeys } from "#ui/clients/canvas/reads/read-keys.ts";
-import { boardsListed } from "#ui/clients/canvas/reads/read-refresh.ts";
-import { boardReads } from "#ui/clients/canvas/reads/retained-reads.ts";
+import { sameModelAsked, readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
+import { modelsListed } from "#ui/clients/canvas/reads/read-refresh.ts";
+import { retainedReads } from "#ui/clients/canvas/reads/retained-reads.ts";
 import { pictureSource } from "#ui/clients/canvas/reads/picture-source.ts";
 
 /**
@@ -22,9 +22,9 @@ import { pictureSource } from "#ui/clients/canvas/reads/picture-source.ts";
  * @param vault The vault.
  * @returns The query options.
  */
-function semanticBoardListQuery(vault: string) {
+function retainedListingQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.boards(vault),
+		queryKey: readKeys.boards(vault),
 		/**
 		 * Read the vault's semantic boards, read again what this tab holds of a
 		 * board that has moved since, and tell the picture source which versions
@@ -34,8 +34,8 @@ function semanticBoardListQuery(vault: string) {
 		 * @returns The listing.
 		 */
 		queryFn: async (context) => {
-			const listing = await boardReads().listing(vault, context.signal);
-			boardsListed(context.client, vault, listing.boards);
+			const listing = await retainedReads().listing(vault, context.signal);
+			modelsListed(context.client, vault, listing.boards);
 			pictureSource().listed?.(vault, listing.boards, context.client);
 			return listing;
 		},
@@ -54,7 +54,7 @@ function semanticBoardListQuery(vault: string) {
  * picture identical to the one already on screen. So there
  * is deliberately no timer here: the cached drawing stays fresh until the
  * board announces a new version over the pane socket, which is what
- * `useSemanticBoardChanges` listens for. That is also why there is no duration
+ * `useModelChanges` listens for. That is also why there is no duration
  * to put in `@archboard/timing` — the absence of one is the contract.
  *
  * A network reconnect is the one exception: while the tab was offline a change
@@ -77,7 +77,7 @@ function semanticBoardListQuery(vault: string) {
  */
 function semanticRenderQuery(request: SemanticRenderRequest) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.render(request),
+		queryKey: readKeys.render(request),
 		/**
 		 * Draw it, in this page or by the server, whichever the page chose.
 		 * @param context The query context, carrying the cache and this read's cancellation.
@@ -95,7 +95,7 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
 		 * @returns That, when it was of this board.
 		 */
 		placeholderData: (previous, previousQuery) =>
-			sameBoardAsked(previousQuery?.queryKey, request) ? previous : undefined,
+			sameModelAsked(previousQuery?.queryKey, request) ? previous : undefined,
 		staleTime: Number.POSITIVE_INFINITY,
 		gcTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
@@ -118,15 +118,15 @@ function semanticRenderQuery(request: SemanticRenderRequest) {
  * @param board The board name.
  * @returns The query options.
  */
-function semanticBoardDocumentQuery(vault: string, board: string) {
+function retainedDocumentQuery(vault: string, board: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.document(vault, board),
+		queryKey: readKeys.document(vault, board),
 		/**
 		 * Read the board, from the server or wherever the page reads boards from.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The document, as the server holds it.
 		 */
-		queryFn: (context) => boardReads().document(vault, board, context.signal),
+		queryFn: (context) => retainedReads().document(vault, board, context.signal),
 		staleTime: Number.POSITIVE_INFINITY,
 		refetchOnWindowFocus: false,
 		refetchOnReconnect: "always" as const,
@@ -146,14 +146,14 @@ function semanticBoardDocumentQuery(vault: string, board: string) {
  */
 function vaultCheckQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.vaultCheck(vault),
+		queryKey: readKeys.vaultCheck(vault),
 		/**
 		 * Read and validate the checker's answer.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The checked policy and diagnostics.
 		 */
-		queryFn: (context) => boardReads().vaultCheck(vault, context.signal),
-		staleTime: BOARD_CACHE_MS.vaultCheck,
+		queryFn: (context) => retainedReads().vaultCheck(vault, context.signal),
+		staleTime: MODEL_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,
@@ -178,15 +178,15 @@ function vaultCheckQuery(vault: string) {
  */
 function codeFindingsQuery(vault: string) {
 	return queryOptions({
-		queryKey: semanticBoardKeys.codeFindings(vault),
+		queryKey: readKeys.codeFindings(vault),
 		/**
 		 * Read the remembered findings.
 		 * @param context The query context, carrying this read's cancellation.
 		 * @returns The readings.
 		 */
-		queryFn: (context) => boardReads().codeFindings(vault, context.signal),
-		staleTime: BOARD_CACHE_MS.vaultCheck,
-		refetchInterval: BOARD_CACHE_MS.vaultCheck,
+		queryFn: (context) => retainedReads().codeFindings(vault, context.signal),
+		staleTime: MODEL_CACHE_MS.vaultCheck,
+		refetchInterval: MODEL_CACHE_MS.vaultCheck,
 		refetchOnWindowFocus: true,
 		refetchOnReconnect: true,
 		retry: false,
@@ -224,8 +224,8 @@ function iconQuery(name: string) {
 export {
 	codeFindingsQuery,
 	iconQuery,
-	semanticBoardDocumentQuery,
-	semanticBoardListQuery,
+	retainedDocumentQuery,
+	retainedListingQuery,
 	semanticRenderQuery,
 	vaultCheckQuery,
 };

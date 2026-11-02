@@ -35,9 +35,9 @@ type WebSocketMessageType =
 	// connect, whenever a show moves it, and when the repository's chosen checkout
 	// changes. It carries no picture — the board is a file the server draws, and
 	// the pane asks for the drawing itself (ADR 0023).
-	| "pane_board"
+	| "pane_place"
 	| "pane_model"
-	// The repositories of this machine changed: a checkout was chosen. Boardless
+	// The repositories of this machine changed: a checkout was chosen. Keyless
 	// and sent to every tab, because the navigator of each lists every one.
 	| "repositories_changed"
 	// Who is writing this board, if anybody (ADR 0016). Board-scoped like every
@@ -45,20 +45,20 @@ type WebSocketMessageType =
 	// affected by this one changing hands. Carries the holder rather than a bare
 	// flag: the pane that holds the lock has to know the news is about itself,
 	// and a pane that does not needs to be able to say who does.
-	| "board_lock"
+	| "model_lock"
 	// This board has a new version. The panes showing it ask for a new picture;
 	// nothing about a pane's own state follows from it, because the pane holds
 	// no copy of the content to patch.
-	| "board_note"
+	| "model_note"
 	// An agent changed this board and said what it was doing (TASK-095). Beside
 	// the lock and not part of it: the lock says who has the board, the claim's
 	// reason says what the claim is for, and this is the step. Carries the last
 	// few lines as well as the new one, so a pane that has just arrived on the
 	// board is not blank until the next write.
-	| "board_doing"
+	| "model_doing"
 	// A board could not be read or drawn. The pane shows this through the
-	// shell's board-error notice.
-	| "board_error"
+	// shell's pane-error notice.
+	| "pane_error"
 	// Canonical model activity across every explicit vault (ADR 0022 and ADR 0068).
 	// Every pane receives the snapshot, independently of its displayed reading.
 	| "agent_activity"

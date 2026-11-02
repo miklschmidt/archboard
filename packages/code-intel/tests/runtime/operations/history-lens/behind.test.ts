@@ -12,12 +12,12 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
-import { decodeSemanticBoardDocument } from "@archboard/model/store-read";
-import { BoardBehindSchema, type BoardBehind } from "#shared/protocol/code-check.ts";
+import { decodeLegacyBoard } from "@archboard/model/store-read";
+import { ModelBehindSchema, type ModelBehind } from "#shared/protocol/code-check.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -130,12 +130,12 @@ const PARTS = [
  * @param draftNote What the draft's summary says, which no reading of behind looks at.
  * @returns The board.
  */
-function board(version: number, extra: readonly object[] = [], draftNote = "first"): SemanticBoard {
+function board(version: number, extra: readonly object[] = [], draftNote = "first"): LegacyBoard {
 	const nodes = [...PARTS, ...extra].map((node, index) =>
 		Object.assign({ order: (index + 1) * 1000 }, node),
 	);
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -165,7 +165,7 @@ const boardFile = join(shop, "vault", "Shop.semantic.json");
  * @param value The board.
  * @param file Where.
  */
-function writeBoard(value: SemanticBoard, file = boardFile): void {
+function writeBoard(value: LegacyBoard, file = boardFile): void {
 	mkdirSync(join(file, ".."), { recursive: true });
 	writeFileSync(file, `${JSON.stringify(value, null, "\t")}\n`);
 }
@@ -179,13 +179,13 @@ function writeBoard(value: SemanticBoard, file = boardFile): void {
  * @returns The answer for that board.
  */
 async function behind(
-	value: SemanticBoard,
+	value: LegacyBoard,
 	reading = lens.createBehindReading(),
 	file = boardFile,
 	vault = join(shop, "vault"),
-): Promise<BoardBehind> {
+): Promise<ModelBehind> {
 	const [answer] = await reading.read(vault, [{ board: value, file }]);
-	return BoardBehindSchema.parse(answer);
+	return ModelBehindSchema.parse(answer);
 }
 
 /**
@@ -194,7 +194,7 @@ async function behind(
  * @param id The part.
  * @returns The subjects, newest first, or undefined when the part was not read.
  */
-function partSubjects(answer: BoardBehind, id: string): string[] | undefined {
+function partSubjects(answer: ModelBehind, id: string): string[] | undefined {
 	if (!("parts" in answer)) return undefined;
 	const part = answer.parts.find((one) => one.subject.id === id);
 	return part?.commits.map(
@@ -362,7 +362,7 @@ test("a board file Git does not track is a change no commit holds, and one Git i
 	const ignored = join(shop, "vault", "Ignored board.semantic.json");
 	writeBoard(board(1), ignored);
 	const ignoredAnswer = await behind(board(1), undefined, ignored);
-	expect(ignoredAnswer.lastChange).toEqual({ kind: "unknown", reason: "board-file-ignored" });
+	expect(ignoredAnswer.lastChange).toEqual({ kind: "unknown", reason: "model-file-ignored" });
 	expect("commits" in ignoredAnswer).toBe(false);
 	const loose = join(outside, "vault", "Loose.semantic.json");
 	writeBoard(board(1), loose);
@@ -383,7 +383,7 @@ test("Behind migrates historical bytes without writing and a schema-only migrati
 	commit(shop, "change code before the migration");
 	const bytes = readFileSync(boardFile, "utf8");
 	const modified = statSync(boardFile).mtimeMs;
-	const decoded = decodeSemanticBoardDocument(bytes);
+	const decoded = decodeLegacyBoard(bytes);
 	if (!decoded.ok) throw new Error(decoded.problem);
 	const inMemory = await behind(decoded.board);
 	expect(inMemory.lastChange).toMatchObject({ kind: "commit", commit: created });

@@ -11,7 +11,7 @@
 // board the page read from the server and holds as a read-only cache (ADR 0023),
 // so the picture is the server's picture of that board.
 
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
 import { scopedRequest } from "#shared/rules/render/drawing-key.ts";
@@ -20,9 +20,9 @@ import type {
 	RenderedDiagram,
 } from "#shared/protocol/render-request.ts";
 import {
-	renderBoard,
-	type BoardRenderChoices,
-	type BoardRenderOutcome,
+	renderLegacyBoard,
+	type LegacyRenderChoices,
+	type LegacyRenderOutcome,
 } from "#shared/rules/render/legacy-board.ts";
 import { installRendererHost } from "#shared/rules/render/host.ts";
 import { loadBrowserCore, type BrowserCore } from "#ui/clients/core.ts";
@@ -97,7 +97,7 @@ function startBrowserRenderer(): void {
 		iconPaths: loadedIconPaths,
 	});
 	// The core is ready before the first picture is painted, and before the
-	// first worker starts. A picture waits for it (`drawBoardHere`), so no solve
+	// first worker starts. A picture waits for it (`drawLegacyBoardHere`), so no solve
 	// is asked for before it.
 	const core = loadBrowserCore().then((ready) => (loaded = ready));
 	started = core.then(() => undefined);
@@ -115,16 +115,16 @@ function startBrowserRenderer(): void {
  * @returns The same answer the render route would give for this board.
  * @throws {Error} When this page never started the renderer.
  */
-async function drawBoardHere(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+async function drawLegacyBoardHere(
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
-): Promise<BoardRenderOutcome> {
+): Promise<LegacyRenderOutcome> {
 	if (started === undefined) {
 		throw new Error("startBrowserRenderer was not called before drawing a board.");
 	}
 	await Promise.all([started, loadDiagramIcons(policy)]);
-	return renderBoard(board, choices, policy);
+	return renderLegacyBoard(board, choices, policy);
 }
 
 /**
@@ -149,4 +149,4 @@ function prepareContentHere(scoped: Omit<SemanticViewRenderRequest, "theme">) {
 	};
 }
 
-export { drawBoardHere, prepareContentHere, startBrowserRenderer };
+export { drawLegacyBoardHere, prepareContentHere, startBrowserRenderer };

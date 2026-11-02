@@ -9,7 +9,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import type { WalkthroughNarration } from "#ui/rules/canvas/walkthrough/narration.ts";
-import { EXPLAINED_BOARD } from "#tests/ui/support/canvas/render-answers.ts";
+import { EXPLAINED_DOCUMENT } from "#tests/ui/support/canvas/render-answers.ts";
 import { drawing, mountStage, server, settle } from "#tests/ui/support/canvas/stage-harness.tsx";
 import { offers } from "#tests/ui/support/canvas/presentation-probes.ts";
 
@@ -44,7 +44,7 @@ function narrating(held: string | null): {
  * @returns Settles once the board tab lists its walkthroughs.
  */
 async function mountExplained(narration?: WalkthroughNarration): Promise<void> {
-	server.documents["pipeline"] = EXPLAINED_BOARD;
+	server.documents["pipeline"] = EXPLAINED_DOCUMENT;
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage(null, { narration });
 	await settle();

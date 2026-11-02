@@ -25,7 +25,7 @@ import {
 import { useCallback, useState, type JSX, type ReactNode } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import type { SemanticBoard, SemanticVariant } from "@archboard/model/legacy-board";
+import type { LegacyBoard, SemanticVariant } from "@archboard/model/legacy-board";
 import { Button, cn } from "@archboard/ui-kit/components";
 import { drillWay, drillWayWords, type DrillWay } from "#ui/rules/canvas/drilling/drill-way.ts";
 import { useDrillTarget, type DrillTarget } from "#ui/hooks/canvas/use-drill-target.ts";
@@ -115,11 +115,11 @@ const WAY_ICONS: Readonly<Record<DrillWay, RemixiconComponentType>> = {
 };
 
 /** Inputs for the way down, once the board it leads to has been resolved. */
-interface OpenBoardProps {
+interface OpenModelProps {
 	/** What the part's drill-down names. */
 	readonly target: DrillDown;
 	/** The board it leads to. */
-	readonly board: SemanticBoard;
+	readonly board: LegacyBoard;
 	/** The variant of it that it opens. */
 	readonly variant: SemanticVariant;
 	/** The part's kind, which is the level of the board it opens (ADR 0029). */
@@ -162,7 +162,7 @@ function stateOf(variant: SemanticVariant): readonly string[] {
  * @param levels The vault's levels, coarsest first, once read.
  * @returns The words.
  */
-function standingOf(props: OpenBoardProps, levels: readonly string[] | undefined): string {
+function standingOf(props: OpenModelProps, levels: readonly string[] | undefined): string {
 	const { board, variant, kind, here } = props;
 	const level = `${board.level.charAt(0).toUpperCase()}${board.level.slice(1)}`;
 	const said = [drillWayWords(kind, here, levels), level].filter((part) => part !== null);
@@ -175,7 +175,7 @@ function standingOf(props: OpenBoardProps, levels: readonly string[] | undefined
  * @param props What the way down opens.
  * @returns The primary action.
  */
-function OpenBoard(props: OpenBoardProps): JSX.Element {
+function OpenModel(props: OpenModelProps): JSX.Element {
 	const { target, board, variant, kind, here, onOpen, there } = props;
 	const vault = usePaneVault();
 	const levels = useQuery(vaultCheckQuery(vault)).data?.policy.levels;
@@ -240,7 +240,7 @@ function unresolvedWords(unresolved: Unresolved, board: string): string {
 	if (unresolved.kind === "unreachable") {
 		return `${board} is a board of ${unresolved.repo}, ${UNREACHABLE_WORDS[unresolved.state]}. Choose a checkout with a vault in its menu in Board navigation, or add one with archboard repo add <directory>.`;
 	}
-	return boardWords(unresolved, board);
+	return modelWords(unresolved, board);
 }
 
 /**
@@ -249,7 +249,7 @@ function unresolvedWords(unresolved: Unresolved, board: string): string {
  * @param board The board the link names.
  * @returns The sentence.
  */
-function boardWords(
+function modelWords(
 	unresolved: Exclude<
 		Unresolved,
 		{ readonly kind: "listing-failed" | "unregistered" | "unreachable" }
@@ -287,7 +287,7 @@ function WayDown(props: WayDownProps): JSX.Element {
 		);
 	}
 	return (
-		<OpenBoard
+		<OpenModel
 			target={target}
 			board={reached.board}
 			variant={reached.variant}

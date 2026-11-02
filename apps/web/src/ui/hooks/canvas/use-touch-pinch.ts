@@ -9,7 +9,7 @@
 
 import { useCallback, useMemo, useRef, type PointerEvent } from "react";
 
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { Fingers, Point } from "#ui/rules/canvas/camera/camera.ts";
 import { capturePointer } from "#ui/clients/canvas/subjects/pointer-gesture.ts";
 
@@ -60,7 +60,7 @@ function pairOf(fingers: ReadonlyMap<number, Point>): Fingers | null {
  * @param camera The camera the pinch moves.
  * @returns The handlers.
  */
-function useTouchPinch(camera: Pick<BoardCamera, "pinch" | "stop">): TouchPinch {
+function useTouchPinch(camera: Pick<PictureCamera, "pinch" | "stop">): TouchPinch {
 	// Where each finger on the viewport is, by its pointer.
 	const fingers = useRef(new Map<number, Point>());
 

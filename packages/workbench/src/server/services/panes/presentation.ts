@@ -16,10 +16,10 @@ import { randomUUID } from "node:crypto";
 
 import { PANE_MS } from "@archboard/timing";
 import {
-	paneBoardOf,
+	paneKeyOfClient,
 	panes,
 	sendToPane,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 } from "#server/services/panes/registry.ts";
 import { semanticPaneContextFor } from "#server/services/panes/context.ts";
 import type { PanePresentRequestSchema } from "@archboard/model/pane-context";
@@ -396,7 +396,7 @@ const panePresentations = createPanePresentations({
 		if (pane === undefined) return null;
 		const architecture = semanticPaneContextFor(clientId)?.architecture;
 		if (architecture?.vault === pane.vault) return { clientId, board: null };
-		const board = paneBoardOf(clientId);
+		const board = paneKeyOfClient(clientId);
 		return board === null ? null : { clientId, board };
 	},
 	/**
@@ -407,7 +407,7 @@ const panePresentations = createPanePresentations({
 	 */
 	send: (pane, message) =>
 		pane.board === null
-			? sendBoardlessToPane(pane.clientId, message)
+			? sendKeylessToPane(pane.clientId, message)
 			: sendToPane(pane.clientId, message, pane.board),
 });
 

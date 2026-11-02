@@ -1,8 +1,8 @@
 import type { PickedSubject } from "#ui/hooks/application/use-pane-reading.ts";
 import { NOTHING_READ, type PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import {
-	boardAddressOf,
-	boardKeyFor,
+	paneAddressOf,
+	paneKeyFor,
 	type SemanticPaneReading,
 } from "#ui/rules/canvas/reading/address.ts";
 
@@ -25,14 +25,14 @@ function readingOf(reading: SemanticPaneReading | null, picked: PickedSubject | 
 	if (!reading?.drawn) {
 		return NOTHING_READ;
 	}
-	const address = boardAddressOf(reading.board);
+	const address = paneAddressOf(reading.board);
 	if (address === null) {
 		return NOTHING_READ;
 	}
 	const { variant, view, version } = reading.drawn;
 	// Current follows adoption; other variants retain their resolved identity.
 	const key =
-		variant.lifecycle === "current" ? reading.board : boardKeyFor(reading.board, variant.id);
+		variant.lifecycle === "current" ? reading.board : paneKeyFor(reading.board, variant.id);
 	return {
 		board: { name: address.board, key },
 		variant,

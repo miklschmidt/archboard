@@ -6,7 +6,7 @@ import { bodyShift, corridorPoints, type DrawnPoint } from "#tests/runtime/suppo
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { scorecardOf } from "#tests/runtime/support/drawn-scorecard.ts";
 import onePointPort from "#tests/runtime/support/fixtures/one-point-port.json";
-import boardRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
+import modelRasterizer from "#tests/runtime/support/fixtures/model-rasterizer.json";
 import browserApplication from "#tests/runtime/support/fixtures/browser-application.json";
 import codexWorkhorse from "#tests/runtime/support/fixtures/codex-workhorse.json";
 import commandGroups from "#tests/runtime/support/fixtures/command-groups.json";
@@ -218,7 +218,7 @@ function leftOfEverything(drawing: RenderedDiagram, id: string): number[] {
 
 test("a line runs inside the drawing rather than round it", async () => {
 	for (const [fixture, id] of [
-		[boardRasterizer, "P1XYQl8l"],
+		[modelRasterizer, "P1XYQl8l"],
 		[codexWorkhorse, "FWJMAVKj"],
 	] as const) {
 		const drawing = await renderArchitecture({

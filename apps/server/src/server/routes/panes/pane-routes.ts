@@ -20,10 +20,10 @@ import {
 } from "@archboard/workbench/host";
 import { asyncEndpoint } from "#server/middleware/mutation-work/mutation-work.ts";
 import {
-	boardsOnScreen,
+	paneKeysOnScreen,
 	currentSocketsByClient,
 	notePaneOpened,
-	paneBoards,
+	paneKeys,
 	paneResponse,
 	paneVaults,
 	panes,
@@ -31,7 +31,7 @@ import {
 	pendingPaneOpens,
 	primaryPane,
 	semanticPaneContextFor,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	settleAfterLayout,
 	type PendingPaneClose,
 	type PendingPaneOpen,
@@ -270,7 +270,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, opened } = awaitPaneOpen();
-	if (!sendBoardlessToPane(answering.clientId, { type: "pane_open" })) {
+	if (!sendKeylessToPane(answering.clientId, { type: "pane_open" })) {
 		pendingPaneOpens.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Opening a pane"));
@@ -287,7 +287,7 @@ async function openPaneRoute(_req: Request, res: Response): Promise<void> {
 			success: true,
 			...paneResponse(panes.get(pane.clientId) ?? pane),
 			paneCount: onScreen,
-			onScreen: boardsOnScreen(),
+			onScreen: paneKeysOnScreen(),
 		});
 	} catch (error) {
 		res.status(504).json({ success: false, error: messageOf(error) });
@@ -403,7 +403,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 	}
 	const askedAt = new Date().toISOString();
 	const { pending, closed } = awaitPaneClose(target.clientId, place);
-	if (!sendBoardlessToPane(target.clientId, { type: "pane_close" })) {
+	if (!sendKeylessToPane(target.clientId, { type: "pane_close" })) {
 		pendingPaneCloses.delete(pending);
 		clearTimeout(pending.timeout);
 		res.status(503).json(noBrowserBody("Closing a pane"));
@@ -430,7 +430,7 @@ async function closePaneRoute(req: Request, res: Response): Promise<void> {
 				board: target.board,
 			},
 			paneCount: onScreen,
-			onScreen: boardsOnScreen(),
+			onScreen: paneKeysOnScreen(),
 		});
 	} catch (error) {
 		res.status(504).json({ success: false, error: messageOf(error) });
@@ -547,5 +547,5 @@ function focusChange(
  * @param board The board it is now showing.
  */
 function arrivedOnBoard(clientId: string, board: string): void {
-	paneBoards.set(clientId, board);
+	paneKeys.set(clientId, board);
 }

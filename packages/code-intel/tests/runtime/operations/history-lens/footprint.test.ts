@@ -16,11 +16,11 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { FootprintAnswerSchema, type FootprintAnswer } from "#shared/protocol/footprint.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 	currentVariant,
 	resolveVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -128,7 +128,7 @@ function nodeOf(node: (typeof BUILT)[number] & { responsibility?: string }, inde
  * stranger's part.
  * @returns The board.
  */
-function board(): SemanticBoard {
+function board(): LegacyBoard {
 	const built = BUILT.map(nodeOf);
 	const reworded = new Set(["pL", "pS"]);
 	const proposed = [
@@ -140,8 +140,8 @@ function board(): SemanticBoard {
 			index,
 		),
 	);
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",

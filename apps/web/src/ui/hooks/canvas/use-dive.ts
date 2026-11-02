@@ -19,7 +19,7 @@ import { useEffect, useState, type RefObject } from "react";
 import { EXPLORING_MS } from "@archboard/timing";
 import { frameClock } from "@archboard/ui-kit/frame-clock";
 import type { SemanticRenderRequest } from "#ui/clients/canvas/reads/drawings.ts";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { CAMERA_MOTION_ATTRIBUTE } from "#ui/hooks/canvas/use-camera-glide.ts";
 import { PICTURE_MOTION_ATTRIBUTE } from "#ui/hooks/canvas/use-picture-transition.ts";
 import type { Camera, Size } from "#ui/rules/canvas/camera/camera.ts";
@@ -35,7 +35,7 @@ import { stagePicture, type MovingPicture } from "#ui/clients/canvas/picture/pic
 
 /** What decides whether a flight can be made, and over what. */
 interface DiveInputs {
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** The picture's area, which holds the camera's viewport and its surface. */
 	readonly area: RefObject<HTMLElement | null>;
 	/** The picture on screen, or null. */
@@ -129,7 +129,7 @@ interface Ground {
 /** A flight about to take off. */
 interface Takeoff extends Plan {
 	readonly stage: Stage;
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	readonly way: DiveWay;
 }
 

@@ -1,12 +1,12 @@
 import { expect, test } from "bun:test";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 
 /** A board of unrelated drafts (so none is drawn against another), whose views name parts only `base` holds; `bare` holds nothing. */
-const BOARD = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const BOARD = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board",
 	name: "Gateway",
@@ -57,7 +57,7 @@ const BOARD = SemanticBoardSchema.parse({
  * @returns The code the empty answer carries, or nothing when a picture was drawn.
  */
 async function emptyCode(variant: string, view?: string): Promise<string | undefined> {
-	const outcome = await renderBoard(
+	const outcome = await renderLegacyBoard(
 		BOARD,
 		{ theme: "light", variant, view },
 		DEFAULT_SEMANTIC_POLICY,
@@ -72,7 +72,7 @@ test("a view that names nothing the variant holds draws nothing, and says so as 
 	expect(await emptyCode("base", "Intake")).toBeUndefined();
 });
 
-test("a variant with nothing on it keeps the empty-board refusal, in a view or not", async () => {
+test("a variant with nothing on it keeps the empty-model refusal, in a view or not", async () => {
 	expect(await emptyCode("bare")).toBe("NOTHING_TO_RENDER");
 	expect(await emptyCode("bare", "Intake")).toBe("NOTHING_TO_RENDER");
 });

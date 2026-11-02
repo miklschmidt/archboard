@@ -154,7 +154,7 @@ test("a selected view with no subjects keeps its resolved identity and remains v
 
 	expect(choices().map((one) => one.textContent)).toEqual(["Overview", "The parts", "Everything"]);
 	expect(choices()[1]?.getAttribute("aria-pressed")).toBe("true");
-	const stage = part("semantic-board-stage");
+	const stage = part("canvas-stage");
 	expect(stage.getAttribute("data-state")).toBe("empty");
 	expect(stage.textContent).toContain("The parts is empty on Proposal");
 	expect(readings.at(-1)?.drawn).toEqual({

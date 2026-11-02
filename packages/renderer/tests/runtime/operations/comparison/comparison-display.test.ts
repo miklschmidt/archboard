@@ -1,10 +1,10 @@
 import { expect, test } from "bun:test";
 
-import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
+import { renderArchitecture, renderLegacyBoard } from "#runtime/operations/render.ts";
 import { bothModes, expectSamePlaces } from "#tests/runtime/support/comparison-modes.ts";
 import { routePoints } from "#tests/runtime/support/drawn-routes.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 
 test("a plain proposal drawing omits comparison marks and removed context", async () => {
@@ -20,8 +20,8 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 			{ id: "new", name: "New worker", kind: "module" },
 		],
 	});
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const board = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Workers",
@@ -35,12 +35,12 @@ test("a plain proposal drawing omits comparison marks and removed context", asyn
 			{ id: "draft", name: "Draft", lifecycle: "draft", parent: "current", content: after },
 		],
 	});
-	const decorated = await renderBoard(
+	const decorated = await renderLegacyBoard(
 		board,
 		{ variant: "draft", theme: "light" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	const plain = await renderBoard(
+	const plain = await renderLegacyBoard(
 		board,
 		{ variant: "draft", theme: "light", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,
@@ -66,8 +66,8 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 	];
 	const existing = { id: "existing", from: "source", to: "sink", kind: "call" };
 	const added = { id: "added", from: "source", to: "sink", kind: "call" };
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const board = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Parallel connections",
@@ -92,12 +92,12 @@ test("hiding comparison marks keeps the routes of continuing relationships", asy
 			},
 		],
 	});
-	const compared = await renderBoard(
+	const compared = await renderLegacyBoard(
 		board,
 		{ variant: "draft", theme: "light", layout: "track" },
 		DEFAULT_SEMANTIC_POLICY,
 	);
-	const plain = await renderBoard(
+	const plain = await renderLegacyBoard(
 		board,
 		{ variant: "draft", theme: "light", layout: "track", comparison: false },
 		DEFAULT_SEMANTIC_POLICY,

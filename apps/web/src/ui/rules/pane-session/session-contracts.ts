@@ -8,7 +8,7 @@ import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
 import type { PaneModelRequest } from "#ui/rules/pane-session/socket-messages.ts";
 import type {
 	AgentActivityEntry,
-	BoardIdentity,
+	LegacyIdentity,
 	DoingEntry,
 	LockHolder,
 	PaneStatus,
@@ -29,7 +29,7 @@ type PaneTheme = "light" | "dark";
  * The holder a pane assumes before the server has said anything.
  *
  * Not a claim and not nobody: a pane that has not been told does not read the
- * board as free (ADR 0016). It disappears the moment the first `board_lock`
+ * board as free (ADR 0016). It disappears the moment the first `model_lock`
  * arrives, which the server sends immediately behind the board.
  */
 const UNKNOWN_HOLDER: LockHolder = Object.freeze({
@@ -68,10 +68,10 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	/**
 	 * Who is writing this pane's board, or null when nobody is.
 	 * @param paneId The pane.
-	 * @param boardKey The board it is showing.
+	 * @param paneKey The board it is showing.
 	 * @param holder The holder, or null.
 	 */
-	onHolder?: (paneId: string, boardKey: string | null, holder: LockHolder | null) => void;
+	onHolder?: (paneId: string, paneKey: string | null, holder: LockHolder | null) => void;
 	/**
 	 * The server asked the shell for another pane, or for this one to go.
 	 * @param request Which way the layout should move.
@@ -121,10 +121,10 @@ interface PaneSessionOptions<Transport extends WorkbenchTransportPort> {
 	 * The board the server says this pane is showing, which is how a pane learns
 	 * that `browser show` moved it.
 	 * @param paneId The pane.
-	 * @param boardKey The board key.
+	 * @param paneKey The board key.
 	 * @param previousKey The previously opened board key, or null on first adoption.
 	 */
-	onBoardAdopted?: (paneId: string, boardKey: string, previousKey: string | null) => void;
+	onBoardAdopted?: (paneId: string, paneKey: string, previousKey: string | null) => void;
 	/** The workbench sockets this pane carries, when the shell gives it one. */
 	createWorkbenchSockets?: () => PaneWorkbenchSocketOwner<Transport>;
 }
@@ -147,7 +147,7 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * puts another board on screen, and the viewer keeps this one so it can
 	 * offer the way back out. Everything about which board this pane HOLDS —
 	 * its lock, the code a subject opens, what an agent is told, the address,
-	 * what `browser panes` says — is the status's `boardKey`, which the pane
+	 * what `browser panes` says — is the status's `paneKey`, which the pane
 	 * reports from what is actually drawn.
 	 */
 	readonly openedKey: string | null;
@@ -160,7 +160,7 @@ interface PaneSession<Transport extends WorkbenchTransportPort> {
 	 * board on screen, which the viewer answers by leaving the drill-down.
 	 */
 	readonly arrivals: number;
-	readonly board: BoardIdentity | null;
+	readonly board: LegacyIdentity | null;
 	readonly connected: boolean;
 	/** Who holds the board, or null when nobody does. */
 	readonly heldBy: LockHolder | null;

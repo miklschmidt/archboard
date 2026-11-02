@@ -1,5 +1,5 @@
 import type { LegacyInventory, LegacyMappingPlan } from "#shared/schemas/migration.ts";
-import type { SemanticBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
 import type { ModelDiagnostic } from "#shared/schemas/model.ts";
 
 /**
@@ -11,7 +11,7 @@ import type { ModelDiagnostic } from "#shared/schemas/model.ts";
  */
 function originalReferences(
 	inventory: LegacyInventory,
-	document: SemanticBoard,
+	document: LegacyBoard,
 	state: SemanticVariant,
 ) {
 	const qualified = `${inventory.plan.origin}/${document.id}#${state.id}`;

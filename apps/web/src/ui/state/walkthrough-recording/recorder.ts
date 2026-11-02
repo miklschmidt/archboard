@@ -14,9 +14,9 @@ import { RECORDING_MS } from "@archboard/timing";
 import type { publishRecordingPage, recordingAskedOf } from "@archboard/walkthrough/recording";
 import { TALK_SAMPLE_RATE } from "@archboard/walkthrough/talk";
 import type { BrowserAudioElementPort } from "@archboard/codex-realtime-voice/controllers";
-import { sameBoardName } from "#ui/rules/canvas/reading/address.ts";
+import { sameModelName } from "#ui/rules/canvas/reading/address.ts";
 import type { PaneReading } from "#ui/state/pane-session/pane-reading.ts";
-import { type SemanticBoardStageProps } from "#ui/components/canvas/CanvasStage.tsx";
+import { type CanvasStageProps } from "#ui/components/canvas/CanvasStage.tsx";
 
 import {
 	pace,
@@ -51,7 +51,7 @@ type RecordedView = {
 };
 
 /** A step the page moves its pane to: its own choice, answering no request. */
-type RecordedStep = NonNullable<SemanticBoardStageProps["driven"]>;
+type RecordedStep = NonNullable<CanvasStageProps["driven"]>;
 
 /**
  * The step a recording moves its pane to, as the live recording and its rendering both ask for it.
@@ -95,7 +95,7 @@ function drawnOn(reading: PaneReading | null, board: string | null): boolean {
 		reading?.board != null &&
 		reading.version !== null &&
 		board !== null &&
-		sameBoardName(reading.board.name, board)
+		sameModelName(reading.board.name, board)
 	);
 }
 

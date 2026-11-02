@@ -20,7 +20,7 @@ import {
 	addressedVariant,
 	nothingBuilt,
 	resolveVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 import type {
@@ -39,7 +39,7 @@ import { SemanticRenderError, type SubjectStanding } from "#shared/protocol/rend
 import { renderSemanticView } from "#shared/rules/render/diagram.ts";
 
 /** What a render of one board asks for. */
-interface BoardRenderChoices {
+interface LegacyRenderChoices {
 	/** A variant id or name; the board's current variant when absent. */
 	readonly variant?: string | undefined;
 	/** A view id or name, `Everything` for the whole variant; the overview when absent (ADR 0052). */
@@ -105,21 +105,21 @@ interface DrawnInput {
 }
 
 /** Which of the request's names this board does not have. */
-interface BoardRenderRefusal {
+interface LegacyRenderRefusal {
 	readonly ok: false;
 	readonly code: "UNKNOWN_VARIANT" | "UNKNOWN_VIEW";
 	readonly error: string;
 }
 
 /** The answer, or which of the request's names this board does not have. */
-type BoardRenderOutcome =
+type LegacyRenderOutcome =
 	| { readonly ok: true; readonly reply: SemanticRenderReply }
-	| BoardRenderRefusal;
+	| LegacyRenderRefusal;
 
 /** The answer and what it was drawn from, or the refusal. */
-type BoardDrawing =
+type LegacyDrawing =
 	| { readonly ok: true; readonly reply: SemanticRenderReply; readonly input: DrawnInput }
-	| BoardRenderRefusal;
+	| LegacyRenderRefusal;
 
 /**
  * A view as a reader needs to know it: enough to ask for it again.
@@ -227,7 +227,7 @@ function emptyReason(
  * @returns The answer.
  */
 async function drawnReply(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	view: SemanticView | undefined,
 	against: SemanticVariant | undefined,
@@ -320,7 +320,7 @@ async function drawnReply(
  * @returns The drawn input.
  */
 function drawnInput(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	against: SemanticVariant | undefined,
 	drawing: {
@@ -385,7 +385,7 @@ function uncitedSteps(steps: readonly FlowStep[]): FlowStep[] {
  * @returns What that variant draws, or null when there is none.
  */
 function drawnBase(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	against: SemanticVariant | undefined,
 ): DrawnContent | null {
@@ -456,7 +456,7 @@ function changesPlaced(
  * @param against The variant the render was asked to read against, if any.
  * @returns True when the frame is drawn.
  */
-function framedAsPlanned(board: SemanticBoard, against: SemanticVariant | undefined): boolean {
+function framedAsPlanned(board: LegacyBoard, against: SemanticVariant | undefined): boolean {
 	return against === undefined && nothingBuilt(board);
 }
 
@@ -468,7 +468,7 @@ function framedAsPlanned(board: SemanticBoard, against: SemanticVariant | undefi
  * @returns The variant, undefined when none was named, or why the name cannot be used.
  */
 function namedAgainst(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	variant: SemanticVariant,
 	named: string | undefined,
 ): SemanticVariant | string | undefined {
@@ -489,28 +489,28 @@ function namedAgainst(
  * @param policy The vault's presentation policy.
  * @returns The answer, or which name the board does not have.
  */
-async function renderBoard(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+async function renderLegacyBoard(
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
-): Promise<BoardRenderOutcome> {
-	const drawing = await drawBoard(board, choices, policy);
+): Promise<LegacyRenderOutcome> {
+	const drawing = await drawLegacyBoard(board, choices, policy);
 	return drawing.ok ? { ok: true, reply: drawing.reply } : drawing;
 }
 
 /**
- * Draw one board as `renderBoard` answers it, and name the input the picture
+ * Draw one board as `renderLegacyBoard` answers it, and name the input the picture
  * was drawn from, for the recipe of a board render.
  * @param board The board, as read.
  * @param choices The variant, view, faces and, for a document that stands alone, theme asked for.
  * @param policy The vault's presentation policy.
  * @returns The answer and its drawn input, or which name the board does not have.
  */
-async function drawBoard(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+async function drawLegacyBoard(
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
-): Promise<BoardDrawing> {
+): Promise<LegacyDrawing> {
 	const addressed = addressedVariant(board, choices.variant);
 	if (!addressed.ok) {
 		return { ok: false, code: "UNKNOWN_VARIANT", error: addressed.problem };
@@ -541,10 +541,10 @@ async function drawBoard(
 }
 
 export {
-	drawBoard,
-	renderBoard,
-	type BoardDrawing,
-	type BoardRenderChoices,
-	type BoardRenderOutcome,
+	drawLegacyBoard,
+	renderLegacyBoard,
+	type LegacyDrawing,
+	type LegacyRenderChoices,
+	type LegacyRenderOutcome,
 	type DrawnInput,
 };

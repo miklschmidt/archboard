@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // What the grader is shown about one run, and nothing that says which skill
 // version produced it: anonymous ids, the request and its sources, the saved
 // boards before and after, the renders, the deterministic verdicts, and the
@@ -40,8 +40,8 @@ interface CompletedRun {
 	readonly commands: readonly ClassifiedCommand[];
 	/** Files the author changed with Codex's editing tool, outside any command. */
 	readonly fileChanges: readonly FileChange[];
-	readonly boards: ReadonlyMap<string, SemanticBoard>;
-	readonly snapshot: ReadonlyMap<string, SemanticBoard>;
+	readonly boards: ReadonlyMap<string, EvaluatedDocument>;
+	readonly snapshot: ReadonlyMap<string, EvaluatedDocument>;
 	readonly policy: Reading["policy"] | null;
 	readonly inspections: Reading["inspections"];
 	readonly renders: readonly {
@@ -84,8 +84,8 @@ interface RunBundle {
 	readonly expectedFeatures: Scenario["expectedFeatures"];
 	readonly status: RunStatus;
 	readonly finalMessage: string | null;
-	readonly boardsBefore: Record<string, SemanticBoard>;
-	readonly boardsAfter: Record<string, SemanticBoard>;
+	readonly boardsBefore: Record<string, EvaluatedDocument>;
+	readonly boardsAfter: Record<string, EvaluatedDocument>;
 	readonly policy: Reading["policy"] | null;
 	readonly inspections: Reading["inspections"];
 	readonly renders: readonly {

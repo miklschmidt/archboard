@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
@@ -11,9 +11,9 @@ import { routeEnds } from "#tests/runtime/support/drawn-routes.ts";
  * @param built Whether its variant is current.
  * @returns The board.
  */
-function boardOf(built: boolean) {
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+function documentOf(built: boolean) {
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Ingest",
@@ -45,7 +45,11 @@ function boardOf(built: boolean) {
  * @returns The drawn reply.
  */
 async function drawn(built: boolean) {
-	const outcome = await renderBoard(boardOf(built), { theme: "light" }, DEFAULT_SEMANTIC_POLICY);
+	const outcome = await renderLegacyBoard(
+		documentOf(built),
+		{ theme: "light" },
+		DEFAULT_SEMANTIC_POLICY,
+	);
 	if (!outcome.ok || !("svg" in outcome.reply)) throw new Error("Expected a drawn board");
 	return outcome.reply;
 }

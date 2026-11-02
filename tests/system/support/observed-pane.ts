@@ -156,7 +156,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	clientId: string;
 	/** The vault the pane shows boards of, which its socket names when it connects (ADR 0049). */
 	vault: string;
-	preferredBoard?: string;
+	preferredModel?: string;
 	register: (board: string | null, signal: AbortSignal) => Promise<Response>;
 	readPanes: (signal: AbortSignal) => Promise<Response>;
 }): Promise<ObservedPane<Event>> {
@@ -191,7 +191,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 		try {
 			const event = JSON.parse(data.toString()) as Event;
 			events.push(event);
-			if (event.type === "pane_board") {
+			if (event.type === "pane_place") {
 				initialArrived = true;
 				resolveInitial(event);
 			}
@@ -233,7 +233,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	};
 	try {
 		const initialEvent = await initial.finally(() => clearTimeout(initialTimer));
-		await register(options.preferredBoard ?? initialEvent.board ?? null);
+		await register(options.preferredModel ?? initialEvent.board ?? null);
 	} catch (error) {
 		try {
 			await closeSocket(socket, options.clientId, TEST_PANE_MESSAGE_TIMEOUT_MS);
@@ -249,7 +249,7 @@ async function openObservedPane<Event extends ObservedPaneEvent>(options: {
 	return {
 		socket,
 		events,
-		board: () => [...events].toReversed().find((event) => event.type === "pane_board")?.board,
+		board: () => [...events].toReversed().find((event) => event.type === "pane_place")?.board,
 		register,
 		async waitFor(match, start = 0, timeoutMs = TEST_PANE_MESSAGE_TIMEOUT_MS) {
 			const deadline = Date.now() + timeoutMs;

@@ -8,7 +8,7 @@ import {
 	paneFromRequest,
 	paneResponse,
 	semanticPaneContextFor,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
@@ -203,8 +203,8 @@ function opensUnread(
 function moveUnread(vault: string, pane: PaneRegistration, res: Response): void {
 	movePaneVault(pane.clientId, vault);
 	const { repository, checkout } = placeOfVault(vault);
-	const place = { type: "pane_board", board: null, identity: null, vault, repository } as const;
-	sendBoardlessToPane(pane.clientId, place);
+	const place = { type: "pane_place", board: null, identity: null, vault, repository } as const;
+	sendKeylessToPane(pane.clientId, place);
 	res.json({ success: true, repository, checkout, paneId: pane.paneId, ...paneResponse(pane) });
 }
 /**

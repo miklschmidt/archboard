@@ -98,7 +98,7 @@ function drawableGrammar(grammar: string, projection: Projection): DiagramGramma
  * @param reading The address fields.
  * @returns The scope of a structural reading, or the flow of a behavioral one.
  */
-function sceneBoard(reading: SceneReading): string {
+function sceneModel(reading: SceneReading): string {
 	return JSON.stringify(
 		reading.grammar === "architecture"
 			? ["architecture", reading.scope]
@@ -125,7 +125,7 @@ function sceneFit(request: Pick<SceneRequest, "reading" | "layout">): string {
 	const { reading, layout } = request;
 	const { state, checkpoint, against, filters, focus, expand } = reading;
 	return JSON.stringify([
-		sceneBoard(reading),
+		sceneModel(reading),
 		focus,
 		expand,
 		state,
@@ -316,7 +316,7 @@ function acceptScene(
 		...request,
 		key: sceneKey(request),
 		drawing,
-		picture: { ...drawing, board: sceneBoard(request.reading), view: sceneView(request.reading) },
+		picture: { ...drawing, board: sceneModel(request.reading), view: sceneView(request.reading) },
 		heading: before === null ? null : departureTo(before, request),
 		selected,
 	};
@@ -386,7 +386,7 @@ function nextScene(
  */
 function leavingTo(scene: AcceptedScene | null, request: SceneRequest): Departure | null {
 	if (scene === null || request.grammar === null || request.presentation !== undefined) return null;
-	return scene.picture.board === sceneBoard(request.reading) ? null : departureTo(scene, request);
+	return scene.picture.board === sceneModel(request.reading) ? null : departureTo(scene, request);
 }
 
 /** How a reader goes from the scene on screen to a module. */
@@ -445,7 +445,7 @@ export {
 	moveTo,
 	nextScene,
 	parentOf,
-	sceneBoard,
+	sceneModel,
 	sceneFit,
 	sceneKey,
 	sceneView,

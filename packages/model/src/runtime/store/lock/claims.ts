@@ -1,6 +1,6 @@
 import { CLAIM_MS } from "@archboard/timing";
-import { boardMemoryKey, normalizeBoardKey } from "#runtime/store/legacy-address.ts";
-import { holdBoard } from "#runtime/store/lock/acquisition.ts";
+import { modelMemoryKey, normalizePaneKey } from "#runtime/store/legacy-address.ts";
+import { holdModel } from "#runtime/store/lock/acquisition.ts";
 import {
 	claimOf,
 	dropClaim,
@@ -15,7 +15,7 @@ import type {
 	ClaimRevocation,
 	LockHolder,
 } from "#runtime/store/lock/contracts.ts";
-import { boardLockState, newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
+import { modelLockState, newToken, releaseHold } from "#runtime/store/lock/lease-state.ts";
 
 /** A claim this server lost, with the opening of the sentence its agent is told once. */
 type LostClaim = ClaimRevocation & {
@@ -28,7 +28,7 @@ type LostClaim = ClaimRevocation & {
  * @param request Board, reason, bounded campaign duration, wait, and cancellation evidence.
  * @returns The active claim and whether this call created its holder identity.
  */
-async function claimBoard(
+async function claimModel(
 	request: Readonly<{
 		vault: string;
 		board: string;
@@ -42,11 +42,11 @@ async function claimBoard(
 	// under the claim renew only the lease; this explicit act alone moves expiry.
 	// Clamp rather than refuse an overlong request, while never making the claim
 	// shorter than the renewable lease beneath it.
-	const board = normalizeBoardKey(request.board);
+	const board = normalizePaneKey(request.board);
 	const forMs = campaignLength(request.forMs);
 	const existing = liveClaim(request.vault, board);
 	const id = existing === null ? `claim-${newToken()}` : existing.holder.id;
-	const hold = await holdBoard({
+	const hold = await holdModel({
 		vault: request.vault,
 		board,
 		holder: { id, kind: "agent", reason: request.reason, claimed: true },
@@ -61,7 +61,7 @@ async function claimBoard(
 		expires: Date.now() + forMs,
 		timer: existing === null ? null : existing.timer,
 	};
-	processClaims.set(boardMemoryKey(request.vault, board), entry);
+	processClaims.set(modelMemoryKey(request.vault, board), entry);
 	entry.timer ??= startRenewing(request.vault, board);
 	return { claim: claimOf(board, entry), created: existing === null };
 }
@@ -84,8 +84,8 @@ function campaignLength(asked: number | undefined): number {
  */
 function releaseClaim(vault: string, board: string): Claim | null {
 	// A late release after expiry or take-back is harmless and reports null.
-	const key = normalizeBoardKey(board);
-	const entry = processClaims.get(boardMemoryKey(vault, key));
+	const key = normalizePaneKey(board);
+	const entry = processClaims.get(modelMemoryKey(vault, key));
 	if (entry === undefined) {
 		return null;
 	}
@@ -101,7 +101,7 @@ function releaseClaim(vault: string, board: string): Claim | null {
  * @returns The live claim, or null.
  */
 function claimOn(vault: string, board: string): Claim | null {
-	const key = normalizeBoardKey(board);
+	const key = normalizePaneKey(board);
 	const entry = liveClaim(vault, key);
 	return entry === null ? null : claimOf(key, entry);
 }
@@ -116,7 +116,7 @@ function claimWriterId(vault: string, board: string): string | null {
 	// The server supplies this id across command-lived agent requests. If the
 	// vault lease was lost, ordinary acquisition must not silently rebuild the
 	// claim; the renewal/revocation owner resolves that state.
-	const entry = liveClaim(vault, normalizeBoardKey(board));
+	const entry = liveClaim(vault, normalizePaneKey(board));
 	return entry === null ? null : entry.holder.id;
 }
 
@@ -129,7 +129,7 @@ function claimWriterId(vault: string, board: string): string | null {
 function takeClaimRevocation(vault: string, board: string): LostClaim | null {
 	// Told once: the next agent act learns what was interrupted and that nothing
 	// was undone; after that, work is ordinary rather than permanently refused.
-	const key = boardMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, board);
 	const lost = processRevocations.get(key);
 	if (lost === undefined) {
 		return null;
@@ -152,12 +152,12 @@ function takeClaimRevocation(vault: string, board: string): LostClaim | null {
  * @param request.signal Cancels waiting for the lease when the caller goes.
  * @returns The agent's claim that stood when the person asked, or null when none did.
  */
-async function takeBackBoard(
+async function takeBackModel(
 	request: Readonly<{ vault: string; board: string; by: string; signal?: Readonly<AbortSignal> }>,
 ): Promise<LockHolder | null> {
 	const { vault, board } = request;
-	const standing = boardLockState(vault, board);
-	const hold = await holdBoard({
+	const standing = modelLockState(vault, board);
+	const hold = await holdModel({
 		vault,
 		board,
 		holder: { id: request.by, kind: "human" },
@@ -191,10 +191,10 @@ function claimEndReason(lost: ClaimRevocation): string {
 
 export {
 	type LostClaim,
-	claimBoard,
+	claimModel,
 	claimOn,
 	claimWriterId,
 	releaseClaim,
-	takeBackBoard,
+	takeBackModel,
 	takeClaimRevocation,
 };

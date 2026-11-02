@@ -104,7 +104,7 @@ function chosenCheckout(): string | undefined {
  * @param vault The vault.
  * @param board The board.
  */
-async function createBoard(vault: string, board: string): Promise<void> {
+async function createModel(vault: string, board: string): Promise<void> {
 	writeFileSync(
 		join(vault, "model.json"),
 		JSON.stringify({ schemaVersion: 1, id: "Payments", name: board, current: null }),
@@ -166,8 +166,8 @@ beforeAll(async () => {
 	});
 	// The main checkout registers first, so it is chosen, and the worktree becomes known with it.
 	archboard(main, ["repo", "add"]);
-	await createBoard(mainVault, "payments");
-	await createBoard(worktreeVault, "payments");
+	await createModel(mainVault, "payments");
+	await createModel(worktreeVault, "payments");
 });
 
 afterAll(async () => {
@@ -227,7 +227,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		});
 		expect(chosenCheckout()).toBe(worktree);
 		// The pane the show did not name follows the choice with its board.
-		expect(await left.waitFor("pane_board", mark)).toMatchObject({
+		expect(await left.waitFor("pane_place", mark)).toMatchObject({
 			board: "payments",
 			vault: worktreeVault,
 			repository: ORDERS,
@@ -257,7 +257,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			stdio: "ignore",
 		});
 		const fix = realpathSync.native(target);
-		await createBoard(vaultOf(fix), "payments");
+		await createModel(vaultOf(fix), "payments");
 		const mark = pane.mark();
 		expect(archboard(fix, ["model", "read"])).toMatchObject({
 			vault: { registered: { root: fix, chosen: false } },
@@ -273,7 +273,7 @@ describe.serial("browser show and the chosen checkout", () => {
 
 		const mark = pane.mark();
 		archboard(fixture.nowhere, ["repo", "use", main]);
-		expect(await pane.waitFor("pane_board", mark)).toMatchObject({
+		expect(await pane.waitFor("pane_place", mark)).toMatchObject({
 			board: "payments",
 			vault: mainVault,
 			repository: ORDERS,
@@ -282,7 +282,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		// Forgotten, the main checkout is no repository's, so the pane in its vault names none.
 		const forgot = pane.mark();
 		archboard(fixture.nowhere, ["repo", "forget", main]);
-		expect(await pane.waitFor("pane_board", forgot)).toMatchObject({
+		expect(await pane.waitFor("pane_place", forgot)).toMatchObject({
 			vault: mainVault,
 			repository: null,
 		});
@@ -298,7 +298,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		});
 		const gone = realpathSync.native(target);
 		const goneVault = vaultOf(gone);
-		await createBoard(goneVault, "payments");
+		await createModel(goneVault, "payments");
 		archboard(fixture.nowhere, ["repo", "use", gone]);
 		const before = await paneIn(goneVault, "pane-gone");
 		await before.close();
@@ -330,7 +330,7 @@ describe.serial("browser show and the chosen checkout", () => {
 				createRequester({ ...server, vault: mainVault })("/api/panes", { signal }),
 		});
 		resources.defer(() => back.close());
-		expect(back.events.find((event) => event.type === "pane_board")).toMatchObject({
+		expect(back.events.find((event) => event.type === "pane_place")).toMatchObject({
 			vault: mainVault,
 			repository: ORDERS,
 		});
@@ -341,7 +341,7 @@ describe.serial("browser show and the chosen checkout", () => {
 		const shelf = join(fixture.root, "shelf", "notes");
 		const shelfVault = vaultOf(shelf);
 		archboard(fixture.nowhere, ["repo", "add", shelf]);
-		await createBoard(shelfVault, "payments");
+		await createModel(shelfVault, "payments");
 		const pane = await paneIn(shelfVault, "pane-notes");
 		resources.defer(() => pane.close());
 
@@ -361,7 +361,7 @@ describe.serial("browser show and the chosen checkout", () => {
 			renamed: { root, from: "notes", to: "notes-2" },
 		});
 		expect(registry().vaults.find((each) => each.root === root)?.name).toBe("notes-2");
-		expect(await pane.waitFor("pane_board", mark)).toMatchObject({
+		expect(await pane.waitFor("pane_place", mark)).toMatchObject({
 			vault: shelfVault,
 			repository: "notes-2",
 		});

@@ -14,9 +14,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import {
-	locateSemanticBoard,
-	SEMANTIC_BOARD_FILE_SUFFIX,
-	type SemanticBoardLocation,
+	locateLegacyBoard,
+	LEGACY_BOARD_FILE_SUFFIX,
+	type LegacyBoardLocation,
 } from "#runtime/store/location.ts";
 
 /** How deep a vault is walked. A board address nests; a vault is not a tree. */
@@ -71,8 +71,8 @@ function namesIn(at: string, prefix: string, depth: number, entry: fs.Dirent): s
  * @returns The board name, or nothing.
  */
 function boardName(prefix: string, file: string): string[] {
-	return file.endsWith(SEMANTIC_BOARD_FILE_SUFFIX)
-		? [`${prefix}${file.slice(0, -SEMANTIC_BOARD_FILE_SUFFIX.length)}`]
+	return file.endsWith(LEGACY_BOARD_FILE_SUFFIX)
+		? [`${prefix}${file.slice(0, -LEGACY_BOARD_FILE_SUFFIX.length)}`]
 		: [];
 }
 
@@ -81,11 +81,11 @@ function boardName(prefix: string, file: string): string[] {
  * @param root The vault root.
  * @returns The boards, sorted by key.
  */
-function listSemanticBoards(root: string): SemanticBoardLocation[] {
-	const found: SemanticBoardLocation[] = [];
+function listLegacyBoards(root: string): LegacyBoardLocation[] {
+	const found: LegacyBoardLocation[] = [];
 	for (const name of namesUnder(path.resolve(root), "", 0)) {
 		try {
-			found.push(locateSemanticBoard(name, root));
+			found.push(locateLegacyBoard(name, root));
 		} catch {
 			// A file whose name is not a board address is not a board. It is
 			// somebody's file that happens to end in our suffix, and the listing
@@ -98,4 +98,4 @@ function listSemanticBoards(root: string): SemanticBoardLocation[] {
 	);
 }
 
-export { listSemanticBoards };
+export { listLegacyBoards };

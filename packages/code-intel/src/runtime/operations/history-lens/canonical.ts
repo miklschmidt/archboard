@@ -3,7 +3,7 @@ import {
 	ArchitectureLocalityRequestSchema,
 	ArchitectureFootprintRequestSchema,
 } from "#shared/protocol/canonical-history.ts";
-import { readBoardsToCheck } from "#runtime/operations/code-check/states.ts";
+import { readStatesToCheck } from "#runtime/operations/code-check/states.ts";
 import { createLocalityEvidence } from "#runtime/operations/history-lens/locality.ts";
 import { readFootprintEvidence } from "#runtime/operations/history-lens/footprint.ts";
 const locality = createLocalityEvidence();
@@ -20,7 +20,7 @@ async function readArchitectureLocality(
 	signal?: AbortSignal,
 ) {
 	const request = ArchitectureLocalityRequestSchema.parse(input);
-	const read = await readBoardsToCheck(vault, request.state, request);
+	const read = await readStatesToCheck(vault, request.state, request);
 	if (!("ok" in read)) return read;
 	const reading = read.boards[0]!;
 	const model = reading.model!;
@@ -54,7 +54,7 @@ async function readArchitectureFootprint(
 	signal?: AbortSignal,
 ) {
 	const request = ArchitectureFootprintRequestSchema.parse(input);
-	const read = await readBoardsToCheck(vault, request.state, request);
+	const read = await readStatesToCheck(vault, request.state, request);
 	if (!("ok" in read)) return read;
 	const reading = read.boards[0]!;
 	const model = reading.model!;

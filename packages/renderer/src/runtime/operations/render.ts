@@ -12,16 +12,16 @@ import {
 	type SemanticViewRenderRequest,
 } from "#shared/protocol/render-request.ts";
 import {
-	drawBoard,
-	type BoardRenderChoices,
-	type BoardRenderOutcome,
+	drawLegacyBoard,
+	type LegacyRenderChoices,
+	type LegacyRenderOutcome,
 	type DrawnInput,
 } from "#shared/rules/render/legacy-board.ts";
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { SemanticPolicy } from "@archboard/model/policy";
 import { wasDrawn, type SemanticRenderReply } from "@archboard/model/render-reply";
 import { installBunHost } from "#runtime/services/bun-host.ts";
-import { boardRecipe, type RecipeVault } from "#runtime/operations/recipe/legacy-recipe.ts";
+import { legacyRecipe, type RecipeVault } from "#runtime/operations/recipe/legacy-recipe.ts";
 import { embedRecipeInSvg } from "#runtime/operations/recipe/svg-recipe.ts";
 
 /**
@@ -58,14 +58,14 @@ async function renderSemanticView(request: SemanticViewRenderRequest): Promise<R
  * @param recipe.vault The vault.
  * @returns The answer, or which name the board does not have.
  */
-async function renderBoard(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+async function renderLegacyBoard(
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	policy: SemanticPolicy,
 	recipe?: { readonly vault: RecipeVault },
-): Promise<BoardRenderOutcome> {
+): Promise<LegacyRenderOutcome> {
 	installBunHost();
-	const drawing = await drawBoard(board, choices, policy);
+	const drawing = await drawLegacyBoard(board, choices, policy);
 	if (!drawing.ok) return drawing;
 	const reply =
 		recipe === undefined
@@ -84,15 +84,15 @@ async function renderBoard(
  * @returns The answer, its SVG carrying the recipe; an answer with no picture as it was.
  */
 function carryingRecipe(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	reply: SemanticRenderReply,
 	input: DrawnInput,
 	vault: RecipeVault,
 ): SemanticRenderReply {
 	if (!wasDrawn(reply)) return reply;
-	const recipe = boardRecipe(board, choices, reply, input, vault);
+	const recipe = legacyRecipe(board, choices, reply, input, vault);
 	return { ...reply, svg: embedRecipeInSvg(reply.svg, recipe) };
 }
 
-export { renderArchitecture, renderBoard, renderSemanticView };
+export { renderArchitecture, renderLegacyBoard, renderSemanticView };

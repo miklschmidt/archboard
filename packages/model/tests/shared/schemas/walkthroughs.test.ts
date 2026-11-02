@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { compareVariants, standingOf, withRemoved } from "#shared/rules/compare/variants.ts";
-import { parseSemanticBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 import { subjectsOf, VariantContentSchema, type VariantContent } from "#shared/schemas/content.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
@@ -48,7 +48,7 @@ const board = (content: Record<string, unknown>) => ({
  * @returns The reason, or "" when it was accepted.
  */
 const refusal = (content: Record<string, unknown>): string => {
-	const parsed = parseSemanticBoard(withFixtureOrders(board(content)));
+	const parsed = parseLegacyBoard(withFixtureOrders(board(content)));
 	return parsed.ok ? "" : parsed.problem;
 };
 

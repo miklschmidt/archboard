@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-const boardRequiredRefusal = {
-	code: "BOARD_REQUIRED",
+const modelRequiredRefusal = {
+	code: "MODEL_REQUIRED",
 	exit: 2,
 	stream: "stderr" as const,
 	description: "A board-sensitive request did not name a board.",
@@ -48,14 +48,14 @@ const doingRefusal = {
 	stream: "stderr" as const,
 	description: "A board write did not declare what it was doing.",
 };
-const boardHeldRefusal = {
-	code: "BOARD_HELD",
+const modelHeldRefusal = {
+	code: "MODEL_HELD",
 	exit: 5,
 	stream: "stderr" as const,
 	description: "Another writer currently holds the board lease.",
 };
-const boardVersionRefusal = {
-	code: "BOARD_VERSION_CONFLICT",
+const modelVersionRefusal = {
+	code: "MODEL_VERSION_CONFLICT",
 	exit: 5,
 	stream: "stderr" as const,
 	description: "The board advanced past expect-version.",
@@ -68,35 +68,35 @@ const claimRevokedRefusal = {
 		"The claim ended before its release: a person took it back, or its lease went to another process.",
 };
 
-const commonRefusals = [boardRequiredRefusal, serverRefusal] as const;
-const boardWriteRefusals = [
-	boardRequiredRefusal,
+const commonRefusals = [modelRequiredRefusal, serverRefusal] as const;
+const modelWriteRefusals = [
+	modelRequiredRefusal,
 	serverRefusal,
 	doingRefusal,
-	boardHeldRefusal,
-	boardVersionRefusal,
+	modelHeldRefusal,
+	modelVersionRefusal,
 	claimRevokedRefusal,
 ] as const;
 const claimRefusals = [
-	boardRequiredRefusal,
+	modelRequiredRefusal,
 	serverRefusal,
-	boardHeldRefusal,
+	modelHeldRefusal,
 	claimRevokedRefusal,
 ] as const;
 const serverBrowserRefusals = [serverRefusal, browserRefusal] as const;
 const tail = z.array(z.string()).default([]);
 
 export {
-	boardRequiredRefusal,
+	modelRequiredRefusal,
 	serverRefusal,
 	vaultRefusals,
 	browserRefusal,
 	doingRefusal,
-	boardHeldRefusal,
-	boardVersionRefusal,
+	modelHeldRefusal,
+	modelVersionRefusal,
 	claimRevokedRefusal,
 	commonRefusals,
-	boardWriteRefusals,
+	modelWriteRefusals,
 	claimRefusals,
 	serverBrowserRefusals,
 	tail,

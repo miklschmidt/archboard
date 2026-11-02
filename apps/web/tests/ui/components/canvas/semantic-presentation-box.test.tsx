@@ -10,7 +10,7 @@ import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
 import type { PaneChrome } from "#ui/components/canvas/PaneChrome.tsx";
-import { EXPLAINED_BOARD, drawing } from "#tests/ui/support/canvas/render-answers.ts";
+import { EXPLAINED_DOCUMENT, drawing } from "#tests/ui/support/canvas/render-answers.ts";
 import { mountStage, part, server, settle } from "#tests/ui/support/canvas/stage-harness.tsx";
 import {
 	current,
@@ -21,7 +21,7 @@ import {
 
 /** A board that tells itself in three steps. */
 const THREE_STEPS = {
-	...EXPLAINED_BOARD,
+	...EXPLAINED_DOCUMENT,
 	variants: [
 		{
 			id: "v1",

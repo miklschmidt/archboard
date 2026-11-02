@@ -2,8 +2,8 @@ import { afterEach, expect, test } from "bun:test";
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { makeIdentity } from "#runtime/store/legacy-address.ts";
-import { SemanticBoardSchema } from "@archboard/model/legacy-board";
-import { paneBoardAddress } from "@archboard/model/legacy-address";
+import { LegacyBoardSchema } from "@archboard/model/legacy-board";
+import { paneAddressKey } from "@archboard/model/legacy-address";
 import { addressedVariant } from "@archboard/model/legacy-board";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import * as writes from "@archboard/model/store-write";
@@ -31,9 +31,9 @@ test("installed original addresses reopen the exact readings emitted by the lega
 	writeFileSync(join(fixture.vault, "Shop.semantic.json"), JSON.stringify(fixture.original));
 	const selections = ["current", "Old", "Past"].map((variant) => {
 		const identity = makeIdentity({ board: fixture.original.name, variant });
-		const legacy = addressedVariant(SemanticBoardSchema.parse(fixture.original), identity.variant);
+		const legacy = addressedVariant(LegacyBoardSchema.parse(fixture.original), identity.variant);
 		if (!legacy.ok) throw new Error(JSON.stringify(legacy));
-		return { address: paneBoardAddress(identity), state: legacy.variant };
+		return { address: paneAddressKey(identity), state: legacy.variant };
 	});
 	expect(selections.map((entry) => entry.address)).toEqual(["shop", "shop@Old", "shop@Past"]);
 	const { vault, request } = await installationFixture(fixture);
@@ -72,7 +72,7 @@ test("captured public pane keys preserve ambiguity between original board famili
 	await savePreviewPlan(vault);
 	const result = await readArchitectureModel(vault, undefined, undefined, {
 		preview: "Shop",
-		legacyAddress: paneBoardAddress(makeIdentity({ board: "Shop" })),
+		legacyAddress: paneAddressKey(makeIdentity({ board: "Shop" })),
 	});
 	expect(result).toMatchObject({
 		success: false,

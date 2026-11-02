@@ -10,12 +10,12 @@
 //   bun docs/design/wide-board-layout-fixtures/timing.ts [runs]
 import fs from "node:fs";
 import path from "node:path";
-import { parseSemanticBoard } from "@archboard/model/legacy-board";
+import { parseLegacyBoard } from "@archboard/model/legacy-board";
 import { renderArchitecture } from "@archboard/renderer/bun";
 import { DEFAULT_LAYOUT_ENGINE } from "@archboard/model/render-reply";
 import { orderedFixture } from "../../../packages/renderer/tests/runtime/support/ordered-fixture.ts";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
-import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
 
 const fixtures = "docs/design/wide-board-layout-fixtures";
 const vault = ".archboard/vault";
@@ -33,12 +33,12 @@ for (const file of fs
 		policy: DEFAULT_SEMANTIC_POLICY,
 	});
 }
-const { configuration: policy } = readSemanticBoardConfiguration(vault);
+const { configuration: policy } = readVaultConfiguration(vault);
 for (const file of fs
 	.readdirSync(vault)
 	.filter((name) => name.endsWith(".semantic.json"))
 	.toSorted()) {
-	const parsed = parseSemanticBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
+	const parsed = parseLegacyBoard(JSON.parse(fs.readFileSync(path.join(vault, file), "utf8")));
 	if (!parsed.ok) continue;
 	const current = parsed.board.variants.find((variant) => variant.id === parsed.board.current);
 	if (current !== undefined)

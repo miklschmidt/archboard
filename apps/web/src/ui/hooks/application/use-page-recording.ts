@@ -11,7 +11,7 @@ import type { PaneList } from "#ui/rules/application/pane-list.ts";
 import type { BrowserWorkbenchMediaOwnerOptions } from "#ui/state/application/pane-handles.ts";
 import type { Workbench } from "#ui/hooks/application/use-workbench.ts";
 import type { WorkspaceAddress } from "#ui/rules/reading-routing/address.ts";
-import { boardAddressOf } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf } from "#ui/rules/canvas/reading/address.ts";
 import { openWalkthroughRecorder } from "#ui/clients/walkthrough-recording/open-recorder.ts";
 import { useWalkthroughRecording } from "#ui/hooks/walkthrough-recording/use-walkthrough-recording.ts";
 import { type WalkthroughRecorder } from "#ui/state/walkthrough-recording/recorder.ts";
@@ -27,8 +27,8 @@ import { type WalkthroughRecorder } from "#ui/state/walkthrough-recording/record
  */
 function usePageRecorder(opening: WorkspaceAddress): WalkthroughRecorder | null {
 	return useState(() => {
-		const key = opening.panes[0]?.boardKey ?? null;
-		return openWalkthroughRecorder(window.location.search, boardAddressOf(key)?.board ?? null);
+		const key = opening.panes[0]?.paneKey ?? null;
+		return openWalkthroughRecorder(window.location.search, paneAddressOf(key)?.board ?? null);
 	})[0];
 }
 

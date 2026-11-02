@@ -9,7 +9,7 @@ import {
 	type LegacyMappingWrite,
 	type LegacyInventoryRead,
 } from "#shared/schemas/migration.ts";
-import { withBoardLock, BoardHeldError } from "#runtime/store/lock/lock.ts";
+import { withLease, ModelHeldError } from "#runtime/store/lock/lock.ts";
 import { MIGRATION_PLAN_PATH } from "#runtime/store/migration-plan.ts";
 import {
 	readLegacyInventory,
@@ -35,7 +35,7 @@ async function saveLegacyMappingPlan(
 		return migrationFailure("MAPPING_INVALID", MIGRATION_PLAN_PATH, description.problem);
 	try {
 		// Board names cannot contain @, so this lease cannot alias a board claim.
-		return await withBoardLock(
+		return await withLease(
 			{
 				vault,
 				board: "@migration-plan",
@@ -69,7 +69,7 @@ async function saveLegacyMappingPlan(
 		);
 	} catch (error) {
 		return migrationFailure(
-			error instanceof BoardHeldError ? "MAPPING_HELD" : "INVENTORY_UNREADABLE",
+			error instanceof ModelHeldError ? "MAPPING_HELD" : "INVENTORY_UNREADABLE",
 			MIGRATION_PLAN_PATH,
 			errorMessage(error),
 		);

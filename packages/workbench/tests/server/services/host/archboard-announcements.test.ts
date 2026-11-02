@@ -10,7 +10,7 @@ import { encodeCanonicalContext } from "#runtime/rules/instructions/context.ts";
 import { ARCHBOARD_CONTEXT_CODEC, workbenchContextOf } from "#runtime/services/host/archboard.ts";
 import { canonicalContextFromBrief } from "#server/projections/semantic-context/semantic-input.ts";
 import {
-	boardChangeAnnouncement,
+	modelChangeAnnouncement,
 	paneAnnouncement,
 } from "#server/services/host/archboard-announcements.ts";
 import { parseTabSessionId } from "@archboard/codex-realtime-voice/server";
@@ -272,7 +272,7 @@ describe("a pane report", () => {
 describe("a settled board change", () => {
 	test("both models are told another agent's write as one quiet sentence, under its writer", () => {
 		const { change: event } = sources("another-agent-thread");
-		const change = boardChangeAnnouncement(event, tab());
+		const change = modelChangeAnnouncement(event, tab());
 
 		expect(change).toMatchObject({ feed: "feed-1", sequence: 7, author: "another-agent-thread" });
 		// Nothing an agent did is folded into the next.
@@ -292,7 +292,7 @@ describe("a settled board change", () => {
 	});
 
 	test("a write to a board no pane of the canvas shows tells neither model", () => {
-		const change = boardChangeAnnouncement(sources(null, "payments").change, tab());
+		const change = modelChangeAnnouncement(sources(null, "payments").change, tab());
 
 		expect(change.voice).toEqual({ withheld: "not_shown" });
 		expect(change.coordinator).toBeUndefined();
@@ -301,10 +301,10 @@ describe("a settled board change", () => {
 	test("live writes stay quiet during captured narration, including the narrated model", () => {
 		const narrating = tab("architecture", ["architecture", "ledger"]);
 
-		expect(boardChangeAnnouncement(sources().change, narrating).voice).toMatchObject({
+		expect(modelChangeAnnouncement(sources().change, narrating).voice).toMatchObject({
 			speech: false,
 		});
-		expect(boardChangeAnnouncement(sources(null, "ledger").change, narrating).voice).toMatchObject({
+		expect(modelChangeAnnouncement(sources(null, "ledger").change, narrating).voice).toMatchObject({
 			speech: false,
 		});
 	});
@@ -317,7 +317,7 @@ describe("a settled board change", () => {
 			origin: "external",
 			change: { ...original.change, origin: "external", by: null },
 		};
-		const change = boardChangeAnnouncement(event, tab("architecture"));
+		const change = modelChangeAnnouncement(event, tab("architecture"));
 
 		expect(change.author).toBeNull();
 		expect(change.voice).toMatchObject({ speech: false });
@@ -329,7 +329,7 @@ describe("a settled board change", () => {
 
 	test("the workhorse of the board's checkout reads the same Archboard context bytes it always did", () => {
 		const { change: event } = sources();
-		const change = boardChangeAnnouncement(event, tab());
+		const change = modelChangeAnnouncement(event, tab());
 		const workhorse = change.workhorse;
 		if (workhorse === undefined || !("text" in workhorse))
 			throw new Error("The workhorse was told nothing.");
@@ -360,7 +360,7 @@ describe("a settled board change", () => {
 		const { change: event } = sources();
 		const stale = { ...event, staleness: { state: "stale" as const, reasons: ["board changed"] } };
 
-		expect(boardChangeAnnouncement(stale, tab()).workhorse).toEqual({
+		expect(modelChangeAnnouncement(stale, tab()).workhorse).toEqual({
 			checkouts: ["/work"],
 			withheld: "stale",
 		});

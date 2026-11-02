@@ -1,8 +1,8 @@
 // What a pane's board key names. Pure: it reads no pane and no vault.
 
-import { parseBoardKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 
-type BoardIdentity = ReturnType<typeof parseBoardKey>;
+type LegacyIdentity = ReturnType<typeof parsePaneKey>;
 
 /**
  * What a pane's key names, or nothing when it does not name a board at all.
@@ -13,9 +13,9 @@ type BoardIdentity = ReturnType<typeof parseBoardKey>;
  * @param key The pane's board key.
  * @returns The identity, or null when the key is not one.
  */
-function paneAddress(key: string): BoardIdentity | null {
+function paneAddress(key: string): LegacyIdentity | null {
 	try {
-		return parseBoardKey(key);
+		return parsePaneKey(key);
 	} catch {
 		return null;
 	}

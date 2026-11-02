@@ -110,7 +110,7 @@ function atRestExpression(nth: number): string {
 		if (!stage || stage.getAttribute("data-state") !== "ready") return false;
 		const diagram = stage.querySelector("[data-slot='model-diagram']");
 		if (!diagram || diagram.getAttribute("aria-busy") === "true") return false;
-		const surface = diagram.querySelector("[data-slot='semantic-board-surface']");
+		const surface = diagram.querySelector("[data-slot='canvas-surface']");
 		return !!surface && !!surface.querySelector("svg") && !surface.hasAttribute("data-picture-motion") && !surface.hasAttribute("data-camera-motion");
 	})()`;
 }
@@ -280,12 +280,12 @@ class Page {
 	 */
 	async card(name: string): Promise<string> {
 		const id = await this.evaluate(`(() => {
-			const cards = [...document.querySelectorAll("[data-slot='semantic-board-surface'] [data-semantic-kind='node'][data-semantic-id]")];
+			const cards = [...document.querySelectorAll("[data-slot='canvas-surface'] [data-semantic-kind='node'][data-semantic-id]")];
 			const first = (card) => card.textContent.split("\\n").map((line) => line.trim()).find((line) => line !== "") ?? "";
 			const hit = cards.find((card) => first(card) === ${JSON.stringify(name)}) ?? cards.find((card) => card.textContent.includes(${JSON.stringify(name)}));
 			return hit ? hit.getAttribute("data-semantic-id") : null; })()`);
 		if (typeof id !== "string") throw new Error(`No drawn card is named ${name}.`);
-		return `[data-slot='semantic-board-surface'] [data-semantic-id='${id}']`;
+		return `[data-slot='canvas-surface'] [data-semantic-id='${id}']`;
 	}
 
 	/**

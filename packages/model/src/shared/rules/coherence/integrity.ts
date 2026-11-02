@@ -11,7 +11,7 @@
 // candidate before it is written — so a board on disk is always coherent, and
 // a refused write leaves the last coherent board exactly where it was.
 
-import type { SemanticBoard } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import { familyIssues, frameIssues, versionIssues } from "#shared/rules/coherence/family.ts";
 import { repeated, walkReturns, type IntegrityIssue } from "#shared/rules/coherence/issues.ts";
 import {
@@ -339,7 +339,7 @@ function reservedViewIssues(views: readonly { readonly name: string }[]): Integr
  * @param board A board that has already been parsed.
  * @returns The issues found; empty when the board is coherent.
  */
-function checkSemanticBoard(board: SemanticBoard): IntegrityIssue[] {
+function checkLegacyBoard(board: LegacyBoard): IntegrityIssue[] {
 	const issues = [
 		...versionIssues(board),
 		...familyIssues(board),
@@ -367,7 +367,7 @@ function describeIntegrityIssues(issues: readonly IntegrityIssue[]): string {
 	return issues.map((issue) => `${issue.at}: ${issue.problem}`).join("; ");
 }
 
-export { checkSemanticBoard, checkVariantContent, describeIntegrityIssues };
+export { checkLegacyBoard, checkVariantContent, describeIntegrityIssues };
 
 /**
  * Validate walkthrough targets against the board-owned views.

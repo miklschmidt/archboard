@@ -11,7 +11,7 @@ import type {
 	SemanticWaiting,
 } from "#ui/clients/canvas/reads/drawings.ts";
 import { PeekProvider } from "#ui/components/canvas/Peek.tsx";
-import type { SemanticBoardStageProps } from "#ui/components/canvas/CanvasStage.tsx";
+import type { CanvasStageProps } from "#ui/components/canvas/CanvasStage.tsx";
 import { SemanticDiagram } from "#ui/components/canvas/SemanticDiagram.tsx";
 import type { GroupControls } from "#ui/components/canvas/SemanticInspectorParts.tsx";
 import { SemanticRefreshFailure } from "#ui/components/canvas/SemanticRefreshFailure.tsx";
@@ -28,7 +28,7 @@ import {
 } from "#ui/components/canvas/SemanticStageStates.tsx";
 import { waitingStage } from "#ui/components/canvas/SemanticStageWaiting.tsx";
 import { SemanticStanding } from "#ui/components/canvas/SemanticStanding.tsx";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { Leaving } from "#ui/hooks/canvas/use-departure.ts";
 import type { DrillNavigation } from "#ui/hooks/canvas/use-drill-down.ts";
 import type { PaneReading } from "#ui/hooks/canvas/use-level-reading.ts";
@@ -44,13 +44,13 @@ import type { Departure } from "#ui/clients/canvas/picture/picture-departure.ts"
 import type { OpenDown } from "#ui/rules/canvas/drilling/drill-target.ts";
 
 /** What the view is assembled from. */
-interface RenderView extends SemanticBoardStageProps {
+interface RenderView extends CanvasStageProps {
 	/** Whether the canvas shows comparison marks and removed context. */
 	readonly comparison: boolean;
 	/** Change this pane's comparison display. */
 	readonly onComparisonChange: (enabled: boolean) => void;
 	/** Camera retained while a different variant is being drawn. */
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** The cache's answer for this board, variant and view. */
 	readonly render: UseQueryResult<SemanticRender>;
 	/** Ask the server for the picture again. */

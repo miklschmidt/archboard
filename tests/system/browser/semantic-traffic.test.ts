@@ -34,7 +34,7 @@ const EXAMPLE = join(import.meta.dir, "../../../examples/canonical-model/.archbo
 /** The model and its independent flow identity. */
 const MODEL = "Shop";
 const FLOW = "Shop#Request";
-const SEMANTIC_SURFACE = '[data-slot="model-diagram"] [data-slot="semantic-board-surface"]';
+const SEMANTIC_SURFACE = '[data-slot="model-diagram"] [data-slot="canvas-surface"]';
 
 /** The canvas the picture is painted on. */
 const CANVAS = '[data-slot="model-diagram"] [data-slot="picture-canvas"]';

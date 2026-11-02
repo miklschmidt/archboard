@@ -7,7 +7,7 @@
 // request from there rather than from every call site.
 
 import type { SourceState } from "#runtime/services/staleness.ts";
-import { type BoardRefusal, isBoardRefusal } from "#runtime/protocol/server-client-refusal.ts";
+import { type ModelRefusal, isModelRefusal } from "#runtime/protocol/server-client-refusal.ts";
 import { requestJson } from "#runtime/clients/server-client-transport.ts";
 import { isRecord } from "@archboard/diagnostics/unknown-record";
 
@@ -48,9 +48,9 @@ function getSyncStatus(): Promise<Record<string, unknown>> {
  * @param error The thrown value.
  * @returns The refusal, or null.
  */
-function boardRefusalOf(error: unknown): BoardRefusal | null {
+function modelRefusalOf(error: unknown): ModelRefusal | null {
 	const refusal = isRecord(error) ? error["refusal"] : undefined;
-	return isBoardRefusal(refusal) ? refusal : null;
+	return isModelRefusal(refusal) ? refusal : null;
 }
 
 /**
@@ -59,8 +59,8 @@ function boardRefusalOf(error: unknown): BoardRefusal | null {
  * @param error The thrown value.
  * @returns The text, or null when the error is not a refusal.
  */
-function formatBoardRefusal(error: unknown): string | null {
-	const refusal = boardRefusalOf(error);
+function formatModelRefusal(error: unknown): string | null {
+	const refusal = modelRefusalOf(error);
 	if (!refusal) {
 		return null;
 	}
@@ -68,4 +68,4 @@ function formatBoardRefusal(error: unknown): string | null {
 	return `${reason}\n\n${JSON.stringify(details, null, 2)}`;
 }
 
-export { type HealthStatus, formatBoardRefusal, getHealth, getSyncStatus };
+export { type HealthStatus, formatModelRefusal, getHealth, getSyncStatus };

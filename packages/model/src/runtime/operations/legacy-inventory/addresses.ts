@@ -1,10 +1,10 @@
-import { addressedVariant, type SemanticBoard } from "#shared/schemas/legacy-board.ts";
+import { addressedVariant, type LegacyBoard } from "#shared/schemas/legacy-board.ts";
 import type { ArchitectureModel, ArchitectureModelRead } from "#shared/schemas/model.ts";
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { mappedIdentity } from "#shared/rules/legacy-inventory/plan.ts";
 import { readingDiagnostics } from "#runtime/operations/read/reading-readiness.ts";
 import { failure } from "#runtime/operations/read/model-read.ts";
-import { paneBoardAddress, parseBoardKey, statedVariant } from "#runtime/store/legacy-address.ts";
+import { paneAddressKey, parsePaneKey, statedVariant } from "#runtime/store/legacy-address.ts";
 
 type Address = NonNullable<NonNullable<ArchitectureModel["migrationPreview"]>["addresses"]>[number];
 /**
@@ -38,11 +38,11 @@ function legacyAddresses(inventory: LegacyInventory): Address[] {
  * @param state The exact original state identity.
  * @returns Its serialized public alias, when the legacy interface accepts it.
  */
-function serializedAlias(board: SemanticBoard, address: string, state: string): string | undefined {
+function serializedAlias(board: LegacyBoard, address: string, state: string): string | undefined {
 	try {
-		const identity = parseBoardKey(address);
+		const identity = parsePaneKey(address);
 		const opened = addressedVariant(board, statedVariant(identity));
-		return opened.ok && opened.variant.id === state ? paneBoardAddress(identity) : undefined;
+		return opened.ok && opened.variant.id === state ? paneAddressKey(identity) : undefined;
 	} catch {
 		return undefined;
 	}
@@ -53,7 +53,7 @@ function serializedAlias(board: SemanticBoard, address: string, state: string): 
  * @param state Its explicit alias target, when present.
  * @returns The exact original state identity or an unavailable bare address.
  */
-function originalAliasState(board: SemanticBoard, state?: string) {
+function originalAliasState(board: LegacyBoard, state?: string) {
 	if (state !== undefined) return state;
 	if (board.current !== undefined) return board.current;
 	const roots = board.variants.filter(

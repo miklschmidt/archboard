@@ -52,7 +52,7 @@ async function openApplicationSocket(base: string, clientId: string): Promise<Ap
 			requestId?: unknown;
 			type?: unknown;
 		};
-		if (message.type === "pane_board") {
+		if (message.type === "pane_place") {
 			initial.resolve();
 		}
 		if (typeof message.requestId !== "string") {

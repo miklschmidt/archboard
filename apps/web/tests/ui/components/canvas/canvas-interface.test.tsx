@@ -58,7 +58,7 @@ const DRAFT_EDGES = [
  * The board document: the current variant and the draft the pane shows.
  * @returns The document.
  */
-function boardOf(): Record<string, unknown> {
+function documentOf(): Record<string, unknown> {
 	return {
 		schemaVersion: "2.2.0",
 		kind: "semantic-board",
@@ -144,7 +144,7 @@ function picture(): Record<string, unknown> {
 
 /** Put the draft in front of a pane whose selection is held above it, and let it arrive. */
 async function served(): Promise<void> {
-	server.documents["pipeline"] = boardOf();
+	server.documents["pipeline"] = documentOf();
 	server.reply = { status: 200, body: picture() };
 	mountStage(null, { live: true, variant: "v2" });
 	await settle();

@@ -5,11 +5,11 @@
 // ghosts. No pane at all is the normal state of a headless server, not an
 // error.
 
-import type { parseBoardKey } from "@archboard/model/legacy-address";
+import type { parsePaneKey } from "@archboard/model/legacy-address";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 
-type BoardIdentity = ReturnType<typeof parseBoardKey>;
+type LegacyIdentity = ReturnType<typeof parsePaneKey>;
 
 /** A rectangle in page coordinates. */
 interface Rect {
@@ -99,7 +99,7 @@ interface PaneReport {
 	/** The board it is showing, or null when it is showing none. */
 	board: string | null;
 	/** What that board is, or null when there is no board. */
-	identity: BoardIdentity | null;
+	identity: LegacyIdentity | null;
 	/** The vault the board is in. */
 	vault: string;
 	/**
@@ -153,7 +153,7 @@ interface PanesReport {
 /** What the report needs from the server, without importing the server. */
 interface PaneContext {
 	/** The identity a board key spells. */
-	identity(board: string): BoardIdentity | null;
+	identity(board: string): LegacyIdentity | null;
 	/** What this pane last reported reading, or null when it has said nothing. */
 	reading(clientId: string): Omit<PaneReading, "moreSelected" | "summary"> | null;
 	/** The model reading this pane last reported, or null when it has reported none. */

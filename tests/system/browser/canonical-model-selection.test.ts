@@ -30,7 +30,7 @@ async function pictureFrame(browser: AgentBrowserSession): Promise<string> {
 	return browser.eval<string>(`(() => {
 		const diagram = document.querySelector('[data-slot="model-diagram"]');
 		const { x, y, width, height } = diagram.getBoundingClientRect();
-		const { transform } = diagram.querySelector('[data-slot="semantic-board-surface"]').style;
+		const { transform } = diagram.querySelector('[data-slot="canvas-surface"]').style;
 		return JSON.stringify({ x, y, width, height, transform });
 	})()`);
 }
@@ -71,7 +71,7 @@ test("module selection supports modifiers and keyboard without layout or history
 	await pollUntil(
 		() =>
 			browser.eval<boolean>(
-				`document.querySelector('[data-slot="semantic-board-surface"]:not([data-picture-motion]) svg') !== null`,
+				`document.querySelector('[data-slot="canvas-surface"]:not([data-picture-motion]) svg') !== null`,
 			),
 		Boolean,
 		"the landed scene",

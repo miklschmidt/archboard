@@ -32,14 +32,6 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 			"Find the vault from this directory instead of the working directory, the way git -C finds a " +
 			"repository; other relative paths still resolve against the working directory",
 	},
-	board: {
-		key: "board",
-		spellings: ["--board"],
-		value: "required",
-		placeholder: "key",
-		required: true,
-		description: "The vault the command is about; there is no default",
-	},
 	doing: {
 		key: "doing",
 		spellings: ["--doing"],
@@ -72,7 +64,6 @@ const SHARED_OPTIONS: Readonly<Record<SharedOptionKey, SharedOption>> = {
 const SHARED_OPTION_KEYS: readonly SharedOptionKey[] = [
 	"url",
 	"directory",
-	"board",
 	"doing",
 	"expect-version",
 	"as-session",

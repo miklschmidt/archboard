@@ -2,8 +2,8 @@
 // Ordinary writes keep the async lease path; a read that finds a live holder
 // can show normalized content and retry persistence on the next access.
 
-import { BOARD_LOCK_MS } from "@archboard/timing";
-import { normalizeBoardKey } from "#runtime/store/legacy-address.ts";
+import { MODEL_LOCK_MS } from "@archboard/timing";
+import { normalizePaneKey } from "#runtime/store/legacy-address.ts";
 import { createExclusively, freshRecord } from "#runtime/store/lock/acquisition.ts";
 import type { LockRequest } from "#runtime/store/lock/contracts.ts";
 import {
@@ -24,8 +24,8 @@ type MigrationHold<T> =
  * @param migrate The conversion to commit while held.
  * @returns Its result, or a pending indication.
  */
-function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): MigrationHold<T> {
-	const board = normalizeBoardKey(request.board);
+function withLeaseIfFreeSync<T>(request: LockRequest, migrate: () => T): MigrationHold<T> {
+	const board = normalizePaneKey(request.board);
 	const file = lockPathFor(request.vault, board);
 	const current = readRecord(file);
 	const live = liveRecord(current);
@@ -33,7 +33,7 @@ function withBoardLockIfFreeSync<T>(request: LockRequest, migrate: () => T): Mig
 	// A lapsed or malformed lease needs the async token-steal guard. Leave it
 	// alone and retry after a regular writer has resolved it.
 	if (current !== null) return { acquired: false };
-	const record = freshRecord(request.holder, request.leaseMs ?? BOARD_LOCK_MS.lease);
+	const record = freshRecord(request.holder, request.leaseMs ?? MODEL_LOCK_MS.lease);
 	const acquired = createExclusively(request.vault, file, record, board, () => {});
 	if (acquired?.ok !== true) return { acquired: false };
 	try {
@@ -54,4 +54,4 @@ function joinedOrPending<T>(heldBy: string, askedBy: string, migrate: () => T): 
 	return heldBy === askedBy ? { acquired: true, value: migrate() } : { acquired: false };
 }
 
-export { withBoardLockIfFreeSync };
+export { withLeaseIfFreeSync };

@@ -2,12 +2,12 @@ import { describe, expect, test } from "bun:test";
 import {
 	addressedVariant,
 	currentVariant,
-	type SemanticBoard,
+	type LegacyBoard,
 } from "#shared/schemas/legacy-board.ts";
-import { parseSemanticBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
+import { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
 
-type Lifecycle = SemanticBoard["variants"][number]["lifecycle"];
+type Lifecycle = LegacyBoard["variants"][number]["lifecycle"];
 
 /**
  * A board document holding the stated variants, designating `current` when given.
@@ -44,8 +44,8 @@ const board = (
  * @param value The document.
  * @returns The board.
  */
-const parsed = (value: unknown): SemanticBoard => {
-	const result = parseSemanticBoard(value);
+const parsed = (value: unknown): LegacyBoard => {
+	const result = parseLegacyBoard(value);
 	if (!result.ok) throw new Error(result.problem);
 	return result.board;
 };
@@ -68,7 +68,7 @@ describe("a board for something nobody has built", () => {
 	});
 
 	test("may not mark a variant current without designating it", () => {
-		expect(parseSemanticBoard(board([["v1", "current"]])).ok).toBe(false);
+		expect(parseLegacyBoard(board([["v1", "current"]])).ok).toBe(false);
 	});
 });
 

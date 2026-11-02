@@ -6,7 +6,7 @@ import { checkBrowserCsrf } from "@archboard/code-opener/browser-origin";
 import type { RawData } from "ws";
 import { logger } from "@archboard/diagnostics/logger";
 import type { WebSocketMessage } from "@archboard/server-lifecycle/pane-messages";
-import { parseBoardKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 import {
 	createServerCodexBrowserSocketSend,
 	type VoiceAgentBrowserPort,
@@ -23,14 +23,14 @@ import { frameText } from "#server/sockets/frame-text.ts";
 import { server } from "#server/wiring/http/server-app.ts";
 import {
 	acceptedSockets,
-	boardForNewPane,
+	paneKeyForNewPane,
 	clientIds,
 	clients,
 	codexSocketInstances,
 	currentSocketsByClient,
 	latestSocketAcceptanceByClient,
 	notePaneClosed,
-	paneBoards,
+	paneKeys,
 	paneVaults,
 	panes,
 	socketVaults,
@@ -105,18 +105,18 @@ function forgetClosedSocket(ws: WebSocket, acceptanceToken: object | null): void
  * @param vault The vault the pane is in, with the name the navigator lists it under.
  * @returns Resolves once the socket has taken the message.
  */
-function sendStartingBoard(
+function sendStartingPlace(
 	ws: WebSocket,
 	startingKey: string | null,
 	vault: string,
 ): Promise<void> {
 	const message: WebSocketMessage = {
-		type: "pane_board",
+		type: "pane_place",
 		vault,
 		repository: repositoryOfVault(vault),
 		...(startingKey === null
 			? { board: null, identity: null }
-			: { board: startingKey, identity: parseBoardKey(startingKey) }),
+			: { board: startingKey, identity: parsePaneKey(startingKey) }),
 	};
 	return new Promise<void>((resolve, reject) => {
 		try {
@@ -138,7 +138,7 @@ function sendStartingBoard(
  * @param startingKey The board the pane was started on.
  * @param vault The vault it was started in.
  */
-function holdPaneBoard(
+function holdPaneKey(
 	ws: WebSocket,
 	clientId: string,
 	startingKey: string | null,
@@ -148,11 +148,11 @@ function holdPaneBoard(
 	// A pane that comes back naming another vault holds none of what it held in
 	// the first: a board key means a board of one vault.
 	if (paneVaults.get(clientId) !== current) {
-		paneBoards.delete(clientId);
+		paneKeys.delete(clientId);
 	}
 	paneVaults.set(clientId, current);
 	if (startingKey !== null && current === vault) {
-		paneBoards.set(clientId, startingKey);
+		paneKeys.set(clientId, startingKey);
 	}
 }
 
@@ -179,7 +179,7 @@ function takePaneAuthority(
 		return false;
 	}
 	const previous = currentSocketsByClient.get(clientId);
-	holdPaneBoard(ws, clientId, startingKey, vault);
+	holdPaneKey(ws, clientId, startingKey, vault);
 	currentSocketsByClient.set(clientId, ws);
 	if (previous !== undefined && previous !== ws) {
 		previous.terminate();
@@ -358,8 +358,8 @@ async function acceptWebSocketConnection(
 	// board, which no longer exists as a single thing. A pane that has been here
 	// before (a dropped socket, not a new tab) resumes what it was holding,
 	// because a reconnect must not undo a user's scene arrangement.
-	const startingKey = startingBoard(req, socket.clientId, vault);
-	await sendStartingBoard(ws, startingKey, vault);
+	const startingKey = startingPaneKey(req, socket.clientId, vault);
+	await sendStartingPlace(ws, startingKey, vault);
 	if (ws.readyState !== WebSocket.OPEN || !admitSocket(ws, socket, startingKey)) {
 		return;
 	}
@@ -380,14 +380,14 @@ async function acceptWebSocketConnection(
  * @param vault The pane's source vault.
  * @returns The legacy starting key, or no legacy reading.
  */
-function startingBoard(
+function startingPaneKey(
 	req: IncomingMessage,
 	clientId: string | null,
 	vault: string,
 ): string | null {
 	const canonical =
 		new URL(req.url ?? "/", "http://localhost").searchParams.get("reading") === "canonical";
-	return clientId === null || canonical ? null : boardForNewPane(clientId, vault);
+	return clientId === null || canonical ? null : paneKeyForNewPane(clientId, vault);
 }
 
 /**

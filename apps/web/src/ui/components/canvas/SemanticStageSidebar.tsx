@@ -9,10 +9,7 @@ import { useCallback, useMemo, type JSX } from "react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
 import type { PictureLegend, SemanticRender } from "#ui/clients/canvas/reads/drawings.ts";
-import {
-	SemanticBoardPanel,
-	type SemanticBoardPanelProps,
-} from "#ui/components/canvas/CanvasPanel.tsx";
+import { CanvasPanel, type CanvasPanelProps } from "#ui/components/canvas/CanvasPanel.tsx";
 import { SemanticInspector } from "#ui/components/canvas/SemanticInspector.tsx";
 import type { GroupControls } from "#ui/components/canvas/SemanticInspectorParts.tsx";
 import {
@@ -27,7 +24,7 @@ import type { OpenDown } from "#ui/rules/canvas/drilling/drill-target.ts";
 
 /** What the stage hands the sidebar. */
 interface StageSidebarView extends Omit<
-	SemanticBoardPanelProps,
+	CanvasPanelProps,
 	"answer" | "onChooseView" | "selectedGroup"
 > {
 	/** The selected group and its members, or null. */
@@ -135,7 +132,7 @@ function SemanticStageSidebar(props: {
 	return (
 		<SemanticSidebar sidebar={view.sidebar} onClearSelection={selection === null ? null : clear}>
 			<SidebarPanel tab="board">
-				<SemanticBoardPanel
+				<CanvasPanel
 					answer={view.render.data}
 					reading={view.reading}
 					onChooseView={level.onView === undefined ? undefined : view.onChooseView}

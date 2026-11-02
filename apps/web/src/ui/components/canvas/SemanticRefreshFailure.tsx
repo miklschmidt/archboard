@@ -33,7 +33,7 @@ function SemanticRefreshFailure(props: SemanticRefreshFailureProps): JSX.Element
 		// did not ask for, and its implicit `status` role is what puts it in front
 		// of a screen reader without taking focus away from the diagram.
 		<output
-			data-slot="semantic-board-refresh-failure"
+			data-slot="canvas-refresh-failure"
 			className="border-border bg-muted/60 flex shrink-0 items-start gap-3 border-b px-4 py-2"
 		>
 			<span className="text-body min-w-0 flex-1">

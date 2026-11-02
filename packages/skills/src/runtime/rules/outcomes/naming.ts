@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // Finding the subject a check names by the name a person would call it. A
 // scenario quotes a symbol out of the source and an author writes a display
 // name for the same thing: `run_simple` is drawn as `Werkzeug run_simple` and
@@ -236,7 +236,7 @@ function namedValue<T>(byName: ReadonlyMap<string, T>, asked: string | undefined
  * @returns The variant, or undefined.
  */
 function variantNamed(
-	board: SemanticBoard,
+	board: EvaluatedDocument,
 	asked: string | undefined,
 ): SemanticVariant | undefined {
 	return (
@@ -251,9 +251,9 @@ function variantNamed(
  * @returns The view, or undefined.
  */
 function viewNamed(
-	board: SemanticBoard,
+	board: EvaluatedDocument,
 	asked: string | undefined,
-): SemanticBoard["views"][number] | undefined {
+): EvaluatedDocument["views"][number] | undefined {
 	return namedSubject(board.views, (view) => view.name, asked);
 }
 

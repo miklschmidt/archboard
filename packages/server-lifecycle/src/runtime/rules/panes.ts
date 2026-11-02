@@ -17,7 +17,7 @@
 // a closed tab or an unsplit takes its registration with it, so there are no
 // ghosts. No pane at all is the normal state of a headless server, not an error.
 
-import { paneBoardAddress, parseBoardKey } from "@archboard/model/legacy-address";
+import { paneAddressKey, parsePaneKey } from "@archboard/model/legacy-address";
 import type { SemanticPaneContextSchema } from "@archboard/model/pane-context";
 import type { z } from "zod";
 import {
@@ -41,7 +41,7 @@ import {
 	soloPane,
 } from "#runtime/rules/panes-addressing.ts";
 
-type BoardIdentity = ReturnType<typeof parseBoardKey>;
+type LegacyIdentity = ReturnType<typeof parsePaneKey>;
 type PaneArchitecture = NonNullable<z.infer<typeof SemanticPaneContextSchema>["architecture"]>;
 
 /**
@@ -132,7 +132,7 @@ function paneReport(
 		place,
 		focused: pane.focused,
 		primary: pane.primary,
-		board: identity === null ? pane.board : paneBoardAddress(identity),
+		board: identity === null ? pane.board : paneAddressKey(identity),
 		identity,
 		vault: pane.vault,
 		repository,
@@ -151,11 +151,11 @@ function paneReport(
  * @param context Where board keys are resolved.
  * @returns The legacy identity, or null for a canonical model or empty pane.
  */
-function identityOf(board: string | null, context: PaneContext): BoardIdentity | null {
+function identityOf(board: string | null, context: PaneContext): LegacyIdentity | null {
 	if (board === null || board.startsWith("model:")) {
 		return null;
 	}
-	return context.identity(board) ?? parseBoardKey(board);
+	return context.identity(board) ?? parsePaneKey(board);
 }
 
 const LAYOUT_PHRASE: Record<string, string> = {

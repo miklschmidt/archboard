@@ -9,7 +9,7 @@ import { loadedBundle, type PaneReport } from "#ui/clients/pane-session/pane-req
 
 /** The identity and placement a report is built from. */
 interface PaneReportInput {
-	boardKey: string | null;
+	paneKey: string | null;
 	/** The element the pane fills, for a measured rectangle. */
 	element: HTMLElement | null;
 	clientId: string;
@@ -59,7 +59,7 @@ function buildPaneReport(input: PaneReportInput): PaneReport | null {
 	const report: PaneReport = {
 		clientId: input.clientId,
 		paneId: input.paneId,
-		board: input.boardKey,
+		board: input.paneKey,
 		primary: input.primary,
 		focused: input.focused,
 		rect,

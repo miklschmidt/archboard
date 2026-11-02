@@ -16,7 +16,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureBoard,
+	board as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -100,7 +100,7 @@ beforeAll(async () => {
 	branch("feat/z", "main", { "src/z.ts": "export function later(): void {}\n" });
 	git("checkout", "-q", "main");
 	register(scratch, { [SHOP]: shop });
-	fixtureBoard(vault, "Alias", [
+	fixtureDocument(vault, "Alias", [
 		{
 			id: "v1",
 			name: "Built",
@@ -117,7 +117,7 @@ beforeAll(async () => {
 	const inherited = part("sOld", 1000, "src/new.ts", "feat/x", "created");
 	const kept = part("sKeep", 4000, "src/new.ts", "feat/x");
 	const later = part("sLater", 3000, "src/z.ts", "feat/z", "later");
-	fixtureBoard(vault, "Stack", [
+	fixtureDocument(vault, "Stack", [
 		{ id: "v0", name: "Built", lifecycle: "current", content: { nodes: [inherited, kept, later] } },
 		{
 			id: "v1",
@@ -145,7 +145,7 @@ afterAll(() => {
  * @returns The outcome.
  */
 async function pass(variant?: string): Promise<CodeCheckOutcome> {
-	const read = check.readBoardsToCheck(vault, variant);
+	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant} ${JSON.stringify(read)}`);
 	return check.checkCode(vault, read.boards, new AbortController().signal);
 }

@@ -5,7 +5,7 @@
 import { act, fireEvent } from "@testing-library/react";
 import { expect, test } from "bun:test";
 
-import { announceSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { announceModelChange } from "#ui/state/canvas/model-changes.ts";
 import { DEFAULT_SEMANTIC_POLICY, type SemanticPolicy } from "@archboard/model/policy";
 import {
 	PANE_VAULT,
@@ -72,7 +72,7 @@ const EDGES = [
  * @param variants Other variants, when the family has them.
  * @returns The document.
  */
-function boardOf(
+function documentOf(
 	nodes: readonly Node[] = NODES,
 	variants: readonly Record<string, unknown>[] = [],
 ): Record<string, unknown> {
@@ -161,7 +161,7 @@ function picture(hidden: readonly string[] = []): Record<string, unknown> {
 
 /** Put the board, a picture of it and the vault's groups in front of a pane. */
 function serving(): void {
-	server.documents["pipeline"] = boardOf();
+	server.documents["pipeline"] = documentOf();
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
 }
@@ -231,7 +231,7 @@ async function toggle(group: string): Promise<void> {
 function selected(): string[] {
 	return EVERYTHING.filter((id) =>
 		document
-			.querySelector(`[data-slot='semantic-board-surface'] [data-semantic-id='${id}']`)
+			.querySelector(`[data-slot='canvas-surface'] [data-semantic-id='${id}']`)
 			?.classList.contains("is-selected"),
 	);
 }
@@ -270,7 +270,7 @@ test("clicking a group selects every member across containers, and clicking it a
 	await settled();
 	await toggle("fulfillment");
 	expect(listed()).toBe("fulfillment");
-	expect(slot("semantic-board-stage")?.getAttribute("data-group")).toBe("fulfillment");
+	expect(slot("canvas-stage")?.getAttribute("data-group")).toBe("fulfillment");
 	// The members in both containers; neither container, no relationship, and
 	// nothing outside the group.
 	expect(selected()).toEqual(["h", "q", "w"]);
@@ -289,10 +289,8 @@ test("selecting a group replaces the picked subject, and picking a subject lets 
 	expect(selected()).toEqual(["w", "l"]);
 
 	act(() => {
-		const viewport = slot("semantic-board-viewport")!;
-		const card = document.querySelector(
-			"[data-slot='semantic-board-surface'] [data-semantic-id='g']",
-		)!;
+		const viewport = slot("canvas-viewport")!;
+		const card = document.querySelector("[data-slot='canvas-surface'] [data-semantic-id='g']")!;
 		fireEvent.pointerDown(card, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
 		fireEvent.pointerUp(viewport, { pointerId: 1, button: 0, clientX: 5, clientY: 5 });
 		fireEvent.click(card, { button: 0, clientX: 5, clientY: 5 });
@@ -306,7 +304,7 @@ test("selecting a group replaces the picked subject, and picking a subject lets 
 	// Escape lets a selected group go, as it lets a picked subject go.
 	await toggle("billing");
 	act(() => {
-		fireEvent.keyDown(slot("semantic-board-viewport")!, { key: "Escape" });
+		fireEvent.keyDown(slot("canvas-viewport")!, { key: "Escape" });
 	});
 	await settled();
 	expect(listed()).toBeNull();
@@ -341,13 +339,13 @@ test("a membership in the inspector selects the same group, with its colour", as
 });
 
 test("a variant with no memberships offers no groups, as a board without views offers no views", async () => {
-	server.documents["pipeline"] = boardOf(NODES.map(({ groups: _groups, ...node }) => node));
+	server.documents["pipeline"] = documentOf(NODES.map(({ groups: _groups, ...node }) => node));
 	server.reply = { status: 200, body: picture() };
 	server.vault = vaultWith(GROUPS);
 	mountStage();
 	await settled();
 	expect(choices()).toEqual([]);
-	expect(slot("semantic-board-panel-groups")).toBeNull();
+	expect(slot("canvas-panel-groups")).toBeNull();
 });
 
 test("an id the configuration no longer defines is still listed, by its id, without a colour", async () => {
@@ -371,11 +369,11 @@ test("a board change refreshes who the selected group selects", async () => {
 	await settled();
 	await toggle("billing");
 	expect(selected()).toEqual(["w", "l"]);
-	server.documents["pipeline"] = boardOf(
+	server.documents["pipeline"] = documentOf(
 		NODES.map((node) => (node.id === "w" ? { ...node, groups: ["fulfillment"] } : node)),
 	);
 	await act(async () => {
-		announceSemanticBoardChange(PANE_VAULT, "pipeline", 2);
+		announceModelChange(PANE_VAULT, "pipeline", 2);
 	});
 	await settled();
 	expect(listed()).toBe("billing");
@@ -383,25 +381,25 @@ test("a board change refreshes who the selected group selects", async () => {
 
 	// Once nothing belongs to it, the list no longer offers it to let go of,
 	// so the selection lets go by itself.
-	server.documents["pipeline"] = boardOf(
+	server.documents["pipeline"] = documentOf(
 		NODES.map((node) => (node.id === "w" || node.id === "l" ? { ...node, groups: [] } : node)),
 	);
 	await act(async () => {
-		announceSemanticBoardChange(PANE_VAULT, "pipeline", 3);
+		announceModelChange(PANE_VAULT, "pipeline", 3);
 	});
 	await settled();
 	expect(listed()).toBeNull();
 	expect(selected()).toEqual([]);
-	server.documents["pipeline"] = boardOf();
+	server.documents["pipeline"] = documentOf();
 	await act(async () => {
-		announceSemanticBoardChange(PANE_VAULT, "pipeline", 4);
+		announceModelChange(PANE_VAULT, "pipeline", 4);
 	});
 	await settled();
 	expect(listed()).toBeNull();
 });
 
 test("moving to another variant drops the group; changing the view keeps it", async () => {
-	server.documents["pipeline"] = boardOf(NODES, [
+	server.documents["pipeline"] = documentOf(NODES, [
 		{
 			id: "v2",
 			name: "proposed",
@@ -453,7 +451,7 @@ test("moving to another variant drops the group; changing the view keeps it", as
 /** Put a board whose variant tells one walkthrough, about the gateway, in front of a pane. */
 function servingWalkthrough(): void {
 	server.documents["pipeline"] = {
-		...boardOf(),
+		...documentOf(),
 		variants: [
 			{
 				id: "v1",
@@ -489,7 +487,7 @@ test("selecting a group leaves a walkthrough, and opening a walkthrough lets the
 
 	await toggle("fulfillment");
 	expect(slot("semantic-presentation")).toBeNull();
-	expect(slot("semantic-board-surface")?.classList.contains("is-veiled")).toBe(false);
+	expect(slot("canvas-surface")?.classList.contains("is-veiled")).toBe(false);
 	expect(listed()).toBe("fulfillment");
 
 	await act(async () => {

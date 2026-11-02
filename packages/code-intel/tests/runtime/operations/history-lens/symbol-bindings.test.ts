@@ -15,8 +15,8 @@ import {
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
 	currentVariant,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
 } from "@archboard/model/legacy-board";
 
 const callerRepos = process.env["ARCHBOARD_REPOS"];
@@ -111,8 +111,8 @@ const bindings = [
 	),
 ] as const;
 
-const board = SemanticBoardSchema.parse({
-	schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+const board = LegacyBoardSchema.parse({
+	schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 	kind: "semantic-board",
 	id: "board1",
 	name: "Shop",

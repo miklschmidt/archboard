@@ -19,7 +19,7 @@
 import fs from "fs";
 import path from "path";
 
-interface BoardIdentity {
+interface LegacyIdentity {
 	// The name as a key: normalised, so it is the same string whoever typed it
 	// and whichever filesystem the vault sits on (ADR 0010).
 	board: string;
@@ -88,7 +88,7 @@ const hasControlCharacter = (value: string): boolean =>
  * @param key A board key or name as typed.
  * @returns The normalised key.
  */
-function normalizeBoardKey(key: string): string {
+function normalizePaneKey(key: string): string {
 	return key.trim().normalize("NFC").toLowerCase();
 }
 
@@ -101,8 +101,8 @@ function normalizeBoardKey(key: string): string {
  * @param board A board key or name as typed.
  * @returns One string per board of one vault.
  */
-function boardMemoryKey(vault: string, board: string): string {
-	return `${vault}\n${normalizeBoardKey(board)}`;
+function modelMemoryKey(vault: string, board: string): string {
+	return `${vault}\n${normalizePaneKey(board)}`;
 }
 
 /**
@@ -111,7 +111,7 @@ function boardMemoryKey(vault: string, board: string): string {
  * @returns The normalised name.
  */
 function normalizeBoardName(name: string): string {
-	return normalizeBoardKey(name);
+	return normalizePaneKey(name);
 }
 
 /**
@@ -256,7 +256,7 @@ interface IdentityInput {
  * @param input The name, and optionally a variant and level.
  * @returns The identity, ready to key a board by.
  */
-function makeIdentity(input: IdentityInput): BoardIdentity {
+function makeIdentity(input: IdentityInput): LegacyIdentity {
 	const typed = validateBoardName(input.board);
 	const key = normalizeBoardName(typed);
 	return {
@@ -274,7 +274,7 @@ function makeIdentity(input: IdentityInput): BoardIdentity {
  * @param identity The board's identity.
  * @returns The display name, or the key when no other casing was chosen.
  */
-function boardDisplayName(identity: Pick<BoardIdentity, "board" | "displayName">): string {
+function boardDisplayName(identity: Pick<LegacyIdentity, "board" | "displayName">): string {
 	return identity.displayName ?? identity.board;
 }
 
@@ -288,14 +288,14 @@ function boardDisplayName(identity: Pick<BoardIdentity, "board" | "displayName">
  * @returns True when it names the current designation.
  */
 function isCurrentVariant(variant: string): boolean {
-	return normalizeBoardKey(variant) === CURRENT_VARIANT;
+	return normalizePaneKey(variant) === CURRENT_VARIANT;
 }
 
 /**
  * The variant a semantic board address states, or undefined when it names none.
  *
  * `makeIdentity` materialises a bare key as `current`, and `board@current` is
- * spelled as the same key by `boardKey` and `paneBoardAddress`, so at the pane
+ * spelled as the same key by `paneKey` and `paneAddressKey`, so at the pane
  * layer neither states a variant: both open whatever the board's bare name
  * opens, which is its current variant, or its draft on a board nobody has built
  * (`addressedVariant`, ADR 0031). A reader asking which variant is implemented
@@ -303,7 +303,7 @@ function isCurrentVariant(variant: string): boolean {
  * @param identity The address, as parsed.
  * @returns The variant it names, or undefined for the board's bare name.
  */
-function statedVariant(identity: Pick<BoardIdentity, "variant">): string | undefined {
+function statedVariant(identity: Pick<LegacyIdentity, "variant">): string | undefined {
 	return isCurrentVariant(identity.variant) ? undefined : identity.variant;
 }
 
@@ -318,7 +318,7 @@ function statedVariant(identity: Pick<BoardIdentity, "variant">): string | undef
  * @returns The variant as a key spells it.
  */
 function variantKey(variant: string): string {
-	return normalizeBoardKey(variant);
+	return normalizePaneKey(variant);
 }
 
 /**
@@ -326,7 +326,7 @@ function variantKey(variant: string): string {
  * @param identity The board's identity.
  * @returns The bare name for the `current` variant, otherwise `name@variant`.
  */
-function boardKey(identity: Pick<BoardIdentity, "board" | "variant">): string {
+function paneKey(identity: Pick<LegacyIdentity, "board" | "variant">): string {
 	return isCurrentVariant(identity.variant)
 		? identity.board
 		: `${identity.board}@${variantKey(identity.variant)}`;
@@ -336,7 +336,7 @@ function boardKey(identity: Pick<BoardIdentity, "board" | "variant">): string {
  * The address a pane shows a board under: the board, and the variant exactly as
  * the board answers to it.
  *
- * Not `boardKey`, which lowercases the variant because a lock, a lease and a
+ * Not `paneKey`, which lowercases the variant because a lock, a lease and a
  * catalogue entry are filed under one spelling of an address (ADR 0010). A pane
  * address is the other job: it is resolved against the board's own variants, and
  * a minted id is matched by the mixed-case alphabet it was minted from
@@ -344,7 +344,7 @@ function boardKey(identity: Pick<BoardIdentity, "board" | "variant">): string {
  * @param identity The board's identity.
  * @returns The bare name for the `current` variant, otherwise `name@variant`.
  */
-function paneBoardAddress(identity: Pick<BoardIdentity, "board" | "variant">): string {
+function paneAddressKey(identity: Pick<LegacyIdentity, "board" | "variant">): string {
 	return isCurrentVariant(identity.variant)
 		? identity.board
 		: `${identity.board}@${identity.variant}`;
@@ -362,7 +362,7 @@ function paneBoardAddress(identity: Pick<BoardIdentity, "board" | "variant">): s
  * @param key The address as typed.
  * @returns The validated identity.
  */
-function parseBoardKey(key: string): BoardIdentity {
+function parsePaneKey(key: string): LegacyIdentity {
 	const at = key.indexOf("@");
 	if (at === -1) return makeIdentity({ board: key });
 	return makeIdentity({ board: key.slice(0, at), variant: key.slice(at + 1) });
@@ -374,7 +374,7 @@ function parseBoardKey(key: string): BoardIdentity {
  * @returns True for the scratch board.
  */
 function isScratchKey(key: string): boolean {
-	return normalizeBoardKey(key) === SCRATCH_BOARD;
+	return normalizePaneKey(key) === SCRATCH_BOARD;
 }
 
 /**
@@ -395,8 +395,8 @@ function entryMatching(dir: string, wanted: string): string | null {
 	} catch {
 		return null;
 	}
-	const key = normalizeBoardKey(wanted);
-	return entries.filter((entry) => normalizeBoardKey(entry) === key).toSorted()[0] ?? null;
+	const key = normalizePaneKey(wanted);
+	return entries.filter((entry) => normalizePaneKey(entry) === key).toSorted()[0] ?? null;
 }
 
 /**
@@ -407,7 +407,7 @@ function entryMatching(dir: string, wanted: string): string | null {
  * @returns The base name.
  * @throws {Error} When the name or variant is not usable.
  */
-function noteBaseName(identity: Pick<BoardIdentity, "board" | "variant" | "displayName">): string {
+function noteBaseName(identity: Pick<LegacyIdentity, "board" | "variant" | "displayName">): string {
 	const name = validateBoardName(boardDisplayName(identity));
 	const variant = validateVariant(identity.variant);
 	return isCurrentVariant(variant) ? name : `${name}@${variantInFileName(variant)}`;
@@ -469,7 +469,7 @@ function byteEqualPathExists(vault: string, candidate: string, relative: string)
  * @returns The path, or null when the board is not archboard's own.
  */
 function archboardOwnPath(
-	identity: Pick<BoardIdentity, "board" | "variant">,
+	identity: Pick<LegacyIdentity, "board" | "variant">,
 	root: string,
 	suffix: string,
 ): string | null {
@@ -497,7 +497,7 @@ function archboardOwnPath(
  * @returns The absolute file path.
  */
 function vaultPathFor(
-	identity: Pick<BoardIdentity, "board" | "variant" | "displayName">,
+	identity: Pick<LegacyIdentity, "board" | "variant" | "displayName">,
 	root: string,
 	suffix: string,
 ): string {
@@ -511,7 +511,7 @@ function vaultPathFor(
 	const resolved = path.resolve(vault, relative);
 	if (!resolved.startsWith(vault + path.sep)) {
 		throw new Error(
-			`Refusing to resolve board "${boardKey(identity)}" outside the vault at ${root}`,
+			`Refusing to resolve board "${paneKey(identity)}" outside the vault at ${root}`,
 		);
 	}
 	// A file at the byte-equal path is the answer, without a readdir. The only
@@ -523,7 +523,7 @@ function vaultPathFor(
 }
 
 export {
-	type BoardIdentity,
+	type LegacyIdentity,
 	CURRENT_VARIANT,
 	isCurrentVariant,
 	statedVariant,
@@ -531,17 +531,17 @@ export {
 	SCRATCH_BOARD,
 	VAULT_STATE_DIR,
 	LEVELS,
-	boardMemoryKey,
-	normalizeBoardKey,
+	modelMemoryKey,
+	normalizePaneKey,
 	normalizeBoardName,
 	validateBoardName,
 	validateVariant,
 	validateLevel,
 	makeIdentity,
 	boardDisplayName,
-	boardKey,
-	paneBoardAddress,
-	parseBoardKey,
+	paneKey,
+	paneAddressKey,
+	parsePaneKey,
 	isScratchKey,
 	vaultPathFor,
 };

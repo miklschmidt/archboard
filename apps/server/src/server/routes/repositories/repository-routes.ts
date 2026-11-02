@@ -26,14 +26,14 @@ import type { Express, Request, Response } from "express";
 import { logger } from "@archboard/diagnostics/logger";
 import { readArchitectureModel } from "@archboard/model/store-read";
 import type { ArchitectureModelRead } from "@archboard/model/contract";
-import { parseBoardKey } from "@archboard/model/legacy-address";
+import { parsePaneKey } from "@archboard/model/legacy-address";
 import { chooseKnownCheckout, listRegistry, registryPath } from "@archboard/workspace/checkouts";
 import { createBrowserOriginGuard } from "@archboard/code-opener/browser-origin";
 import {
 	semanticPaneContextFor,
-	paneBoardOf,
+	paneKeyOfClient,
 	paneVaults,
-	sendBoardlessToPane,
+	sendKeylessToPane,
 	sendToPane,
 } from "@archboard/workbench/panes";
 import { broadcastEverywhere, movePaneVault } from "#server/state/pane-vaults/pane-vaults.ts";
@@ -168,7 +168,7 @@ function followRegistry(): void {
 	for (const [clientId, vault] of paneVaults) {
 		const { home, repository } = placeOfVault(vault);
 		if (home === vault) {
-			sendBoardlessToPane(clientId, { type: "pane_board", vault, repository });
+			sendKeylessToPane(clientId, { type: "pane_place", vault, repository });
 		} else {
 			movePane(clientId, home, repository);
 		}
@@ -246,15 +246,15 @@ function moveCanonicalPane(
  */
 function movePane(clientId: string, to: string, repository: string | null): void {
 	const captured = semanticPaneContextFor(clientId)?.architecture;
-	const key = paneBoardOf(clientId);
+	const key = paneKeyOfClient(clientId);
 	movePaneVault(clientId, to);
 	if (key?.startsWith("model:")) {
 		moveCanonicalPane(clientId, to, repository, key, captured);
 		return;
 	}
 	if (key === null) {
-		sendBoardlessToPane(clientId, {
-			type: "pane_board",
+		sendKeylessToPane(clientId, {
+			type: "pane_place",
 			board: null,
 			identity: null,
 			vault: to,
@@ -264,7 +264,7 @@ function movePane(clientId: string, to: string, repository: string | null): void
 	}
 	sendToPane(
 		clientId,
-		{ type: "pane_board", identity: parseBoardKey(key), vault: to, repository },
+		{ type: "pane_place", identity: parsePaneKey(key), vault: to, repository },
 		key,
 	);
 	arrivedOnBoard(clientId, key);

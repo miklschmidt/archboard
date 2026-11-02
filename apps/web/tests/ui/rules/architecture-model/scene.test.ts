@@ -5,7 +5,7 @@ import {
 	moveTo,
 	nextScene,
 	parentOf,
-	sceneBoard,
+	sceneModel,
 	sceneFit,
 	sceneView,
 	type AcceptedScene,
@@ -120,12 +120,12 @@ test("a picture stays while the next reading of its subject is drawn", () => {
 
 test("a state, comparison or filter is carried on one board, and a focus starts afresh", () => {
 	const scope = reading({ scope: "Shop#Gateway" });
-	expect(sceneBoard({ ...scope, state: "Draft", against: "Current" })).toBe(sceneBoard(scope));
+	expect(sceneModel({ ...scope, state: "Draft", against: "Current" })).toBe(sceneModel(scope));
 	expect(sceneView({ ...scope, filters: { hideKinds: ["call"] } })).toBeNull();
 	expect(sceneView({ ...scope, focus: ["Shop#Handler"] })).toEqual({ id: "Shop#Handler" });
-	expect(sceneBoard({ ...scope, scope: "Shop#Worker" })).not.toBe(sceneBoard(scope));
-	expect(sceneBoard({ ...scope, grammar: "sequence", flow: "Shop#Flow" })).not.toBe(
-		sceneBoard({ ...scope, grammar: "flowchart", flow: "Shop#Flow" }),
+	expect(sceneModel({ ...scope, scope: "Shop#Worker" })).not.toBe(sceneModel(scope));
+	expect(sceneModel({ ...scope, grammar: "sequence", flow: "Shop#Flow" })).not.toBe(
+		sceneModel({ ...scope, grammar: "flowchart", flow: "Shop#Flow" }),
 	);
 	expect(sceneFit({ reading: { ...scope, against: "Current" } })).not.toBe(
 		sceneFit({ reading: scope }),

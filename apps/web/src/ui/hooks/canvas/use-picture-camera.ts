@@ -45,7 +45,7 @@ import {
 } from "#ui/state/canvas/camera-store.ts";
 
 /** How a person moves the camera, and where it is now. */
-interface BoardCamera {
+interface PictureCamera {
 	/**
 	 * Where the pane is looking now. A handler or an effect reads it; a component
 	 * that draws with it subscribes instead, through `useCameraView`.
@@ -200,7 +200,7 @@ function destinationIn(size: Size | null, to: FitTarget | Camera): Camera | null
  * @returns The surface, or null when there is none.
  */
 function surfaceIn(viewport: HTMLElement | null): HTMLElement | null {
-	return viewport?.querySelector<HTMLElement>("[data-slot='semantic-board-surface']") ?? null;
+	return viewport?.querySelector<HTMLElement>("[data-slot='canvas-surface']") ?? null;
 }
 
 /**
@@ -265,7 +265,7 @@ function pointIn(element: HTMLElement, event: WheelEvent): readonly [number, num
  * @param reducedMotion Whether the person asked for no motion: a zoom or a move then lands at once.
  * @returns The camera and the ways it moves.
  */
-function useBoardCamera(reducedMotion = false): BoardCamera {
+function usePictureCamera(reducedMotion = false): PictureCamera {
 	const [store] = useState(createCameraStore);
 	const { read, write } = store;
 	const [viewport, setViewport] = useState<HTMLElement | null>(null);
@@ -356,7 +356,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
 		};
 		const observer = new ResizeObserver(() => {
 			stopWaiting();
-			settling = frameClock().after(COLUMN_MS.boardResizeSettle, measure);
+			settling = frameClock().after(COLUMN_MS.pictureResizeSettle, measure);
 		});
 		observer.observe(element);
 		return (): void => {
@@ -559,7 +559,7 @@ function useBoardCamera(reducedMotion = false): BoardCamera {
  * @param camera The camera.
  * @returns Where it is, and how its last move goes.
  */
-function useCameraView(camera: BoardCamera): CameraView {
+function useCameraView(camera: PictureCamera): CameraView {
 	return useSyncExternalStore(camera.subscribe, camera.view, camera.view);
 }
 
@@ -570,7 +570,7 @@ function useCameraView(camera: BoardCamera): CameraView {
  * @param select What to read off it; a value compared by identity.
  * @returns What was read.
  */
-function useCameraWith<T>(camera: BoardCamera, select: (view: CameraView) => T): T {
+function useCameraWith<T>(camera: PictureCamera, select: (view: CameraView) => T): T {
 	/**
 	 * What is read off the camera now.
 	 * @returns It.
@@ -579,4 +579,4 @@ function useCameraWith<T>(camera: BoardCamera, select: (view: CameraView) => T):
 	return useSyncExternalStore(camera.subscribe, read, read);
 }
 
-export { useBoardCamera, useCameraView, useCameraWith, type BoardCamera, type CameraView };
+export { usePictureCamera, useCameraView, useCameraWith, type PictureCamera, type CameraView };

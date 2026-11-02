@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
 import { forgetDoing, recentDoing, recordDoing } from "#runtime/store/doing.ts";
-import { BOARD_LOCK_MS } from "@archboard/timing";
+import { MODEL_LOCK_MS } from "@archboard/timing";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
 
@@ -21,7 +21,7 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 		told.push({ vault, board, held: holder !== null });
 	});
 	try {
-		await lock.claimBoard({
+		await lock.claimModel({
 			vault: vaultA,
 			board: "payments",
 			reason: "reworking A",
@@ -32,7 +32,7 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 		expect(lock.claimWriterId(vaultB, "payments")).toBeNull();
 
 		// A writer in vault B is not blocked by the claim in vault A.
-		const wrote = await lock.withBoardLock(
+		const wrote = await lock.withLease(
 			{ vault: vaultB, board: "payments", holder: { id: "writer-b", kind: "agent" }, waitMs: 0 },
 			() => "written",
 		);
@@ -60,7 +60,7 @@ test("a board of one name in two vaults keeps its claim, lease, announcements an
 test("the lock sweep reads each board on screen in its own vault", async () => {
 	const vaultA = join(home, "sweep-a");
 	const vaultB = join(home, "sweep-b");
-	await lock.holdBoard({
+	await lock.holdModel({
 		vault: vaultB,
 		board: "payments",
 		holder: { id: "another-server", kind: "agent" },
@@ -73,19 +73,19 @@ test("the lock sweep reads each board on screen in its own vault", async () => {
 	});
 	jest.useFakeTimers();
 	try {
-		lock.watchBoardLocks({
+		lock.watchModelLocks({
 			boards: () => [
 				{ vault: vaultA, board: "payments" },
 				{ vault: vaultB, board: "Payments" },
 			],
 		});
-		jest.advanceTimersByTime(BOARD_LOCK_MS.watch);
+		jest.advanceTimersByTime(MODEL_LOCK_MS.watch);
 		expect(told).toEqual([
 			{ vault: vaultA, held: false },
 			{ vault: vaultB, held: true },
 		]);
 	} finally {
-		lock.watchBoardLocks(null);
+		lock.watchModelLocks(null);
 		jest.useRealTimers();
 		lock.onBoardLockChanged(null);
 		lock.releaseHold(vaultB, "payments", "another-server");

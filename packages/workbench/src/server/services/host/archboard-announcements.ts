@@ -61,7 +61,7 @@ function heard(
  * @param tab The tab session and its canvas.
  * @returns The change.
  */
-function boardChangeAnnouncement(event: SettledSemanticChangeEvent, tab: TabCanvas): ContextChange {
+function modelChangeAnnouncement(event: SettledSemanticChangeEvent, tab: TabCanvas): ContextChange {
 	const checkouts = [checkoutOfVault(event.board.vault)];
 	return {
 		feed: event.change.feedId,
@@ -186,7 +186,7 @@ function createArchboardAnnouncements(
 		 */
 		const tab = (): TabCanvas => ({ id, canvas: options.canvas(id) });
 		publisher.subscribeSettledChange((event) => {
-			tell(() => boardChangeAnnouncement(event, tab()));
+			tell(() => modelChangeAnnouncement(event, tab()));
 		});
 		/**
 		 * Announce one pane report.
@@ -236,7 +236,7 @@ function createArchboardAnnouncements(
 }
 
 export {
-	boardChangeAnnouncement,
+	modelChangeAnnouncement,
 	createArchboardAnnouncements,
 	paneAnnouncement,
 	type ArchboardAnnouncements,

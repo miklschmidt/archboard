@@ -12,7 +12,7 @@ import { drawing } from "#tests/ui/support/canvas/render-answers.ts";
  * @param views The ways this board can be read.
  * @returns The document.
  */
-function boardOf(
+function documentOf(
 	name: string,
 	variants: readonly Record<string, unknown>[],
 	current: string,
@@ -55,10 +55,10 @@ function cardOpening(id: string, name: string, below: string): Record<string, un
  * @param below The board its card opens, or undefined for a card that opens none.
  * @returns The document.
  */
-function cardBoard(name: string, below: string | undefined): Record<string, unknown> {
+function cardDocument(name: string, below: string | undefined): Record<string, unknown> {
 	const card = { id: "n1", name: name + " card", kind: "module" };
 	const node = below === undefined ? card : cardOpening("n1", name + " card", below);
-	return boardOf(
+	return documentOf(
 		name,
 		[{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes: [node], edges: [] } }],
 		"v1",
@@ -74,7 +74,7 @@ function twoCardPipeline(): Record<string, unknown> {
 		cardOpening("n1", "engine card", "engine"),
 		cardOpening("n2", "store card", "store"),
 	];
-	return boardOf(
+	return documentOf(
 		"pipeline",
 		[{ id: "v1", name: "as it is", lifecycle: "current", content: { nodes, edges: [] } }],
 		"v1",
@@ -102,4 +102,4 @@ function twoCardDrawing(): Record<string, unknown> {
 	};
 }
 
-export { boardOf, cardBoard, twoCardDrawing, twoCardPipeline };
+export { documentOf, cardDocument, twoCardDrawing, twoCardPipeline };

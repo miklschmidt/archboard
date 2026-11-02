@@ -1,7 +1,7 @@
 // Turns a command failure into the process exit code and the stderr explanation the CLI
 // contract promises, without trusting the thrown value's shape.
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
-import { BOARD_REFUSAL_CODES, formatBoardRefusal } from "@archboard/server-lifecycle/server-client";
+import { MODEL_REFUSAL_CODES, formatModelRefusal } from "@archboard/server-lifecycle/server-client";
 import { type RouteOwner } from "#cli/protocol/routing/route.ts";
 
 /**
@@ -40,15 +40,15 @@ function errorMessage(error: unknown): string {
  * @param code - The error code, if any.
  * @returns True for a board-write refusal.
  */
-function isBoardRefusalCode(code: string | undefined): boolean {
-	return code !== undefined && BOARD_REFUSAL_CODES.has(code);
+function isModelRefusalCode(code: string | undefined): boolean {
+	return code !== undefined && MODEL_REFUSAL_CODES.has(code);
 }
 
 const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
 	SERVER_UNREACHABLE: 3,
 	BROWSER_REQUIRED: 4,
 	// A missing board is a mistake at the keyboard, like any other usage error.
-	BOARD_REQUIRED: 2,
+	MODEL_REQUIRED: 2,
 	// The same for a vault: finding and naming one is the caller's to fix (ADR 0049).
 	VAULT_NOT_FOUND: 2,
 	VAULT_REQUIRED: 2,
@@ -91,7 +91,7 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 	// Every refusal leaves the board unwritten, so they share the exit status a
 	// script already watches for. The attached body says whether another holder,
 	// a revoked claim, a moved version or a changed note stopped it.
-	if (isBoardRefusalCode(code)) {
+	if (isModelRefusalCode(code)) {
 		return 5;
 	}
 	return code === undefined ? 1 : (WELL_KNOWN_EXIT_CODES[code] ?? 1);
@@ -105,7 +105,7 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
  */
 function reportFailure(error: unknown, usage: string): void {
 	if (!isQuietError(error)) {
-		process.stderr.write(`Error: ${formatBoardRefusal(error) ?? errorMessage(error)}\n`);
+		process.stderr.write(`Error: ${formatModelRefusal(error) ?? errorMessage(error)}\n`);
 	}
 	if (error instanceof CliUsageError) {
 		process.stderr.write(`Usage: ${usage}\n`);

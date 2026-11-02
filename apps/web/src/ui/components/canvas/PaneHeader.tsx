@@ -38,7 +38,7 @@ import type { OfferedVariant } from "#ui/rules/canvas/reading/document.ts";
 import { VariantMark } from "#ui/components/variant-lifecycle/VariantMark.tsx";
 
 /** A board above the one on screen, as the navigator places it or as the reader came down from it. */
-interface BoardPlace {
+interface CrumbPlace {
 	readonly name: string;
 	/** Its level, as it states it. */
 	readonly level: string | undefined;
@@ -84,7 +84,7 @@ interface PaneHeaderProps {
 	/** Its repository, named where a trail across repositories enters it. */
 	readonly repository?: string;
 	/** The boards above it, outermost first. */
-	readonly ancestors: readonly BoardPlace[];
+	readonly ancestors: readonly CrumbPlace[];
 	/** The variant on screen, when it is not the one the board's name opens. */
 	readonly variant: OfferedVariant | null;
 	/** Nothing the board describes is built: it has no current variant. */
@@ -95,7 +95,7 @@ interface PaneHeaderProps {
 
 /** One place of the breadcrumb, and what tells it apart from the others. */
 interface KeyedPlace {
-	readonly place: BoardPlace;
+	readonly place: CrumbPlace;
 	readonly key: string;
 }
 
@@ -106,7 +106,7 @@ interface KeyedPlace {
  * @param places The places, outermost first.
  * @returns The places, keyed.
  */
-function keyed(places: readonly BoardPlace[]): readonly KeyedPlace[] {
+function keyed(places: readonly CrumbPlace[]): readonly KeyedPlace[] {
 	const seen = new Map<string, number>();
 	return places.map((place) => {
 		const before = seen.get(place.name) ?? 0;
@@ -133,7 +133,7 @@ function Step(): JSX.Element {
  * @param props.middle Whether it is one of the middle places, which a narrow header folds away.
  * @returns The place, with the step after it.
  */
-function Ancestor(props: { readonly place: BoardPlace; readonly middle: boolean }): JSX.Element {
+function Ancestor(props: { readonly place: CrumbPlace; readonly middle: boolean }): JSX.Element {
 	const { place } = props;
 	const paneVault = usePaneVault();
 	return (
@@ -221,7 +221,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 					<RepositoryOf repository={props.repository} />
 					<LevelMark level={level} vault={vault} />
 					<h2
-						data-slot="pane-board-name"
+						data-slot="pane-model-name"
 						title={level === undefined ? name : `${name} · ${level}`}
 						className="text-foreground min-w-0 truncate text-[13px] leading-[18px] font-[650]"
 					>
@@ -229,7 +229,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 					</h2>
 				</li>
 				{variant !== null && (
-					<li data-slot="board-state" className="flex min-w-0 shrink items-center gap-1">
+					<li data-slot="crumb-state" className="flex min-w-0 shrink items-center gap-1">
 						<Step />
 						<VariantMark lifecycle={variant.lifecycle} className="ml-0.5" />
 						<span className="sr-only">showing the {variant.lifecycle} </span>
@@ -238,7 +238,7 @@ function Breadcrumb(props: PaneHeaderProps): JSX.Element {
 				)}
 				{props.unbuilt && (
 					<li
-						data-slot="board-not-built"
+						data-slot="model-not-built"
 						className="text-technical text-muted-foreground border-muted-foreground/60 rounded-chip ml-1.5 inline-flex h-5 shrink-0 items-center border border-dashed px-1.5 font-mono"
 					>
 						not built
@@ -277,7 +277,7 @@ function PaneHeader(props: PaneHeaderProps): JSX.Element {
  * none: it says so, and keeps the shell's controls and what the shell says.
  * @returns The header row.
  */
-function NoBoardHeader(): JSX.Element {
+function NoModelHeader(): JSX.Element {
 	const { controls } = usePaneChrome();
 	return (
 		<HeaderRow>
@@ -291,4 +291,4 @@ function NoBoardHeader(): JSX.Element {
 	);
 }
 
-export { NoBoardHeader, PaneHeader, type BoardPlace, type PaneHeaderProps };
+export { NoModelHeader, PaneHeader, type CrumbPlace, type PaneHeaderProps };

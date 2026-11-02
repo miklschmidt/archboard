@@ -9,7 +9,7 @@ import { RiLoader4Line } from "@remixicon/react";
 import type { JSX, ReactNode } from "react";
 
 import type { SemanticOfferedView } from "#ui/clients/canvas/reads/drawings.ts";
-import { SemanticBoardError } from "#ui/clients/canvas/reads/drawings.ts";
+import { ReadingError } from "#ui/clients/canvas/reads/drawings.ts";
 
 /** The classes every state of the stage fills its pane with. */
 const STAGE_CLASS = "bg-background relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden";
@@ -32,7 +32,7 @@ function StageSpinner(props: { readonly className?: string }): JSX.Element {
 	return (
 		<div
 			aria-hidden="true"
-			data-slot="semantic-board-spinner"
+			data-slot="canvas-spinner"
 			className={`slow-wait-reveal flex items-center justify-center ${props.className ?? ""}`}
 		>
 			<RiLoader4Line className="text-muted-foreground size-6 animate-spin [animation-duration:0.8s]" />
@@ -52,7 +52,7 @@ function SemanticStageLoading(props: SemanticStateProps): JSX.Element {
 	return (
 		<section
 			aria-label={`Semantic board ${props.board}`}
-			data-slot="semantic-board-stage"
+			data-slot="canvas-stage"
 			data-state="loading"
 			aria-busy="true"
 			className={STAGE_CLASS}
@@ -89,7 +89,7 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 	return (
 		<section
 			aria-label={`Semantic board ${props.board}`}
-			data-slot="semantic-board-stage"
+			data-slot="canvas-stage"
 			data-state={props.notice === null ? "empty" : "stale"}
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}
 		>
@@ -110,7 +110,7 @@ function SemanticStageEmpty(props: SemanticEmptyProps): JSX.Element {
 
 /** What each way of failing is called, in the shell's voice. */
 const FAILURE_TITLES: Readonly<Record<string, string>> = {
-	BOARD_MISSING: "There is no such board",
+	MODEL_MISSING: "There is no such board",
 	UNKNOWN_VARIANT: "There is no such variant",
 	UNKNOWN_VIEW: "There is no such view",
 	BOARD_UNREADABLE: "This board could not be read",
@@ -124,7 +124,7 @@ const FAILURE_TITLES: Readonly<Record<string, string>> = {
  * @returns A title and the detail behind it.
  */
 function failureWords(error: unknown): { title: string; detail: string } {
-	if (error instanceof SemanticBoardError) {
+	if (error instanceof ReadingError) {
 		return {
 			title: FAILURE_TITLES[error.code] ?? "This board could not be drawn",
 			detail: error.message,
@@ -153,7 +153,7 @@ function SemanticStageProblem(props: SemanticStageProblemProps): JSX.Element {
 	return (
 		<section
 			aria-label={`Semantic board ${props.board}`}
-			data-slot="semantic-board-stage"
+			data-slot="canvas-stage"
 			data-state="error"
 			className={`${STAGE_CLASS} items-center justify-center gap-2 p-8 text-center`}
 		>

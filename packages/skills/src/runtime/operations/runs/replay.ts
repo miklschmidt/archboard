@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
-import { addressedVariant, type SemanticBoard } from "@archboard/model/legacy-board";
+import { addressedVariant, type LegacyBoard } from "@archboard/model/legacy-board";
 import { DiagramThemeSchema, type DiagramTheme } from "@archboard/model/render-reply";
 import { SKILL_EVAL_MS } from "@archboard/timing";
 import {
@@ -86,7 +86,7 @@ function spelledFromHome(home: string, absolute: string): string {
  */
 function talkOfFixture(
 	fixture: TalkFixture,
-	board: SemanticBoard,
+	board: LegacyBoard,
 	policy: VaultCheck,
 ): Omit<Parameters<typeof keepTalk>[0], "directory"> {
 	const address = addressedVariant(board, fixture.variant);

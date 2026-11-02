@@ -213,7 +213,7 @@ test("each step and leaving reach the voice model as speech, the first once the 
 		expect(h.session.texts).toHaveLength(0);
 		expect(
 			h.session.injections.every((injection) =>
-				JSON.stringify(injection).includes("archboard_board_catalogue"),
+				JSON.stringify(injection).includes("archboard_model_catalogue"),
 			),
 		).toBe(true);
 		expect(h.session.starts).toHaveLength(1);

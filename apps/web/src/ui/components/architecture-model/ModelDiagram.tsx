@@ -16,7 +16,7 @@ import type { DiagramBox } from "@archboard/model/render-reply";
 import type { projectModel } from "@archboard/model/content";
 import { CameraSurface } from "#ui/components/canvas/CameraSurface.tsx";
 import { LeavingPart } from "#ui/components/canvas/LeavingPart.tsx";
-import { useCameraWith, type BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { useCameraWith, type PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { seenFromFar, type FitTarget } from "#ui/rules/canvas/camera/camera.ts";
 import { ModelDoorTip } from "#ui/components/architecture-model/ModelDoorTip.tsx";
 import { ModelEmptyReading } from "#ui/components/architecture-model/ModelEmptyReading.tsx";
@@ -59,7 +59,7 @@ function hasFarView(scene: AcceptedScene): boolean {
 
 interface ModelDiagramProps {
 	scene: AcceptedScene;
-	camera: BoardCamera;
+	camera: PictureCamera;
 	/** Whether another reading is on its way to this surface. */
 	pending: boolean;
 	/** Where the reader went, while the next picture is too far off to keep this one on screen. */
@@ -342,7 +342,7 @@ function useSceneLighting(scene: AcceptedScene, selected: ReadonlySet<string>, l
  */
 function useSceneTip(
 	drawing: AcceptedScene["picture"],
-	camera: BoardCamera,
+	camera: PictureCamera,
 	lighting: ReturnType<typeof useLighting>,
 ) {
 	const { shown, at, onHover: tipHover, dismiss } = useSubjectTip({ drawing, camera });
@@ -383,7 +383,7 @@ function useRelease(dragging: boolean, release: () => void): void {
 function ModelSubjectTip(props: {
 	target: TipTarget | null;
 	scene: AcceptedScene;
-	camera: BoardCamera;
+	camera: PictureCamera;
 }): JSX.Element {
 	const { target, scene } = props;
 	const far = useCameraWith(props.camera, seenFromFar) && hasFarView(scene);

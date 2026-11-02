@@ -28,7 +28,7 @@ function paneReady(status: PaneStatus): boolean {
 /**
  * The status of a pane nothing has been heard from.
  * @param paneId The pane.
- * @returns A disconnected, boardless status.
+ * @returns A disconnected, keyless status.
  */
 function emptyPaneStatus(paneId: string): PaneStatus {
 	return {
@@ -37,7 +37,7 @@ function emptyPaneStatus(paneId: string): PaneStatus {
 		connected: false,
 		registered: false,
 		board: null,
-		boardKey: null,
+		paneKey: null,
 		opened: null,
 		view: null,
 		lastChangeAt: null,

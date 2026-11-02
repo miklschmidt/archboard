@@ -13,7 +13,7 @@ import { expect, test } from "bun:test";
 import { act, fireEvent } from "@testing-library/react";
 
 import type { CodeBinding } from "@archboard/code-binding/bindings";
-import { announceSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { announceModelChange } from "#ui/state/canvas/model-changes.ts";
 import {
 	PANE_VAULT,
 	drawing,
@@ -34,7 +34,7 @@ type Node = Record<string, unknown>;
  * @param edges The current variant's relationships.
  * @returns The document.
  */
-function boardOf(
+function documentOf(
 	name: string,
 	nodes: readonly Node[],
 	variants: readonly Record<string, unknown>[] = [],
@@ -118,7 +118,7 @@ function record(binding: CodeBinding): void {
  */
 function serving(nodes: readonly Node[] = NODES): void {
 	server.reply = { status: 200, body: drawing(1) };
-	server.documents["pipeline"] = boardOf("pipeline", nodes);
+	server.documents["pipeline"] = documentOf("pipeline", nodes);
 }
 
 /**
@@ -218,7 +218,7 @@ test("opening a part's code hands the shell the binding the board states", async
 
 test("a drill-down discloses the target variant and where it stands before opening it", async () => {
 	serving();
-	server.documents["engine"] = boardOf(
+	server.documents["engine"] = documentOf(
 		"engine",
 		[{ id: "m1", name: "atomic-write", kind: "module" }],
 		[
@@ -254,7 +254,7 @@ test("a drill-down that asks for whichever variant is current says that it asked
 			drillDown: { board: "engine", variant: { kind: "current" } },
 		},
 	]);
-	server.documents["engine"] = boardOf("engine", [
+	server.documents["engine"] = documentOf("engine", [
 		{ id: "m1", name: "atomic-write", kind: "module" },
 	]);
 	mountStage("n1");
@@ -267,7 +267,7 @@ test("a drill-down that asks for whichever variant is current says that it asked
 
 test("a drill-down naming a variant the target has not got says so and opens nothing", async () => {
 	serving();
-	server.documents["engine"] = boardOf("engine", [
+	server.documents["engine"] = documentOf("engine", [
 		{ id: "m1", name: "atomic-write", kind: "module" },
 	]);
 	mountStage("n1");
@@ -290,8 +290,8 @@ test("a drill-down whose board the vault has not got names the board rather than
 test("following a drill-down shows the target board and offers the way back", async () => {
 	serving();
 	// The way back is named as the board is, not as its key is spelled.
-	server.documents["pipeline"] = boardOf("Pipeline Board", NODES);
-	server.documents["engine"] = boardOf(
+	server.documents["pipeline"] = documentOf("Pipeline Board", NODES);
+	server.documents["engine"] = documentOf(
 		"engine",
 		[{ id: "m1", name: "atomic-write", kind: "module" }],
 		[
@@ -312,7 +312,7 @@ test("following a drill-down shows the target board and offers the way back", as
 	});
 	await settled();
 
-	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("engine");
+	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("engine");
 	expect(server.calls.some((url) => url.includes("board=engine"))).toBe(true);
 	// The pane says where it came from and how to get back, with no navigator to
 	// place the board: the address still names the board the pane was opened on,
@@ -323,7 +323,7 @@ test("following a drill-down shows the target board and offers the way back", as
 		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
-	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");
+	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("pipeline");
 	expect(slot("pane-crumb")).toBeNull();
 });
 
@@ -331,7 +331,7 @@ test("a link written before its board and variant were renamed opens them by the
 	// The link on n1 still says "engine" and "as built" (ADR 0036).
 	serving();
 	const renamed = {
-		...boardOf(
+		...documentOf(
 			"Board Engine",
 			[{ id: "m1", name: "atomic-write", kind: "module" }],
 			[
@@ -360,12 +360,12 @@ test("a link written before its board and variant were renamed opens them by the
 		fireEvent.click(slot("semantic-drill-down-open")!);
 	});
 	await settled();
-	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("Board Engine");
+	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("Board Engine");
 });
 
 test("the way back survives drilling into a board with nothing on it", async () => {
 	serving();
-	server.documents["engine"] = boardOf(
+	server.documents["engine"] = documentOf(
 		"engine",
 		[{ id: "m1", name: "atomic-write", kind: "module" }],
 		[{ id: "v2", name: "as built", lifecycle: "draft", content: { nodes: [], edges: [] } }],
@@ -381,13 +381,13 @@ test("the way back survives drilling into a board with nothing on it", async () 
 	});
 	await settled();
 
-	expect(slot("semantic-board-stage")?.getAttribute("data-state")).toBe("empty");
+	expect(slot("canvas-stage")?.getAttribute("data-state")).toBe("empty");
 	expect(slot("pane-crumb")?.textContent).toContain("pipeline");
 	await act(async () => {
 		fireEvent.click(slot("pane-crumb")!);
 	});
 	await settled();
-	expect(slot("semantic-board-stage")?.getAttribute("data-board")).toBe("pipeline");
+	expect(slot("canvas-stage")?.getAttribute("data-model")).toBe("pipeline");
 });
 
 test("a drill-down asking for the current variant follows it when it moves", async () => {
@@ -399,7 +399,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 			drillDown: { board: "engine", variant: { kind: "current" } },
 		},
 	]);
-	server.documents["engine"] = boardOf("engine", [
+	server.documents["engine"] = documentOf("engine", [
 		{ id: "m1", name: "atomic-write", kind: "module" },
 	]);
 	mountStage("n1", { live: true });
@@ -409,7 +409,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 	// The target board adopts something else. A preview pinned for the life of
 	// the tab would go on calling the old state current and open it.
 	server.documents["engine"] = {
-		...boardOf("engine", []),
+		...documentOf("engine", []),
 		current: "v2",
 		variants: [
 			{ id: "v1", name: "as it is", lifecycle: "historical", content: { nodes: [], edges: [] } },
@@ -422,7 +422,7 @@ test("a drill-down asking for the current variant follows it when it moves", asy
 		],
 	};
 	await act(async () => {
-		announceSemanticBoardChange(PANE_VAULT, "engine", 2);
+		announceModelChange(PANE_VAULT, "engine", 2);
 	});
 	await settled();
 
@@ -447,7 +447,7 @@ test("a subject held up by two disagreements of one kind says both", async () =>
 		body: { ...drawing(1), variant: { id: "v2", name: "proposed", lifecycle: "draft" } },
 	};
 	server.documents["pipeline"] = {
-		...boardOf("pipeline", NODES),
+		...documentOf("pipeline", NODES),
 		variants: [
 			{ id: "v1", name: "as it is", lifecycle: "current", content: wired },
 			{
@@ -516,7 +516,7 @@ test("picking a joined line of the overview shows its drawn ends and every relat
 		{ id: "e1", from: "n1", to: "n3", kind: "call", label: "reads notes" },
 		{ id: "e2", from: "n2", to: "n3", kind: "call", label: "takes the lease" },
 	];
-	server.documents["pipeline"] = boardOf("pipeline", NODES, [], edges);
+	server.documents["pipeline"] = documentOf("pipeline", NODES, [], edges);
 	server.reply = { status: 200, body: drawing(1) };
 	mountStage("e1");
 	await settled();
@@ -535,7 +535,7 @@ test("the same id in Everything is the one relationship it names", async () => {
 		{ id: "e1", from: "n1", to: "n3", kind: "call", label: "reads notes" },
 		{ id: "e2", from: "n2", to: "n3", kind: "call", label: "takes the lease" },
 	];
-	server.documents["pipeline"] = boardOf("pipeline", NODES, [], edges);
+	server.documents["pipeline"] = documentOf("pipeline", NODES, [], edges);
 	server.reply = {
 		status: 200,
 		body: {

@@ -28,7 +28,7 @@ import { cameraNow, pressKey } from "#tests/ui/support/canvas/camera-probes.ts";
  * @param variants The variants, in the order the board states them.
  * @returns The document its route answers with.
  */
-function boardOf(variants: readonly Record<string, unknown>[]): Record<string, unknown> {
+function documentOf(variants: readonly Record<string, unknown>[]): Record<string, unknown> {
 	return {
 		schemaVersion: "2.0.0",
 		kind: "semantic-board",
@@ -101,7 +101,7 @@ function runFrames(frames: Map<number, FrameRequestCallback>, now: number): void
  * @param shown Which variant the drawing says it is of.
  */
 function serving(variants: readonly Record<string, unknown>[], shown = AS_IT_IS): void {
-	server.documents["pipeline"] = boardOf(variants);
+	server.documents["pipeline"] = documentOf(variants);
 	server.reply = {
 		status: 200,
 		body: {
@@ -116,9 +116,9 @@ test("the variant the pane is told to show rides in the request", async () => {
 	mountStage(null, { variant: "v2" });
 	await settle();
 	expect(renderCalls().at(-1)).toContain("variant=v2");
-	expect(
-		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-variant"),
-	).toBe(PROPOSED.name);
+	expect(document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-variant")).toBe(
+		PROPOSED.name,
+	);
 });
 
 test.each([false, true])(
@@ -150,9 +150,9 @@ test.each([false, true])(
 		// The last picture stays up while the uncached one is on its way, so the
 		// pane can carry it into the next rather than dropping to a skeleton;
 		// the camera must outlive the request either way.
-		const stage = document.querySelector("[data-slot='semantic-board-stage']");
+		const stage = document.querySelector("[data-slot='canvas-stage']");
 		expect(stage?.getAttribute("data-variant")).toBe("current");
-		expect(document.querySelector("[data-slot='semantic-board-surface']")).not.toBeNull();
+		expect(document.querySelector("[data-slot='canvas-surface']")).not.toBeNull();
 		await settle();
 		expect(stage?.getAttribute("data-variant")).toBe(PROPOSED.name);
 		expect(renderCalls().at(-1)).toContain("variant=v2");
@@ -249,9 +249,9 @@ test("switching variants animates the scale toward the selected view's fit", asy
 		};
 		chooseVariantInShell(PROPOSED.id);
 		await settle();
-		expect(
-			document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-board"),
-		).toBe("pipeline");
+		expect(document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-model")).toBe(
+			"pipeline",
+		);
 		expect(surface().hasAttribute("data-camera-motion")).toBe(true);
 		expect(cameraNow()).toEqual(before);
 		let now = performance.now() + PICTURE_MS.transition / 2;
@@ -278,7 +278,7 @@ test("switching variants animates the scale toward the selected view's fit", asy
 
 test("switching boards lands at once when motion is reduced", async () => {
 	serving([LINKED]);
-	server.documents["archive"] = { ...boardOf([AS_IT_IS]), name: "archive" };
+	server.documents["archive"] = { ...documentOf([AS_IT_IS]), name: "archive" };
 	mountStage("n1", { live: true, reducedMotion: true });
 	await settle();
 	server.reply = {

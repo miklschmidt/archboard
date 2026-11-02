@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
-import { renderArchitecture, renderBoard } from "#runtime/operations/render.ts";
-import { SemanticBoardSchema, SEMANTIC_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
+import { renderArchitecture, renderLegacyBoard } from "#runtime/operations/render.ts";
+import { LegacyBoardSchema, LEGACY_BOARD_SCHEMA_VERSION } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { arrangementOf } from "#tests/runtime/support/drawn-atlas.ts";
@@ -21,8 +21,8 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 		],
 		edges: [{ id: "keys", from: "kms", to: "custody", kind: "data", label: "Signing key" }],
 	};
-	const board = SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	const board = LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "board",
 		name: "Nested proposal",
@@ -47,7 +47,7 @@ test("a nested proposal lays out its comparison content fresh and retains subjec
 			},
 		],
 	});
-	const proposal = await renderBoard(
+	const proposal = await renderLegacyBoard(
 		board,
 		// Every nested part, which the overview would close.
 		{ variant: "draft", view: "Everything", theme: "light" },

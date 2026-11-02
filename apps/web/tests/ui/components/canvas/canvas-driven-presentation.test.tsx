@@ -92,7 +92,7 @@ test("a requested step is presented without anybody choosing the walkthrough, an
 	serving();
 	const reported = driven(1, true);
 	await settle();
-	expect(part("semantic-board-stage").getAttribute("data-presentation-step")).toBe("1");
+	expect(part("canvas-stage").getAttribute("data-presentation-step")).toBe("1");
 	expect(part("semantic-presentation-heading").textContent).toBe("One writer");
 	expect(reported.at(-1)).toEqual({
 		walkthrough: "w1",
@@ -176,7 +176,7 @@ test("a user stepping by hand takes the position back, and the same request does
 	});
 	await settle();
 	expect(reported.at(-1)).toBeNull();
-	expect(part("semantic-board-stage").hasAttribute("data-presentation-step")).toBe(false);
+	expect(part("canvas-stage").hasAttribute("data-presentation-step")).toBe(false);
 });
 
 /**

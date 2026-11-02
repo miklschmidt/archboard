@@ -1,8 +1,8 @@
 // The recipe of one board render, from what the render asked and answered.
 
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import type { DrawnBoard } from "@archboard/model/render-reply";
-import type { BoardRenderChoices, DrawnInput } from "#shared/rules/render/legacy-board.ts";
+import type { LegacyRenderChoices, DrawnInput } from "#shared/rules/render/legacy-board.ts";
 import { inputFingerprint, sha256Of } from "#runtime/operations/recipe/digest.ts";
 import { RENDER_RECIPE_VERSION, type RenderRecipe } from "#runtime/operations/recipe/schema.ts";
 
@@ -19,7 +19,7 @@ interface RecipeVault {
  * @returns The recipe's selection.
  */
 function selection(
-	choices: BoardRenderChoices,
+	choices: LegacyRenderChoices,
 	reply: DrawnBoard,
 ): Pick<RenderRecipe, "variant" | "view" | "comparison"> {
 	return {
@@ -36,7 +36,7 @@ function selection(
  * @returns `off`, the variant it was asked to be drawn against, or `on` for the board's own reading.
  * @throws {Error} When a picture asked against a variant answered no comparison.
  */
-function comparison(choices: BoardRenderChoices, reply: DrawnBoard): RenderRecipe["comparison"] {
+function comparison(choices: LegacyRenderChoices, reply: DrawnBoard): RenderRecipe["comparison"] {
 	if (choices.comparison === false) return "off";
 	if (choices.against === undefined) return "on";
 	if (reply.changes === null) {
@@ -52,7 +52,7 @@ function comparison(choices: BoardRenderChoices, reply: DrawnBoard): RenderRecip
  * @throws {Error} When the render does not stand alone, which no recipe can draw again.
  */
 function drawingChoices(
-	choices: BoardRenderChoices,
+	choices: LegacyRenderChoices,
 ): Pick<RenderRecipe, "theme" | "layout" | "title" | "legend"> {
 	if (choices.theme === undefined) {
 		throw new Error("Only a render that stands alone, in a theme of its own, carries a recipe.");
@@ -70,7 +70,7 @@ function drawingChoices(
  * @param choices What the render asked for.
  * @returns Its layout and whether it stands alone, or null for none.
  */
-function legendOf(choices: BoardRenderChoices): RenderRecipe["legend"] {
+function legendOf(choices: LegacyRenderChoices): RenderRecipe["legend"] {
 	return choices.legend === undefined
 		? null
 		: { layout: choices.legend, alone: choices.legendOnly === true };
@@ -87,9 +87,9 @@ function legendOf(choices: BoardRenderChoices): RenderRecipe["legend"] {
  * @param vault The vault the recipe names.
  * @returns The recipe.
  */
-function boardRecipe(
-	board: SemanticBoard,
-	choices: BoardRenderChoices,
+function legacyRecipe(
+	board: LegacyBoard,
+	choices: LegacyRenderChoices,
 	reply: DrawnBoard,
 	input: DrawnInput,
 	vault: RecipeVault,
@@ -105,4 +105,4 @@ function boardRecipe(
 	};
 }
 
-export { boardRecipe, type RecipeVault };
+export { legacyRecipe, type RecipeVault };

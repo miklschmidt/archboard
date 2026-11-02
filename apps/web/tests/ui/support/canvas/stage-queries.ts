@@ -6,9 +6,7 @@
  * @returns The `data-state` of the stage, or null when nothing is mounted.
  */
 function stageState(): string | null {
-	return (
-		document.querySelector("[data-slot='semantic-board-stage']")?.getAttribute("data-state") ?? null
-	);
+	return document.querySelector("[data-slot='canvas-stage']")?.getAttribute("data-state") ?? null;
 }
 
 /**
@@ -29,7 +27,7 @@ function part(slot: string): HTMLElement {
  * @returns The surface.
  */
 function surface(): HTMLElement {
-	return part("semantic-board-surface");
+	return part("canvas-surface");
 }
 
 /**
@@ -37,7 +35,7 @@ function surface(): HTMLElement {
  * @returns The viewport.
  */
 function viewport(): HTMLElement {
-	return part("semantic-board-viewport");
+	return part("canvas-viewport");
 }
 
 /**

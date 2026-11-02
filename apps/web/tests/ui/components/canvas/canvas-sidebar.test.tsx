@@ -44,7 +44,7 @@ test("picking something out opens the selection, and letting go gives back the t
 	mountStage(null, { live: true });
 	await settle();
 	expect(openTab()).toBe("board");
-	expect(part("semantic-board-panel")).not.toBeNull();
+	expect(part("canvas-panel")).not.toBeNull();
 
 	pickCard();
 	await settle();

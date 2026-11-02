@@ -1,13 +1,13 @@
 import type { LegacyInventory } from "#shared/schemas/migration.ts";
 import { subjectsOf } from "#shared/schemas/content.ts";
-import type { SemanticBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
+import type { LegacyBoard, SemanticVariant } from "#shared/schemas/legacy-board.ts";
 
 /**
  * Preserve every subject identity, including subjects retained only in a reconciliation base.
  * @param document The original family.
  * @returns Its original local identities and kinds.
  */
-function familySubjects(document: SemanticBoard) {
+function familySubjects(document: LegacyBoard) {
 	return [
 		...document.views.map((view) => ({ id: view.id, kind: "view" as const })),
 		...document.variants.flatMap((state) => [
@@ -24,7 +24,7 @@ function familySubjects(document: SemanticBoard) {
  * @param state The original state.
  * @returns Every original state selector.
  */
-function stateNames(document: SemanticBoard, state: SemanticVariant): string[] {
+function stateNames(document: LegacyBoard, state: SemanticVariant): string[] {
 	return [
 		state.name,
 		...(state.formerNames ?? []),
@@ -39,7 +39,7 @@ function stateNames(document: SemanticBoard, state: SemanticVariant): string[] {
  * @param file The original source location.
  * @returns Its retained addresses.
  */
-function familyAliases(document: SemanticBoard, file: string): LegacyInventory["aliases"] {
+function familyAliases(document: LegacyBoard, file: string): LegacyInventory["aliases"] {
 	const names = [
 		...new Set([
 			document.name,

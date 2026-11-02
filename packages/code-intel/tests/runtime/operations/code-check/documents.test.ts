@@ -13,7 +13,7 @@ import { join } from "node:path";
 import type * as CheckModule from "#tests/runtime/support/code-check/pass.ts";
 import type { CodeCheckOutcome } from "#runtime/operations/code-check/check.ts";
 import {
-	board as fixtureBoard,
+	board as fixtureDocument,
 	git as fixtureGit,
 	register,
 	write,
@@ -50,7 +50,7 @@ beforeAll(async () => {
 	git("commit", "-q", "--no-gpg-sign", "-m", "design");
 	git("checkout", "-q", "main");
 	register(scratch, { [SHOP]: shop });
-	fixtureBoard(vault, "Shop", [
+	fixtureDocument(vault, "Shop", [
 		{
 			id: "v1",
 			name: "Built",
@@ -90,7 +90,7 @@ afterAll(() => {
  * @returns The outcome.
  */
 async function pass(variant?: string): Promise<CodeCheckOutcome> {
-	const read = check.readBoardsToCheck(vault, variant);
+	const read = check.readStatesToCheck(vault, variant);
 	if (!read.ok) throw new Error(`no draft ${variant}`);
 	return check.checkCode(vault, read.boards, new AbortController().signal);
 }

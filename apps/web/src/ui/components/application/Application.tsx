@@ -45,7 +45,7 @@ import { conversationActivation } from "#ui/clients/application/shown-conversati
 import { useWorkbench, type Workbench } from "#ui/hooks/application/use-workbench.ts";
 import { useWorkspaceAddressing } from "#ui/hooks/application/use-workspace-addressing.ts";
 import { useBesideOpening } from "#ui/hooks/application/use-beside-opening.ts";
-import { BoardCatalogProvider } from "#ui/components/model-catalog/ModelCatalogProvider.tsx";
+import { ModelCatalogProvider } from "#ui/components/model-catalog/ModelCatalogProvider.tsx";
 import {
 	useModelCatalog,
 	type ModelCatalog,
@@ -54,7 +54,7 @@ import { useOpeningAddress } from "#ui/hooks/reading-routing/use-opening-address
 import { useLastReading, useStart } from "#ui/hooks/reading-routing/use-start.ts";
 import { type WorkspaceAddressing } from "#ui/hooks/reading-routing/use-workspace-address.ts";
 import { Tooltip } from "@archboard/ui-kit/components";
-import { boardAddressOf, boardKeyFor } from "#ui/rules/canvas/reading/address.ts";
+import { paneAddressOf, paneKeyFor } from "#ui/rules/canvas/reading/address.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
@@ -341,11 +341,11 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const onVariantChange = useCallback(
 		(paneId: string, variant: string | null): void => {
 			const { records, actions: shell } = variantSources.read();
-			const address = boardAddressOf(recordFor(records, paneId).status.boardKey);
+			const address = paneAddressOf(recordFor(records, paneId).status.paneKey);
 			if (address !== null) {
 				// This pane, not whichever has focus: the person chose a variant of
 				// the board in front of them, and focus follows the pointer.
-				void shell.selectBoard(boardKeyFor(address.board, variant), paneId);
+				void shell.selectModel(paneKeyFor(address.board, variant), paneId);
 			}
 		},
 		[variantSources],
@@ -354,9 +354,9 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	// each time they are: a pane is offered one function for as long as it lives.
 	const [actionsNow] = useState(() => new LiveBinding<ShellActions>());
 	actionsNow.bind(actions);
-	const selectBoard = useCallback(
+	const selectModel = useCallback(
 		(key: string, paneId: string, repository?: string): Promise<boolean> =>
-			actionsNow.read().selectBoard(key, paneId, repository),
+			actionsNow.read().selectModel(key, paneId, repository),
 		[actionsNow],
 	);
 	const selectPane = useCallback(
@@ -388,7 +388,7 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 		readings,
 		reducedMotion,
 		onVariantChange,
-		openBoard: selectBoard,
+		openPaneKey: selectModel,
 		openingVault,
 		...recorded,
 	});
@@ -510,9 +510,9 @@ function ApplicationStart(): JSX.Element {
  */
 function Application(): JSX.Element {
 	return (
-		<BoardCatalogProvider>
+		<ModelCatalogProvider>
 			<ApplicationStart />
-		</BoardCatalogProvider>
+		</ModelCatalogProvider>
 	);
 }
 

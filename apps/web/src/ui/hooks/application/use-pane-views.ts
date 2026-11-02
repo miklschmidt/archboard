@@ -55,7 +55,7 @@ interface PaneViewSources {
 	 * @param repository The repository the board is in; the pane's own when none is named.
 	 * @returns Whether the pane shows it now.
 	 */
-	readonly openBoard: (key: string, paneId: string, repository?: string) => Promise<boolean>;
+	readonly openPaneKey: (key: string, paneId: string, repository?: string) => Promise<boolean>;
 	/**
 	 * The vault a pane mounted now opens in: that of the other pane, so a second pane
 	 * never lands on an unrelated repository.
@@ -154,7 +154,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		openBoard,
+		openPaneKey,
 		openingVault,
 	} = sources;
 	const { list, callbacks, handles } = panes;
@@ -171,7 +171,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 					narration,
 					overlay,
 					recording,
-					openBoard,
+					openPaneKey,
 					openingVault,
 				},
 				entry.paneId,
@@ -190,7 +190,7 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 		narration,
 		overlay,
 		recording,
-		openBoard,
+		openPaneKey,
 		openingVault,
 	]);
 }

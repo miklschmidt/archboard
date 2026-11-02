@@ -77,7 +77,7 @@ test("the comparison control carries the picture in and out without changing the
 		expect(surface().hasAttribute("data-picture-motion")).toBe(true);
 		// The key to marks the picture no longer draws goes with them.
 		expect(document.querySelector("[data-slot='semantic-change-key']")).toBeNull();
-		expect(part("semantic-board-stage").getAttribute("data-variant")).toBe("Proposal");
+		expect(part("canvas-stage").getAttribute("data-variant")).toBe("Proposal");
 		land();
 		expect(surface().hasAttribute("data-picture-motion")).toBe(false);
 		expect(surface().innerHTML.includes("stray")).toBe(false);

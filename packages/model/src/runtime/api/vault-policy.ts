@@ -2,7 +2,4 @@
 
 export { edgeSubjects, nodeSubject } from "#runtime/operations/check/subject.ts";
 export { structureDiagnostics } from "#runtime/operations/check/structure.ts";
-export {
-	readSemanticBoardConfiguration,
-	SemanticBoardConfigurationSchema,
-} from "#runtime/store/configuration.ts";
+export { readVaultConfiguration, VaultConfigurationSchema } from "#runtime/store/configuration.ts";

@@ -2,7 +2,7 @@ import { afterAll, expect, spyOn, test } from "bun:test";
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 
 import { createPaneCore } from "#ui/state/pane-session/pane-core.ts";
-import { onSemanticBoardChange } from "#ui/state/canvas/model-changes.ts";
+import { onModelChange } from "#ui/state/canvas/model-changes.ts";
 import type { PaneStatus } from "#ui/rules/pane-session/session-types.ts";
 
 GlobalRegistrator.register({ url: "http://localhost/" });
@@ -95,7 +95,7 @@ test("a reconnect becomes connected only after its unchanged pane is registered 
 			if (connected) accepted.resolve();
 		},
 		/** This fixture has no displayed board. */
-		setBoard: (): void => {},
+		setModel: (): void => {},
 		/** This fixture makes no board navigation. */
 		setOpened: (): void => {},
 		/** This fixture makes no board navigation. */
@@ -221,7 +221,7 @@ async function paneOnPayments() {
 		/** Read from the published status instead. */
 		setConnected: (): void => {},
 		/** Read from the published status instead. */
-		setBoard: (): void => {},
+		setModel: (): void => {},
 		/** Read from the published status instead. */
 		setOpened: (): void => {},
 		/** Read from the published status instead. */
@@ -239,7 +239,7 @@ async function paneOnPayments() {
 	await firstCall.promise;
 	calls[0]!.answer.resolve(registeredReply());
 	deliver(socket, {
-		type: "pane_board",
+		type: "pane_place",
 		board: "payments",
 		identity: PAYMENTS,
 		vault: LEFT_VAULT,
@@ -267,7 +267,7 @@ function registeredReply(): Response {
  */
 function chooseOtherCheckout(socket: ControlledSocket): void {
 	deliver(socket, {
-		type: "pane_board",
+		type: "pane_place",
 		board: "payments",
 		identity: PAYMENTS,
 		vault: CHOSEN_VAULT,
@@ -309,11 +309,11 @@ test("a pane told only where it is takes its repository's new name and keeps its
 	try {
 		const calls = pane.calls.length;
 		// The registry changed, and the name the repository goes by with it.
-		deliver(pane.socket, { type: "pane_board", vault: LEFT_VAULT, repository: "r-2" });
+		deliver(pane.socket, { type: "pane_place", vault: LEFT_VAULT, repository: "r-2" });
 		expect(pane.statuses.at(-1)).toMatchObject({
 			vault: LEFT_VAULT,
 			repository: "r-2",
-			boardKey: "payments",
+			paneKey: "payments",
 		});
 		// Nothing moved, so the pane has nothing new to report.
 		expect(pane.calls).toHaveLength(calls);
@@ -331,7 +331,7 @@ test("an answer from the vault a pane left that comes back before the move leave
 		pane.calls[1]!.answer.resolve(registeredReply());
 		await Bun.sleep(0);
 		deliver(pane.socket, {
-			type: "pane_board",
+			type: "pane_place",
 			board: "ledger",
 			identity: { board: "ledger", variant: "current" },
 			vault: LEFT_VAULT,
@@ -356,13 +356,13 @@ test("news of a board is news of the vault the pane is in, before and after the 
 	Object.defineProperty(globalThis, "WebSocket", { configurable: true, value: ControlledSocket });
 	const pane = await paneOnPayments();
 	const heard: string[] = [];
-	const stop = onSemanticBoardChange((vault) => {
+	const stop = onModelChange((vault) => {
 		heard.push(vault);
 	});
 	try {
-		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 2 });
+		deliver(pane.socket, { type: "model_note", semantic: true, board: "payments", version: 2 });
 		chooseOtherCheckout(pane.socket);
-		deliver(pane.socket, { type: "board_note", semantic: true, board: "payments", version: 7 });
+		deliver(pane.socket, { type: "model_note", semantic: true, board: "payments", version: 7 });
 		// The server sends a pane only its own vault's news, so the board the
 		// canvas reads again is the one of the vault it moved to.
 		expect(heard).toEqual([LEFT_VAULT, CHOSEN_VAULT]);
@@ -405,7 +405,7 @@ function dialledTabSession(paneId: string): string | null {
 		/** The socket is never opened here. */
 		setConnected: (): void => {},
 		/** This fixture has no displayed board. */
-		setBoard: (): void => {},
+		setModel: (): void => {},
 		/** This fixture makes no board navigation. */
 		setOpened: (): void => {},
 		/** This fixture makes no board navigation. */

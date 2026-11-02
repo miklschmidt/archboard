@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { everyStep } from "@archboard/model/flow";
 import type { DiagramBox } from "@archboard/model/render-reply";
 import type { projectModel } from "@archboard/model/content";
-import type { BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import type { PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import type { AcceptedScene } from "#ui/rules/architecture-model/scene.ts";
 
 /**
@@ -38,7 +38,7 @@ function intersects(box: DiagramBox, area: DiagramBox): boolean {
  */
 function useAreaSelection(
 	scene: AcceptedScene,
-	camera: BoardCamera,
+	camera: PictureCamera,
 	onSelectMany: (ids: readonly string[], toggle?: boolean) => void,
 ) {
 	const { projection, picture } = scene;

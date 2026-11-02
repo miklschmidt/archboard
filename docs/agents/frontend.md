@@ -352,7 +352,7 @@ A switch is a destination like any other: the last picture stays until the other
 A flow request carries no engine, because the core lays out only architecture, so its stored drawing outlives a switch.
 `ModelHoverLight` stands under it. `clients/canvas/subjects/hover-light.ts` remembers in this browser whether a part the pointer rests on dims the rest of the picture, and `useLighting` reads it. A pick, a trace and a row of the sidebar light the picture either way, because each one asks a question that only the light answers.
 `useDoorPick` turns a click on a door into a move to its module, and `ModelDoorTip` lists the door's endpoints on hover. Ctrl, a removed door and a presented step keep the ordinary pick.
-A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneBoard`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
+A click on the control that a door or a frame's tab wears goes to `onToggle` instead. The one rule is `toggled` in `rules/architecture-model/expansion.ts`, and the pointer, the panel and the `E` key all reach it. A module expanded beside the scope keeps `sceneModel`, so the picture is carried, and `sceneFit` names it, so the camera lands whole.
 Only `useModelReading` and `useModelMoves` pass `controls: true` to `projectModel`, so an export and a presented step draw neither control. The core draws the control, and `app.css` adds only its hover.
 The selection survives About.
 ModelPane owns ordinary selection across asynchronous reads.

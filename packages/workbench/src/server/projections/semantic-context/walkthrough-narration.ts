@@ -219,7 +219,7 @@ function narrationChangesOf(
  * @param tabSessionId The tab.
  * @returns The board's aggregate key, or null when no pane of that tab is narrated.
  */
-function narratedBoardOf(tabSessionId: TabSessionId): string | null {
+function narratedModelOf(tabSessionId: TabSessionId): string | null {
 	for (const [clientId, narration] of narrated) {
 		if (tabSessionOf(clientId) === tabSessionId && narration.capture !== undefined)
 			return `model:${narration.capture.model.manifest.id}`;
@@ -241,7 +241,7 @@ function subscribeNarrationChanges(listener: NarrationListener): () => void {
 
 export {
 	forgetNarration,
-	narratedBoardOf,
+	narratedModelOf,
 	narrationChangesOf,
 	narrationFor,
 	openNarration,

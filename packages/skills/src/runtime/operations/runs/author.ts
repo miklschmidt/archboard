@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // One author run, start to finish: a private world, Flask at the pin, a
 // Archboard server of its own, the fixture laid, the skill installed and verified, a
 // snapshot, one Codex exec with the scenario's prompt, and then everything
@@ -35,7 +35,7 @@ import {
 	type GuidanceStanding,
 } from "#runtime/protocol/events.ts";
 import { checkoutFlask, emptyCheckout } from "#runtime/processes/flask.ts";
-import { countDirectBoardWrites, evaluateGuardrails } from "#runtime/rules/audit/guardrails.ts";
+import { countDirectVaultWrites, evaluateGuardrails } from "#runtime/rules/audit/guardrails.ts";
 import { installSkill, type InstallRecord } from "#runtime/operations/runs/install.ts";
 import {
 	authorConfigToml,
@@ -64,7 +64,7 @@ import {
 	readConfigurationText,
 	readPolicy,
 	readVault,
-	renderBoard,
+	renderLegacyBoard,
 	vaultDiagnostics,
 	writeBoards,
 	writeVaultConfiguration,
@@ -239,12 +239,12 @@ function statusOf(result: ProcessResult, failure: string | null): RunStatus {
 async function readAfter(
 	world: RunWorld,
 	scenario: Scenario,
-	snapshot: ReadonlyMap<string, SemanticBoard>,
+	snapshot: ReadonlyMap<string, EvaluatedDocument>,
 	commands: readonly ClassifiedCommand[],
 ): Promise<Reading> {
 	const boards = await readVault(world.cli);
 	const renders = await sequentially(renderRequests(scenario.outcomes), (request, index) =>
-		renderBoard(world.cli, request, path.join(world.paths.renders, `render-${index}.svg`)),
+		renderLegacyBoard(world.cli, request, path.join(world.paths.renders, `render-${index}.svg`)),
 	);
 	const inspections = await sequentially(inspectionRequests(scenario.outcomes), (request) =>
 		inspectGroup(world.cli, request),
@@ -390,7 +390,7 @@ function assemble(
 		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
 	});
-	const directWrites = countDirectBoardWrites({
+	const directWrites = countDirectVaultWrites({
 		commands,
 		fileChanges: trace.fileChanges,
 		vault: world.paths.vault,
@@ -479,7 +479,7 @@ function assemble(
  * @returns Every declaration, including why an unavailable capture was not taken.
  */
 async function partialCaptures(job: RunJob, world: RunWorld | null): Promise<CaptureAttempt[]> {
-	let boards: ReadonlyMap<string, SemanticBoard> = new Map();
+	let boards: ReadonlyMap<string, EvaluatedDocument> = new Map();
 	if (world !== null && !job.signal.aborted) {
 		// An unreadable vault leaves every-view captures with no views to take;
 		// the named captures still record why they were not taken.

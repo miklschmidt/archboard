@@ -1,4 +1,4 @@
-import type { EvaluationArchitecture as SemanticBoard } from "#runtime/rules/outcomes/reading.ts";
+import type { EvaluationArchitecture as EvaluatedDocument } from "#runtime/rules/outcomes/reading.ts";
 // The comparison of a proposal against the variant its picture is drawn
 // against and `semantic compare` reads it against by default — the board's
 // current one, or on a board with none its direct predecessor — as a check
@@ -49,7 +49,7 @@ function countChanges(changes: ReadonlyMap<string, { readonly kind: string }>): 
  * @returns The counts, or undefined when there is nothing to read it against.
  */
 function standingCounts(
-	board: SemanticBoard,
+	board: EvaluatedDocument,
 	variant: SemanticVariant,
 ):
 	| { readonly against: string; readonly all: ChangeCounts; readonly nodes: ChangeCounts }

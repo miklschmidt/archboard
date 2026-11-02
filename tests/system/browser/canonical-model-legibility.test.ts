@@ -30,7 +30,7 @@ import { OPAQUE_SRGB, edgeInks, sameHue, unresolvedPaints } from "./support/comp
 const WAIT = { timeoutMs: 6_000 } as const;
 
 /** The element the camera moves. */
-const SURFACE = "[data-slot='model-diagram'] [data-slot='semantic-board-surface']";
+const SURFACE = "[data-slot='model-diagram'] [data-slot='canvas-surface']";
 
 /** The panel beside the diagram. */
 const INSPECTOR = "[data-slot='module-details']";

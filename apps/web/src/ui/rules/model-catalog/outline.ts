@@ -15,7 +15,7 @@ interface OutlineLink {
 }
 
 /** One board as the outline reads it. */
-interface OutlineBoard {
+interface OutlineModel {
 	/** The board's name, which may carry `/` folders. */
 	readonly name: string;
 	/** The board's architecture level, when it has one. */
@@ -25,7 +25,7 @@ interface OutlineBoard {
 }
 
 /** A folder in the boards' names, and what is in it. */
-interface OutlineFolder<Board extends OutlineBoard> {
+interface OutlineFolder<Board extends OutlineModel> {
 	readonly kind: "folder";
 	/** Stable across renders: `folder:` and the folder's path. */
 	readonly id: string;
@@ -39,7 +39,7 @@ interface OutlineFolder<Board extends OutlineBoard> {
 }
 
 /** A board in the outline, and the boards drawn under it. */
-interface OutlineBoardNode<Board extends OutlineBoard> {
+interface OutlineModelNode<Board extends OutlineModel> {
 	readonly kind: "board";
 	/** Stable across renders: `board:` and the board's name folded to its key. */
 	readonly id: string;
@@ -52,10 +52,10 @@ interface OutlineBoardNode<Board extends OutlineBoard> {
 }
 
 /** One place in the outline. */
-type OutlineNode<Board extends OutlineBoard> = OutlineFolder<Board> | OutlineBoardNode<Board>;
+type OutlineNode<Board extends OutlineModel> = OutlineFolder<Board> | OutlineModelNode<Board>;
 
 /** A mutable node while the outline is being assembled. */
-interface DraftNode<Board extends OutlineBoard> {
+interface DraftNode<Board extends OutlineModel> {
 	readonly kind: "folder" | "board";
 	readonly id: string;
 	readonly name: string;
@@ -125,8 +125,8 @@ interface ParentCandidate {
  * @returns The candidate `from` would be for `to`, or null.
  */
 function downLink(
-	from: OutlineBoard,
-	to: OutlineBoard,
+	from: OutlineModel,
+	to: OutlineModel,
 	levels: readonly string[],
 ): ParentCandidate | null {
 	const fromRank = rankOf(levels, from.level);
@@ -147,7 +147,7 @@ function downLink(
  * @param levels The configured levels.
  * @returns True unless the target is at a finer level than the linking board.
  */
-function pointsUp(from: OutlineBoard, to: OutlineBoard, levels: readonly string[]): boolean {
+function pointsUp(from: OutlineModel, to: OutlineModel, levels: readonly string[]): boolean {
 	const fromRank = rankOf(levels, from.level);
 	const toRank = rankOf(levels, to.level);
 	return fromRank === null || toRank === null || toRank <= fromRank;
@@ -163,11 +163,11 @@ function pointsUp(from: OutlineBoard, to: OutlineBoard, levels: readonly string[
  * @returns The child and its candidate parent, or null for a sideways link.
  */
 function linkPlacement(
-	board: OutlineBoard,
-	target: OutlineBoard,
+	board: OutlineModel,
+	target: OutlineModel,
 	container: boolean,
 	levels: readonly string[],
-): { readonly child: OutlineBoard; readonly candidate: ParentCandidate } | null {
+): { readonly child: OutlineModel; readonly candidate: ParentCandidate } | null {
 	if (container && pointsUp(board, target, levels)) {
 		return { child: board, candidate: { name: target.name, container: true, rank: -1 } };
 	}
@@ -183,7 +183,7 @@ function linkPlacement(
  * @returns Parent candidates by folded board name.
  */
 function parentCandidates(
-	boards: readonly OutlineBoard[],
+	boards: readonly OutlineModel[],
 	levels: readonly string[],
 ): Map<string, ParentCandidate[]> {
 	const byName = new Map(boards.map((board) => [foldName(board.name), board]));
@@ -193,7 +193,7 @@ function parentCandidates(
 	 * @param child The board that would be drawn under the candidate.
 	 * @param candidate The board above it, and why.
 	 */
-	const add = (child: OutlineBoard, candidate: ParentCandidate): void => {
+	const add = (child: OutlineModel, candidate: ParentCandidate): void => {
 		const parent = byName.get(foldName(candidate.name));
 		if (
 			parent === undefined ||
@@ -277,7 +277,7 @@ function breakCycles(
  * @param path The folder path.
  * @returns The children list boards in that folder go into.
  */
-function folderChildren<Board extends OutlineBoard>(
+function folderChildren<Board extends OutlineModel>(
 	folders: Map<string, DraftNode<Board>>,
 	roots: DraftNode<Board>[],
 	path: string,
@@ -305,7 +305,7 @@ function folderChildren<Board extends OutlineBoard>(
  * @param nodes The siblings.
  * @returns The sorted siblings.
  */
-function sortSiblings<Board extends OutlineBoard>(nodes: DraftNode<Board>[]): DraftNode<Board>[] {
+function sortSiblings<Board extends OutlineModel>(nodes: DraftNode<Board>[]): DraftNode<Board>[] {
 	return nodes.toSorted(
 		(a, b) =>
 			Number(a.kind === "board") - Number(b.kind === "board") || COLLATOR.compare(a.name, b.name),
@@ -317,7 +317,7 @@ function sortSiblings<Board extends OutlineBoard>(nodes: DraftNode<Board>[]): Dr
  * @param node The drafted node.
  * @returns The outline node.
  */
-function finish<Board extends OutlineBoard>(node: DraftNode<Board>): OutlineNode<Board> {
+function finish<Board extends OutlineModel>(node: DraftNode<Board>): OutlineNode<Board> {
 	const children = sortSiblings(node.children).map(finish);
 	if (node.board === null) {
 		return {
@@ -326,7 +326,7 @@ function finish<Board extends OutlineBoard>(node: DraftNode<Board>): OutlineNode
 			name: node.name,
 			path: node.path,
 			children,
-			count: countBoards(children),
+			count: countModels(children),
 		};
 	}
 	return {
@@ -344,9 +344,9 @@ function finish<Board extends OutlineBoard>(node: DraftNode<Board>): OutlineNode
  * @param nodes The nodes.
  * @returns The count.
  */
-function countBoards<Board extends OutlineBoard>(nodes: readonly OutlineNode<Board>[]): number {
+function countModels<Board extends OutlineModel>(nodes: readonly OutlineNode<Board>[]): number {
 	return nodes.reduce(
-		(sum, node) => sum + (node.kind === "folder" ? node.count : 1 + countBoards(node.children)),
+		(sum, node) => sum + (node.kind === "folder" ? node.count : 1 + countModels(node.children)),
 		0,
 	);
 }
@@ -358,7 +358,7 @@ function countBoards<Board extends OutlineBoard>(nodes: readonly OutlineNode<Boa
  * @param candidates Every board that stands above it.
  * @returns The drafted node.
  */
-function boardDraft<Board extends OutlineBoard>(
+function modelDraft<Board extends OutlineModel>(
 	board: Board,
 	primary: string | null,
 	candidates: readonly ParentCandidate[],
@@ -384,7 +384,7 @@ function boardDraft<Board extends OutlineBoard>(
  * @returns Primary parent by folded board name.
  */
 function primaryParents(
-	boards: readonly OutlineBoard[],
+	boards: readonly OutlineModel[],
 	candidates: ReadonlyMap<string, ParentCandidate[]>,
 ): Map<string, string | null> {
 	const names = new Map(boards.map((board) => [foldName(board.name), board.name]));
@@ -406,7 +406,7 @@ function primaryParents(
  * @param levels The vault's configured levels, coarsest first.
  * @returns The outline's top nodes.
  */
-function buildOutline<Board extends OutlineBoard>(
+function buildOutline<Board extends OutlineModel>(
 	boards: readonly Board[],
 	levels: readonly string[],
 ): OutlineNode<Board>[] {
@@ -415,7 +415,7 @@ function buildOutline<Board extends OutlineBoard>(
 	const nodes = new Map(
 		boards.map((board) => {
 			const own = foldName(board.name);
-			return [own, boardDraft(board, parents.get(own) ?? null, candidates.get(own) ?? [])];
+			return [own, modelDraft(board, parents.get(own) ?? null, candidates.get(own) ?? [])];
 		}),
 	);
 	const roots: DraftNode<Board>[] = [];
@@ -435,7 +435,7 @@ function buildOutline<Board extends OutlineBoard>(
  * @param name The board's name.
  * @returns The ancestor boards, or an empty list for a board at the top or not listed.
  */
-function boardAncestors<Board extends OutlineBoard>(
+function modelAncestors<Board extends OutlineModel>(
 	outline: readonly OutlineNode<Board>[],
 	name: string,
 ): Board[] {
@@ -465,7 +465,7 @@ function boardAncestors<Board extends OutlineBoard>(
  * @param name The board's name.
  * @returns The ids, outermost first; empty when the board is at the top or not listed.
  */
-function pathIds(outline: readonly OutlineNode<OutlineBoard>[], name: string): string[] {
+function pathIds(outline: readonly OutlineNode<OutlineModel>[], name: string): string[] {
 	const wanted = foldName(name);
 	/**
 	 * Search one level for the board, carrying the ids passed on the way.
@@ -473,7 +473,7 @@ function pathIds(outline: readonly OutlineNode<OutlineBoard>[], name: string): s
 	 * @param trail The ids above it.
 	 * @returns The ids above the board, or null when it is not under this level.
 	 */
-	const walk = (nodes: readonly OutlineNode<OutlineBoard>[], trail: string[]): string[] | null => {
+	const walk = (nodes: readonly OutlineNode<OutlineModel>[], trail: string[]): string[] | null => {
 		for (const node of nodes) {
 			if (node.kind === "board" && foldName(node.board.name) === wanted) return trail;
 			const found = walk(node.children, [...trail, node.id]);
@@ -485,12 +485,12 @@ function pathIds(outline: readonly OutlineNode<OutlineBoard>[], name: string): s
 }
 
 export {
-	boardAncestors,
+	modelAncestors,
 	buildOutline,
-	countBoards,
+	countModels,
 	pathIds,
-	type OutlineBoard,
-	type OutlineBoardNode,
+	type OutlineModel,
+	type OutlineModelNode,
 	type OutlineFolder,
 	type OutlineLink,
 	type OutlineNode,

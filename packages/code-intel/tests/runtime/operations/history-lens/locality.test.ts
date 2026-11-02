@@ -15,9 +15,9 @@ import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
 import { LocalityAnswerSchema, type LocalityAnswer } from "#shared/protocol/locality.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "@archboard/model/legacy-board";
 
@@ -119,7 +119,7 @@ const IN_SHOP = (path: string, extra: object = {}) => ({ repo: SHOP, path, ...ex
  * @param version The board's version.
  * @returns The board.
  */
-function board(version: number): SemanticBoard {
+function board(version: number): LegacyBoard {
 	const current = [
 		part("pA", "Checkout", IN_SHOP("src/a.ts")),
 		part("pB", "Payments", IN_SHOP("src/b.ts")),
@@ -134,8 +134,8 @@ function board(version: number): SemanticBoard {
 		part("pP", "Pinned", IN_SHOP("src/a.ts", { branch: "elsewhere" })),
 	].map((node, index) => Object.assign({ order: (index + 1) * 1000 }, node));
 	const draft = [...current, { order: 10_000, ...part("pN", "Cache", IN_SHOP("src/b.ts")) }];
-	return SemanticBoardSchema.parse({
-		schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+	return LegacyBoardSchema.parse({
+		schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 		kind: "semantic-board",
 		id: "bd",
 		name: "Shop",
@@ -157,7 +157,7 @@ function board(version: number): SemanticBoard {
  * @param id The variant's id.
  * @returns The variant.
  */
-function variantOf(value: SemanticBoard, id: string): SemanticVariant {
+function variantOf(value: LegacyBoard, id: string): SemanticVariant {
 	const found = value.variants.find((one) => one.id === id);
 	if (found === undefined) throw new Error(`no variant ${id}`);
 	return found;
@@ -341,7 +341,7 @@ test("a draft is read when it is named, and its parts rank beside the current on
 });
 
 test("a board with no part in a registered repository answers an empty ranking, not a failure", async () => {
-	const lonely = SemanticBoardSchema.parse({
+	const lonely = LegacyBoardSchema.parse({
 		...built,
 		variants: [
 			{
@@ -360,8 +360,8 @@ test("a board with no part in a registered repository answers an empty ranking, 
 	expect(answer.skipped.map((one) => one.reason)).toEqual(["unbound"]);
 });
 
-const small = (version: number): SemanticBoard =>
-	SemanticBoardSchema.parse({
+const small = (version: number): LegacyBoard =>
+	LegacyBoardSchema.parse({
 		...built,
 		version,
 		variants: [

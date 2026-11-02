@@ -1,5 +1,5 @@
-import { BOARD_LOCK_MS, CLAIM_MS } from "@archboard/timing";
-import { boardMemoryKey } from "#runtime/store/legacy-address.ts";
+import { MODEL_LOCK_MS, CLAIM_MS } from "@archboard/timing";
+import { modelMemoryKey } from "#runtime/store/legacy-address.ts";
 import type {
 	Claim,
 	ClaimEndCause,
@@ -8,13 +8,13 @@ import type {
 	LockHolder,
 } from "#runtime/store/lock/contracts.ts";
 import {
-	boardLockState,
+	modelLockState,
 	releaseHold,
 	renewRecord,
 	stamp,
 } from "#runtime/store/lock/lease-state.ts";
 
-// Both are keyed by `boardMemoryKey`: one server serves several vaults, and two
+// Both are keyed by `modelMemoryKey`: one server serves several vaults, and two
 // of them can each hold a board of one name (ADR 0049).
 const processClaims = new Map<string, ClaimEntry>();
 const processRevocations = new Map<string, ClaimRevocation>();
@@ -51,7 +51,7 @@ function stopRenewing(entry: ClaimEntry): void {
  */
 function dropClaim(entry: ClaimEntry): void {
 	stopRenewing(entry);
-	processClaims.delete(boardMemoryKey(entry.vault, entry.board));
+	processClaims.delete(modelMemoryKey(entry.vault, entry.board));
 }
 
 /**
@@ -65,7 +65,7 @@ function dropClaim(entry: ClaimEntry): void {
  * @returns The claim, or null when this server has none.
  */
 function liveClaim(vault: string, board: string): ClaimEntry | null {
-	const entry = processClaims.get(boardMemoryKey(vault, board));
+	const entry = processClaims.get(modelMemoryKey(vault, board));
 	if (!entry) {
 		return null;
 	}
@@ -99,7 +99,7 @@ function noteClaimRevoked(
 	by: LockHolder | null,
 	cause: ClaimEndCause,
 ): void {
-	const key = boardMemoryKey(vault, board);
+	const key = modelMemoryKey(vault, board);
 	const entry = processClaims.get(key);
 	if (!entry || entry.holder.id !== lost.id) {
 		return;
@@ -129,7 +129,7 @@ function renewClaim(vault: string, board: string): void {
 	}
 	// Never call ordinary acquisition here. Retaking a free lease would restore
 	// a claim the person explicitly took back (ADR 0022).
-	const holder = boardLockState(vault, board);
+	const holder = modelLockState(vault, board);
 	noteClaimRevoked(vault, board, entry.holder, holder, causeOfRefusedRenewal(holder));
 }
 
@@ -159,7 +159,7 @@ function causeOfRefusedRenewal(holder: LockHolder | null): ClaimEndCause {
 function startRenewing(vault: string, board: string): ReturnType<typeof setInterval> {
 	const timer = setInterval(() => {
 		renewClaim(vault, board);
-	}, BOARD_LOCK_MS.renew);
+	}, MODEL_LOCK_MS.renew);
 	// Renewal must not be the reason a process stays alive.
 	timer.unref();
 	return timer;

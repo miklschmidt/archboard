@@ -26,7 +26,7 @@ const SHELL_CLOCK_MS = durations({
 });
 
 /** What the browser keeps of the server's answers (TASK-167). */
-const BOARD_CACHE_MS = durations({
+const MODEL_CACHE_MS = durations({
 	/**
 	 * How long the board listing stays fresh. The listing is small and every
 	 * event that can change it invalidates it by name, so this window is only the
@@ -51,4 +51,4 @@ const BOARD_CACHE_MS = durations({
 	startListing: 2_000,
 });
 
-export { SHELL_CLOCK_MS, BOARD_CACHE_MS };
+export { SHELL_CLOCK_MS, MODEL_CACHE_MS };

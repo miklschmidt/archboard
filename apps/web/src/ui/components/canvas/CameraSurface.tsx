@@ -13,7 +13,7 @@ import {
 
 import { EXPLORING_MS, PRESENTATION_MS } from "@archboard/timing";
 import { attachStage, stageOf } from "#ui/clients/canvas/picture/picture-stage.ts";
-import { useCameraView, type BoardCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
+import { useCameraView, type PictureCamera } from "#ui/hooks/canvas/use-picture-camera.ts";
 import { cameraTransform, type Size } from "#ui/rules/canvas/camera/camera.ts";
 
 /** Where a press on the diagram stands: none, pressed, or moving the diagram. */
@@ -74,7 +74,7 @@ function cameraEases(gesture: Gesture, reducedMotion: boolean, following: boolea
 /** What the surface the camera moves is drawn with. */
 interface CameraSurfaceProps {
 	/** The camera that moves it. */
-	readonly camera: BoardCamera;
+	readonly camera: PictureCamera;
 	/** Where the picture's element is handed to whatever writes the picture into it. */
 	readonly attach: (element: HTMLDivElement | null) => void;
 	/** How big the picture is. */
@@ -141,7 +141,7 @@ function CameraSurface(props: CameraSurfaceProps): JSX.Element {
 			/>
 			<div
 				ref={attachSurface}
-				data-slot="semantic-board-surface"
+				data-slot="canvas-surface"
 				style={style}
 				className={`${surfaceClass(gesture, reducedMotion, instant, moving)}${marks}`}
 			/>

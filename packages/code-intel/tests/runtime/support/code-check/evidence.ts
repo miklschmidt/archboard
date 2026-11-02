@@ -3,10 +3,10 @@ import type { CodeCheckSkip } from "#shared/protocol/code-check.ts";
 // Live model discovery belongs to the public canonical runtime owner.
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { SemanticBoardSchema, type SemanticBoard } from "@archboard/model/legacy-board";
+import { LegacyBoardSchema, type LegacyBoard } from "@archboard/model/legacy-board";
 import { DEFAULT_SEMANTIC_POLICY } from "@archboard/model/policy";
-import { readSemanticBoardConfiguration } from "@archboard/model/vault-policy";
-import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
+import { readVaultConfiguration } from "@archboard/model/vault-policy";
+import type { StateToCheck } from "#runtime/operations/code-check/states.ts";
 /**
  * Load static evidence fixtures for the language engine.
  * @param vault The fixture directory.
@@ -15,18 +15,16 @@ import type { BoardToCheck } from "#runtime/operations/code-check/states.ts";
  * @returns Selected fixture evidence.
  */
 function evidence(vault: string, variant?: string, every = false) {
-	const boards: Array<Omit<BoardToCheck, "board"> & { board: SemanticBoard }> = [];
+	const boards: Array<Omit<StateToCheck, "board"> & { board: LegacyBoard }> = [];
 	const skipped: CodeCheckSkip[] = [];
 	const drafts = new Set<string>();
 	const relationshipKinds =
-		readSemanticBoardConfiguration(vault).configuration.relationshipKinds ??
+		readVaultConfiguration(vault).configuration.relationshipKinds ??
 		DEFAULT_SEMANTIC_POLICY.relationshipKinds;
 	for (const file of readdirSync(vault).filter((name) => name.endsWith(".semantic.json"))) {
-		const parsed = SemanticBoardSchema.safeParse(
-			JSON.parse(readFileSync(join(vault, file), "utf8")),
-		);
+		const parsed = LegacyBoardSchema.safeParse(JSON.parse(readFileSync(join(vault, file), "utf8")));
 		if (!parsed.success) {
-			skipped.push({ reason: "board-unreadable", board: file });
+			skipped.push({ reason: "model-unreadable", board: file });
 			continue;
 		}
 		const board = parsed.data;
@@ -55,7 +53,7 @@ function evidence(vault: string, variant?: string, every = false) {
 		? { ok: false as const, variant, drafts: [...drafts] }
 		: { ok: true as const, boards, skipped };
 }
-function readBoardsToCheck(vault: string, variant?: string) {
+function readStatesToCheck(vault: string, variant?: string) {
 	return evidence(vault, variant);
 }
 function readEveryDraftToCheck(vault: string) {
@@ -63,4 +61,4 @@ function readEveryDraftToCheck(vault: string) {
 	if (!read.ok) throw new Error("Fixture draft selection failed.");
 	return read;
 }
-export { readBoardsToCheck, readEveryDraftToCheck };
+export { readStatesToCheck, readEveryDraftToCheck };

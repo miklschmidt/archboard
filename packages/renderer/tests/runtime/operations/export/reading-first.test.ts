@@ -3,13 +3,13 @@ import { SemanticPolicySchema } from "@archboard/model/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
 import { orderedFixture } from "#tests/runtime/support/ordered-fixture.ts";
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
-import boardChangesReachTheWorkhorse from "#tests/runtime/support/fixtures/model-changes-reach-the-workhorse.json";
-import boardPersistence from "#tests/runtime/support/fixtures/model-persistence.json";
+import modelChangesReachTheWorkhorse from "#tests/runtime/support/fixtures/model-changes-reach-the-workhorse.json";
+import modelPersistence from "#tests/runtime/support/fixtures/model-persistence.json";
 import codeEvidence from "#tests/runtime/support/fixtures/code-evidence.json";
 import durableWriteBoundary from "#tests/runtime/support/fixtures/durable-write-boundary.json";
 import oneCommand from "#tests/runtime/support/fixtures/one-command.json";
 import oneWriteLands from "#tests/runtime/support/fixtures/one-write-lands.json";
-import readingABoard from "#tests/runtime/support/fixtures/reading-a-model-joins.json";
+import readingAModel from "#tests/runtime/support/fixtures/reading-a-model-joins.json";
 import theTwoThreads from "#tests/runtime/support/fixtures/the-two-threads.json";
 import whatTheCliCanBeAsked from "#tests/runtime/support/fixtures/what-the-cli-can-be-asked.json";
 import workhorseNews from "#tests/runtime/support/fixtures/workhorse-news.json";
@@ -55,14 +55,14 @@ const policy = SemanticPolicySchema.parse({
 test.each([
 	["One command", oneCommand, "track"],
 	["One write lands", oneWriteLands, "track"],
-	["Board persistence", boardPersistence, "track"],
+	["Board persistence", modelPersistence, "track"],
 	["Code evidence", codeEvidence, "track"],
 	["Durable write boundary", durableWriteBoundary, "track"],
 	["What the CLI can be asked", whatTheCliCanBeAsked, "blocks"],
 	["Workhorse news", workhorseNews, "blocks"],
 	["The two threads", theTwoThreads, "track"],
-	["Reading a board", readingABoard, "blocks"],
-	["Board changes reach the workhorse", boardChangesReachTheWorkhorse, "track"],
+	["Reading a board", readingAModel, "blocks"],
+	["Board changes reach the workhorse", modelChangesReachTheWorkhorse, "track"],
 ] as const)(
 	"%s: one graph plan keeps every card, label, and route intact",
 	async (_name, fixture, layout) => {

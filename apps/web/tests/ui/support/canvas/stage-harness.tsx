@@ -12,7 +12,7 @@ import type { CodeBinding } from "@archboard/code-binding/bindings";
 import { type PaneChrome, PaneChromeContext } from "#ui/components/canvas/PaneChrome.tsx";
 import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import { PaneVaultContext } from "#ui/state/canvas/pane-vault.ts";
-import { SemanticBoardStage } from "#ui/components/canvas/CanvasStage.tsx";
+import { CanvasStage } from "#ui/components/canvas/CanvasStage.tsx";
 import { type SemanticPaneReading } from "#ui/rules/canvas/reading/address.ts";
 
 import {
@@ -98,7 +98,7 @@ function Cache(children: ReactNode): JSX.Element {
  * narration, and what the shell hears the person changed.
  */
 type StagePassThrough = Pick<
-	Parameters<typeof SemanticBoardStage>[0],
+	Parameters<typeof CanvasStage>[0],
 	"driven" | "overlay" | "placeOf" | "narration" | "onUserChanged"
 >;
 /** What else a mounted pane may be told, beyond what it is showing. */
@@ -295,7 +295,7 @@ function Held(props: HeldProps): JSX.Element {
 	return createElement(
 		PaneChromeContext.Provider,
 		{ value: chrome ?? alone },
-		createElement(SemanticBoardStage, {
+		createElement(CanvasStage, {
 			board: "pipeline",
 			...paneReading(props),
 			variant,
@@ -328,7 +328,7 @@ function mountStage(selection: string | null = null, options: MountOptions = {})
 	const stage =
 		options.live === true
 			? createElement(Held, { ...options, selection, report: onSelect })
-			: createElement(SemanticBoardStage, {
+			: createElement(CanvasStage, {
 					board: "pipeline",
 					...paneReading(options),
 					selection,
@@ -368,7 +368,7 @@ export {
 
 export {
 	NOTHING_DRAWN,
-	NO_SUCH_BOARD,
+	NO_SUCH_MODEL,
 	UNREADABLE,
 	drawing,
 } from "#tests/ui/support/canvas/render-answers.ts";

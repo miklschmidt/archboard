@@ -26,7 +26,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import type { DiagramTheme, LayoutEngineName } from "@archboard/model/render-reply";
-import type { SemanticBoard } from "@archboard/model/legacy-board";
+import type { LegacyBoard } from "@archboard/model/legacy-board";
 import { SHELL_VIEWPORT } from "@archboard/renderer/shell-geometry";
 import { RECORDER_MS } from "@archboard/timing";
 import {
@@ -106,7 +106,7 @@ interface RecordingOptions {
 type CanonicalModel = Extract<ArchitectureModelRead, { success: true }>;
 type WalkthroughRecordingRequest = RecordingOptions &
 	(
-		| { board: SemanticBoard; architecture?: never; vault?: never }
+		| { board: LegacyBoard; architecture?: never; vault?: never }
 		| { architecture: CanonicalModel; vault: string; board?: never }
 	);
 
@@ -137,7 +137,7 @@ type RecordingPageAddress = Pick<
 > & {
 	readonly walkthrough: Pick<WalkthroughRecordingRequest["walkthrough"], "id">;
 } & (
-		| { board: Pick<SemanticBoard, "name">; architecture?: never; vault?: never }
+		| { board: Pick<LegacyBoard, "name">; architecture?: never; vault?: never }
 		| { architecture: CanonicalModel; vault: string; board?: never }
 	);
 

@@ -393,7 +393,7 @@ function architectureClaimsQuery(vault: string) {
 /**
  * Whether this vault still belongs to the legacy reader or has no model.
  * @param error The structured read failure.
- * @returns True when the existing empty-board surface remains appropriate.
+ * @returns True when the existing empty-model surface remains appropriate.
  */
 function hasNoCanonicalModel(error: Error | null): boolean {
 	return (

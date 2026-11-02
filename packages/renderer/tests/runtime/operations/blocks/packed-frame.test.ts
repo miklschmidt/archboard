@@ -21,8 +21,8 @@ interface Solved {
  * @returns A solve of one graph.
  */
 function layoutEngine(): (graph: object) => Solved {
-	const { layOutBoard } = loadCore();
-	return (graph) => JSON.parse(layOutBoard(JSON.stringify(graph))) as Solved;
+	const { layOutPicture } = loadCore();
+	return (graph) => JSON.parse(layOutPicture(JSON.stringify(graph))) as Solved;
 }
 
 /**

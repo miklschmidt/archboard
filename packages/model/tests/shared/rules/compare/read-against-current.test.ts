@@ -9,9 +9,9 @@
 import { describe, expect, test } from "bun:test";
 import { drawingOf } from "#shared/rules/compare/drawing.ts";
 import {
-	SEMANTIC_BOARD_SCHEMA_VERSION,
-	SemanticBoardSchema,
-	type SemanticBoard,
+	LEGACY_BOARD_SCHEMA_VERSION,
+	LegacyBoardSchema,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "#shared/schemas/legacy-board.ts";
 import { withFixtureOrders } from "#tests/shared/support/fixture-orders.ts";
@@ -58,10 +58,10 @@ const HISTORY = [
  * @param current The one it designates current, if any.
  * @returns The board.
  */
-function boardOf(variants: readonly Record<string, unknown>[], current?: string): SemanticBoard {
-	return SemanticBoardSchema.parse(
+function documentOf(variants: readonly Record<string, unknown>[], current?: string): LegacyBoard {
+	return LegacyBoardSchema.parse(
 		withFixtureOrders({
-			schemaVersion: SEMANTIC_BOARD_SCHEMA_VERSION,
+			schemaVersion: LEGACY_BOARD_SCHEMA_VERSION,
 			kind: "semantic-board",
 			id: "bd",
 			name: "payments",
@@ -81,14 +81,14 @@ function boardOf(variants: readonly Record<string, unknown>[], current?: string)
  * @param id The variant's id.
  * @returns The variant.
  */
-function variantOf(board: SemanticBoard, id: string): SemanticVariant {
+function variantOf(board: LegacyBoard, id: string): SemanticVariant {
 	const found = board.variants.find((one) => one.id === id);
 	if (found === undefined) throw new Error(`no variant ${id}`);
 	return found;
 }
 
 describe("a board with a current variant", () => {
-	const board = boardOf(HISTORY, "v2");
+	const board = documentOf(HISTORY, "v2");
 
 	test("draws the current variant as it is, with no comparison", () => {
 		const drawing = drawingOf(board, variantOf(board, "v2"));
@@ -126,7 +126,7 @@ describe("a board with a current variant", () => {
 });
 
 describe("a board nobody has built", () => {
-	const board = boardOf([
+	const board = documentOf([
 		{ id: "d1", name: "First sketch", lifecycle: "draft", content: { nodes: [PLATFORM, GATEWAY] } },
 		{
 			id: "d2",

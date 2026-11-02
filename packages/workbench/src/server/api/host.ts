@@ -9,7 +9,6 @@ export {
 	serverUrl,
 } from "#server/services/host/listener-address.ts";
 export {
-	boardOfRequest,
 	bodyOf,
 	bodyString,
 	isRecord,

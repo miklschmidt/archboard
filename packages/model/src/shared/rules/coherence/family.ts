@@ -14,9 +14,9 @@
 import {
 	asksForDesignation,
 	CURRENT_DESIGNATION,
-	SEMANTIC_BOARD_SCHEMA_VERSION,
+	LEGACY_BOARD_SCHEMA_VERSION,
 	SUPPORTED_SCHEMA_MAJOR,
-	type SemanticBoard,
+	type LegacyBoard,
 	type SemanticVariant,
 } from "#shared/schemas/legacy-board.ts";
 import { subjectIds } from "#shared/schemas/content.ts";
@@ -28,7 +28,7 @@ import { repeated, walkReturns, type IntegrityIssue } from "#shared/rules/cohere
  * @param board The board.
  * @returns The issues found.
  */
-function familyIssues(board: SemanticBoard): IntegrityIssue[] {
+function familyIssues(board: LegacyBoard): IntegrityIssue[] {
 	const issues: IntegrityIssue[] = [];
 	const byId = new Map(board.variants.map((variant) => [variant.id, variant]));
 	for (const id of repeated(board.variants.map((variant) => variant.id))) {
@@ -77,7 +77,7 @@ function familyIssues(board: SemanticBoard): IntegrityIssue[] {
  * @returns The issues found.
  */
 function standingIssues(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	byId: ReadonlyMap<string, SemanticVariant>,
 ): IntegrityIssue[] {
 	return board.variants.flatMap((variant) =>
@@ -104,7 +104,7 @@ function standingIssues(
  */
 function oneStandingIssues(
 	standing: NonNullable<SemanticVariant["reconciliation"]>,
-	board: SemanticBoard,
+	board: LegacyBoard,
 	byId: ReadonlyMap<string, SemanticVariant>,
 	at: string,
 	parent: string | undefined,
@@ -152,7 +152,7 @@ function oneStandingIssues(
  * @returns The issues found.
  */
 function designationIssues(
-	board: SemanticBoard,
+	board: LegacyBoard,
 	byId: ReadonlyMap<string, SemanticVariant>,
 ): IntegrityIssue[] {
 	const claiming = board.variants.filter((variant) => variant.lifecycle === "current");
@@ -244,7 +244,7 @@ function ancestryIssues(
  * @param board The board.
  * @returns The issue, or nothing when the version is one this build implements.
  */
-function versionIssues(board: SemanticBoard): IntegrityIssue[] {
+function versionIssues(board: LegacyBoard): IntegrityIssue[] {
 	const major = Number(board.schemaVersion.split(".")[0]);
 	if (major === SUPPORTED_SCHEMA_MAJOR) {
 		return [];
@@ -254,7 +254,7 @@ function versionIssues(board: SemanticBoard): IntegrityIssue[] {
 			at: "schemaVersion",
 			problem:
 				`written for contract version ${board.schemaVersion}; ` +
-				`this build implements ${SEMANTIC_BOARD_SCHEMA_VERSION}`,
+				`this build implements ${LEGACY_BOARD_SCHEMA_VERSION}`,
 		},
 	];
 }
@@ -272,7 +272,7 @@ function versionIssues(board: SemanticBoard): IntegrityIssue[] {
  * @param board The board.
  * @returns The issues found.
  */
-function frameIssues(board: SemanticBoard): IntegrityIssue[] {
+function frameIssues(board: LegacyBoard): IntegrityIssue[] {
 	const onVariants = new Set(board.variants.flatMap((variant) => subjectIds(variant.content)));
 	const issues: IntegrityIssue[] = [];
 	const reserved = new Set([
