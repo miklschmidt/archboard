@@ -105,8 +105,6 @@ export {
 	type CodeTargetFailureCode,
 	GitHubHttpsUrlSchema,
 	type GitHubHttpsUrl,
-	CodeTargetNoticeActionSchema,
-	type CodeTargetNoticeAction,
 	CodeTargetOpenSuccessSchema,
 	type CodeTargetOpenSuccess,
 	CodeTargetOpenFailureSchema,

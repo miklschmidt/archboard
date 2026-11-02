@@ -66,4 +66,4 @@ function checkDoing(raw: unknown): DoingCheck {
 	return { ok: true, doing };
 }
 
-export { DOING_MAX_CHARS, type DoingCheck, checkDoing };
+export { checkDoing };

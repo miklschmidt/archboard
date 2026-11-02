@@ -410,8 +410,6 @@ function keepTalk(
 }
 
 export {
-	KEPT_TALKS,
-	TALK_FILE,
 	TalkFileError,
 	askedTalkPlace,
 	freshTalkPlace,

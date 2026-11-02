@@ -514,22 +514,11 @@ function vaultPathFor(
 }
 
 export {
-	type LegacyIdentity,
-	CURRENT_VARIANT,
-	isCurrentVariant,
 	statedVariant,
-	variantKey,
-	SCRATCH_BOARD,
 	VAULT_STATE_DIR,
-	LEVELS,
 	modelMemoryKey,
 	normalizePaneKey,
-	normalizeBoardName,
-	validateBoardName,
-	validateVariant,
-	validateLevel,
 	makeIdentity,
-	boardDisplayName,
 	paneKey,
 	paneAddressKey,
 	parsePaneKey,

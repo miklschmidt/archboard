@@ -330,7 +330,6 @@ type ArchitectureFeedFrame = z.infer<typeof ArchitectureFeedFrameSchema>;
 export {
 	ArchitectureRenderRequestSchema,
 	ArchitectureRenderResultSchema,
-	ArchitectureTargetSchema,
 	ArchitectureClaimSchema,
 	ArchitectureClaimRequestSchema,
 	ArchitectureClaimListSchema,
@@ -342,7 +341,6 @@ export {
 	ArchitectureModuleEditResultSchema,
 	ArchitectureEditSuccessSchema,
 	ArchitectureRecoveryResultSchema,
-	ArchitectureEventSchema,
 	ArchitectureFeedFrameSchema,
 	ArchitectureFeedRequestSchema,
 	type ArchitectureModuleEdit,

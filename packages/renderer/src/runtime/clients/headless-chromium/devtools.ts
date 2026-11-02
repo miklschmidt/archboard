@@ -427,4 +427,4 @@ class DevTools {
 	}
 }
 
-export { DevTools, isJsonRecord, type DevToolsListener, type EvaluateOptions, type JsonRecord };
+export { DevTools, isJsonRecord, type JsonRecord };

@@ -117,4 +117,4 @@ async function launchOpener(command: OpenerCommand): Promise<LaunchResult> {
 	});
 }
 
-export { type LaunchResult, type ResolvedOpenerCommand, resolveOpenerCommand, launchOpener };
+export { type LaunchResult, resolveOpenerCommand, launchOpener };

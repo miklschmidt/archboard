@@ -189,5 +189,4 @@ export {
 	type IdentityContext,
 	createIdentitySchemas,
 	assertCurrentTarget,
-	type AnyIdentity,
 };

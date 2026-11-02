@@ -194,13 +194,4 @@ function stepMotion(camera: Camera, motion: Motion, dt: number): Stepped {
 	};
 }
 
-export {
-	STILL,
-	easeMotion,
-	stepMotion,
-	wheelZoomFactor,
-	zoomMotion,
-	type Motion,
-	type Pair,
-	type WheelTurn,
-};
+export { STILL, easeMotion, stepMotion, wheelZoomFactor, zoomMotion, type Motion, type Pair };

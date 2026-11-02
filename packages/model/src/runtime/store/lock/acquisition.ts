@@ -592,4 +592,4 @@ async function withLease<T>(request: LockRequest, write: () => T): Promise<T> {
 	}
 }
 
-export { ModelLockCancelledError, holdModel, sleep, withLease, freshRecord, createExclusively };
+export { ModelLockCancelledError, holdModel, withLease };

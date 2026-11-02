@@ -148,11 +148,4 @@ function repositoryOfVault(vault: string): string | null {
 	return placeOfVault(vault).repository;
 }
 
-export {
-	listRepositories,
-	placeOfVault,
-	repositoryOfVault,
-	vaultIn,
-	type RepositoryEntry,
-	type VaultPlace,
-};
+export { listRepositories, placeOfVault, repositoryOfVault, vaultIn };

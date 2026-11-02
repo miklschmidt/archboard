@@ -90,4 +90,4 @@ function tokenUses(tree: Node): TokenUse[] {
 	return uses;
 }
 
-export { type TokenUse, tokenUses };
+export { tokenUses };

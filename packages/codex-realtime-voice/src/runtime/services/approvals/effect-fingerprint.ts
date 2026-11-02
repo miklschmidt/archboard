@@ -41,4 +41,4 @@ function effectFingerprint(params: unknown): string {
 	return createHash("sha256").update(stableJson(params), "utf8").digest("hex");
 }
 
-export { effectFingerprint, stableJson };
+export { effectFingerprint };

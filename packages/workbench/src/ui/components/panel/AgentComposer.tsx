@@ -108,4 +108,4 @@ function AgentComposer(props: AgentComposerProps): JSX.Element {
 	);
 }
 
-export { AgentComposer, type AgentComposerProps };
+export { AgentComposer };

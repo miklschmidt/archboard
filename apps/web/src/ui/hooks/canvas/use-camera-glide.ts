@@ -115,4 +115,4 @@ function useCameraGlide(): CameraGlide {
 	return useMemo(() => ({ start, stop }), [start, stop]);
 }
 
-export { CAMERA_MOTION_ATTRIBUTE, useCameraGlide, type CameraGlide };
+export { CAMERA_MOTION_ATTRIBUTE, useCameraGlide };

@@ -46,4 +46,4 @@ type DynamicImmutableEffect =
 			readonly visualSummary: string;
 	  }>;
 
-export type { DynamicForkEffectArguments, DynamicImmutableEffect };
+export type { DynamicImmutableEffect };

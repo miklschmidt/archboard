@@ -109,4 +109,4 @@ function paneEvents(owners: PaneEventOwners): PaneEvents {
 	};
 }
 
-export { paneEvents, type PaneEventOwners };
+export { paneEvents };

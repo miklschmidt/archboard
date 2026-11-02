@@ -423,4 +423,4 @@ function contentCheck(check: OutcomeCheck, reading: Reading): Finding | undefine
 	return owner === undefined ? undefined : onContent(check, reading, owner);
 }
 
-export { contentCheck, edgesOnContainers, fieldOf };
+export { contentCheck, fieldOf };

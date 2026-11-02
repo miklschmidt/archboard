@@ -108,4 +108,4 @@ function mountMutationAdmission(app: Express): void {
 	});
 }
 
-export { asyncEndpoint, callerGone, mountMutationAdmission, trackMutationWork };
+export { asyncEndpoint, mountMutationAdmission, trackMutationWork };

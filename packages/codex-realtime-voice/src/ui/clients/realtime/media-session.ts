@@ -557,9 +557,4 @@ function createRealtimeMediaSession(
 	});
 }
 
-export {
-	createRealtimeMediaSession,
-	type RealtimeMediaSession,
-	type RealtimeMediaSessionOptions,
-	type RealtimeMediaSnapshot,
-};
+export { createRealtimeMediaSession, type RealtimeMediaSession, type RealtimeMediaSnapshot };

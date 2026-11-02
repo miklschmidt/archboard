@@ -231,4 +231,4 @@ function PaneStage(props: PaneStageProps): JSX.Element {
 	);
 }
 
-export { PaneStages, type PaneStagesProps };
+export { PaneStages };

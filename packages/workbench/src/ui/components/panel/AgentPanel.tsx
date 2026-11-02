@@ -213,4 +213,4 @@ function PanelMenu(props: PanelMenuProps): JSX.Element {
 	);
 }
 
-export { AgentPanel, type AgentPanelProps };
+export { AgentPanel };

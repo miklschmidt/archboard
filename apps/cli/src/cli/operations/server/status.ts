@@ -177,11 +177,4 @@ const statusContract = defineCommand({
 	},
 });
 
-export {
-	StatusInputSchema,
-	StatusUnavailableResultSchema,
-	StatusForeignServiceResultSchema,
-	StatusRunningResultSchema,
-	StatusResultSchema,
-	statusContract,
-};
+export { statusContract };

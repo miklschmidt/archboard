@@ -440,5 +440,4 @@ export {
 	withFetchedArchive,
 	requireCompleteArchive,
 	retention,
-	type PublicationContext,
 };

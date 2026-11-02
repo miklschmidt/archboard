@@ -536,22 +536,4 @@ const repoForgetContract = defineCommand({
 	},
 });
 
-export {
-	RepoNamespaceInputSchema,
-	RepoNamespaceResultSchema,
-	repoContract,
-	RegisteredRepoResultSchema,
-	RepoListInputSchema,
-	RepoListJsonResultSchema,
-	RepoListResultSchema,
-	repoListContract,
-	RepoAddInputSchema,
-	RepoAddResultSchema,
-	repoAddContract,
-	RepoUseInputSchema,
-	RepoUseResultSchema,
-	repoUseContract,
-	RepoForgetInputSchema,
-	RepoForgetResultSchema,
-	repoForgetContract,
-};
+export { repoContract, repoListContract, repoAddContract, repoUseContract, repoForgetContract };

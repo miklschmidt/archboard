@@ -523,10 +523,7 @@ function createServerCodexBrowserSocketOwner(
 }
 
 export {
-	type ServerCodexBrowserSocketSend,
 	type ServerCodexBrowserWebSocket,
 	createServerCodexBrowserSocketSend,
-	type ServerCodexBrowserSocketOwnerOptions,
-	type ServerCodexBrowserSocketOwner,
 	createServerCodexBrowserSocketOwner,
 };

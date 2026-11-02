@@ -42,4 +42,4 @@ function readPngDimensions(bytes: Uint8Array): PngDimensions {
 	return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
-export { readPngDimensions, type PngDimensions };
+export { readPngDimensions };

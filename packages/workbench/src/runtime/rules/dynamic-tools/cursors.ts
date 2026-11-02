@@ -349,10 +349,4 @@ function unwrapDynamicCursor(
 	return Object.freeze({ cursor: binding.cursor, sequence: binding.sequence });
 }
 
-export {
-	type DynamicCursorDirection,
-	type DynamicCursorBinding,
-	encodeDynamicCursor,
-	decodeDynamicCursor,
-	unwrapDynamicCursor,
-};
+export { encodeDynamicCursor, decodeDynamicCursor, unwrapDynamicCursor };

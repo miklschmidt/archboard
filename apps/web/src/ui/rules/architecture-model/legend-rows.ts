@@ -226,6 +226,5 @@ export {
 	type LegendGroup,
 	type LegendLine,
 	type LegendMark,
-	type LegendReading,
 	type LegendRow,
 };

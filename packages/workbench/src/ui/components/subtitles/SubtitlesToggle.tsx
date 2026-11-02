@@ -143,4 +143,4 @@ function SubtitlesToggle(props: SubtitlesToggleProps): JSX.Element {
 	);
 }
 
-export { SubtitlesToggle, type SubtitlesToggleProps };
+export { SubtitlesToggle };

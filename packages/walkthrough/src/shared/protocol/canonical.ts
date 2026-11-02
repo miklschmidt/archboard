@@ -43,4 +43,4 @@ function canonicalRecordingModel(input: CanonicalModel): CanonicalModel {
 	if (problems.length > 0) throw new Error(problems.join(" "));
 	return model;
 }
-export { canonicalReadingProblems, canonicalRecordingModel, type CanonicalModel };
+export { canonicalReadingProblems, canonicalRecordingModel };

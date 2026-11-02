@@ -145,4 +145,4 @@ function sameModelAsked(
 	return previous?.[2] === request.vault && previous[3] === request.model;
 }
 
-export { cachedReadings, sameModelAsked, readKeys, type CachedReading };
+export { cachedReadings, sameModelAsked, readKeys };

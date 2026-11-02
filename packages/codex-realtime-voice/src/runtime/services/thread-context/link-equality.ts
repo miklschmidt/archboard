@@ -82,4 +82,4 @@ function sameBinding(left: ThreadLinkBindingSnapshot, right: ThreadLinkBindingSn
 	);
 }
 
-export { sameBinding, sameLink };
+export { sameBinding };

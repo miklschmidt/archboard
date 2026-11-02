@@ -75,7 +75,7 @@ export type SessionNotificationHandler = (event: TransportServerNotification) =>
 
 export const CODEX_SESSION_CONTROL: unique symbol = Symbol("codex-session-control");
 
-export interface CodexSessionControl {
+interface CodexSessionControl {
 	readonly onNotification: (event: TransportServerNotification) => void;
 	readonly onServerRequest: (request: TransportServerRequest) => void;
 	readonly dispose: () => void;
@@ -111,18 +111,18 @@ export type SessionCurrentTimeRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "currentTime/read" }
 >;
-export type SessionTokenRefreshRequest = Extract<
+type SessionTokenRefreshRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "account/chatgptAuthTokens/refresh" }
 >;
-export type SessionAttestationRequest = Extract<
+type SessionAttestationRequest = Extract<
 	SessionServerRequest,
 	{ readonly method: "attestation/generate" }
 >;
 
 export type SessionMutationOutcome = "not_delivered" | "outcome_unknown";
 
-export type CodexSessionErrorCode =
+type CodexSessionErrorCode =
 	| "already_initialized"
 	| "not_initialized"
 	| "not_account_ready"

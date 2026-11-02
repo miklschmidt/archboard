@@ -77,4 +77,4 @@ function createVoiceStore(): VoiceStore {
 	});
 }
 
-export { createVoiceStore, type VoiceStore };
+export { createVoiceStore };

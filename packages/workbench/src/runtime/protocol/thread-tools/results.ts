@@ -20,7 +20,7 @@ const IdentitySchema = boundedText(128);
 const CursorSchema = boundedUtf8Text(1024);
 const ReasonSchema = nullableUtf8Text(512);
 
-export const ToolDeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
+const ToolDeliverySchema = z.enum(["delivered", "not_delivered", "outcome_unknown"]);
 
 const DeliveredInitialTurnSchema = z.strictObject({
 	delivery: z.literal("delivered"),
@@ -179,7 +179,7 @@ const SharedEnvelopeSchemas = [
 	OutcomeUnknownEnvelopeSchema,
 ] as const;
 
-export const TOOL_RESULT_ENVELOPE_SCHEMAS = Object.freeze({
+const TOOL_RESULT_ENVELOPE_SCHEMAS = Object.freeze({
 	create_thread: z.union([okEnvelope(CreateThreadValueSchema), ...SharedEnvelopeSchemas]),
 	fork_thread: z.union([okEnvelope(ForkThreadValueSchema), ...SharedEnvelopeSchemas]),
 	list_threads: z.union([okEnvelope(ListThreadsValueSchema), ...SharedEnvelopeSchemas]),
@@ -199,7 +199,7 @@ export const DynamicToolCallResponseSchema = z.strictObject({
 });
 
 export type DynamicToolCallResponse = z.infer<typeof DynamicToolCallResponseSchema>;
-export type ToolResultEnvelope<Name extends GeneralThreadToolName> = z.infer<
+type ToolResultEnvelope<Name extends GeneralThreadToolName> = z.infer<
 	(typeof TOOL_RESULT_ENVELOPE_SCHEMAS)[Name]
 >;
 

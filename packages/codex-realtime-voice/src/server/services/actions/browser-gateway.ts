@@ -497,9 +497,4 @@ function createServerBrowserGatewayOptions(
 	};
 }
 
-export {
-	type ServerBrowserGatewayInput,
-	createServerBrowserGatewayOptions,
-	createServerOrdinaryApprovalActions,
-	type ServerBrowserBindingState,
-};
+export { createServerBrowserGatewayOptions, type ServerBrowserBindingState };

@@ -35,7 +35,6 @@ const InstalledMigrationSchema = MigrationReadingsSchema.extend({
 });
 export {
 	ArchitectureMigrationRequestSchema,
-	MigrationPreviewInstallationSchema,
 	MigrationInstallationSchema,
 	InstalledMigrationSchema,
 };

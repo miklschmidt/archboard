@@ -188,4 +188,4 @@ function useDrillDown(own: OwnModel, dive: Dive | undefined): DrillNavigation {
 	}, [trail, ownStop, open, backTo]);
 }
 
-export { type Dive, type DrillNavigation, type OwnModel, useDrillDown };
+export { type Dive, type DrillNavigation, useDrillDown };

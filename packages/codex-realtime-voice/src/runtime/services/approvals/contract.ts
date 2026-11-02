@@ -333,7 +333,7 @@ export interface CodexApprovalBrokerOptions {
 	readonly listenerOwnership?: "self" | "composition";
 }
 
-export type CodexApprovalErrorCode =
+type CodexApprovalErrorCode =
 	| "disposed"
 	| "invalid_request"
 	| "unsupported_request"

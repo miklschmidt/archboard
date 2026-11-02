@@ -239,4 +239,4 @@ function measureInterfaces(readings: readonly VariantContent[]): MeasuredContain
 	}));
 }
 
-export { type InterfaceChange, type InterfaceComparison, compareInterfaces, measureInterfaces };
+export { type InterfaceChange, compareInterfaces, measureInterfaces };

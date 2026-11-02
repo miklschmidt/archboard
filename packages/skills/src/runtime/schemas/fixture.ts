@@ -42,4 +42,4 @@ const FixtureSchema = z
 	.strict();
 type Fixture = z.infer<typeof FixtureSchema>;
 
-export { FixtureSchema, HomePathSchema, RawFixtureStepSchema, type Fixture, type TalkFixture };
+export { FixtureSchema, HomePathSchema, type Fixture, type TalkFixture };

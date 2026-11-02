@@ -156,8 +156,6 @@ function forkedThread(
 }
 
 export {
-	type MutationKind,
-	type SettlementScope,
 	forkedThread,
 	initialTurnReport,
 	refusal,

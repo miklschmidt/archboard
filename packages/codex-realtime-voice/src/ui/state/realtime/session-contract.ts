@@ -116,7 +116,6 @@ export {
 	stopFailedState,
 	stoppable,
 	type FailureState,
-	type RealtimeMediaListener,
 	type RealtimeMediaSession,
 	type RealtimeMediaSessionOptions,
 };

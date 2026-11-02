@@ -101,4 +101,4 @@ function Shell(props: ShellProps): JSX.Element {
 	);
 }
 
-export { Shell, type ShellProps };
+export { Shell };

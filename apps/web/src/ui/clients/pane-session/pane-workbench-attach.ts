@@ -64,4 +64,4 @@ function attachWorkbenchOwner<Transport extends WorkbenchTransportPort>(
 		.catch(() => undefined);
 }
 
-export { attachWorkbenchOwner, type WorkbenchAttachment };
+export { attachWorkbenchOwner };

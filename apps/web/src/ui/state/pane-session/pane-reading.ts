@@ -258,4 +258,4 @@ function createReadingPublisher(parts: ReadingPublisherParts): ReadingPublisher 
 	};
 }
 
-export { NOTHING_READ, createReadingPublisher, type PaneReading, type ReadingPublisher };
+export { NOTHING_READ, createReadingPublisher, type PaneReading };

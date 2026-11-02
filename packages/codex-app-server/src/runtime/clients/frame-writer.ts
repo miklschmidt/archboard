@@ -451,10 +451,4 @@ function createFrameWriter<T>(stdin: Writable, callbacks: FrameWriterCallbacks<T
 	});
 }
 
-export {
-	type FrameWriterLane,
-	type FrameWriterJob,
-	type FrameWriterCallbacks,
-	type FrameWriter,
-	createFrameWriter,
-};
+export { type FrameWriterJob, type FrameWriterCallbacks, type FrameWriter, createFrameWriter };

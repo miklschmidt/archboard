@@ -130,4 +130,4 @@ async function pinVersions(directory: string, tools: PinTools): Promise<PinChang
 	return sequentially(entries, (entry) => pinOne(directory, tools, entry));
 }
 
-export { pinVersions, type PinChange, type PinTools };
+export { pinVersions };

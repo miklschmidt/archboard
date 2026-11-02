@@ -234,4 +234,4 @@ function definitionsOf(
 		.flatMap((name) => definitionOf(name, context, exposure) ?? []);
 }
 
-export { type DefinitionContext, definitionsOf, targetNames };
+export { definitionsOf, targetNames };

@@ -198,4 +198,4 @@ function useLighting(inputs: LightingInputs): Lighting {
 	};
 }
 
-export { useLighting, type Lighting };
+export { useLighting };

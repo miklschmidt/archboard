@@ -263,8 +263,6 @@ export {
 	type RetainedListing,
 	type SemanticBox,
 	type SemanticDrawing,
-	type SemanticFailureCode,
-	type SemanticNothingDrawn,
 	type SemanticRender,
 	type SemanticOfferedView,
 	type SemanticRenderRequest,

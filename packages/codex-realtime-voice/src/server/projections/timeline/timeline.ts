@@ -580,7 +580,6 @@ function createServerTimelineOwner(options: ServerTimelineOwnerOptions): ServerT
 export {
 	type ServerBrowserProjectionBudget,
 	type ServerTimelineOwner,
-	type ServerTimelineOwnerOptions,
 	type TimelineTarget,
 	createServerBrowserProjectionBudget,
 	createServerTimelineOwner,

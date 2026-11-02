@@ -18,19 +18,19 @@ import {
 } from "#runtime/services/approvals/response.ts";
 
 /** What this approval settles as, once the binding has been re-checked against the answer. */
-export interface ProvenSettlement {
+interface ProvenSettlement {
 	readonly state: TerminalApprovalState;
 	readonly reason: string;
 	readonly response: ApprovalResponse;
 }
 
 /** The encoded server response, or what encoding it threw. */
-export type EncodedResponse =
+type EncodedResponse =
 	| { readonly ok: true; readonly value: ReturnType<typeof toServerResponse> }
 	| { readonly ok: false; readonly error: unknown };
 
 /** The write of one response, and whether the transport was reached at all. */
-export interface AttemptedWrite {
+interface AttemptedWrite {
 	readonly promise: Promise<void>;
 	readonly attempted: boolean;
 }

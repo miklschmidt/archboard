@@ -528,4 +528,4 @@ function readManifest(text: string): Manifest {
 	return objects === undefined ? unparsedManifest(text, lines) : { status: "manifest", objects };
 }
 
-export { type LabelSelector, type Manifest, type ManifestObject, readManifest, selects };
+export { type LabelSelector, type ManifestObject, readManifest, selects };

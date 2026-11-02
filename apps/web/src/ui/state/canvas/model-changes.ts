@@ -47,4 +47,4 @@ function onModelChange(listener: ModelChangeListener): () => void {
 	};
 }
 
-export { announceModelChange, onModelChange, type ModelChangeListener };
+export { announceModelChange, onModelChange };

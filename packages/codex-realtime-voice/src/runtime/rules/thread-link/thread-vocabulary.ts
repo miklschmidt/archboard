@@ -220,7 +220,6 @@ export {
 	isExecutableThreadLinkStatus,
 	isNonEmptyString,
 	isRecord,
-	isThreadLinkSource,
 	isThreadLinkStatus,
 	observedDirectInput,
 	sourceOf,

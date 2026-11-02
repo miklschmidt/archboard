@@ -171,7 +171,6 @@ function moduleSelector(model: ArchitectureModel, modules: ArchitectureModel["mo
 }
 export {
 	type Flow,
-	type Collection,
 	type Change,
 	type Placement,
 	type Entry,

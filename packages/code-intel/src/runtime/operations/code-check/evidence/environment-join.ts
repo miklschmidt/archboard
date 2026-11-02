@@ -502,7 +502,6 @@ async function joinEnvironment(
 
 export {
 	type EnvironmentJoin,
-	type HopSides,
 	type Reach,
 	type Runner,
 	type Setting,

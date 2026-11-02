@@ -31,7 +31,7 @@ interface ConfirmedIdentities {
 	readonly threadSource: string | null;
 }
 
-export interface EpochValidationInput {
+interface EpochValidationInput {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;
@@ -42,7 +42,7 @@ export interface EpochValidationInput {
 	readonly manifestHash: string;
 }
 
-export interface PreparedExecutionRequest {
+interface PreparedExecutionRequest {
 	readonly childId: ChildId;
 	readonly epoch: ChildEpoch;
 	readonly operationId: string;

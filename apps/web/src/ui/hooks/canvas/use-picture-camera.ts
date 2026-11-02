@@ -579,4 +579,4 @@ function useCameraWith<T>(camera: PictureCamera, select: (view: CameraView) => T
 	return useSyncExternalStore(camera.subscribe, read, read);
 }
 
-export { usePictureCamera, useCameraView, useCameraWith, type PictureCamera, type CameraView };
+export { usePictureCamera, useCameraView, useCameraWith, type PictureCamera };

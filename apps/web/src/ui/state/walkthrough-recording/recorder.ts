@@ -490,4 +490,4 @@ class WalkthroughRecorder {
 	}
 }
 
-export { WalkthroughRecorder, recordedStep, type RecordedStep, type RecordingRequest };
+export { WalkthroughRecorder, recordedStep, type RecordedStep };

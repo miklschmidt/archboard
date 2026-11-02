@@ -535,4 +535,4 @@ async function renderTalk(request: RenderTalkRequest): Promise<RenderedTalk> {
 	}
 }
 
-export { renderFlags, renderTalk, type RenderTalkRequest, type RenderedTalk };
+export { renderFlags, renderTalk };

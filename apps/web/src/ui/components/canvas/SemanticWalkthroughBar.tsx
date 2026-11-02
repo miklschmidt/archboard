@@ -154,4 +154,4 @@ function SemanticWalkthroughBar(props: SemanticWalkthroughBarProps): JSX.Element
 	);
 }
 
-export { SemanticWalkthroughBar, type SemanticWalkthroughBarProps };
+export { SemanticWalkthroughBar };

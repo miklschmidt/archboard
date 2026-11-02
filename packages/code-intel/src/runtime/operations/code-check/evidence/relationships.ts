@@ -593,4 +593,4 @@ function judgeRelationships(reading: RelationshipReading): RelationshipOutcome {
 	return { findings: [...undrawnFindings(reading), ...edges.findings], skipped: edges.skipped };
 }
 
-export { type RelationshipReading, judgeRelationships, siteOf };
+export { judgeRelationships, siteOf };

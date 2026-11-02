@@ -232,9 +232,4 @@ async function workingDirectoryCheckout(
 	return { repo: checkout.identity, root: checkout.root };
 }
 
-export {
-	RepoLanguageServerInputSchema,
-	type RepoLanguageServerInput,
-	RepoLanguageServerResultSchema,
-	repoLanguageServerContract,
-};
+export { repoLanguageServerContract };

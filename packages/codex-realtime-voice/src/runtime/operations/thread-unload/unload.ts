@@ -256,4 +256,4 @@ function createCodexThreadUnload(options: CodexThreadUnloadOptions): CodexThread
 }
 
 export { createCodexThreadUnload };
-export type { CodexThreadUnload, CodexThreadUnloadOptions, ThreadUnload };
+export type { ThreadUnload };

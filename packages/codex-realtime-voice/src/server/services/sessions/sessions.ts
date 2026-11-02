@@ -583,11 +583,9 @@ export type {
 	CodexWorkbenchSessions,
 	CodexWorkbenchTabSession,
 	CodexWorkbenchTabSessionScope,
-	CodexWorkbenchTabSessionState,
 	CodexWorkbenchWorkhorse,
 	CodexWorkbenchWorkhorseComponents,
 	CodexWorkbenchWorkhorseScope,
 	CodexWorkbenchWorkhorseState,
 	CreateCodexWorkbenchSessionsOptions,
-	WorkhorseStop,
 };

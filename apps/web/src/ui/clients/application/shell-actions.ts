@@ -383,4 +383,4 @@ function createShellActions(deps: ShellActionDeps): ComposedShellActions {
 	};
 }
 
-export { createShellActions, vaultOf, type ComposedShellActions, type ShellActionDeps };
+export { createShellActions, vaultOf, type ShellActionDeps };

@@ -414,4 +414,4 @@ async function git(
 	}
 }
 
-export { type GitOptions, git };
+export { git };

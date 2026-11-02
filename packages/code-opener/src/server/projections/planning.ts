@@ -157,12 +157,4 @@ function planPlatformOpener(target: string, platform: string): OpenerPlan {
 			};
 }
 
-export {
-	type OpenerPlanSuccess,
-	type OpenerPlanFailure,
-	type OpenerPlan,
-	type OpenerSelectionInvalid,
-	type PlanOptions,
-	validateOpenerSelection,
-	planOpenerCommand,
-};
+export { type OpenerPlan, type PlanOptions, validateOpenerSelection, planOpenerCommand };

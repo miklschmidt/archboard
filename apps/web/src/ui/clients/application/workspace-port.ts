@@ -323,11 +323,9 @@ function createWorkspacePort(deps: WorkspacePortDeps): WorkspacePort {
 }
 
 export {
-	NO_READINGS,
 	addressingOver,
 	announcingViews,
 	createWorkspacePort,
-	displayedAddress,
 	openingPaneList,
 	type WorkspacePortDeps,
 };

@@ -331,4 +331,4 @@ class TalkCapture {
 	}
 }
 
-export { TalkCapture, type SaidLine };
+export { TalkCapture };

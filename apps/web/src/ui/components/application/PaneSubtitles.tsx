@@ -94,4 +94,4 @@ function Subtitled(props: SubtitledProps): JSX.Element {
 	);
 }
 
-export { PaneSubtitles, type PaneSubtitlesProps };
+export { PaneSubtitles };

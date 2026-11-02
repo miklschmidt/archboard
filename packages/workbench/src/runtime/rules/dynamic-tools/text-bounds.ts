@@ -65,11 +65,4 @@ function encodeJsonText(value: unknown): string | undefined {
 	return JSON.stringify(value);
 }
 
-export {
-	RESPONSE_TEXT_MAX_UTF8_BYTES,
-	boundedMessage,
-	encodeJsonText,
-	truncateUtf8,
-	truncateUtf8Marked,
-	type TruncatedText,
-};
+export { RESPONSE_TEXT_MAX_UTF8_BYTES, boundedMessage, encodeJsonText, truncateUtf8 };

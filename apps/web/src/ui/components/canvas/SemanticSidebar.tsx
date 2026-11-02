@@ -331,4 +331,4 @@ function NothingSelected(): JSX.Element {
 	);
 }
 
-export { NothingSelected, SemanticSidebar, SidebarPanel, type SemanticSidebarProps };
+export { NothingSelected, SemanticSidebar, SidebarPanel };

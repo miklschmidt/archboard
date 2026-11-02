@@ -66,4 +66,4 @@ function mintId(inUse: IdsInUse = NOTHING_IN_USE): string {
 	}
 }
 
-export { BLOCK_ID_RE, type IdsInUse, mintId };
+export { BLOCK_ID_RE, mintId };

@@ -81,4 +81,4 @@ function gitCheckoutOfVault(vault: string): VaultGitCheckout | undefined {
 	return { root: fs.realpathSync.native(top), identity: repoIdentityFor(top, remote, listing) };
 }
 
-export { gitCheckoutOfVault, type VaultGitCheckout };
+export { gitCheckoutOfVault };

@@ -543,7 +543,6 @@ async function drawLegacyBoard(
 export {
 	drawLegacyBoard,
 	renderLegacyBoard,
-	type LegacyDrawing,
 	type LegacyRenderChoices,
 	type LegacyRenderOutcome,
 	type DrawnInput,

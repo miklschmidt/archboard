@@ -130,7 +130,6 @@ const ComparisonSchema = z.strictObject({
 });
 export {
 	StateSelectionSchema,
-	ModelStandingSchema,
 	ModelIssueSchema,
 	FamilyStandingSchema,
 	ProposalSchema,
@@ -141,5 +140,4 @@ export {
 	SubjectKindSchema,
 	CorrectionIntentSchema,
 	CorrectionSchema,
-	CorrectionAuditSchema,
 };

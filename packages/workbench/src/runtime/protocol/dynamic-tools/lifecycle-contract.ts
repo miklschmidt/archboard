@@ -120,7 +120,6 @@ export type {
 	DynamicFailClosedShutdownOwner,
 	DynamicFailClosedShutdownReason,
 	DynamicFatalLifecycleFault,
-	DynamicMutationQuarantineExit,
 	DynamicMutationQuarantineIdentity,
 	DynamicMutationQuarantineInspection,
 	DynamicMutationQuarantineOwner,

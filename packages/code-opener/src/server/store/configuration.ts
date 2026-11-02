@@ -106,12 +106,4 @@ function resetOpenerSelection(): OpenerConfigurationResult {
 	return writeSelection(DEFAULT_SELECTION);
 }
 
-export {
-	type OpenerConfigurationSuccess,
-	type OpenerConfigurationFailure,
-	type OpenerConfigurationResult,
-	openerConfigPath,
-	readOpenerSelection,
-	saveOpenerSelection,
-	resetOpenerSelection,
-};
+export { readOpenerSelection, saveOpenerSelection, resetOpenerSelection };

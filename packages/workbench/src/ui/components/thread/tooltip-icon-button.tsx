@@ -2,7 +2,7 @@ import { type ComponentPropsWithRef, forwardRef } from "react";
 
 import { Button, cn, Tooltip } from "@archboard/ui-kit/components";
 
-export type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
+type TooltipIconButtonProps = ComponentPropsWithRef<typeof Button> & {
 	tooltip: string;
 	side?: "top" | "bottom" | "left" | "right";
 };

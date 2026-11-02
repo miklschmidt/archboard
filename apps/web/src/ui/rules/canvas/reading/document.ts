@@ -575,9 +575,7 @@ function nameOfSubject(subject: Subject): string | undefined {
 }
 
 export {
-	type DocumentReading,
 	type SelectedSubject,
-	type Depiction,
 	type EdgeSubject,
 	type FlowSubject,
 	type NodeSubject,
@@ -585,10 +583,8 @@ export {
 	type StepSubject,
 	type Subject,
 	type VariantReading,
-	ancestryOf,
 	depictionOf,
 	readDocument,
 	readVariant,
-	selectedSubject,
 	subjectOf,
 };

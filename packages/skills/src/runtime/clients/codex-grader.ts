@@ -181,10 +181,4 @@ function codexGrader(settings: CodexGraderSettings, executable: string): GraderR
 	};
 }
 
-export {
-	codexGrader,
-	codexGraderArgv,
-	codexProtocolFailure,
-	outsideReaches,
-	type CodexGraderSettings,
-};
+export { codexGrader, codexGraderArgv, codexProtocolFailure, outsideReaches };

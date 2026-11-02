@@ -95,6 +95,5 @@ export {
 	type GraderIdentity,
 	type GraderRunner,
 	type ImageDelivery,
-	type RawUsage,
 	type UsageSemantics,
 };

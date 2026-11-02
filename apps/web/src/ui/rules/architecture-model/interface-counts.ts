@@ -104,4 +104,4 @@ function interfaceCounts(
 	return counts.filter(({ key, count }) => key !== "wholeModule" || count > 0);
 }
 
-export { interfaceCounts, type Interface, type InterfaceCount, type InterfaceKey };
+export { interfaceCounts, type InterfaceCount, type InterfaceKey };

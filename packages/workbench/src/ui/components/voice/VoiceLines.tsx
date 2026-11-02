@@ -102,4 +102,4 @@ function VoiceHeading(props: { readonly voice: BrowserVoice }): JSX.Element {
 	);
 }
 
-export { VoiceLines, type VoiceLinesProps };
+export { VoiceLines };

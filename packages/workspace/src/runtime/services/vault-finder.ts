@@ -347,12 +347,10 @@ async function findVault(search: VaultSearch): Promise<VaultFinding> {
 export {
 	VAULT_DIRECTORY,
 	VAULT_ORIGINS,
-	type VaultOrigin,
 	type VaultSearch,
 	type BoundVault,
 	type FoundVault,
 	type VaultNotFound,
-	type VaultNotFoundReason,
 	type VaultFinding,
 	checkoutOfVault,
 	findVault,

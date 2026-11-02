@@ -81,9 +81,4 @@ interface AgentActivityMessage extends WebSocketMessage {
 	activity: AgentActivity[];
 }
 
-export {
-	type AgentActivity,
-	type AgentActivityMessage,
-	type WebSocketMessage,
-	type WebSocketMessageType,
-};
+export { type AgentActivityMessage, type WebSocketMessage };

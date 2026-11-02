@@ -31,4 +31,4 @@ function drillDirection(
 	return there < at ? "up" : "down";
 }
 
-export { drillDirection, type DrillDirection };
+export { drillDirection };

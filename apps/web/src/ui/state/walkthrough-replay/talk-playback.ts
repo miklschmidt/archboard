@@ -168,4 +168,4 @@ class TalkPlayback {
 	}
 }
 
-export { TalkPlayback, frameOf, type TalkMoment };
+export { TalkPlayback, frameOf };

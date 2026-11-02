@@ -264,6 +264,5 @@ export {
 	renderLegacyBoard,
 	vaultDiagnostics,
 	writeDocuments,
-	fixturePolicy,
 	writeVaultConfiguration,
 };

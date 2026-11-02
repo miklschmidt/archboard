@@ -266,7 +266,6 @@ interface WorkbenchApprovalSubmission {
 }
 
 export type {
-	WorkbenchApprovalAuthority,
 	WorkbenchApprovalBeaconEntry,
 	WorkbenchApprovalCard,
 	WorkbenchApprovalControl,

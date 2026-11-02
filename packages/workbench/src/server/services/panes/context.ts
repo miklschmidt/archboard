@@ -189,7 +189,6 @@ export {
 	mountSemanticPaneContextRoutes,
 	recordSemanticPaneContext,
 	semanticPaneContextFor,
-	semanticPaneContexts,
 };
 
 export { onSemanticPaneContext };

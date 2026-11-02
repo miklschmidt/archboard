@@ -381,12 +381,4 @@ function conversationStatus(
 	return last === undefined ? { ...BLANK, tone: "quiet", headline: READY_HEADLINE } : ended(last);
 }
 
-export {
-	isReady,
-	agentStatus,
-	unsettledApprovals,
-	waitingApprovals,
-	type AgentStatus,
-	type StatusAction,
-	type StatusTone,
-};
+export { isReady, agentStatus, unsettledApprovals, type AgentStatus, type StatusTone };

@@ -575,4 +575,4 @@ function SemanticInspector(props: SemanticInspectorProps): JSX.Element {
 	);
 }
 
-export { SemanticInspector, type SemanticInspectorProps };
+export { SemanticInspector };

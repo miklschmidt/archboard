@@ -80,10 +80,4 @@ function checkedBitmap(shot: unknown, bounds: RasterBounds): CheckedBitmap {
 	return { png, width: measured.width, height: measured.height };
 }
 
-export {
-	READINESS_SCRIPT,
-	checkedBitmap,
-	checkedReadiness,
-	type CheckedBitmap,
-	type PageReadiness,
-};
+export { READINESS_SCRIPT, checkedBitmap, checkedReadiness };

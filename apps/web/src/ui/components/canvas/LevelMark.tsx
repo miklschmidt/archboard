@@ -70,4 +70,4 @@ function LevelMark(props: LevelMarkProps): JSX.Element {
 	);
 }
 
-export { LevelMark, type LevelMarkProps };
+export { LevelMark };

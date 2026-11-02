@@ -333,7 +333,6 @@ type BrowserDynamicApprovalResponse = z.infer<
 >;
 
 export {
-	type DynamicApprovalCanonicalIdentity,
 	type DynamicApprovalCanonicalEffect,
 	type DynamicApprovalCanonicalInput,
 	dynamicApprovalHashForCanonicalJson,

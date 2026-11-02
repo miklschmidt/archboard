@@ -75,4 +75,4 @@ function useStageEvents(stage: HTMLDivElement | null, events: StageEvents): void
 	}, [stage, events]);
 }
 
-export { useStageEvents, type StageEvents };
+export { useStageEvents };

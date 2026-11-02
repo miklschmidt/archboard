@@ -585,11 +585,4 @@ function terraformRootOf(
 	return terraformModules({ files }).has(where) ? where : undefined;
 }
 
-export {
-	type Declaration,
-	type Declared,
-	type Link,
-	type TerraformConfiguration,
-	terraformConfiguration,
-	terraformRootOf,
-};
+export { type Declared, type TerraformConfiguration, terraformConfiguration, terraformRootOf };

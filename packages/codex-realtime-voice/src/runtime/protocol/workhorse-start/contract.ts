@@ -120,18 +120,10 @@ interface CodexWorkhorseStart {
 
 export {
 	type WorkhorseStartResponse,
-	type WorkhorseApprovalPolicy,
-	type WorkhorseApprovalsReviewer,
-	type WorkhorseSandboxPolicy,
-	type WorkhorsePermissionProfile,
 	type WorkhorseSessionPort,
 	type WorkhorseThreadLinkPort,
-	type WorkhorseEpochPort,
-	type WorkhorseIdentityPort,
-	type WorkhorseOperationPort,
 	type WorkhorseStartInput,
 	type CodexWorkhorseStartOptions,
-	type WorkhorseLifecycleState,
 	type WorkhorseSettlementOutcome,
 	type WorkhorseStartFacts,
 	type WorkhorseCleanupFacts,

@@ -365,10 +365,4 @@ function createSessionOperations(ports: SessionOperationPorts): SessionOperation
 	});
 }
 
-export {
-	createSessionOperations,
-	validateLogin,
-	type SessionGate,
-	type SessionOperationPorts,
-	type SessionOperations,
-};
+export { createSessionOperations, type SessionGate };

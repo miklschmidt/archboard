@@ -161,4 +161,4 @@ function createCodeCheck(): CodeCheck {
 	};
 }
 
-export { type CodeCheck, type CodeCheckRefusal, type CodeCheckRequest, createCodeCheck };
+export { createCodeCheck };

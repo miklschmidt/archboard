@@ -182,4 +182,4 @@ function publicChild(state: ProcessOwnerState, record: ChildRecord): CodexProces
 	return Object.freeze(child);
 }
 
-export { childLifecycle, isCurrentGeneration, publicChild };
+export { publicChild };

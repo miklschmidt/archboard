@@ -175,7 +175,6 @@ export {
 	recordKey,
 	sameBinding,
 	sameSpokenEffectPresentation,
-	safeErrorMessage,
 	oneLine,
 	validSequence,
 	failure,

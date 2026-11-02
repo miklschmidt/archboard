@@ -141,4 +141,4 @@ function foldedScope(complete: VariantContent, scope: string | null): string | n
 	return foldChain(containment(complete), scope).at(-1) ?? scope;
 }
 
-export { containment, foldChain, foldedScope, moduleForest };
+export { containment, foldedScope, moduleForest };

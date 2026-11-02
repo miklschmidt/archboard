@@ -245,4 +245,4 @@ function readTerraformPlan(text: string): PlanModule {
 	return moduleOf(root, MODULE_DEPTH);
 }
 
-export { type PlanLink, type PlanModule, type TerraformPlan, readTerraformPlan };
+export { type PlanModule, type TerraformPlan, readTerraformPlan };

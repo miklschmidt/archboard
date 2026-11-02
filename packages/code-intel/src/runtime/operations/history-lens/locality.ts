@@ -408,4 +408,4 @@ function createVariantLocality(): VariantLocality {
 		},
 	};
 }
-export { type VariantLocality, createVariantLocality, createLocalityEvidence };
+export { createVariantLocality, createLocalityEvidence };

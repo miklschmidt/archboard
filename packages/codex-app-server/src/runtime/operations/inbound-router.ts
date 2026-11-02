@@ -497,4 +497,4 @@ function createInboundRouter(options: InboundRouterOptions): InboundRouter {
 	return Object.freeze({ handleLine, registerDynamicDispatcher, respond: responder.respond });
 }
 
-export { type InboundRouterOptions, type InboundRouter, createInboundRouter };
+export { createInboundRouter };

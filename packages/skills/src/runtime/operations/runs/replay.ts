@@ -324,4 +324,4 @@ function videoRendered(check: OutcomeCheck, reading: Reading): Finding {
 	);
 }
 
-export { inHome, inspectVideo, talkOfFixture, videoRendered, videoRequests, type VideoRequest };
+export { inspectVideo, talkOfFixture, videoRendered, videoRequests };

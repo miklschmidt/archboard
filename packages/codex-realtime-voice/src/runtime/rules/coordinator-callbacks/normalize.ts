@@ -379,10 +379,4 @@ function coordinatorCallbackCoalescingKey(callback: CoordinatorCallback): string
 		: `context:${contextScope(callback)}:topic:${JSON.stringify(topic)}`;
 }
 
-export {
-	normalizeOperationCallback,
-	normalizeContextCallback,
-	normalizeCoordinatorCallback,
-	coordinatorCallbackKey,
-	coordinatorCallbackCoalescingKey,
-};
+export { normalizeCoordinatorCallback, coordinatorCallbackKey, coordinatorCallbackCoalescingKey };

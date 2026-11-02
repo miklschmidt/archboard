@@ -362,8 +362,6 @@ function forgetLockState(): void {
 }
 
 export {
-	type WatchedModel,
-	type WatchedModels,
 	announceHeld,
 	modelLockState,
 	forgetLockState,

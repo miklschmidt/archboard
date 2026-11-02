@@ -254,7 +254,6 @@ function surfaceMarks({
 }
 
 export {
-	SUBJECT_ATTRIBUTE,
 	controlAt,
 	markReach,
 	markSubjects,

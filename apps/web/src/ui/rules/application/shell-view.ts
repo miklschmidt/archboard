@@ -123,4 +123,4 @@ function assembleShellView(inputs: ShellViewInputs): ShellView {
 	};
 }
 
-export { assembleShellView, type ShellViewInputs };
+export { assembleShellView };

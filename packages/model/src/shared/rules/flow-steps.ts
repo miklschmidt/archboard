@@ -262,13 +262,9 @@ function emptiedHolder(steps: readonly FlowStep[]): FlowDecision | FlowLoop | un
 }
 
 export {
-	type StepPlace,
 	type FlatStep,
-	type FlatDecision,
-	type FlatLoop,
 	isMessage,
 	stepWords,
-	placedSteps,
 	everyStep,
 	messagesOf,
 	flatSteps,

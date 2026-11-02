@@ -442,7 +442,6 @@ export {
 	RESERVED_VIEW_NAMES,
 	containersOf,
 	findView,
-	overviewContent,
 	overviewLines,
 	scopedContent,
 	type DrawnEdge,

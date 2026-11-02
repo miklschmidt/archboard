@@ -346,4 +346,4 @@ async function waitForDynamicThreads(input: WaitInput): Promise<WaitProjection> 
 	}
 }
 
-export { type WaitProjection, waitForDynamicThreads };
+export { waitForDynamicThreads };

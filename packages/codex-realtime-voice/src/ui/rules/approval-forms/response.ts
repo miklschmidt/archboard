@@ -390,10 +390,4 @@ function dynamicApprovalDraft(input: DynamicDraftInput): WorkbenchApprovalDraftR
 	return { ok: true, draft };
 }
 
-export {
-	DEFAULT_DECLINE_REASON,
-	dynamicApprovalDraft,
-	ordinaryApprovalDraft,
-	type DynamicDraftInput,
-	type OrdinaryDraftInput,
-};
+export { dynamicApprovalDraft, ordinaryApprovalDraft };

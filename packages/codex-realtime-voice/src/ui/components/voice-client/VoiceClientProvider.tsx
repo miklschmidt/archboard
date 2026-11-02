@@ -23,4 +23,4 @@ function VoiceClientProvider(props: VoiceClientProviderProps): JSX.Element {
 	);
 }
 
-export { VoiceClientProvider, type VoiceClientProviderProps };
+export { VoiceClientProvider };

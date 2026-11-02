@@ -94,7 +94,6 @@ export {
 	SingleLineTextSchema,
 	SemanticIdSchema,
 	DisplayNameSchema,
-	GroupIdSchema,
 	GroupMembershipsSchema,
 	normalizeGroupIds,
 	ResponsibilitySchema,

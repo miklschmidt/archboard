@@ -58,8 +58,4 @@ function createConversationControllers(
 	});
 }
 
-export {
-	createConversationControllers,
-	type ConversationControllers,
-	type ConversationControllersOptions,
-};
+export { createConversationControllers, type ConversationControllers };

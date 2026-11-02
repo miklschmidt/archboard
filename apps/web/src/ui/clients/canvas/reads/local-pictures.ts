@@ -358,4 +358,4 @@ function createLocalPictureSource(setup: LocalPictureSetup): PictureSource {
 	};
 }
 
-export { createLocalPictureSource, type DrawLegacyBoard, type LocalPictureSetup };
+export { createLocalPictureSource };

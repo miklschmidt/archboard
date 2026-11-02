@@ -141,16 +141,11 @@ type Hotspot = z.infer<typeof HotspotSchema>;
 type CoupledPair = z.infer<typeof CoupledPairSchema>;
 
 export {
-	CoupledPairSchema,
 	type CoupledPair,
-	HotspotSchema,
 	type Hotspot,
-	LeftOutSchema,
 	LocalityAnswerSchema,
 	type LocalityAnswer,
-	LocalityCommitSchema,
 	type LocalityCommit,
-	LocalityPeriodSchema,
 	type LocalityPeriod,
 	PeriodStartSchema,
 };

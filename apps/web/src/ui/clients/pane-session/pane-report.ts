@@ -86,4 +86,4 @@ function paneReportKey(report: PaneReport): string {
 	);
 }
 
-export { buildPaneReport, paneReportKey, type PaneReportInput };
+export { buildPaneReport, paneReportKey };

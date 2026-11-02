@@ -522,9 +522,4 @@ function createWorkhorseBindings(
 	};
 }
 
-export {
-	createSessionBindings,
-	createWorkhorseBindings,
-	type SessionBindingContext,
-	type WorkhorseBindingContext,
-};
+export { createSessionBindings, createWorkhorseBindings };

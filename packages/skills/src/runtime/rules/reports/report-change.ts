@@ -326,17 +326,13 @@ function changeOf(
 
 export {
 	pairedNoise,
-	axisChanges,
 	changeOf,
-	countChanges,
 	directionOf,
 	standingOf,
 	type AxisChange,
 	type CountChange,
-	type Direction,
 	type QualityAxis,
 	type QualityChange,
 	type QualityCount,
-	type Standing,
 	type UnassessedReason,
 };

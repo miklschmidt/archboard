@@ -442,9 +442,4 @@ function createProcessGroupCleanup(
 }
 
 export { createProcessGroupCleanup };
-export type {
-	ProcessGroupCleanup,
-	ProcessGroupCleanupClock,
-	ProcessGroupCleanupDiagnostics,
-	ProcessGroupCleanupInput,
-};
+export type { ProcessGroupCleanup };

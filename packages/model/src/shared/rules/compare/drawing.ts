@@ -275,4 +275,4 @@ function drawnSubjects(content: VariantContent, placed: readonly string[]): Draw
 	};
 }
 
-export { drawingOf, drawnSubjects, comparedWith, type DrawnChanges, type DrawnProposal };
+export { drawingOf, drawnSubjects, comparedWith };

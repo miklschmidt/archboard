@@ -326,4 +326,4 @@ function openVideoEncoder(options: VideoEncoderOptions): VideoEncoder {
 	return new FfmpegEncoder(options);
 }
 
-export { VideoEncodingError, openVideoEncoder, type VideoEncoder, type VideoEncoderOptions };
+export { openVideoEncoder, type VideoEncoder };

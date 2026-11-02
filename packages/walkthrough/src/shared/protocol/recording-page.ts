@@ -199,11 +199,9 @@ export {
 	RECORDING_SEARCH_PARAM,
 	RecordingContainerSchema,
 	RecordingNarrationSchema,
-	RecordingPhaseSchema,
 	RecordingStateSchema,
 	publishRecordingPage,
 	recordingAskedOf,
 	type RecordingContainer,
-	type RecordingPage,
 	type RecordingState,
 };

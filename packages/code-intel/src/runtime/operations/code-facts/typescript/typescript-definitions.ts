@@ -347,4 +347,4 @@ function definitionsOf(names: readonly Node[], context: DefinitionContext): Defi
 	return names.flatMap((name) => definitionOf(name, context, exposure) ?? []);
 }
 
-export { type DefinitionContext, definitionsOf, exportedNames };
+export { definitionsOf, exportedNames };

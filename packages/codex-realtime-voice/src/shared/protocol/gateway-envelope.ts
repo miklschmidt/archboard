@@ -108,7 +108,6 @@ interface BrowserGatewayAccountReadResult {
 }
 
 export {
-	BROWSER_GATEWAY_ACTIONS,
 	type BrowserGatewayAction,
 	BROWSER_GATEWAY_ERROR_CODES,
 	type BrowserGatewayErrorCode,

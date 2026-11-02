@@ -148,11 +148,4 @@ function inspectGroup(content: VariantContent, group: string): GroupInspection {
 	return { group, members, internalEdges, boundaryEdges, neighbors };
 }
 
-export {
-	type BoundaryDirection,
-	type BoundaryEdge,
-	type GroupInspection,
-	groupsUsed,
-	inspectGroup,
-	isMemberOf,
-};
+export { groupsUsed, inspectGroup, isMemberOf };

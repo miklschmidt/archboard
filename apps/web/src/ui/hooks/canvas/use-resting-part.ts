@@ -149,4 +149,4 @@ function useRestingPart(atlas: SemanticAtlas): RestingPart {
 	return { part: parts[0] ?? null, parts, onHover, release };
 }
 
-export { useRestingPart, type RestingPart };
+export { useRestingPart };

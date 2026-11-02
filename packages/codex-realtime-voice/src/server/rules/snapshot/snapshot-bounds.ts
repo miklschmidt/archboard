@@ -4,7 +4,7 @@ import type { BrowserSnapshotDelta } from "#server/protocol/gateway/contract.ts"
 
 export const BROWSER_SNAPSHOT_MAX_BYTES = 1_048_576;
 export const BROWSER_SNAPSHOT_MIN_BYTES = 32_768;
-export const BROWSER_DELTA_MAX_BYTES = 262_144;
+const BROWSER_DELTA_MAX_BYTES = 262_144;
 
 type BrowserTimelineTurn = BrowserTimeline["turns"][number];
 

@@ -165,4 +165,4 @@ function tipSpot(inputs: TipSpotInputs): TipSpot {
 	);
 }
 
-export { DIM_WORTH, LINE_WORTH, LIT_WORTH, tipSpot, type ScreenBox, type TipGround, type TipSpot };
+export { DIM_WORTH, LINE_WORTH, LIT_WORTH, tipSpot, type ScreenBox, type TipGround };

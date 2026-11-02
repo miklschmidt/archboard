@@ -84,4 +84,4 @@ function mutationOutcome(error: unknown): SessionMutationOutcome | undefined {
 	return hasOutcome(error) ? error.outcome : undefined;
 }
 
-export { isRecord, requestParams, hasOutcome, mutationFailure, mutationOutcome };
+export { isRecord, requestParams, mutationFailure, mutationOutcome };

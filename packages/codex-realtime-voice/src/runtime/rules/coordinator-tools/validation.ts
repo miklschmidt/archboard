@@ -425,7 +425,6 @@ function logicalCallKey(call: LogicalToolCallCorrelation): string {
 export {
 	type ValidatedCoordinatorToolCall,
 	type ValidatedOperationCall,
-	type ValidatedStopCall,
 	type ValidatedVoiceCall,
 	type ValidatedWorkhorseCall,
 	CoordinatorToolValidationError,

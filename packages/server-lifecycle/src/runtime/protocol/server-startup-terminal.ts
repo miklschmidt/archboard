@@ -226,8 +226,6 @@ export {
 	reportStartupOwnership,
 	SERVER_STARTUP_TERMINAL_FD_ENV,
 	type ServerStartupProcessGroupIdentity,
-	type ServerStartupOwnershipRecord,
-	type ServerStartupTerminalRecord,
 	type ServerStartupProtocolRecord,
 	type ServerStartupProtocolEvent,
 	serverStartupOwnershipRecord,

@@ -558,4 +558,4 @@ function createPaneCore<Transport extends WorkbenchTransportPort>(
 	};
 }
 
-export { createPaneCore, type PaneCore, type PaneCorePorts };
+export { createPaneCore, type PaneCore };

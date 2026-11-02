@@ -452,11 +452,4 @@ function createSemanticRasterizer(options: SemanticRasterizerOptions = {}): Sema
 	};
 }
 
-export {
-	SemanticRasterError,
-	createSemanticRasterizer,
-	type RasterErrorCode,
-	type SemanticRasterizer,
-	type SemanticRasterizerOptions,
-	type SemanticRasterizerStatus,
-};
+export { SemanticRasterError, createSemanticRasterizer, type SemanticRasterizer };

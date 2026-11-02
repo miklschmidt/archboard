@@ -574,10 +574,4 @@ function inspectDecision(
 	};
 }
 
-export {
-	COORDINATOR_OPERATION_KIND,
-	COORDINATOR_RPC,
-	type CandidateDecision,
-	assertCurrentEpoch,
-	decideCandidate,
-};
+export { COORDINATOR_OPERATION_KIND, COORDINATOR_RPC, assertCurrentEpoch, decideCandidate };

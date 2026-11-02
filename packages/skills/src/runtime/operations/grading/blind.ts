@@ -220,9 +220,7 @@ function bundleForGrader(run: CompletedRun, id: string): RunBundle {
 export {
 	anonymousRunId,
 	bundleForGrader,
-	redacted,
 	type Arm,
-	type BundledCapture,
 	type CompletedRun,
 	type RunBundle,
 	type RunStatus,

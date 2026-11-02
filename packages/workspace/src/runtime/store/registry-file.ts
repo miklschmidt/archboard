@@ -332,14 +332,12 @@ function changeRegistry<T>(change: (registry: Registry) => T): T {
 }
 
 export {
-	type RepoSource,
 	type RegisteredRepo,
 	type RegisteredRepoStatus,
 	type UntrackedVault,
 	type UntrackedVaultStatus,
 	type Registry,
 	RepoRegistryError,
-	RegistryWriteError,
 	registryPath,
 	readRegistry,
 	isDirectory,

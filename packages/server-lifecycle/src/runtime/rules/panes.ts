@@ -392,12 +392,4 @@ function buildPanesReport(registrations: PaneRegistration[], context: PaneContex
 }
 
 export type { PaneRegistration } from "#runtime/rules/panes-layout.ts";
-export {
-	architectureWords,
-	HOW_TO_OPEN_A_PANE,
-	addressablePanes,
-	buildPanesReport,
-	panesInOrder,
-	resolvePaneSpec,
-	soloPane,
-};
+export { buildPanesReport, resolvePaneSpec, soloPane };

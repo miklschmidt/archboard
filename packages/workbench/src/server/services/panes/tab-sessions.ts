@@ -167,4 +167,3 @@ export {
 	shownCheckoutOf,
 	tabSessionOf,
 };
-export type { TabSessions };

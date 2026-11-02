@@ -410,10 +410,8 @@ async function worktreesOf(
 }
 
 export {
-	type CheckoutHead,
 	worktreesOf,
 	checkoutHead,
-	repoIdentityFromRemote,
 	existingDir,
 	repoRootOf,
 	repoIdentityAt,

@@ -317,8 +317,4 @@ function createWorkbenchQueueController(
 	});
 }
 
-export {
-	createWorkbenchQueueController,
-	type WorkbenchQueueCommandState,
-	type WorkbenchQueueController,
-};
+export { createWorkbenchQueueController, type WorkbenchQueueController };

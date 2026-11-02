@@ -37,4 +37,4 @@ function StatusDot(props: StatusDotProps): JSX.Element {
 	);
 }
 
-export { StatusDot, type StatusDotProps };
+export { StatusDot };

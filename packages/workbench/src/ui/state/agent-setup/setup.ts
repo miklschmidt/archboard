@@ -577,8 +577,6 @@ export {
 	type AgentSetupPorts,
 	type AgentSetupSnapshot,
 	type AuthTab,
-	type SendOptions,
 	type SetupStep,
-	type TalkOptions,
 	type SetupStepResult,
 };

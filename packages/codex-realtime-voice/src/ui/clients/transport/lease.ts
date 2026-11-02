@@ -215,4 +215,4 @@ async function accountRead(core: TransportCore): Promise<BrowserWorkbenchAccount
 	return result;
 }
 
-export { accountRead, claimLease, releaseLease, renewLease, requireAccountReady, stopIncompatible };
+export { accountRead, claimLease, releaseLease, renewLease, stopIncompatible };

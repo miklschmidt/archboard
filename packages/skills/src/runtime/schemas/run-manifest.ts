@@ -143,8 +143,6 @@ function subdirectories(directory: string): string[] {
 }
 
 export {
-	CommandCountsSchema,
-	ExposureCountsSchema,
 	RunManifestSchema,
 	runDirectories,
 	writeRunManifest,

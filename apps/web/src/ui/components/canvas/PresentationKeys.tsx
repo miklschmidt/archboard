@@ -106,4 +106,4 @@ function PresentationKeys(props: PresentationKeysProps): JSX.Element {
 	);
 }
 
-export { KeyTip, PresentationKeys, type PresentationKeysProps };
+export { KeyTip, PresentationKeys };

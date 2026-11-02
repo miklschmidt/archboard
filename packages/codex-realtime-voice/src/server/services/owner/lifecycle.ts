@@ -445,15 +445,12 @@ export {
 };
 export type {
 	CodexWorkbenchComponents,
-	CodexWorkbenchExitBridge,
 	CodexWorkbenchGeneration,
 	CodexWorkbenchGenerationFactory,
 	CodexWorkbenchGenerationHooks,
 	CodexWorkbenchGenerationInput,
 	CodexWorkbenchOwner,
 	CodexWorkbenchOwnerOptions,
-	CodexWorkbenchOwnerRuntime,
-	CodexWorkbenchOwnerSlots,
 	CodexWorkbenchSnapshot,
 	CodexWorkbenchStableKernel,
 };

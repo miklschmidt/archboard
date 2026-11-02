@@ -375,4 +375,4 @@ function usePictureTransition(
 	return picture;
 }
 
-export { PICTURE_MOTION_ATTRIBUTE, usePictureTransition, type PictureMotion, type StagedPicture };
+export { PICTURE_MOTION_ATTRIBUTE, usePictureTransition, type StagedPicture };

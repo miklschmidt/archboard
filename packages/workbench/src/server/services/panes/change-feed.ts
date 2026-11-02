@@ -94,4 +94,4 @@ const semanticChangeFeed = {
 	},
 };
 
-export { semanticChangeFeed, type SettledModelChange, type SettledChangeListener };
+export { semanticChangeFeed };

@@ -240,4 +240,4 @@ function Age(props: { readonly at: string | null; readonly now: number }): JSX.E
 	);
 }
 
-export { WorkingNow, type WorkingEntry, type WorkingNowProps };
+export { WorkingNow, type WorkingEntry };

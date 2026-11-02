@@ -200,7 +200,6 @@ export {
 	litInPicture,
 	subtreeOf,
 	withReach,
-	type Connections,
 	type Link,
 	type Wiring,
 };

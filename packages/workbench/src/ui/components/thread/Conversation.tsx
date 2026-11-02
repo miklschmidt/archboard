@@ -179,4 +179,4 @@ function Conversation(props: ConversationProps): JSX.Element {
 	);
 }
 
-export { Conversation, type ConversationProps };
+export { Conversation };

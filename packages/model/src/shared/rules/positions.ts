@@ -32,4 +32,4 @@ function placedArrivals<Subject extends { readonly id: string; readonly order: n
 	});
 }
 
-export { ORDER_STEP, placedArrivals };
+export { placedArrivals };

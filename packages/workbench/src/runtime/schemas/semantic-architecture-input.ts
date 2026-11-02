@@ -436,4 +436,4 @@ function normalizeArchitecture(
 	};
 }
 
-export { type BoundedValue, normalizeArchitecture };
+export { normalizeArchitecture };

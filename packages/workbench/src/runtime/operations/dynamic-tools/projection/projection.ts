@@ -438,13 +438,4 @@ async function projectRead(
 	});
 }
 
-export {
-	THREAD_SOURCE_KINDS,
-	AUTHORITY_PAGE_LIMIT,
-	type ListedThreadProjection,
-	type ListProjection,
-	type ReadTurnProjection,
-	type ReadProjection,
-	projectList,
-	projectRead,
-};
+export { projectList, projectRead };

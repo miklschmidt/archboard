@@ -152,4 +152,4 @@ function claimEndReason(lost: ClaimRevocation): string {
 	return `The lease on ${model} was given up or removed by another process, such as a take-back through another server, before this server renewed it`;
 }
 
-export { type LostClaim, claimModel, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };
+export { claimModel, claimOn, claimWriterId, releaseClaim, takeClaimRevocation };

@@ -488,4 +488,4 @@ function GoDeeper(props: GoDeeperProps): JSX.Element | null {
 	);
 }
 
-export { GoDeeper, type GoDeeperProps };
+export { GoDeeper };

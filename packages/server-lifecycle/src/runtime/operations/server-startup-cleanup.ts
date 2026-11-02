@@ -575,13 +575,9 @@ async function completeFailedServerCleanup(
 }
 
 export {
-	type FailedServerCleanupTiming,
 	failedServerCleanupTiming,
-	type FailedServerCleanupProtocol,
 	type ServerStartupProtocolReader,
 	createServerStartupProtocolReader,
 	type FailedServerCleanupOperations,
-	type FailedServerCleanupResult,
-	type CompleteFailedServerCleanupOptions,
 	completeFailedServerCleanup,
 };

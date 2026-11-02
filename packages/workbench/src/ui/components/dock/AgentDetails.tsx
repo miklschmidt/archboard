@@ -176,4 +176,4 @@ function Row(props: {
 	);
 }
 
-export { AgentDetails, type AgentDetailsProps };
+export { AgentDetails };

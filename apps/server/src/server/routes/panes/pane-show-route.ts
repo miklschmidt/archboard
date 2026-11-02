@@ -316,4 +316,4 @@ function showablePane(vault: string, spec: unknown, res: Response): PaneRegistra
 	return pane;
 }
 
-export { chooseShownCheckout, showPaneRoute, type ShowChoice };
+export { showPaneRoute };

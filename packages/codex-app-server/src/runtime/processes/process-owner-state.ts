@@ -534,7 +534,6 @@ function processErrorFrom(
 }
 
 export {
-	cancelTimer,
 	clearReadiness,
 	clearRestart,
 	createOwnerState,
@@ -545,7 +544,6 @@ export {
 	publish,
 	rejectPendingStart,
 	releaseStorage,
-	releaseStorageWhenIdle,
 	resolvePendingStart,
 	retireListener,
 	safeCauseMessage,

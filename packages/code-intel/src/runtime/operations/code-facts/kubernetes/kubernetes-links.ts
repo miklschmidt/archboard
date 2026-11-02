@@ -155,4 +155,4 @@ function kubernetesLinks(
 	});
 }
 
-export { type KubernetesLink, type ManifestSite, kubernetesLinks };
+export { type ManifestSite, kubernetesLinks };

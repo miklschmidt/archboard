@@ -1,7 +1,7 @@
 import type { PaneRegistration } from "@archboard/server-lifecycle/panes";
 
 /** What choosing a presenting pane needs to know about a pane on screen. */
-export type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focused" | "recording">>;
+type PresentablePane = Readonly<Pick<PaneRegistration, "paneId" | "focused" | "recording">>;
 
 /**
  * The pane that work nobody's command started presents through: the semantic

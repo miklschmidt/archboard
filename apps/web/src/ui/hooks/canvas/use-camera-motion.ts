@@ -152,4 +152,4 @@ function useCameraMotion(stage: CameraStage, reducedMotion: boolean): CameraMoti
 	return useMemo(() => ({ zoomAt, ease, halt, easing }), [zoomAt, ease, halt, easing]);
 }
 
-export { useCameraMotion, type CameraMotion, type CameraStage };
+export { useCameraMotion, type CameraStage };

@@ -186,4 +186,4 @@ function createReverseRequestHandlers(context: ReverseRequestContext): ReverseRe
 	});
 }
 
-export { createReverseRequestHandlers, type ReverseRequestHandlers };
+export { createReverseRequestHandlers };

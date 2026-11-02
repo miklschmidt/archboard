@@ -102,4 +102,4 @@ function introspectAnswerFields() {
 	};
 }
 
-export { type RegistryContractEntry, introspectAnswerFields, introspectContracts };
+export { introspectAnswerFields, introspectContracts };

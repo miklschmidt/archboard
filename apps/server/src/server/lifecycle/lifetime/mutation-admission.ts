@@ -196,10 +196,4 @@ function createServerMutationAdmission(options: ServerMutationAdmissionOptions) 
 		activeMutations: (): readonly ServerActiveMutation[] => [...active.values()],
 	});
 }
-export {
-	ServerApplicationBusyError,
-	createServerMutationAdmission,
-	type ServerActiveMutation,
-	type ServerMutationAdmissionOptions,
-	type ServerMutationLease,
-};
+export { ServerApplicationBusyError, createServerMutationAdmission, type ServerMutationLease };

@@ -558,22 +558,15 @@ function buildReport(
 }
 
 export {
-	answeredOffChecklist,
 	buildReport,
 	median,
-	mean,
-	percentChange,
-	succeeded,
 	sumUsage,
-	summarize,
 	type ArmSummary,
 	type BatchReport,
-	type ChecklistAnswer,
 	type ComparisonRow,
 	type ConcernKind,
 	type ExcusedDepartureOnRun,
 	type GraderReport,
-	type RaisedConcern,
 	type SkillDisagreement,
 	type Report,
 	type RunRecord,

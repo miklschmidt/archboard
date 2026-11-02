@@ -141,4 +141,4 @@ function statedInvocation(): InvocationStatement {
 	};
 }
 
-export { type InvocationStatement, stateInvocation, statedInvocation, withVault, withWriteClaims };
+export { stateInvocation, statedInvocation, withVault, withWriteClaims };

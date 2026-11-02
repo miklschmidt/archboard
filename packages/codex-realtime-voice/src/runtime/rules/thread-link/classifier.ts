@@ -405,4 +405,4 @@ async function classifyCodexThreadLink(
 	return createCodexThreadLinkClassifier(options).classify(target);
 }
 
-export { isExecutableThreadLinkStatus, createCodexThreadLinkClassifier, classifyCodexThreadLink };
+export { createCodexThreadLinkClassifier, classifyCodexThreadLink };

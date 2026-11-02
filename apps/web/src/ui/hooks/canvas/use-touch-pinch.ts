@@ -102,4 +102,4 @@ function useTouchPinch(camera: Pick<PictureCamera, "pinch" | "stop">): TouchPinc
 	return useMemo(() => ({ down, move, up }), [down, move, up]);
 }
 
-export { useTouchPinch, type TouchPinch };
+export { useTouchPinch };

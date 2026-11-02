@@ -107,4 +107,4 @@ function effectHashFor(value: string): string {
 	return `sha256:${sha256(value)}`;
 }
 
-export { sha256, effectHashFor };
+export { effectHashFor };

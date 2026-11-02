@@ -212,4 +212,4 @@ function notFound(
 	return part === undefined ? { status: "absent" } : { status: "unparsed", unparsed: part };
 }
 
-export { type Accept, type Found, definitionsNamed, endsWithNames, findSymbol };
+export { type Accept, definitionsNamed, endsWithNames, findSymbol };

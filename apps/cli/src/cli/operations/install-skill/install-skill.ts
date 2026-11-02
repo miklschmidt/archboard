@@ -352,14 +352,4 @@ const installSkillContract = defineCommand({
 	},
 });
 
-export {
-	BUNDLED_SKILLS,
-	InstallSkillInputSchema,
-	type InstallSkillInput,
-	InstallSkillRequestSchema,
-	type InstallSkillRequest,
-	InstallSkillSetupResultSchema,
-	InstallSkillResultSchema,
-	type InstallSkillResult,
-	installSkillContract,
-};
+export { installSkillContract };

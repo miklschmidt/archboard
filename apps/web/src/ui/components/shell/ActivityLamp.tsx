@@ -56,4 +56,4 @@ function MarkerLamp(props: Omit<ActivityLampProps, "className">): JSX.Element {
 	return <ActivityLamp {...props} className={MARKER_CORNER} />;
 }
 
-export { ActivityLamp, MarkerLamp, type LampState };
+export { ActivityLamp, MarkerLamp };

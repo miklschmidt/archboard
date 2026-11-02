@@ -205,7 +205,6 @@ export {
 	type CodexRequestFailureReason,
 	type CodexRequestOutcome,
 	type TransportRemoteErrorSummary,
-	CodexTransportError,
 	CodexTransportClosedError,
 	CodexTransportWriteError,
 	CodexTransportUsageError,

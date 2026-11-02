@@ -104,4 +104,4 @@ function PresentationRail(props: PresentationRailProps): JSX.Element {
 	);
 }
 
-export { PresentationRail, type PresentationRailProps };
+export { PresentationRail };

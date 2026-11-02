@@ -278,4 +278,4 @@ function DetailsPanel(props: DetailsPanelProps): JSX.Element {
 	);
 }
 
-export { DetailsPanel, type DetailsPanelProps };
+export { DetailsPanel };

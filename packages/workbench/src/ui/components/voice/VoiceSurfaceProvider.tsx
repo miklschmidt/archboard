@@ -25,4 +25,4 @@ function VoiceSurfaceProvider(props: VoiceSurfaceProviderProps): JSX.Element {
 	);
 }
 
-export { VoiceSurfaceProvider, type VoiceSurfaceProviderProps };
+export { VoiceSurfaceProvider };

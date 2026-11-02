@@ -511,21 +511,11 @@ const browserShowContract = defineCommand({
 });
 
 export {
-	PaneNamespaceInputSchema,
-	PaneNamespaceResultSchema,
 	browserContract,
-	PaneOpenInputSchema,
-	PaneOpenStageSchema,
 	PaneOpenResultSchema,
 	paneOpenContract,
-	PaneCloseInputSchema,
-	PaneCloseStageSchema,
-	PaneCloseResultSchema,
 	paneCloseContract,
-	PanesInputSchema,
-	PanesResultSchema,
 	panesContract,
-	ShowInputSchema,
 	ShowResultSchema,
 	browserShowContract,
 };

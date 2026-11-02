@@ -445,14 +445,8 @@ function createServerApplicationLifetime(options: ServerApplicationLifetimeOptio
 }
 
 export {
-	type ServerApplicationPhase,
-	type ServerApplicationStopReason,
 	type ServerMutationLease,
 	ServerApplicationBusyError,
 	createServerMutationAdmission,
-	type ServerApplicationResource,
-	type ServerApplicationEvent,
-	type ServerApplicationLifetimeOptions,
-	ServerApplicationStartupCancelledError,
 	createServerApplicationLifetime,
 };

@@ -21,4 +21,4 @@ function useOverlayPlace(): OverlayPlace {
 	return useContext(OverlayPlaceContext);
 }
 
-export { OverlayPlaceContext, useOverlayPlace, type OverlayPlace };
+export { OverlayPlaceContext, useOverlayPlace };

@@ -98,4 +98,4 @@ function embedsCheckLines(part: EmbedsPart | undefined): string[] {
 	];
 }
 
-export { embedsCheckLines, embedStanding, fixLine, type EmbedStanding };
+export { embedsCheckLines, embedStanding, fixLine };

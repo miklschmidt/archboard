@@ -557,7 +557,6 @@ export {
 	ownsProcessChild,
 	ownsTicket,
 	releaseRegistration,
-	releasedSnapshots,
 	reserveTicket,
 	revokePublicDispatch,
 	snapshot,
@@ -577,8 +576,6 @@ export type {
 	CodexWorkbenchOwnerRuntime,
 	CodexWorkbenchOwnerSlots,
 	CodexWorkbenchStableKernel,
-	GenerationResource,
 	LifecycleTransaction,
-	LifecycleTransactionPhase,
 	OwnerLocalState,
 };

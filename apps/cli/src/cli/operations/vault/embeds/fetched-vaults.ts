@@ -383,4 +383,4 @@ async function defaultBranchInCache(
 	return fetchInto(cache, identity, url, signal);
 }
 
-export { fetchedVault, remoteOf, type FetchedVault };
+export { fetchedVault, remoteOf };

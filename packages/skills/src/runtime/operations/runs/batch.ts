@@ -378,11 +378,4 @@ async function runBatch(
 	return { root, runs: runs.filter((run): run is CompletedRun => run !== null) };
 }
 
-export {
-	keptCandidate,
-	planJobs,
-	resumeSelection,
-	runBatch,
-	type BatchOptions,
-	type KeptCandidate,
-};
+export { keptCandidate, resumeSelection, runBatch, type BatchOptions };

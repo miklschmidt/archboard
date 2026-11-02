@@ -522,7 +522,6 @@ function recordedOwnerIsGone(record: string): boolean {
 export {
 	awaitFrozenGroup,
 	type ProcessObservation,
-	type ProcessState,
 	readProcessObservation,
 	listProcessObservations,
 	listProcessGroupObservations,

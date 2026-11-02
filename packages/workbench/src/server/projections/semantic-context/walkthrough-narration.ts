@@ -239,11 +239,4 @@ function subscribeNarrationChanges(listener: NarrationListener): () => void {
 	};
 }
 
-export {
-	forgetNarration,
-	narratedModelOf,
-	narrationChangesOf,
-	narrationFor,
-	openNarration,
-	subscribeNarrationChanges,
-};
+export { forgetNarration, narratedModelOf, narrationChangesOf, narrationFor, openNarration };

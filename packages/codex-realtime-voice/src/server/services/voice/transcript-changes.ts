@@ -43,4 +43,4 @@ function watchTranscriptChanges(realtime: TranscriptEvents, listener: () => void
 	};
 }
 
-export { watchTranscriptChanges, type TranscriptEvents };
+export { watchTranscriptChanges };

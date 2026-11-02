@@ -308,19 +308,10 @@ const COORDINATOR_TOOL_CATALOGUE = deepFreeze({
 });
 
 export {
-	COORDINATOR_ROLE,
-	type CoordinatorRole,
-	COORDINATOR_NAMESPACE_ROLES,
 	COORDINATOR_THREAD_CONFIG,
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
-	type AuthorityTarget,
-	AuthorityTargetSchema,
-	type RequiredLink,
-	RequiredLinkSchema,
 	CoordinatorToolContractSchema,
-	type SuccessResultContract,
-	type CoordinatorToolContract,
 	WORKHORSE_TOOL_CONTRACTS,
 	VOICE_TOOL_CONTRACTS,
 	COORDINATOR_TOOL_CONTRACTS,

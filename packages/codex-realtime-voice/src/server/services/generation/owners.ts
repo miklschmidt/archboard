@@ -299,4 +299,4 @@ export {
 	publishProjection,
 	retire,
 };
-export type { GenerationOwners, GenerationOwnerStore, RealtimeGenerationCorrelation };
+export type { GenerationOwners };

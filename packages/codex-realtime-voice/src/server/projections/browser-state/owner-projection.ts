@@ -356,4 +356,4 @@ function readBrowserOwnerProjection(
 	};
 }
 
-export { readBrowserOwnerProjection, type ServerOwnerProjectionInput };
+export { readBrowserOwnerProjection };

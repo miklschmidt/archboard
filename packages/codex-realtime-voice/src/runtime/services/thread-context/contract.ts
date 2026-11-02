@@ -244,8 +244,6 @@ export {
 	type CodexThreadContextBinding,
 	type CodexThreadContextBindingToken,
 	type CodexThreadContextBindingSnapshot,
-	type CodexThreadContextBindingTransition,
-	type CodexThreadContextControllerErrorCode,
 	CodexThreadContextControllerError,
 	type CodexThreadContextControllerOptions,
 	type CodexThreadContextController,

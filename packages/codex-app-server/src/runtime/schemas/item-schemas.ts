@@ -267,7 +267,6 @@ export {
 	CommandActionSchema,
 	FileChangeSchema,
 	FileUpdateChangeSchema,
-	DynamicToolCallOutputContentItemSchema,
 	ThreadItemSchema,
 	ThreadItemEntrySchema,
 };

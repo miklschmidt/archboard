@@ -463,7 +463,6 @@ export {
 	paneKeys,
 	paneFromRequest,
 	paneVaults,
-	paneRef,
 	paneResponse,
 	panes,
 	pendingPaneCloses,
@@ -474,6 +473,5 @@ export {
 	sendToPane,
 	settleAfterLayout,
 	socketVaults,
-	socketsFor,
 };
 export type { PendingPaneClose, PendingPaneOpen };

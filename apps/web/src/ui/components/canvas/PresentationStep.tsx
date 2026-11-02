@@ -159,4 +159,4 @@ function StepWords(props: StepWordsProps): JSX.Element {
 	);
 }
 
-export { StepFigure, StepWords, type StepFigureProps, type StepWordsProps };
+export { StepFigure, StepWords };

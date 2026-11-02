@@ -435,7 +435,5 @@ export {
 	shortAnswers,
 	verdictShortfall,
 	type FiledEvidence,
-	type RetriedRun,
 	type ShortAnswer,
-	type VerdictShortfall,
 };

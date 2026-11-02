@@ -155,4 +155,4 @@ function SemanticStageSidebar(props: {
 	);
 }
 
-export { SemanticStageSidebar, type StageSidebarView };
+export { SemanticStageSidebar };

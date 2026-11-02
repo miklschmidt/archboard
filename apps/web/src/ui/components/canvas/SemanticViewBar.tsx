@@ -128,4 +128,4 @@ function SemanticViewBar(props: SemanticViewBarProps): JSX.Element {
 	);
 }
 
-export { SemanticViewBar, type SemanticViewBarProps };
+export { SemanticViewBar };

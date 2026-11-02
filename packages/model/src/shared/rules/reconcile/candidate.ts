@@ -193,4 +193,4 @@ function collectionAsIn<Entity extends { readonly id: string }>(
 	return [...kept, ...yours.filter((entity) => ids.has(entity.id) && !present.has(entity.id))];
 }
 
-export { coherentPart, incoherenceOf, subjectsAsIn };
+export { coherentPart, incoherenceOf };

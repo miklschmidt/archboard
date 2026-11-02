@@ -181,4 +181,4 @@ function Decision(props: {
 	);
 }
 
-export { ApprovalCard, type ApprovalCardProps };
+export { ApprovalCard };

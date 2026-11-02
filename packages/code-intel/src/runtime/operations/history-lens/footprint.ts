@@ -478,4 +478,4 @@ async function readVariantFootprint(
 		...(await readFootprintEvidence(request)),
 	};
 }
-export { type VariantFootprintRequest, readVariantFootprint, readFootprintEvidence };
+export { readVariantFootprint, readFootprintEvidence };

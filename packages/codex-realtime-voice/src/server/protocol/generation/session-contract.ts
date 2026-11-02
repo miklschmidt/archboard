@@ -199,7 +199,6 @@ export type {
 	CodexWorkbenchSessionComponents,
 	CodexWorkbenchSessions,
 	CodexWorkbenchTabSession,
-	CodexWorkbenchTabSessionActions,
 	CodexWorkbenchTabSessionScope,
 	CodexWorkbenchTabSessionState,
 	CodexWorkbenchWorkhorseScope,

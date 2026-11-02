@@ -29,4 +29,4 @@ function tabSessionId(): string {
 	}
 }
 
-export { TAB_SESSION_STORAGE_KEY, tabSessionId };
+export { tabSessionId };

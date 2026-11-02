@@ -155,10 +155,8 @@ const ToldStandingSchema = StandingShapeSchema.omit({ base: true }).refine(
 type ToldStanding = z.infer<typeof ToldStandingSchema>;
 
 export {
-	ChangedFieldSchema,
 	ReconciliationIssueSchema,
 	ReconciliationKindSchema,
-	StandingShapeSchema,
 	ToldStandingSchema,
 	VariantStandingSchema,
 	type ChangedField,

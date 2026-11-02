@@ -30,4 +30,4 @@ function RecordingStage(props: RecordingStageProps): JSX.Element {
 	);
 }
 
-export { RecordingStage, type RecordingStageProps };
+export { RecordingStage };

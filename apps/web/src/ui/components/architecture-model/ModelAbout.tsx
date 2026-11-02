@@ -355,4 +355,4 @@ function ScopePage(props: ScopePageProps): JSX.Element {
 	);
 }
 
-export { ModelAbout, scopeHead, type ModelAboutProps };
+export { ModelAbout, scopeHead };

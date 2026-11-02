@@ -138,4 +138,4 @@ function createCameraStore(): CameraStore {
 	};
 }
 
-export { createCameraStore, type CameraStore, type CameraView, type Move };
+export { createCameraStore, type CameraStore, type CameraView };

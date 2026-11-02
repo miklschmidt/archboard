@@ -126,10 +126,8 @@ export {
 	addPane,
 	canClosePane,
 	closePane,
-	hasPane,
 	initialPaneList,
 	paneListOf,
 	selectPane,
-	type PaneEntry,
 	type PaneList,
 };

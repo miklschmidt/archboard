@@ -194,7 +194,5 @@ export {
 	type ResolveSpokenApprovalInput,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
 	VOICE_TOOL_INPUT_SCHEMAS,
-	parseWorkhorseToolInput,
-	parseVoiceToolInput,
 	parseCoordinatorToolInput,
 };

@@ -96,4 +96,4 @@ function VoiceContextBody(props: { readonly voiceContext: VoiceContext }): JSX.E
 	);
 }
 
-export { VoiceContextDetails, type VoiceContextDetailsProps };
+export { VoiceContextDetails };

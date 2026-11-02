@@ -223,12 +223,9 @@ const SemanticViewSchema = z
 type SemanticView = z.infer<typeof SemanticViewSchema>;
 
 export {
-	StepLabelSchema,
-	FlowWordsSchema,
 	alternativesOf,
 	FlowMessageSchema,
 	type FlowMessage,
-	FlowAlternativeSchema,
 	FlowDecisionSchema,
 	type FlowDecision,
 	FlowLoopSchema,
@@ -237,7 +234,6 @@ export {
 	type FlowStep,
 	SemanticFlowSchema,
 	type SemanticFlow,
-	ViewScopeSchema,
 	type ViewScope,
 	SemanticViewSchema,
 	type SemanticView,

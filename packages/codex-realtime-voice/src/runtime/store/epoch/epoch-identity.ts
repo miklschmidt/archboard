@@ -215,13 +215,9 @@ function timestamp(value: unknown, label: string, minimum = 0): number {
 }
 
 export {
-	CHILD_PATTERN,
-	EPOCH_PATTERN,
 	HASH_PATTERN,
 	OPERATION_PATTERN,
-	THREAD_PATTERN,
 	TOKEN_PATTERN,
-	TURN_PATTERN,
 	boundedToken,
 	canonicalChild,
 	canonicalEpoch,

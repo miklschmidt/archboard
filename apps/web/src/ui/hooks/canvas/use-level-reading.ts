@@ -120,4 +120,4 @@ function useLevelReading(drill: DrillNavigation, own: OwnReading): PaneReading {
 	}, [depth, ownDepth, drill.variant, here, onView, own.onView, own.view]);
 }
 
-export { useLevelReading, type OwnReading, type PaneReading };
+export { useLevelReading, type PaneReading };

@@ -110,4 +110,4 @@ function createPaneReportDeadline(
 	};
 }
 
-export { createPaneReportDeadline, type PaneDeadlineClock, type PaneReportDeadline };
+export { createPaneReportDeadline };

@@ -251,4 +251,4 @@ function isManifest(facts: ParsedFacts): facts is ManifestFacts {
 	return "package" in facts;
 }
 
-export { type SwiftPackage, type SwiftTarget, isManifest, manifestFacts };
+export { type SwiftTarget, isManifest, manifestFacts };

@@ -122,4 +122,4 @@ function VoiceSubtitles(props: VoiceSubtitlesProps): JSX.Element | null {
 	) : null;
 }
 
-export { SubtitleWords, VoiceSubtitles, type SubtitleWordsProps, type VoiceSubtitlesProps };
+export { SubtitleWords, VoiceSubtitles };

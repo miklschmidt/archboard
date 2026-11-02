@@ -114,4 +114,4 @@ function ReadingArea(props: {
 	);
 }
 
-export { ReadingArea, pictureMarks, presentationOver, type PresentationView };
+export { ReadingArea, pictureMarks, presentationOver };

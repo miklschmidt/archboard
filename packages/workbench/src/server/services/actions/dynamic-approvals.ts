@@ -532,8 +532,4 @@ function createServerDynamicApprovalOwner(
 	});
 }
 
-export {
-	type ServerDynamicApprovalOwner,
-	type ServerDynamicApprovalOwnerOptions,
-	createServerDynamicApprovalOwner,
-};
+export { type ServerDynamicApprovalOwner, createServerDynamicApprovalOwner };

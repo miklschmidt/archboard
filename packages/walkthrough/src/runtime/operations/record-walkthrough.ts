@@ -496,10 +496,4 @@ async function recordWalkthrough(
 		rmSync(scratch, { recursive: true, force: true });
 	}
 }
-export {
-	recordWalkthrough,
-	recordingFlags,
-	recordingPageUrl,
-	type RecordedWalkthrough,
-	type WalkthroughRecordingRequest,
-};
+export { recordWalkthrough, recordingPageUrl };

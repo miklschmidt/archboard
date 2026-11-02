@@ -66,4 +66,4 @@ async function restartServer(): Promise<RestartResult> {
 	return { ...started, stop, frontendBuild: built };
 }
 
-export { type RestartResult, restartServer };
+export { restartServer };

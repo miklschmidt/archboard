@@ -103,4 +103,4 @@ function SemanticStanding(props: SemanticStandingProps): JSX.Element | null {
 	);
 }
 
-export { SemanticStanding, type SemanticStandingProps };
+export { SemanticStanding };

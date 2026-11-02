@@ -372,7 +372,6 @@ export function approvalExpiry(request: DynamicToolApprovalRequest, nowMs: numbe
 }
 
 export {
-	type DynamicIssuedOperations,
 	type DynamicOperationSettlement,
 	createDynamicOperationRecoverySettlement,
 	createDynamicOperationSettlement,

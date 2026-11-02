@@ -277,4 +277,4 @@ function mkdirDurably(directory: string): void {
 	}
 }
 
-export { tempPathFor, unlinkDurably, writeFileAtomic };
+export { unlinkDurably, writeFileAtomic };

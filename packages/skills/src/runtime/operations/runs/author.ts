@@ -568,4 +568,4 @@ async function failedRun(
 	return run;
 }
 
-export { authorArgv, executeRun, statusOf, type RunJob };
+export { executeRun, type RunJob };

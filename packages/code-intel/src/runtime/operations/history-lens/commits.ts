@@ -233,12 +233,4 @@ function commitsByBoundPath(
 	);
 }
 
-export {
-	type FileChange,
-	type WalkedCommit,
-	commitsByBoundPath,
-	isLargeCommit,
-	normalizeBoundPath,
-	parseLog,
-	walkCommits,
-};
+export { type WalkedCommit, commitsByBoundPath, isLargeCommit, normalizeBoundPath, walkCommits };

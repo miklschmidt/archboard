@@ -149,4 +149,4 @@ function PresentationFoot(props: PresentationFootProps): JSX.Element | null {
 	);
 }
 
-export { PresentationFoot, type PresentationFootProps };
+export { PresentationFoot };

@@ -233,7 +233,6 @@ export {
 	nodeNameOf,
 	nodeNamed,
 	nodesPlausiblyNamed,
-	variantOf,
 	type CheckVerdict,
 	type Finding,
 	type InspectedGroup,

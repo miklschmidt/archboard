@@ -43,4 +43,4 @@ const doingRefusal = {
 
 const serverBrowserRefusals = [serverRefusal, browserRefusal] as const;
 
-export { serverRefusal, vaultRefusals, browserRefusal, doingRefusal, serverBrowserRefusals };
+export { serverRefusal, vaultRefusals, doingRefusal, serverBrowserRefusals };

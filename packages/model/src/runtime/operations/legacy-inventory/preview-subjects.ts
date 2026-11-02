@@ -179,4 +179,4 @@ function composeModules(inventory: LegacyInventory, diagnostics: ModelDiagnostic
 	applySiblingOrder(inventory, modules, diagnostics);
 	return modules;
 }
-export { composeModules, uniqueValues };
+export { composeModules };

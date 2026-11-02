@@ -374,4 +374,4 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 	);
 }
 
-export { SemanticDiagram, type SemanticDiagramProps };
+export { SemanticDiagram };

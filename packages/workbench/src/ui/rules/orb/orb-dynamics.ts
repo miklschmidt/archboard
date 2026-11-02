@@ -327,6 +327,5 @@ export {
 	restOrb,
 	stepOrb,
 	type OrbDynamics,
-	type OrbInput,
 	type OrbMode,
 };

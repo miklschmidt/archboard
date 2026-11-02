@@ -72,4 +72,4 @@ function OpenerSettings(props: OpenerSettingsProps): JSX.Element {
 	);
 }
 
-export { OpenerSettings, type OpenerSettingsProps };
+export { OpenerSettings };

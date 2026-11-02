@@ -443,8 +443,6 @@ export {
 	socketOpen,
 	transportFailure,
 	waitForOpen,
-	type PendingKind,
-	type PendingRequest,
 	type RequestSpec,
 	type SocketRun,
 	type SocketRunPorts,

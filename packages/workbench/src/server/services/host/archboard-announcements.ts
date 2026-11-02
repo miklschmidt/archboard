@@ -235,9 +235,4 @@ function createArchboardAnnouncements(
 	});
 }
 
-export {
-	modelChangeAnnouncement,
-	createArchboardAnnouncements,
-	paneAnnouncement,
-	type ArchboardAnnouncements,
-};
+export { modelChangeAnnouncement, createArchboardAnnouncements, paneAnnouncement };

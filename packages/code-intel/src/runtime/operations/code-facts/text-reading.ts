@@ -72,4 +72,4 @@ function textTest(symbol: string): TextTest {
 	};
 }
 
-export { type TextTest, lastName, textTest };
+export { lastName, textTest };

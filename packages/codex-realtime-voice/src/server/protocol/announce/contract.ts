@@ -89,4 +89,4 @@ interface ContextReceipt {
 	readonly reason: ContextReceiptReason | null;
 }
 
-export type { ContextAudience, ContextChange, ContextReceipt, ContextReceiptReason, ContextWords };
+export type { ContextChange, ContextReceipt, ContextReceiptReason };

@@ -178,4 +178,4 @@ function ReplayStage(props: ReplayStageProps): JSX.Element {
 	);
 }
 
-export { ReplayStage, type ReplayStageProps };
+export { ReplayStage };

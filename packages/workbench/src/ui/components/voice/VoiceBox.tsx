@@ -211,4 +211,4 @@ function VoiceWord(props: { readonly state: CircleState }): JSX.Element {
 	);
 }
 
-export { VoiceBox, type VoiceBoxPlace, type VoiceBoxProps };
+export { VoiceBox, type VoiceBoxProps };

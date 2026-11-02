@@ -338,7 +338,6 @@ export {
 	type PaneReport,
 	type PanesReport,
 	type PlacedPane,
-	type Rect,
 	MAX_IDS,
 	arrangementOf,
 	panesInOrder,

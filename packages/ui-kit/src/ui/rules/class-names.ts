@@ -57,4 +57,4 @@ const cn = createCn({
 	},
 });
 
-export { cn, TYPE_ROLES };
+export { cn };

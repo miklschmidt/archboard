@@ -481,7 +481,6 @@ function isJoiningDeclaration(address: string): boolean {
 export {
 	type Classified,
 	type JoinEnd,
-	type TerraformKind,
 	classifyReference,
 	isJoiningDeclaration,
 	isMetaArgument,

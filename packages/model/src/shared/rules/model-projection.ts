@@ -577,11 +577,4 @@ function visibleEndpoint(
 	return at;
 }
 
-export {
-	projectModel,
-	modelContent,
-	type DrawnNode,
-	type Model,
-	type ModelFilters,
-	type ModelFlow,
-};
+export { projectModel, modelContent, type Model, type ModelFilters, type ModelFlow };

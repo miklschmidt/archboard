@@ -298,6 +298,5 @@ export type {
 	ResolvedImport,
 	SyntaxFacts,
 	Target,
-	TextFacts,
 	Unparsed,
 };

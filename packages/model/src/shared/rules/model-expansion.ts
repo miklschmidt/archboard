@@ -93,4 +93,4 @@ function withToggle<Card extends { readonly id: string; readonly door?: unknown 
 	return card.door !== undefined && offered.expands(card.id) ? { ...card, toggle: "expand" } : card;
 }
 
-export { expansions, toggles, withToggle, type Expansion, type Toggle, type Toggles };
+export { expansions, toggles, withToggle, type Toggle, type Toggles };

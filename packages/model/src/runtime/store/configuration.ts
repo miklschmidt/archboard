@@ -97,13 +97,7 @@ function configurationWarnings(
 			];
 }
 
-export {
-	VAULT_CONFIGURATION_PATH,
-	VaultConfigurationSchema,
-	type VaultConfigurationRead,
-	vaultConfigurationPath,
-	readVaultConfiguration,
-};
+export { VaultConfigurationSchema, readVaultConfiguration };
 
 /**
  * Validate shape and installed icon vocabulary together.

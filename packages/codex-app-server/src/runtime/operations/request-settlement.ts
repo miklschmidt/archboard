@@ -152,4 +152,3 @@ function createRequestSettlement(options: RequestSettlementOptions): RequestSett
 }
 
 export { createRequestSettlement };
-export type { RequestSettlement, RequestSettlementOptions };

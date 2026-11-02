@@ -81,4 +81,4 @@ function spansOf(spans: readonly Span[]): Spans {
 	};
 }
 
-export { type Span, type Spans, merged, sourceRange, spansOf };
+export { type Span, type Spans, sourceRange, spansOf };

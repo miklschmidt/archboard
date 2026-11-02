@@ -59,4 +59,4 @@ function summedField(
 		: values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
 }
 
-export { mean, median, present, summedField, type Maybe };
+export { mean, median, summedField, type Maybe };

@@ -154,5 +154,4 @@ export {
 	sameModelName,
 	type PanePresentation,
 	type SemanticPaneReading,
-	type SemanticTarget,
 };

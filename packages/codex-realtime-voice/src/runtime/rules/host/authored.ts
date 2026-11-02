@@ -76,7 +76,6 @@ export {
 	CORE_ROLE_INSTRUCTIONS,
 	CHANNEL_RULE,
 	COORDINATOR_CHANNEL_INSTRUCTIONS,
-	assertWorkbenchInstructionBytes,
 	readWorkbenchInstructionDocument,
 };
 

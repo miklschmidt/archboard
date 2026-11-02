@@ -170,16 +170,12 @@ interface InstallProductionCodexWorkbenchOptions {
 
 export type {
 	CodexWorkbenchComponentFactories,
-	CodexWorkbenchCoordinatorCallOwner,
 	CodexWorkbenchSessionBindings,
 	CodexWorkbenchWorkhorseBindings,
-	ComponentBuilder,
 	ComponentName,
 	ComposeCodexWorkbenchGenerationOptions,
 	InstallProductionCodexWorkbenchOptions,
 	ProductionCodexWorkbenchBindings,
-	SessionComponentBuilder,
 	SessionComponentName,
-	WorkhorseComponentBuilder,
 	WorkhorseComponentName,
 };

@@ -66,4 +66,4 @@ function toolRoleOf(
 	return role;
 }
 
-export { createVoiceToolset, toolRoleOf, type VoiceToolRole, type VoiceToolset };
+export { createVoiceToolset, toolRoleOf, type VoiceToolset };

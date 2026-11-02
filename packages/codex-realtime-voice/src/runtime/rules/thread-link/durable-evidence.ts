@@ -324,4 +324,3 @@ function durableEvidence(
 }
 
 export { durableEvidence };
-export type { DurableEvidence };

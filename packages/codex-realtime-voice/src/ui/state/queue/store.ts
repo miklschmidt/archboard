@@ -103,4 +103,4 @@ function createWorkbenchQueueStore(transport: WorkbenchQueueTransportPort): Work
 	});
 }
 
-export { createWorkbenchQueueStore, type WorkbenchQueueObservation, type WorkbenchQueueStore };
+export { createWorkbenchQueueStore };

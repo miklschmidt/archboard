@@ -577,7 +577,6 @@ export {
 	archiveCommit,
 	appendCheckpoint,
 	tree,
-	readBlob,
 	readRecord,
 	captureSource,
 	captureOwnSource,

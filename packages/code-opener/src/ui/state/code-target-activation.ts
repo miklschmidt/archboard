@@ -92,4 +92,4 @@ function activationRequest(options: CodeTargetActivationOptions): CodeTargetOpen
 	return { board: options.paneKey, element: options.elementId };
 }
 
-export { activateCodeTarget, type CodeTargetActivationOptions };
+export { activateCodeTarget };

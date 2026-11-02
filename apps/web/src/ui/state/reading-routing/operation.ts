@@ -238,5 +238,4 @@ export {
 	startOperation,
 	type Operation,
 	type OperationAnswer,
-	type Operator,
 };

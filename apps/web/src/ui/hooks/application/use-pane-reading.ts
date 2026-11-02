@@ -126,4 +126,4 @@ function usePaneReadings(): PaneReadings {
 	);
 }
 
-export { usePaneReadings, type ByPane, type PaneReadings, type PickedSubject };
+export { usePaneReadings, type PaneReadings, type PickedSubject };

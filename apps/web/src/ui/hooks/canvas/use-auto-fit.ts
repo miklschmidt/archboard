@@ -267,4 +267,4 @@ function useAutoFit(
 	}, [camera, target, subject, picture, room, presenting, reducedMotion, cut, recall]);
 }
 
-export { useAutoFit, type FitReading, type HeldCamera };
+export { useAutoFit, type HeldCamera };

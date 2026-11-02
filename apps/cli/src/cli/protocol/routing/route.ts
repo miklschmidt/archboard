@@ -56,7 +56,6 @@ const contract = (value: AnyCommandContract, handlerOwner: string): ContractComm
 const child = (owner: RouteOwner): CommandRoute => ({ owner });
 
 export {
-	type ContractCommand,
 	type RouteOwner,
 	type CommandRoute,
 	type CommandRoutes,

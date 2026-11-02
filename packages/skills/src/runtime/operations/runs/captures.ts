@@ -413,6 +413,5 @@ export {
 	type CaptureAttempt,
 	type CaptureProvenance,
 	type CaptureSummary,
-	type CaptureTile,
 	type PageRegion,
 };

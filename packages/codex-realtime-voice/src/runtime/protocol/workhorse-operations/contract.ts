@@ -285,20 +285,13 @@ interface CodexWorkhorseOperations {
 type WorkhorseOperationClassification = ThreadLinkClassification;
 
 export {
-	WORKHORSE_OPERATION_NAMES,
 	type WorkhorseOperationName,
-	type WorkhorseTurnOperation,
 	type WorkhorseOperationRpc,
 	type WorkhorseOperationDelivery,
 	type WorkhorseOperationTarget,
 	type WorkhorseOperationBinding,
-	type CurrentWorkhorseOperationBinding,
-	type WorkhorseOperationThreadLinkPort,
 	type WorkhorseOperationSessionPort,
-	type WorkhorseOperationEpochPort,
 	type WorkhorseCoordinatorCall,
-	type CurrentWorkhorseCoordinatorCall,
-	type WorkhorseOperationContextInput,
 	type WorkhorseOperationOptions,
 	type InspectWorkhorseRequest,
 	type DelegateToWorkhorseRequest,

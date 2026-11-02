@@ -22,4 +22,4 @@ function ModelCatalogProvider(props: ModelCatalogProviderProps): JSX.Element {
 	return <QueryClientProvider client={client}>{props.children}</QueryClientProvider>;
 }
 
-export { ModelCatalogProvider, type ModelCatalogProviderProps };
+export { ModelCatalogProvider };

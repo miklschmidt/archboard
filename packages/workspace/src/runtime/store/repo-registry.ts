@@ -521,18 +521,9 @@ function setLanguageServer(
 }
 
 export {
-	type RegisteredRepo,
 	type RegisteredRepoStatus,
-	type UntrackedVault,
-	type UntrackedVaultStatus,
-	type Chosen,
 	type Declared,
-	type Forgotten,
-	type RenamedVault,
-	type RegistryListing,
-	type VaultRepository,
 	RepoRegistryError,
-	readRegistry,
 	listRegistry,
 	chosenCheckouts,
 	chooseKnownCheckout,

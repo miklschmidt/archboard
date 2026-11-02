@@ -89,11 +89,4 @@ function settleDelivery(
 	return held.map((message) => (message.id === id ? { ...message, ...change } : message));
 }
 
-export {
-	arrivedAfterAll,
-	promptsIn,
-	settleDelivery,
-	shownInTimeline,
-	type HeldMessage,
-	type HeldState,
-};
+export { arrivedAfterAll, promptsIn, settleDelivery, shownInTimeline, type HeldMessage };

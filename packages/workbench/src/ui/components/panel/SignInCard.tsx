@@ -64,4 +64,4 @@ function SignInCard(props: SignInCardProps): JSX.Element {
 	);
 }
 
-export { SignInCard, type SignInCardProps };
+export { SignInCard };

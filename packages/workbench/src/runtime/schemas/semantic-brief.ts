@@ -238,4 +238,4 @@ function buildSemanticBrief(
 	};
 }
 
-export { type BriefMetadata, buildSemanticBrief };
+export { buildSemanticBrief };

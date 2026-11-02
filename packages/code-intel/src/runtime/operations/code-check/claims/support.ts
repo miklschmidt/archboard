@@ -329,4 +329,4 @@ async function judgeSupport(
 	return anchorMismatch(claim, site, anchoredUse(await facts.read(checkout, file), claim));
 }
 
-export { type SupportContext, judgeSupport };
+export { judgeSupport };

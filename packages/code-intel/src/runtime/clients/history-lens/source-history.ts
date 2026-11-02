@@ -288,4 +288,4 @@ async function holdsRef(
 	return from === to || (await gitAnswer(root, ["merge-base", from, to], options)) === from;
 }
 
-export { commitOf, holdsRef, type SourceAtRef, sourceAt, sourceHistory, type SourceRevision };
+export { commitOf, holdsRef, sourceAt, sourceHistory, type SourceRevision };

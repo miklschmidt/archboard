@@ -251,4 +251,4 @@ function useWalkthrough(
 	);
 }
 
-export { useWalkthrough, type DrivenPlace, type WalkthroughReading, type WalkthroughSource };
+export { useWalkthrough, type DrivenPlace, type WalkthroughReading };

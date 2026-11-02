@@ -74,4 +74,4 @@ const NO_FEED: VoiceFeed = {
 	voice: () => null,
 };
 
-export { heardOver, subtitledTranscript, type SubtitledVoice, type VoiceFeed };
+export { heardOver, subtitledTranscript, type VoiceFeed };

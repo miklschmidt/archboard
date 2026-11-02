@@ -134,4 +134,4 @@ function partReading(
 	return { read, skipped };
 }
 
-export { type PartReading, type ReadPart, partReading };
+export { type ReadPart, partReading };

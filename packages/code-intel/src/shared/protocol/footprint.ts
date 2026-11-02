@@ -161,12 +161,8 @@ type NamedReason = z.infer<typeof NamedReasonSchema>;
 export {
 	FootprintAnswerSchema,
 	type FootprintAnswer,
-	FootprintPartSchema,
 	type FootprintPart,
-	FootprintRepositorySchema,
 	type FootprintRepository,
-	FootprintSkipSchema,
 	type FootprintSkip,
-	NamedReasonSchema,
 	type NamedReason,
 };

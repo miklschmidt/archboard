@@ -266,9 +266,6 @@ export {
 	namesMatch,
 	plausibleSubjects,
 	recordingMatches,
-	subjectOf,
 	variantNamed,
 	viewNamed,
-	wordsOf,
-	type NameMatch,
 };

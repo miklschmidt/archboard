@@ -56,4 +56,4 @@ function reply(entry: Entry): Result {
 	return structuredClone({ success: true, action: entry.action });
 }
 export { refuse, reply };
-export type { Request, Invocation, Result, Action, Reading, Workhorse, Notification, Entry };
+export type { Request, Invocation, Result, Reading, Workhorse, Notification, Entry };

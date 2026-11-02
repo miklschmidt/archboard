@@ -209,7 +209,6 @@ export {
 	cancelTabSessionApprovals,
 	createServerOrdinaryApprovalActions,
 	tabSessionLink,
-	tabSessionOfLink,
 	visibleApprovalViews,
 	workhorseApprovalLink,
 };

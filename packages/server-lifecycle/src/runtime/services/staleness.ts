@@ -184,4 +184,4 @@ function frontendState(loadedBuild: string | null | undefined): FrontendState {
 	};
 }
 
-export { type SourceState, sourceState, type FrontendState, frontendBuild, frontendState };
+export { type SourceState, sourceState, frontendBuild, frontendState };

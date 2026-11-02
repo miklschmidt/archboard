@@ -47,11 +47,4 @@ interface ConversationTurn {
 	readonly delegatedBy: ConversationDelegation | null;
 }
 
-export type {
-	ConversationDelegation,
-	ConversationItem,
-	ConversationOutcome,
-	ConversationOwner,
-	ConversationPlan,
-	ConversationTurn,
-};
+export type { ConversationOutcome, ConversationOwner, ConversationTurn };

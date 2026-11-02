@@ -190,4 +190,4 @@ function attachCodexStreamReader(
 	return Object.freeze({ dispose });
 }
 
-export { type StreamReaderHandlers, type StreamReaderAttachment, attachCodexStreamReader };
+export { type StreamReaderAttachment, attachCodexStreamReader };

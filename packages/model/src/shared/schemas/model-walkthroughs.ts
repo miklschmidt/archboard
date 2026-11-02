@@ -65,4 +65,4 @@ const WalkthroughChangeSchema = z.discriminatedUnion("type", [
 	}),
 	z.strictObject({ type: z.literal("remove-walkthrough"), subject: QualifiedSubjectIdSchema }),
 ]);
-export { ReadingSchema, WalkthroughSchema, BeatSchema, WalkthroughChangeSchema };
+export { ReadingSchema, WalkthroughSchema, WalkthroughChangeSchema };

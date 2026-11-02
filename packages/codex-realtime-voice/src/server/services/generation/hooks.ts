@@ -265,4 +265,3 @@ function createProductionHooks(context: HookContext): CodexWorkbenchGenerationHo
 }
 
 export { createProductionHooks };
-export type { HookContext };

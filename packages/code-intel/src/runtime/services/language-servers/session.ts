@@ -523,13 +523,4 @@ function failure(argv: readonly string[], error: unknown): string {
 	return `${path.basename(argv[0] ?? "the server")} ${what}`;
 }
 
-export {
-	type DefinitionAnswer,
-	type DefinitionQuestion,
-	type LanguageServerSession,
-	type ServerOf,
-	type SessionOptions,
-	type ServerTiming,
-	type UnavailableServer,
-	openLanguageServers,
-};
+export { type LanguageServerSession, type ServerOf, type UnavailableServer, openLanguageServers };

@@ -262,5 +262,4 @@ export {
 	catalogueProblems,
 	catalogueRowsOf,
 	citationProblem,
-	headingAnchor,
 };

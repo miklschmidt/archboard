@@ -177,12 +177,10 @@ export {
 	type SpokenApprovalGateState,
 	type SpokenApprovalFallbackReason,
 	type SpokenApprovalEffectPrompt,
-	type SpokenApprovalClassifierInput,
 	type SpokenApprovalArmInput,
 	type SpokenApprovalSnapshot,
 	type SpokenApprovalToolResult,
 	type CodexSpokenApprovalGateOptions,
 	type CodexSpokenApprovalGate,
-	type CodexSpokenApprovalErrorCode,
 	CodexSpokenApprovalError,
 };

@@ -93,4 +93,4 @@ function SemanticGroupList(props: SemanticGroupListProps): JSX.Element | null {
 	);
 }
 
-export { SemanticGroupList, type SemanticGroupListProps };
+export { SemanticGroupList };

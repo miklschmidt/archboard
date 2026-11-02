@@ -294,7 +294,6 @@ function createDynamicApprovalEffectSchemas(identity: IdentitySchemas, context: 
 type DynamicApprovalEffectSchemas = ReturnType<typeof createDynamicApprovalEffectSchemas>;
 
 export {
-	DYNAMIC_APPROVAL_TOOLS,
 	DYNAMIC_APPROVAL_DECISIONS,
 	DYNAMIC_APPROVAL_STATES,
 	createDynamicApprovalEffectSchemas,

@@ -352,15 +352,10 @@ function searchOfRepository(
 }
 
 export {
-	ACTIVE_PANE_PARAM,
 	addressFromSearch,
-	paneParam,
 	parseWorkspaceSearchString,
-	repoParam,
 	searchFromAddress,
 	searchOfRepository,
 	stringifyWorkspaceSearch,
-	viewParam,
 	validateWorkspaceSearch,
-	type WorkspaceSearch,
 };

@@ -450,12 +450,6 @@ function normalizeCodexJsonWire(value: unknown): CodexJsonValue | undefined {
 
 export {
 	CodexSafeI64Schema,
-	type CodexSafeI64,
-	type CodexJsonWire,
-	type CodexClientRequest,
-	type CodexClientNotification,
-	type CodexServerRequest,
-	type CodexServerNotification,
 	type CodexIngressConformance,
 	type CodexOutputConformance,
 	type CodexClientRequestParamsByMethod,
@@ -464,13 +458,7 @@ export {
 	type CodexClientNotificationByMethod,
 	type CodexInitializeCapabilities,
 	type CodexLoginAccountParams,
-	type CodexThreadStatus,
-	type CodexTurnStatus,
-	type CodexTurnPlanStepStatus,
-	type CodexPatchChangeKindType,
-	type CodexTokenUsageBreakdown,
 	type CodexCommandExecutionApprovalDecision,
-	type CodexFileChangeApprovalDecision,
 	CODEX_CLIENT_REQUEST_METHODS,
 	CODEX_SERVER_REQUEST_METHODS,
 	CodexThreadStatusSchema,
@@ -487,6 +475,5 @@ export {
 	CodexFileChangeApprovalDecisionSchema,
 	type CodexResponseByMethod,
 	type CodexServerResponseByMethod,
-	type CodexJsonValue,
 	normalizeCodexJsonWire,
 };

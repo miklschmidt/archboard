@@ -176,10 +176,4 @@ const operation: Pick<OperationAuthority, "decoder" | "validator"> = {
 /** The browser's inert identity context for the shared browser model. */
 const wireIdentityContext: IdentityContext = { decoder, validator, operation };
 
-export {
-	BrowserWorkbenchWireError,
-	WIRE_IDENTITY_MAX_BYTES,
-	parseIdentity,
-	wireIdentityContext,
-	type IdentityByDomain,
-};
+export { BrowserWorkbenchWireError, parseIdentity, wireIdentityContext };

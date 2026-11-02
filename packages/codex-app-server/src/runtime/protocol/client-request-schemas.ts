@@ -466,9 +466,6 @@ export {
 	CLIENT_REQUEST_PARAM_SCHEMAS,
 	type ClientRequestPayloads,
 	type ClientRequestParams,
-	type ClientRequestInputPayloads,
 	type ClientRequestInput,
-	type CodexSessionTurnSteerParams,
-	type CodexSessionRequestPayloads,
 	type CodexSessionRequestParams,
 };

@@ -125,4 +125,4 @@ function kindLookOf(
 /** The look before the vault's policy has arrived. */
 const DEFAULT_LOOK_POLICY = DEFAULT_SEMANTIC_POLICY;
 
-export { DEFAULT_LOOK_POLICY, kindLookOf, type KindLook, type RelationshipLook };
+export { DEFAULT_LOOK_POLICY, kindLookOf, type KindLook };

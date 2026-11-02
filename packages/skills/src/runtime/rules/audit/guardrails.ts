@@ -367,4 +367,4 @@ function evaluateGuardrails(names: readonly string[], context: GuardrailContext)
 	});
 }
 
-export { countDirectVaultWrites, evaluateGuardrails, type GuardrailContext };
+export { countDirectVaultWrites, evaluateGuardrails };

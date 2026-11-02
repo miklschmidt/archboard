@@ -506,9 +506,4 @@ function useWorkspaceAddress(port: WorkspacePort): WorkspaceAddressing {
 	);
 }
 
-export {
-	useWorkspaceAddress,
-	type NavigationClaim,
-	type NavigationPermission,
-	type WorkspaceAddressing,
-};
+export { useWorkspaceAddress, type WorkspaceAddressing };

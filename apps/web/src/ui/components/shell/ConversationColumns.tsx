@@ -194,4 +194,4 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 	);
 }
 
-export { ConversationColumns, type ConversationColumnsProps };
+export { ConversationColumns };

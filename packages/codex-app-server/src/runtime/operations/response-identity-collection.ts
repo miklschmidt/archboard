@@ -345,10 +345,8 @@ function collectResponseIdentities(
 
 export {
 	collectResponseIdentities,
-	collection,
 	isRecord,
 	isUnknownArray,
-	type ResponseIdentityCollection,
 	type ResponseIdentityKind,
 	type UnknownRecord,
 };

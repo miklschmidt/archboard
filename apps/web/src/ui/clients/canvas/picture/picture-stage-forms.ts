@@ -126,7 +126,6 @@ function fitPainter(started: StartedPainter): void {
 }
 
 export {
-	PHASES,
 	fitPainter,
 	headingJson,
 	marksJson,

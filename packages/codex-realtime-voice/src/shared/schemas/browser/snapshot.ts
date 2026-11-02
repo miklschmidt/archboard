@@ -253,8 +253,6 @@ type BrowserDto = z.infer<BrowserSchemas["BrowserDtoSchema"]>;
 type DeliveryOutcome = z.infer<typeof DeliveryOutcomeSchema>;
 
 export {
-	DeliveryOutcomeSchema,
-	type BrowserSnapshotRelationshipIssue,
 	browserSnapshotRelationshipIssues,
 	createBrowserSchemas,
 	type BrowserSchemas,

@@ -255,6 +255,5 @@ export {
 	prepareRunDirectory,
 	runEnvironment,
 	writeCliWrapper,
-	type AuthorSettings,
 	type RunPaths,
 };

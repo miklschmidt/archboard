@@ -24,4 +24,4 @@ function BusyText(props: BusyTextProps): JSX.Element | null {
 	);
 }
 
-export { BusyText, type BusyTextProps };
+export { BusyText };

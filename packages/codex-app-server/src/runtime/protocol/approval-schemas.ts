@@ -229,12 +229,9 @@ export {
 	NetworkPolicyAmendmentSchema,
 	ExecPolicyAmendmentSchema,
 	CommandExecutionApprovalDecisionSchema,
-	AdditionalNetworkPermissionsSchema,
-	AdditionalFileSystemPermissionsSchema,
 	AdditionalPermissionProfileSchema,
 	RequestPermissionProfileSchema,
 	McpServerElicitationRequestParamsSchema,
-	ParsedCommandSchema,
 	ApplyPatchApprovalParamsSchema,
 	ExecCommandApprovalParamsSchema,
 };

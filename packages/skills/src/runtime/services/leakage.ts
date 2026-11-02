@@ -177,4 +177,4 @@ function leakageProblems(
 	);
 }
 
-export { evaluationNames, leakageProblems, leaks, packageText };
+export { leakageProblems };

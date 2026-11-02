@@ -243,9 +243,4 @@ function createPaneReportSender(parts: PaneReportSenderParts): PaneReportSender 
 	return { send, forget };
 }
 
-export {
-	createPaneReportSender,
-	type PaneReportListeners,
-	type PaneReportSender,
-	type PaneReportSenderParts,
-};
+export { createPaneReportSender };

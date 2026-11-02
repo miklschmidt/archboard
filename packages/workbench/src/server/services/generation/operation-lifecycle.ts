@@ -523,7 +523,6 @@ function createServerDynamicLifecycleOwner(
 
 export {
 	createServerDynamicOperationIdAdapter,
-	type ServerDynamicLifecycleOwnerOptions,
 	type ServerDynamicLifecycleOwner,
 	createServerDynamicLifecycleOwner,
 };

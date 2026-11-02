@@ -140,4 +140,4 @@ function classify(
 	return deliveredSettlement(action, result, target);
 }
 
-export { classify, words, type Settlement };
+export { classify, words };

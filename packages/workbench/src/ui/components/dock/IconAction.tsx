@@ -50,4 +50,4 @@ function IconAction(props: IconActionProps): JSX.Element {
 	);
 }
 
-export { IconAction, type IconActionProps };
+export { IconAction };

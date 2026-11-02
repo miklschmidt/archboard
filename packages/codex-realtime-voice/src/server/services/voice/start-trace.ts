@@ -171,13 +171,9 @@ function traceMessage(error: unknown): string {
 }
 
 export {
-	VOICE_START_TRACE_ROUTE,
 	createVoiceStartTrace,
 	mountVoiceStartTraceRoute,
 	sessionVoiceStartTrace,
 	traceMessage,
 	type SessionVoiceStartTrace,
-	type VoiceStartAttempt,
-	type VoiceStartNote,
-	type VoiceStartTrace,
 };

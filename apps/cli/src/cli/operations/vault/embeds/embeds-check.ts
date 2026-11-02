@@ -340,4 +340,4 @@ function checkEmbeds(context: Pick<CommandContext, "vault" | "checkout" | "signa
 	if (context.checkout !== null) return checkEmbedsAt({ checkout: context.checkout }, options);
 	throw new Error("The embeds check requires an addressed vault or checkout.");
 }
-export { checkEmbeds, checkEmbedsAt };
+export { checkEmbeds };

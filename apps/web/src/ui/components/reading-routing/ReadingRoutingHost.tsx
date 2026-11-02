@@ -74,4 +74,4 @@ function createReadingRoutingHost(component: () => JSX.Element | null): () => JS
 	};
 }
 
-export { createReadingRoutingHost, type ReadingRouter };
+export { createReadingRoutingHost };

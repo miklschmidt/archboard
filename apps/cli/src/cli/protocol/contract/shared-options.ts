@@ -96,10 +96,4 @@ function inapplicableSharedOptions(
 	);
 }
 
-export {
-	SHARED_OPTIONS,
-	SHARED_OPTION_KEYS,
-	type SharedOption,
-	inapplicableSharedOptions,
-	sharedOptionsFor,
-};
+export { SHARED_OPTIONS, SHARED_OPTION_KEYS, inapplicableSharedOptions, sharedOptionsFor };

@@ -59,4 +59,4 @@ function applyTheme(theme: ThemeChoice): void {
 	}
 }
 
-export { THEME_STORAGE_KEY, initialTheme, applyTheme };
+export { initialTheme, applyTheme };

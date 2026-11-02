@@ -277,12 +277,4 @@ function listedLegacyBoard(
 	};
 }
 
-export {
-	LegacyLinkSchema,
-	type LegacyLink,
-	ListedLegacyBoardSchema,
-	type ListedLegacyBoard,
-	LegacyListingSchema,
-	type ListedRead,
-	listedLegacyBoard,
-};
+export { LegacyListingSchema, listedLegacyBoard };

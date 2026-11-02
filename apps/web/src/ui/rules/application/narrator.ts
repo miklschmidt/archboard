@@ -141,4 +141,4 @@ function offerNarration(
 	};
 }
 
-export { createNarrator, offerNarration, type Narrator, type NarratorPorts, type ShellState };
+export { createNarrator, offerNarration, type Narrator, type ShellState };

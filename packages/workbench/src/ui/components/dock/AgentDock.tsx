@@ -447,4 +447,4 @@ function ConversationToggle(props: {
 	);
 }
 
-export { AgentDock, type AgentDockProps };
+export { AgentDock };

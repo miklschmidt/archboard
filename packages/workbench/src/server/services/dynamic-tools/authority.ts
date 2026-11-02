@@ -21,7 +21,7 @@ import {
 import type { DynamicServerRequest } from "@archboard/codex-app-server/transport";
 import type { ArchboardContext } from "#runtime/rules/instructions/context.ts";
 
-export interface ServerDynamicAuthorityOptions {
+interface ServerDynamicAuthorityOptions {
 	readonly identity: IdentityAuthorities;
 	readonly epoch: Pick<CodexEpochStore, "snapshot">;
 	readonly threadLink: Pick<CodexThreadLinkPort, "classify" | "read">;

@@ -211,12 +211,4 @@ function interfaceMeasures(inspection: ContainerInterface): InterfaceMeasures {
 	};
 }
 
-export {
-	type Caller,
-	type ContainerInspection,
-	type ContainerInterface,
-	type EntryPoint,
-	type InterfaceMeasures,
-	inspectContainer,
-	interfaceMeasures,
-};
+export { type Caller, type ContainerInterface, inspectContainer, interfaceMeasures };

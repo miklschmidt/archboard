@@ -25,4 +25,4 @@ function Technical(props: TechnicalProps): JSX.Element {
 	);
 }
 
-export { Technical, type TechnicalProps };
+export { Technical };

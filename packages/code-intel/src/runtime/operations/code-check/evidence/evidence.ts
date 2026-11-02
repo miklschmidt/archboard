@@ -554,4 +554,4 @@ async function evidenceOf(
 	return { pieces: firstOfEach(pieces, values), parsed, unfollowed, values };
 }
 
-export { type StateEvidence, type EvidenceReading, type Piece, evidenceOf, piecesBetween };
+export { type StateEvidence, type Piece, evidenceOf, piecesBetween };

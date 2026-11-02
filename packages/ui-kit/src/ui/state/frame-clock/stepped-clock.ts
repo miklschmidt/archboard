@@ -213,4 +213,4 @@ function createSteppedClock(start: number): SteppedClock {
 	return new SteppedClock(start);
 }
 
-export { createSteppedClock, type ClockViolation, type SteppedClock };
+export { createSteppedClock, type SteppedClock };

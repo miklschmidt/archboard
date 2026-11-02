@@ -407,4 +407,4 @@ function sendReferences(captured: SendCaptures, unparsed: Spans): Reference[] {
 	];
 }
 
-export { type SendCaptures, sendReferences };
+export { sendReferences };

@@ -91,4 +91,4 @@ function BrandBar(props: BrandBarProps): JSX.Element {
 	);
 }
 
-export { BrandBar, SETTINGS_TRIGGER_ID, type BrandBarProps };
+export { BrandBar, SETTINGS_TRIGGER_ID };

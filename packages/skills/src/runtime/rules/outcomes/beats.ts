@@ -172,6 +172,4 @@ export {
 	referencesDetail,
 	singleBeatStanding,
 	walkthroughNamed,
-	type Beat,
-	type BeatReferences,
 };

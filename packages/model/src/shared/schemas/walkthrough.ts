@@ -95,7 +95,6 @@ const SemanticWalkthroughSchema = z
 type SemanticWalkthrough = z.infer<typeof SemanticWalkthroughSchema>;
 
 export {
-	WALKTHROUGH_VIEW_DESCRIPTION,
 	WalkthroughBeatSchema,
 	type WalkthroughBeat,
 	SemanticWalkthroughSchema,

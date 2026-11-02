@@ -53,4 +53,4 @@ function SemanticRefreshFailure(props: SemanticRefreshFailureProps): JSX.Element
 	);
 }
 
-export { SemanticRefreshFailure, type SemanticRefreshFailureProps };
+export { SemanticRefreshFailure };

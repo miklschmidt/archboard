@@ -407,7 +407,6 @@ function createBrowserSpokenApprovalSchema(identity: IdentitySchemas) {
 }
 
 export {
-	BROWSER_SPOKEN_APPROVAL_STATES,
 	BROWSER_SPOKEN_APPROVAL_REASONS,
 	BROWSER_IDLE_SPOKEN_APPROVAL,
 	createBrowserSpokenApprovalSchema,

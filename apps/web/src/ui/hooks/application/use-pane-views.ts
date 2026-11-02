@@ -195,4 +195,4 @@ function usePaneViews(sources: PaneViewSources): Readonly<Record<string, ReactNo
 	]);
 }
 
-export { usePaneViews, type PaneOverlay, type PaneRecording, type PaneViewSources };
+export { usePaneViews, type PaneOverlay, type PaneRecording };

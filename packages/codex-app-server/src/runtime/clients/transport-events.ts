@@ -145,7 +145,7 @@ function slidTail(priorTail: Buffer, incoming: Buffer, half: number): Buffer {
 			]);
 }
 
-export interface TransportEvents {
+interface TransportEvents {
 	readonly emitIssue: (issue: TransportIssue) => void;
 	readonly emitServerRequest: (request: TransportServerRequest) => boolean;
 	readonly emitServerNotification: (event: TransportServerNotification) => void;

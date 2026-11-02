@@ -494,11 +494,8 @@ function quoted(variants: readonly SemanticVariant[]): string {
 }
 
 export {
-	AdoptionSchema,
-	ShelvingSchema,
 	LEGACY_BOARD_SCHEMA_VERSION,
 	SUPPORTED_SCHEMA_MAJOR,
-	FIRST_BOARD_VERSION,
 	SemanticVariantSchema,
 	type SemanticVariant,
 	LegacyBoardLevelSchema,
@@ -507,7 +504,6 @@ export {
 	TrackedEmbedSchema,
 	currentVariant,
 	nothingBuilt,
-	type VariantAddress,
 	addressedVariant,
 	findVariant,
 	variantNamed,

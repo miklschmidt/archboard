@@ -245,11 +245,9 @@ function createCodexProcessGroupOperations(): CodexProcessGroupOperations {
 }
 
 export {
-	type CodexProcessGroupSignal,
 	type CodexProcessGroupInspection,
 	type CodexProcessGroupIdentity,
 	type CodexProcessGroupOperations,
-	type CodexProcessGroupFailureCode,
 	CodexProcessGroupError,
 	createCodexProcessGroupOperations,
 };

@@ -136,7 +136,6 @@ function epochRefusalCode(error: unknown): EpochRefusalCode | null {
 }
 
 export {
-	type AuthorityRefusalCode,
 	type DynamicApprovalCause,
 	type DynamicApprovalOutcome,
 	type DynamicDispatchErrorCode,
@@ -149,12 +148,9 @@ export {
 	type DynamicRelation,
 	type DynamicStatus,
 	type DynamicToolName,
-	type EpochRefusalCode,
 	authorityRefusalCode,
 	epochRefusalCode,
-	errorCodeOf,
 	isDynamicEpochState,
 	isDynamicOwnership,
 	isDynamicStatus,
-	isOneOf,
 };

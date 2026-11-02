@@ -108,6 +108,5 @@ export {
 	RENDER_RECIPE_MARK,
 	RENDER_RECIPE_NAMESPACE,
 	RENDER_RECIPE_VERSION,
-	RenderRecipeSchema,
 	type RenderRecipe,
 };

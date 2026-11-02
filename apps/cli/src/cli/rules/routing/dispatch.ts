@@ -131,4 +131,4 @@ function dispatchedCommand(root: CommandRoute, rest: readonly string[]): Dispatc
 	return { root, selected: selectedRoute.owner, argv };
 }
 
-export { type DispatchedCommand, dispatchedCommand };
+export { dispatchedCommand };

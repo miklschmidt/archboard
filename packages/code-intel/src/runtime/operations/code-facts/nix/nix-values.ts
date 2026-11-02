@@ -272,7 +272,6 @@ export {
 	type Budget,
 	type Derivation,
 	type Entry,
-	type FunctionValue,
 	type NixValue,
 	type Thunk,
 	OTHER,

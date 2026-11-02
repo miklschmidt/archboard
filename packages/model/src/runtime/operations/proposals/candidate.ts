@@ -453,7 +453,6 @@ async function proposalIntentCandidate(
 export {
 	proposalDependencies,
 	proposalIntentCandidate,
-	proposalCandidate,
 	retainBaseline,
 	updateChanges,
 	decodedDraft,

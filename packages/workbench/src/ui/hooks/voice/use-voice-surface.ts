@@ -26,4 +26,4 @@ function useVoiceSurface(): VoiceSurface | null {
 	return useContext(VoiceSurfaceContext);
 }
 
-export { VoiceSurfaceContext, useVoiceSurface, type VoiceSurface };
+export { VoiceSurfaceContext, useVoiceSurface };

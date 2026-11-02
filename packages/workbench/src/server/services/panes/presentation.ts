@@ -411,12 +411,4 @@ const panePresentations = createPanePresentations({
 			: sendToPane(pane.clientId, message, pane.model),
 });
 
-export {
-	createPanePresentations,
-	panePresentations,
-	type PanePresentations,
-	type UserPresentationChange,
-	type PresentInput,
-	type PresentOutcome,
-	type PresentRefusal,
-};
+export { createPanePresentations, panePresentations, type UserPresentationChange };

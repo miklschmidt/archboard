@@ -55,4 +55,4 @@ function VariantMark(props: VariantMarkProps): JSX.Element {
 	);
 }
 
-export { VariantMark, type VariantMarkProps };
+export { VariantMark };

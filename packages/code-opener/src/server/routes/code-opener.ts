@@ -93,7 +93,7 @@ const pass: RequestHandler = (_request, _response, next) => {
 	next();
 };
 
-export interface CodeOpenerRouteDependencies {
+interface CodeOpenerRouteDependencies {
 	/** Reads the binding a node carries, off the model of the vault the call names. */
 	bindingForElement(model: string, element: string, vault: string): BindingLookup;
 	/** Resolves a binding to the code it opens, in the checkout the vault the call names reads. */

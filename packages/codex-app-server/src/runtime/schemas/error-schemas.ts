@@ -10,4 +10,4 @@ const MisalignmentErrorDetailsSchema = looseObject({
 	steer: MisalignmentSteerSchema.nullable(),
 });
 
-export { MisalignmentErrorDetailsSchema, MisalignmentSteerSchema };
+export { MisalignmentErrorDetailsSchema };

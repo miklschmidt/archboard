@@ -255,4 +255,4 @@ function ListingSkeleton(): JSX.Element {
 	);
 }
 
-export { Navigator, type NavigatorProps };
+export { Navigator };

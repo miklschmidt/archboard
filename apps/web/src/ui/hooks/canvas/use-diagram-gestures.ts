@@ -488,4 +488,4 @@ function selectionBox(started: Drag, event: PointerEvent<HTMLElement>): DiagramB
 	};
 }
 
-export { useDiagramGestures, type DiagramGestureInputs, type DiagramPointer };
+export { useDiagramGestures };

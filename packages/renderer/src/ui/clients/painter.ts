@@ -209,4 +209,4 @@ async function startPainter(
 		: startCpu(target, dark, failure.reason);
 }
 
-export { startPainter, warmPainter, type PainterFailure };
+export { startPainter, warmPainter };

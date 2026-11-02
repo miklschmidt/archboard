@@ -88,4 +88,4 @@ async function findAndRegisterVault(
 	}
 }
 
-export { findAndRegisterVault, type AddressedVault, type VaultRegistration };
+export { findAndRegisterVault };

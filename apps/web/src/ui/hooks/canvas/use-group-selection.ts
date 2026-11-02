@@ -138,4 +138,4 @@ function useGroupSelection(
 	return useMemo(() => ({ names, choices, selected, choose }), [names, choices, selected, choose]);
 }
 
-export { useGroupSelection, type GroupSelectionState };
+export { useGroupSelection };

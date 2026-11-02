@@ -553,4 +553,3 @@ function createReverseRequestRouter(options: ReverseRequestRouterOptions): Rever
 }
 
 export { createReverseRequestRouter, REVERSE_ERROR_MESSAGES };
-export type { ReverseRequestRouter, ReverseRequestRouterOptions };

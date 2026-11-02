@@ -267,10 +267,8 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 
 export {
 	ARCHBOARD_SERVICE_NAME,
-	assertServerIdentity,
 	foreignServiceError,
 	markServerIdentityVerified,
 	OtherSourceError,
 	requestJson,
-	responseError,
 };

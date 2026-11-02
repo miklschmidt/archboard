@@ -65,4 +65,4 @@ function generatedSchemas(): GeneratedSchema[] {
 		},
 	}));
 }
-export { generatedSchemas, type GeneratedSchema };
+export { generatedSchemas };

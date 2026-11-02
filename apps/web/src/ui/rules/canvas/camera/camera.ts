@@ -353,17 +353,13 @@ function cameraOf(transform: string): Camera | null {
 }
 
 export {
-	FOCUS_MAX_SCALE,
 	IDENTITY_CAMERA,
-	MAX_SCALE,
-	MIN_SCALE,
 	PAN_STEP,
 	ZOOM_STEP,
 	cameraFor,
 	cameraOf,
 	cameraTransform,
 	clampScale,
-	fitCamera,
 	panCamera,
 	pinchCamera,
 	FAR_SCALE,

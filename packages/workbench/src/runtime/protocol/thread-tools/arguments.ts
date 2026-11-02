@@ -57,7 +57,7 @@ const WaitThreadsArgumentsSchema = z.strictObject({
 	cursor: CursorSchema.optional(),
 });
 
-export const TOOL_ARGUMENT_SCHEMAS = Object.freeze({
+const TOOL_ARGUMENT_SCHEMAS = Object.freeze({
 	create_thread: CreateThreadArgumentsSchema,
 	fork_thread: ForkThreadArgumentsSchema,
 	list_threads: ListThreadsArgumentsSchema,

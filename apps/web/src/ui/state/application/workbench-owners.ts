@@ -78,10 +78,4 @@ function createWorkbenchOwners(options: WorkbenchOwnersOptions): WorkbenchOwners
 	});
 }
 
-export {
-	createWorkbenchOwners,
-	type ApprovalDecisions,
-	type VoiceOwner,
-	type WorkbenchOwners,
-	type WorkbenchOwnersOptions,
-};
+export { createWorkbenchOwners, type ApprovalDecisions, type VoiceOwner, type WorkbenchOwners };

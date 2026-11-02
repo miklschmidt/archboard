@@ -133,10 +133,4 @@ function readVoice(sources: RecordingSources): VoiceReading {
 	};
 }
 
-export {
-	agentReadiness,
-	readVoice,
-	type AgentReadiness,
-	type RecordingSources,
-	type RecordingTransport,
-};
+export { agentReadiness, readVoice, type RecordingSources, type RecordingTransport };

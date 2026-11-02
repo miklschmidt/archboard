@@ -102,7 +102,6 @@ function PeekProvider(props: PeekProviderProps): JSX.Element {
 }
 
 export {
-	NOTHING_PEEKED,
 	PeekControlContext,
 	PeekProvider,
 	PeekedContext,

@@ -80,4 +80,4 @@ function createPaneStatus(parts: PaneStatusParts): PaneStatusOwner {
 	return { live, publish };
 }
 
-export { createPaneStatus, type LivePaneStatus, type PaneStatusOwner };
+export { createPaneStatus, type LivePaneStatus };

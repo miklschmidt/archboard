@@ -268,7 +268,6 @@ const VaultCheckSchema = z.object({
 
 export {
 	VocabularyNameSchema,
-	GroupPolicySchema,
 	createSemanticPolicySchema,
 	PaletteColorSchema,
 	SemanticPolicySchema,
@@ -278,7 +277,6 @@ export {
 	describeSubject,
 	diagnosticLine,
 	EvidenceKindSchema,
-	type EvidenceKind,
 	VaultDiagnosticSchema,
 	type VaultDiagnostic,
 	VaultCheckSchema,

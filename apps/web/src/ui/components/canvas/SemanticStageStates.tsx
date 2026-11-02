@@ -172,7 +172,4 @@ export {
 	SemanticStageProblem,
 	StageSpinner,
 	failureWords,
-	type SemanticEmptyProps,
-	type SemanticStageProblemProps,
-	type SemanticStateProps,
 };

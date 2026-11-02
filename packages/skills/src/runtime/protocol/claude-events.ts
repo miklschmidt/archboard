@@ -375,4 +375,4 @@ function redactedClaudeStream(text: string): string {
 		.join("\n");
 }
 
-export { claudeUsageFrom, parseClaudeTrace, redactedClaudeStream, type ClaudeTrace, type ToolRead };
+export { claudeUsageFrom, parseClaudeTrace, redactedClaudeStream, type ClaudeTrace };

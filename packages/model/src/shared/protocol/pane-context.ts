@@ -220,9 +220,6 @@ const SemanticPaneContextSchema = z
 export {
 	SEMANTIC_PANE_CONTEXT_ROUTE,
 	SemanticSubjectKindSchema,
-	SemanticSubjectRefSchema,
-	SemanticPanePartSchema,
-	SemanticPanePresentationSchema,
 	PanePresentRequestSchema,
 	SemanticPaneContextSchema,
 };

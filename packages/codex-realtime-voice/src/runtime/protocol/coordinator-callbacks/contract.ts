@@ -412,10 +412,8 @@ export {
 	type CoordinatorCallbackCurrentChild,
 	type CoordinatorCallbackReadyCoordinator,
 	type CoordinatorCallbackDeliveryPath,
-	type CallbackBufferOverflowReason,
 	type CoordinatorCallbackDeliveryReason,
 	type CoordinatorCallbackDelivery,
 	type CoordinatorCallbackOptions,
-	type CoordinatorCallbackHistory,
 	type CoordinatorCallbacks,
 };

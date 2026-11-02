@@ -222,10 +222,4 @@ function toThreadMessageLike(turn: ConversationTurn): ThreadMessageLike {
 	};
 }
 
-export {
-	toThreadMessageLike,
-	type ActivityItem,
-	type ActivityRun,
-	type ConversationDataParts,
-	type TurnEnd,
-};
+export { toThreadMessageLike, type ActivityItem, type ActivityRun, type ConversationDataParts };

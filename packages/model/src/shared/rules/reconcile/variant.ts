@@ -483,13 +483,4 @@ function asIssues(issues: readonly OrderedIssue[]): ReconciliationIssue[] {
 	}));
 }
 
-export {
-	asIssues,
-	mergeByIdentity,
-	sidesOf,
-	MERGED,
-	SUBJECT_WORDS,
-	reconcileVariant,
-	type Reconciliation,
-	type ThreeStates,
-};
+export { asIssues, mergeByIdentity, reconcileVariant, type Reconciliation, type ThreeStates };

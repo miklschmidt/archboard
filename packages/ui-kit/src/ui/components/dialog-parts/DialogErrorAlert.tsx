@@ -30,4 +30,4 @@ function DialogErrorAlert(props: DialogErrorAlertProps): JSX.Element | null {
 	);
 }
 
-export { DialogErrorAlert, type DialogErrorAlertProps };
+export { DialogErrorAlert };

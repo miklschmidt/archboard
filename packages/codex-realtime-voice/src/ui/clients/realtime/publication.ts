@@ -94,4 +94,4 @@ function createPublisher<T>(): Publisher<T> {
 	});
 }
 
-export { createPublisher, type PublicationListener, type Publisher };
+export { createPublisher };

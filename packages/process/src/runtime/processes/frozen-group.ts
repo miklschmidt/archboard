@@ -64,4 +64,4 @@ async function awaitFrozenGroup(seam: FrozenGroupSeam, deadlineAtMs: number): Pr
 	}
 }
 
-export { awaitFrozenGroup, type FrozenGroupSeam };
+export { awaitFrozenGroup };

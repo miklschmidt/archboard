@@ -556,10 +556,7 @@ function standingOf(comparison: VariantComparison, id: string): ChangeKind {
 
 export {
 	type ChangeKind,
-	type PlacedStep,
-	type PlacedBeat,
 	type FieldChange,
-	type SubjectChange,
 	type VariantComparison,
 	changeOf,
 	compareVariants,

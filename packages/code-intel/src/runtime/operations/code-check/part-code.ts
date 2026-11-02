@@ -368,9 +368,7 @@ function unboundSkips(
 }
 
 export {
-	type Grain,
 	type PartCode,
-	type PartReading,
 	type ReadPart,
 	type RepoCheckout,
 	type SkippedPart,
