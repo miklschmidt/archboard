@@ -9,14 +9,12 @@
 
 import { useLayoutEffect } from "react";
 
-import type { SemanticAtlas } from "#ui/clients/semantic-board-canvas/reads/semantic-boards.ts";
 import type { StagedPicture } from "#ui/hooks/semantic-board-canvas/use-picture-transition.ts";
 import { stageOf } from "#ui/clients/semantic-board-canvas/picture/picture-stage.ts";
 import {
 	markReach,
 	markSubjects,
 	markVeil,
-	quietLines,
 } from "#ui/clients/semantic-board-canvas/subjects/subjects.ts";
 
 /** No subjects. */
@@ -31,7 +29,6 @@ interface ViewerMarks {
 	/** How many hops beyond the first each subject a trace reached is; null without a trace. */
 	readonly reach: ReadonlyMap<string, number> | null;
 	/** Where every subject ended up, which says which of them are lines. */
-	readonly atlas: SemanticAtlas;
 }
 
 /**
@@ -44,13 +41,12 @@ interface ViewerMarks {
  * @param marks What to mark.
  */
 function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void {
-	const { attended, veil, reach, atlas } = marks;
-	const quiet = quietLines(attended, veil, atlas);
+	const { attended, veil, reach } = marks;
 	useLayoutEffect(() => {
 		if (picture !== null) {
-			markSubjects(picture.root, attended, quiet);
+			markSubjects(picture.root, attended);
 		}
-	}, [picture, attended, quiet]);
+	}, [picture, attended]);
 	// The veil is its own mark, independent of attention.
 	useLayoutEffect(() => {
 		if (picture !== null) {
@@ -69,10 +65,9 @@ function useViewerMarks(picture: StagedPicture | null, marks: ViewerMarks): void
 			stageOf(picture.surface)?.setMarks({
 				selected: attended,
 				whole: veil ?? NOTHING,
-				quietLines: quiet,
 			});
 		}
-	}, [picture, attended, veil, quiet]);
+	}, [picture, attended, veil]);
 }
 
 export { useViewerMarks };

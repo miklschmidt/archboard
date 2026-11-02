@@ -296,7 +296,6 @@ impl Stage {
     pub fn set_marks(&mut self, marks: Marks) {
         self.presentation.selected = marks.selected;
         self.presentation.whole = marks.whole;
-        self.presentation.quiet_lines = marks.quiet_lines;
         self.forget_targets();
     }
 

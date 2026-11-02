@@ -65,8 +65,6 @@ pub struct Presentation {
     pub selected: HashSet<String>,
     /// The relationships lit along their whole route, shared stretches too.
     pub whole: HashSet<String>,
-    /// Whether a selected line goes without its ring, because several are chosen.
-    pub quiet_lines: bool,
     /// How far each flow's head is held down from where the picture drew it,
     /// in the picture's units, by flow. A head with no drop stays where it is.
     pub heads: HashMap<String, f64>,
@@ -123,9 +121,4 @@ pub struct Marks {
     pub selected: HashSet<String>,
     /// The relationships lit along their whole route.
     pub whole: HashSet<String>,
-    /// Whether a selected line goes without its ring: among several, the light
-    /// says which stand. It stays selected, so it still stands on top and takes
-    /// the pointer.
-    #[serde(default, rename = "quietLines")]
-    pub quiet_lines: bool,
 }

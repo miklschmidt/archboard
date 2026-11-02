@@ -6,7 +6,7 @@
 use crate::drawing::{NodeFacts, TextRole, TextRun};
 use crate::geometry::Rect;
 use crate::js;
-use crate::measure::{self, FarCard, FarWords, far_words, tag_end};
+use crate::measure::{self, FarCard, FarWords, far_words, tag_end, tags_width};
 use crate::paint::Ctx;
 use crate::paint::appearance::type_chip;
 use crate::paint::build::{Items, concat, lines, point};
@@ -80,6 +80,9 @@ pub(super) struct NearCard {
     pub lines: usize,
     /// The top of its row of tags, from the top of its box.
     pub tag_top: f64,
+    /// Whether that row stands under its name, from the left of its words, and
+    /// not at its top right corner.
+    pub tags_under: bool,
 }
 
 /// The gist a heading or a card draws: none where it says nothing but white space.
@@ -163,7 +166,11 @@ pub(super) fn paint_card_views(
         size: ICON_CHIP_SIZE,
     };
     let near_tags = point(
-        rect.x + tag_end(rect.width, part.appearance.drill.is_some()),
+        if near.tags_under {
+            near.words.anchor.x + tags_width(&names, 1.0)
+        } else {
+            rect.x + tag_end(rect.width, part.appearance.drill.is_some())
+        },
         rect.y + near.tag_top,
     );
     let icon = type_chip(

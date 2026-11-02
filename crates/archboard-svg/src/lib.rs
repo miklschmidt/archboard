@@ -101,7 +101,7 @@ fn stylesheet(document: &DocumentRequest) -> String {
         "[data-semantic-kind]{cursor:pointer}".to_owned(),
         format!(".{HALO_CLASS}{{opacity:0}}"),
         format!(
-            ".is-selected .{HALO_CLASS}{{opacity:1;stroke:{}}}",
+            ".is-selected:not([data-semantic-kind=edge]) .{HALO_CLASS},[data-semantic-part].is-selected .{HALO_CLASS}{{opacity:1;stroke:{}}}",
             css(&Token::DiagramSelection.into())
         ),
         ".is-selected[mask]{mask:none}".to_owned(),

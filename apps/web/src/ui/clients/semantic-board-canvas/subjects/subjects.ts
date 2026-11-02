@@ -123,31 +123,12 @@ function controlAt(target: EventTarget | null): boolean {
  * which is what keeps the drawing the server's and the highlight the pane's.
  * @param surface The element the picture was put into.
  * @param attended Which subjects are being attended to; empty for none.
- * @param quiet Whether a relationship's line goes without the ring.
  */
-function markSubjects(surface: Element, attended: ReadonlySet<string>, quiet: boolean): void {
+function markSubjects(surface: Element, attended: ReadonlySet<string>): void {
 	for (const group of surface.querySelectorAll(MARKED)) {
 		const id = markedId(group);
-		const ringless = quiet && group.getAttribute("data-semantic-kind") === "edge";
-		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id) && !ringless);
+		group.classList.toggle(SELECTED_CLASS, id !== null && attended.has(id));
 	}
-}
-
-/**
- * Whether selected lines go without the ring. A line wears it alone: among
- * several, the light says which stand, and a ring round each would turn the
- * picture gold.
- * @param attended Which subjects are being attended to.
- * @param veil What the light leaves standing, or null for no light.
- * @param atlas Where every subject ended up, which says which are lines.
- * @returns True when they do.
- */
-function quietLines(
-	attended: ReadonlySet<string>,
-	veil: ReadonlySet<string> | null,
-	atlas: Pick<SemanticAtlas, "edges">,
-): boolean {
-	return veil !== null && [...attended].filter((id) => atlas.edges[id] !== undefined).length > 1;
 }
 
 /** The class the surface carries while a presented step veils what it is not about. */
@@ -289,7 +270,6 @@ export {
 	markReach,
 	markSubjects,
 	markVeil,
-	quietLines,
 	subjectAt,
 	subjectBox,
 	surfaceMarks,

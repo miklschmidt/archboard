@@ -259,7 +259,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		[selection, focus, props.group],
 	);
 	const reach = props.reach ?? lighting.reach;
-	useViewerMarks(picture, { attended, veil: lighting.standing, reach, atlas: drawing.atlas });
+	useViewerMarks(picture, { attended, veil: lighting.standing, reach });
 	useSweep(picture, lighting.light, lighting.reach, reducedMotion);
 	useStickyHeads(picture, drawing.atlas);
 	// Seen from far away, each card's name is drawn larger in place of what it

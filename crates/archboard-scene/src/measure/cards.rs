@@ -236,6 +236,7 @@ fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
         runs: tab_runs(DOOR_NEAR, words.name, None),
         headers: None,
         pointed: None,
+        tags_under: None,
     }
 }
 
@@ -256,6 +257,7 @@ fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
         runs: near,
         headers: None,
         pointed: None,
+        tags_under: None,
     }
 }
 
@@ -266,10 +268,18 @@ pub(crate) fn tags_width(tags: &[&str], scale: f64) -> f64 {
     words + (tags.len().saturating_sub(1)) as f64 * TAG_GAP * scale
 }
 
-/// Whether a row of tags takes a row of its own above a card's name: where it
-/// beside the name would leave the name less than half of the words' width.
-fn own_row(tags: f64, room: f64) -> bool {
-    tags > room / 2.0
+/// How much of a name's row a row of tags takes: the tags end nearer the edge
+/// than the words do.
+fn tags_beside(tags: f64) -> f64 {
+    tags + TAG_BESIDE - (ARCHITECTURE_CARD_PADDING - TAG_INSET)
+}
+
+/// Whether a row of tags stands under a card's name, not beside it: where the
+/// name would no longer fit its row, and the tags would leave it less than half
+/// of the words' width. The name keeps the top of the card either way, so no
+/// card opens on an empty band.
+fn tags_under_name(tags: f64, room: f64, name: f64) -> bool {
+    tags > room / 2.0 && name + tags_beside(tags) > room
 }
 
 /// Where a card's row of tags ends: at its top right corner, clear of a drill mark.
@@ -279,33 +289,23 @@ pub(crate) fn tag_end(card_width: f64, drills: bool) -> f64 {
 
 /// How far a row of tags beside a name stands above that name's baseline.
 const TAG_ABOVE: f64 = 16.0;
+/// How far a row of tags under a name stands below that name's last line.
+const TAG_UNDER: f64 = 4.0;
 
-/// Where a card's row of tags stands, from the baseline of its name.
-pub(crate) fn tag_top(tags: f64, card_width: f64, baseline: f64) -> f64 {
-    let left = ARCHITECTURE_CARD_PADDING + ICON_CHIP_SIZE + ARCHITECTURE_ICON_GAP;
-    if own_row(tags, card_width - left - ARCHITECTURE_CARD_PADDING) {
-        TAG_INSET
-    } else {
-        baseline - TAG_ABOVE
-    }
+/// Where a card's row of tags beside its name stands, from that name's baseline.
+pub(crate) fn tag_top(baseline: f64) -> f64 {
+    baseline - TAG_ABOVE
 }
 
 /// What the name of a card gives up to the tags beside it, and what the row
-/// above it adds.
-fn tag_room(tags: f64, room: f64) -> (f64, f64) {
+/// under it adds.
+fn tag_room(tags: f64, room: f64, name: f64) -> (f64, f64) {
     if tags == 0.0 {
         (0.0, 0.0)
-    } else if own_row(tags, room) {
-        (
-            0.0,
-            TAG_HEIGHT + TAG_INSET - ARCHITECTURE_CARD_PADDING + TAG_BESIDE,
-        )
+    } else if tags_under_name(tags, room, name) {
+        (0.0, TAG_UNDER + TAG_HEIGHT)
     } else {
-        // The tags end nearer the edge than the words do.
-        (
-            tags + TAG_BESIDE - (ARCHITECTURE_CARD_PADDING - TAG_INSET),
-            0.0,
-        )
+        (tags_beside(tags), 0.0)
     }
 }
 
@@ -356,8 +356,10 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
     let title = paragraph(words.name, title_style.font, title_style.size);
     let note = paragraph(words.responsibility.unwrap_or(""), NOTE.font, NOTE.size);
     let far = far_name_width(words.name);
-    let named = title.natural_width() + marked + left + padding;
-    let least = js_max(js_max(size.least, far + marked), named);
+    let name = title.natural_width() + marked;
+    // A card takes the width to keep its name and tags on one row, up to its most.
+    let row = name + if tags > 0.0 { tags_beside(tags) } else { 0.0 };
+    let least = js_max(js_max(size.least, far + marked), row + left + padding);
     // A note that outgrows the card takes the most width, never a width of its
     // own, so a row of cards reads as one set.
     let width = if note.natural_width() + left + padding <= least {
@@ -366,14 +368,19 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         size.most
     };
     let available = width - left - padding;
-    let (beside, above) = tag_room(tags, available);
-    let top = padding + above;
-    let titles = runs_for(&title, title_style, available - marked - beside, left, top);
-    let titled = top + titles.len() as f64 * title_style.line;
-    let note_top = titled + ARCHITECTURE_NOTE_GAP;
+    let (beside, under) = tag_room(tags, available, name);
+    let titles = runs_for(
+        &title,
+        title_style,
+        available - marked - beside,
+        left,
+        padding,
+    );
+    let titled = padding + titles.len() as f64 * title_style.line;
+    let note_top = titled + under + ARCHITECTURE_NOTE_GAP;
     let notes = runs_for(&note, NOTE, available, left, note_top);
     let told = if notes.is_empty() {
-        titled
+        titled + under
     } else {
         note_top + notes.len() as f64 * NOTE.line
     };
@@ -399,6 +406,7 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
         .iter()
         .map(|run| run.width + marked + beside)
         .chain(notes.iter().map(|run| run.width))
+        .chain((under > 0.0).then_some(tags))
         .fold(0.0, js_max);
     let shifted = |run: TextRun| TextRun {
         y: run.y + slack,
@@ -417,6 +425,7 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
             .collect(),
         headers: None,
         pointed: None,
+        tags_under: (under > 0.0).then_some(titled + TAG_UNDER + slack),
     }
 }
 
@@ -427,6 +436,10 @@ mod tests {
 
     fn card(path: Option<&str>) -> MeasuredNode<()> {
         tagged(path, "Run checks", &[])
+    }
+
+    fn tagged_plain(name: &str) -> MeasuredNode<()> {
+        tagged(None, name, &[])
     }
 
     fn tagged(path: Option<&str>, name: &str, tags: &[GroupTag]) -> MeasuredNode<()> {
@@ -496,7 +509,7 @@ mod tests {
     }
 
     #[test]
-    fn a_tag_never_covers_a_name_and_two_tags_take_their_own_row_when_they_must() {
+    fn a_tag_never_covers_a_name_and_two_tags_stand_under_a_name_they_would_wrap() {
         let name = "Canonical checkpoint operations";
         let one = tagged(None, name, &[tag("Workhorse")]);
         let ends = |node: &MeasuredNode<()>| {
@@ -509,11 +522,27 @@ mod tests {
             tag("A very long group name of this model"),
             tag("And another"),
         ];
-        let both = tagged(None, name, &wide);
+        let both = tagged(Some("src"), name, &wide);
         let held: Vec<&str> = wide.iter().map(|tag| tag.name.as_str()).collect();
         let row = tags_width(&held, 1.0);
-        let top = tag_top(row, both.width, both.runs[0].y);
-        assert!(top + TAG_HEIGHT < both.runs[0].y - both.runs[0].font_size);
+        let top = both.tags_under.expect("a row under the name");
+        let plain = tagged(Some("src"), name, &[]);
+        assert_eq!(both.runs[0].y, plain.runs[0].y);
+        assert!(top > both.runs[0].y);
+        let note = both.runs.iter().find(|run| run.role == TextRole::Note);
+        assert!(top + TAG_HEIGHT < note.expect("a note").y - NOTE.size);
+        assert!(both.width >= row);
+    }
+
+    #[test]
+    fn a_short_name_keeps_two_tags_on_its_row_and_the_top_of_its_card() {
+        let two = [tag("Agent"), tag("Workspace packages")];
+        let name = "workbench";
+        let tagged = tagged(None, name, &two);
+        let plain = tagged_plain(name);
+        assert_eq!(tagged.tags_under, None);
+        assert_eq!(tagged.runs[0].y, plain.runs[0].y);
+        assert_eq!(tagged.height, plain.height);
     }
 
     #[test]

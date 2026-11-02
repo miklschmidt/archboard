@@ -420,9 +420,7 @@ test("a step about several cards lights and frames the lines between them, and o
 	};
 	mountStage(null, { reducedMotion: true });
 	await presenting();
-	expect(unveiled()).toEqual(["n1", "n2", "e1", "e2"]);
-	// Several lines stand lit in their own ink, so only the cards wear a ring.
-	expect(marked()).toEqual(["n1", "n2"]);
+	expect(marked()).toEqual(["n1", "n2", "e1", "e2"]);
 	const cards = cameraNow();
 	goTo(1);
 	await settle();

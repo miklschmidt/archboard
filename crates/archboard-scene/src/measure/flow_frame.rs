@@ -60,5 +60,6 @@ pub fn measure_flow_frame<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> 
         runs,
         headers: None,
         pointed: None,
+        tags_under: None,
     }
 }

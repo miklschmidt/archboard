@@ -6,6 +6,7 @@ use crate::drawing::{Edge, Emphasis};
 use crate::geometry::{Point, label_anchor_of, round_coord};
 use crate::paint::appearance::label_look;
 use crate::paint::build::{Items, group, grouped, lines, route, shape};
+use crate::paint::cards::halo;
 use crate::paint::design::{PILL_RADIUS, RAILS};
 use crate::paint::palette::Palette;
 use crate::paint::ports::{Port, port_inside};
@@ -24,11 +25,9 @@ use crate::scene::{
     Role, Shape, Stroke, SubjectKind,
 };
 
-/// Width added to a connection's invisible selection halo.
+/// Width added to a connection's unseen stroke, which takes the pointer. Its
+/// label wears the selection ring.
 const EDGE_HALO_EXTRA: f64 = 5.0;
-/// How solid a line's halo stands when it is lit: a bed for the line, which
-/// keeps its own ink, and no band of gold.
-const EDGE_HALO_OPACITY: f64 = 0.3;
 /// An arrowhead's drawing: a square this many marker units wide.
 const MARKER_BOX: f64 = 10.0;
 /// How thick the open head's arms are drawn, in marker units.
@@ -147,12 +146,9 @@ pub(super) fn paint_edge_line(
     }
     parts.push(standing_swipe(&path, width, standing, palette));
     parts.push(shape(
-        Shape::path(Purpose::Halo, path).unfilled().stroked(
-            styles
-                .ring(Some(width + EDGE_HALO_EXTRA))
-                .at(EDGE_HALO_OPACITY)
-                .rounded(),
-        ),
+        Shape::path(Purpose::Halo, path)
+            .unfilled()
+            .stroked(styles.ring(Some(width + EDGE_HALO_EXTRA)).rounded()),
     ));
     if appearance.dash == Dash::Mixed {
         parts.push(shape(
@@ -198,7 +194,11 @@ pub(super) fn paint_edge_words(
     let pill = match &routed.label {
         None => Items::new(),
         Some(label) => {
-            let mut parts = vec![slab_seat(label.bounds, PILL_RADIUS)];
+            let styles = Styles::of(palette);
+            let mut parts = vec![
+                slab_seat(label.bounds, PILL_RADIUS),
+                halo(label.bounds, PILL_RADIUS, &styles, standing),
+            ];
             // A removed label's ghost; a label's shadow lies under the lines (`label_shadow`).
             if standing == Some(Standing::Removed) {
                 parts.push(slab_shadow(

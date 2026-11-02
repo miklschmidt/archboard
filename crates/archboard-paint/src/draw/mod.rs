@@ -481,7 +481,8 @@ impl<C: Canvas> Walk<'_, C> {
             shape.purpose,
             Purpose::Halo | Purpose::Ring | Purpose::LitLine
         );
-        if ring && (!inside.selected || (inside.line && self.presentation.quiet_lines)) {
+        // A relationship's label wears the ring; its line keeps its own ink.
+        if ring && (!inside.selected || inside.line) {
             return;
         }
         let (path, bounds) = outline_of(&shape.geometry);

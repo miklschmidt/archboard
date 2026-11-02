@@ -96,6 +96,11 @@ pub struct MeasuredNode<N> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub pointed: Option<f64>,
+    /// For a card whose row of tags stands under its name: how far down the
+    /// card that row stands. Absent on a card whose tags stand beside its name.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub tags_under: Option<f64>,
 }
 
 /// A relationship label whose words and box are settled before routing.

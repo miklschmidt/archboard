@@ -86,6 +86,7 @@ fn lines_keep_their_lanes_where_a_card_that_is_not_drawn_held_them_apart() {
             runs: Vec::new(),
             headers: None,
             pointed: None,
+            tags_under: None,
         },
         bounds: Rect {
             x: 45.0,

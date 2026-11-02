@@ -201,7 +201,7 @@ every role and changes the values. The file theme.css holds both themes.
 
 **The Untouched Picture Rule.** The renderer draws the picture. The shell never paints gold, shadow or decoration on a card in it.
 
-**The One Ring Rule.** The gold ring goes round a card, a door or a frame that is chosen. A line wears a faint gold bed under its own ink, and only when it is the one line chosen. Among several lines the light says which stand, and each keeps its own ink.
+**The One Ring Rule.** The gold ring goes round a card, a door, a frame or a relationship's label that is chosen. A line keeps its own ink, and the light says which lines stand.
 
 **The Clear Tip Rule.** A reader rests on a part to read it and to see what it touches. So a tip stands against its part, on the nearest spot that leaves the part and what lights round it in view. On a dense picture it hides dim parts first, and it takes no pointer.
 

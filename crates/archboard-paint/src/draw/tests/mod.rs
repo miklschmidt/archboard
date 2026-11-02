@@ -552,30 +552,22 @@ fn drawn_line(id: &str, x: f64) -> Item {
 }
 
 #[test]
-fn among_several_lines_each_goes_without_its_ring_and_stays_on_top() {
+fn a_selected_line_goes_without_a_ring_and_stands_on_top() {
     let mut stage = Stage::new(Theme::Light, (400.0, 400.0));
     stage.show(painting(vec![
         drawn_line("first", 0.0),
         drawn_line("second", 10.0),
     ]));
-    let selected = HashSet::from(["first".to_owned()]);
     stage.set_marks(Marks {
-        selected: selected.clone(),
+        selected: HashSet::from(["first".to_owned()]),
         ..Marks::default()
     });
-    let (ringed, _) = frame(&mut stage, 0.0);
-    stage.set_marks(Marks {
-        selected,
-        quiet_lines: true,
-        ..Marks::default()
-    });
-    let (quiet, _) = frame(&mut stage, 1.0);
-    // Two routes and one ring, then the two routes alone.
-    assert_eq!(ringed.iter().filter(|op| op.stroked).count(), 3);
-    assert_eq!(quiet.iter().filter(|op| op.stroked).count(), 2);
+    let (selected, _) = frame(&mut stage, 0.0);
+    // The two routes alone, and no ring of either.
+    assert_eq!(selected.iter().filter(|op| op.stroked).count(), 2);
     // The chosen line still draws last, so it still takes the pointer.
     assert_eq!(
-        quiet.iter().rfind(|op| op.stroked).map(|op| op.x),
+        selected.iter().rfind(|op| op.stroked).map(|op| op.x),
         Some(0.0)
     );
 }

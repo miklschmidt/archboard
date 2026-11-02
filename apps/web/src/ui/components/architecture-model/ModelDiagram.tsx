@@ -442,7 +442,6 @@ function useSceneMarks(
 		attended,
 		veil: veil ?? lighting.standing,
 		reach,
-		atlas: scene.picture.atlas,
 	});
 }
 
