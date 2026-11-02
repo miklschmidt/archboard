@@ -163,7 +163,7 @@ No test owns this budget. A board that fills these buffers stops drawing, with n
 
 Each round filmed one moment on a large board at the real canvas size and changed one thing.
 A film holds the page's clock, steps it by one frame, and reads the frame that the painter drew. So it has no timing noise, and a look at the frames decides each round.
-The first films ran in a private headless sway at 7680x2160. Later films ran in headless Chrome on the same NVIDIA adapter, and they read each frame from the WebGPU swap texture, because that browser shows no WebGPU canvas in a screenshot.
+The first films ran in a private headless sway at 7680x2160. Later films ran in headless Chrome on the same NVIDIA adapter. That browser shows no WebGPU canvas in a screenshot, so they read each frame from the WebGPU swap texture.
 Both labs show 60 Hz at most, so their frame gaps count only as long gaps. No run measured 120 Hz at this canvas size.
 
 | Moment                    | What the film showed                                                                             | Change                                                                                                                                                 | Result                                                                                   |
@@ -181,7 +181,7 @@ Both labs show 60 Hz at most, so their frame gaps count only as long gaps. No ru
 | The way back              | The board shrank alone on an empty stage for 300 ms.                                             | Each fade of a dive follows the camera's place on the path, not the clock.                                                                             | The board settles into its card, and the parent comes up around it.                      |
 | A picture during a flight | The board jumped to the last picture and set off again, with 52,467 changed pixels in one frame. | The next flight starts from the in-between, and following a picture stops a glide where it is drawn.                                                   | The frame changes 15,238 pixels, the same as its neighbors.                              |
 
-At the real canvas size the painter takes 3.6 to 4 ms of main thread for a frame at the median and 5.2 to 6.3 ms at the 90th percentile.
+At the real canvas size, the painter takes 3.6 to 4 ms of main thread for a median frame. At the 90th percentile, it takes 5.2 to 6.3 ms.
 From submit to done takes 7.4 to 7.6 ms at the median and 10.4 to 11 ms at the 90th percentile. Each frame submits twice, for the render and for the blit.
 
 ### What the last pass covered
@@ -202,8 +202,8 @@ These things stay after the pass, and each one has a reason:
 
 - A new picture is drawn on the main thread, which stalls it for about 90 ms just before a flight on a large board. Pulses and the step back stop for that time. A move of that draw to a worker is a decision for the owner.
 - A door that the reader did not rest on waits for layout, with the step back as its answer.
-- The words of a card fade out and return during a flight that turned around, because the in-between holds no words that match the next picture.
-- The pulses of a sequence stop for a flight and start again when it lands.
+- The words of a card fade out and return during a flight that turned around. The in-between holds no words that match the next picture.
+- When a flight starts, the pulses of a sequence stop. When it lands, they start again.
 - A flight takes 640 ms at any distance, inside the band that the note on `PICTURE_MS.transition` in `@archboard/timing` gives. This pass tested no longer flight.
 - A first load starts about 150 ms later than on the old page, because the ink waits for the painter.
 - A receded line keeps its arrowhead.
@@ -261,9 +261,9 @@ The focal moment is a card that opens into its board. Every other move is a quie
 
 The owner tested the rack of focus and said: "If navigating on the same depth i want to be "transported" sideways. If navigating to a deeper module, i would expect it to zoom into the target. Navigating upwards in depth should zoom out to arrive at the target etc."
 
-`departureTo` in `apps/web/src/ui/rules/architecture-model/scene.ts` compares the depth of the two scopes, and this alone gives the way. A move to a scope at the same depth gets a side from the order of the module tree, so one board always stands to the same side of another.
+`departureTo` in `apps/web/src/ui/rules/architecture-model/scene.ts` compares the depth of the two scopes, and this alone gives the way. A move to a scope at the same depth gets a side from the order of the module tree. One board then always stands to the same side of another.
 
-A passage (`crates/archboard-paint/src/passage.rs`) is a move between boards with no flight. Two rigid planes run on one timeline with one number for the place on the way, so they cannot drift apart. The click starts the passage with a small first step, and the place runs on from that step when the next picture arrives.
+A passage (`crates/archboard-paint/src/passage.rs`) is a move between boards with no flight. Two rigid planes run on one timeline with one number for the place on the way, so they cannot drift apart. The click starts the passage with a small first step. When the next picture arrives, the place runs on from that step.
 
 | Way      | The board left                         | The next board                                  | The lens                                   |
 | -------- | -------------------------------------- | ----------------------------------------------- | ------------------------------------------ |
@@ -271,13 +271,13 @@ A passage (`crates/archboard-paint/src/passage.rs`) is a move between boards wit
 | In       | Grows about the card and fades.        | Grows out of the card, from far inside.         | The next board holds focus.                |
 | Out      | Shrinks and fades, and stays in focus. | Settles from round the reader.                  | The next board comes into focus last.      |
 
-The strip of boards is as short as the widest board lets it be. The next board is in sight before the last has gone, and no frame in the middle of the move is empty. The boards stand 8 percent further apart than the edge of the canvas needs, so the slow end of the move leaves nothing at the edge.
+The strip of boards is as short as the widest board lets it be. The next board is in sight before the last has gone, and no frame in the middle of the move is empty. The boards stand 8 percent further apart than the edge of the canvas needs. The slow end of the move then leaves nothing at the edge.
 
 ### Lines follow the connections
 
 The owner looked at the depth moves and said: "It's a bit tooo fast now for how much is going on with those lines." They suggested lines that animate along traced connections, or a reveal from the top left to the bottom right.
 
-The film showed two causes. On a first load, every line appeared in about 180 ms. On a door, every line swung from its old route to its new route at once, and the middle of the move was a web of diagonals.
+The film showed two causes. On a first load, every line appeared in about 180 ms. On a door, every line swung from its old route to its new route at once. The middle of the move was a web of diagonals.
 
 `crates/archboard-paint/src/between/circuit.rs` gives the order. A spark leaves each card that nothing feeds. Where it lands, the lines of that card start, so a board builds along the way its parts talk. A ring has no start, so a spark enters it at its top left card.
 
@@ -299,30 +299,30 @@ A diagonal reveal from the top left was filmed for comparison. It reads tidily, 
 The owner tested a first load and said that containers "just pop in". A container faded in over 228 ms, and a dark well as large as the board read as a flash.
 One square front now leaves the middle of the picture and passes the last container in 456 ms. Each container shows where the front passed, so a card lands on a floor. A thin edge runs with the front and cools as the container lands. `crates/archboard-paint/src/between/open.rs` holds this.
 
-The first film used a box of the container's shape. The wave of cards is round, so on a wide board the cards of the top and bottom rows stood outside that box for a few frames. A square matches the wave. The cards now start up to 46 ms later and the sparks 45 ms later, so that the front stays ahead of them.
+The first film used a box of the container's shape. The wave of cards is round. On a wide board, the cards of the top and bottom rows stood outside that box for a few frames. A square matches the wave. The cards now start up to 46 ms later and the sparks 45 ms later, so that the front stays ahead of them.
 
 A container that only the next picture has opens on the same front in a move, between `enterStart` and the end of the move. A test owns that case, and no film covers it.
 
-On the board of the film, in headless Chrome at 60 Hz, three runs of a first load gave a mean frame gap of 17.5 to 18.4 ms on the GPU, against 17.2 to 18.4 ms with the old fade. Two runs on the CPU painter gave a mean of 50.0 to 56.1 ms against 48.5 to 49.2 ms, and a longest gap of 150 to 167 ms against 100 ms.
+These runs used the board of the film, in headless Chrome at 60 Hz. Three runs of a first load gave a mean frame gap of 17.5 to 18.4 ms on the GPU. The old fade gave 17.2 to 18.4 ms. Two runs on the CPU painter gave a mean of 50.0 to 56.1 ms against 48.5 to 49.2 ms. Their longest gap was 150 to 167 ms against 100 ms.
 
 ### A container stays on
 
 The owner said that a change between flowchart and sequence must keep the container, because it only resizes. Both grammars draw a flow's tray under one id. The tray left with the last picture and a second tray opened, so the eye lost the one thing that stays.
 
-A container that the last picture also drew now changes its size. It starts in the box that the last picture gave it, under that picture's camera, and it lands in its new box on the curve of the opening. Each point of the tray keeps its distance from the nearer edge of the box, so corners, walls, and the tab keep their shape. The page sends the picture and the camera apart, so the stage tells the entrance how the two cameras relate on each frame. A test owns the start, the landing, and the camera.
+A container that the last picture also drew now changes its size. It starts in the box that the last picture gave it, under that picture's camera. It lands in its new box on the curve of the opening. Each point of the tray keeps its distance from the nearer edge of the box, so corners, walls, and the tab keep their shape. The page sends the picture and the camera apart, so the stage tells the entrance how the two cameras relate on each frame. A test owns the start, the landing, and the camera.
 
-Three smaller changes follow from one tray. The lens of an entrance blurred the tab outside its circle, so the entrance has no lens when a tray stays. The old cards hung outside a tray that shrank, so the last picture now leaves inside the tray when all its cards stood there. A second change that interrupts the first takes the tray from the box that it held, and a film of a second press 233 ms in shows widths of 971, 976, 972 and 960 pixels with no jump.
+Three smaller changes follow from one tray. The lens of an entrance blurred the tab outside its circle. If a tray stays, the entrance now has no lens. The old cards hung outside a tray that shrank. If all the cards of the last picture stood in the tray, that picture now leaves inside the tray. A second change that interrupts the first takes the tray from the box that it held. A film of a second press 233 ms in shows widths of 971, 976, 972 and 960 pixels with no jump.
 
 A sequence's flow frame now counts as a container, so it opens on a first load. A card's rim no longer uses the box of the atlas, because the box of a lifeline holds its whole column. That box caused the glow up the first column. A rim goes round a body that a group draws, so it now runs round an activation bar.
 
-Films of both directions on the GPU show one tray, a sharp tab, and no pop at the landing. With reduced motion, the change is one cut. In headless Chrome at 60 Hz, three runs of each direction gave a mean frame gap of 16.7 ms and a longest gap of 16.8 ms on the GPU. One run of each direction on the CPU painter gave a mean of 30.3 to 32.3 ms and a longest gap of 50 ms. These films ran on the board of a flow with twelve steps and eight participants, not on the largest board.
+Films of both directions on the GPU show one tray, a sharp tab, and no pop at the landing. With reduced motion, the change is one cut. On the GPU, three runs of each direction gave a mean frame gap of 16.7 ms and a longest gap of 16.8 ms. These ran in headless Chrome at 60 Hz. One run of each direction on the CPU painter gave a mean of 30.3 to 32.3 ms and a longest gap of 50 ms. These films ran on the board of a flow with twelve steps and eight participants, not on the largest board.
 
 ### A line waits for its cards
 
 The film of a tall flowchart showed lines that ran into empty space. The cards come out of the middle, the sparks started at 243 ms, and the top cards showed in full only at 492 ms. Rims waited for their cards, so they lit from the middle out and not along the flow.
 
 The whole drawing waits until both cards of each line show in full before that line starts.
-A dashed line fades along its whole length, so its destination must already stand there when it begins.
+A dashed line fades along its whole length. Before it begins, its destination must already stand there.
 A card shows in full at 60 percent of its arrival, and it stands within a few pixels of its place by then.
 
 All lines wait by the same time, so a line still starts as the line that feeds it lands.
@@ -333,17 +333,17 @@ Its wait is at most 294 ms, as the configured phases give it.
 The table above includes these waits.
 A rim lights as its line lands, so on the flowchart the rims run from the first card to the last.
 
-The start and the end of a flow belong to no subject, so they faded in with the frames, as two gold blurs before their container opened. They now come with the last cards. The shadow of a start or an end waits for them too.
+The start and the end of a flow belong to no subject. They faded in with the frames, as two gold blurs before their container opened. They now come with the last cards. The shadow of a start or an end waits for them too.
 
 The owner saw activation bars arrive before their cards. A participant draws two groups of one id: its lifeline with its bars, and its card. The lifeline took its time and its place from its own largest bar, in the middle of the picture. It then arrived before the card at its head. The lifeline now takes the time, the path and the opacity of its card.
 
 A message that ended inside a decision's frame lit a rim round the whole frame, about two seconds into an entrance. That frame is notation, and no line lands on it, so it takes no rim. A bar still does.
 
-On the largest board, three runs of a first load gave a mean frame gap of 18.4 ms on the GPU, with one gap of 117 ms at its start. Two runs on the flowchart gave 16.7 and 16.9 ms. Two runs of the largest board on the CPU painter gave a mean of 41.7 and 42.7 ms and a longest gap of 117 and 133 ms. One run of the flowchart gave 29.0 ms and 67 ms. All ran in headless Chrome at 60 Hz. With reduced motion, a first load of the flowchart changes no pixel after its first frame.
+On the largest board, three runs of a first load gave a mean frame gap of 18.4 ms on the GPU. One gap of 117 ms came at its start. Two runs on the flowchart gave 16.7 and 16.9 ms. Two runs of the largest board on the CPU painter gave a mean of 41.7 and 42.7 ms. Their longest gaps were 117 and 133 ms. One run of the flowchart gave 29.0 ms and 67 ms. All ran in headless Chrome at 60 Hz. With reduced motion, a first load of the flowchart changes no pixel after its first frame.
 
 ### A move cuts an opening short
 
-A door pressed during an opening showed a second wall. The move cross-faded from what had opened to the frame of the next picture, and the edge of the opening stayed where it stood. A container that a move finds on its way open now goes on from the box that it reached, in the way that a tray resizes, and the edge rides with it and cools. `crates/archboard-paint/src/between/resize.rs` holds this, and tests own the start, the landing, and the edge.
+A door pressed during an opening showed a second wall. The move cross-faded from what had opened to the frame of the next picture, and the edge of the opening stayed where it stood. A move can find a container on its way open. That container now goes on from the box that it reached, in the way that a tray resizes. The edge rides with it and cools. `crates/archboard-paint/src/between/resize.rs` holds this, and tests own the start, the landing, and the edge.
 
 An entrance and an edit capture the same tray state: its visible box, opacity, scale, and edge.
 A second interruption keeps that state, including transforms outside the tray group.
@@ -366,8 +366,8 @@ The lens takes no measurable frame time. A flight on the large board at 6144x172
 | New flight, lens    | 11.7 to 13.8 ms       | 18.5 to 19.3 ms | 6                 |
 
 The same few long frames appear in all three builds, near the start of a flight. They are not new.
-The cause is the page, not the painter. When a picture arrives, the page replaces the SVG that it keeps for hit testing, and the next two reads of a size force a layout of that SVG.
-On the large board, this is one task of 74 to 116 ms. It lands before the move runs, and the time of a move starts with the first frame drawn of it, so the move loses no frames.
+The cause is the page, not the painter. When a picture arrives, the page replaces the SVG that it keeps for hit testing. The next two reads of a size force a layout of that SVG.
+On the large board, this is one task of 74 to 116 ms. It lands before the move runs. The time of a move starts with the first frame drawn of it, so the move loses no frames.
 This pass left that cost in place, because the code that reads the surface expects the next picture to be there at once.
 The levels of the lens take about 35 MB of GPU memory on a canvas of 13 megapixels. The page allocates them with the first frame that uses the lens.
 
@@ -377,13 +377,18 @@ This pass filmed each of these on the held clock and looked at the frames: a fli
 It also filmed a flight and a first load on the light ground.
 It filmed a sidebar move and a flight with `prefers-reduced-motion`, and a sidebar move was one cut with no blur.
 
-The pass over the depth moves filmed these moves in the repository's own model and looked at the frames: a sidebar move sideways at each of two depths, a flight in and out from the sidebar, a zoom in and a zoom out with no flight, a zoom into a card with the wait for a flight set to 0, and a sideways move with `prefers-reduced-motion`, which was one cut.
-It also filmed a move to a grandchild, a move two levels up, a change of mind during a passage, a door to a shallower board, Back, and a sideways move on the light ground.
+The pass over the depth moves filmed these moves in the repository's own model and looked at the frames.
+It filmed a sidebar move sideways at each of two depths, and a flight in and out from the sidebar.
+It filmed a zoom in and a zoom out with no flight.
+It filmed a zoom into a card with the wait for a flight set to 0.
+A sideways move with `prefers-reduced-motion` was one cut.
+It also filmed a move to a grandchild, a move two levels up, and a change of mind during a passage.
+It filmed a door to a shallower board, Back, and a sideways move on the light ground.
 Eight sideways moves between two large boards gave 913 frames in about 16 seconds, with 11 frames over 25 ms.
 A move that a walkthrough makes between boards was not filmed in this pass. The film of a walkthrough stayed on one board.
 
-The pass over the lines filmed a first load at full pixel scale on both grounds, a door, and a flight into a card, and looked at the frames. It also filmed a first load with `prefers-reduced-motion`, and the diagonal reveal on a first load and a door.
-The final build, measured in three runs of each move in headless Chrome at 60 Hz, gave these medians on the large board. A door drew 104 frames, with a median of 4.6 ms on the main thread for each frame and 8 frames over 25 ms. Its longest gap, 83 ms, follows one main-thread task of 88 ms when the picture arrives. A dive drew 97 frames, with 6 frames over 25 ms and a longest gap of 67 ms.
+The pass over the lines filmed a first load at full pixel scale on both grounds, a door, and a flight into a card. It looked at the frames. It also filmed a first load with `prefers-reduced-motion`, and the diagonal reveal on a first load and a door.
+The final build, measured in three runs of each move in headless Chrome at 60 Hz, gave these medians on the large board. A door drew 104 frames, with a median of 4.6 ms on the main thread for each frame and 8 frames over 25 ms. When the picture arrives, one main-thread task takes 88 ms. The longest gap, 83 ms, follows it. A dive drew 97 frames, with 6 frames over 25 ms and a longest gap of 67 ms.
 No film ran at 120 Hz. The stepped films run at 60 frames a second.
 
 ### The last pass on the final code
