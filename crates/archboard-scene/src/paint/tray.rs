@@ -41,8 +41,11 @@ const TOP_SHADE: f64 = 14.0;
 const SIDE_SHADE: f64 = 12.0;
 /// How strong the shadow of a side is, against the top wall's.
 const SIDE_STRENGTH: f64 = 0.7;
-/// How wide a band of shadow is painted, which leaves its rounded corners whole.
-const SHADE_BAND: f64 = 2.0 * BAND_RADIUS;
+
+/// How wide a band of shadow is painted: its reach, and the far corners it rounds past that.
+const fn band_of(reach: f64) -> f64 {
+    reach + BAND_RADIUS
+}
 
 /// What a frame draws: its box, and the box of the tab at its top left.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -112,18 +115,18 @@ impl Well {
         }
     }
 
-    /// The bands of shadow on the floor, each rounded as the floor is, whose
-    /// gradients lay over each other as the blur of one inset shadow does.
+    /// The bands of shadow on the floor, each rounded as the floor is. Where two
+    /// overlap, they darken the corner as an inset shadow does.
     fn shades(&self) -> [(Rect, GradientId); 3] {
         let floor = self.floor();
         let side = Rect {
-            width: SHADE_BAND,
+            width: band_of(SIDE_SHADE),
             ..floor
         };
         [
             (
                 Rect {
-                    height: SHADE_BAND,
+                    height: band_of(TOP_SHADE),
                     ..floor
                 },
                 GradientId::WellShade,
@@ -131,7 +134,7 @@ impl Well {
             (side, GradientId::WellLeftShade),
             (
                 Rect {
-                    x: self.right() - SHADE_BAND,
+                    x: self.right() - side.width,
                     ..side
                 },
                 GradientId::WellRightShade,
@@ -351,7 +354,7 @@ pub(super) fn well_shades(palette: &Palette) -> Vec<Definition> {
                 line: Some(line),
                 user_space: false,
             },
-            stops: falling(&shadow_ink(palette, strength), reach / SHADE_BAND),
+            stops: falling(&shadow_ink(palette, strength), reach / band_of(reach)),
         })
     };
     vec![

@@ -464,7 +464,7 @@ viewpoint shows no side wall, so the two 6-unit bands of rule 3 and of the amend
 the owner asked for real shadows in their place. The floor now reaches both sides of the box. The top wall is the rim
 less itself moved down, so it thins to nothing round both top corners. Each side leaves a soft shadow of 12 units on the
 floor, weaker than the inner shadow of 14 units from the top edge. All three use the falloff of a card's shadow. They
-are three gradient bands, with no filter, blur or mask: a blur of an inset box is the product of its two falloffs, and
-that is what two translucent bands give where they overlap. They take the lighter ink of a card's shadow on the light
+are three gradient bands, with no filter, blur or mask, and where two overlap they darken the corner as an inset shadow
+does. They take the lighter ink of a card's shadow on the light
 ground. On the dark ground the top wall goes toward the lit lip, a little brighter than the floor, because a shade of
 the floor was lost in the shadow under it.
