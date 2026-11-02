@@ -27,7 +27,7 @@
     },
     {
       "order": 21000,
-      "kind": "dependency",
+      "kind": "call",
       "label": "whether this page is a replay",
       "emphasis": "normal",
       "anchor": {
@@ -86,8 +86,8 @@
         "path": "apps/web/src/main.tsx",
         "symbol": "Application"
       },
-      "to": "vKEsyHFk#mlSnLR16",
-      "id": "vKEsyHFk#sFuyzbsG"
+      "id": "vKEsyHFk#sFuyzbsG",
+      "to": "vKEsyHFk#mlSnLR16"
     }
   ]
 }

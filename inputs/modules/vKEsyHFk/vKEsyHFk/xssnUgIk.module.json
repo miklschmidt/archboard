@@ -1,7 +1,7 @@
 {
   "order": 39001,
   "name": "Workbench example",
-  "kind": "service",
+  "kind": "app",
   "responsibility": "An independent host on Bun.serve that uses only the voice package's public entries, without a board or vault",
   "groups": [
     "agent"
