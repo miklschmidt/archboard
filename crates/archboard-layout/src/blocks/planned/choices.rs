@@ -103,12 +103,13 @@ fn select<'a>(
     } else {
         &[false]
     };
+    let count = paths.len();
     passes
         .iter()
-        .flat_map(move |&beside| paths.clone().into_iter().map(move |one| (beside, one)))
-        .filter_map(move |(beside, points)| {
+        .flat_map(move |&beside| (0..count).map(move |at| (beside, at)))
+        .filter_map(move |(beside, at)| {
             let words = |path: &[Point]| label_for(model, edge, path, &slots, beside);
-            pool.keep(model, edge, words, &probe, points)
+            pool.keep(model, edge, words, &probe, paths[at].clone())
         })
         .take(limit)
 }

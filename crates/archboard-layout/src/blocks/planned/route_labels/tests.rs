@@ -159,3 +159,18 @@ fn words_that_stand_over_another_stretch_of_their_own_line_are_not_kept() {
     assert!(!own.rides_one(words(60.0)));
     assert!(own.rides_one(words(-30.0)));
 }
+
+#[test]
+fn a_trunk_line_with_no_spot_off_its_own_line_waits_for_room() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let mut shape = drawing(&[("ab", route)]);
+    let edge = model.edge_index["ab"];
+    assert_eq!(seat(&model, &mut shape, &[edge]), vec![edge]);
+}
