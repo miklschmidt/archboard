@@ -7,7 +7,7 @@ use std::task::{Context, Poll};
 use crate::Graphviz;
 use crate::blocks::place::lay_out_picture;
 
-/// Where the board's measured graph is laid out. The root options name its nesting.
+/// Where the picture's measured graph is laid out. The root options name its nesting.
 /// Dropping the returned future cancels work that the host has not completed.
 pub trait Solver {
     /// One solve under way.

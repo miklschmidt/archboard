@@ -135,7 +135,7 @@ impl Track<'_> {
         .map(|member| self.net(member).x_at(side.other()))
         .collect();
         let middle = ends.iter().fold(0.0, |sum, x| sum + x) / ends.len() as f64;
-        // Of two ends as near the middle, the one the board lists first.
+        // Of two ends as near the middle, the one the picture lists first.
         let wanted = ends[1..].iter().fold(ends[0], |one, &other| {
             if abs(other - middle) < abs(one - middle) - 0.01 {
                 other

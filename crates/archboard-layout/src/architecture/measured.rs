@@ -1,4 +1,4 @@
-//! A board's words measured, keyed by the identities the board gave them:
+//! A picture's words measured, keyed by the identities the picture gave them:
 //! what the layout sizes each card and label to.
 
 use std::collections::BTreeMap;
@@ -8,10 +8,10 @@ use indexmap::IndexMap;
 
 use crate::routes::LineLook;
 
-/// Every measured subject of a board.
+/// Every measured subject of a picture.
 #[derive(Clone, Debug, Default)]
 pub struct Measured {
-    /// Each part's box and words, by id, in the board's order.
+    /// Each part's box and words, by id, in the picture's order.
     pub nodes: IndexMap<String, MeasuredNode<NodeFacts>>,
     /// Each relationship's label, by relationship id, for those that have words.
     pub labels: IndexMap<String, MeasuredLabel>,

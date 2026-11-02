@@ -161,7 +161,7 @@ impl Doors {
     }
 
     /// The innermost box round a subject. A line rides only when it stands whole
-    /// inside: one that leaves the box stays on the board.
+    /// inside: one that leaves the box stays on the picture.
     fn around(unfolds: &[Unfold], found: &Found<'_>) -> Option<Unfold> {
         let frame = box_of(found)?;
         innermost(unfolds, frame)

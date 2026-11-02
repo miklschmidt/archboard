@@ -68,7 +68,7 @@ pub(crate) struct FoldPlan {
 
 /// The columns a block of cards would better fold into, if any: the cut of
 /// its ranks into runs that scores best, when that beats the block unfolded
-/// by a clear margin. Only the board and a container folds, and neither folds
+/// by a clear margin. Only the picture and a container folds, and neither folds
 /// when a line must cross every column.
 pub(crate) fn fold_plan(
     block: &Block,

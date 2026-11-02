@@ -33,7 +33,7 @@ impl Stage {
             last: &ghost.picture.scene,
             shown: ghost.shown(),
         });
-        // A passage carries the next board as one plane, so it has no entrance.
+        // A passage carries the next picture as one plane, so it has no entrance.
         let passes = ghost.as_ref().is_some_and(|ghost| ghost.axis.is_some());
         let flight = self
             .phases
@@ -57,8 +57,8 @@ impl Stage {
     }
 
     /// The line of the passage a heading starts, if it starts one, with the width
-    /// of the board it goes to as far as that is known. A picture has no place in
-    /// the module tree against no heading, or a view of its own board.
+    /// of the picture it goes to as far as that is known. A picture has no place in
+    /// the module tree against no heading, or a view of its own picture.
     pub(super) fn axis_of(&self, heading: Heading, next_width: f64) -> Option<Axis> {
         let camera = self.presentation.camera;
         let (width, height) = self.size;
@@ -82,7 +82,7 @@ impl Stage {
     }
 
     /// What is left of the picture on the stage, as a ghost. On a passage it stands
-    /// where the click took it, and a board that a passage was still bringing in
+    /// where the click took it, and a picture that a passage was still bringing in
     /// goes on along that passage as it leaves.
     fn ghost_of_last(
         &mut self,
@@ -138,7 +138,7 @@ impl Stage {
         })
     }
 
-    /// Put a board inside its card, and start the fades of the flight between
+    /// Put a picture inside its card, and start the fades of the flight between
     /// the two. `flight` is the flight's way, and the card it flies into.
     pub fn dive(
         &mut self,
@@ -170,7 +170,7 @@ impl Stage {
         });
     }
 
-    /// Take the board inside a card away, and the fades with it.
+    /// Take the picture inside a card away, and the fades with it.
     pub fn end_dive(&mut self) {
         self.dive = None;
         self.presentation.fading_words = None;

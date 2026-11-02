@@ -29,13 +29,13 @@ pub enum Grammar {
 /// One reading of a variant: its parts, its relationships and its flows.
 #[derive(Clone, Debug, Default, Deserialize)]
 pub struct Reading {
-    /// The parts, in the board's order.
+    /// The parts, in the picture's order.
     #[serde(default)]
     pub nodes: Vec<Node>,
-    /// The relationships, in the board's order.
+    /// The relationships, in the picture's order.
     #[serde(default)]
     pub edges: Vec<Edge>,
-    /// The flows, in the board's order.
+    /// The flows, in the picture's order.
     #[serde(default)]
     pub flows: Vec<Flow>,
 }
@@ -135,10 +135,10 @@ pub struct RenderRequest {
     /// The subjects nobody has decided yet.
     #[serde(default)]
     pub unsettled: Vec<String>,
-    /// Whether the board says nothing it describes is built (ADR 0031).
+    /// Whether the picture says nothing it describes is built (ADR 0031).
     #[serde(default)]
     pub unbuilt: bool,
-    /// The level of the board drawn (ADR 0029).
+    /// The level of the picture drawn (ADR 0029).
     #[serde(default)]
     pub level: Option<String>,
     /// Which engine lays an architecture out, resolved by the host from its shared default.

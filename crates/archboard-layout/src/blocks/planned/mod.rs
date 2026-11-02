@@ -2,7 +2,7 @@
 
 // A bounded readability search keeps dense solves within their render budget.
 const REFINEMENT_LIMIT: usize = 32;
-// Medium views also need placement alternatives; large boards keep one routed candidate.
+// Medium views also need placement alternatives; large pictures keep one routed candidate.
 const PLACEMENT_REFINEMENT_LIMIT: usize = 64;
 
 mod channel;

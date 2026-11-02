@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 
 /// Draw semantic content through the production graph builder and the real layout engine.
 fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
-    let content: Content = serde_json::from_value(content).expect("valid board content");
+    let content: Content = serde_json::from_value(content).expect("valid picture content");
     let mut measured = Measured::default();
     for (node, &(width, height)) in content.nodes.iter().zip(sizes) {
         measured.nodes.insert(

@@ -1,7 +1,7 @@
 //! Graphviz answers the graphs of the slowest first renders as it answered them before
 //! graphviz-pure was made faster for them (TASK-548.07).
 //!
-//! The fixture holds one graph of the critical solve of Agent workbench and one of Board
+//! The fixture holds one graph of the critical solve of Agent workbench and one of Picture
 //! viewer, each with an FNV-1a hash of the answer that commit b39ce7afa gave it. The
 //! graphs have clusters, wide ranks and long routes, so their answers go through every
 //! part of crossing reduction, network simplex and routing that was rewritten for speed.

@@ -67,17 +67,17 @@ impl PaletteColor {
     }
 }
 
-/// Which way the board a part opens lies from the board it is drawn on.
+/// Which way the picture a part opens lies from the picture it is drawn on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum DrillDirection {
-    /// It lies at a coarser level of the vault's levels than the board drawn.
+    /// It lies at a coarser level of the vault's levels than the picture drawn.
     Up,
-    /// It lies at a finer level of the vault's levels than the board drawn.
+    /// It lies at a finer level of the vault's levels than the picture drawn.
     Down,
-    /// It lies at the same level as the board drawn.
+    /// It lies at the same level as the picture drawn.
     Across,
-    /// The vault lists no level for the part's kind or for the board drawn, so no way can be said.
+    /// The vault lists no level for the part's kind or for the picture drawn, so no way can be said.
     Elsewhere,
 }
 
@@ -110,7 +110,7 @@ pub struct NodeAppearance {
     pub type_name: String,
     /// The key of its kind in the vault's policy.
     pub type_kind: String,
-    /// Which way the board it opens lies, or null when it opens none.
+    /// Which way the picture it opens lies, or null when it opens none.
     pub drill: Option<DrillDirection>,
 }
 
@@ -209,7 +209,7 @@ pub struct ArchitecturePicture {
     pub appearances: BTreeMap<String, NodeAppearance>,
     /// How each drawn line reads, by relationship id.
     pub lines: BTreeMap<String, LineAppearance>,
-    /// The lines that are flow steps drawn on the board, not authored relationships.
+    /// The lines that are flow steps drawn on the picture, not authored relationships.
     pub steps: Vec<String>,
     /// The shapes of a flowchart; absent on an architecture.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -221,7 +221,7 @@ pub struct ArchitecturePicture {
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[serde(tag = "grammar", rename_all = "lowercase")]
 pub enum Picture {
-    /// A board of parts and relationships, or a flowchart drawn as one.
+    /// A picture of parts and relationships, or a flowchart drawn as one.
     Architecture(Box<ArchitecturePicture>),
     /// A stack of message sequences.
     Sequence(SequencePicture),
@@ -266,7 +266,7 @@ pub struct PageRequest {
     pub plain: bool,
     /// The subjects nobody has decided yet.
     pub unsettled: Vec<String>,
-    /// Whether the board describes something nobody has built.
+    /// Whether the picture describes something nobody has built.
     pub unbuilt: bool,
     /// What an export carries beside its drawing.
     #[serde(skip_serializing_if = "Option::is_none")]

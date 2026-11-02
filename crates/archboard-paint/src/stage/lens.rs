@@ -20,11 +20,11 @@ use crate::timing::{Curve, EMPHASISED};
 /// The most a picture goes out of focus, as a share of the canvas's height.
 const MOST_BLUR: f64 = 0.02;
 
-/// How soft the board round a door goes, as a share of the canvas's height. The
-/// reader goes on reading this board, so it stays near.
+/// How soft the picture round a door goes, as a share of the canvas's height. The
+/// reader goes on reading this picture, so it stays near.
 const DOOR_BLUR: f64 = 0.006;
 
-/// How far the board round a card sinks into the ground as the reader flies in.
+/// How far the picture round a card sinks into the ground as the reader flies in.
 const MOST_SINK: f64 = 0.72;
 
 /// A card's corners, in the picture's units.
@@ -36,21 +36,21 @@ const CARD_SOFT: f64 = 0.03;
 /// How far past a door's edge the focus goes, as a share of the canvas's height.
 const DOOR_SOFT: f64 = 0.08;
 
-/// The part of a flight that the board round the card falls out of focus over,
+/// The part of a flight that the picture round the card falls out of focus over,
 /// and the part it sinks over. Both are places on the camera's path.
 const FLIGHT_BLURS: (f64, f64) = (0.0, 0.42);
 const FLIGHT_SINKS: (f64, f64) = (0.04, 0.5);
 
-/// The parts of a door's move that the board softens over and comes back over.
+/// The parts of a door's move that the picture softens over and comes back over.
 const DOOR_SOFTENS: (f64, f64) = (0.0, 0.3);
 const DOOR_RETURNS: (f64, f64) = (0.6, 1.0);
 
-/// The parts of a passage out of a board that the board arrived at falls out of
+/// The parts of a passage out of a picture that the picture arrived at falls out of
 /// focus over and comes back over.
 const OUT_FALLS: (f64, f64) = (0.0, 0.2);
 const OUT_RETURNS: (f64, f64) = (0.4, 0.98);
 
-/// How soft the two boards go at the middle of a sideways passage, as a share of
+/// How soft the two pictures go at the middle of a sideways passage, as a share of
 /// the canvas's height.
 const ACROSS_BLUR: f64 = 0.003;
 
@@ -96,7 +96,7 @@ fn through(camera: Camera, frame: Rect) -> Rect {
     }
 }
 
-/// What a flight is seen through: the card in focus, and the board round it
+/// What a flight is seen through: the card in focus, and the picture round it
 /// falling away.
 fn flight_lens(dive: &Dive, now: f64, camera: Camera, height: f64) -> Lens {
     let along = dive.along(now);
@@ -112,10 +112,10 @@ fn flight_lens(dive: &Dive, now: f64, camera: Camera, height: f64) -> Lens {
     }
 }
 
-/// What a passage is seen through. Along the strip of boards the frame smears
-/// with its speed, and a little softness joins the two boards. Along the axis of
-/// depth the nearer board stays sharp and the board behind it falls away, so
-/// going in holds the board arrived at, and going out the board left.
+/// What a passage is seen through. Along the strip of pictures the frame smears
+/// with its speed, and a little softness joins the two pictures. Along the axis of
+/// depth the nearer picture stays sharp and the picture behind it falls away, so
+/// going in holds the picture arrived at, and going out the picture left.
 fn passage_lens((axis, place): (Axis, f64), near: Rect, speed: f64, height: f64) -> Lens {
     let radius = height * CARD_SOFT;
     let in_focus = Focus {
@@ -148,7 +148,7 @@ fn passage_lens((axis, place): (Axis, f64), near: Rect, speed: f64, height: f64)
     }
 }
 
-/// What a door that opens is seen through: the door in focus, and the board
+/// What a door that opens is seen through: the door in focus, and the picture
 /// round it a little soft while it makes way.
 fn door_lens(door: Rect, share: f64, height: f64) -> Lens {
     let swell = racked(share, DOOR_SOFTENS) * (1.0 - racked(share, DOOR_RETURNS));
@@ -221,7 +221,7 @@ impl Stage {
         Some((passage, passage.1 - before))
     }
 
-    /// What a passage is seen through at a moment, if one runs. The nearer board
+    /// What a passage is seen through at a moment, if one runs. The nearer picture
     /// is the one the reader leaves on the way out, and the one they go to on the
     /// way in.
     fn passage_lens_at(&self, now: f64) -> Option<Lens> {

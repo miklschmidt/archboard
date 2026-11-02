@@ -112,7 +112,7 @@ impl Standings {
     }
 }
 
-/// Which subjects the board says nobody has decided yet.
+/// Which subjects the picture says nobody has decided yet.
 #[derive(Clone, Debug, Default)]
 pub(super) struct Unsettled(HashSet<String>);
 

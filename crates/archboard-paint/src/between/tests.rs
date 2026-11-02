@@ -42,7 +42,7 @@ fn shape_of(group: &Group, purpose: Purpose) -> &Shape {
         .expect("the group draws that shape")
 }
 
-/// A board of two cards and a line between them.
+/// A picture of two cards and a line between them.
 fn two_cards(left: Rect, note: &str) -> (Vec<Item>, Vec<(&'static str, Rect)>) {
     let right = rect(200.0, 10.0, 100.0, 50.0);
     let body = vec![
@@ -137,7 +137,7 @@ fn a_picture_that_arrives_during_a_move_starts_from_what_shows() {
     assert_ne!(plate(card), plate(drawing(&first.body, "a")[0]));
 }
 
-/// A move of one group down the board, far enough to count as a long way.
+/// A move of one group down the picture, far enough to count as a long way.
 fn a_long_way(before: Item, after: Item) -> Between {
     Between::new(
         &scene(vec![before], &[]),
@@ -166,7 +166,7 @@ fn a_line_that_travels_far_recedes_and_comes_back() {
 }
 
 #[test]
-fn a_label_that_crosses_the_board_leaves_and_comes_back_at_its_new_place() {
+fn a_label_that_crosses_the_picture_leaves_and_comes_back_at_its_new_place() {
     let new_place = rect(300.0, 300.0, 40.0, 10.0);
     let between = a_long_way(
         label("e", rect(0.0, 0.0, 40.0, 10.0), "words"),

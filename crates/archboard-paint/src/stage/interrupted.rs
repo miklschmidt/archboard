@@ -37,7 +37,7 @@ fn card(id: &str, x: f64) -> Item {
     )
 }
 
-fn board() -> Vec<Item> {
+fn picture() -> Vec<Item> {
     let line = Shape::path(
         Purpose::Line,
         vec![
@@ -74,7 +74,7 @@ fn replacing_an_entrance_keeps_the_visible_frame_including_late_sparks() {
     for now in [10.0, 40.0, 100.0, 150.0] {
         let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
         stage.set_phases(PHASES);
-        stage.enter(painting(board()), None, 100.0, (0.0, 0.0), 0.0);
+        stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
         raster(&mut stage, 0.0);
         let before = raster(&mut stage, now);
         stage.enter(
@@ -89,7 +89,7 @@ fn replacing_an_entrance_keeps_the_visible_frame_including_late_sparks() {
 }
 
 #[test]
-fn an_edit_of_an_arriving_board_keeps_both_planes_on_the_passage() {
+fn an_edit_of_an_arriving_picture_keeps_both_planes_on_the_passage() {
     let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
     stage.set_phases(PHASES);
     stage.show(painting(vec![card("left", 80.0)]));
@@ -115,7 +115,7 @@ fn an_edit_of_an_arriving_board_keeps_both_planes_on_the_passage() {
 fn a_departure_still_answers_while_sparks_run_after_the_cards_land() {
     let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
     stage.set_phases(PHASES);
-    stage.enter(painting(board()), None, 100.0, (0.0, 0.0), 0.0);
+    stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
     raster(&mut stage, 0.0);
     let visible = raster(&mut stage, 110.0);
     stage.leave(Heading::Across { side: None }, 20.0, 110.0);
@@ -131,14 +131,14 @@ fn an_edit_during_an_entrance_keeps_the_visible_frame_including_late_sparks() {
     for now in [10.0, 40.0, 100.0, 150.0] {
         let mut stage = Stage::new(Theme::Light, (200.0, 100.0));
         stage.set_phases(PHASES);
-        stage.enter(painting(board()), None, 100.0, (0.0, 0.0), 0.0);
+        stage.enter(painting(picture()), None, 100.0, (0.0, 0.0), 0.0);
         raster(&mut stage, 0.0);
         let before = raster(&mut stage, now);
-        stage.carry(painting(board()), (0.0, 0.0), 100.0);
+        stage.carry(painting(picture()), (0.0, 0.0), 100.0);
         let after = raster(&mut stage, now);
         assert!(before == after, "progress {}", now / 100.0);
         let before = raster(&mut stage, now + 5.0);
-        stage.carry(painting(board()), (0.0, 0.0), 100.0);
+        stage.carry(painting(picture()), (0.0, 0.0), 100.0);
         assert!(
             before == raster(&mut stage, now + 5.0),
             "second edit at {}",

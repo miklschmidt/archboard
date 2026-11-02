@@ -1,4 +1,4 @@
-//! A board drawn as blocks (the Blocks engine): every container is a block of
+//! A picture drawn as blocks (the Blocks engine): every container is a block of
 //! its own and every group region round more than one node too, each laid out
 //! on its own. A block of blocks gathers the cards it holds outside every block
 //! into a cluster, so every block holds cards alone or blocks alone.
@@ -68,7 +68,7 @@ impl BlockTree {
 
     /// Gather loose cards into compact units beside the blocks a parent holds.
     /// A named parent interface keeps disconnected member work independent.
-    /// The board's loose collaborators retain their shared rank context.
+    /// The picture's loose collaborators retain their shared rank context.
     pub(super) fn gather(&mut self, block: BlockId, edges: &[Rc<Edge>]) {
         let items = self.get(block).items.clone();
         let inner: Vec<&String> = items.iter().filter(|item| self.is_block(item)).collect();

@@ -64,7 +64,7 @@ pub(super) fn shifted(canvas: &Canvas, body: Items) -> Items {
 }
 
 /// What the planned frame says.
-const PLANNED_LABEL: &str = "Planned — nothing on this board is built";
+const PLANNED_LABEL: &str = "Planned — nothing in this picture is built";
 const LABEL_SIZE: f64 = 12.0;
 const LABEL_RISE: f64 = LABEL_SIZE / 2.0 + 2.0;
 const LABEL_INDENT: f64 = 16.0;
@@ -175,7 +175,7 @@ pub(super) fn page_for(painting: PaintedPage, palette: &Palette, unbuilt: bool) 
     }
 }
 
-/// The accessible name, saying what the frame says when the board is planned.
+/// The accessible name, saying what the frame says when the picture is planned.
 pub(super) fn planned_title(title: &str, unbuilt: bool) -> String {
     if unbuilt {
         format!("{title}. {PLANNED_LABEL}")

@@ -1,6 +1,6 @@
-//! The renderer core's layout of architecture boards (ADR 0059): a board's
+//! The renderer core's layout of architecture pictures (ADR 0059): a picture's
 //! parts and relationships, measured, drawn by Track or Blocks ([`draw`]). A
-//! drawing is chosen between the solves of one board, each a measured graph
+//! drawing is chosen between the solves of one picture, each a measured graph
 //! laid out one way ([`lay_out_picture`]) and read for what the choice weighs;
 //! the host runs the solves ([`Solver`]), side by side where it can, and each
 //! solve lays out its graphs with a [`Graphviz`]. The chosen drawing is put on

@@ -4,7 +4,7 @@
 //! A group names the subject it draws, when it draws one, and its role, so a
 //! painter can light, recede or pick out a part without reading the structure
 //! of the picture (ADR 0059). A role carries the facts that come with it: how
-//! a part was drawn, which way the board it opens lies, where a view's words
+//! a part was drawn, which way the picture it opens lies, where a view's words
 //! move to.
 
 use serde::{Deserialize, Serialize};
@@ -85,11 +85,11 @@ pub enum ShadowOf {
     Activation,
 }
 
-/// A part of the page an export adds, or the frame of a planned board.
+/// A part of the page an export adds, or the frame of a planned picture.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(tag = "slot", rename_all = "camelCase")]
 pub enum Slot {
-    /// The dashed frame and label of a board nothing on which is built.
+    /// The dashed frame and label of a picture nothing on which is built.
     PlannedFrame,
     /// The title an export draws above its picture.
     ExportTitle,
@@ -154,7 +154,7 @@ pub enum Role {
         /// Where the words move to when the other view shows.
         away: Transform,
     },
-    /// The mark of a board a part opens, and which way that board lies.
+    /// The mark of a picture a part opens, and which way that picture lies.
     DrillMark(DrillDirection),
     /// The arrow of a door.
     DoorArrow,

@@ -46,7 +46,7 @@ impl BlockTree {
             .find(|block| to_chain.contains(block))
             .ok_or_else(|| {
                 format!(
-                    "Relationship {} names a node the board does not hold.",
+                    "Relationship {} names a node the picture does not hold.",
                     edge.id
                 )
             })?;
@@ -69,7 +69,7 @@ impl BlockTree {
     }
 
     /// The relationships that close a cycle in the block they are drawn in,
-    /// found depth-first from the items nothing points at, in the board's
+    /// found depth-first from the items nothing points at, in the picture's
     /// order. A line into its own container runs upward.
     pub(crate) fn back_edges(&self) -> Set<String> {
         let mut back = Set::default();

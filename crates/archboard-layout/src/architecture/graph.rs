@@ -229,7 +229,7 @@ fn children_of(node: &mut J) -> Option<&mut Vec<J>> {
         })
 }
 
-/// Assemble the nodes into their containers: each node, by the board's
+/// Assemble the nodes into their containers: each node, by the picture's
 /// order, into its parent where the parent holds children, else onto the root.
 fn assembled(content: &Content, mut nodes: IndexMap<String, J>) -> Vec<J> {
     let ordered = ecma::sorted_by(&content.nodes.iter().collect::<Vec<_>>(), |one, other| {
@@ -276,7 +276,7 @@ fn nest(id: &str, nodes: &mut IndexMap<String, J>, kids: &IndexMap<String, Vec<S
     node
 }
 
-/// Where each node stands among its peers: in the board's order, with a group's
+/// Where each node stands among its peers: in the picture's order, with a group's
 /// members right after its first member, so that a group stands together.
 fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
     let ordered = ecma::sorted_by(&content.nodes.iter().collect::<Vec<_>>(), |one, other| {
@@ -304,7 +304,7 @@ fn gathered_order(content: &Content) -> BTreeMap<&str, f64> {
         .collect()
 }
 
-/// The graph of a board: its nodes in their containers, and its relationships
+/// The graph of a picture: its nodes in their containers, and its relationships
 /// with their labels and options.
 ///
 /// `inline` selects the retained Track input; Blocks also keeps the variant’s own overview kinds.

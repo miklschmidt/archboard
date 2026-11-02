@@ -41,7 +41,7 @@ pub(crate) fn insets_of(block: &Block) -> Insets {
 }
 
 /// The room a block keeps around what it holds, alone in no region: the page
-/// margin round the board, none round a column or a cluster of loose cards,
+/// margin round the picture, none round a column or a cluster of loose cards,
 /// and a container's or region's inset round it, but under it where a port
 /// stands on its bottom.
 fn plain_insets(block: &Block) -> Insets {
@@ -118,14 +118,14 @@ fn lay_cards(
 }
 
 /// The blocks, every block laid out, and each block of blocks' packing.
-struct Board {
+struct Picture {
     tree: BlockTree,
     laid: LaidMap,
     packings: Map<String, Packing>,
 }
 
-impl Board {
-    /// The board as settling reads and writes it.
+impl Picture {
+    /// The picture as settling reads and writes it.
     fn settling(&mut self) -> Settling<'_> {
         Settling {
             tree: &self.tree,
@@ -150,11 +150,11 @@ struct Earlier {
 /// Track packs complete parent frames here; group regions keep shared ranks.
 fn lay_block(
     gv: &mut Engine<'_>,
-    board: &mut Board,
+    picture: &mut Picture,
     block: BlockId,
     earlier: &Earlier,
 ) -> Result<Rc<Laid>, String> {
-    let tree = &board.tree;
+    let tree = &picture.tree;
     let one = tree.get(block);
     let packs = !one.items.is_empty()
         && one.clusters.is_empty()
@@ -169,12 +169,12 @@ fn lay_block(
             .values()
             .any(|line| line.labelled && line.edge.label_count() > 0);
     if !packs {
-        return lay_cards(gv, &mut board.tree, block, &mut board.laid);
+        return lay_cards(gv, &mut picture.tree, block, &mut picture.laid);
     }
     let one = tree.get(block);
-    let (packed, packing) =
-        PackLayout::new(tree, &board.laid, one, insets_of(one)).lay(earlier.packings.get(&one.id));
-    board.packings.insert(one.id.clone(), packing);
+    let (packed, packing) = PackLayout::new(tree, &picture.laid, one, insets_of(one))
+        .lay(earlier.packings.get(&one.id));
+    picture.packings.insert(one.id.clone(), packing);
     Ok(Rc::new(packed))
 }
 
@@ -186,7 +186,7 @@ fn lay_all(
     graph: &Node,
     earlier: &Earlier,
     way: &Way,
-) -> Result<Board, String> {
+) -> Result<Picture, String> {
     let mut tree = BlockTree::new(
         graph,
         Kept {
@@ -196,14 +196,14 @@ fn lay_all(
         way.nesting,
     )?;
     reserve_room(&mut tree, way);
-    let mut board = Board {
+    let mut picture = Picture {
         tree,
         laid: LaidMap::default(),
         packings: Map::default(),
     };
-    for block in board.tree.innermost_first(board.tree.root) {
-        let once = lay_block(gv, &mut board, block, earlier)?;
-        let wider = board
+    for block in picture.tree.innermost_first(picture.tree.root) {
+        let once = lay_block(gv, &mut picture, block, earlier)?;
+        let wider = picture
             .tree
             .get(block)
             .lone
@@ -212,27 +212,29 @@ fn lay_all(
         let laid = match wider {
             None => once,
             Some(wider) => {
-                let one = board.tree.get_mut(block);
+                let one = picture.tree.get_mut(block);
                 one.lone = Some(wider.clone());
                 let id = one.id.clone();
-                board.tree.lone.insert(id, wider);
-                lay_block(gv, &mut board, block, earlier)?
+                picture.tree.lone.insert(id, wider);
+                lay_block(gv, &mut picture, block, earlier)?
             }
         };
-        board.laid.insert(board.tree.get(block).id.clone(), laid);
+        picture
+            .laid
+            .insert(picture.tree.get(block).id.clone(), laid);
     }
-    Ok(board)
+    Ok(picture)
 }
 
 /// Settle ports after both ends are known. An unsettled overlap cannot win by drawing less ink.
-fn settled_picture(mut board: Board) -> Board {
-    settle_ports(&mut board.settling());
-    board
+fn settled_picture(mut picture: Picture) -> Picture {
+    settle_ports(&mut picture.settling());
+    picture
 }
 
-/// How often a board's lines cross, and how often they turn.
-fn crossings_and_bends(board: &Board) -> (f64, f64) {
-    let placed = Assembly::new(&board.tree, &board.laid).placed();
+/// How often a picture's lines cross, and how often they turn.
+fn crossings_and_bends(picture: &Picture) -> (f64, f64) {
+    let placed = Assembly::new(&picture.tree, &picture.laid).placed();
     let lines: Vec<&[_]> = placed
         .edges
         .iter()
@@ -247,7 +249,7 @@ fn crossings_and_bends(board: &Board) -> (f64, f64) {
 /// Lay the hierarchy, then choose the wall each route crosses from its geometry.
 /// Keep a settled port order when it reduces crossings without adding bends.
 /// Finally settle every port with both ends of its route known.
-fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Board, String> {
+fn lay_out(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Picture, String> {
     let first = lay_all(gv, graph, &Earlier::default(), way)?;
     let exits = sides_of(&first.tree, &first.laid);
     let kept = Earlier {
@@ -287,7 +289,7 @@ pub(super) fn place(
     host: &mut dyn Graphviz,
 ) -> Result<super::assembly::Placed, String> {
     let mut gv = Engine::new(host);
-    let board = lay_out(
+    let picture = lay_out(
         &mut gv,
         graph,
         &Way {
@@ -298,7 +300,9 @@ pub(super) fn place(
             complete_repair: false,
         },
     )?;
-    Ok(Assembly::new(&board.tree, &board.laid).placed().unstepped())
+    Ok(Assembly::new(&picture.tree, &picture.laid)
+        .placed()
+        .unstepped())
 }
 
 /// Legacy placements in the order the planner tries them. The wider search and
@@ -308,16 +312,16 @@ pub(super) struct Candidates<'g> {
     graph: Node,
     way: Way,
     ready: std::vec::IntoIter<super::assembly::Placed>,
-    unsettled: Vec<Board>,
+    unsettled: Vec<Picture>,
     widened: bool,
     settled: bool,
     seen: rustc_hash::FxHashSet<String>,
 }
 
-fn drawings(boards: &[Board]) -> std::vec::IntoIter<super::assembly::Placed> {
-    let mut drawings: Vec<_> = boards
+fn drawings(pictures: &[Picture]) -> std::vec::IntoIter<super::assembly::Placed> {
+    let mut drawings: Vec<_> = pictures
         .iter()
-        .map(|board| Assembly::new(&board.tree, &board.laid).placed())
+        .map(|picture| Assembly::new(&picture.tree, &picture.laid).placed())
         .collect();
     drawings.sort_by(|a, b| (a.width * a.height).total_cmp(&(b.width * b.height)));
     drawings.into_iter()
@@ -400,8 +404,8 @@ pub(super) fn candidates<'g>(
         )?)
     };
     let mut unsettled: Vec<_> = std::iter::once(first).chain(ordered).collect();
-    let area = |board: &Board| {
-        let root = &board.laid[&board.tree.get(board.tree.root).id];
+    let area = |picture: &Picture| {
+        let root = &picture.laid[&picture.tree.get(picture.tree.root).id];
         root.width * root.height
     };
     unsettled.sort_by(|a, b| area(a).total_cmp(&area(b)));
@@ -429,7 +433,7 @@ fn alternative_hierarchies(
     gv: &mut Engine<'_>,
     graph: &Node,
     way: &Way,
-) -> Result<Vec<Board>, String> {
+) -> Result<Vec<Picture>, String> {
     let mut candidates = expanded_candidates(gv, graph, way)?;
     if graph
         .edges
@@ -447,7 +451,11 @@ fn alternative_hierarchies(
 }
 
 /// Compare the wider wrap search with axial frame approaches and its settled port order.
-fn expanded_candidates(gv: &mut Engine<'_>, graph: &Node, way: &Way) -> Result<Vec<Board>, String> {
+fn expanded_candidates(
+    gv: &mut Engine<'_>,
+    graph: &Node,
+    way: &Way,
+) -> Result<Vec<Picture>, String> {
     let way = Way {
         expanded: true,
         ..way.clone()

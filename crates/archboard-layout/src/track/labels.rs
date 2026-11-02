@@ -361,7 +361,7 @@ impl Track<'_> {
     /// can move there clear of its neighbours.
     fn settle_on_lanes(&mut self, nets: &[NetId]) {
         let lanes = self.lanes_by_band(nets);
-        // In the board's order, so which of two neighbours moves first never depends on the document's.
+        // In the picture's order, so which of two neighbours moves first never depends on the document's.
         let ordered = sorted_by(nets, |&one, &other| {
             self.net(one).order - self.net(other).order
         });

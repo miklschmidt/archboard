@@ -26,7 +26,7 @@ enum Target {
     },
 }
 
-/// A flight between a board and the board inside its card, as a page states it.
+/// A flight between a picture and the picture inside its card, as a page states it.
 #[derive(Deserialize)]
 struct DiveFlight {
     way: DiveWay,
@@ -195,7 +195,7 @@ impl Painter {
         self.stage.stay();
     }
 
-    /// Put a board inside its card and start the flight's fades. `flight` names
+    /// Put a picture inside its card and start the flight's fades. `flight` names
     /// `{"way","card","frame"}` in JSON.
     ///
     /// # Errors
@@ -210,7 +210,7 @@ impl Painter {
         Ok(())
     }
 
-    /// Take the board inside a card away.
+    /// Take the picture inside a card away.
     #[wasm_bindgen(js_name = endDive)]
     pub fn end_dive(&mut self) {
         self.stage.end_dive();

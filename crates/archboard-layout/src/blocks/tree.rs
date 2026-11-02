@@ -1,9 +1,9 @@
-//! Drawn as blocks (the Blocks engine), the board, every container and every
+//! Drawn as blocks (the Blocks engine), the picture, every container and every
 //! group region round more than one node is a block, laid out on its own from
 //! its cards and child blocks; its parent places it as one box, as compact as
 //! what it holds. A block of blocks gathers the cards it holds outside every
 //! block into a cluster, so each block holds cards alone or blocks alone.
-//! Drawn inline (the Track engine), only the board and every group region
+//! Drawn inline (the Track engine), only the picture and every group region
 //! packed as a block of its own (`groups`) are blocks, and every container and
 //! every other region is a cluster of the block that lays it out (TASK-349).
 //! A folded block's columns are blocks too (`fold.rs`).
@@ -33,8 +33,8 @@ use super::laid::Size;
 use super::lone::{Card, Lone, captions_of};
 use super::projection::labels_before_joins;
 
-/// How a board's containers and group regions are drawn: each packed as a
-/// block of its own, every one inline as a cluster of the board's layout, or
+/// How a picture's containers and group regions are drawn: each packed as a
+/// block of its own, every one inline as a cluster of the picture's layout, or
 /// containers inline with each group's region packed as a block.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum Nesting {
@@ -55,7 +55,7 @@ impl Nesting {
             "inline" => Ok(Nesting::Inline),
             "groups" => Ok(Nesting::Groups),
             other => Err(format!(
-                "A board is drawn as blocks, inline or with its groups packed (blocks, inline or groups); not {other}."
+                "A picture is drawn as blocks, inline or with its groups packed (blocks, inline or groups); not {other}."
             )),
         }
     }
@@ -65,7 +65,7 @@ impl Nesting {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct BlockId(pub usize);
 
-/// What a block is: the board, a container, a group region packed whole, the
+/// What a block is: the picture, a container, a group region packed whole, the
 /// cluster of cards a block of blocks holds outside every block, or a column a
 /// block folds into.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -132,7 +132,7 @@ pub(crate) struct Ends {
     pub head: String,
 }
 
-/// A block: the board, a container, a group region, the cluster of cards a
+/// A block: the picture, a container, a group region, the cluster of cards a
 /// block of blocks holds outside every block, or a column a block folds into.
 #[derive(Clone, Debug)]
 pub(crate) struct Block {
@@ -147,7 +147,7 @@ pub(crate) struct Block {
     pub header: Option<Header>,
     /// The region round a container alone in it, which it is laid out as.
     pub lone: Option<Lone>,
-    /// Its cards and the blocks directly inside it, in the board's order.
+    /// Its cards and the blocks directly inside it, in the picture's order.
     pub items: Vec<String>,
     /// The lines it draws, by key.
     pub lines: Map<String, Line>,
@@ -281,7 +281,7 @@ pub(crate) fn exit_key(block: &str, way: &str, face: Side, along: &str) -> Strin
     format!("{block}|port:{way}|{}|{along}", face.name())
 }
 
-/// The board's blocks and every relationship's lines through them.
+/// The picture's blocks and every relationship's lines through them.
 pub(crate) struct BlockTree {
     pub arena: Vec<Block>,
     pub blocks: Map<String, BlockId>,
@@ -295,7 +295,7 @@ pub(crate) struct BlockTree {
     pub lone: Map<String, Lone>,
     /// Nodes drawn inline that are entry points of their container, each true when first.
     pub entries: Map<String, bool>,
-    /// Every relationship's projection, in the board's order.
+    /// Every relationship's projection, in the picture's order.
     pub projections: Vec<Projection>,
     /// How each relationship is drawn, by id.
     pub routes: Map<String, Route>,
@@ -315,7 +315,7 @@ pub(crate) struct BlockTree {
     pub orders: Map<String, Vec<String>>,
 }
 
-/// What an earlier layout of a board decided, which laying it out again keeps.
+/// What an earlier layout of a picture decided, which laying it out again keeps.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Kept {
     /// Try the wider packing and axial frame approaches as a complete candidate.

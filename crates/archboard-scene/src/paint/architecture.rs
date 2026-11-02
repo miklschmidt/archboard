@@ -82,7 +82,7 @@ fn extent_of(drawing: &Painted, standings: &Standings, unsettled: &Unsettled) ->
 pub(super) struct Vocabulary<'a> {
     pub appearances: &'a BTreeMap<String, NodeAppearance>,
     pub lines: &'a BTreeMap<String, LineAppearance>,
-    /// The lines that are flow steps drawn on the board.
+    /// The lines that are flow steps drawn on the picture.
     pub steps: HashSet<&'a str>,
 }
 
@@ -140,7 +140,7 @@ struct Stacked<'p> {
 
 impl<'p> Stacked<'p> {
     /// A drawing's boxes in the order they are painted: containers shallowest
-    /// first, then the board's order, and cards in the board's order.
+    /// first, then the picture's order, and cards in the picture's order.
     fn of(drawing: &'p Painted) -> Stacked<'p> {
         let mut containers: Vec<&Node> = drawing.drawing.containers.iter().collect();
         containers.sort_by(|a, b| {

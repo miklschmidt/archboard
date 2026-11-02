@@ -46,7 +46,7 @@ fn self_loop(bounds: Rect) -> Curve {
     )
 }
 
-/// Every relationship along its route, in the board's order.
+/// Every relationship along its route, in the picture's order.
 fn edges_of(
     content: &Content,
     measured: &Measured,

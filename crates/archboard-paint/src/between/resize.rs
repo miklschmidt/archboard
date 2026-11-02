@@ -338,8 +338,8 @@ mod tests {
     fn band_from(stood: Rect) -> Resizing {
         let tray = rect(0.0, 0.0, 100.0, 100.0);
         let band = rect(0.0, 0.0, 100.0, 8.0);
-        let board = scene(vec![region("r", tray), region("r", band)], &[]);
-        let groups = found(&board);
+        let picture = scene(vec![region("r", tray), region("r", band)], &[]);
+        let groups = found(&picture);
         let way = ways(&groups, MIDDLE, (0.0, 1.0))["r"];
         Resizing::new(&groups[1], Tray::of(&groups[0], stood), way, 0.0)
     }

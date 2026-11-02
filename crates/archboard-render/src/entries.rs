@@ -8,7 +8,7 @@
 //! Both are read off the whole variant: an entry point stays one in a view
 //! that hides its caller, a child a comparison puts back is never one, since
 //! the variant does not hold it, and a view holds a container's first row
-//! only where the whole variant does. The interface itself is the board's
+//! only where the whole variant does. The interface itself is the picture's
 //! (`@archboard/model/container-interface`, `inspectContainer`).
 
 use std::collections::{BTreeMap, HashMap, HashSet};

@@ -157,7 +157,7 @@ fn a_dashed_line_waits_for_the_card_at_its_far_end() {
         panic!("a route")
     };
     shape.stroke.as_mut().unwrap().dashes = vec![4.0, 4.0];
-    let board = scene(
+    let picture = scene(
         vec![
             card("near", rect(180.0, 90.0, 40.0, 20.0), &[]),
             card("far", rect(0.0, 0.0, 40.0, 20.0), &[]),
@@ -165,7 +165,7 @@ fn a_dashed_line_waits_for_the_card_at_its_far_end() {
         ],
         &[],
     );
-    let entrance = Entrance::new(&board, &PHASES, None);
+    let entrance = Entrance::new(&picture, &PHASES, None);
     let body = (1..100)
         .map(|step| entrance.at(f64::from(step) / 100.0))
         .find(|body| {

@@ -28,7 +28,7 @@ const BLOOM_SCALE: f64 = 0.84;
 /// How far through its arrival a card shows in full, all but settled.
 pub(super) const SHOWN_BY: f64 = 0.6;
 
-/// Where a label that crosses the board is gone, as a share of the move.
+/// Where a label that crosses the picture is gone, as a share of the move.
 pub(super) const LABEL_GONE_BY: f64 = 0.16;
 
 /// The move that changes nothing.
@@ -301,7 +301,7 @@ impl Swap {
     }
 
     /// A label whose line travels far: it goes as the line sets off, and comes
-    /// back where the line lands, so that no words cross the board.
+    /// back where the line lands, so that no words cross the picture.
     pub(super) fn across(old: &Group, new: &Group, phases: Transition) -> Swap {
         Swap {
             old: borrowed(old),

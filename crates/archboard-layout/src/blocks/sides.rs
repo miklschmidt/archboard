@@ -1,9 +1,9 @@
-//! Which edge of each block a relationship crosses, chosen once the board is
+//! Which edge of each block a relationship crosses, chosen once the picture is
 //! laid out. The tree first sends every relationship out of the bottom of each
 //! block around its source and into the top of each block around its target
 //! (upward, the other way round). Where the two blocks it runs between in the
 //! block that holds both ends stand beside each other, or the wrong way up,
-//! the board is laid out again with the line leaving and entering every block
+//! the picture is laid out again with the line leaving and entering every block
 //! of its chain by the edges that face each other: the walls where the two
 //! blocks stand further apart across than up and down, else the faces toward
 //! each other. A region round one node stands its node taller, and turns no

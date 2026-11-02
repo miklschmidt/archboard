@@ -62,7 +62,7 @@ pub struct CardWords<'a> {
     pub path: Option<&'a str>,
     /// The groups a card is in.
     pub tags: &'a [GroupTag],
-    /// Whether it opens another board, which puts a mark beside its name.
+    /// Whether it opens another picture, which puts a mark beside its name.
     pub drills: bool,
     /// Whether it stands outside the open frame as a door.
     pub door: bool,

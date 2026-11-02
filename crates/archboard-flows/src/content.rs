@@ -1,4 +1,4 @@
-//! A board's flows and nodes, as the layout reads them from the board's own
+//! A picture's flows and nodes, as the layout reads them from the picture's own
 //! JSON (`@archboard/model/flow`, `@archboard/model/content`). A flow is a tree
 //! told in order: a decision holds its alternatives' steps, and a loop holds
 //! the steps it repeats (ADR 0053).
@@ -169,7 +169,7 @@ pub struct Flow {
     pub id: String,
     /// What the flow is called.
     pub name: String,
-    /// A line on what the flow explains, when the board has one.
+    /// A line on what the flow explains, when the picture has one.
     #[serde(default)]
     pub summary: Option<String>,
     /// The ids of the nodes whose columns the flow draws, left to right.

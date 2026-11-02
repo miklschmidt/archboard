@@ -16,9 +16,9 @@ use super::card_layout::{Arrangement, CardLayout, Engine};
 use super::laid::{Insets, Laid, LaidMap};
 use super::tree::{BlockId, BlockTree, Kind, Nesting};
 
-/// How much better a wrap must fit the page than the board whole.
+/// How much better a wrap must fit the page than the picture whole.
 const WORTH_WRAPPING: f64 = 1.1;
-/// How much better a wrap must fit the page than a block inside the board.
+/// How much better a wrap must fit the page than a block inside the picture.
 const WORTH_WRAPPING_INSIDE: f64 = 1.4;
 /// The fewest items a rank must hold to be wrapped.
 const MIN_WRAPPED: usize = 4;
@@ -327,8 +327,8 @@ fn try_wrap(lowered: &Plan, nesting: Nesting, boxes: usize, cards: usize) -> boo
             .values()
             .enumerate()
             .all(|(index, &row)| row == index % rows);
-    // Labels and boundary ports can make a small board's fan count as dense.
-    // Keep its two-row cut without widening the search of large boards.
+    // Labels and boundary ports can make a small picture's fan count as dense.
+    // Keep its two-row cut without widening the search of large pictures.
     let cut = (rows == 4 || rows == 2 && cards <= 24) && lowered.values().is_sorted();
     dealt || cut
 }

@@ -34,7 +34,7 @@ pub struct SequenceCard {
     pub title_size: f64,
     /// The lines of its responsibility, positioned from the card's box.
     pub notes: Vec<TextRun>,
-    /// The run its name has: the text run, less the mark of a part that opens a board.
+    /// The run its name has: the text run, less the mark of a part that opens a picture.
     pub title_room: f64,
 }
 

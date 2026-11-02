@@ -92,7 +92,7 @@ impl Graphviz for Refusing {
     }
 }
 
-/// A board measured: two containers holding a card each, and a call from one
+/// A picture measured: two containers holding a card each, and a call from one
 /// card to the other, drawn the way its nesting names.
 fn two_containers(nesting: &str) -> String {
     let container = |id: &str, card: Value| {
@@ -218,7 +218,7 @@ fn a_parent_inside_a_packed_group_stays_above_its_enclosing_inline_frame() {
 }
 
 #[test]
-fn a_board_drawn_no_way_the_core_knows_is_refused_before_graphviz_is_asked() {
+fn a_picture_drawn_no_way_the_core_knows_is_refused_before_graphviz_is_asked() {
     let mut graphviz = Column::default();
     lay_out_picture(&two_containers("stacked"), &mut graphviz).unwrap_err();
     assert_eq!(graphviz.asked, 0);

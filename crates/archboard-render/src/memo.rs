@@ -1,6 +1,6 @@
-//! The layouts a renderer remembers: each distinct board, engine and
+//! The layouts a renderer remembers: each distinct picture, engine and
 //! comparison laid out once, the least recently used forgotten first. A
-//! layout under way is shared: a second render of the same board waits for
+//! layout under way is shared: a second render of the same picture waits for
 //! the first one's layout rather than laying it out again. A failed layout is
 //! not remembered, so the next render tries again.
 
@@ -12,7 +12,7 @@ use std::task::{Poll, Waker};
 use archboard_scene::drawing::Painted;
 use indexmap::IndexMap;
 
-/// How many distinct layouts are remembered across boards, variants and comparisons.
+/// How many distinct layouts are remembered across pictures, variants and comparisons.
 const REMEMBERED_LAYOUTS: usize = 64;
 
 /// What a layout answered.

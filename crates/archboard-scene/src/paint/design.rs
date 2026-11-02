@@ -1,5 +1,5 @@
 //! The sizes, faces and icons the painter draws with. The core's sequence and
-//! flowchart layout (`archboard-flows`) and its board layout
+//! flowchart layout (`archboard-flows`) and its picture layout
 //! (`archboard-layout`) read them from here.
 
 use crate::drawing::{DiagramFont, FontFamily};
@@ -98,9 +98,9 @@ pub(crate) const PILL_RADIUS: f64 = 4.0;
 
 /// The space around the final drawing.
 pub const DIAGRAM_MARGIN: f64 = 20.0;
-/// The extra space a planned board's page adds around the drawing to hold its frame.
+/// The extra space a planned picture's page adds around the drawing to hold its frame.
 pub(crate) const PLANNED_FRAME_MARGIN: f64 = 16.0;
-/// The distance from the page edge to a planned board's dashed frame.
+/// The distance from the page edge to a planned picture's dashed frame.
 pub(crate) const PLANNED_FRAME_INSET: f64 = 8.0;
 /// How tall a door stands, and how round its corners are.
 pub const DOOR_HEIGHT: f64 = 34.0;

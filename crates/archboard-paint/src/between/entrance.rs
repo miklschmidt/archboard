@@ -1,5 +1,5 @@
 //! A picture arriving with nothing to carry it from: the first picture of a
-//! page, another board, another view of this one.
+//! page, another picture, another view of this one.
 //!
 //! A move can carry what two scenes share. Here nothing is shared, so the
 //! picture blooms out of its middle instead. Containers open first, so the cards
@@ -7,12 +7,12 @@
 //! little nearer the middle and smaller than it lands. Once the cards the lines leave
 //! and reach stand there, a spark runs along the connections and draws the lines, and
 //! each label arrives when the spark reaches it. Everything is timed by where it is
-//! on the board, not by how many there are, so a board of four cards and a board of
+//! on the picture, not by how many there are, so a picture of four cards and a picture of
 //! forty read as the same gesture.
 //!
 //! A subject the last picture also drew is the same subject. It flies from where
 //! the last picture drew it to its place in this one, so the eye keeps hold of
-//! something across the change of board.
+//! something across the change of picture.
 
 use std::collections::{BTreeMap, HashMap, HashSet};
 

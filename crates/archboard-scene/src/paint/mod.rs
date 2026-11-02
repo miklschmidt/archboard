@@ -347,7 +347,7 @@ mod tests {
         all
     }
 
-    /// The scene of the test board.
+    /// The scene of the test picture.
     fn painted() -> Scene {
         let request: PaintRequest =
             serde_json::from_str(&REQUEST.replace("EDGE", EDGE)).expect("the request reads");
@@ -413,7 +413,7 @@ mod tests {
                 _ => None,
             })
             .collect();
-        assert_ne!(traffic.len(), 0, "the board draws its traffic");
+        assert_ne!(traffic.len(), 0, "the picture draws its traffic");
         assert!(traffic.iter().all(|mark| !mark.route.segments.is_empty()
             && matches!(mark.motion, Motion::Steady { speed, .. } if speed > 0.0)));
     }

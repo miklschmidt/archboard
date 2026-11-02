@@ -1,5 +1,5 @@
 //! What moves a whole picture: a flight from the last picture, a part-by-part
-//! entrance, a picture leaving, the ghost of one that left, and the board inside
+//! entrance, a picture leaving, the ghost of one that left, and the picture inside
 //! a card that the camera flies into. Each holds what it needs from its start
 //! and answers for a moment of the host's clock.
 
@@ -105,7 +105,7 @@ impl Flight {
     }
 
     /// An entrance that went on inside a card and has landed, so that its sparks
-    /// run on over the board that took over.
+    /// run on over the picture that took over.
     pub(crate) fn landed_from(entrance: Entrance, ms: f64, now: f64) -> Option<Flight> {
         let length = entrance.length();
         (length > 1.0).then(|| Flight::Enter {
@@ -263,7 +263,7 @@ impl Ghost {
     }
 
     /// Where the reader is on the passage at a moment, when the ghost is the
-    /// board left on one.
+    /// picture left on one.
     pub(crate) fn passage(&self, now: f64) -> Option<(Axis, f64)> {
         let (axis, from) = self.axis?;
         Some((axis, place_at(from, self.time.share(now))))
@@ -298,7 +298,7 @@ pub(crate) struct Ghost {
     /// The line of the passage, and the place on it where the reader stood when
     /// the next picture arrived.
     pub(crate) axis: Option<(Axis, f64)>,
-    /// The passage that was still bringing this board in, if one was: the board
+    /// The passage that was still bringing this picture in, if one was: the picture
     /// goes on along it as it leaves, so a change of mind has no stop in it.
     pub(crate) held: Option<(Axis, f64, Stretch)>,
     /// How the picture looked when it was last seen: it leaves in its own light.
@@ -316,7 +316,7 @@ impl Ghost {
         self.axis.map(|_| self.time.end(now))
     }
 
-    /// Where the passage that brought this board in has taken it by a moment.
+    /// Where the passage that brought this picture in has taken it by a moment.
     pub(crate) fn held_at(&self, now: f64) -> Plane {
         self.held.map_or(Plane::STILL, |(axis, from, time)| {
             axis.arrived(place_at(from, time.share(now)))
@@ -351,7 +351,7 @@ impl Ghost {
     }
 }
 
-/// Which way a flight goes between a board and the board inside its card.
+/// Which way a flight goes between a picture and the picture inside its card.
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum DiveWay {
@@ -364,13 +364,13 @@ pub enum DiveWay {
 /// Opacity at points of the flight into a card, from 0 to 1, in order.
 type Stops = [(f64, f64); 4];
 
-/// What a card says goes first, so the board inside it is not read through its label.
+/// What a card says goes first, so the picture inside it is not read through its label.
 const WORDS: Stops = [(0.0, 1.0), (0.03, 1.0), (0.16, 0.0), (1.0, 0.0)];
 
-/// The board above stays until the board inside can be made out.
+/// The picture above stays until the picture inside can be made out.
 const PARENT: Stops = [(0.0, 1.0), (0.3, 1.0), (0.82, 0.0), (1.0, 0.0)];
 
-/// The board inside comes up before the card fills the pane.
+/// The picture inside comes up before the card fills the pane.
 const INSET: Stops = [(0.0, 0.0), (0.02, 0.0), (0.16, 1.0), (1.0, 1.0)];
 
 /// Where a fade stands at a point of the flight into the card. Each stretch
@@ -386,7 +386,7 @@ fn fade_at(stops: &Stops, progress: f64) -> f64 {
     from.1 + (to.1 - from.1) * eased
 }
 
-/// Which part of a flight the board inside the card blooms over.
+/// Which part of a flight the picture inside the card blooms over.
 const BLOOM: (f64, f64) = (0.06, 0.96);
 
 /// Where a moment of a flight stands on the way in. Each part shows at one place
@@ -399,12 +399,12 @@ fn along_flight(way: DiveWay, progress: f64) -> f64 {
     }
 }
 
-/// The board inside a card, in the parent's own coordinates, so the camera
+/// The picture inside a card, in the parent's own coordinates, so the camera
 /// carries it along.
 #[derive(Debug)]
 pub(crate) struct Dive {
     pub(crate) inset: Picture,
-    /// The board's parts on their way out of its middle.
+    /// The picture's parts on their way out of its middle.
     pub(crate) bloom: Option<Entrance>,
     pub(crate) frame: Rect,
     /// The card's own box, when the picture says where it is.
@@ -439,7 +439,7 @@ impl Dive {
         along_flight(self.way, share(now, self.start, self.ms))
     }
 
-    /// What the board inside the card shows at a moment.
+    /// What the picture inside the card shows at a moment.
     pub(crate) fn inset_at(&self, now: f64) -> Vec<Item> {
         let bloomed = ((self.along(now) - BLOOM.0) / (BLOOM.1 - BLOOM.0)).clamp(0.0, 1.0);
         self.bloom.as_ref().map_or_else(
@@ -462,7 +462,7 @@ mod tests {
     use super::{DiveWay, INSET, PARENT, WORDS, along_flight, fade_at};
 
     #[test]
-    fn what_a_card_says_goes_before_the_board_above_it() {
+    fn what_a_card_says_goes_before_the_picture_above_it() {
         assert_eq!(fade_at(&WORDS, 0.03), 1.0);
         assert_eq!(fade_at(&WORDS, 0.16), 0.0);
         assert!(fade_at(&PARENT, 0.16) > 0.5);
@@ -470,14 +470,14 @@ mod tests {
     }
 
     #[test]
-    fn the_board_inside_is_up_before_the_board_above_has_gone() {
+    fn the_picture_inside_is_up_before_the_picture_above_has_gone() {
         assert_eq!(fade_at(&INSET, 0.02), 0.0);
         assert_eq!(fade_at(&INSET, 0.16), 1.0);
         assert!(fade_at(&PARENT, 0.16) > 0.0);
     }
 
     #[test]
-    fn the_way_back_finds_the_board_above_around_the_board_it_leaves() {
+    fn the_way_back_finds_the_picture_above_around_the_picture_it_leaves() {
         let halfway = along_flight(DiveWay::Out, 0.5);
         assert!(fade_at(&PARENT, halfway) > 0.5);
         assert!(fade_at(&INSET, halfway) > 0.5);

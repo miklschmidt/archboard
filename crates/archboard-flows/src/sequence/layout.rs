@@ -219,7 +219,7 @@ pub(super) fn largest(values: impl IntoIterator<Item = f64>, floor: f64) -> f64 
     values.into_iter().fold(floor, js::js_max)
 }
 
-/// The node a column stands for. A board whose flows name nodes it does not
+/// The node a column stands for. A picture whose flows name nodes it does not
 /// hold is refused before it is read, so the stand-in is a backstop: a column
 /// named after the id, because a sequence that silently lost a participant
 /// would be a different sequence.

@@ -1,6 +1,6 @@
 //! Which answer of a decision leaves from which point. The layout is asked
 //! for the points in the order a first layout that holds no answer to a point
-//! stood the answers left to right, and for the board's order instead when
+//! stood the answers left to right, and for the picture's order instead when
 //! that crosses fewer lines.
 
 use std::collections::{BTreeMap, HashMap};
@@ -46,7 +46,7 @@ fn ordering(difference: f64) -> std::cmp::Ordering {
 
 /// The graph's content with each decision's answers in the order a layout that
 /// holds no answer to a point stood them, left to right, and whether that
-/// order differs from the board's. Asked for its points in the board's order
+/// order differs from the picture's. Asked for its points in the picture's order
 /// instead, Graphviz keeps that order even where it costs a crossing, as when
 /// a loop runs back up past one answer.
 async fn in_free_order<S: Solver>(
@@ -136,7 +136,7 @@ fn crossings_of(drawing: &Painted) -> usize {
 }
 
 /// The graph laid out with each decision's answers asked for their points in
-/// the order of a first layout (`in_free_order`), or in the board's order when
+/// the order of a first layout (`in_free_order`), or in the picture's order when
 /// that crosses fewer lines: asked for its points, Graphviz can still stand
 /// answers' steps against the first layout's order. The first layout's order
 /// wins a tie.
@@ -151,9 +151,9 @@ pub(super) async fn laid_out<S: Solver>(
     if free.is_none() || crossed == 0 {
         return Ok(first);
     }
-    let board = track(content, measure, solver).await?;
-    Ok(if crossings_of(&board) < crossed {
-        board
+    let picture = track(content, measure, solver).await?;
+    Ok(if crossings_of(&picture) < crossed {
+        picture
     } else {
         first
     })

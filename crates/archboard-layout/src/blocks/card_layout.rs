@@ -34,7 +34,7 @@ use super::walls::ranks;
 /// Vertical room Graphviz keeps between ranks; the router spaces ranks again from its tracks.
 const RANK_GAP: f64 = 28.0;
 
-/// Graphviz asked once for each graph one layout of a board gives it.
+/// Graphviz asked once for each graph one layout of a picture gives it.
 /// Graphviz answers a graph the same way every time, so a graph it has
 /// answered is answered again from the text it gave.
 pub(crate) struct Engine<'g> {
@@ -137,7 +137,7 @@ impl<'t> CardLayout<'t> {
             // Graphviz keeps the clusters directly in a graph its margin apart on a rank.
             ("margin", Value::Num(CONTAINER_INSET)),
         ]);
-        // Ranks cross the clusters a block draws inline, as one board; a block without
+        // Ranks cross the clusters a block draws inline, as one picture; a block without
         // any keeps Graphviz's own ranking, which holds its header alone on the first rank.
         if !block.clusters.is_empty() {
             attrs.set("newrank", true);
@@ -271,7 +271,7 @@ impl<'t> CardLayout<'t> {
             .collect()
     }
 
-    /// The block's cards no line touches, in the board's order, with their
+    /// The block's cards no line touches, in the picture's order, with their
     /// sizes, by the cluster that holds them.
     pub(crate) fn loose_cards(&self) -> Vec<Vec<Loose>> {
         let touched: Set<String> = self
