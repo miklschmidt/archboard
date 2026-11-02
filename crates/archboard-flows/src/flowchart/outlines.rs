@@ -5,7 +5,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use archboard_scene::drawing::{DrawingEdge, EdgeFacts, Painted};
+use archboard_scene::drawing::{Bridged, DrawingEdge, EdgeFacts, Painted};
 use archboard_scene::geometry::{Curve, EPSILON, Point, Rect, Segment};
 use archboard_scene::js;
 use archboard_scene::request::FlowchartShape;
@@ -65,10 +65,28 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
         .map(|(_, bounds)| bounds)
 }
 
+/// The lines that keep their place, because the bridges are settled: each that
+/// carries a hop, which every line of a trunk does though a bridge names only
+/// one of them, and each that a bridge passes over.
+fn settled(plain: &[DrawingEdge<EdgeFacts>], bridged: &Bridged<EdgeFacts>) -> HashSet<String> {
+    let curves: HashMap<&str, &Curve> = plain
+        .iter()
+        .map(|line| (line.edge.id.as_str(), &line.curve))
+        .collect();
+    let hopped = bridged
+        .edges
+        .iter()
+        .filter(|line| curves.get(line.edge.id.as_str()) != Some(&&line.curve));
+    hopped
+        .map(|line| &line.edge.id)
+        .chain(bridged.bridges.iter().flat_map(|bridge| &bridge.under))
+        .cloned()
+        .collect()
+}
+
 /// The drawing with every line that meets a shape carried on to its outline,
 /// and every line that meets a decision or a terminal turned to the middle of
-/// the side it crosses. A line that a bridge stands on keeps its place, because
-/// the bridge is settled.
+/// the side it crosses.
 pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
     let boxes: HashMap<String, Rect> = drawing
         .drawing
@@ -76,13 +94,7 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
         .iter()
         .map(|card| (card.measured.node.id.clone(), card.bounds))
         .collect();
-    let bridged: HashSet<String> = drawing
-        .bridged
-        .bridges
-        .iter()
-        .flat_map(|bridge| bridge.under.iter().chain([&bridge.edge_id]))
-        .cloned()
-        .collect();
+    let settled = settled(&drawing.drawing.edges, &drawing.bridged);
     let shaped = |id: &str| -> Shaped { Some((graph.shape(id)?, *boxes.get(id)?)) };
     let card_of = |routed: &DrawingEdge<EdgeFacts>, from: Shaped, to: Shaped| {
         let id = match (pointed(from), pointed(to)) {
@@ -90,7 +102,7 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
             (Some(_), None) => &routed.edge.to,
             _ => return None,
         };
-        let free = !bridged.contains(&routed.edge.id);
+        let free = !settled.contains(&routed.edge.id);
         boxes.get(id).copied().filter(|_| free)
     };
     let on_shapes = |routed: &mut DrawingEdge<EdgeFacts>| {
@@ -112,4 +124,71 @@ pub(super) fn with_outlines(mut drawing: Painted, graph: &Graph) -> Painted {
     drawing.drawing.edges.iter_mut().for_each(on_shapes);
     drawing.bridged.edges.iter_mut().for_each(on_shapes);
     drawing
+}
+
+#[cfg(test)]
+mod tests {
+    use archboard_scene::drawing::{DrawingBridge, Emphasis};
+
+    use super::*;
+
+    fn line(id: &str, y: f64) -> DrawingEdge<EdgeFacts> {
+        DrawingEdge {
+            edge: EdgeFacts {
+                id: id.to_owned(),
+                from: "a".to_owned(),
+                to: "b".to_owned(),
+                kind: "next".to_owned(),
+                emphasis: Emphasis::Normal,
+                traffic: None,
+                two_way: false,
+            },
+            curve: Curve {
+                from: Point { x: 0.0, y },
+                segments: vec![Segment::Line {
+                    to: Point { x: 100.0, y },
+                }],
+            },
+            label: None,
+        }
+    }
+
+    #[test]
+    fn every_line_of_a_bridged_trunk_and_each_line_under_it_keep_their_place() {
+        let plain = [
+            line("named", 0.0),
+            line("trunk", 0.0),
+            line("under", 50.0),
+            line("free", 90.0),
+        ];
+        let hop = Curve {
+            from: Point { x: 40.0, y: 0.0 },
+            segments: vec![Segment::Line {
+                to: Point { x: 60.0, y: 0.0 },
+            }],
+        };
+        let hopped = |id: &str| {
+            let mut carrier = line(id, 0.0);
+            carrier.curve.segments.insert(0, hop.segments[0]);
+            carrier
+        };
+        let bridged = Bridged {
+            edges: vec![
+                hopped("named"),
+                hopped("trunk"),
+                line("under", 50.0),
+                line("free", 90.0),
+            ],
+            bridges: vec![DrawingBridge {
+                edge_id: "named".to_owned(),
+                under: vec!["under".to_owned()],
+                curve: hop.clone(),
+                join: None,
+            }],
+        };
+        let kept = settled(&plain, &bridged);
+        let mut kept: Vec<&str> = kept.iter().map(String::as_str).collect();
+        kept.sort_unstable();
+        assert_eq!(kept, ["named", "trunk", "under"]);
+    }
 }
