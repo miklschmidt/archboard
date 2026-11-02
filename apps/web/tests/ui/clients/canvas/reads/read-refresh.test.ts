@@ -294,6 +294,27 @@ test("a changed model is read from after the change: an answer decided before it
 	client.clear();
 });
 
+test("a change refreshes every spelling and former name in its own vault, including a key naming a variant", async () => {
+	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+	const spelled = pane(client, SHOP, "PAYMENTS");
+	const former = pane(client, SHOP, "Old payments");
+	const elsewhere = pane(client, BILLING, "payments");
+	await until(() => [spelled, former, elsewhere].every((one) => one.versions().join() === "1,1"));
+	await settle();
+	asked.length = 0;
+
+	server.get(SHOP)!.version = 2;
+	server.get(BILLING)!.version = 2;
+	await modelChanged(client, SHOP, "payments@proposed");
+
+	await until(() => [spelled, former].every((one) => one.versions().join() === "2,2"));
+	await settle();
+	expect(elsewhere.versions()).toEqual([1, 1]);
+	expect(asked.filter((one) => one.startsWith(BILLING))).toEqual([]);
+	for (const one of [spelled, former, elsewhere]) one.close();
+	client.clear();
+});
+
 test("a listing reads again a model this tab drew ahead at another version, by any spelling, in that vault only, and nothing it lists at the version held", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	// Drawn ahead at version 1 in both vaults, with no pane showing either, the
