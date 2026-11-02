@@ -67,7 +67,8 @@ fn pointed(shaped: Shaped) -> Option<Rect> {
 
 /// The lines that keep their place, because the bridges are settled: each that
 /// carries a hop, which every line of a trunk does though a bridge names only
-/// one of them, and each that a bridge passes over.
+/// one of them, and each that a bridge names, because a bridge at a join cuts
+/// the line beneath and leaves its own line's curve as it was.
 fn settled(plain: &[DrawingEdge<EdgeFacts>], bridged: &Bridged<EdgeFacts>) -> HashSet<String> {
     let curves: HashMap<&str, &Curve> = plain
         .iter()
@@ -79,7 +80,12 @@ fn settled(plain: &[DrawingEdge<EdgeFacts>], bridged: &Bridged<EdgeFacts>) -> Ha
         .filter(|line| curves.get(line.edge.id.as_str()) != Some(&&line.curve));
     hopped
         .map(|line| &line.edge.id)
-        .chain(bridged.bridges.iter().flat_map(|bridge| &bridge.under))
+        .chain(
+            bridged
+                .bridges
+                .iter()
+                .flat_map(|bridge| std::iter::once(&bridge.edge_id).chain(&bridge.under)),
+        )
         .cloned()
         .collect()
 }
@@ -159,6 +165,7 @@ mod tests {
             line("named", 0.0),
             line("trunk", 0.0),
             line("under", 50.0),
+            line("join", 70.0),
             line("free", 90.0),
         ];
         let hop = Curve {
@@ -177,18 +184,27 @@ mod tests {
                 hopped("named"),
                 hopped("trunk"),
                 line("under", 50.0),
+                line("join", 70.0),
                 line("free", 90.0),
             ],
-            bridges: vec![DrawingBridge {
-                edge_id: "named".to_owned(),
-                under: vec!["under".to_owned()],
-                curve: hop.clone(),
-                join: None,
-            }],
+            bridges: vec![
+                DrawingBridge {
+                    edge_id: "named".to_owned(),
+                    under: vec!["under".to_owned()],
+                    curve: hop.clone(),
+                    join: None,
+                },
+                DrawingBridge {
+                    edge_id: "join".to_owned(),
+                    under: vec!["under".to_owned()],
+                    curve: hop.clone(),
+                    join: Some(true),
+                },
+            ],
         };
         let kept = settled(&plain, &bridged);
         let mut kept: Vec<&str> = kept.iter().map(String::as_str).collect();
         kept.sort_unstable();
-        assert_eq!(kept, ["named", "trunk", "under"]);
+        assert_eq!(kept, ["join", "named", "trunk", "under"]);
     }
 }
