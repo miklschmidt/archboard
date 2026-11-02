@@ -170,4 +170,4 @@ async function setUpRepository(options: SetupOptions): Promise<SetupResult> {
 	return { repo, vault, vaultCreated, vaultIgnored, removedBlocks };
 }
 
-export { setUpRepository };
+export { setUpRepository, withoutOldBlock };
