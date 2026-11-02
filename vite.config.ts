@@ -30,7 +30,7 @@ const trackedInputsFingerprint = createHash("sha256")
 /** The module a page imports to draw pictures itself (TASK-247). */
 const RENDERER_MODULE = "virtual:archboard-renderer";
 
-/** Everything a picture drawn in the browser depends on, besides the board. */
+/** Everything a picture drawn in the browser depends on, besides the model. */
 const RENDERER_SOURCES = [
 	"packages/renderer/src/shared",
 	"packages/renderer/src/ui",

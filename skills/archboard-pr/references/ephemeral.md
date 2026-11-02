@@ -2,7 +2,7 @@
 
 A temporary model explains an incidental flow or process that the repository's architecture does not need to keep.
 It uses the same manifest, subject claims, compact proposals, archive, and writer as any canonical model.
-It creates no temporary board format or alternate authoring path.
+It uses the canonical format and authoring path.
 
 ## Initialize the vault
 

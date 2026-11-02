@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T20:10:00Z'
-updated_date: '2026-11-02T22:07:00Z'
+updated_date: '2026-11-02T22:31:00Z'
 labels:
   - cleanup
   - refactor
@@ -63,4 +63,6 @@ These stay on purpose and are not finished:
 - model-changes.ts, use-model-changes.ts and the canvas failure state for a refresh have no sender now. Their removal means a redesign of the stale state of the legacy canvas, and live legend and camera tests use the feed.
 
 Not checked by this pass: the deletions of test files were read by title. A machine prune that removed live tests was reset and redone by hand.
+
+Review restored live installer and cache behavior tests. withoutOldBlock stays exported from repo-setup.ts as a test seam for repository setup. Removed the unused clipboard dependency and the unreachable refusal envelope. The source boundary guide and the voice consumer guide now describe the narrower interfaces.
 <!-- SECTION:NOTES:END -->
