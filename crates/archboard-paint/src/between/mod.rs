@@ -23,6 +23,8 @@ mod definitions;
 mod departure;
 mod ease;
 mod entrance;
+#[cfg(test)]
+mod entrance_order;
 mod found;
 mod handover;
 #[cfg(test)]
