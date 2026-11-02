@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-02T19:39:00Z'
-updated_date: '2026-11-02T19:51:00Z'
+updated_date: '2026-11-02T20:10:00Z'
 labels:
   - naming
   - refactor
@@ -42,4 +42,6 @@ ADR 0068 retired boards for one canonical model with recursive modules, and CONT
 6. Write the ADR, retitle ADR 0071, and update CONTEXT.md, CLAUDE.md, docs/agents, and the skills.
 7. Edit the current state of the model through model edit with a claim. Keep every identity. Reconcile the drafts. Do not adopt JTZvj2vi. No new proposal: a rename leaves the architecture accurate, and AC 3 names the current model, and only the owner can authorize an adoption.
 8. Run the complete gate, rebase onto feat/vello-renderer, delegate the review, run the gate again, open the stacked pull request and leave it for the owner.
+
+9. After the rename, carry out TASK-565 on this branch in its own commits, then finalize the kept-word list in the ADR, so that the one complete gate and the one review cover both.
 <!-- SECTION:PLAN:END -->
