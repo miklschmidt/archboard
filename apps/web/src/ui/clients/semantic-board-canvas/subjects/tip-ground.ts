@@ -25,40 +25,21 @@ const WORDS_WORTH = 4 * LIT_WORTH;
 /** What a tip counts as solid: a group's part, or its kind for a whole subject. */
 const SOLID_PARTS: ReadonlySet<string> = new Set(["header", "label", "node", "step"]);
 
-/** How the picture's own units stand on the screen. */
-interface PictureView {
-	readonly left: number;
-	readonly top: number;
-	readonly scale: number;
-}
-
 /**
- * How the picture's own units stand on the screen.
- * @param picture The picture.
- * @returns Where its origin stands, and how many pixels a unit takes.
- */
-function viewOf(picture: SVGSVGElement): PictureView {
-	const box = picture.getBoundingClientRect();
-	const view = picture.viewBox.baseVal;
-	const scale = box.width / view.width;
-	return { left: box.left - view.x * scale, top: box.top - view.y * scale, scale };
-}
-
-/**
- * The ink of a lit line.
+ * The ink of a lit line. Its group holds its arrowhead's path too, inside its definitions.
  * @param group The line's group.
- * @param view How the picture stands on the screen.
  * @returns A box for each read along it.
  */
-function lineGround(group: Element, view: PictureView): readonly TipGround[] {
-	const line = group.querySelector<SVGGeometryElement>("path");
-	if (line === null) return [];
+function lineGround(group: Element): readonly TipGround[] {
+	const line = group.querySelector<SVGGeometryElement>(":scope > path");
+	const screen = line?.getScreenCTM() ?? null;
+	if (line === null || screen === null) return [];
 	const length = line.getTotalLength();
-	const reads = Math.ceil((length * view.scale) / LINE_STEP);
+	const reads = Math.ceil((length * screen.a) / LINE_STEP);
 	return Array.from({ length: reads + 1 }, (_, read) => {
-		const point = line.getPointAtLength((length * read) / reads);
-		const left = view.left + point.x * view.scale - LINE_INK / 2;
-		const top = view.top + point.y * view.scale - LINE_INK / 2;
+		const point = line.getPointAtLength((length * read) / reads).matrixTransform(screen);
+		const left = point.x - LINE_INK / 2;
+		const top = point.y - LINE_INK / 2;
 		return {
 			box: { left, top, right: left + LINE_INK, bottom: top + LINE_INK },
 			worth: LINE_WORTH,
@@ -72,7 +53,7 @@ function lineGround(group: Element, view: PictureView): readonly TipGround[] {
  * @returns True for a line.
  */
 function isLine(group: Element): boolean {
-	return !group.hasAttribute(PART_ATTRIBUTE) && group.getAttribute("data-semantic-kind") === "edge";
+	return !group.hasAttribute(PART_ATTRIBUTE) && group.hasAttribute("data-line-dash");
 }
 
 /**
@@ -89,17 +70,12 @@ function isSolid(group: Element): boolean {
  * What one drawn group of the picture puts on the ground.
  * @param group The group.
  * @param standing What the light leaves standing.
- * @param view How the picture stands on the screen.
  * @returns What a tip would hide of it.
  */
-function groundOf(
-	group: Element,
-	standing: ReadonlySet<string>,
-	view: PictureView,
-): readonly TipGround[] {
+function groundOf(group: Element, standing: ReadonlySet<string>): readonly TipGround[] {
 	const lit = standing.has(group.getAttribute(SUBJECT_ATTRIBUTE) ?? "");
 	if (isLine(group)) {
-		return lit ? lineGround(group, view) : [];
+		return lit ? lineGround(group) : [];
 	}
 	return isSolid(group)
 		? [{ box: group.getBoundingClientRect(), worth: lit ? LIT_WORTH : DIM_WORTH }]
@@ -129,11 +105,10 @@ function walkthroughGround(picture: Element): readonly TipGround[] {
 function tipGround(part: Element, standing: ReadonlySet<string> | null): readonly TipGround[] {
 	const picture = part.closest("svg");
 	if (picture === null) return [];
-	const view = viewOf(picture);
 	const lit = standing ?? new Set<string>();
 	return [
 		...[...picture.querySelectorAll(`[${SUBJECT_ATTRIBUTE}]`)].flatMap((group) =>
-			groundOf(group, lit, view),
+			groundOf(group, lit),
 		),
 		...walkthroughGround(picture),
 	];
