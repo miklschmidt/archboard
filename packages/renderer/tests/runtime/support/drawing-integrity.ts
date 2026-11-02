@@ -16,6 +16,7 @@ import {
 } from "#tests/runtime/support/drawn-parents.ts";
 import {
 	labelsAcrossWalls,
+	labelsOverOwnLine,
 	nearLanes,
 	runsUnderLabels,
 	slants,
@@ -51,6 +52,7 @@ export function expectDrawingIntact(
 		expect(collinearPorts(drawing, content), "opposite card ports on one line").toEqual([]);
 	expect(labelsOffRuns(drawing), "labels off their own route").toEqual([]);
 	expect(runsUnderLabels(drawing), "routes under another's label").toEqual([]);
+	expect(labelsOverOwnLine(drawing), "labels over their own line").toEqual([]);
 	expect(Object.keys(drawing.atlas.nodes).toSorted()).toEqual(
 		content.nodes.map(({ id }) => id).toSorted(),
 	);

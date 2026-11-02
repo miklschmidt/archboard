@@ -1,6 +1,6 @@
 //! Labels use existing private ink. They never alter a route's bends.
 
-mod own;
+pub(super) mod own;
 mod trunk;
 
 use own::{Own, keeps, meets};

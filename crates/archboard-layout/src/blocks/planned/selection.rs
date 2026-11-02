@@ -1,5 +1,8 @@
 //! Resolve corridor conflicts without revisiting independent route choices.
-use super::{fixed::route_cost, model::Model, shape::Shape, topology::Topology};
+use super::{
+    fixed::route_cost, model::Model, route_labels::own::words_clear, shape::Shape,
+    topology::Topology,
+};
 use crate::blocks::assembly::PlacedLine;
 
 /// The route orders of `order`, the longest routes first.
@@ -141,12 +144,9 @@ fn next(
         .then(|| fan_join(model, topology, shape, &paths[edge], edge))
         .flatten()
         .or_else(|| {
-            paths[edge]
-                .iter()
-                .find_map(|line| append(model, topology, shape, line))
-                .map(|chosen| {
-                    shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
-                })
+            first_fit(model, topology, shape, &paths[edge]).map(|chosen| {
+                shorten(model, topology, shape, paths, edge, repairs, &chosen).unwrap_or(chosen)
+            })
         })
         .or_else(|| fan_join(model, topology, shape, &paths[edge], edge))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Channels))
@@ -154,6 +154,26 @@ fn next(
         .or_else(|| hierarchy(model, topology, shape, edge, windows))
         .or_else(|| dynamic(model, topology, shape, edge, super::fixed::Search::Ports))
 }
+/// The first route that fits, or a later one when that first one stands words on their own line.
+fn first_fit(
+    model: &Model<'_>,
+    topology: &Topology,
+    shape: &Shape,
+    lines: &[PlacedLine],
+) -> Option<Shape> {
+    let mut fits = lines
+        .iter()
+        .filter_map(|line| append(model, topology, shape, line));
+    let first = fits.next()?;
+    if words_clear(model, &first) {
+        return Some(first);
+    }
+    Some(
+        fits.find(|later| words_clear(model, later))
+            .unwrap_or(first),
+    )
+}
+
 /// How many unworded lines of one kind to one end make a bus (rule 5).
 const BUS_LINES: usize = 3;
 
@@ -193,7 +213,8 @@ fn shorten(
             .map(|line| route_cost(&line.points))
             .sum::<f64>()
     };
-    (total(&repaired) < total(chosen)).then_some(repaired)
+    let clear = words_clear(model, &repaired) || !words_clear(model, chosen);
+    (clear && total(&repaired) < total(chosen)).then_some(repaired)
 }
 
 fn dynamic(

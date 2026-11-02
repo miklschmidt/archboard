@@ -174,3 +174,27 @@ fn a_trunk_line_with_no_spot_off_its_own_line_waits_for_room() {
     let edge = model.edge_index["ab"];
     assert_eq!(seat(&model, &mut shape, &[edge]), vec![edge]);
 }
+
+#[test]
+fn a_drawing_knows_when_words_stand_on_their_own_line() {
+    let graph = graph();
+    let model = Model::new(&graph).unwrap();
+    let route: &[(f64, f64)] = &[
+        (100.0, 100.0),
+        (100.0, 300.0),
+        (140.0, 300.0),
+        (140.0, 100.0),
+    ];
+    let mut shape = drawing(&[("ab", route)]);
+    let edge = model.edge_index["ab"];
+    let words = |x| Rect {
+        x,
+        y: 188.0,
+        width: 80.0,
+        height: 24.0,
+    };
+    shape.labels.insert(edge, words(-30.0));
+    assert!(own::words_clear(&model, &shape));
+    shape.labels.insert(edge, words(60.0));
+    assert!(!own::words_clear(&model, &shape));
+}

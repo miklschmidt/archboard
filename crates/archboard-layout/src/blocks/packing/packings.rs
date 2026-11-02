@@ -212,6 +212,16 @@ mod tests {
     }
 
     #[test]
+    fn a_column_takes_a_later_item_only_at_its_foot() {
+        let columns = Packing::of(false, vec![vec![0, 1], vec![2]]);
+        let moved: Vec<Vec<Vec<usize>>> = backfilled(&columns)
+            .into_iter()
+            .map(|packing| packing.groups)
+            .collect();
+        assert_eq!(moved, vec![vec![vec![0, 1, 2]]]);
+    }
+
+    #[test]
     fn moving_an_item_up_must_save_area_before_it_is_laid_out() {
         let moved = Packing::of(true, vec![vec![0, 2], vec![1]]);
         for (width, kept) in [(910.0, false), (890.0, true)] {

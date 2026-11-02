@@ -3,6 +3,7 @@
 // label, lines closer than a lane, a line along a container's wall, a label
 // across a container's edge, and a route on a slant.
 
+import type { DiagramBox } from "@archboard/board/render-reply";
 import type { RenderedDiagram } from "#shared/protocol/render-request.ts";
 import {
 	type DrawnPoint,
@@ -12,6 +13,45 @@ import {
 	routePoints,
 } from "#tests/runtime/support/drawn-routes.ts";
 
+/** How far inside a label a run must reach to pass under it. */
+const UNDER_LABEL = 3;
+
+/**
+ * Whether a straight run passes under a label.
+ * @param pill The label.
+ * @param start Where the run starts.
+ * @param end Where it ends.
+ * @returns True when it does.
+ */
+function passesUnder(pill: DiagramBox, start: DrawnPoint, end: DrawnPoint): boolean {
+	const [low, high] = [pill.x + UNDER_LABEL, pill.x + pill.width - UNDER_LABEL];
+	const [top, bottom] = [pill.y + UNDER_LABEL, pill.y + pill.height - UNDER_LABEL];
+	if (start.x === end.x)
+		return (
+			start.x > low &&
+			start.x < high &&
+			Math.max(start.y, end.y) > top &&
+			Math.min(start.y, end.y) < bottom
+		);
+	return (
+		start.y === end.y &&
+		start.y > top &&
+		start.y < bottom &&
+		Math.max(start.x, end.x) > low &&
+		Math.min(start.x, end.x) < high
+	);
+}
+
+/**
+ * How many straight runs of a route pass under a label.
+ * @param pill The label.
+ * @param points The route.
+ * @returns The count.
+ */
+function runsUnder(pill: DiagramBox, points: readonly DrawnPoint[]): number {
+	return points.slice(1).filter((end, index) => passesUnder(pill, points[index]!, end)).length;
+}
+
 /**
  * Every straight run of one route through another relationship's label, where
  * a reader would take the route to end at the label it vanishes under.
@@ -20,33 +60,22 @@ import {
  */
 function runsUnderLabels(drawing: RenderedDiagram): string[] {
 	const routes = [...corridorPoints(drawing.svg)];
-	const inside = 3;
 	return [...routeLabels(drawing.svg)].flatMap(([id, pill]) =>
 		routes
-			.filter(([other]) => other !== id)
-			.filter(([, points]) =>
-				points.slice(1).some((end, index) => {
-					const start = points[index]!;
-					const [low, high] = [pill.x + inside, pill.x + pill.width - inside];
-					const [top, bottom] = [pill.y + inside, pill.y + pill.height - inside];
-					if (start.x === end.x)
-						return (
-							start.x > low &&
-							start.x < high &&
-							Math.max(start.y, end.y) > top &&
-							Math.min(start.y, end.y) < bottom
-						);
-					if (start.y === end.y)
-						return (
-							start.y > top &&
-							start.y < bottom &&
-							Math.max(start.x, end.x) > low &&
-							Math.min(start.x, end.x) < high
-						);
-					return false;
-				}),
-			)
+			.filter(([other, points]) => other !== id && runsUnder(pill, points) > 0)
 			.map(([other]) => `${other} under ${id}`),
+	);
+}
+
+/**
+ * Every label with more than one stretch of its own route under it.
+ * @param drawing The rendered board.
+ * @returns Each such relationship, named.
+ */
+function labelsOverOwnLine(drawing: RenderedDiagram): string[] {
+	const routes = new Map(corridorPoints(drawing.svg));
+	return [...routeLabels(drawing.svg)].flatMap(([id, pill]) =>
+		runsUnder(pill, routes.get(id) ?? []) > 1 ? [id] : [],
 	);
 }
 
@@ -201,4 +230,12 @@ function slants(drawing: RenderedDiagram): string[] {
 	);
 }
 
-export { TRACK_LANE, labelsAcrossWalls, nearLanes, runsUnderLabels, slants, wallHugs };
+export {
+	TRACK_LANE,
+	labelsAcrossWalls,
+	labelsOverOwnLine,
+	nearLanes,
+	runsUnderLabels,
+	slants,
+	wallHugs,
+};

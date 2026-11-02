@@ -1,4 +1,5 @@
 import { expectDrawingIntact } from "#tests/runtime/support/drawing-integrity.ts";
+import { labelsOverOwnLine } from "#tests/runtime/support/drawn-checks.ts";
 import { expect, test } from "bun:test";
 import { SemanticPolicySchema } from "@archboard/board/policy";
 import { renderArchitecture } from "#runtime/operations/render.ts";
@@ -40,11 +41,10 @@ const policy = SemanticPolicySchema.parse({
 	},
 });
 
-test("a block moved up into a column stands below the blocks that lead to it", async () => {
+test("a line's words stand clear of its own legs on a board of tight rows", async () => {
 	const content = orderedFixture(boardRasterizer);
-	const { atlas } = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
-	const [command, chromium] = [atlas.nodes["jChkQdeE"]!, atlas.nodes["R9St060W"]!];
-	expect(chromium.y).toBeGreaterThan(command.y + command.height);
+	const drawing = await renderArchitecture({ content, theme: "light", policy, layout: "blocks" });
+	expect(labelsOverOwnLine(drawing)).toEqual([]);
 });
 
 test("blocks read forward across a row or down the page", async () => {

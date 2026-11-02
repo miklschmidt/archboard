@@ -1,7 +1,7 @@
 //! A relationship's own route: its words ride one stretch and stand clear of the rest.
 
 use super::{Span, StrokeIndex, clear};
-use crate::blocks::planned::{label_space::Labels, shape::Shape};
+use crate::blocks::planned::{label_space::Labels, model::Model, shape::Shape};
 use crate::geometry::{Point, Rect, inflate};
 
 /// The relationship whose words are placed, and the route they ride.
@@ -52,12 +52,24 @@ impl Own<'_> {
             .map(stretch)
     }
 
-    /// Whether words stand on one stretch of the route and clear of the rest.
-    pub(super) fn rides_one(self, words: Rect) -> bool {
-        let kept = inflate(words, 12.01);
+    /// Whether a box meets one stretch of the route at most.
+    pub(super) fn rides_one(self, area: Rect) -> bool {
         let met = self.path.windows(2).map(stretch);
-        met.filter(|&stretch| meets(kept, stretch)).count() <= 1
+        met.filter(|&stretch| meets(area, stretch)).count() <= 1
     }
+}
+
+/// Whether every line's words in a drawing stand clear of the line's other stretches.
+pub(in crate::blocks::planned) fn words_clear(model: &Model<'_>, shape: &Shape) -> bool {
+    shape.routes.iter().all(|line| {
+        let edge = model.edge_index[line.id.as_str()];
+        let path = line.points.as_slice();
+        let own = Own { edge, path };
+        shape
+            .labels
+            .get(&edge)
+            .is_none_or(|&words| own.rides_one(words))
+    })
 }
 
 /// Whether a drawing dressed with its trunks' words keeps a plate where it stands: each
@@ -69,5 +81,7 @@ pub(super) fn keeps(
     strokes: &StrokeIndex,
     labels: &Labels,
 ) -> bool {
-    !shape.trunk.is_empty() && own.rides_one(at) && clear(shape, own.edge, at, strokes, labels)
+    !shape.trunk.is_empty()
+        && own.rides_one(inflate(at, 12.01))
+        && clear(shape, own.edge, at, strokes, labels)
 }
