@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T20:06:00Z'
+updated_date: '2026-11-02T20:52:00Z'
 labels:
   - reader
   - design
@@ -36,9 +36,9 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #12 A flowchart's lines that reach one step join into one trunk: no two run side by side and none stops short of the join (dTfYgmVn, End)
 - [x] #13 A consumer without Nix can follow INSTALL.md to the toolchain that builds the product
 - [x] #14 The project requires Bun 1.4.4 and a patched Node.js on every route
-- [ ] #15 A module with no parts outside the open one stands as a card, not a door
-- [ ] #16 A reading falls to the Graphviz placement only when no dense room can draw it (Canonical architecture, 1VHRyajb)
-- [ ] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
+- [x] #15 A module with no parts outside the open one stands as a card, not a door
+- [x] #16 A reading falls to the Graphviz placement only when no dense room can draw it (Canonical architecture, 1VHRyajb)
+- [x] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -51,10 +51,14 @@ Undecided, for the owner: why flowcharts show the module icon so often. Boxes ca
 Gate 9 on 600456d1a passed with exit 0, 21 of 21 tasks and 49 of 49 browser owners. The review of 204e86cc2..600456d1a ended APPROVE after five delivered rounds; one round was cancelled unread. S4 was at first declined on a sampling check that was too coarse; a check at one pixel steps showed the reviewer's U-shaped overlap on board-rasterizer.json, so first_fit in selection.rs takes a later route when words would stand on their own line, and keeps the first route when none is clear. S8, a nit about partial improvement when an overlap persists across every candidate, is declined: no reading shows that case. The block packing test was deleted because its outcome depended on that overlap; the column rule is now a unit test. A wider tagged card can change how a fan wraps: the fan test's group is now named Writes, and with Board writes that fan takes three rows.
 
 Flowchart joins (criterion 12): a straight line a few units off the middle of End kinked at its foot and ran beside the others, and that kink took the last bend from a line that joined the lane, because same_turn matched both ends of the kink's small turn to one end of the bend. same_turn now pairs ends, and a straight line under 16 units off the middle slides whole, with its words, along the card or loop at its other end. Across 72 flowcharts and 1487 lines the scan went from 3 kinks, 1 cut bend and 1 side by side pair to none, and 5 flowcharts changed. A line within reach of a bridge keeps its place and its kink: reviewers broke three guards built from a bridge's names, so the rule is one of place, grown by the farthest slide. No test owns the words moving with the line. Gate 15 on 5d3b3268c failed in one browser owner, codex-live-voice.test.ts, at the operability of the dock's mute control. No code of the voice dock changed since gate 14 passed on d2b3985cd. Gate 16 on 2a5a0ab4f, the same code and a Backlog commit, passed with exit 0, 21 of 21 tasks and 49 of 49 browser owners. The failed step reads the dock's control straight after a Tab press with no retry, so this is a timing flake that was not reproduced or diagnosed further. The README refresh was reviewed in round 7 and the join fix in rounds 8 to 12, the last of which approved. readme:check reports 17 of 17 current, and archboard check embeds exits 0.
+
+A non-Nix route (criterion 13): INSTALL.md gives rustup with a C toolchain, and from a fresh clone in a temporary home that route built the product with rustc 1.99.1. Its flowchart equals the Nix build's picture outside metadata. macOS and Debian were not run. Runtime (criterion 14): Bun 1.4.4 and Node.js ^22.23.4 || ^24.22.1 || >=26.12.1 on every route, and nothing refuses an older runtime at run time. Round 15 found that Bun 1.4.4 makes a ws error with no listener an uncaught exception, and a malformed frame on the feed socket ended the server: every accepted socket now has a listener from its first frame. It also found that the pinned nixpkgs throws for x86_64-darwin, so the flake drops that shell and INSTALL.md sends an Intel Mac to rustup.
+
+Doors (criterion 15): the drawn door field now decides, in doorEndpoints and isDoor too. projection.context still lists modules outside the reading that a line reaches. ADR 0070 is amended. Layout (criterion 16): Canonical architecture went from 3296x5499 to 2766x1513. A refused reading tries wider rooms at its own refusal budget, then, past 40 lines, its own rooms with four refusals. More refusals everywhere was rejected, because it made that reading 3146x1704. Across 752 readings no refused reading reaches Graphviz. 71 focused readings with no frame and at most 17 lines keep their ranks, by design. Slowest native release solve 1.0 s against 0.85 s. Rim (criterion 17): the well's rim turns down at the left as at the right, and the tab fills the corner above it. Round 16 on d95c3d37c..8f160dff3 approved with no findings. Gate 20 failed on the door button fixture, gate 22 on the format of the new fixtures, and gates 21, 23 and 24 passed. Gate 24 on d64c34eeb passed with exit 0, 21 of 21 tasks and 49 of 49 browser owners. readme:check reports 17 of 17 current, and archboard check embeds exits 0. All 13 attachments were filmed again or replayed from kept talks, and the frames were looked at before upload.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
 
 <!-- SECTION:FINAL_SUMMARY:BEGIN -->
-Polished the reader before PR 26 merges. A tip stands against its part. A chosen line's label wears the ring and the line keeps its ink. A right click on a part opens a menu at the cursor that explains it or copies a reference, and the browser keeps its menu elsewhere. A card widens for its tags. A label stays off its own line wherever any route allows. A flowchart's lines join on one lane. A door takes the colour of its group or kind, or stands neutral. The model gains an Application kind, and Page start to Talk contract is a call. All 17 README assets show the final picture. Gate 16 passed on the final code after one timing failure in the voice dock's browser owner on the run before, and an independent review approved the final diff. Risks and open decisions stay in the PR: the module icon in flowcharts is undecided, and no test owns the words that move with a sliding line.
+Polished the reader before PR 26 merges. A tip stands against its part. A chosen line's label wears the ring and the line keeps its ink. A right click on a part opens a menu at the cursor that explains it or copies a reference, and the browser keeps its menu elsewhere. A card widens for its tags. A label stays off its own line wherever any route allows. A flowchart's lines join on one lane. A door takes the colour of its group or kind, or stands neutral, and a module with no parts stands as its card. A reading that the dense layout refuses stays dense. A frame's recess reads as a well. The model gains an Application kind, and Page start to Talk contract is a call. INSTALL.md gives a route without Nix, and the project requires Bun 1.4.4 and the patched Node.js releases, with the server held to survive a socket error under them. All 17 README assets show the final picture. Gate 24 passed on the final code, and an independent review approved the final diff. codex-live-voice.test.ts failed once on an earlier run and on no run since. Risks and open decisions stay in the PR: the module icon in flowcharts is undecided, no test owns the words that move with a sliding line, and the rustup route was not run on macOS or Debian.
 <!-- SECTION:FINAL_SUMMARY:END -->
