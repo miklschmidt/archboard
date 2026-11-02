@@ -1,7 +1,6 @@
 // Turns a command failure into the process exit code and the stderr explanation the CLI
 // contract promises, without trusting the thrown value's shape.
 import { CliUsageError } from "#cli/protocol/contract/contract.ts";
-import { MODEL_REFUSAL_CODES, formatModelRefusal } from "@archboard/server-lifecycle/server-client";
 import { type RouteOwner } from "#cli/protocol/routing/route.ts";
 
 /**
@@ -34,19 +33,10 @@ function errorMessage(error: unknown): string {
 	return error instanceof Error ? error.message : String(error);
 }
 
-/**
- * Whether the code names a refused model write: the note stays unwritten, whether another
- * holder, a revoked claim or a moved version stopped it.
- * @param code - The error code, if any.
- * @returns True for a model-write refusal.
- */
-function isModelRefusalCode(code: string | undefined): boolean {
-	return code !== undefined && MODEL_REFUSAL_CODES.has(code);
-}
-
 const WELL_KNOWN_EXIT_CODES: Readonly<Record<string, number>> = {
 	SERVER_UNREACHABLE: 3,
 	BROWSER_REQUIRED: 4,
+	CLAIM_REVOKED: 5,
 	// The same for a vault: finding and naming one is the caller's to fix (ADR 0049).
 	VAULT_NOT_FOUND: 2,
 	VAULT_REQUIRED: 2,
@@ -86,24 +76,17 @@ function exitCodeFor(error: unknown, command?: RouteOwner): number {
 	if (declared !== undefined) {
 		return declared;
 	}
-	// Every refusal leaves the model unwritten, so they share the exit status a
-	// script already watches for. The attached body says whether another holder,
-	// a revoked claim, a moved version or a changed note stopped it.
-	if (isModelRefusalCode(code)) {
-		return 5;
-	}
 	return code === undefined ? 1 : (WELL_KNOWN_EXIT_CODES[code] ?? 1);
 }
 
 /**
- * Writes the failure to stderr: the message (or the formatted model refusal), then, when a
- * refused write left work held on the server, what happens to everything drawn from here on.
+ * Writes the failure message to stderr, followed by usage for a usage error.
  * @param error - The thrown value.
  * @param usage - The usage line to print after a usage error.
  */
 function reportFailure(error: unknown, usage: string): void {
 	if (!isQuietError(error)) {
-		process.stderr.write(`Error: ${formatModelRefusal(error) ?? errorMessage(error)}\n`);
+		process.stderr.write(`Error: ${errorMessage(error)}\n`);
 	}
 	if (error instanceof CliUsageError) {
 		process.stderr.write(`Usage: ${usage}\n`);

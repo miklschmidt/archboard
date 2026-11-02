@@ -1,5 +1,4 @@
-// What the lifecycle asks a running Archboard server about itself, and how a refused model
-// request is shown.
+// What the lifecycle asks a running Archboard server about itself.
 //
 // One request goes through `server-client-transport.ts`, which owns the identity gate and the
 // error shapes; what this invocation says about itself — which model, what it is doing, which
@@ -7,9 +6,7 @@
 // request from there rather than from every call site.
 
 import type { SourceState } from "#runtime/services/staleness.ts";
-import { type ModelRefusal, isModelRefusal } from "#runtime/protocol/server-client-refusal.ts";
 import { requestJson } from "#runtime/clients/server-client-transport.ts";
-import { isRecord } from "@archboard/diagnostics/unknown-record";
 
 /** What `/health` answers with. */
 interface HealthStatus {
@@ -43,29 +40,4 @@ function getSyncStatus(): Promise<Record<string, unknown>> {
 	return requestJson("/api/sync/status");
 }
 
-/**
- * The refusal a thrown value carries, when it carries one.
- * @param error The thrown value.
- * @returns The refusal, or null.
- */
-function modelRefusalOf(error: unknown): ModelRefusal | null {
-	const refusal = isRecord(error) ? error["refusal"] : undefined;
-	return isModelRefusal(refusal) ? refusal : null;
-}
-
-/**
- * A refusal as the CLI prints it: the unchanged reason first, then every
- * structured fact from the same body.
- * @param error The thrown value.
- * @returns The text, or null when the error is not a refusal.
- */
-function formatModelRefusal(error: unknown): string | null {
-	const refusal = modelRefusalOf(error);
-	if (!refusal) {
-		return null;
-	}
-	const { success: _success, error: reason, ...details } = refusal;
-	return `${reason}\n\n${JSON.stringify(details, null, 2)}`;
-}
-
-export { type HealthStatus, formatModelRefusal, getHealth, getSyncStatus };
+export { type HealthStatus, getHealth, getSyncStatus };

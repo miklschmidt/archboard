@@ -2,7 +2,6 @@
 
 import { ARCHBOARD_URL } from "#runtime/services/config.ts";
 import { withVault, withWriteClaims } from "#runtime/state/server-client-session.ts";
-import { isModelRefusal } from "#runtime/protocol/server-client-refusal.ts";
 import { isRecord, stringAt } from "@archboard/diagnostics/unknown-record";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -168,7 +167,6 @@ async function assertServerIdentity(): Promise<void> {
 type ServerError = Error & {
 	code?: unknown;
 	available?: unknown;
-	refusal?: unknown;
 	/** The whole body the server answered with, for a route whose refusal says more than its reason. */
 	answer?: Record<string, unknown>;
 };
@@ -191,9 +189,6 @@ function responseError(data: unknown, response: Response): Error {
 	const error: ServerError = new Error([reason, ...diagnosticLines(body)].join("\n"));
 	describeFailure(error, body);
 	error.answer = body;
-	if (isModelRefusal(data)) {
-		error.refusal = data;
-	}
 	return error;
 }
 
