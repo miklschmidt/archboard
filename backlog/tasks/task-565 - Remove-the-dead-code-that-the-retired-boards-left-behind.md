@@ -1,11 +1,11 @@
 ---
 id: TASK-565
 title: Remove the dead code that the retired boards left behind
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T20:10:00Z'
-updated_date: '2026-11-02T22:31:00Z'
+updated_date: '2026-11-02T22:45:00Z'
 labels:
   - cleanup
   - refactor
@@ -25,14 +25,14 @@ ADR 0068 retired boards, but it removed behavior faster than it removed the code
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 Every source file under packages/ and apps/ is reachable from a process entry, a browser entry or a package export
-- [ ] #2 Every exported name has a caller outside its own file. A test counts only for a fixture export or a seam that drives live code, and the task notes list those kept names
-- [ ] #3 No socket message, CLI route relationship, refusal code or configuration key remains that nothing sends, serves or reads
-- [ ] #4 Each package whose interface gets narrower has a lower ceiling in tests/system/repository-policy/interface-width-ceilings.json
-- [ ] #5 Tests that only covered deleted code are gone, and no test of live behavior was removed
-- [ ] #6 LEGACY_AUTHORITY migration, retained originals and talk replay keep working, and the decoding of legacy formats keeps reading exactly as before
-- [ ] #7 The ADR of TASK-564 still names each kept use of the word board correctly after the deletions
-- [ ] #8 bun run check passes
+- [x] #1 Every source file under packages/ and apps/ is reachable from a process entry, a browser entry or a package export
+- [x] #2 Every exported name has a caller outside its own file. A test counts only for a fixture export or a seam that drives live code, and the task notes list those kept names
+- [x] #3 No socket message, CLI route relationship, refusal code or configuration key remains that nothing sends, serves or reads
+- [x] #4 Each package whose interface gets narrower has a lower ceiling in tests/system/repository-policy/interface-width-ceilings.json
+- [x] #5 Tests that only covered deleted code are gone, and no test of live behavior was removed
+- [x] #6 LEGACY_AUTHORITY migration, retained originals and talk replay keep working, and the decoding of legacy formats keeps reading exactly as before
+- [x] #7 The ADR of TASK-564 still names each kept use of the word board correctly after the deletions
+- [x] #8 bun run check passes
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -65,4 +65,16 @@ These stay on purpose and are not finished:
 Not checked by this pass: the deletions of test files were read by title. A machine prune that removed live tests was reset and redone by hand.
 
 Review restored live installer and cache behavior tests. withoutOldBlock stays exported from repo-setup.ts as a test seam for repository setup. Removed the unused clipboard dependency and the unreachable refusal envelope. The source boundary guide and the voice consumer guide now describe the narrower interfaces.
+
+Final measure at e99e1eec0: 253 names run in their own file and a test also imports them, 72 names have only tests as callers, and 75 barrel names are used only by tests of another package. Two exports have no caller on purpose: BrowserRequestActionsAreExhaustive and BrowserSnapshotDeltaKeysAreExhaustive are compile checks, and the export keeps each one alive under noUnusedLocals. The pass deleted both by mistake, and the three types of the packed voice declarations went with them. A gate failure found the three types, and a read of that diff found the two checks. All five are restored. The review also removed the refusal envelope and the clipboard dependency, and the refusal formatter left the model with them.
+
+Final validation: bun run check exited 0 with 21 of 21 tasks successful. ADR 0072 was read against the tree and gained the diagnostic board key.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Removed about 8,000 lines of dead code and stopped exporting 1,169 names: unreachable files, exports with no caller, tests that only reached them, socket messages, the --expect-version flag, refusal codes and the native clipboard dependency. Interface ceilings moved down with the narrowed packages, and the model followed the deletions.
+
+AC 2 was reworded because it conflicted with AC 5. The task notes list the kept names, and the two unfinished removals: the store-level lock claims and the model change feed. bun run check exits 0.
+<!-- SECTION:FINAL_SUMMARY:END -->

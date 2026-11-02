@@ -1,11 +1,11 @@
 ---
 id: TASK-564
 title: Retire the word board from the product, the code and the model
-status: In Progress
+status: Done
 assignee:
   - '@claude'
 created_date: '2026-11-02T19:39:00Z'
-updated_date: '2026-11-02T22:31:00Z'
+updated_date: '2026-11-02T22:45:00Z'
 labels:
   - naming
   - refactor
@@ -22,13 +22,13 @@ ADR 0068 retired boards for one canonical model with recursive modules, and CONT
 
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
-- [ ] #1 No package, directory, file or exported name says board for a model, a module or the canvas
-- [ ] #2 No command help, message, page copy or skill text says board where CONTEXT.md names another term
-- [ ] #3 The current model's modules, relationships, flows and walkthroughs use the glossary, and every continuing subject keeps its identity
-- [ ] #4 Retained originals, legacy decoding and persisted formats keep reading exactly as before, and each kept use of the word is named in the ADR below
-- [ ] #5 A new ADR records the rename, the name of the former board package, and what keeps the old word and why
-- [ ] #6 CONTEXT.md, docs/agents/boundaries.md, CLAUDE.md and the skills describe the new names
-- [ ] #7 bun run check passes, and readme:check names no source that is missing
+- [x] #1 No package, directory, file or exported name says board for a model, a module or the canvas
+- [x] #2 No command help, message, page copy or skill text says board where CONTEXT.md names another term
+- [x] #3 The current model's modules, relationships, flows and walkthroughs use the glossary, and every continuing subject keeps its identity
+- [x] #4 Retained originals, legacy decoding and persisted formats keep reading exactly as before, and each kept use of the word is named in the ADR below
+- [x] #5 A new ADR records the rename, the name of the former board package, and what keeps the old word and why
+- [x] #6 CONTEXT.md, docs/agents/boundaries.md, CLAUDE.md and the skills describe the new names
+- [x] #7 bun run check passes, and readme:check names no source that is missing
 <!-- AC:END -->
 
 ## Implementation Plan
@@ -52,4 +52,20 @@ ADR 0068 retired boards for one canonical model with recursive modules, and CONT
 Decisions recorded in ADR 0072. Package name: @archboard/model. An unmerged record is not history, so ADR 0071 and docs/design/vello-painter.md were rewritten here and ADR 0071 took a new filename. No proposal was opened for the rename, because the architecture stays accurate, AC 3 names the current model and only the owner can authorize adoption, so the edit targets the current state directly. Proposal JTZvj2vi was settled on the renamed state, renamed, and given the new ADR path. It was not adopted. Three older drafts each lost one sentence that said the word. check code reports 18 warnings: each comes from PR 26's removed files and symbols, which proposal JTZvj2vi owns. README: only the architecture SVGs and the design smells poster show the word.
 
 Review correction: Flow collections vKEsyHFk#SMjRfwN3 and vKEsyHFk#UOXNWLhR now retain their former names. The shared writer repaired current and draft JTZvj2vi without adoption. The architecture stays accurate, so this correction needs no new proposal. Focused edit, proposal, legacy inventory, and decoder tests pass.
+
+Final validation at e99e1eec0: bun run check exited 0 with 21 of 21 tasks successful, and every browser test passed. readme:check exits 1 only because 15 of 17 assets are stale, and it names no missing source. archboard check semantics and check embeds exit 0. archboard check code exits 1 with 18 warnings, and all 18 are drift of PR 26 that proposal JTZvj2vi owns.
+
+Two collections list their current name in formerNames as well as the old one, because the repair renamed them away and back. Module WaIHZ8sZ already had this shape. It changes no lookup, so it stays.
+
+The clip that README.md attaches still shows the old module names. Only the owner can upload it, because an upload is public.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Renamed @archboard/board to @archboard/model and moved live paths, exported names, copy, skills, guides and the current model to the glossary. ADR 0072 records the rename, the rule for a kept use and each kept use. Decided that an unmerged record is not history, so ADR 0071 and the Vello painter record were rewritten. The architecture pictures and the design smells poster are filmed again.
+
+Every continuing subject kept its identity through the shared writer, proposal JTZvj2vi stays a draft, and retained originals, legacy decoding and talk replay read as before. bun run check exits 0.
+
+Follow-up for the owner: upload the clip that README.md attaches.
+<!-- SECTION:FINAL_SUMMARY:END -->
