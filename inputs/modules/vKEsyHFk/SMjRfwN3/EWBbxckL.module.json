@@ -27,24 +27,6 @@
       "to": "vKEsyHFk/SMjRfwN3#6uHnaygd"
     },
     {
-      "order": 35000,
-      "kind": "rpc",
-      "label": "load the talk, then frame(n) for every frame",
-      "description": "Through window.archboardReplay, evaluated over the renderer's DevTools connection. A frame answers once the page has drawn it at the frame's time and holds still.",
-      "emphasis": "hero",
-      "traffic": {
-        "speed": 40,
-        "volume": 0.5
-      },
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/walkthrough/src/runtime/operations/render-talk.ts",
-        "symbol": "PAGE"
-      },
-      "id": "vKEsyHFk/SMjRfwN3#nthMhjL4",
-      "to": "vKEsyHFk/SMjRfwN3#Kek84WN9"
-    },
-    {
       "order": 36000,
       "kind": "call",
       "label": "evaluate in the page; screenshot each frame as JPEG q92",

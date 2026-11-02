@@ -46,6 +46,18 @@
       "to": "vKEsyHFk/XppR9owz#yHgIapK7"
     },
     {
+      "order": 100000,
+      "kind": "http",
+      "emphasis": "normal",
+      "anchor": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
+        "symbol": "mountArchitectureModelRoutes"
+      },
+      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
+      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+    },
+    {
       "order": 112000,
       "kind": "http",
       "label": "HTTP edits, claims and recovery",
@@ -60,16 +72,21 @@
       "to": "vKEsyHFk/HBlhIeSD#9zu5ryhZ"
     },
     {
-      "order": 100000,
+      "order": 1000,
       "kind": "http",
-      "emphasis": "normal",
+      "label": "semantic commands, on its own checkout's port",
+      "emphasis": "hero",
+      "traffic": {
+        "speed": 40,
+        "volume": 0.5
+      },
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
-        "path": "apps/server/src/server/routes/architecture/model-routes.ts",
-        "symbol": "mountArchitectureModelRoutes"
+        "path": "packages/server-lifecycle/src/runtime/clients/server-client-transport.ts",
+        "symbol": "fetch"
       },
-      "id": "vKEsyHFk/HBlhIeSD#RiRoDLVp",
-      "to": "vKEsyHFk/HBlhIeSD#nn1ec9Tw"
+      "id": "vKEsyHFk/vKEsyHFk#9m47dJzG",
+      "to": "vKEsyHFk/6E6hL0Zk#2naazvac"
     }
   ]
 }

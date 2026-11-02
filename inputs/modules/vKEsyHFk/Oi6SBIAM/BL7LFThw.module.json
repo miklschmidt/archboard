@@ -28,17 +28,17 @@
   ],
   "outgoing": [
     {
-      "order": 6000,
-      "kind": "event",
-      "label": "board and agent news; the vault a pane is in",
-      "emphasis": "hero",
+      "order": 36000,
+      "kind": "dependency",
+      "label": "pane registrations and messages",
+      "emphasis": "normal",
       "anchor": {
         "repo": "github.com/miklschmidt/archboard",
         "path": "packages/workbench/src/server/services/panes/registry.ts",
-        "symbol": "sendToVaultClients"
+        "symbol": "resolvePane"
       },
-      "id": "vKEsyHFk/Oi6SBIAM#gK39PRbo",
-      "to": "vKEsyHFk#iORmkZrI"
+      "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
+      "to": "vKEsyHFk#PmExcyj9"
     },
     {
       "order": 79000,
@@ -53,19 +53,6 @@
       },
       "id": "vKEsyHFk/Oi6SBIAM#6kzjcG2u",
       "to": "vKEsyHFk#ZGONZKxj"
-    },
-    {
-      "order": 36000,
-      "kind": "dependency",
-      "label": "pane registrations and messages",
-      "emphasis": "normal",
-      "anchor": {
-        "repo": "github.com/miklschmidt/archboard",
-        "path": "packages/workbench/src/server/services/panes/registry.ts",
-        "symbol": "resolvePane"
-      },
-      "id": "vKEsyHFk/vKEsyHFk#YHDPy2Y1",
-      "to": "vKEsyHFk#PmExcyj9"
     }
   ]
 }
