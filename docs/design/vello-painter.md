@@ -245,17 +245,17 @@ This pass threw the old choreography away where a GPU can do better. It keeps th
 The thesis is one material: focus. A reader goes somewhere, and that place stays sharp while the rest falls away.
 The focal moment is a card that opens into its board. Every other move is a quieter use of the same lens.
 
-| Moment                      | Before                                                                | Now                                                                                                                      |
-| --------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| A flight into a card        | A zoom, with a finished small picture faded in inside the card.       | The card holds focus, and the board round it blurs and sinks. The parts of the next board bloom out of the middle.       |
-| The way back                | The same zoom, run backward, on an empty stage for a moment.          | The parts gather into the card, and the board above rises into focus round it.                                           |
-| A move to a deeper board    | The picture faded, and the next came in by reading order.             | The camera flies through the nearest card that holds it. With no card, or no picture yet, the two boards zoom in as one. |
-| A move to a shallower board | The picture faded, and the next came in by reading order.             | The camera flies out of the card that held this board. With no such card, the two boards zoom out as one.                |
-| A move at the same depth    | The picture faded, and the next came in by reading order.             | The two boards travel sideways together, in the order of the tree, with a smear along the way.                           |
-| A view of the same board    | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.         |
-| A first load                | Frames, then cards down the board, then lines, then all labels.       | A wave of cards leaves the middle. Sparks then draw the lines along the connections, and each label comes as they reach. |
-| A door opens                | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur.       |
-| A door closes               | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                       |
+| Moment                      | Before                                                                | Now                                                                                                                                                |
+| --------------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A flight into a card        | A zoom, with a finished small picture faded in inside the card.       | The card holds focus, and the board round it blurs and sinks. The parts of the next board bloom out of the middle.                                 |
+| The way back                | The same zoom, run backward, on an empty stage for a moment.          | The parts gather into the card, and the board above rises into focus round it.                                                                     |
+| A move to a deeper board    | The picture faded, and the next came in by reading order.             | The camera flies through the nearest card that holds it. With no card, or no picture yet, the two boards zoom in as one.                           |
+| A move to a shallower board | The picture faded, and the next came in by reading order.             | The camera flies out of the card that held this board. With no such card, the two boards zoom out as one.                                          |
+| A move at the same depth    | The picture faded, and the next came in by reading order.             | The two boards travel sideways together, in the order of the tree, with a smear along the way.                                                     |
+| A view of the same board    | The picture faded, and the next came in by reading order.             | The picture racks out of focus. The next blooms sharp from its middle, and shared subjects fly through the blur.                                   |
+| A first load                | Frames, then cards down the board, then lines, then all labels.       | Containers open out of the middle, ahead of a wave of cards. Sparks then draw the lines along the connections, and each label comes as they reach. |
+| A door opens                | The frame grew empty, the lines dropped out, and the parts came late. | The parts ride inside the door at its scale, the door holds focus, and the lines stay visible under a slight blur.                                 |
+| A door closes               | The parts faded where they stood.                                     | The parts ride back into the door.                                                                                                                 |
 
 ### The module tree decides the move
 
@@ -287,12 +287,23 @@ The more lines run at once, the slower each goes, by the square root of their nu
 
 | Moment                | Sparks start | The last spark lands | The rest of the move lands |
 | --------------------- | ------------ | -------------------- | -------------------------- |
-| A first load          | 198 ms       | 2,128 ms             | 760 ms                     |
+| A first load          | 243 ms       | 2,128 ms             | 760 ms                     |
 | A move on one picture | 269 ms       | 1,920 ms             | 640 ms                     |
 
 A small board does not stretch to fill this time, and it lands early. A line with a different number of points, or points that move more than 10 units apart, counts as a new shape. A line that keeps its shape rides with its cards.
 
 A diagonal reveal from the top left was filmed for comparison. It reads tidily, but its order says nothing about the board, so the order of the connections stayed. A traffic pulse mixes toward white, and a white spark vanishes on the chalk ground, so a spark mixes toward `Token::DiagramText`.
+
+### A container opens
+
+The owner tested a first load and said that containers "just pop in". A container faded in over 228 ms, and a dark well as large as the board read as a flash.
+One square front now leaves the middle of the picture and passes the last container in 456 ms. Each container shows where the front passed, so a card lands on a floor. A thin edge runs with the front and cools as the container lands. `crates/archboard-paint/src/between/open.rs` holds this.
+
+The first film used a box of the container's shape. The wave of cards is round, so on a wide board the cards of the top and bottom rows stood outside that box for a few frames. A square matches the wave. The cards now start up to 46 ms later and the sparks 45 ms later, so that the front stays ahead of them.
+
+A container that only the next picture has opens on the same front in a move, between `enterStart` and the end of the move. A test owns that case, and no film covers it.
+
+On the board of the film, in headless Chrome at 60 Hz, three runs of a first load gave a mean frame gap of 17.5 to 18.4 ms on the GPU, against 17.2 to 18.4 ms with the old fade. Two runs on the CPU painter gave a mean of 50.0 to 56.1 ms against 48.5 to 49.2 ms, and a longest gap of 150 to 167 ms against 100 ms.
 
 ### What the lens costs
 

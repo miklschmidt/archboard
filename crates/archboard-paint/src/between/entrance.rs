@@ -2,9 +2,9 @@
 //! page, another board, another view of this one.
 //!
 //! A move can carry what two scenes share. Here nothing is shared, so the
-//! picture blooms out of its middle instead. Frames fade in first, so the pane
-//! has its shape. The cards come out of the middle in a wave, each from a little
-//! nearer the middle and smaller than it lands. Then a spark runs along the
+//! picture blooms out of its middle instead. Containers open first, so the cards
+//! have a floor to land on. The cards come out of the middle in a wave, each from a
+//! little nearer the middle and smaller than it lands. Then a spark runs along the
 //! connections and draws the lines, and each label arrives when the spark reaches
 //! it. Everything is timed by where it is on the board, not by how many there are,
 //! so a board of four cards and a board of forty read as the same gesture.
@@ -21,6 +21,7 @@ use archboard_scene::scene::{Group, Item, Role, Scene};
 use super::arrive::Grow;
 use super::circuit::{Span, Spans, label_span, length_of, line_spans};
 use super::found::{Form, Found, found, holds_subject};
+use super::open::{Opening, ways};
 use super::phases::{Entry, Phases};
 use super::plan::{Mover, Plan, Wiring};
 use super::spark::{DrawOn, rims};
@@ -41,7 +42,7 @@ fn wave_key(point: Point, middle: Point) -> f64 {
 }
 
 /// The middle of a scene.
-fn middle_of_scene(scene: &Scene) -> Point {
+pub(super) fn middle_of_scene(scene: &Scene) -> Point {
     Point {
         x: scene.width / 2.0,
         y: scene.height / 2.0,
@@ -245,20 +246,21 @@ fn lines(groups: &[Found<'_>], times: &[(usize, Span)], phases: &Phases) -> Vec<
         .collect()
 }
 
-/// The containers, which fade in with the frames, and the labels, each of which
+/// The containers, which open ahead of the cards, and the labels, each of which
 /// arrives as the spark reaches it.
 fn frames_and_labels(
     groups: &[Found<'_>],
     spans: &Spans<'_>,
     entry: &Entry,
+    middle: Point,
 ) -> Vec<(usize, Mover)> {
+    let ways = ways(groups, middle, (0.0, entry.region_span));
     groups
         .iter()
         .enumerate()
         .filter_map(|(at, group)| {
-            if group.is_region() {
-                let frame = Mover::Frame(Item::Group(group.group.clone()), 0.0, entry.frames_end);
-                Some((at, frame))
+            if let Some(way) = ways.get(group.id) {
+                Some((at, Mover::Open(Box::new(Opening::new(group, *way)))))
             } else if group.is_label() {
                 let (start, end) = spans
                     .get(group.id)
@@ -339,7 +341,7 @@ fn movers(
     let by_place: BTreeMap<usize, Mover> = [
         cards(groups, &phases.entry, middle, last),
         lines(groups, times, phases),
-        frames_and_labels(groups, &spans, &phases.entry),
+        frames_and_labels(groups, &spans, &phases.entry, middle),
     ]
     .into_iter()
     .flatten()
@@ -578,7 +580,7 @@ mod tests {
                 .collect::<Vec<_>>()
         };
         assert_eq!(lines(0.2), [0.0, 0.0], "no line before the cards");
-        let [line, label] = lines(0.3)[..] else {
+        let [line, label] = lines(0.36)[..] else {
             panic!("a line and its label")
         };
         assert!(line > 0.0, "the line has begun");

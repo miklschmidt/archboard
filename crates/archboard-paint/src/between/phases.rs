@@ -41,8 +41,10 @@ pub struct Transition {
 #[derive(Clone, Copy, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
-    /// Frames fade in over the first part.
+    /// The page's furniture fades in over the first part.
     pub frames_end: f64,
+    /// How long the front that opens the containers takes.
+    pub region_span: f64,
     /// The first card in the wave begins here.
     pub cards_start: f64,
     /// The last card in the wave begins by here.
@@ -101,10 +103,11 @@ pub(crate) mod fixtures {
         },
         entry: Entry {
             frames_end: 0.3,
-            cards_start: 0.02,
-            cards_start_by: 0.3,
+            region_span: 0.6,
+            cards_start: 0.06,
+            cards_start_by: 0.36,
             card_span: 0.48,
-            lines_start: 0.26,
+            lines_start: 0.32,
             draw_end: 2.8,
             pulse_span: 0.12,
             labels_start: 0.66,
@@ -123,7 +126,7 @@ mod tests {
     fn the_host_hands_over_its_numbers_as_json_in_the_names_of_the_timing_package() {
         let phases: Phases = serde_json::from_str(
             r#"{"transition":{"exitEnd":0.35,"moveStart":0.06,"moveEnd":0.88,"fadeStart":0.2,"fadeEnd":0.68,"swapAt":0.44,"enterStart":0.54,"arrowheadAt":0.9,"labelsStart":0.66,"insideStart":0.08,"insideEnd":0.46,"drawStart":0.42,"drawEnd":3.0},
-                "entry":{"framesEnd":0.3,"cardsStart":0.02,"cardsStartBy":0.3,"cardSpan":0.48,"linesStart":0.26,"drawEnd":2.8,"pulseSpan":0.12,"labelsStart":0.66},
+                "entry":{"framesEnd":0.3,"regionSpan":0.6,"cardsStart":0.06,"cardsStartBy":0.36,"cardSpan":0.48,"linesStart":0.32,"drawEnd":2.8,"pulseSpan":0.12,"labelsStart":0.66},
                 "enter":760,"exit":280,"shutter":8}"#,
         )
         .expect("the timing package's phases");

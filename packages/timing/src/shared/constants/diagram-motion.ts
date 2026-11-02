@@ -177,15 +177,21 @@ const PICTURE_TRANSITION_PHASES = Object.freeze({
 
 /** When, as fractions of `PICTURE_MS.entry`, each part of a picture arrives. */
 const PICTURE_ENTRY_PHASES = Object.freeze({
-	/** Frames fade in over the first part. */
+	/** The page's furniture fades in over the first part. */
 	framesEnd: 0.3,
+	/**
+	 * How long the front that opens the containers takes to leave the middle and pass the last
+	 * of them. Pulls against the wave of cards, which must land on a floor: the front runs ahead
+	 * of `cardsStartBy`. Much shorter than this and a well as large as the board reads as a pop.
+	 */
+	regionSpan: 0.6,
 	/** The card nearest the middle begins here, and the farthest begins by `cardsStartBy`. */
-	cardsStart: 0.02,
-	cardsStartBy: 0.3,
+	cardsStart: 0.06,
+	cardsStartBy: 0.36,
 	/** How long each card takes to arrive. */
 	cardSpan: 0.48,
 	/** Sparks start to run along the lines here, from the cards that nothing feeds. */
-	linesStart: 0.26,
+	linesStart: 0.32,
 	/**
 	 * The last spark lands by here. This is past 1, because the lines go on after the
 	 * rest of the entrance has landed. A board of a hundred lines drawn in less than a

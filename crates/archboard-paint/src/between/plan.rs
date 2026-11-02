@@ -10,6 +10,7 @@ use super::card::CardCarry;
 use super::content::shell;
 use super::ease::{ease_out, emphasised, phase};
 use super::line::LineCarry;
+use super::open::Opening;
 use super::ride::Ride;
 use super::spark::{DrawOn, Rim};
 use super::unfold::Inside;
@@ -43,6 +44,8 @@ pub(super) enum Mover {
     Both(Box<Mover>, Box<Mover>),
     /// The edge of a card taking the spark that landed on it.
     Rim(Box<Rim>),
+    /// A container only the next scene has, on its way open.
+    Open(Box<Opening>),
 }
 
 impl Mover {
@@ -52,6 +55,7 @@ impl Mover {
             Mover::Draw(draw) => draw.end(),
             Mover::Grow(grow) => grow.end(),
             Mover::Rim(rim) => rim.end(),
+            Mover::Open(opening) => opening.end(),
             Mover::Frame(_, _, end) => *end,
             Mover::Both(old, new) => old.end().max(new.end()),
             _ => 1.0,
@@ -72,6 +76,7 @@ impl Mover {
             Mover::Ride(ride) => ride.at(progress),
             Mover::Inside(inside) => inside.at(progress),
             Mover::Rim(rim) => rim.at(progress),
+            Mover::Open(opening) => opening.at(progress),
             Mover::Both(old, new) => {
                 let mut both = old.at(progress);
                 both.extend(new.at(progress));

@@ -2,12 +2,19 @@
 //! leaves, one only the next has arrives, and one drawn another way swaps in
 //! place.
 
+use std::collections::HashMap;
+
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Group, Item, Pointer, Role, Transform};
 
+use super::circuit::{Spans, label_span};
 use super::ease::{ease_in_out, ease_out, emphasised, phase, scale_about, then};
-use super::found::Found;
+use super::found::{Form, Found};
+use super::open::{Opening, Way};
 use super::phases::Transition;
+use super::plan::Mover;
+use super::spark::DrawOn;
+use super::unfold::{Doors, Inside};
 
 /// How much a card leaving shrinks to.
 const LEAVE_SCALE: f64 = 0.96;
@@ -52,6 +59,38 @@ fn scaled_about(group: &mut Group, frame: Option<Rect>, scale: f64) {
     }
 }
 
+/// The mover of a subject only the next scene has.
+pub(super) fn arriving(
+    new: &Found<'_>,
+    doors: &Doors,
+    spans: &Spans<'_>,
+    openings: &HashMap<&str, Way>,
+    phases: Transition,
+) -> Mover {
+    if let Some(unfold) = doors.carrying(new) {
+        let fade = if new.is_label() {
+            (phases.labels_start, 1.0)
+        } else {
+            (phases.inside_start, phases.inside_end)
+        };
+        return Mover::Inside(Box::new(Inside::arriving(new.group.clone(), unfold, fade)));
+    }
+    if let Some(way) = openings.get(new.id) {
+        return Mover::Open(Box::new(Opening::new(new, *way)));
+    }
+    let span = spans.get(new.id).copied();
+    if new.form() == Form::Line {
+        let span = span.unwrap_or((phases.enter_start, 1.0));
+        return Mover::Draw(DrawOn::new(new.group, span, phases.arrowhead_at));
+    }
+    let (start, end) = if new.is_label() {
+        span.map_or((phases.labels_start, 1.0), label_span)
+    } else {
+        (phases.enter_start, 1.0)
+    };
+    Mover::Grow(Grow::new(new, start, end))
+}
+
 /// A subject only the last scene had, seen off: it fades, and a card draws in on
 /// itself a little as it goes.
 #[derive(Clone, Debug)]
@@ -68,9 +107,7 @@ impl Leave {
     pub(super) fn new(found: &Found<'_>, phases: Transition) -> Leave {
         Leave {
             group: borrowed(found.group),
-            frame: found
-                .frame
-                .filter(|_| found.form() == super::found::Form::Card),
+            frame: found.frame.filter(|_| found.form() == Form::Card),
             outer: found.outer,
             exit_end: phases.exit_end,
         }

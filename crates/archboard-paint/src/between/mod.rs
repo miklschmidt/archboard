@@ -26,6 +26,7 @@ mod found;
 mod interrupted;
 mod line;
 mod morph;
+mod open;
 mod phases;
 mod plan;
 mod rename;
@@ -44,17 +45,19 @@ use std::collections::{HashMap, HashSet};
 use archboard_scene::geometry::Rect;
 use archboard_scene::scene::{Definition, Group, Item, Mask, Role, Scene, SubjectKind, Transform};
 
-use arrive::{Ground, Grow, LABEL_GONE_BY, Leave, Swap};
+use arrive::{Ground, LABEL_GONE_BY, Leave, Swap, arriving};
 use card::CardCarry;
 use circuit::{Span, Spans, label_span, length_of, line_spans};
 use content::{is_parked, shell, unpark, unpark_held};
 use definitions::{borrowed_definitions, clear_definitions, masks_of};
 use ease::emphasised;
+use entrance::middle_of_scene;
 use found::{Form, Found, Pairing, found, holds_subject, pair};
 use line::{LineCarry, reroutes};
+use open::ways;
 use plan::{Mover, Plan, Riding, Wiring};
 use ride::{Ride, mark_of};
-use spark::{DrawOn, redrawn, rims};
+use spark::{redrawn, rims};
 use unfold::{Doors, Inside, Unfold};
 
 pub(crate) use departure::departing;
@@ -185,29 +188,6 @@ fn drawn_lines(
         .filter(|&b| new[b].form() == Form::Line && doors.carrying(&new[b]).is_none());
     let drawn: Vec<usize> = changed.chain(added).collect();
     line_spans(new, &drawn, scene, (phases.draw_start, phases.draw_end))
-}
-
-/// The mover of a subject only the next scene has.
-fn arriving(new: &Found<'_>, doors: &Doors, spans: &Spans<'_>, phases: Transition) -> Mover {
-    if let Some(unfold) = doors.carrying(new) {
-        let fade = if new.is_label() {
-            (phases.labels_start, 1.0)
-        } else {
-            (phases.inside_start, phases.inside_end)
-        };
-        return Mover::Inside(Box::new(Inside::arriving(new.group.clone(), unfold, fade)));
-    }
-    let span = spans.get(new.id).copied();
-    if new.form() == Form::Line {
-        let span = span.unwrap_or((phases.enter_start, 1.0));
-        return Mover::Draw(DrawOn::new(new.group, span, phases.arrowhead_at));
-    }
-    let (start, end) = if new.is_label() {
-        span.map_or((phases.labels_start, 1.0), label_span)
-    } else {
-        (phases.enter_start, 1.0)
-    };
-    Mover::Grow(Grow::new(new, start, end))
 }
 
 /// What a move would park, among some items, to any depth: the shadows and the
@@ -382,6 +362,22 @@ fn depth_of(body: &[Item], kind: SubjectKind) -> usize {
     first.unwrap_or(body.len())
 }
 
+/// The movers of some subjects, and which mover each subject has.
+fn gathered(
+    all: impl Iterator<Item = (usize, Option<Mover>)>,
+    subjects: usize,
+) -> (Vec<Mover>, Vec<Option<usize>>) {
+    let mut movers = Vec::new();
+    let mut of_subject = vec![None; subjects];
+    for (at, mover) in all {
+        if let Some(mover) = mover {
+            of_subject[at] = Some(movers.len());
+            movers.push(mover);
+        }
+    }
+    (movers, of_subject)
+}
+
 /// Temporary shapes left over a picture, such as rims, fade where they stood.
 fn stopping_shapes<'a>(
     last: &'a Scene,
@@ -438,8 +434,6 @@ impl Between {
             let id = found.group.mask.as_ref()?;
             masks.get(&id.line).cloned()
         };
-        let mut movers = Vec::new();
-        let mut of_subject = vec![None; new.len()];
         let carries = pairing.shared.iter().map(|&(a, b)| {
             let masks = (mask_of(&old[a], &last_masks), mask_of(&new[b], &next_masks));
             (
@@ -453,16 +447,15 @@ impl Between {
                 ),
             )
         });
-        let arrivals = pairing
-            .added
-            .iter()
-            .map(|&b| (b, Some(arriving(&new[b], &doors, &spans, phases))));
-        for (b, mover) in carries.chain(arrivals) {
-            if let Some(mover) = mover {
-                of_subject[b] = Some(movers.len());
-                movers.push(mover);
-            }
-        }
+        let added: Vec<Found<'_>> = pairing.added.iter().map(|&b| new[b]).collect();
+        let openings = ways(&added, middle_of_scene(&next), (phases.enter_start, 1.0));
+        let arrivals = pairing.added.iter().map(|&b| {
+            (
+                b,
+                Some(arriving(&new[b], &doors, &spans, &openings, phases)),
+            )
+        });
+        let (movers, of_subject) = gathered(carries.chain(arrivals), new.len());
         let mut traffic = HashMap::new();
         traffic_in(&last.body, &mut traffic);
         let mut landing = HashMap::new();
