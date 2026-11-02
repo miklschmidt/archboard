@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: In Progress
+status: Done
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T23:39:00Z'
+updated_date: '2026-11-02T23:59:00Z'
 labels:
   - reader
   - design
@@ -39,8 +39,8 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #15 A module with no parts outside the open one stands as a card, not a door
 - [x] #16 A reading falls to the Graphviz placement only when no dense room can draw it (Canonical architecture, 1VHRyajb)
 - [x] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
-- [ ] #18 A well's side walls are real soft shadows on its floor, with no flat band, so the depth reads from one viewpoint
-- [ ] #19 A well's shadows stay gentle on the light ground, and its top wall stands a little brighter than its floor on the dark ground
+- [x] #18 A well's side walls are real soft shadows on its floor, with no flat band, so the depth reads from one viewpoint
+- [x] #19 A well's shadows stay gentle on the light ground, and its top wall stands a little brighter than its floor on the dark ground
 <!-- AC:END -->
 
 ## Implementation Notes
@@ -57,6 +57,8 @@ Flowchart joins (criterion 12): a straight line a few units off the middle of En
 A non-Nix route (criterion 13): INSTALL.md gives rustup with a C toolchain, and from a fresh clone in a temporary home that route built the product with rustc 1.99.1. Its flowchart equals the Nix build's picture outside metadata. macOS and Debian were not run. Runtime (criterion 14): Bun 1.4.4 and Node.js ^22.23.4 || ^24.22.1 || >=26.12.1 on every route, and nothing refuses an older runtime at run time. Round 15 found that Bun 1.4.4 makes a ws error with no listener an uncaught exception, and a malformed frame on the feed socket ended the server: every accepted socket now has a listener from its first frame. It also found that the pinned nixpkgs throws for x86_64-darwin, so the flake drops that shell and INSTALL.md sends an Intel Mac to rustup.
 
 Doors (criterion 15): the drawn door field now decides, in doorEndpoints and isDoor too. projection.context still lists modules outside the reading that a line reaches. ADR 0070 is amended. Layout (criterion 16): Canonical architecture went from 3296x5499 to 2766x1513. A refused reading tries wider rooms at its own refusal budget, then, past 40 lines, its own rooms with four refusals. More refusals everywhere was rejected, because it made that reading 3146x1704. Across 752 readings no refused reading reaches Graphviz. 71 focused readings with no frame and at most 17 lines keep their ranks, by design. Slowest native release solve 1.0 s against 0.85 s. Rim (criterion 17): the well's rim turns down at the left as at the right, and the tab fills the corner above it. Round 16 on d95c3d37c..8f160dff3 approved with no findings. Gate 20 failed on the door button fixture, gate 22 on the format of the new fixtures, and gates 21, 23 and 24 passed. Gate 24 on d64c34eeb passed with exit 0, 21 of 21 tasks and 49 of 49 browser owners. readme:check reports 17 of 17 current, and archboard check embeds exits 0. All 13 attachments were filmed again or replayed from kept talks, and the frames were looked at before upload.
+
+Well (owner, 2026-11-03): the flat side bands are gone. The floor reaches both sides, the top wall is the rim less itself moved down, and each side leaves a soft shadow of 12 units beside the top wall's 14. The bands use the falloff of a card's shadow and its lighter ink on the light ground. On the dark ground the top wall mixes 15% toward the lip. Proof: gate 27 on bfffa67a6 passed, 21 of 21 tasks. GPU parity on 0T9enjhi readings: 80 comparisons, 0.219% of ink apart on average, 0.50% at worst. Review: round 18 found three items, fixed by the implementer in bfffa67a6; round 19 approved with no findings.
 <!-- SECTION:NOTES:END -->
 
 ## Final Summary
