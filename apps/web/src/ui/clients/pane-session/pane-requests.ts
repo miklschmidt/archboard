@@ -9,7 +9,6 @@ import {
 	type ShownConversationRequest,
 } from "@archboard/workbench/browser-contract";
 import { inVault, requestJson } from "@archboard/server-requests";
-import type { BrowserPaneListing } from "#ui/rules/pane-session/session-types.ts";
 
 /** What one pane tells the server it has in front of the human. */
 interface PaneReport {
@@ -75,15 +74,6 @@ function loadedBundle(): string | undefined {
 }
 
 /**
- * What the panes are holding, across every tab this server serves.
- * @param signal Cancels the read.
- * @returns The pane inventory.
- */
-function fetchPaneInventory(signal?: AbortSignal): Promise<BrowserPaneListing> {
-	return requestJson("/api/panes", { signal });
-}
-
-/**
  * Open a canonical reading through the same addressed route used by local agents.
  * @param vault The destination vault.
  * @param pane The registered client identity.
@@ -119,12 +109,4 @@ function showConversation(
 	});
 }
 
-export {
-	fetchPaneInventory,
-	loadedBundle,
-	reportPane,
-	showModel,
-	showConversation,
-	type PaneReply,
-	type PaneReport,
-};
+export { loadedBundle, reportPane, showModel, showConversation, type PaneReply, type PaneReport };

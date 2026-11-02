@@ -1,4 +1,3 @@
-import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts";
 // What makes this tab read a model again, and in what order (ADR 0023).
 //
 // Callers report what happened: a model changed, models of a vault were
@@ -19,7 +18,6 @@ import { architectureModelKeys } from "#ui/clients/architecture-model/queries.ts
 
 import type { QueryClient, QueryKey } from "@tanstack/react-query";
 
-import { modelCatalogKeys } from "#ui/clients/model-catalog/queries.ts";
 import { cachedReadings, readKeys } from "#ui/clients/canvas/reads/read-keys.ts";
 import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
 import { paneAddressOf, sameModelName } from "#ui/rules/canvas/reading/address.ts";
@@ -106,46 +104,6 @@ function modelChanged(client: QueryClient, vault: string, model: string): Promis
 }
 
 /**
- * These legacy boards of one vault have been written, or stopped being worked on:
- * the vault's listing and which pane holds what are read again either way, and
- * each named legacy board as `modelChanged` reads it.
- * @param client The tab's cache.
- * @param vault The vault the legacy boards are in.
- * @param models The legacy board keys, which may be none. A key that names a variant is of the whole legacy board.
- * @returns Settles once the fresh reads have been asked for.
- */
-async function modelsChanged(
-	client: QueryClient,
-	vault: string,
-	models: readonly string[],
-): Promise<void> {
-	await Promise.all([
-		readAgain(client, [readKeys.models(vault), modelCatalogKeys.panes]),
-		...models.map((model) => modelChanged(client, vault, model)),
-	]);
-}
-
-/**
- * Something may have moved what every vault lists or what the panes hold: a
- * model command, a pane report. The repositories are not read: only a chosen
- * checkout moves those, and it is announced.
- * @param client The tab's cache.
- * @returns Settles once the fresh reads have been asked for.
- */
-function listingsChanged(client: QueryClient): Promise<void> {
-	return readAgain(client, [readKeys.allModels, modelCatalogKeys.panes]);
-}
-
-/**
- * A checkout was chosen somewhere: the repositories are read again, and with them their models.
- * @param client The tab's cache.
- * @returns Settles once the fresh reads have been asked for.
- */
-function repositoriesChanged(client: QueryClient): Promise<void> {
-	return readAgain(client, [modelCatalogKeys.repositories]);
-}
-
-/**
  * A vault's policy changed, or was read for the first time: every picture of
  * the vault is drawn again under it. No document is read again: the policy is
  * not part of a model.
@@ -155,25 +113,6 @@ function repositoriesChanged(client: QueryClient): Promise<void> {
  */
 function policyChanged(client: QueryClient, vault: string): Promise<void> {
 	return readAgain(client, [readKeys.rendersIn(vault)]);
-}
-
-/**
- * Read the repositories, the listings, the panes, and every document and
- * picture of every model again: what a reconnected socket needs, since
- * whatever moved while it was down moved unheard, and the one control a person
- * has when something the shell reads has gone wrong. The documents matter as
- * much as the pictures: the inspector and the variant controls are built from
- * them, and a fresh picture beside a document of before would explain a model
- * as it used to be.
- * @param client The tab's cache.
- * @returns Settles once the fresh reads have been asked for.
- */
-async function readEverythingAgain(client: QueryClient): Promise<void> {
-	await Promise.all([
-		repositoriesChanged(client),
-		listingsChanged(client),
-		readAgain(client, [readKeys.documents, readKeys.renders, architectureModelKeys.all]),
-	]);
 }
 
 /**
@@ -236,13 +175,4 @@ function modelsListed(client: QueryClient, vault: string, models: readonly Docum
 	void readAgain(client, queryKeys);
 }
 
-export {
-	modelChanged,
-	modelGoneStale,
-	modelsChanged,
-	modelsListed,
-	listingsChanged,
-	policyChanged,
-	readEverythingAgain,
-	repositoriesChanged,
-};
+export { modelChanged, modelGoneStale, modelsListed, policyChanged };

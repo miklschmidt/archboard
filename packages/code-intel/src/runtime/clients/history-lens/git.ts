@@ -108,21 +108,6 @@ async function gitText(
 }
 
 /**
- * Run a command whose exit code is the answer: 0 is yes, any other is no.
- * @param root The checkout it runs in.
- * @param args Git's arguments.
- * @param options The caller's signal.
- * @returns Whether it exited 0.
- */
-async function gitSays(
-	root: string,
-	args: readonly string[],
-	options: GitRunOptions,
-): Promise<boolean> {
-	return (await runGit(root, args, options)).exitCode === 0;
-}
-
-/**
  * Run a command whose failure means there is no answer, such as a directory
  * that is in no repository or a ref that does not resolve.
  * @param root Where it runs.
@@ -139,4 +124,4 @@ async function gitAnswer(
 	return run.exitCode === 0 ? new TextDecoder().decode(run.stdout).trim() : undefined;
 }
 
-export { type GitRunOptions, gitAnswer, gitBytes, gitSays, gitText };
+export { type GitRunOptions, gitAnswer, gitBytes, gitText };

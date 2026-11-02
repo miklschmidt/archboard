@@ -26,7 +26,6 @@ const DelegateToWorkhorseInputSchema = z
 	.strict();
 
 const QueueOperationSchema = z.enum(["list", "add", "update", "delete", "reorder", "start"]);
-type QueueOperation = z.infer<typeof QueueOperationSchema>;
 
 const QueueSubmissionIdSchema = z.string().min(1).max(128);
 const QueuePromptSchema = z.string().min(1).max(16_384);
@@ -176,7 +175,6 @@ export {
 	InspectWorkhorseInputSchema,
 	DelegateToWorkhorseInputSchema,
 	QueueOperationSchema,
-	type QueueOperation,
 	QueueSubmissionIdSchema,
 	QueueListInputSchema,
 	QueueAddInputSchema,

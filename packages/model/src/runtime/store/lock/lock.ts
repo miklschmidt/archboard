@@ -38,7 +38,7 @@ function forgetLockAnnouncements(): void {
 }
 
 export { ModelLockCancelledError, holdModel, withLease } from "#runtime/store/lock/acquisition.ts";
-export { ModelHeldError, type Claim, type HolderKind } from "#runtime/store/lock/contracts.ts";
+export { ModelHeldError, type Claim } from "#runtime/store/lock/contracts.ts";
 export {
 	claimModel,
 	claimOn,

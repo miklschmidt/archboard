@@ -77,21 +77,6 @@ function sameSemanticOrder(one: readonly string[], other: readonly string[]): bo
 	return one.length === other.length && one.every((id, index) => id === other[index]);
 }
 
-/**
- * Memberships as a node persists them: the canonical spelling, or nothing at
- * all when there are none. Omitted and empty mean the same thing, and the
- * document keeps only the shorter of the two.
- * @param ids The ids as stated, or undefined when none were.
- * @returns The canonical array, or undefined for no membership.
- */
-function persistedGroupIds(ids: readonly string[] | undefined): string[] | undefined {
-	if (ids === undefined) {
-		return undefined;
-	}
-	const canonical = normalizeGroupIds(ids);
-	return canonical.length === 0 ? undefined : canonical;
-}
-
 /** The longer explanation, reached by inspecting a node rather than drawn on it. */
 const DescriptionSchema = NonBlankTextSchema.max(MAX_DESCRIPTION);
 
@@ -112,7 +97,6 @@ export {
 	GroupIdSchema,
 	GroupMembershipsSchema,
 	normalizeGroupIds,
-	persistedGroupIds,
 	ResponsibilitySchema,
 	DescriptionSchema,
 };

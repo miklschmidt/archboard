@@ -5,8 +5,8 @@
 
 import { describe, expect, test } from "bun:test";
 import { compareVariants } from "#shared/rules/compare/variants.ts";
-import { groupsUsed, inspectGroup, placingGroups } from "#shared/rules/inspect/groups.ts";
-import { normalizeGroupIds, persistedGroupIds } from "#shared/schemas/primitives.ts";
+import { groupsUsed, inspectGroup } from "#shared/rules/inspect/groups.ts";
+import { normalizeGroupIds } from "#shared/schemas/primitives.ts";
 import { reconcileVariant } from "#shared/rules/reconcile/variant.ts";
 import {
 	SemanticNodeSchema,
@@ -89,56 +89,6 @@ describe("inspecting one group", () => {
 /** The worker on its own, so a merge has nothing but memberships to decide. */
 const FREE_WORKER = { id: "w", name: "Worker", kind: "job", groups: ["billing", "fulfillment"] };
 
-/**
- * The placing group of every placed node, drawing the given nodes.
- * @param nodes The nodes drawn, each with an id, a parent and memberships.
- * @param order The configured groups, in config.yaml order.
- * @returns Node id to placing group id, for the placed nodes only.
- */
-const placing = (nodes: readonly Record<string, unknown>[], order: readonly string[]) =>
-	Object.fromEntries(
-		placingGroups(
-			content({
-				nodes: [
-					ORDERS,
-					SHIPPING,
-					...nodes.map((node) => ({ name: node["id"], kind: "job", ...node })),
-				],
-			}).nodes,
-			{
-				groups: Object.fromEntries(order.map((id) => [id, { name: id, color: "blue" as const }])),
-			},
-		),
-	);
-
-describe("the group a card is placed with", () => {
-	test("a card is placed with its first configured group whether or not a sibling shares it", () => {
-		const nodes = [
-			{ id: "a", parent: "orders", groups: ["billing", "fulfillment"] },
-			{ id: "b", parent: "orders", groups: ["fulfillment"] },
-			{ id: "c", parent: "shipping", groups: ["audit"] },
-			{ id: "d", groups: ["billing"] },
-			{ id: "e", parent: "orders" },
-		];
-		expect(placing(nodes, ["billing", "fulfillment", "audit"])).toEqual({
-			a: "billing",
-			b: "fulfillment",
-			c: "audit",
-			d: "billing",
-		});
-		expect(placing(nodes, ["fulfillment", "billing", "audit"])["a"]).toBe("fulfillment");
-	});
-
-	test("a group the configuration does not define never places", () => {
-		const nodes = [
-			{ id: "a", parent: "orders", groups: ["billing", "retired"] },
-			{ id: "b", parent: "orders", groups: ["retired"] },
-			{ id: "c", parent: "orders", groups: ["billing"] },
-		];
-		expect(placing(nodes, ["billing"])).toEqual({ a: "billing", c: "billing" });
-	});
-});
-
 describe("memberships as a set", () => {
 	test("a relationship to a part of a member reaches that member, and one inside a member crosses nothing", () => {
 		const held = content({
@@ -167,8 +117,6 @@ describe("memberships as a set", () => {
 		expect(SemanticNodeSchema.safeParse({ ...LEDGER, groups: ["a", "a"] }).success).toBe(false);
 		expect(SemanticNodeSchema.safeParse({ ...LEDGER, groups: ["a", "b"] }).success).toBe(true);
 		expect(normalizeGroupIds(["b", "a", "b"])).toEqual(["a", "b"]);
-		expect(persistedGroupIds([])).toBeUndefined();
-		expect(persistedGroupIds(undefined)).toBeUndefined();
 	});
 
 	test("absence and an empty list do not compare as change; membership does", () => {

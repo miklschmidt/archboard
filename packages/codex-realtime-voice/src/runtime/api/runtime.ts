@@ -14,9 +14,6 @@ export { EMPTY_SPOKEN_APPROVAL_SNAPSHOT } from "#runtime/state/spoken-approval/s
 export { createCodexWaitGraph } from "#runtime/state/wait-graph/wait-graph.ts";
 export { emptyManifest } from "#runtime/store/epoch/manifest.ts";
 
-export {
-	assertWorkbenchInstructionBytes,
-	readWorkbenchInstructionDocument,
-} from "#runtime/rules/host/authored.ts";
+export { readWorkbenchInstructionDocument } from "#runtime/rules/host/authored.ts";
 
 export { composeWorkbenchRoleInstructions } from "#runtime/rules/host/instructions.ts";

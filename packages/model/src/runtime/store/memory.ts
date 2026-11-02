@@ -3,7 +3,6 @@
 // watch and its listeners, and what agents said they were doing. None of it is
 // model content, so a stopping server forgets all of it at once.
 
-import { forgetDoing } from "#runtime/store/doing.ts";
 import {
 	forgetLockAnnouncements,
 	onModelLockChanged,
@@ -18,7 +17,6 @@ function forgetModelMemory(): void {
 	onModelLockChanged(null);
 	onModelSweep(null);
 	forgetLockAnnouncements();
-	forgetDoing();
 }
 
 export { forgetModelMemory };

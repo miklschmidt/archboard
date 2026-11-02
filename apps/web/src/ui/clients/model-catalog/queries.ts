@@ -12,7 +12,6 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { MODEL_CACHE_MS } from "@archboard/timing";
 import { fetchRepositories } from "#ui/clients/model-catalog/repositories.ts";
-import { fetchPaneInventory } from "#ui/clients/pane-session/pane-requests.ts";
 
 /** The one root every catalog resource hangs under, so invalidation can sweep it. */
 const CATALOG_KEY = "model-catalog";
@@ -26,33 +25,6 @@ const modelCatalogKeys = {
 	/** The repositories of this machine, each with the vault of its chosen checkout. */
 	repositories: [CATALOG_KEY, "repositories"] as const,
 };
-
-/**
- * What the live panes hold, across every tab this server serves. Separate from
- * the vault on purpose: a pane inventory that cannot be read must not take the
- * listed models down with it.
- *
- * Read again every time the tab comes back, stale or not. A pane belonging to
- * another tab can be closed while this one is in the background, and nothing
- * says so: this tab's own panes announce their retirement, another tab's
- * cannot. Coming back is the only moment that reliably precedes looking, and
- * settling for the stale-only default would leave a pane that has gone marked
- * as on screen for as long as somebody kept returning inside the window.
- * @returns The query options.
- */
-function paneInventoryQuery() {
-	return queryOptions({
-		queryKey: modelCatalogKeys.panes,
-		/**
-		 * Read the live panes.
-		 * @param context The query context, carrying this read's cancellation.
-		 * @returns The pane inventory.
-		 */
-		queryFn: (context) => fetchPaneInventory(context.signal),
-		staleTime: MODEL_CACHE_MS.listingStale,
-		refetchOnWindowFocus: "always",
-	});
-}
 
 /**
  * The repositories of this machine.
@@ -76,4 +48,4 @@ function repositoriesQuery() {
 	});
 }
 
-export { modelCatalogKeys, paneInventoryQuery, repositoriesQuery };
+export { modelCatalogKeys, repositoriesQuery };

@@ -6,7 +6,6 @@ import {
 	closePane,
 	initialPaneList,
 	paneListOf,
-	primaryPaneId,
 	selectPane,
 } from "#ui/rules/application/pane-list.ts";
 
@@ -18,7 +17,6 @@ test("the application starts with pane A focused and adds pane B at most once", 
 	expect(two.panes.map((pane) => pane.paneId)).toEqual(["A", "B"]);
 	expect(two.activePaneId).toBe("B");
 	expect(addPane(two)).toBe(two);
-	expect(primaryPaneId(two)).toBe("A");
 });
 
 test("closing the focused pane moves focus to the pane that remains; the last pane stays", () => {

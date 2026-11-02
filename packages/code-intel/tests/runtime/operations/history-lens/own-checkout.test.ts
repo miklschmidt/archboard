@@ -1,4 +1,4 @@
-// Behind, footprint and locality read a document against the checkout that holds
+// Footprint and locality read a document against the checkout that holds
 // its vault, for the vault's own repository (ADR 0049, TASK-472.03).
 //
 // The registry holds `shop` on `main`. A second checkout of the same
@@ -11,7 +11,6 @@ import { afterAll, beforeAll, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createBehindReading } from "#runtime/operations/history-lens/behind.ts";
 import { createVariantLocality } from "#runtime/operations/history-lens/locality.ts";
 import { readVariantFootprint } from "#runtime/operations/history-lens/footprint.ts";
 import {
@@ -139,15 +138,6 @@ afterAll(() => {
 	if (callerRepos === undefined) delete process.env["ARCHBOARD_REPOS"];
 	else process.env["ARCHBOARD_REPOS"] = callerRepos;
 	rmSync(scratch, { recursive: true, force: true });
-});
-
-test("behind counts the commits of the checkout that holds the vault", async () => {
-	const [answer] = await createBehindReading().read(vault, [
-		{ document, file: join(vault, "Shop.semantic.json") },
-	]);
-	if (answer === undefined || !("parts" in answer)) throw new Error("the document was not read");
-	expect(answer.skipped).toEqual([]);
-	expect(answer.parts.map((part) => [part.subject.id, part.commits.length])).toEqual([["pA", 1]]);
 });
 
 test("footprint and locality read the part in the checkout that holds the vault", async () => {

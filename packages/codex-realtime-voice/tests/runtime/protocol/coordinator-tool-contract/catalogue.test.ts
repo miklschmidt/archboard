@@ -1,4 +1,3 @@
-import { CODEX_PROTOCOL_VERSION } from "@archboard/codex-app-server/protocol";
 import { describe, expect, test } from "bun:test";
 
 import {
@@ -6,11 +5,6 @@ import {
 	assertCanonicalManifest,
 } from "#runtime/protocol/coordinator-tool-contract/manifest.ts";
 import { createVoiceToolset } from "#runtime/rules/host/toolset.ts";
-import {
-	CODEX_QUEUE_OPERATION_CONTRACTS,
-	CODEX_QUEUE_PARAMETER_SCHEMAS,
-	CODEX_QUEUE_PROTOCOL,
-} from "#runtime/protocol/coordinator-tool-contract/queue-operations.ts";
 import {
 	COORDINATOR_IDENTITY,
 	CoordinatorIdentitySchema,
@@ -36,17 +30,8 @@ import {
 	VOICE_TOOL_INPUT_SCHEMAS,
 	WORKHORSE_TOOL_INPUT_SCHEMAS,
 } from "#runtime/protocol/coordinator-tool-contract/tool-inputs.ts";
-import {
-	ThreadQueueAddParamsSchema,
-	ThreadQueueDeleteParamsSchema,
-	ThreadQueueListParamsSchema,
-	ThreadQueueReorderParamsSchema,
-	ThreadQueueStartParamsSchema,
-	ThreadQueueUpdateParamsSchema,
-} from "@archboard/codex-app-server/session";
 
 import {
-	QUEUE_OPERATION_SNAPSHOT,
 	VOICE_MANIFEST_SNAPSHOT,
 	WORKHORSE_MANIFEST_SNAPSHOT,
 } from "#tests/runtime/protocol/coordinator-tool-contract/fixtures.ts";
@@ -234,58 +219,6 @@ describe("dynamic tool schemas and queue protocol", () => {
 			checkout: "/work/payments",
 			operation: "start",
 			submissionId: "q",
-		});
-	});
-
-	test("mirrors the pinned Codex queue parameter fields", () => {
-		const textInput = { type: "text" as const, text: "queue prompt", text_elements: [] };
-		expect(
-			ThreadQueueAddParamsSchema.parse({
-				threadId: "thread-1",
-				input: [textInput],
-				clientUserMessageId: "client-1",
-			}),
-		).toEqual(
-			JSON.parse(
-				JSON.stringify({
-					threadId: "thread-1",
-					input: [textInput],
-					clientUserMessageId: "client-1",
-				}),
-			),
-		);
-		expect(
-			ThreadQueueListParamsSchema.parse({ threadId: "thread-1", cursor: null, limit: null }),
-		).toEqual({ threadId: "thread-1", cursor: null, limit: null });
-		expect(
-			ThreadQueueUpdateParamsSchema.parse({
-				threadId: "thread-1",
-				queuedSubmissionId: "q",
-				input: [textInput],
-			}),
-		).toEqual({ threadId: "thread-1", queuedSubmissionId: "q", input: [textInput] });
-		expect(
-			ThreadQueueDeleteParamsSchema.parse({ threadId: "thread-1", queuedSubmissionId: "q" }),
-		).toEqual({ threadId: "thread-1", queuedSubmissionId: "q" });
-		expect(
-			ThreadQueueReorderParamsSchema.parse({
-				threadId: "thread-1",
-				queuedSubmissionIds: ["q-2", "q-1"],
-			}),
-		).toEqual({ threadId: "thread-1", queuedSubmissionIds: ["q-2", "q-1"] });
-		expect(
-			ThreadQueueStartParamsSchema.parse({ threadId: "thread-1", queuedSubmissionId: null }),
-		).toEqual({ threadId: "thread-1", queuedSubmissionId: null });
-		for (const schema of Object.values(CODEX_QUEUE_PARAMETER_SCHEMAS)) {
-			expect(() => schema.parse({ threadId: "thread-1", revision: 1 })).toThrow();
-		}
-		expect(CODEX_QUEUE_OPERATION_CONTRACTS.map(({ operation }) => operation)).toEqual([
-			...QUEUE_OPERATION_SNAPSHOT,
-		]);
-		expect(CODEX_QUEUE_PROTOCOL).toEqual({
-			protocol: "codex-app-server",
-			version: CODEX_PROTOCOL_VERSION,
-			operations: [...QUEUE_OPERATION_SNAPSHOT],
 		});
 	});
 

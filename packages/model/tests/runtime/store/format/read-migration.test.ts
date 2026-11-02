@@ -2,7 +2,6 @@ import { afterAll, expect, test } from "bun:test";
 import { mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { locateLegacyBoard } from "#runtime/store/location.ts";
 import { decodeLegacyBoard } from "#runtime/store/format/decode.ts";
 import { LEGACY_BOARD_SCHEMA_VERSION } from "#shared/schemas/legacy-board.ts";
 
@@ -52,7 +51,7 @@ function legacyBoard(name: string) {
 }
 
 function put(name: string, board: Record<string, unknown>): string {
-	const file = locateLegacyBoard(name, vault).file;
+	const file = join(vault, `${name}.semantic.json`);
 	writeFileSync(file, `${JSON.stringify(board)}\n`);
 	return file;
 }

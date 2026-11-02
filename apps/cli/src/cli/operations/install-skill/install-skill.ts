@@ -14,7 +14,7 @@ import {
 	resolveExplicitDir,
 	resolveTarget,
 } from "#cli/operations/install-skill/skill-destination.ts";
-import { setUpRepository, withoutOldBlock } from "#cli/operations/install-skill/repo-setup.ts";
+import { setUpRepository } from "#cli/operations/install-skill/repo-setup.ts";
 import { prepareSkillArtifacts } from "@archboard/skills/distribution";
 import { SOURCE_CHECKOUT } from "@archboard/workspace/source-checkout";
 
@@ -362,5 +362,4 @@ export {
 	InstallSkillResultSchema,
 	type InstallSkillResult,
 	installSkillContract,
-	withoutOldBlock,
 };

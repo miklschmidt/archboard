@@ -6,7 +6,4 @@ export {
 } from "#tests/runtime/support/code-check/evidence.ts";
 export { checkCode } from "#runtime/operations/code-check/check.ts";
 export { readPlans } from "#runtime/operations/code-check/plans.ts";
-export {
-	checkCandidateCode,
-	suggestHistoricalCommits,
-} from "#runtime/operations/code-check/candidate.ts";
+export { checkCandidateCode, suggestHistoricalCommits } from "#tests/runtime/support/candidate.ts";

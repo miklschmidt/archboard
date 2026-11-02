@@ -3,12 +3,6 @@ export {
 	CodexServerResponseSchema,
 	QueuedSubmissionSchema,
 	SupportedLoginAccountParamsSchema,
-	ThreadQueueAddParamsSchema,
-	ThreadQueueDeleteParamsSchema,
-	ThreadQueueListParamsSchema,
-	ThreadQueueReorderParamsSchema,
-	ThreadQueueStartParamsSchema,
-	ThreadQueueUpdateParamsSchema,
 } from "#runtime/schemas/session-contract.ts";
 export type {
 	SessionUserInput,

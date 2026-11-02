@@ -30,9 +30,6 @@
 // worse. So the line is capped and the list is short, and both caps are here
 // rather than in the middleware, the pane and the injector separately.
 
-import { modelMemoryKey } from "#runtime/store/legacy-address.ts";
-import type { HolderKind } from "#runtime/store/lock/lock.ts";
-
 /**
  * The longest line worth putting on a wall.
  *
@@ -42,41 +39,6 @@ import type { HolderKind } from "#runtime/store/lock/lock.ts";
  * short enough that four of them fit in the corner of a model.
  */
 const DOING_MAX_CHARS = 140;
-
-/** How many are kept per model. The last few actions, not a transcript. */
-const DOING_KEPT = 5;
-
-/** One thing somebody said they were doing, and who said it. */
-interface DoingEntry {
-	/** The line itself, as it was written. */
-	doing: string;
-	/** ISO timestamp of the write it arrived with. */
-	at: string;
-	/**
-	 * Whose it is: the lock holder id of the writer.
-	 *
-	 * Kept because "whose descriptions are whose" is the question ADR 0005 makes
-	 * load-bearing, and because two agents on one model otherwise read as one.
-	 */
-	by: string;
-	kind: HolderKind;
-	/** Was this write part of a claim — a step of a campaign, rather than a lone act? */
-	claimed?: boolean;
-}
-
-interface Store {
-	/** Keyed by `modelMemoryKey`: one server serves several vaults (ADR 0049). */
-	byModel: Map<string, DoingEntry[]>;
-}
-
-const processStore: Store = { byModel: new Map<string, DoingEntry[]>() };
-/**
- * Where the lines are kept, which is this process and nowhere else: what an
- * agent said it was doing is a fact about a server that is running, not one
- * the vault has a file for.
- * @returns The store.
- */
-const store = (): Store => processStore;
 
 /** A line as it must arrive, or the reason it is refused. */
 type DoingCheck = { ok: true; doing: string } | { ok: false; problem: string };
@@ -104,73 +66,4 @@ function checkDoing(raw: unknown): DoingCheck {
 	return { ok: true, doing };
 }
 
-/**
- * Remember what was said, newest last, oldest dropped.
- *
- * One thing said twice running is one line, not two. A single intent can be
- * several writes — `import` clears the legacy board, batches the scene in and posts
- * its images, all under the one sentence the caller wrote — and a list showing
- * that sentence three times has spent three of its five lines saying one thing.
- * The newest timestamp wins, so the line stays current while it repeats.
- *
- * On the words alone, and not on the writer, because an unclaimed agent gets a
- * fresh id per request — that id is what makes the lock reentrant, not who
- * anybody is, so keying on it would mean never coalescing. Two agents saying
- * the same sentence about one legacy board inside five writes therefore read as one
- * line. That is the cheaper of the two mistakes: the other one is a list that
- * is the same sentence five times, which is what this is for.
- * @param vault The vault the legacy board lives in.
- * @param model Which legacy board it was said about.
- * @param entry What was said, and who said it.
- * @returns The legacy board's lines, oldest first.
- */
-function recordDoing(vault: string, model: string, entry: DoingEntry): DoingEntry[] {
-	const key = modelMemoryKey(vault, model);
-	const { byModel } = store();
-	const existing = byModel.get(key) ?? [];
-	const last = existing[existing.length - 1];
-	const repeat = last !== undefined && last.doing === entry.doing;
-	const list = [...(repeat ? existing.slice(0, -1) : existing), entry].slice(-DOING_KEPT);
-	byModel.set(key, list);
-	return list;
-}
-
-/**
- * The last few things said about this legacy board, oldest first.
- * @param vault The vault the legacy board lives in.
- * @param model Which legacy board.
- * @returns The lines.
- */
-function recentDoing(vault: string, model: string): DoingEntry[] {
-	return store().byModel.get(modelMemoryKey(vault, model)) ?? [];
-}
-
-/**
- * Forget a legacy board's lines.
- *
- * Nothing calls this on the ordinary path — the list is meant to outlive the
- * work it describes for as long as somebody might still be looking at the
- * legacy board. It exists for the checks, which run several legacy boards through one server.
- * @param which The vault and legacy board, or every legacy board of every vault when omitted.
- * @param which.vault The vault the legacy board lives in.
- * @param which.model Which legacy board.
- */
-function forgetDoing(which?: { readonly vault: string; readonly model: string }): void {
-	const { byModel } = store();
-	if (which === undefined) {
-		byModel.clear();
-	} else {
-		byModel.delete(modelMemoryKey(which.vault, which.model));
-	}
-}
-
-export {
-	DOING_MAX_CHARS,
-	DOING_KEPT,
-	type DoingEntry,
-	type DoingCheck,
-	checkDoing,
-	recordDoing,
-	recentDoing,
-	forgetDoing,
-};
+export { DOING_MAX_CHARS, type DoingCheck, checkDoing };

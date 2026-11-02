@@ -1,6 +1,5 @@
 import {
 	composeWorkbenchRoleInstructions,
-	assertWorkbenchInstructionBytes,
 	readWorkbenchInstructionDocument,
 } from "@archboard/codex-realtime-voice/runtime";
 import type { VoiceAgentOptions } from "@archboard/codex-realtime-voice/server";
@@ -24,37 +23,12 @@ function domainInstructions(name: AuthoredInstructionName): string {
 const WORKHORSE_DOMAIN_INSTRUCTIONS = domainInstructions("workhorse");
 const COORDINATOR_DOMAIN_INSTRUCTIONS = domainInstructions("coordinator");
 const workhorse = composeWorkbenchRoleInstructions("workhorse", WORKHORSE_DOMAIN_INSTRUCTIONS);
-const coordinator = composeWorkbenchRoleInstructions(
-	"coordinator",
-	COORDINATOR_DOMAIN_INSTRUCTIONS,
-);
 const WORKHORSE_DEVELOPER_INSTRUCTIONS = workhorse.text;
 const WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256 = workhorse.sha256;
-const AUTHORED_INSTRUCTION_DIGESTS = Object.freeze({
-	workhorse: workhorse.sha256,
-	coordinator: coordinator.sha256,
-});
-/**
- * Refuse a complete role document whose composed bytes changed.
- * @param name The role.
- * @param candidate The candidate complete role document.
- */
-function assertCanonicalInstructionBytes(
-	name: AuthoredInstructionName,
-	candidate: string | Uint8Array,
-): void {
-	assertWorkbenchInstructionBytes(
-		candidate,
-		`${name} developer instructions`,
-		AUTHORED_INSTRUCTION_DIGESTS[name],
-	);
-}
 export {
 	WORKHORSE_DOMAIN_INSTRUCTIONS,
 	COORDINATOR_DOMAIN_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS,
 	WORKHORSE_DEVELOPER_INSTRUCTIONS_SHA256,
-	AUTHORED_INSTRUCTION_DIGESTS,
-	assertCanonicalInstructionBytes,
 	type AuthoredInstructionName,
 };

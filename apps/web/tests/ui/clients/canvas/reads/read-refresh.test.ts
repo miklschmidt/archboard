@@ -15,15 +15,8 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
 
-import { paneInventoryQuery, repositoriesQuery } from "#ui/clients/model-catalog/queries.ts";
 import { readRetainedFrom } from "#ui/clients/canvas/reads/retained-reads.ts";
-import {
-	modelChanged,
-	modelsChanged,
-	listingsChanged,
-	policyChanged,
-	readEverythingAgain,
-} from "#ui/clients/canvas/reads/read-refresh.ts";
+import { modelChanged, policyChanged } from "#ui/clients/canvas/reads/read-refresh.ts";
 import { takePicturesFrom } from "#ui/clients/canvas/reads/picture-source.ts";
 import {
 	retainedDocumentQuery,
@@ -182,15 +175,6 @@ async function readListing(vault: string) {
 }
 
 /**
- * How often a route was asked.
- * @param route The path, with `|vault` for a route asked in a vault.
- * @returns The count.
- */
-function timesAsked(route: string): number {
-	return requested.filter((one) => one === route).length;
-}
-
-/**
  * Draw a picture from the model's document as this tab's cache holds it.
  * @param request What is asked for.
  * @param client The tab's cache.
@@ -287,23 +271,6 @@ function pane(
 	return { versions, close };
 }
 
-/**
- * The navigator: both vaults' listings, the panes and the repositories, each kept read.
- * @param client The tab's cache.
- * @returns How to stop reading them.
- */
-function navigator(client: QueryClient): () => void {
-	const stops = [
-		new QueryObserver(client, retainedListingQuery(SHOP)).subscribe(ignore),
-		new QueryObserver(client, retainedListingQuery(BILLING)).subscribe(ignore),
-		new QueryObserver(client, paneInventoryQuery()).subscribe(ignore),
-		new QueryObserver(client, repositoriesQuery()).subscribe(ignore),
-	];
-	return () => {
-		for (const stop of stops) stop();
-	};
-}
-
 test("a changed model is read from after the change: an answer decided before it does not win", async () => {
 	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 	const shown = pane(client, SHOP, "Payments");
@@ -324,66 +291,6 @@ test("a changed model is read from after the change: an answer decided before it
 	await settle();
 	expect(shown.versions()).toEqual([2, 2]);
 	shown.close();
-	client.clear();
-});
-
-test("a model let go under the server's spelling reads again what was asked by another spelling or a former name, and the vault's listing and the panes, in that vault only", async () => {
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	const stopNavigator = navigator(client);
-	const spelled = pane(client, SHOP, "PAYMENTS");
-	const former = pane(client, SHOP, "Old payments");
-	const elsewhere = pane(client, BILLING, "payments");
-	await until(() => [spelled, former, elsewhere].every((one) => one.versions().join() === "1,1"));
-	await settle();
-	asked.length = 0;
-	requested.length = 0;
-
-	// Both vaults' models move on; the server reports one pane letting go of a
-	// proposal of the shop's model, by the key it lists it under.
-	server.get(SHOP)!.version = 2;
-	server.get(BILLING)!.version = 2;
-	await modelsChanged(client, SHOP, ["payments@proposed"]);
-
-	await until(() => [spelled, former].every((one) => one.versions().join() === "2,2"));
-	await settle();
-	expect(elsewhere.versions()).toEqual([1, 1]);
-	expect(asked.filter((one) => one.startsWith(BILLING))).toEqual([]);
-	expect({
-		shop: timesAsked(`/retained-list|${SHOP}`),
-		billing: timesAsked(`/retained-list|${BILLING}`),
-		panes: timesAsked("/api/panes"),
-		repositories: timesAsked("/api/repositories"),
-	}).toEqual({ shop: 1, billing: 0, panes: 1, repositories: 0 });
-	for (const one of [spelled, former, elsewhere]) one.close();
-	stopNavigator();
-	client.clear();
-});
-
-test("a model command reads every listing and the panes again, not the repositories; reading everything again reads them too", async () => {
-	const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-	const stopNavigator = navigator(client);
-	await until(() => requested.length === 4);
-	await settle();
-	requested.length = 0;
-
-	await listingsChanged(client);
-	await settle();
-	expect(requested.toSorted()).toEqual(
-		["/api/panes", `/retained-list|${BILLING}`, `/retained-list|${SHOP}`].toSorted(),
-	);
-
-	requested.length = 0;
-	await readEverythingAgain(client);
-	await settle();
-	expect(requested.toSorted()).toEqual(
-		[
-			"/api/panes",
-			"/api/repositories",
-			`/retained-list|${BILLING}`,
-			`/retained-list|${SHOP}`,
-		].toSorted(),
-	);
-	stopNavigator();
 	client.clear();
 });
 

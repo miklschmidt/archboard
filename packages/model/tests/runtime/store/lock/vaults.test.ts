@@ -3,7 +3,6 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as lock from "#runtime/store/lock/lock.ts";
-import { forgetDoing, recentDoing, recordDoing } from "#runtime/store/doing.ts";
 import { MODEL_LOCK_MS } from "@archboard/timing";
 
 const home = mkdtempSync(join(tmpdir(), "archboard-lock-vaults-"));
@@ -13,7 +12,7 @@ afterAll(() => {
 });
 
 // One server serves several vaults (ADR 0049), so a model of one name in two vaults is two models.
-test("a model of one name in two vaults keeps its claim, lease, announcements and doing line apart", async () => {
+test("a model of one name in two vaults keeps its claim, lease and announcements apart", async () => {
 	const vaultA = join(home, "a");
 	const vaultB = join(home, "b");
 	const told: Array<{ vault: string; model: string; held: boolean }> = [];
@@ -38,20 +37,10 @@ test("a model of one name in two vaults keeps its claim, lease, announcements an
 		);
 		expect(wrote).toBe("written");
 		expect(told.filter((item) => item.vault === vaultB && item.held)).not.toEqual([]);
-
-		recordDoing(vaultA, "payments", {
-			doing: "reworking A",
-			at: "2026-10-15T00:00:00.000Z",
-			by: "writer-a",
-			kind: "agent",
-		});
-		expect(recentDoing(vaultA, "payments")).toHaveLength(1);
-		expect(recentDoing(vaultB, "payments")).toEqual([]);
 	} finally {
 		lock.releaseClaim(vaultA, "payments");
 		lock.onModelLockChanged(null);
 		lock.forgetLockAnnouncements();
-		forgetDoing();
 	}
 });
 

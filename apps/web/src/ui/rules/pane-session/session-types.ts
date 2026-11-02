@@ -7,47 +7,11 @@ import type { AgentActivityMessage } from "@archboard/server-lifecycle/pane-mess
 // copy the browser could edit (ADR 0023), so there is nothing in this file that
 // a pane could write back.
 
-import type { DocumentEntry } from "#ui/clients/canvas/reads/drawings.ts";
-
 /** A model's address: what it is called, and which of its variants is shown. */
 export interface LegacyIdentity {
 	model: string;
 	/** The variant's name, or `current` when the pane follows the designation. */
 	variant: string;
-}
-
-/** One persisted variant of a listed model, with the key a pane opens it by. */
-export type ListedVariant = DocumentEntry["variants"][number] & {
-	/** The model key a pane is addressed with: bare for the variant the name opens, `board@id` otherwise. */
-	key: string;
-};
-
-/** One model as the vault lists it, each variant carrying the key a pane opens it by. */
-export type CatalogModel = Omit<DocumentEntry, "variants"> & {
-	variants: ListedVariant[];
-};
-
-/** Persisted model inventory returned by `/api/semantic-boards`. */
-export interface PersistedLegacyListing {
-	models: CatalogModel[];
-	/** The vault's configured levels, coarsest first. */
-	levels: readonly string[];
-}
-
-/** Browser-session inventory returned by `/api/panes`. */
-export interface BrowserPaneListing {
-	panes: Array<{
-		paneId: string;
-		place: string;
-		model: string;
-		identity: LegacyIdentity;
-	}>;
-}
-
-/** UI-local projection of persisted models and the live pane inventory. */
-export interface LegacyListing extends PersistedLegacyListing {
-	/** What each pane is holding right now, in reading order. */
-	onScreen: Array<{ paneId: string; place: string; model: string }>;
 }
 
 /** What the server sends a pane over its socket. */

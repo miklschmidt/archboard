@@ -408,7 +408,6 @@ type RememberedFindings = z.infer<typeof RememberedFindingsSchema>;
 type CodeCheckSkip = z.infer<typeof CodeCheckSkipSchema>;
 type CodeFinding = z.infer<typeof CodeFindingSchema>;
 type CodeEvidence = z.infer<typeof CodeEvidenceSchema>;
-type ModelBehind = z.infer<typeof ModelBehindSchema>;
 type BehindCommit = z.infer<typeof BehindCommitSchema>;
 type BehindSkip = z.infer<typeof BehindSkipSchema>;
 
@@ -421,7 +420,6 @@ export {
 	BehindSkipSchema,
 	type BehindSkip,
 	ModelBehindSchema,
-	type ModelBehind,
 	CodeCheckAnswerSchema,
 	type CodeCheckAnswer,
 	CodeCheckDocumentSchema,

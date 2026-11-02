@@ -2,7 +2,6 @@
 export { parseLegacyBoard } from "#shared/rules/coherence/parse-legacy-board.ts";
 export {
 	addressedVariant,
-	asksForDesignation,
 	currentVariant,
 	findVariant,
 	nothingBuilt,

@@ -7,7 +7,6 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type * as LensModule from "#tests/runtime/support/history-lens/lens.ts";
-import { ModelBehindSchema } from "#shared/protocol/code-check.ts";
 import { FootprintAnswerSchema } from "#shared/protocol/footprint.ts";
 import { LocalityAnswerSchema } from "#shared/protocol/locality.ts";
 import {
@@ -127,14 +126,6 @@ afterAll(() => {
 	if (callerRepos === undefined) delete process.env["ARCHBOARD_REPOS"];
 	else process.env["ARCHBOARD_REPOS"] = callerRepos;
 	rmSync(scratch, { recursive: true, force: true });
-});
-
-test("Behind counts every changed file in a project directory after the document changed", async () => {
-	const [read] = await lens.createBehindReading().read(vault, [{ document, file }]);
-	const answer = ModelBehindSchema.parse(read);
-	if (!("parts" in answer)) throw new Error("no last change");
-	expect(answer.lastChange).toMatchObject({ kind: "commit", commit: base });
-	expect(answer.parts.find((part) => part.subject.id === "project")?.commits).toHaveLength(6);
 });
 
 test("hotspots and coupling use the project directory and omit overlapping bindings", async () => {
