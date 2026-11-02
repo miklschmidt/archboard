@@ -3,6 +3,10 @@
   "name": "code-opener",
   "kind": "package",
   "responsibility": "Opens the code that a node binds",
+  "groups": [
+    "code",
+    "packages"
+  ],
   "binding": {
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/code-opener"
@@ -15,8 +19,5 @@
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "groups": [
-    "packages"
-  ]
+  "outgoing": []
 }
