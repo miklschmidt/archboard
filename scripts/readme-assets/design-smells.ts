@@ -58,8 +58,8 @@ const CANVAS = { x: 460, y: 60, width: 600, height: 900 } as const;
 const BLANK_SPREAD = 6;
 /** The module each beat shows, by its name in the model. */
 const BEATS = {
-	unjoined: "Diagram surface",
-	shallow: "Retained reads",
+	unjoined: "Walkthrough recording",
+	shallow: "server-lifecycle",
 	passThrough: "Command contract",
 } as const;
 
