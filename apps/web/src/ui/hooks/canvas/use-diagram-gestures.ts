@@ -313,9 +313,10 @@ function useDiagramGestures(inputs: DiagramGestureInputs): {
 	// level down, when it has one.
 	const onDoubleClick = useCallback(
 		(event: ReactMouseEvent<HTMLElement>): void => {
-			if (!controlAt(pickedTarget(event))) openDown(openableAt(pickedTarget(event), event.clientY));
+			if (space || controlAt(pickedTarget(event))) return;
+			openDown(openableAt(pickedTarget(event), event.clientY));
 		},
-		[openDown],
+		[openDown, space],
 	);
 
 	const onKeyDown = useCallback(

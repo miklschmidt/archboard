@@ -200,6 +200,25 @@ test("a double click opens a card", async () => {
 		WAIT,
 	);
 	expect(takers).toBe(0);
+	const address = await browser.eval<string>("window.location.search");
+	await browser.eval(
+		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }))`,
+	);
+	await pollUntil(
+		() =>
+			browser.eval<string>(
+				`getComputedStyle(document.querySelector('[data-slot="model-diagram"]')).cursor`,
+			),
+		(cursor) => cursor === "grab",
+		"the Space hand before a double click",
+		WAIT,
+	);
+	await browser.run(["dblclick", card]);
+	expect(await selectedIds(browser)).toEqual([]);
+	expect(await browser.eval<string>("window.location.search")).toBe(address);
+	await browser.eval(
+		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }))`,
+	);
 	await browser.run(["dblclick", card]);
 	await settledOn(browser, "Shop#Gateway");
 }, 30_000);
