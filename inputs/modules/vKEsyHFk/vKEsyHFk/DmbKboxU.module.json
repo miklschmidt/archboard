@@ -2,7 +2,7 @@
   "order": 29000,
   "name": "model",
   "kind": "package",
-  "responsibility": "The canonical model contract and its one reader and durable writer",
+  "responsibility": "The canonical model contract and its rules, the coherent reader and durable writer, the signed archive of its history, and legacy decoding for migration and retained originals",
   "groups": [
     "packages",
     "writes"
@@ -13,14 +13,14 @@
   },
   "schemaVersion": 1,
   "id": "vKEsyHFk/vKEsyHFk#DmbKboxU",
+  "formerNames": [
+    "board"
+  ],
   "documents": [
     {
       "repo": "github.com/miklschmidt/archboard",
       "path": "backlog/tasks/task-517 - Extract-a-reusable-Codex-agent-workbench.md"
     }
   ],
-  "outgoing": [],
-  "formerNames": [
-    "board"
-  ]
+  "outgoing": []
 }
