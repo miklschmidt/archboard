@@ -320,7 +320,7 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 <sub>What each tool does out of the box, as of September 2026. IcePanel and the three analysis rows as of November 2026.</sub>
 
-[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. Its read-only model viewer lays out the model automatically. IcePanel can sync that model with deployment data from production. Its MCP server is available on paid plans only.
+[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. Its read-only model viewer lays out the model automatically. Teams can build custom integrations through its API. Its MCP server is available on paid plans only.
 
 ## Archboard next to PR Lens and Archify
 
