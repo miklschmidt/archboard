@@ -172,6 +172,21 @@ describe("install targets", () => {
 		expect(readdirSync(linkedRoot), installFailure(refused)).toEqual(["archboard"]);
 	});
 
+	test("copies into a repository reached through a directory link", () => {
+		using fixture = createInstallFixture();
+		const repo = fixture.repo("real-repository");
+		fixture.git(repo, "init", "--quiet");
+		const alias = join(fixture.root, "repository-link");
+		symlinkSync(repo, alias, "dir");
+		const root = join(alias, ".agents", "skills");
+		const result = fixture.install(alias, ["--dir", root, "--no-setup"]);
+		const diagnostic = installFailure(result.spawn);
+		expect(result.install, diagnostic).toBe("copy");
+		for (const skill of shippedSkills) {
+			expect(lstatSync(join(root, skill)).isSymbolicLink(), diagnostic).toBe(false);
+		}
+	});
+
 	test("makes the vault and writes no agent document, and a rerun changes nothing", async () => {
 		using fixture = createInstallFixture();
 		const repo = fixture.repo("fresh");

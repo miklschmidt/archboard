@@ -245,14 +245,24 @@ function linkSkills(
 }
 
 /**
+ * Resolves links in the existing part of an install path, including when its skills root is new.
+ * @param directory - An absolute path.
+ * @returns The physical path with any missing directories appended.
+ */
+function realInstallPath(directory: string): string {
+	if (fs.existsSync(directory)) return fs.realpathSync(directory);
+	return path.join(realInstallPath(path.dirname(directory)), path.basename(directory));
+}
+
+/**
  * Whether a path is a directory or lies below it.
  * @param child - The path to test.
  * @param parent - The directory.
  * @returns True when the path is inside the directory.
  */
 function isInside(child: string, parent: string): boolean {
-	const relative = path.relative(parent, child);
-	return !relative.startsWith("..") && !path.isAbsolute(relative);
+	const relative = path.relative(realInstallPath(parent), realInstallPath(child));
+	return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
 }
 
 /**
