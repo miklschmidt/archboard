@@ -5,7 +5,15 @@ import { ModelArrivalContext } from "#ui/state/reading-routing/model-arrival.ts"
 // connects them.
 
 import { VaultDiagnostics } from "#ui/components/vault-diagnostics/VaultDiagnostics.tsx";
-import { useCallback, useEffect, useMemo, useState, type JSX, type ReactNode } from "react";
+import {
+	useCallback,
+	useEffect,
+	useMemo,
+	useState,
+	type ContextType,
+	type JSX,
+	type ReactNode,
+} from "react";
 
 import { LiveBinding } from "#ui/state/application/live-binding.ts";
 import { livePanesOver } from "#ui/rules/application/live-panes.ts";
@@ -57,7 +65,7 @@ import { Tooltip } from "@archboard/ui-kit/components";
 import { paneAddressOf, paneKeyFor } from "#ui/rules/canvas/reading/address.ts";
 import { RecordingStage } from "#ui/components/walkthrough-recording/RecordingStage.tsx";
 import { OrbStageProvider, VoiceSurfaceProvider } from "@archboard/workbench/voice";
-import { AnswerFilesContext, type AnswerFile } from "@archboard/workbench/agent";
+import { AnswerFilesContext } from "@archboard/workbench/agent";
 import { activateCodeTarget } from "@archboard/code-opener/code-target";
 import { AgentDockSlot, AgentPanelSlot } from "#ui/components/application/AgentSurfaceSlots.tsx";
 import { PresentationVoiceKey } from "#ui/components/application/PresentationVoiceKey.tsx";
@@ -267,8 +275,8 @@ function ApplicationBody(props: ApplicationBodyProps): JSX.Element {
 	const { raise } = notices;
 	// A file an agent's answer names opens through the focused pane's vault, as the page's other
 	// requests do, so it opens only inside a checkout that vault reads.
-	const openAnswerFile = useCallback(
-		(file: AnswerFile): void =>
+	const openAnswerFile = useCallback<NonNullable<ContextType<typeof AnswerFilesContext>>>(
+		(file): void =>
 			activateCodeTarget({
 				vault: livePanes.active.status.vault ?? start.first,
 				target: file,

@@ -3,9 +3,7 @@ export { AgentDock } from "#ui/components/dock/AgentDock.tsx";
 export { AgentPanel } from "#ui/components/panel/AgentPanel.tsx";
 export { AgentAnswer } from "#ui/components/thread/AnswerText.tsx";
 export { AnswerFilesContext } from "#ui/hooks/thread/use-answer-files.ts";
-export type { AnswerFile } from "#ui/rules/thread/answer-file.ts";
 export { useConversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
-export type { Conversation } from "#ui/hooks/runtime/use-agent-runtime.ts";
 export { createAgentSetup } from "#ui/state/agent-setup/setup.ts";
 export type {
 	AgentSetup,

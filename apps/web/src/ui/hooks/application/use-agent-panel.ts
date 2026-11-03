@@ -5,7 +5,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 
-import type { Conversation } from "@archboard/workbench/agent";
+import type { AgentView } from "@archboard/workbench/agent";
 
 const STORAGE_KEY = "archboard.agent.panel";
 
@@ -38,7 +38,7 @@ function storeOpen(open: boolean): void {
  * @param conversation The conversation.
  * @returns The mark.
  */
-function saidMark(conversation: Conversation): string {
+function saidMark(conversation: AgentView["conversation"]): string {
 	const last = conversation.turns.at(-1);
 	if (last === undefined) return "";
 	const said = last.items.filter((item) => item.media === "text").length;
@@ -88,7 +88,7 @@ function useAgentPanel(): AgentPanelState {
  * @param open Whether the panel is open.
  * @returns True while something unseen waits.
  */
-function useUnread(conversation: Conversation, open: boolean): boolean {
+function useUnread(conversation: AgentView["conversation"], open: boolean): boolean {
 	const mark = saidMark(conversation);
 	const [seen, setSeen] = useState(mark);
 	if (open && seen !== mark) setSeen(mark);
