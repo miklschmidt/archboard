@@ -2893,6 +2893,8 @@ three times, as the TypeScript did. A sequence is laid out and painted in one
 synchronous call (`drawSequence`), and a flowchart in one asynchronous call
 (`drawFlowchart`), so neither drawing crosses back to TypeScript before it is
 painted.
+[ADR 0073](../adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md)
+later replaced this flowchart layout: the core lays a flowchart out from its flow in one pass, with no track engine.
 
 Every sequence and flowchart view of every variant of the dogfood vault and
 of the vaults under `examples/` was drawn with the TypeScript layout and with
