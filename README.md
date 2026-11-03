@@ -304,38 +304,46 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 ## Archboard next to the usual diagram tools
 
-|                                         |            Archboard             |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |
-| --------------------------------------- | :------------------------------: | :----------------: | :----------------------------------: | :--------------------------: |
-| Who places the boxes                    |       the renderer, always       |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |
-| Written by                              | your coding agent, through a CLI |    you, in text    |             you, by hand             |        you, in a DSL         |
-| Proposals drawn against today           |       ✅ module by module        |         no         |                  no                  |              no              |
-| History with the reason for each change |                ✅                |      git log       |               git log                | git log, ADRs in Structurizr |
-| Narrated walkthroughs and video         |                ✅                |         no         |                  no                  | step-through views, no voice |
-| Sequence views over the same modules    |                ✅                | a separate diagram |                  no                  |       ✅ dynamic views       |
-| Modules bound to code                   |        ✅ opens the file         |       links        |                links                 |            links             |
-| Several agents writing safely           |   ✅ claims and version checks   |         no         |                  no                  |              no              |
+|                                          |                               Archboard                               |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |                  IcePanel                  |
+| ---------------------------------------- | :-------------------------------------------------------------------: | :----------------: | :----------------------------------: | :--------------------------: | :----------------------------------------: |
+| Who places the boxes                     |                         the renderer, always                          |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    | you or an agent, or the auto-layout viewer |
+| Written by                               |                   your coding agent, through a CLI                    |    you, in text    |             you, by hand             |        you, in a DSL         |  you, or an agent through MCP or the API   |
+| Proposals drawn against today            |                          ✅ module by module                          |         no         |                  no                  |              no              |       ✅ drafts, but not through MCP       |
+| History with the reason for each change  |                                  ✅                                   |      git log       |               git log                | git log, ADRs in Structurizr |       versions and decision records        |
+| Narrated walkthroughs and video          |                                  ✅                                   |         no         |                  no                  | step-through views, no voice |        step-through flows, no voice        |
+| Sequence views over the same modules     |                                  ✅                                   | a separate diagram |                  no                  |       ✅ dynamic views       |   flows, or sequence diagrams by export    |
+| Modules bound to code                    |                           ✅ opens the file                           |       links        |                links                 |            links             |      links to repositories and files       |
+| Dependencies the map leaves out          |    ✅ [the code check](#find-where-the-map-and-the-code-disagree)     |         no         |                  no                  |              no              |    no, it flags moved or deleted links     |
+| Git history read by module               | ✅ [what changes together](#read-the-change-through-the-architecture) |         no         |                  no                  |              no              |                     no                     |
+| Design smells from the model and history |            ✅ [Measures](#find-the-smells-in-your-design)             |         no         |                  no                  |              no              |                     no                     |
+| Several agents writing safely            |                     ✅ claims and version checks                      |         no         |                  no                  |              no              |  MCP edits the live model, no draft tools  |
 
-<sub>What each tool does out of the box, as of September 2026.</sub>
+<sub>What each tool does out of the box, as of September 2026. IcePanel and the three analysis rows as of November 2026.</sub>
+
+[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. Its read-only model viewer lays out the model automatically. Teams can build custom integrations through its API. Its MCP server is available on paid plans only.
 
 ## Archboard next to PR Lens and Archify
 
 [PR Lens](https://github.com/coldteadotai/pr-lens) and [Archify](https://github.com/tt-a1i/archify) are the closest tools to Archboard. Both let a coding agent draw architecture, and each covers part of what Archboard does. Archboard keeps one model of each system and changes it over time. PR Lens draws one pull request at a time from its diff, and Archify draws one diagram for each request.
 
-|                                         |               Archboard               |                   PR Lens                   |                  Archify                  |
-| --------------------------------------- | :-----------------------------------: | :-----------------------------------------: | :---------------------------------------: |
-| Who places the boxes                    |         the renderer, always          |   the renderer, in lanes the model names    |  your agent, on a grid or by coordinates  |
-| Written by                              |   your coding agent, through a CLI    | a model that reads the diff, or your agent  |            your agent, as JSON            |
-| Kept between changes                    | ✅ one model and retained checkpoints |           rebuilt from each diff            |         a new folder per request          |
-| History with the reason for each change |                  ✅                   |                     no                      |                    no                     |
-| Proposals drawn against today           |          ✅ module by module          |        one diff, marked by the model        |         ✅ two snapshots compared         |
-| Narrated walkthroughs and video         |                  ✅                   | walkthroughs on its hosted canvas, no voice |      a video of the motion, no voice      |
-| Sequence views over the same modules    |                  ✅                   |              ✅ data-flow lens              |            a separate diagram             |
-| Modules bound to code                   |           ✅ opens the file           |           links with line ranges            |         links pinned to a commit          |
-| Several agents writing safely           |     ✅ claims and version checks      |       a revision check on canvas push       |                    no                     |
-| Pull-request comments                   |       a narrated MP4 you attach       |     ✅ posted and updated on every push     |                    no                     |
-| Diagram kinds                           |   architecture, sequence, flowchart   |           architecture, data flow           | ✅ five, with workflow and state machines |
+|                                          |                               Archboard                               |                   PR Lens                   |                  Archify                  |
+| ---------------------------------------- | :-------------------------------------------------------------------: | :-----------------------------------------: | :---------------------------------------: |
+| Who places the boxes                     |                         the renderer, always                          |   the renderer, in lanes the model names    |  your agent, on a grid or by coordinates  |
+| Written by                               |                   your coding agent, through a CLI                    | a model that reads the diff, or your agent  |            your agent, as JSON            |
+| Kept between changes                     |                 ✅ one model and retained checkpoints                 |           rebuilt from each diff            |         a new folder per request          |
+| History with the reason for each change  |                                  ✅                                   |                     no                      |                    no                     |
+| Proposals drawn against today            |                          ✅ module by module                          |        one diff, marked by the model        |         ✅ two snapshots compared         |
+| Narrated walkthroughs and video          |                                  ✅                                   | walkthroughs on its hosted canvas, no voice |      a video of the motion, no voice      |
+| Sequence views over the same modules     |                                  ✅                                   |              ✅ data-flow lens              |            a separate diagram             |
+| Modules bound to code                    |                           ✅ opens the file                           |           links with line ranges            |         links pinned to a commit          |
+| Dependencies the map leaves out          |    ✅ [the code check](#find-where-the-map-and-the-code-disagree)     |                     no                      |                    no                     |
+| Git history read by module               | ✅ [what changes together](#read-the-change-through-the-architecture) |                     no                      |                    no                     |
+| Design smells from the model and history |            ✅ [Measures](#find-the-smells-in-your-design)             |                     no                      |                    no                     |
+| Several agents writing safely            |                     ✅ claims and version checks                      |       a revision check on canvas push       |                    no                     |
+| Pull-request comments                    |                       a narrated MP4 you attach                       |     ✅ posted and updated on every push     |                    no                     |
+| Diagram kinds                            |                   architecture, sequence, flowchart                   |           architecture, data flow           | ✅ five, with workflow and state machines |
 
-<sub>What each tool does out of the box, as of September 2026: PR Lens v0.9.0 and Archify v3.0.1.</sub>
+<sub>What each tool does out of the box, as of September 2026: PR Lens v0.9.0 and Archify v3.0.1. The three analysis rows as of November 2026: PR Lens v0.13.3 and Archify v3.2.0.</sub>
 
 Each of them also does things that Archboard does not. PR Lens posts its diagrams to pull requests on GitHub, GitLab and Bitbucket from a GitHub App or from CI. It also shares them as hosted canvas links. Archify writes one HTML file that stays interactive without a server, and it converts pasted Mermaid.
 
