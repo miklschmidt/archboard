@@ -1,0 +1,102 @@
+{
+  "id": "vdbwhuzZ",
+  "name": "A flowchart lays out from its flow and a flow opens in the reading that fits",
+  "summary": "The flowchart lays a flow out from its structure in one pass and breaks a long run into columns, so a long flow fits a desktop pane, and a flow opens in the reading that its pane shows larger.",
+  "documents": [
+    {
+      "repo": "github.com/miklschmidt/archboard",
+      "path": "docs/adr/0073-a-flowchart-lays-out-from-its-flow-and-a-flow-opens-in-the-reading-that-fits.md"
+    }
+  ],
+  "schemaVersion": 1,
+  "lifecycle": "draft",
+  "createdAt": "2026-11-03T14:32:23.950Z",
+  "predecessor": "oyXXnyCV",
+  "predecessorRevision": "c674c7627c291c429f1877b7a7901f59df43edac4be5769074ff4864f4c4b6f9",
+  "baseline": "1e3bd5ec882cbcc9e69e72fe6c182e4343e81d1d",
+  "changes": [
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/gbyqW4H3#8WJV0Mer"
+    },
+    {
+      "type": "remove",
+      "subject": "vKEsyHFk/gbyqW4H3#NR1ARSyH"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+      "field": "responsibility",
+      "value": "Lays out one flow's logic from its structure: steps on one axis, answers side by side, loops as hexagons, long runs in columns"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#0idmUHd2",
+      "field": "description",
+      "value": "A flow is a run of blocks, and each block is a box, a decision or a loop. The layout stacks a run on one axis, stands the answers of a decision side by side, and draws a loop's line back on the left of its steps. A run that is taller than its column height breaks into even columns, and the line between them rises in the gap. The core keeps the column height at which the reference pane shows the picture largest (ADR 0073). No layout engine takes part, so the lines cross nowhere."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
+      "field": "label",
+      "value": "round each line's corners"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#LJUm7E1m",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/mod.rs",
+        "symbol": "curve_through"
+      }
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/yejBBUFY#n2ONtqdt",
+      "field": "description",
+      "value": "Reads current, draft, completed, and exact architecture with explicit unavailable states. One catalogue supplies reading and comparison choices. Recursive scopes expose complete interfaces and relationship evidence. The router owns scope, state, checkpoint, focus, filters, grammar, flow, comparison, and foreign destinations.\n\nSelection retains canonical identities through renames, hidden subjects, and removed comparison definitions. Pointer modifiers, keyboard commands, and area selection share one owner. Focus opens containment paths. Filters preserve complete interfaces. Behavioral readings retain all participants and steps. A flow opens in the reading that its pane shows larger, and a tie opens the sequence.\n\nCode and foreign navigation preserve exact historical pins. State details expose decisions, dates, documents, correction audit, unresolved issues, and blocked ancestry. Explanation actions capture the exact reading through the existing local action.\n\nEach reader belongs to its resolved vault. Captured walkthroughs reuse its renderer and camera, retain the ordinary reading, and change revision only on explicit restart. Every converted beat requires an explicit view. Unavailable beats draw no replacement architecture.\n\nMigration previews retain original coverage, lifecycle, standing, predecessors, and baselines. Failed composition keeps exact originals inspectable without claiming an empty current model. The browser authors no mapping, settlement, lifecycle decision, or migration.\n\nInstalled bookmarks preserve canonical authority and exact view membership without owning model content. Former addresses reopen retained originals with their exact state and checkpoint. Model ownership transfer remains explicitly unavailable."
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+      "field": "to",
+      "value": "vKEsyHFk/gbyqW4H3#0idmUHd2"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+      "field": "label",
+      "value": "lay the blocks out and break long runs into columns"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+      "field": "kind",
+      "value": "self"
+    },
+    {
+      "type": "assign",
+      "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+      "field": "anchor",
+      "value": {
+        "repo": "github.com/miklschmidt/archboard",
+        "path": "crates/archboard-flows/src/flowchart/frames.rs",
+        "symbol": "fitted"
+      }
+    },
+    {
+      "type": "place",
+      "subject": "vKEsyHFk/gbyqW4H3#XFJazS8y",
+      "placement": {
+        "holder": "vKEsyHFk/gbyqW4H3#4f8Q81AB",
+        "alternative": "flowchart",
+        "before": "vKEsyHFk/gbyqW4H3#A3mQ1UEN"
+      }
+    }
+  ],
+  "retiredIds": [
+    "vKEsyHFk/gbyqW4H3#8WJV0Mer",
+    "vKEsyHFk/gbyqW4H3#NR1ARSyH"
+  ]
+}
