@@ -316,7 +316,7 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 | Dependencies the map leaves out          |    ✅ [the code check](#find-where-the-map-and-the-code-disagree)     |         no         |                  no                  |              no              |    no, it flags moved or deleted links     |
 | Git history read by module               | ✅ [what changes together](#read-the-change-through-the-architecture) |         no         |                  no                  |              no              |                     no                     |
 | Design smells from the model and history |            ✅ [Measures](#find-the-smells-in-your-design)             |         no         |                  no                  |              no              |                     no                     |
-| Several agents writing safely            |                     ✅ claims and version checks                      |         no         |                  no                  |              no              |       no, MCP writes the live model        |
+| Several agents writing safely            |                     ✅ claims and version checks                      |         no         |                  no                  |              no              |  MCP edits the live model, no draft tools  |
 
 <sub>What each tool does out of the box, as of September 2026. IcePanel and the three analysis rows as of November 2026.</sub>
 
