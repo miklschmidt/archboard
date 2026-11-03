@@ -7,8 +7,8 @@
     "repo": "github.com/miklschmidt/archboard",
     "path": "packages/workspace/src/runtime/services/state-dir.ts"
   },
-  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "schemaVersion": 1,
   "id": "vKEsyHFk#Q1jP0WbC",
+  "parent": "vKEsyHFk/vKEsyHFk#tdKalihR",
   "outgoing": []
 }
