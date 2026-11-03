@@ -97,7 +97,8 @@ fn count(blocks: &[Block]) -> usize {
             }
             Block::Loop { body, .. } => 1 + count(body),
             Block::Guard { side, .. } => 1 + count(&side.blocks),
-            Block::Step(_) | Block::Terminal(_) | Block::Land(_) => 1,
+            Block::Step(_) | Block::Terminal(_) => 1,
+            Block::Land(_) => 0,
         })
         .sum()
 }

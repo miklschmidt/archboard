@@ -303,6 +303,23 @@ fn a_long_loop_jumps_back_to_its_hexagon_and_on_from_beside_it() {
 }
 
 #[test]
+fn nested_landings_do_not_change_which_decisions_jump() {
+    let inner = graph::decision("inner", "", &graph::messages("i", 4));
+    for (first, second, jumps) in [
+        (inner.clone(), graph::messages("m", 9), true),
+        (graph::messages("m", 2), inner, false),
+    ] {
+        let outer = graph::decision("outer", &first, &second);
+        let laid = laid(&graph::flow_of(&outer), f64::INFINITY);
+        assert_eq!(
+            laid.markers.iter().any(|marker| marker.id == "outer~jump"),
+            jumps,
+            "only authored blocks count toward the four-block difference"
+        );
+    }
+}
+
+#[test]
 fn a_long_loop_body_in_columns_jumps_back_from_below_its_last_column() {
     let steps = format!(
         r#"{{"id":"l","kind":"loop","condition":"each","steps":[{}]}}"#,
