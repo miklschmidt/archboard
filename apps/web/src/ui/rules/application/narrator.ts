@@ -114,11 +114,13 @@ function createNarrator(ports: NarratorPorts): Narrator {
  * what it was offered already.
  * @param narrator The narrator.
  * @param held Why a narration cannot start now, or null when one can.
+ * @param starting Whether voice is still connecting.
  * @returns What a pane is offered.
  */
 function offerNarration(
 	narrator: Narrator,
 	held: string | null,
+	starting: boolean,
 ): (paneId: string) => WalkthroughNarration {
 	const offered = new Map<string, WalkthroughNarration>();
 	return (paneId) => {
@@ -128,6 +130,7 @@ function offerNarration(
 		}
 		const made: WalkthroughNarration = {
 			held,
+			starting,
 			/**
 			 * Narrate one of this pane's walkthroughs.
 			 * @param walkthrough The walkthrough's id.

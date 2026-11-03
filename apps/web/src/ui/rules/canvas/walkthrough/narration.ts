@@ -5,6 +5,8 @@
 
 /** Narrating this pane's walkthroughs aloud. */
 interface WalkthroughNarration {
+	/** Whether voice is still connecting, so that nobody can hear a step yet. */
+	readonly starting: boolean;
 	/** Why a narration cannot start now, or null when one can. */
 	readonly held: string | null;
 	/**

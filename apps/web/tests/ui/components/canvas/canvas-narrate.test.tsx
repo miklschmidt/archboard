@@ -26,6 +26,7 @@ function narrating(held: string | null): {
 	return {
 		narration: {
 			held,
+			starting: false,
 			/**
 			 * Record the narration.
 			 * @param id The walkthrough's id.

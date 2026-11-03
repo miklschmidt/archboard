@@ -107,7 +107,7 @@ test("nothing starts while voice runs", () => {
 
 test("a pane is offered one narration, again each time it is asked for, that starts for that pane", () => {
 	const shell = mountNarrator(QUIET);
-	const offer = offerNarration(shell.narrator, null);
+	const offer = offerNarration(shell.narrator, null, false);
 	expect(offer("b")).toBe(offer("b"));
 	expect(offer("b")).not.toBe(offer("a"));
 

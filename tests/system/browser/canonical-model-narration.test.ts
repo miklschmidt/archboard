@@ -78,8 +78,19 @@ test("canonical narration follows the captured walkthrough in its own pane", asy
 		productionRecords(fixture.logPath)
 			.filter((entry) => entry.kind === "frame" && entry.method === "thread/realtime/appendSpeech")
 			.map((entry) => String(entry.params?.["text"]));
+	// A voice that has not connected cannot be heard, so the first beat waits for it.
+	await browser.eval(`(() => {
+		const peer = RTCPeerConnection.prototype;
+		const connect = peer.setRemoteDescription;
+		const held = new Promise((open) => { globalThis.__openVoice = open; });
+		peer.setRemoteDescription = function (answer) { return held.then(() => connect.call(this, answer)); };
+		return true;
+	})()`);
 	await browser.run(["click", `${PANE} [data-slot="semantic-presentation-narrate"]`]);
 	await atBeat(0);
+	await Bun.sleep(1_000);
+	expect(speeches()).toEqual([]);
+	await browser.eval(`(globalThis.__openVoice(), true)`);
 	const first = await pollUntil(
 		speeches,
 		(lines) => lines.length >= 1,

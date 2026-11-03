@@ -14,6 +14,15 @@ import { durations } from "#shared/constants/durations.ts";
 /** The voice in the agent dock and its flight to the voice box over a pane. */
 const VOICE_MS = durations({
 	/**
+	 * How long a voice that just connected gets before the first step of a narration reaches it.
+	 *
+	 * Nothing says when the voice model is ready, so this is measured on the real model, with a
+	 * silent microphone. A first step handed over before the voice connected was lost in 3 of 3
+	 * runs. Handed over as it connected, it stopped at a sound such as "Mm-hmm" in 3 of 7 runs, and
+	 * after this wait in 3 of 15. Pulls against the silence after Narrate.
+	 */
+	firstStepSettle: 1500,
+	/**
 	 * How long the Talk key takes to become the voice circle, and the circle to
 	 * become the key again.
 	 *

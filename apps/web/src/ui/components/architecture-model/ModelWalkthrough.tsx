@@ -118,8 +118,12 @@ function NarrativePresentation(props: WalkthroughProps & { playback: Playback })
 		[index, playback.walkthrough.id, caption.beats.length, picture, key, position.answering],
 	);
 	const reporting = useMemo(
-		() => ({ ready: picture?.key === key || !available, presentation, onReading: props.onReading }),
-		[picture, key, available, presentation, props.onReading],
+		() => ({
+			ready: picture?.key === key || !available,
+			presentation: audiblePresentation(presentation, props.narration),
+			onReading: props.onReading,
+		}),
+		[picture, key, available, presentation, props.narration, props.onReading],
 	);
 	useModelExplanation(props.vault, model, location, accepted.selected, reporting);
 	const ignore = useCallback((): void => {}, []);
@@ -252,6 +256,22 @@ function UnavailableBeat({ status }: { status: Playback["beats"][number] }): JSX
 }
 
 export { ModelWalkthrough };
+
+/**
+ * Hold a step's arrival while voice connects. The server hands a step to the voice model once the
+ * pane says that it arrived, and a step handed over before the voice can be heard is lost.
+ * @param presentation The beat on screen and its arrival.
+ * @param narration What the shell offers this pane.
+ * @returns The position to report.
+ */
+function audiblePresentation(
+	presentation: PaneReading["presentation"],
+	narration: WalkthroughProps["narration"],
+): PaneReading["presentation"] {
+	return presentation == null || narration?.starting !== true
+		? presentation
+		: { ...presentation, arrived: false };
+}
 
 /**
  * Offer narration only when the pane can publish its captured architecture.
