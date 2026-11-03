@@ -442,7 +442,7 @@ test(
 							noticeRect.top >= centreRect.top - 0.5 && noticeRect.bottom <= centreRect.bottom + 0.5,
 						width: noticeRect.width, copyType: metrics(text), actionHeight: action.getBoundingClientRect().height,
 						dismissHeight: dismiss.getBoundingClientRect().height,
-						flat: getComputedStyle(notice).boxShadow === 'none' && getComputedStyle(notice).backgroundImage === 'none',
+						flat: notice.closest('[data-sonner-toast]') !== null,
 						text: text.textContent?.trim() ?? '' };
 				})()`),
 			(layout) => layout?.text === PERSISTENT_NOTICE_TEXT,

@@ -168,26 +168,31 @@ interface NoticesProps {
  * @returns The stack, or nothing when there is no notice.
  */
 function Notices(props: NoticesProps): JSX.Element {
-	const previous = useRef<readonly ShellNotice[]>([]);
+	const current = useRef(new Map<ShellNotice, string | number>());
 	useEffect(() => {
+		for (const [notice, id] of current.current) {
+			if (props.notices.includes(notice)) continue;
+			current.current.delete(notice);
+			toast.dismiss(id);
+		}
 		for (const notice of props.notices) {
-			if (previous.current.includes(notice)) continue;
-			toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
-				id: notice.id,
+			if (current.current.has(notice)) continue;
+			const dismiss = (): void => {
+				if (current.current.has(notice)) props.actions.dismissNotice(notice.id);
+			};
+			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
 				duration:
 					notice.actions.length > 0 || notice.tone === "destructive" ? Infinity : NOTICE_TIMEOUT_MS,
-				onAutoClose: () => props.actions.dismissNotice(notice.id),
-				onDismiss: () => props.actions.dismissNotice(notice.id),
+				onAutoClose: dismiss,
+				onDismiss: dismiss,
 			});
+			current.current.set(notice, id);
 		}
-		for (const notice of previous.current) {
-			if (!props.notices.some((current) => current.id === notice.id)) toast.dismiss(notice.id);
-		}
-		previous.current = props.notices;
 	}, [props.notices, props.actions]);
 	useEffect(
 		() => () => {
-			for (const notice of previous.current) toast.dismiss(notice.id);
+			for (const id of current.current.values()) toast.dismiss(id);
+			current.current.clear();
 		},
 		[],
 	);
