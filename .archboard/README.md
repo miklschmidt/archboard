@@ -82,7 +82,7 @@ The [consumer skill](../skills/archboard/SKILL.md) gives the public command cont
 Adoption and shelving require an explicit decision.
 A source commit or code merge does not adopt architecture.
 
-`From modules to durable architecture` explains the canonical model through scoped readings and the current durable-edit flow.
+`What Archboard does` is the README tour: what an architect does with Archboard, and the parts that do it.
 Each beat states its complete reading, so presentation does not inherit an earlier beat's scope or selection.
 The `Original` walkthroughs retain their earlier explanations against an exact checkpoint.
 They do not describe the current implementation.
