@@ -75,6 +75,23 @@ const READ_DESKTOP = `(() => {
 		composer: box(document.querySelector('${COMPOSER}')), panel: box(document.querySelector('${AGENT_PANEL}')) };
 })()`;
 
+/**
+ * How far the conversation moves when something below its foot is scrolled into view: the
+ * column under it must clip, never scroll, or it draws a second scroll bar beside the
+ * conversation's own and moves the conversation under its header.
+ */
+const SCROLL_BELOW_THE_CONVERSATION = `(() => {
+	const panel = document.querySelector('${AGENT_PANEL}');
+	const before = panel.getBoundingClientRect().top;
+	const below = document.createElement('div');
+	below.style.cssText = 'position: absolute; top: 100%; left: 0; width: 10px; height: 300px';
+	panel.querySelector('[data-slot="agent-panel-footer"]').append(below);
+	below.scrollIntoView({ block: 'end' });
+	const moved = panel.getBoundingClientRect().top - before;
+	below.remove();
+	return moved;
+})()`;
+
 /** The lone pane's width, and the size of its window on the picture. */
 /** The pane letters, present only while two panes are open. */
 const READ_PANE_LETTERS = `(() => {
@@ -334,6 +351,7 @@ test(
 		expect(open.stages.height).toBe(closed.stages.height);
 		expect(open.column).toEqual(closed.column);
 		expect(open.dock).toEqual(closed.dock);
+		expect(await browser.eval<number>(SCROLL_BELOW_THE_CONVERSATION)).toBe(0);
 		await roleAction(browser, "button", "Close the conversation");
 		const reclosed = await pollUntil(
 			() => browser.eval<DesktopShell>(READ_DESKTOP),
