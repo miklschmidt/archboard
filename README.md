@@ -306,8 +306,8 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 |                                          |                               Archboard                               |    Mermaid · D2    |         Excalidraw · draw.io         |     Structurizr · LikeC4     |                  IcePanel                  |
 | ---------------------------------------- | :-------------------------------------------------------------------: | :----------------: | :----------------------------------: | :--------------------------: | :----------------------------------------: |
-| Who places the boxes                     |                         the renderer, always                          |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    |              you, on a canvas              |
-| Written by                               |                   your coding agent, through a CLI                    |    you, in text    |             you, by hand             |        you, in a DSL         | you, in a web app, or an agent through MCP |
+| Who places the boxes                     |                         the renderer, always                          |  a layout engine   | you, or an agent placing coordinates |   a layout engine, or you    | you or an agent, or the auto-layout viewer |
+| Written by                               |                   your coding agent, through a CLI                    |    you, in text    |             you, by hand             |        you, in a DSL         |  you, or an agent through MCP or the API   |
 | Proposals drawn against today            |                          ✅ module by module                          |         no         |                  no                  |              no              |       ✅ drafts, but not through MCP       |
 | History with the reason for each change  |                                  ✅                                   |      git log       |               git log                | git log, ADRs in Structurizr |       versions and decision records        |
 | Narrated walkthroughs and video          |                                  ✅                                   |         no         |                  no                  | step-through views, no voice |        step-through flows, no voice        |
@@ -320,7 +320,7 @@ Put a diagram of the Payments module in docs/design.md, and keep it current.
 
 <sub>What each tool does out of the box, as of September 2026. IcePanel and the three analysis rows as of November 2026.</sub>
 
-[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. IcePanel can sync that model with deployment data from production. Its MCP server is available on paid plans only.
+[IcePanel](https://icepanel.io/) is a hosted service, and it also does things that Archboard does not. A team edits and comments on one shared model in the browser. Its read-only model viewer lays out the model automatically. IcePanel can sync that model with deployment data from production. Its MCP server is available on paid plans only.
 
 ## Archboard next to PR Lens and Archify
 
