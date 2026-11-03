@@ -132,7 +132,7 @@ impl Track<'_> {
     }
 
     /// Move a card's own port along its face to an x, when the port is no
-    /// trunk's, held to no point, and clear of the face's corners and its
+    /// trunk's and clear of the face's corners and its
     /// other ports; a block's own port slides along the block's edge instead.
     fn move_port(&mut self, nets: &[NetId], net: NetId, end: End, x: f64) -> bool {
         let station = self.net(net).at(end);
@@ -140,10 +140,7 @@ impl Track<'_> {
         if item.is_some_and(|item| self.scene.slides.contains_key(&item)) {
             return self.slide_port(nets, net, end, x);
         }
-        if self.shared_at(net, end).is_some()
-            || self.station(station).at.is_some()
-            || !self.on_face(station, x)
-        {
+        if self.shared_at(net, end).is_some() || !self.on_face(station, x) {
             return false;
         }
         let crowded = nets.iter().any(|&other| {

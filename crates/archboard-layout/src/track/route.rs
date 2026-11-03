@@ -518,7 +518,6 @@ pub(crate) fn route_scene(
         .iter()
         .map(|line| (line.id.clone(), track.chain_of(line.placed)))
         .collect();
-    track.hold_to_points(&inner, &chains);
     // A line that enters or leaves its block by a wall comes from or goes to that wall, not its stub.
     let movable: Vec<ChainId> = inner
         .iter()

@@ -16,7 +16,6 @@ pub(crate) mod label_runs;
 pub(crate) mod labels;
 pub(crate) mod occupancy;
 pub(crate) mod parting;
-pub(crate) mod points;
 pub(crate) mod ports;
 pub(crate) mod readings;
 pub(crate) mod relay;

@@ -155,7 +155,6 @@ fn measured(
                 header_height: 0.0,
                 runs: Vec::new(),
                 headers: None,
-                pointed: None,
             };
             (node.id.clone(), measured)
         })

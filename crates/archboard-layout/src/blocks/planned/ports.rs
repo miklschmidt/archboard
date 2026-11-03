@@ -21,15 +21,6 @@ pub(super) fn port(
     shape: &Shape,
     toward: Point,
 ) -> Option<Port> {
-    if source
-        && model.edges[edge]
-            .option(crate::graph::FROM_POINTS)
-            .is_some()
-    {
-        return (side == Side::Bottom)
-            .then(|| super::points::source_port(model, edge, shape))
-            .flatten();
-    }
     choose_port(model, edge, source, side, shape, toward)
 }
 
@@ -48,9 +39,6 @@ fn choose_port(
         let endpoint = model.ends[edge].1;
         (endpoint, &model.incoming[endpoint])
     };
-    if !source && super::points::pointed(model, endpoint) && side != Side::Top {
-        return None;
-    }
     if !model.endpoints[endpoint].walls.contains(&side) {
         return None;
     }

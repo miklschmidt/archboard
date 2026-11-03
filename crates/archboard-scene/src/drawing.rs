@@ -89,13 +89,6 @@ pub struct MeasuredNode<N> {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ts(optional)]
     pub headers: Option<Vec<MeasuredNode<N>>>,
-    /// For a card whose lines down leave it from its points, as out of a
-    /// flowchart's decision: how far in from the left and right edges of its
-    /// box the lines from its side points run down. Absent on a card whose
-    /// lines spread along its face.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    #[ts(optional)]
-    pub pointed: Option<f64>,
 }
 
 /// A relationship label whose words and box are settled before routing.

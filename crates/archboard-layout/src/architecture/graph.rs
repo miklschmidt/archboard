@@ -1,7 +1,6 @@
 //! The measured graph Track and Blocks lay out: semantic containment,
-//! measured sizes, which children are entry points of the container around
-//! them, and which point of a flowchart's decision each of its answers leaves
-//! from. Each solve chooses ranks and attachment faces.
+//! measured sizes, and which children are entry points of the container around
+//! them. Each solve chooses ranks and attachment faces.
 
 use std::collections::BTreeMap;
 
@@ -20,10 +19,6 @@ use crate::json::J;
 const ENTRY_POINT: &str = "archboard.entry";
 /// The option carrying each width a container's header can take, as `[width, height]` rows.
 const HEADER_STEPS: &str = "archboard.header.steps";
-/// The option marking a line that leaves its source from the source's points.
-const FROM_POINTS: &str = "archboard.from-points";
-/// How far in from its source's edges the lines from its side points run down.
-const POINTS_INSET: &str = "archboard.from-points.inset";
 
 /// How each relationship stands when a picture is compared: every subject's
 /// standing, `unchanged` for one the comparison does not name.
@@ -63,43 +58,6 @@ impl Graph {
 /// A number as `String(value)` spells it.
 fn text(value: f64) -> String {
     ecma::number(value)
-}
-
-/// The options of each line out of a card that leaves from its points: the
-/// first of two or more asks for the bottom-left corner of the card's box,
-/// the last for the bottom-right, and any other for the middle of its bottom.
-fn points_of(
-    edges: &[&Edge],
-    measured: &Measured,
-) -> BTreeMap<String, Vec<(&'static str, String)>> {
-    let mut leaving: IndexMap<&str, Vec<&str>> = IndexMap::new();
-    for edge in edges {
-        let pointed = measured.nodes.get(&edge.from).and_then(|node| node.pointed);
-        if pointed.is_some() {
-            leaving
-                .entry(edge.from.as_str())
-                .or_default()
-                .push(&edge.id);
-        }
-    }
-    let mut points = BTreeMap::new();
-    for (from, ids) in leaving {
-        let inset = measured.nodes[from].pointed.map_or_else(String::new, text);
-        for (index, id) in ids.iter().enumerate() {
-            let end = ids.len() > 1 && (index == 0 || index == ids.len() - 1);
-            let compass = match (end, index) {
-                (true, 0) => "sw",
-                (true, _) => "se",
-                _ => "s",
-            };
-            let options = vec![
-                (FROM_POINTS, compass.to_owned()),
-                (POINTS_INSET, inset.clone()),
-            ];
-            points.insert((*id).to_owned(), options);
-        }
-    }
-    points
 }
 
 /// The options that carry a container's header: its height at its least
@@ -182,19 +140,10 @@ fn edge_options(edge: &Edge, standing: Option<&str>) -> Vec<(String, J)> {
 }
 
 /// A relationship with its options and its measured label.
-fn edge_of(
-    edge: &Edge,
-    measured: &Measured,
-    standing: Option<&str>,
-    inline: bool,
-    points: Option<&Vec<(&'static str, String)>>,
-) -> J {
+fn edge_of(edge: &Edge, measured: &Measured, standing: Option<&str>, inline: bool) -> J {
     let mut options = edge_options(edge, standing);
     if !inline && let Some(kind) = measured.held_kinds.get(&edge.id) {
         options.push(("archboard.relationship.held-kind".to_owned(), J::str(kind)));
-    }
-    for (name, value) in points.into_iter().flatten() {
-        options.push(((*name).to_owned(), J::str(value)));
     }
     let labels = measured
         .labels
@@ -337,14 +286,13 @@ pub(crate) fn compound_graph(
     let edges = ecma::sorted_by(&content.edges.iter().collect::<Vec<_>>(), |one, other| {
         one.order - other.order
     });
-    let points = points_of(&edges, measured);
     let unchanged = "unchanged";
     let edges: Vec<J> = edges
         .iter()
         .map(|edge| {
             let standing =
                 standings.map(|standings| standings.get(&edge.id).map_or(unchanged, word));
-            edge_of(edge, measured, standing, inline, points.get(&edge.id))
+            edge_of(edge, measured, standing, inline)
         })
         .collect();
     let mut body = String::from("\"children\":");

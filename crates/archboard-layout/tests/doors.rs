@@ -23,7 +23,6 @@ fn drawing(content: Value, sizes: &[(f64, f64)], engine: Engine) -> Painted {
                 header_height: 0.0,
                 runs: Vec::new(),
                 headers: None,
-                pointed: None,
             },
         );
     }

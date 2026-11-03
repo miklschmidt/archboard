@@ -125,7 +125,3 @@ pub(crate) const ENTRY_POINT: &str = "archboard.entry";
 pub(crate) const DOOR: &str = "archboard.door";
 /// The option carrying each size a container's header can take.
 pub(crate) const HEADER_STEPS: &str = "archboard.header.steps";
-/// The option marking a line that leaves its source from the source's points.
-pub(crate) const FROM_POINTS: &str = "archboard.from-points";
-/// How far in from its source's sides a line from a side point runs down.
-pub(crate) const POINTS_INSET: &str = "archboard.from-points.inset";

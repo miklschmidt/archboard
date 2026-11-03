@@ -235,7 +235,6 @@ fn door<N>(node: N, words: &CardWords<'_>) -> MeasuredNode<N> {
         header_height: 0.0,
         runs: tab_runs(DOOR_NEAR, words.name, None),
         headers: None,
-        pointed: None,
     }
 }
 
@@ -255,7 +254,6 @@ fn one_line<N>(node: N, words: &CardWords<'_>, beside: f64) -> MeasuredNode<N> {
         header_height: TAB_HEIGHT,
         runs: near,
         headers: None,
-        pointed: None,
     }
 }
 
@@ -406,7 +404,6 @@ fn slab<N>(node: N, words: &CardWords<'_>, size: Size, title_style: Style) -> Me
             .chain(paths)
             .collect(),
         headers: None,
-        pointed: None,
     }
 }
 

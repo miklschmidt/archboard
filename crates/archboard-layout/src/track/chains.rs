@@ -56,8 +56,6 @@ pub(crate) struct Station {
     x: f64,
     /// Whether its x is its label box's centre, read from the box and written to it.
     live: bool,
-    /// Where the line must meet its card, in from the card's left edge.
-    pub at: Option<f64>,
 }
 
 impl Station {
@@ -69,7 +67,6 @@ impl Station {
             item,
             x,
             live: false,
-            at: None,
         }
     }
 }
@@ -163,11 +160,6 @@ impl<'s> Track<'s> {
         &self.stations[id.0]
     }
 
-    /// A station, to change.
-    pub(crate) fn station_mut(&mut self, id: StationId) -> &mut Station {
-        &mut self.stations[id.0]
-    }
-
     /// Keep a new station.
     pub(crate) fn add(&mut self, station: Station) -> StationId {
         self.stations.push(station);
@@ -226,7 +218,6 @@ impl<'s> Track<'s> {
             item: Some(item),
             x: 0.0,
             live: true,
-            at: None,
         })
     }
 
@@ -463,7 +454,7 @@ impl<'s> Track<'s> {
 
     /// The x a line can pass a station at straight: anywhere along a card's or
     /// title row's face clear of its corners, anywhere across a label box, or
-    /// a lane's own x. A line held to one point of its card passes there alone.
+    /// a lane's own x.
     pub(crate) fn reach_of(&self, id: StationId) -> (f64, f64) {
         let station = self.station(id);
         let Some(item) = station.item else {
@@ -471,9 +462,6 @@ impl<'s> Track<'s> {
             return (x, x);
         };
         let bx = self.scene.item(item).bx;
-        if let Some(at) = station.at {
-            return (bx.x + at, bx.x + at);
-        }
         let margin = js_min(
             if station.kind == Kind::Label {
                 LANE
