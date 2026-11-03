@@ -16,6 +16,7 @@ import {
 } from "./support/codex-live-voice.ts";
 import {
 	productionFixtureRecords,
+	operableWorkbenchControl,
 	workbenchControlOperability,
 } from "./support/codex-workbench-production.ts";
 import {
@@ -148,7 +149,7 @@ test(
 		for (const control of [DOCK_MUTE, DOCK_SUBTITLES]) {
 			await browser.run(["press", "Tab"]);
 			expect(await focusIs(browser, control)).toEqual([true, false]);
-			expect((await workbenchControlOperability(browser, control)).operable).toBe(true);
+			await operableWorkbenchControl(browser, control);
 		}
 		// The wire, in order: the coordinator and then the workhorse are created, the
 		// conversation reads the workhorse as the tab's linked thread, voice starts on the
