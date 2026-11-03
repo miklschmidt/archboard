@@ -181,6 +181,7 @@ function useReader(inputs: ReaderInputs) {
 	);
 	const flowReadings = useFlowReadings({
 		model,
+		entry: request.entry,
 		structure,
 		camera,
 		showFlow: location.showFlow,
