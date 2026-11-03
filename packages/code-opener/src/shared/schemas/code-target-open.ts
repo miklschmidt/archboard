@@ -19,6 +19,8 @@ const CodeTargetOpenRequestSchema = z.union([
 				request.checkpoint === undefined,
 			"Select one state or checkpoint outside a migration preview.",
 		),
+	// A file an agent's answer names. It opens only inside a checkout that the vault reads (ADR 0018).
+	z.strictObject({ path: NonemptyString, line: z.number().int().positive().optional() }),
 ]);
 type CodeTargetOpenRequest = z.infer<typeof CodeTargetOpenRequestSchema>;
 

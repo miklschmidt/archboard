@@ -41,6 +41,14 @@ const CENTRE_MIN_WIDTH = 560;
 const GROUP_STYLE: CSSProperties = { "--panel-slide-ms": `${COLUMN_MS.agentPanelSlide}ms` };
 
 /**
+ * The column clips what it holds and never scrolls: the conversation scrolls in its own
+ * viewport. The library gives the element that takes a panel's classes `overflow: auto` in its
+ * style, which no class overrides, so a column that scrolled would draw a second scroll bar
+ * and a scroll into view would move the whole conversation under its header.
+ */
+const COLUMN_STYLE: CSSProperties = { overflow: "clip" };
+
+/**
  * The width the person last gave the conversation, or the shell's own.
  * @returns The width in pixels, within what it can be.
  */
@@ -176,7 +184,8 @@ function ConversationColumns(props: ConversationColumnsProps): JSX.Element {
 				groupResizeBehavior="preserve-pixel-size"
 				onResize={handleResize}
 				inert={!open}
-				className="shadow-edge-side relative z-20 flex h-full justify-end overflow-hidden"
+				style={COLUMN_STYLE}
+				className="shadow-edge-side relative z-20 flex h-full justify-end"
 			>
 				<ConversationSlide open={open} moving={slide.moving} width={width}>
 					{props.conversation}
