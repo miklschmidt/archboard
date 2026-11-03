@@ -205,7 +205,7 @@ function rowPlace(depth: number, expanded: boolean | undefined, flat: boolean): 
  */
 function rowClass(props: TreeRowProps): string {
 	return cn(
-		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 cursor-default items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
+		"group/row bg-tray-sink focus-visible:ring-ring rounded-control relative isolate flex min-h-7 w-full min-w-0 items-center py-1 outline-none select-none focus-visible:ring-1 focus-visible:ring-inset",
 		// Square corners, so nothing that scrolls beneath shows at the corners of a stuck row.
 		props.expanded === true && "sticky z-10 rounded-none",
 		props.selected ? "bg-tray-tab shadow-raised" : "hover:bg-tray-tab/50",

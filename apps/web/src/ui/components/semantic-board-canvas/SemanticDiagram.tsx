@@ -296,7 +296,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 		leave();
 	}, [dismissTip, leave]);
 	const openDown = useDrillOpen(reading, props.onOpenDown);
-	const { gesture, pointer } = useDiagramGestures({
+	const { gesture, pointer, cursor } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
 		onSelect,
@@ -355,9 +355,7 @@ function SemanticDiagram(props: SemanticDiagramProps): JSX.Element {
 					{...pointer}
 					onPointerLeave={onPointerLeave}
 					onWheel={dismissTip}
-					className={`relative flex min-h-0 min-w-0 flex-1 touch-none overflow-hidden outline-none ${
-						gesture === "idle" ? "cursor-grab" : "cursor-grabbing"
-					}`}
+					className={`relative flex min-h-0 min-w-0 flex-1 touch-none overflow-hidden outline-none ${cursor}`}
 				>
 					{/* The picture inside is the transition's to write, never React's:
 					    see `usePictureTransition`. */}

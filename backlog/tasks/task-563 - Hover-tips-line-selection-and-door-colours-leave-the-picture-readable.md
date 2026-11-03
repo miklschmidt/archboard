@@ -1,11 +1,11 @@
 ---
 id: TASK-563
 title: Polish the reader before PR 26 merges
-status: Done
+status: In Progress
 assignee:
   - '@codex'
 created_date: '2026-11-02T13:25:00Z'
-updated_date: '2026-11-02T23:59:00Z'
+updated_date: '2026-11-03T00:28:00Z'
 labels:
   - reader
   - design
@@ -41,6 +41,10 @@ The owner's running list of reader problems found while testing PR 26. Each new 
 - [x] #17 A frame's recess reads as a well: the wall meets its corner at the rim, not at the floor (One run's world)
 - [x] #18 A well's side walls are real soft shadows on its floor, with no flat band, so the depth reads from one viewpoint
 - [x] #19 A well's shadows stay gentle on the light ground, and its top wall stands a little brighter than its floor on the dark ground
+- [ ] #20 Holding Space over the canvas shows an open hand, a press turns it into a closed hand, and a press with Space picks nothing
+- [ ] #21 A part that takes a click shows a pointer on the picture, and a frame's floor does not
+- [ ] #22 Every interactive element of the app shows a pointer under the mouse
+- [ ] #23 The walkthrough's voice model is triggered correctly on the new renderer, and it presents each beat as its prompt asks
 <!-- AC:END -->
 
 ## Implementation Notes

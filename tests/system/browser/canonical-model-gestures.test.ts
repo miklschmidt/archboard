@@ -97,6 +97,22 @@ test("empty-canvas dragging selects while middle and Space dragging pan", async 
 	);
 	expect(await selectedIds(browser)).toEqual(["Shop#Dispatch", "Shop#Gateway", "Shop#Worker"]);
 	expect(await cameraTransform(browser)).toBe(originalCamera);
+	const cursor = (): Promise<string> =>
+		browser.eval<string>(
+			`getComputedStyle(document.querySelector('[data-slot="model-diagram"]')).cursor`,
+		);
+	const showsCursor = (shown: string): Promise<string> =>
+		pollUntil(cursor, (now) => now === shown, `the ${shown} cursor`, WAIT);
+	await browser.run(["mouse", "move", String(rectangle.left + 4), String(rectangle.bottom - 4)]);
+	await showsCursor("default");
+	const card = await browser.eval<{ x: number; y: number }>(
+		`(() => { const room = document.querySelector('[data-slot="model-diagram"]').getBoundingClientRect(); const box = [...document.querySelectorAll('[data-slot="model-diagram"] [data-semantic-kind="node"]')].map((one) => one.getBoundingClientRect()).find((one) => one.left > room.left && one.top > room.top && one.right < room.right && one.bottom < room.bottom); return { x: Math.round(box.left + box.width / 2), y: Math.round(box.top + box.height / 2) }; })()`,
+	);
+	await browser.run(["mouse", "move", String(card.x), String(card.y)]);
+	await showsCursor("pointer");
+	expect(
+		await browser.eval<string>(`getComputedStyle(document.querySelector('button:enabled')).cursor`),
+	).toBe("pointer");
 	await drag(browser, rectangle.left + 8, rectangle.top + 8, "middle");
 	await pollUntil(
 		() => cameraTransform(browser),
@@ -109,6 +125,11 @@ test("empty-canvas dragging selects while middle and Space dragging pan", async 
 	await browser.eval(
 		`document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true, cancelable: true }))`,
 	);
+	await showsCursor("grab");
+	await browser.run(["mouse", "down", "left"]);
+	await showsCursor("grabbing");
+	await browser.run(["mouse", "up", "left"]);
+	await showsCursor("grab");
 	await drag(browser, rectangle.left + 8, rectangle.top + 8, "left");
 	await browser.eval(
 		`document.querySelector('[data-slot="model-diagram"]').dispatchEvent(new KeyboardEvent('keyup', { key: ' ', code: 'Space', bubbles: true }))`,

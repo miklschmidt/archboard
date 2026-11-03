@@ -165,7 +165,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 		onPick: onSelect,
 	});
 	const { pick, openDown } = useDoorPick(scene, open, onPick, props.onToggle);
-	const { pointer, gesture, rectangle, keyboard } = useDiagramGestures({
+	const { pointer, gesture, rectangle, keyboard, cursor } = useDiagramGestures({
 		camera,
 		atlas: drawing.atlas,
 		onSelect: pick,
@@ -224,7 +224,7 @@ function ModelDiagram(props: ModelDiagramProps): JSX.Element {
 			aria-busy={props.pending}
 			tabIndex={0}
 			aria-label="Module diagram"
-			className={diagramClass(leaving)}
+			className={`${diagramClass(leaving)} ${cursor}`}
 			ref={attachViewport}
 			{...pointer}
 			onPointerLeave={tip.leave}
