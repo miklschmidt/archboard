@@ -7,7 +7,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: '2026-11-03T13:53:00Z'
-updated_date: '2026-11-03T14:13:00Z'
+updated_date: '2026-11-03T14:34:00Z'
 labels:
   - renderer
   - flows
@@ -47,3 +47,9 @@ A long flow draws as one tall column of boxes in the flowchart reading. A 35-ste
 6. Prove with the renderer flow tests, the Rust tests, before and after rasters of the longest dogfood flows, and a browser check of the opened reading.
 7. Review with the code-review skill, fix findings, and open the PR.
 <!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Architecture proposal: state vdbwhuzZ ("A flowchart lays out from its flow and a flow opens in the reading that fits"), predecessor oyXXnyCV, model vKEsyHFk, vault .archboard/vault. It changes Flowchart vKEsyHFk/gbyqW4H3#0idmUHd2 (responsibility, description), removes relationship 8WJV0Mer to Drawing settlement, relabels LJUm7E1m to Edge geometry and anchors it at flowchart/mod.rs curve_through, turns Draw a view step XFJazS8y into a self step anchored at frames.rs fitted, removes return step NR1ARSyH, and adds the fitting reading to the Model reading description. No module was added for use-flow-readings.ts: the reader hooks have no module of their own, and the Model reading description states the behavior. check: no finding names a changed subject. The remaining warnings (three missing canvas files) hold on main too. The Rust language server is not configured, so Rust anchors were judged by name.
+<!-- SECTION:NOTES:END -->
