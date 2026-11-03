@@ -10,7 +10,10 @@
 
 import { expect, test } from "bun:test";
 
-import type { RealtimePresentationChange } from "#runtime/rules/realtime/presentation-mode.ts";
+import {
+	presentationSpeech,
+	type RealtimePresentationChange,
+} from "#runtime/rules/realtime/presentation-mode.ts";
 import {
 	COORDINATOR_WIRE_THREAD_ID,
 	correlation,
@@ -245,6 +248,20 @@ function paragraphs(prompt: string | null | undefined): string[] {
 		.map((one) => one.trim())
 		.filter((one) => one.length > 0);
 }
+
+test("a narrated step carries no number, and only the last says where it is", () => {
+	const step = {
+		kind: "stepped",
+		heading: "One writer",
+		body: "It owns writes.",
+		subjects: [],
+	} as const;
+	const middle = presentationSpeech({ ...step, step: 2, of: 5 }, false);
+	const last = presentationSpeech({ ...step, step: 5, of: 5 }, false);
+	expect(middle).not.toMatch(/\d/u);
+	expect(last).not.toMatch(/\d/u);
+	expect(last).not.toBe(middle);
+});
 
 test("a recording's steps reach the voice model as what to explain, in the words its prompt names, never which step they are, and leaving it is never told", async () => {
 	const source = changeSource();
