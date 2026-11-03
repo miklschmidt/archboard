@@ -13,6 +13,8 @@ import { Alert, Button, buttonVariants, IconButton } from "@archboard/ui-kit/com
 import type { ShellActions, ShellNotice, ShellNoticeAction } from "#ui/rules/shell/contracts.ts";
 
 /** A 24px outline action with two-pixel corners. */
+const TOASTER_STYLE = { fontFamily: "var(--font-sans)" };
+
 const ACTION_CLASS = "rounded-chip font-medium";
 
 const LINK_BUTTON_CLASS = buttonVariants({
@@ -177,14 +179,12 @@ function Notices(props: NoticesProps): JSX.Element {
 		}
 		for (const notice of props.notices) {
 			if (current.current.has(notice)) continue;
+			/** Remove shell state only while this exact notice remains current. */
 			const dismiss = (): void => {
 				if (current.current.has(notice)) props.actions.dismissNotice(notice.id);
 			};
 			const id = toast.custom(() => <Notice notice={notice} actions={props.actions} />, {
-				duration:
-					notice.actions.length > 0 || notice.tone === "destructive"
-						? Infinity
-						: SHELL_CLOCK_MS.notice,
+				duration: isPersistent(notice) ? Infinity : SHELL_CLOCK_MS.notice,
 				onAutoClose: dismiss,
 				onDismiss: dismiss,
 			});
@@ -198,7 +198,16 @@ function Notices(props: NoticesProps): JSX.Element {
 		},
 		[],
 	);
-	return <Toaster position="bottom-right" style={{ fontFamily: "var(--font-sans)" }} />;
+	return <Toaster position="bottom-right" style={TOASTER_STYLE} />;
+}
+
+/**
+ * Whether a notice needs an explicit dismissal.
+ * @param notice The message and its recovery actions.
+ * @returns Whether it stays visible.
+ */
+function isPersistent(notice: ShellNotice): boolean {
+	return notice.actions.length > 0 || notice.tone === "destructive";
 }
 
 export { Notices };
