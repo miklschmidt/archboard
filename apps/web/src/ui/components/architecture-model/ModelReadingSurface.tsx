@@ -198,7 +198,7 @@ function ReadingPanel(props: ReadingPanelProps): JSX.Element {
 		onOpen: reader.onOpen,
 		onToggle: reader.onToggle,
 		onReveal: props.onReveal,
-		onRevealFlow: location.openFlow,
+		onRevealFlow: reader.openFlow,
 		code: code.reading,
 		pathOf,
 		context,
@@ -433,7 +433,7 @@ function ReadingAbout(props: {
 }): JSX.Element {
 	const { surface, code } = props;
 	const { reader } = surface;
-	const { accepted, selection, location, aboutSubject } = reader;
+	const { accepted, selection, aboutSubject } = reader;
 	const { shown, scene } = accepted;
 	const walkthroughs = useMemo(
 		() => walkthroughsAbout(shown.model, scopeSubjects(shown.projection.opened)),
@@ -476,7 +476,7 @@ function ReadingAbout(props: {
 			selection={selection}
 			onOpen={reader.onOpen}
 			onReveal={props.onReveal}
-			onRevealFlow={location.openFlow}
+			onRevealFlow={reader.openFlow}
 		>
 			<SelectionControls {...props.actions} />
 		</ModelAbout>

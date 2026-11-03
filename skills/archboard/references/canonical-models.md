@@ -54,6 +54,7 @@ Selection itself stays temporary and does not add history.
 
 Use the diagram selector to choose Architecture, Sequence, or Flowchart.
 For Sequence or Flowchart, choose an authored flow from the Flow selector.
+A flow opens in the reading that its pane shows larger, and the selector switches it.
 The choices involve the selected subjects, focused subjects, or open module.
 The diagram includes every participant and step that the selected flow requires.
 The participant list keeps the order that the flow defines.

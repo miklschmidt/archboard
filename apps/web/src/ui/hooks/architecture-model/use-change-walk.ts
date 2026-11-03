@@ -29,6 +29,11 @@ interface ChangeWalkInputs {
 	/** The base of the comparison, once it is read. */
 	readonly reference: Model | undefined;
 	readonly location: ReturnType<typeof useModelLocation>;
+	/**
+	 * Open a flow in the reading that fits it best.
+	 * @param id The flow.
+	 */
+	readonly openFlow: (id: string) => void;
 	/** The module the reading opens. */
 	readonly opened: string | null;
 	/** The selected identities. */
@@ -88,8 +93,8 @@ function useChangePlace(model: Model, reference: Model | undefined) {
  * @returns Go to a target.
  */
 function useChangeTargets(inputs: ChangeWalkInputs): (target: ChangeTarget) => void {
-	const { location, opened, model } = inputs;
-	const { grammar, flow, focus, open, openFlow, selectGrammar } = location;
+	const { location, opened, model, openFlow } = inputs;
+	const { grammar, flow, focus, open, selectGrammar } = location;
 	const { id: modelId } = model.manifest;
 	const pane = useContext(ModelPaneContext);
 	if (pane === null) throw new Error("A change walk requires its pane presentation.");

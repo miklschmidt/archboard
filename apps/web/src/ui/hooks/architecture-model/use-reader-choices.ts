@@ -1,6 +1,7 @@
 import { useCallback, useContext, type RefObject } from "react";
 import type { Model } from "@archboard/model/content";
 import type { Destination } from "#ui/components/architecture-model/ModelColumn.tsx";
+import type { useFlowReadings } from "#ui/hooks/architecture-model/use-flow-readings.ts";
 import type { useModelLocation } from "#ui/hooks/architecture-model/use-model-location.ts";
 import { usePaneChrome } from "#ui/hooks/canvas/use-pane-chrome.ts";
 import type { FindHit } from "#ui/rules/architecture-model/search.ts";
@@ -9,6 +10,8 @@ import { ModelWalkthroughContext } from "#ui/state/architecture-model/presentati
 /** What a choice in the left column reaches. */
 interface ReaderChoiceInputs {
 	readonly location: ReturnType<typeof useModelLocation>;
+	/** How a flow opens in the reading that fits it best, here or in a pane not laid out yet. */
+	readonly flows: Pick<ReturnType<typeof useFlowReadings>, "openFlow" | "fitting">;
 	readonly model: Model;
 	/** The module the reading opens. */
 	readonly opened: string | null;
@@ -26,8 +29,10 @@ interface ReaderChoiceInputs {
  * @returns A choice of a module, a flow, or something found, and the way to show each of them.
  */
 function useReaderChoices(inputs: ReaderChoiceInputs) {
-	const { location, model, opened, frames, area, selectMany, onOpen, onDestination } = inputs;
-	const { open, openFlow, selectBookmark, selectLegacyAddress } = location;
+	const { location, flows, model, opened, frames, area, selectMany, onOpen, onDestination } =
+		inputs;
+	const { open, selectBookmark, selectLegacyAddress } = location;
+	const { openFlow, fitting } = flows;
 	const { openBeside } = usePaneChrome();
 	const playback = useContext(ModelWalkthroughContext);
 	const { id: modelId } = model.manifest;
@@ -43,14 +48,21 @@ function useReaderChoices(inputs: ReaderChoiceInputs) {
 	const chooseFlow = useCallback(
 		(id: string, beside: boolean): void => {
 			if (beside) {
-				const scope = opened ?? undefined;
-				openBeside?.(modelId, { scope, flow: id, grammar: "sequence" });
+				/**
+				 * Open the flow beside, in the reading that fits a pane best.
+				 * @returns Once the other pane is asked to open it.
+				 */
+				const besides = async (): Promise<void> => {
+					const grammar = await fitting(id, null);
+					openBeside?.(modelId, { scope: opened ?? undefined, flow: id, grammar });
+				};
+				void besides();
 				return;
 			}
 			leave?.();
 			openFlow(id);
 		},
-		[openBeside, modelId, opened, leave, openFlow],
+		[openBeside, modelId, opened, leave, openFlow, fitting],
 	);
 	const showHere = useCallback(
 		(ids: readonly string[], scope: string | null): void => {
