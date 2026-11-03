@@ -5,7 +5,7 @@ status: In Progress
 assignee:
   - '@claude'
 created_date: 2026-10-14 14:39
-updated_date: '2026-11-03T04:26:00Z'
+updated_date: '2026-11-03T04:45:00Z'
 labels: []
 dependencies: []
 parent_task_id: TASK-471
@@ -43,4 +43,6 @@ archboard is installed by cloning it. The installer copies the skills into the g
 
 <!-- SECTION:NOTES:BEGIN -->
 Global installs (default, --target, --agent) and a --dir outside the repository now link each skill to the checkout's skills/<skill>; a --dir inside the repository copies, and still refuses a symlink in the way. The receipt names install: link|copy. prepareSkillArtifacts writes only changed files through a temporary file and removes stale ones, so a rerun changes nothing and a concurrent reader never sees a missing file. Proof: tests/system/cli/install-targets.test.ts fails 11/12 on the old installer and passes 12/12; bun run check passes 21/21 lanes. Open: AC 3 (--local), AC 5 (copied INSTALL.md holds checkout paths), AC 6 (PATH warning), AC 7 (shipped skills do not mention installation).
+
+Architecture: draft proposal FnzqYzFU (predecessor oyXXnyCV) restates Install skill (vKEsyHFk/XppR9owz#XgeEM0Pb) as linking to the checkout or copying into a root inside the repository. Footprint names Install skill as named-and-changed; Skill evaluation (prepare.ts) changed without a meaning change. Not adopted: a source merge does not adopt it. Sol review: 2 rounds with gpt-6.1-sol, approved; S1 (keep hand-made relative links) declined, S2 (symlinked repository path) picked.
 <!-- SECTION:NOTES:END -->
